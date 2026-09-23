@@ -12,6 +12,21 @@ function getRoomIdFromUrl(req) {
   return parts[parts.length - 1];
 }
 
+// Marque la room comme "vivante" à chaque consultation/join : c'est ce
+// timestamp que le nettoyage automatique (pg_cron) utilise pour repérer
+// les rooms inactives depuis plus d'1h.
+async function toucherActivite(roomId) {
+  try {
+    await supabase
+      .from("rooms")
+      .update({ last_active_at: new Date().toISOString() })
+      .eq("room_id", roomId);
+  } catch (error) {
+    // Un heartbeat manqué n'est pas grave, on ne bloque jamais la requête pour ça
+    console.error("Erreur mise à jour last_active_at :", error);
+  }
+}
+
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
@@ -22,6 +37,7 @@ module.exports = async (req, res) => {
     }
 
     const roomId = getRoomIdFromUrl(req);
+    await toucherActivite(roomId);
 
     // ---- Consultation de l'état actuel de la room ----
     if (req.method === "GET") {

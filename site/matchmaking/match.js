@@ -28,6 +28,7 @@ const configCollections = {
 };
 
 const POLL_INTERVAL_MS = 2500;
+const HEARTBEAT_INTERVAL_MS = 60000; // ping régulier pour garder la room "active"
 
 let vueActive = "characters";
 let boxActive = "full";
@@ -36,6 +37,7 @@ let roomId = null;
 let personnagesData = [];
 let armesData = [];
 let intervalPolling = null;
+let intervalHeartbeat = null;
 
 // Données des 2 joueurs : { discordId, nom, avatar, data } ou null si pas encore présent
 let joueur1 = null;
@@ -90,6 +92,22 @@ async function chargerCompte(discordId) {
   const reponse = await fetch(`/api/accounts/${discordId}`);
   if (!reponse.ok) throw new Error("Impossible de charger ce compte.");
   return await reponse.json();
+}
+
+// Ping régulier tant que la page reste ouverte, pour que la room reste
+// marquée comme active côté serveur (sinon elle est supprimée au bout
+// d'1h d'inactivité par le nettoyage automatique).
+async function envoyerHeartbeat() {
+  try {
+    await fetch(`/api/rooms/${roomId}`, { credentials: "include" });
+  } catch (error) {
+    // silencieux : un heartbeat manqué n'est pas grave, le suivant réessaiera
+  }
+}
+
+function demarrerHeartbeat() {
+  if (intervalHeartbeat) return;
+  intervalHeartbeat = setInterval(envoyerHeartbeat, HEARTBEAT_INTERVAL_MS);
 }
 
 function getFondRarete(rarete) {
@@ -249,6 +267,7 @@ async function demarrer() {
     ]);
 
     initialiserControles();
+    demarrerHeartbeat();
 
     await rafraichirEtatRoom();
 
