@@ -2,47 +2,40 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
+<link rel="stylesheet" href="match.css">
 </head>
 <body>
-<a href="index.html">Accueil</a>
+<a href="../index.html" class="lien-accueil">Accueil</a>
 <h1>Match</h1>
- 
-  <p id="room-id"></p>
-<p id="player-id"></p>
-<p id="lien-room"></p>
- 
-  <script>
-    async function initialiserMatch() {
-      const params = new URLSearchParams(window.location.search);
-      const roomId = params.get("room");
-      let player = params.get("player");
- 
-      if (!roomId) {
-        document.body.innerHTML += "<p>Room introuvable.</p>";
-        return;
-      }
- 
-      if (!player) {
-        const reponse = await fetch(`/api/rooms/${roomId}/join`);
-        const data = await reponse.json();
- 
-        if (!data.ok) {
-          document.body.innerHTML += "<p>Impossible de rejoindre la room.</p>";
-          return;
-        }
- 
-        player = data.player;
-        window.history.replaceState({}, "", `match.html?room=${roomId}&player=${player}`);
-      }
- 
-      document.getElementById("room-id").textContent = "Room : " + roomId;
-      document.getElementById("player-id").textContent = "Vous êtes : " + player;
-      document.getElementById("lien-room").innerHTML =
-        `Lien à partager : <a href="match.html?room=${roomId}">match.html?room=${roomId}</a>`;
-    }
- 
-    initialiserMatch();
-</script>
+
+  <div id="etat-attente">En attente du second joueur…</div>
+
+  <div id="controles">
+    <div id="view-selector">
+      <button type="button" class="view-btn active" data-view="characters">Personnages</button>
+      <button type="button" class="view-btn" data-view="weapons">Armes</button>
+    </div>
+
+    <div id="box-selector">
+      <button type="button" class="box-btn active" data-box="full">Full box</button>
+      <button type="button" class="box-btn" data-box="stuff">Stuff</button>
+    </div>
+  </div>
+
+  <div id="joueurs">
+    <section class="colonne-joueur" id="colonne-joueur1">
+      <div class="entete-joueur" id="entete-joueur1"></div>
+      <div class="box-joueur" id="box-joueur1"></div>
+    </section>
+
+    <section class="colonne-joueur" id="colonne-joueur2">
+      <div class="entete-joueur" id="entete-joueur2"></div>
+      <div class="box-joueur" id="box-joueur2"></div>
+    </section>
+  </div>
+
+  <script src="match.js"></script>
 </body>
 </html>
