@@ -1,0 +1,86 @@
+[
+  {
+    "id": "childe_boss",
+    "nom": "Tartaglia",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/childe_boss.webp"
+  },
+  {
+    "id": "azhdaha_boss",
+    "nom": "Azhdaha",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/azhdaha_boss.webp"
+  },
+  {
+    "id": "signora_boss",
+    "nom": "Signora",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/signora_boss.webp"
+  },
+  {
+    "id": "raiden_boss",
+    "nom": "Narukami no Mikoto la destructrice",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/raiden_boss.webp"
+  },
+  {
+    "id": "scara_boss",
+    "nom": "Shouki no Kami, le prodige",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/scara_boss.webp"
+  },
+  {
+    "id": "apep_boss",
+    "nom": "Garde de l'oasis d'Apep",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/apep_boss.webp"
+  },
+  {
+    "id": "narwhal_boss",
+    "nom": "Narval stellavore",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/narwhal_boss.webp"
+  },
+  {
+    "id": "arle_boss",
+    "nom": "Arlecchino",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/arle_boss.webp"
+  },
+  {
+    "id": "tartaglia_boss",
+    "nom": "Tartaglia",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/tartaglia_boss.webp"
+  },
+  {
+    "id": "erode_boss",
+    "nom": "Érodé seigneur du feu primordial",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/erode_boss.webp"
+  },
+  {
+    "id": "dottoreI_boss",
+    "nom": "dottoreI",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/dottoreI_boss.webp"
+  },
+  {
+    "id": "dottoreII_boss",
+    "nom": "dottoreII",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/dottoreII_boss.webp"
+  }
+]
