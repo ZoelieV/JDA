@@ -148,14 +148,43 @@ async function envoyerAction(url, body) {
   return data;
 }
 
+// Mise à jour optimiste : on anticipe le résultat côté affichage pour que
+// le clic réagisse immédiatement, sans attendre l'aller-retour réseau. Le
+// serveur reste la seule source de vérité : sa réponse écrase l'anticipation,
+// et en cas d'erreur on revient à l'état précédent.
 async function postBox(box) {
-  const data = await envoyerAction(`/api/rooms/${roomId}/box`, { box });
-  definirDraft(data.draft);
+  const ancienneBox = draft[`box_${monRole}`];
+  const ancienPret = draft[`pret_${monRole}`];
+
+  draft[`box_${monRole}`] = box;
+  draft[`pret_${monRole}`] = false;
+  rendrePhase();
+
+  try {
+    const data = await envoyerAction(`/api/rooms/${roomId}/box`, { box });
+    definirDraft(data.draft);
+  } catch (err) {
+    draft[`box_${monRole}`] = ancienneBox;
+    draft[`pret_${monRole}`] = ancienPret;
+    rendrePhase();
+    throw err;
+  }
 }
 
 async function postReady(pret) {
-  const data = await envoyerAction(`/api/rooms/${roomId}/ready`, { pret });
-  definirDraft(data.draft);
+  const ancienPret = draft[`pret_${monRole}`];
+
+  draft[`pret_${monRole}`] = pret;
+  rendrePhase();
+
+  try {
+    const data = await envoyerAction(`/api/rooms/${roomId}/ready`, { pret });
+    definirDraft(data.draft);
+  } catch (err) {
+    draft[`pret_${monRole}`] = ancienPret;
+    rendrePhase();
+    throw err;
+  }
 }
 
 async function postActionDraft(persoId) {
@@ -211,6 +240,40 @@ function creerCarteItem(personnage, { selectionnable = false, onClick = null } =
   }
 
   return card;
+}
+
+function getJoueurDataParRole(role) {
+  return role === "j1" ? joueur1?.data : joueur2?.data;
+}
+
+// Aperçu des personnages compris dans une box donnée (image + nom, pas
+// de points/constellation : c'est juste un aperçu de composition ici).
+function rendreApercuBox(containerId, joueurData, boxChoisie) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+
+  if (!boxChoisie) {
+    container.innerHTML = `<p class="apercu-vide">Aucune box choisie pour l'instant.</p>`;
+    return;
+  }
+
+  const collection = joueurData?.characters || { full: {}, selections: {} };
+
+  const persosBox = personnagesData.filter(p => {
+    const valeur = collection.full?.[p.id] ?? -1;
+    if (valeur < 0) return false;
+    if (boxChoisie !== "full") {
+      return !!collection.selections?.[boxChoisie]?.[p.id];
+    }
+    return true;
+  });
+
+  if (persosBox.length === 0) {
+    container.innerHTML = `<p class="apercu-vide">Cette box ne contient aucun personnage.</p>`;
+    return;
+  }
+
+  persosBox.forEach(p => container.appendChild(creerCarteItem(p)));
 }
 
 function creerBanMini(personnage) {
@@ -283,6 +346,9 @@ function rendreChoixBox() {
   btnPret.classList.toggle("active", dejaPret);
   btnPret.disabled = !draft[`box_${monRole}`];
   btnPret.onclick = () => postReady(!dejaPret).catch(err => alert(err.message));
+
+  rendreApercuBox("apercu-box-moi", getJoueurDataParRole(monRole), draft[`box_${monRole}`]);
+  rendreApercuBox("apercu-box-adversaire", getJoueurDataParRole(autre), draft[`box_${autre}`]);
 }
 
 // ---- Phase 2 : bans bonus d'équilibrage ----
@@ -506,6 +572,10 @@ async function rafraichirEtatRoomEtJoueurs() {
 
   if (joueur1 && joueur2) {
     monRole = moiDiscordId === joueur1.discordId ? "j1" : "j2";
+    // Repère de debug : à retirer une fois le point du rôle confirmé
+    // correct des 2 côtés (vérifiable dans la console F12 de chacun).
+    console.log("Mon discord_id :", moiDiscordId, "| Mon rôle :", monRole,
+      "| j1 =", joueur1.discordId, "| j2 =", joueur2.discordId);
 
     document.getElementById("etat-attente").classList.add("cache");
     document.getElementById("zone-match").classList.remove("cache");

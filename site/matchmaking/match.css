@@ -150,6 +150,20 @@ h1 {
   background-color: rgba(62, 207, 106, 0.55);
 }
 
+.apercu-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.apercu-vide {
+  font-size: 12px;
+  opacity: 0.6;
+  font-style: italic;
+  margin-top: 14px;
+}
+
 /* ---- Bandeaux d'info / boss / tour ---- */
 
 .bandeau-info {
