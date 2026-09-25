@@ -16,6 +16,9 @@
 
     <div class="entetes-joueurs">
       <div class="entete-joueur" id="entete-joueur1"></div>
+      <!-- Boss tiré : affiché entre les 2 entêtes (qui se rétrécissent) à
+           partir de la phase draft, cf. rendrePhase(). -->
+      <div id="boss-affiche" class="bandeau-boss cache"></div>
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
 
@@ -62,8 +65,6 @@
         <div id="constellations-j2" class="constellations-side constellations-j2"></div>
       </div>
 
-      <div id="boss-affiche" class="bandeau-boss"></div>
-
       <div class="draft-toolbar">
         <div id="tour-actuel" class="tour-actuel"></div>
         <div class="toolbar-droite">
@@ -89,8 +90,6 @@
 
     <!-- Phase 4 : saisie du temps -->
     <section id="phase-temps" class="phase cache">
-      <div id="boss-affiche-temps" class="bandeau-boss"></div>
-
       <div class="recap-teams">
         <div class="equipe-joueur" id="recap-equipe-j1"></div>
         <div class="equipe-joueur" id="recap-equipe-j2"></div>

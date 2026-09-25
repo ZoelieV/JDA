@@ -300,7 +300,7 @@ function getRefinementArmeSignature(joueurData, personnageId) {
   return valeur >= 0 ? valeur : null;
 }
 
-// Niveau "95/100" ou "100/100" d'un perso, ou null si non renseigné
+// Niveau "95" ou "100" d'un perso, ou null si non renseigné
 // (la pastille n'est alors pas dessinée).
 function getNiveauPersonnage(joueurData, personnageId) {
   // Renseigné sur la page Mon compte : profil.characters.niveaux[id] = 95 | 100
@@ -308,7 +308,7 @@ function getNiveauPersonnage(joueurData, personnageId) {
   const niveau = joueurData?.characters?.niveaux?.[personnageId];
   if (niveau !== 95 && niveau !== 100) return null;
 
-  return `${niveau}/100`;
+  return String(niveau);
 }
 
 // Constellation (toujours connue : c'est la valeur de possession 0-6),
@@ -632,6 +632,10 @@ function rendreConstellations() {
     const joueurData = getJoueurDataParRole(role);
     const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
 
+    // Côté sans pick : rectangle vide masqué (mais garde sa place pour que
+    // j2 reste à droite).
+    container.classList.toggle("vide", picks.length === 0);
+
     picks.forEach(persoId => {
       const personnage = getPersonnageParId(persoId);
       if (!personnage) return;
@@ -645,6 +649,9 @@ function rendreConstellations() {
       container.appendChild(badge);
     });
   });
+
+  const aucunPick = !draft.actions.some(a => a.type === "pick");
+  document.getElementById("constellations-bar").classList.toggle("cache", aucunPick);
 }
 
 // Petit rappel persistant, pendant la draft, des bans d'équilibrage joués
@@ -725,6 +732,15 @@ function jouerAnimationBoss(bossIdFinal) {
   }
 
   etape();
+}
+
+// Affiche le boss (sans animation) s'il n'est pas déjà à l'écran et
+// qu'aucune animation n'est en cours (ex : rechargement en phase temps).
+function assurerBossAffiche() {
+  if (draft.boss_id !== bossAnimeId && !animationBossEnCours) {
+    afficherBossFinal(draft.boss_id);
+    bossAnimeId = draft.boss_id;
+  }
 }
 
 function rendreDraft(phasePrecedente) {
@@ -922,11 +938,7 @@ function rendrePicksSeuls(containerId, role) {
 }
 
 function rendreTemps() {
-  const boss = bossData.find(b => b.id === draft.boss_id);
-  const bossContainer = document.getElementById("boss-affiche-temps");
-  bossContainer.innerHTML = boss
-    ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span class="nom-boss">${boss.nom}</span>`
-    : "";
+  assurerBossAffiche();
 
   rendrePicksSeuls("recap-equipe-j1", "j1");
   rendrePicksSeuls("recap-equipe-j2", "j2");
@@ -1032,6 +1044,12 @@ function rendrePhase() {
   if (!idAffiche) return;
 
   document.getElementById(idAffiche).classList.remove("cache");
+
+  // Une fois le boss tiré (draft, temps) : entêtes réduites à 1/3 de leur
+  // largeur, boss au centre dans l'espace libéré.
+  const avecBoss = draft.phase === "draft" || draft.phase === "temps";
+  document.querySelector(".entetes-joueurs").classList.toggle("avec-boss", avecBoss);
+  document.getElementById("boss-affiche").classList.toggle("cache", !avecBoss);
 
   if (draft.phase === "choix_box") rendreChoixBox();
   else if (draft.phase === "bans_bonus") rendreBansBonus();
