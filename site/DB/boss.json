@@ -60,7 +60,7 @@
     "nom": "Tartaglia",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/tartaglia_boss.webp"
+    "image": "images/boss/childe_boss.webp"
   },
   {
     "id": "erode_boss",

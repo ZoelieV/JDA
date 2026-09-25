@@ -575,7 +575,11 @@ function rendreBansBonus() {
   }
 
   const grille = document.getElementById("grille-bans-bonus");
-  grille.innerHTML = "";
+  const cleGrille = JSON.stringify([
+    choix, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible,
+    draft.pool_j1, draft.pool_j2, draft.discord_j1, draft.discord_j2, monRole
+  ]);
+  if (!grilleAChange(grille, cleGrille)) return;
 
   draft.pool_disponible.forEach(id => {
     const personnage = getPersonnageParId(id);
@@ -626,8 +630,7 @@ function rendreSlotsEtBans(role) {
       const personnage = getPersonnageParId(persoId);
       slot.className = "slot-pick";
       slot.innerHTML = `
-        <img src="../DB/${personnage.image}" alt="${personnage.nom}">
-        <span class="nom-slot">${personnage.nom}</span>
+        <img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">
       `;
     } else {
       slot.className = "slot-pick vide";
@@ -650,8 +653,7 @@ function rendreSlotsEtBans(role) {
     if (personnage) {
       slot.className = "slot-pick slot-ban";
       slot.innerHTML = `
-        <img src="../DB/${personnage.image}" alt="${personnage.nom}">
-        <span class="nom-slot">${personnage.nom}</span>
+        <img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">
       `;
     } else {
       slot.className = "slot-pick slot-ban vide";
@@ -787,7 +789,12 @@ function rendreDraft(phasePrecedente) {
   rendreSlotsEtBans("j2");
 
   const grille = document.getElementById("grille-pool-draft");
-  grille.innerHTML = "";
+  const cleGrille = JSON.stringify([
+    draft.actions, draft.sequence_index, draft.pool_disponible, draft.pool_j1, draft.pool_j2,
+    draft.discord_j1, draft.discord_j2, monRole,
+    [...filtreElement], [...filtreEtoile], filtreProprietaire, rechercheTexte
+  ]);
+  if (!grilleAChange(grille, cleGrille)) return;
 
   const cEstMonTour = !!prochaine && prochaine.joueur === monRole;
   const restrictionPick = cEstMonTour && prochaine.type === "pick";
@@ -818,9 +825,18 @@ function rendreDraft(phasePrecedente) {
     });
 }
 
-// ---- Barre de filtres / recherche de la grille de draft ----
-// Construite UNE SEULE FOIS (pas à chaque rendu) pour ne pas perdre le
-// focus/texte de la recherche à chaque poll.
+// ---- Grilles de persos : reconstruction seulement si nécessaire ----
+// Le polling rappelle le rendu toutes les 2.5s : reconstruire la grille à
+// chaque fois recrée la carte survolée, qui rejoue alors son animation de
+// survol (effet "faux clic"). On ne la reconstruit que si ce qui l'affecte
+// (état de la draft, filtres, rôles) a changé. Vide la grille si oui.
+
+function grilleAChange(grille, cle) {
+  if (grille.dataset.cle === cle) return false;
+  grille.dataset.cle = cle;
+  grille.innerHTML = "";
+  return true;
+}
 
 // ---- Grilles de persos : écarts homogènes ----
 // Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE, puis
@@ -845,6 +861,10 @@ function initialiserGrillesPersos() {
   const observer = new ResizeObserver(entrees => entrees.forEach(e => ajusterGrille(e.target)));
   document.querySelectorAll(".grille-pool").forEach(grille => observer.observe(grille));
 }
+
+// ---- Barre de filtres / recherche de la grille de draft ----
+// Construite UNE SEULE FOIS (pas à chaque rendu) pour ne pas perdre le
+// focus/texte de la recherche à chaque poll.
 
 function initialiserFiltresTri() {
   const container = document.getElementById("filtres-tri");
@@ -952,8 +972,7 @@ function rendrePicksSeuls(containerId, role) {
       const personnage = getPersonnageParId(persoId);
       slot.className = "slot-pick";
       slot.innerHTML = `
-        <img src="../DB/${personnage.image}" alt="${personnage.nom}">
-        <span class="nom-slot">${personnage.nom}</span>
+        <img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">
       `;
     } else {
       slot.className = "slot-pick vide";

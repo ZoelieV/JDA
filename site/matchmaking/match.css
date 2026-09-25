@@ -401,7 +401,7 @@ h1 {
 .draft-toolbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
@@ -445,7 +445,7 @@ h1 {
 .filtres-tri {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -454,14 +454,14 @@ h1 {
 .filtres-etoiles,
 .filtres-proprietaire {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .filtre-icone-btn {
-  width: 52px;
-  height: 52px;
-  padding: 6px;
-  border-radius: 12px;
+  width: 39px;
+  height: 39px;
+  padding: 5px;
+  border-radius: 9px;
   border: 2px solid transparent;
   background-color: rgba(255, 255, 255, 0.06);
   cursor: pointer;
@@ -483,13 +483,13 @@ h1 {
 
 .filtre-etoile-btn,
 .filtre-proprietaire-btn {
-  height: 52px;
-  padding: 8px 16px;
-  border-radius: 12px;
+  height: 39px;
+  padding: 6px 12px;
+  border-radius: 9px;
   border: 2px solid transparent;
   background-color: rgba(255, 255, 255, 0.06);
   color: white;
-  font-size: 24px;
+  font-size: 18px;
   cursor: pointer;
 }
 
@@ -500,13 +500,13 @@ h1 {
 }
 
 .btn-clear-filtres {
-  height: 52px;
-  padding: 8px 16px;
-  border-radius: 12px;
+  height: 39px;
+  padding: 6px 12px;
+  border-radius: 9px;
   border: 2px solid rgba(255, 255, 255, 0.2);
   background-color: transparent;
   color: white;
-  font-size: 24px;
+  font-size: 18px;
   cursor: pointer;
   opacity: 0.8;
 }
@@ -517,14 +517,14 @@ h1 {
 
 .recherche-personnage {
   box-sizing: border-box;
-  height: 52px;
+  height: 39px;
   background-color: rgba(255, 255, 255, 0.08);
   border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 8px 16px;
+  border-radius: 9px;
+  padding: 6px 12px;
   color: white;
-  font-size: 22px;
-  width: 280px;
+  font-size: 17px;
+  width: 210px;
 }
 
 /* ---- Draft : grille pool + équipes ---- */
@@ -697,11 +697,11 @@ h1 {
 .character-constellation,
 .character-niveau {
   position: absolute;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   padding: 1px 6px;
   border-radius: 5px;
-  background-color: #000;
+  background-color: rgba(0, 0, 0, 0.75);
 }
 
 /* Constellation en haut de carte */
