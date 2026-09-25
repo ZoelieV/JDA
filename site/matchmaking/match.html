@@ -16,8 +16,9 @@
 
     <div class="entetes-joueurs">
       <div class="entete-joueur" id="entete-joueur1"></div>
-      <!-- Boss tiré : affiché entre les 2 entêtes (qui se rétrécissent) à
-           partir de la phase draft, cf. rendrePhase(). -->
+      <!-- Boss tiré : affiché entre les 2 entêtes (réduites dès les bans
+           d'équilibrage) pendant la draft et la saisie du temps, cf.
+           rendrePhase(). -->
       <div id="boss-affiche" class="bandeau-boss cache"></div>
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
@@ -60,11 +61,6 @@
 
     <!-- Phase 3 : draft (boss + bans/picks) -->
     <section id="phase-draft" class="phase cache">
-      <div id="constellations-bar" class="constellations-bar">
-        <div id="constellations-j1" class="constellations-side constellations-j1"></div>
-        <div id="constellations-j2" class="constellations-side constellations-j2"></div>
-      </div>
-
       <div class="draft-toolbar">
         <div id="tour-actuel" class="tour-actuel"></div>
         <div class="toolbar-droite">

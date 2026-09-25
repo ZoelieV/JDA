@@ -292,12 +292,37 @@ function trouverArmeSignature(personnageId) {
 
 // Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un personnage chez
 // un joueur donné, ou null s'il ne la possède pas / si le perso n'a pas
-// d'arme signature référencée.
+// d'arme signature référencée. Copies dupliquées ("idArme#2"...) comprises :
+// on garde la meilleure.
 function getRefinementArmeSignature(joueurData, personnageId) {
   const arme = trouverArmeSignature(personnageId);
   if (!arme) return null;
-  const valeur = joueurData?.weapons?.full?.[arme.id] ?? -1;
-  return valeur >= 0 ? valeur : null;
+
+  const full = joueurData?.weapons?.full || {};
+  let meilleur = -1;
+  Object.entries(full).forEach(([cle, valeur]) => {
+    if ((cle === arme.id || cle.startsWith(`${arme.id}#`)) && valeur > meilleur) {
+      meilleur = valeur;
+    }
+  });
+  return meilleur >= 0 ? meilleur : null;
+}
+
+// Raffinement affiché pour le glow d'une carte : celui du joueur filtré
+// (J1/J2), sinon le plus élevé des 2. Un joueur ne compte que s'il possède
+// le perso.
+function getRefinementAffiche(personnageId) {
+  const roles = filtreProprietaire ? [filtreProprietaire] : ["j1", "j2"];
+  let meilleur = null;
+
+  roles.forEach(role => {
+    const pool = role === "j1" ? draft.pool_j1 : draft.pool_j2;
+    if (!pool || !pool.includes(personnageId)) return;
+    const r = getRefinementArmeSignature(getJoueurDataParRole(role), personnageId);
+    if (r !== null && (meilleur === null || r > meilleur)) meilleur = r;
+  });
+
+  return meilleur;
 }
 
 // Niveau "95" ou "100" d'un perso, ou null si non renseigné
@@ -620,40 +645,6 @@ function rendreSlotsEtBans(role) {
   });
 }
 
-// Résumé des constellations picks en haut de la draft : j1 à gauche, j2 à
-// droite, 2 couleurs distinctes (cf. CSS). Rend inutile un éventuel tag
-// "j1/j2" sur chaque carte de la grille du pool.
-function rendreConstellations() {
-  ["j1", "j2"].forEach(role => {
-    const container = document.getElementById(`constellations-${role}`);
-    if (!container) return;
-    container.innerHTML = "";
-
-    const joueurData = getJoueurDataParRole(role);
-    const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
-
-    // Côté sans pick : rectangle vide masqué (mais garde sa place pour que
-    // j2 reste à droite).
-    container.classList.toggle("vide", picks.length === 0);
-
-    picks.forEach(persoId => {
-      const personnage = getPersonnageParId(persoId);
-      if (!personnage) return;
-
-      const niveauC = joueurData?.characters?.full?.[persoId];
-      const label = typeof niveauC === "number" && niveauC >= 0 ? `C${niveauC}` : "";
-
-      const badge = document.createElement("span");
-      badge.className = "constellation-badge";
-      badge.innerHTML = `<img src="../DB/${personnage.image}" alt="${personnage.nom}"><span>${personnage.nom}${label ? " · " + label : ""}</span>`;
-      container.appendChild(badge);
-    });
-  });
-
-  const aucunPick = !draft.actions.some(a => a.type === "pick");
-  document.getElementById("constellations-bar").classList.toggle("cache", aucunPick);
-}
-
 // Petit rappel persistant, pendant la draft, des bans d'équilibrage joués
 // avant le tirage du boss (utile puisque la phase bans_bonus elle-même est
 // passée à ce stade).
@@ -758,7 +749,6 @@ function rendreDraft(phasePrecedente) {
   // Si une animation est déjà en cours ou déjà jouée pour ce boss, on ne
   // touche pas à #boss-affiche (évite de la couper/relancer à chaque poll).
 
-  rendreConstellations();
   rendreBansBonusRecap();
 
   const prochaine = getProchaineActionLocale();
@@ -785,7 +775,6 @@ function rendreDraft(phasePrecedente) {
   const cEstMonTour = !!prochaine && prochaine.joueur === monRole;
   const restrictionPick = cEstMonTour && prochaine.type === "pick";
   const monPool = monRole === "j1" ? draft.pool_j1 : draft.pool_j2;
-  const joueurDataViewer = getJoueurDataParRole(monRole);
 
   draft.pool_disponible
     .map(id => getPersonnageParId(id))
@@ -796,9 +785,7 @@ function rendreDraft(phasePrecedente) {
 
       const dataJ1 = draft.pool_j1 && draft.pool_j1.includes(personnage.id) ? getJoueurDataParRole("j1") : null;
       const dataJ2 = draft.pool_j2 && draft.pool_j2.includes(personnage.id) ? getJoueurDataParRole("j2") : null;
-      const refinement = monPool && monPool.includes(personnage.id)
-        ? getRefinementArmeSignature(joueurDataViewer, personnage.id)
-        : null;
+      const refinement = getRefinementAffiche(personnage.id);
 
       const carte = creerCarteItem(personnage, {
         selectionnable,
@@ -1045,10 +1032,11 @@ function rendrePhase() {
 
   document.getElementById(idAffiche).classList.remove("cache");
 
-  // Une fois le boss tiré (draft, temps) : entêtes réduites à 1/3 de leur
-  // largeur, boss au centre dans l'espace libéré.
+  // Des bans d'équilibrage jusqu'à la saisie du temps : entêtes réduites à
+  // 1/3 de leur largeur ; une fois le boss tiré, il occupe le centre libéré.
+  const compact = ["bans_bonus", "draft", "temps"].includes(draft.phase);
   const avecBoss = draft.phase === "draft" || draft.phase === "temps";
-  document.querySelector(".entetes-joueurs").classList.toggle("avec-boss", avecBoss);
+  document.querySelector(".entetes-joueurs").classList.toggle("compact", compact);
   document.getElementById("boss-affiche").classList.toggle("cache", !avecBoss);
 
   if (draft.phase === "choix_box") rendreChoixBox();
