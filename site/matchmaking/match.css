@@ -351,14 +351,19 @@ h1 {
 .bans-bonus-recap {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  opacity: 0.85;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 8px 12px;
+  background-color: rgba(255, 90, 90, 0.1);
+  border: 1px solid rgba(255, 90, 90, 0.3);
+  border-radius: 8px;
 }
 
 .bans-bonus-recap .ban-mini {
-  width: 22px;
-  height: 22px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.9;
 }
 
 .filtres-tri {
@@ -587,14 +592,34 @@ h1 {
   height: 16px;
 }
 
+.character-constellation,
 .character-niveau {
   position: absolute;
-  bottom: 2px;
   font-size: 10px;
   font-weight: bold;
   padding: 1px 4px;
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.55);
+}
+
+/* Constellation en haut de carte */
+.character-constellation {
+  top: 2px;
+}
+
+.character-constellation.constellation-j1 {
+  left: 2px;
+  color: var(--couleur-j1);
+}
+
+.character-constellation.constellation-j2 {
+  right: 2px;
+  color: var(--couleur-j2);
+}
+
+/* Niveau en bas de carte */
+.character-niveau {
+  bottom: 2px;
 }
 
 .character-niveau.niveau-j1 {
@@ -693,6 +718,19 @@ h1 {
 }
 
 /* ---- Phase : temps ---- */
+
+.recap-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 800px) {
+  .recap-teams {
+    grid-template-columns: 1fr;
+  }
+}
 
 .saisie-temps {
   margin-bottom: 16px;

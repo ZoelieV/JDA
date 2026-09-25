@@ -316,6 +316,13 @@ function getNiveauPersonnage(joueurData, personnageId) {
   return `${brut}/100`;
 }
 
+// Constellation (toujours connue : c'est la valeur de possession 0-6),
+// affichée séparément du niveau (en haut de carte, cf. creerCarteItem).
+function getConstellationLabel(joueurData, persoId) {
+  const c = joueurData?.characters?.full?.[persoId];
+  return typeof c === "number" && c >= 0 ? `C${c}` : null;
+}
+
 function personnageCorrespondFiltres(personnage) {
   if (filtreElement.size > 0 && !filtreElement.has(personnage.element)) return false;
   if (filtreEtoile.size > 0 && !filtreEtoile.has(String(personnage.rarete))) return false;
@@ -337,6 +344,8 @@ function creerCarteItem(personnage, {
   selectionnable = false,
   indisponible = false,
   onClick = null,
+  constellationJ1 = null,
+  constellationJ2 = null,
   niveauJ1 = null,
   niveauJ2 = null,
   refinementViewer = null
@@ -347,13 +356,17 @@ function creerCarteItem(personnage, {
     (indisponible ? " indisponible" : "");
 
   const fond = getFondRarete(personnage.rarete);
-  const icone = iconesElements[personnage.element] || "";
 
   const glow = refinementViewer !== null && refinementViewer !== undefined;
   const styleParts = [`background-image: url('${fond}')`];
   if (glow) {
     styleParts.push(`--couleur-glow: ${COULEURS_REFINEMENT[refinementViewer] || COULEURS_REFINEMENT[0]}`);
   }
+
+  const constellationHtml = [
+    constellationJ1 ? `<span class="character-constellation constellation-j1">${constellationJ1}</span>` : "",
+    constellationJ2 ? `<span class="character-constellation constellation-j2">${constellationJ2}</span>` : ""
+  ].join("");
 
   const niveauHtml = [
     niveauJ1 ? `<span class="character-niveau niveau-j1">${niveauJ1}</span>` : "",
@@ -363,7 +376,7 @@ function creerCarteItem(personnage, {
   card.innerHTML = `
     <div class="character-visuel${glow ? " arme-signature" : ""}" style="${styleParts.join("; ")};">
       <img src="../DB/${personnage.image}" alt="${personnage.nom}">
-      ${icone ? `<img class="character-icone-type" src="${icone}" alt="">` : ""}
+      ${constellationHtml}
       ${niveauHtml}
     </div>
     <div class="character-name">${personnage.nom}</div>
@@ -551,10 +564,17 @@ function rendreBansBonus() {
     const dejaChoisi = choix.includes(id);
     const peutCliquer = cEstMonTour && (dejaChoisi || choix.length < draft.bans_bonus_total);
 
+    const dataJ1 = draft.pool_j1 && draft.pool_j1.includes(id) ? getJoueurDataParRole("j1") : null;
+    const dataJ2 = draft.pool_j2 && draft.pool_j2.includes(id) ? getJoueurDataParRole("j2") : null;
+
     const carte = creerCarteItem(personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi,
-      onClick: () => postBonusToggle(id).catch(err => alert(err.message))
+      onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
+      constellationJ1: dataJ1 ? getConstellationLabel(dataJ1, id) : null,
+      constellationJ2: dataJ2 ? getConstellationLabel(dataJ2, id) : null,
+      niveauJ1: dataJ1 ? getNiveauPersonnage(dataJ1, id) : null,
+      niveauJ2: dataJ2 ? getNiveauPersonnage(dataJ2, id) : null
     });
     grille.appendChild(carte);
   });
@@ -571,7 +591,9 @@ function rendreSlotsEtBans(role) {
   const nomJoueur = role === "j1" ? joueur1.nom : joueur2.nom;
 
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
-  const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role).map(a => a.perso_id);
+  // Les bans bonus d'équilibrage ont leur propre récap (bans-bonus-recap,
+  // affiché en haut) : on ne les remet pas ici pour éviter le doublon.
+  const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
 
   const slotsContainer = document.getElementById(`slots-pick-${role}`);
   slotsContainer.innerHTML = `<h4>${nomJoueur}</h4>`;
@@ -668,7 +690,7 @@ function rendreDraft() {
   if (!prochaine) {
     tourContainer.innerHTML = "Draft terminée.";
   } else {
-    const verbe = prochaine.type === "ban" ? "bannir" : "picker";
+    const verbe = prochaine.type === "ban" ? "bannir" : "pick";
     if (prochaine.joueur === monRole) {
       tourContainer.innerHTML = `À toi de <strong>${verbe}</strong> un personnage.`;
     } else {
@@ -695,12 +717,8 @@ function rendreDraft() {
       const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
       const selectionnable = cEstMonTour && jePeuxLePicker;
 
-      const niveauJ1 = draft.pool_j1 && draft.pool_j1.includes(personnage.id)
-        ? getNiveauPersonnage(getJoueurDataParRole("j1"), personnage.id)
-        : null;
-      const niveauJ2 = draft.pool_j2 && draft.pool_j2.includes(personnage.id)
-        ? getNiveauPersonnage(getJoueurDataParRole("j2"), personnage.id)
-        : null;
+      const dataJ1 = draft.pool_j1 && draft.pool_j1.includes(personnage.id) ? getJoueurDataParRole("j1") : null;
+      const dataJ2 = draft.pool_j2 && draft.pool_j2.includes(personnage.id) ? getJoueurDataParRole("j2") : null;
       const refinement = monPool && monPool.includes(personnage.id)
         ? getRefinementArmeSignature(joueurDataViewer, personnage.id)
         : null;
@@ -709,8 +727,10 @@ function rendreDraft() {
         selectionnable,
         indisponible: cEstMonTour && !jePeuxLePicker,
         onClick: () => postActionDraft(personnage.id).catch(err => alert(err.message)),
-        niveauJ1,
-        niveauJ2,
+        constellationJ1: dataJ1 ? getConstellationLabel(dataJ1, personnage.id) : null,
+        constellationJ2: dataJ2 ? getConstellationLabel(dataJ2, personnage.id) : null,
+        niveauJ1: dataJ1 ? getNiveauPersonnage(dataJ1, personnage.id) : null,
+        niveauJ2: dataJ2 ? getNiveauPersonnage(dataJ2, personnage.id) : null,
         refinementViewer: refinement
       });
       grille.appendChild(carte);
@@ -805,7 +825,51 @@ function initialiserFiltresTri() {
 
 // ---- Phase 4 : saisie du temps ----
 
+// Recap des picks d'un joueur (sans la rangée de bans, contrairement à
+// rendreSlotsEtBans) — utilisé sur la page de saisie du temps pour se
+// souvenir des 2 teams pendant qu'on tape son temps.
+function rendrePicksSeuls(containerId, role) {
+  const nomJoueur = role === "j1" ? joueur1.nom : joueur2.nom;
+  const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = `<h4>${nomJoueur}</h4>`;
+
+  const slotsWrap = document.createElement("div");
+  slotsWrap.className = "slots-pick";
+
+  for (let i = 0; i < 4; i++) {
+    const persoId = picks[i];
+    const slot = document.createElement("div");
+
+    if (persoId) {
+      const personnage = getPersonnageParId(persoId);
+      slot.className = "slot-pick";
+      slot.innerHTML = `
+        <img src="../DB/${personnage.image}" alt="${personnage.nom}">
+        <span class="nom-slot">${personnage.nom}</span>
+      `;
+    } else {
+      slot.className = "slot-pick vide";
+      slot.textContent = "Vide";
+    }
+
+    slotsWrap.appendChild(slot);
+  }
+
+  container.appendChild(slotsWrap);
+}
+
 function rendreTemps() {
+  const boss = bossData.find(b => b.id === draft.boss_id);
+  const bossContainer = document.getElementById("boss-affiche-temps");
+  bossContainer.innerHTML = boss
+    ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span class="nom-boss">${boss.nom}</span>`
+    : "";
+
+  rendrePicksSeuls("recap-equipe-j1", "j1");
+  rendrePicksSeuls("recap-equipe-j2", "j2");
+
   const monTemps = draft[`temps_${monRole}`];
   const tempsAdversaire = draft[`temps_${getAutreRole(monRole)}`];
 
