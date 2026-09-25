@@ -19,35 +19,58 @@
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
 
-    <!-- Phase 1 : choix de box + prêt -->
+    <!-- Phase 1 : choix de box + prêt. Colonnes fixes j1 (gauche) / j2
+         (droite), alignées sur les entêtes joueurs ci-dessus : chacun ne
+         peut modifier que sa propre colonne. -->
     <section id="phase-choix-box" class="phase cache">
       <div class="colonnes-box">
-        <div class="colonne-box">
-          <h3>Ta box</h3>
-          <div class="box-select" id="box-select-moi"></div>
-          <div class="statut-pret" id="statut-pret-moi"></div>
-          <button id="btn-pret" type="button">Je suis prêt</button>
-          <div class="apercu-box" id="apercu-box-moi"></div>
+        <div class="colonne-box" id="colonne-box-j1">
+          <h3 id="titre-box-j1">Box</h3>
+          <div class="box-select" id="box-select-j1"></div>
+          <div class="statut-pret" id="statut-pret-j1"></div>
+          <button id="btn-pret-j1" type="button" class="cache">Je suis prêt</button>
+          <div class="apercu-box" id="apercu-box-j1"></div>
         </div>
-        <div class="colonne-box colonne-box-adversaire">
-          <h3>Box adverse</h3>
-          <div class="box-select desactive" id="box-select-adversaire"></div>
-          <div class="statut-pret" id="statut-pret-adversaire"></div>
-          <div class="apercu-box" id="apercu-box-adversaire"></div>
+        <div class="colonne-box" id="colonne-box-j2">
+          <h3 id="titre-box-j2">Box</h3>
+          <div class="box-select" id="box-select-j2"></div>
+          <div class="statut-pret" id="statut-pret-j2"></div>
+          <button id="btn-pret-j2" type="button" class="cache">Je suis prêt</button>
+          <div class="apercu-box" id="apercu-box-j2"></div>
         </div>
       </div>
     </section>
 
-    <!-- Phase 2 : bans bonus d'équilibrage -->
+    <!-- Phase 2 : bans bonus d'équilibrage. Les bans choisis vont dans des
+         emplacements dédiés (bans-bonus-slots) qu'on peut modifier/annuler
+         avant de confirmer. -->
     <section id="phase-bans-bonus" class="phase cache">
       <div id="message-equilibrage" class="bandeau-info"></div>
+
+      <div class="bans-bonus-layout">
+        <div class="bans-bonus-slots" id="bans-bonus-slots"></div>
+        <button id="btn-confirmer-bonus" type="button" class="cache">Confirmer les bans</button>
+      </div>
+
       <div id="grille-bans-bonus" class="grille-pool"></div>
     </section>
 
     <!-- Phase 3 : draft (boss + bans/picks) -->
     <section id="phase-draft" class="phase cache">
+      <div id="constellations-bar" class="constellations-bar">
+        <div id="constellations-j1" class="constellations-side constellations-j1"></div>
+        <div id="constellations-j2" class="constellations-side constellations-j2"></div>
+      </div>
+
       <div id="boss-affiche" class="bandeau-boss"></div>
-      <div id="tour-actuel" class="bandeau-info"></div>
+
+      <div class="draft-toolbar">
+        <div id="tour-actuel" class="tour-actuel"></div>
+        <div class="toolbar-droite">
+          <div id="bans-bonus-recap" class="bans-bonus-recap cache"></div>
+          <div class="filtres-tri" id="filtres-tri"></div>
+        </div>
+      </div>
 
       <div class="draft-layout">
         <div class="equipe-joueur" id="equipe-j1">
@@ -80,6 +103,7 @@
     <section id="phase-termine" class="phase cache">
       <div id="resultat-final"></div>
       <button id="btn-rejouer" type="button">Rejouer</button>
+      <div id="etat-rejouer" class="bandeau-info cache"></div>
     </section>
 
   </div>

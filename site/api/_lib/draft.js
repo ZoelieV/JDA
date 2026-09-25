@@ -43,9 +43,16 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 //
 // Utilisé à la création d'une room ET au clic sur "Rejouer" (qui remet la
 // room exactement à ce stade, sans recréer de room ni toucher à match_history).
+//
+// discord_j1 / discord_j2 : qui est "j1" et "j2" POUR CETTE MANCHE. Tiré au
+// sort la première fois que la room est complète (voir _lib/room.js), puis
+// échangé automatiquement à chaque revanche (voir handleRejouer) pour que
+// le 1er pick ne reste pas indéfiniment du même côté.
 function etatInitialDraft() {
   return {
     phase: "choix_box", // choix_box -> bans_bonus (si écart) -> draft -> temps -> termine
+    discord_j1: null,
+    discord_j2: null,
     box_j1: null,
     box_j2: null,
     pret_j1: false,
@@ -55,13 +62,18 @@ function etatInitialDraft() {
     bans_bonus_total: 0,
     bans_bonus_faits: 0,
     bans_bonus_joueur: null, // "j1" | "j2" | null si pas d'écart suffisant
+    bans_bonus_choix: [], // ids en cours de sélection, pas encore confirmés
     boss_id: null,
-    pool_disponible: null, // liste d'ids, remplie une fois les 2 joueurs prêts
+    pool_disponible: null, // liste d'ids (union), remplie une fois les 2 joueurs prêts
+    pool_j1: null, // ids possédés par j1 (sa Full box) — restreint ses picks
+    pool_j2: null, // ids possédés par j2 (sa Full box) — restreint ses picks
     actions: [], // { joueur, type: "ban" | "pick", perso_id, bonus: bool }
     sequence_index: 0,
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
-    vainqueur: null // "j1" | "j2" | "egalite" une fois les 2 temps rentrés
+    vainqueur: null, // "j1" | "j2" | "egalite" une fois les 2 temps rentrés
+    rejouer_j1: false, // ready-check pour la revanche, même principe que pret_j1/pret_j2
+    rejouer_j2: false
   };
 }
 
@@ -85,19 +97,24 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
   return total;
 }
 
-// ---- Pool de personnages draftables ----
-//
-// Seuls les personnages possédés (peu importe la box choisie pour
-// l'équilibrage : on regarde la Full box de chacun) par AU MOINS un des
-// 2 joueurs sont proposables au ban/pick. Le reste du catalogue n'a
-// simplement pas d'intérêt en draft puisque personne ne peut le jouer.
-function calculerPoolDisponible(profilJ1Data, profilJ2Data, personnages) {
-  const fullJ1 = profilJ1Data?.characters?.full || {};
-  const fullJ2 = profilJ2Data?.characters?.full || {};
-
+// ---- Pool d'un joueur (tout ce qu'il possède, peu importe la box choisie
+// pour l'équilibrage : on regarde sa Full box) ----
+function calculerPoolJoueur(profilData, personnages) {
+  const full = profilData?.characters?.full || {};
   return personnages
-    .filter(p => (fullJ1[p.id] ?? -1) >= 0 || (fullJ2[p.id] ?? -1) >= 0)
+    .filter(p => (full[p.id] ?? -1) >= 0)
     .map(p => p.id);
+}
+
+// ---- Pool de personnages draftables (union des 2 joueurs) ----
+//
+// Seuls les personnages possédés par AU MOINS un des 2 joueurs sont
+// proposables au ban/pick. Le reste du catalogue n'a simplement pas
+// d'intérêt en draft puisque personne ne peut le jouer. Les PICKS restent
+// ensuite individuellement restreints à pool_j1 / pool_j2 (cf. handleAction) :
+// on ne peut jouer que ce qu'on possède, même si l'adversaire l'a banni.
+function calculerPoolDisponible(poolJ1, poolJ2) {
+  return Array.from(new Set([...poolJ1, ...poolJ2]));
 }
 
 // ---- Prochaine action attendue ----
@@ -125,7 +142,7 @@ function getProchaineAction(draft) {
 // ---- Démarrage de la draft proprement dite ----
 //
 // Appelée soit juste après l'équilibrage (si aucun ban bonus n'est dû),
-// soit une fois tous les bans bonus joués : tire le boss et bascule sur
+// soit une fois tous les bans bonus confirmés : tire le boss et bascule sur
 // la séquence fixe.
 function demarrerDraftApresBonus(draft, tirerBossAleatoire) {
   const boss = tirerBossAleatoire();
@@ -147,6 +164,7 @@ module.exports = {
   calculerBansBonus,
   etatInitialDraft,
   calculerPointsBox,
+  calculerPoolJoueur,
   calculerPoolDisponible,
   getProchaineAction,
   demarrerDraftApresBonus,

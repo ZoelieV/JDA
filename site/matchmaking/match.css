@@ -30,6 +30,14 @@ h1 {
   margin-bottom: 16px;
 }
 
+/* ---- Couleurs distinctes j1 / j2, réutilisées partout (entêtes,
+   constellations, bandeaux, glow…) ---- */
+
+:root {
+  --couleur-j1: #5b9bd5;
+  --couleur-j2: #e0645a;
+}
+
 /* ---- Entêtes joueurs (haut de page, toujours visibles une fois les 2 présents) ---- */
 
 .entetes-joueurs {
@@ -52,6 +60,16 @@ h1 {
   padding: 10px 14px;
   background-color: rgba(255, 255, 255, 0.04);
   border-radius: 10px;
+  border-left: 3px solid var(--couleur-j1);
+}
+
+/* j2 est le miroir de j1 : pseudo aligné à droite, avatar à droite du
+   pseudo, pastille de statut ramenée vers le centre. */
+#entete-joueur2 {
+  flex-direction: row-reverse;
+  text-align: right;
+  border-left: none;
+  border-right: 3px solid var(--couleur-j2);
 }
 
 .entete-joueur img {
@@ -60,6 +78,7 @@ h1 {
   border-radius: 50%;
   object-fit: cover;
   background: #333;
+  flex-shrink: 0;
 }
 
 .entete-joueur .nom-joueur {
@@ -72,10 +91,21 @@ h1 {
   height: 12px;
   border-radius: 50%;
   background-color: #666;
+  flex-shrink: 0;
+}
+
+#entete-joueur2 .pastille {
+  margin-left: 0;
+  margin-right: auto;
 }
 
 .entete-joueur .pastille.pret {
   background-color: #3ecf6a;
+}
+
+.entete-joueur .vide {
+  opacity: 0.6;
+  font-style: italic;
 }
 
 /* ---- Phase : choix de box ---- */
@@ -96,10 +126,32 @@ h1 {
   background-color: rgba(255, 255, 255, 0.04);
   border-radius: 12px;
   padding: 16px;
+  border-top: 3px solid var(--couleur-j1);
+}
+
+#colonne-box-j2 {
+  border-top-color: var(--couleur-j2);
+}
+
+#colonne-box-j2 h3,
+#colonne-box-j2 .statut-pret {
+  text-align: right;
 }
 
 .colonne-box h3 {
   margin-top: 0;
+}
+
+.colonne-box h3 .tag-toi {
+  font-size: 11px;
+  font-weight: normal;
+  opacity: 0.7;
+  margin-left: 6px;
+}
+
+#colonne-box-j2 h3 .tag-toi {
+  margin-left: 0;
+  margin-right: 6px;
 }
 
 .box-select {
@@ -107,6 +159,10 @@ h1 {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
+}
+
+#colonne-box-j2 .box-select {
+  justify-content: flex-end;
 }
 
 .box-select.desactive {
@@ -136,7 +192,8 @@ h1 {
   opacity: 0.85;
 }
 
-#btn-pret {
+#btn-pret-j1,
+#btn-pret-j2 {
   background-color: rgba(62, 207, 106, 0.2);
   border: 2px solid rgba(62, 207, 106, 0.6);
   color: white;
@@ -146,7 +203,12 @@ h1 {
   font-size: 14px;
 }
 
-#btn-pret.active {
+#colonne-box-j2 #btn-pret-j2 {
+  float: right;
+}
+
+#btn-pret-j1.active,
+#btn-pret-j2.active {
   background-color: rgba(62, 207, 106, 0.55);
 }
 
@@ -155,6 +217,11 @@ h1 {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+  clear: both;
+}
+
+#colonne-box-j2 .apercu-box {
+  justify-content: flex-end;
 }
 
 .apercu-vide {
@@ -162,6 +229,10 @@ h1 {
   opacity: 0.6;
   font-style: italic;
   margin-top: 14px;
+}
+
+#colonne-box-j2 .apercu-vide {
+  text-align: right;
 }
 
 /* ---- Bandeaux d'info / boss / tour ---- */
@@ -175,20 +246,200 @@ h1 {
 
 .bandeau-boss {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
   background-color: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   margin-bottom: 12px;
+  text-align: center;
 }
 
 .bandeau-boss img {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  width: 110px;
+  height: 110px;
+  border-radius: 12px;
   object-fit: cover;
   background: #333;
+}
+
+.bandeau-boss .nom-boss {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* ---- Barre des constellations (résumé des picks, en haut de la draft) ---- */
+
+.constellations-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.constellations-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.04);
+  flex: 1;
+}
+
+.constellations-j2 {
+  justify-content: flex-end;
+}
+
+.constellation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.constellations-j1 .constellation-badge {
+  border-left: 3px solid var(--couleur-j1);
+}
+
+.constellations-j2 .constellation-badge {
+  border-right: 3px solid var(--couleur-j2);
+}
+
+.constellation-badge img {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+/* ---- Barre d'outils de la draft : tour actuel à gauche, filtres/recherche
+   et récap des bans d'équilibrage à droite ---- */
+
+.draft-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tour-actuel {
+  padding: 10px 14px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.tour-actuel strong {
+  color: #f5c542;
+}
+
+.toolbar-droite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.bans-bonus-recap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.bans-bonus-recap .ban-mini {
+  width: 22px;
+  height: 22px;
+}
+
+.filtres-tri {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filtres-icones,
+.filtres-etoiles,
+.filtres-proprietaire {
+  display: flex;
+  gap: 4px;
+}
+
+.filtre-icone-btn {
+  width: 26px;
+  height: 26px;
+  padding: 3px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-color: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filtre-icone-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.filtre-icone-btn.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+.filtre-etoile-btn,
+.filtre-proprietaire-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filtre-etoile-btn.active,
+.filtre-proprietaire-btn.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+.btn-clear-filtres {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background-color: transparent;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.btn-clear-filtres:hover {
+  opacity: 1;
+}
+
+.recherche-personnage {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 5px 10px;
+  color: white;
+  font-size: 13px;
+  width: 140px;
 }
 
 /* ---- Draft : grille pool + équipes ---- */
@@ -259,27 +510,14 @@ h1 {
   height: 28px;
   border-radius: 6px;
   overflow: hidden;
-  opacity: 0.55;
+  opacity: 0.75;
 }
 
 .ban-mini img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(70%);
-}
-
-.ban-mini::after {
-  content: "×";
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ff5a5a;
-  font-weight: bold;
-  font-size: 16px;
-  text-shadow: 0 0 3px black;
+  filter: grayscale(35%);
 }
 
 .grille-pool {
@@ -306,19 +544,34 @@ h1 {
   transform: translateY(-2px);
 }
 
+.character-card.indisponible {
+  opacity: 0.35;
+  filter: grayscale(60%);
+}
+
 .character-visuel {
   position: relative;
-  display: inline-block;
+  display: block;
+  width: 90px;
+  height: 90px;
   background-size: cover;
   background-position: center;
-  padding: 5px;
   border-radius: 8px;
+  overflow: hidden;
 }
 
 .character-visuel img {
-  width: 65px;
-  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
+  border-radius: 8px;
+}
+
+/* Contour brillant : personnage équipé de son arme signature, coloré selon
+   le raffinement (R1 -> R5) de cette arme chez le joueur qui la possède. */
+.character-visuel.arme-signature {
+  box-shadow: 0 0 0 2px var(--couleur-glow), 0 0 10px 2px var(--couleur-glow);
 }
 
 .character-icone-type {
@@ -334,6 +587,26 @@ h1 {
   height: 16px;
 }
 
+.character-niveau {
+  position: absolute;
+  bottom: 2px;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.55);
+}
+
+.character-niveau.niveau-j1 {
+  left: 2px;
+  color: var(--couleur-j1);
+}
+
+.character-niveau.niveau-j2 {
+  right: 2px;
+  color: var(--couleur-j2);
+}
+
 .character-name {
   margin-top: 4px;
   font-size: 11px;
@@ -342,6 +615,81 @@ h1 {
   padding: 1px 6px;
   border-radius: 6px;
   background-color: rgba(0, 0, 0, 0.35);
+}
+
+/* ---- Phase : bans bonus d'équilibrage ---- */
+
+.bans-bonus-layout {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.bans-bonus-slots {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.slot-bonus {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: default;
+}
+
+.slot-bonus.rempli {
+  border-style: solid;
+  border-color: rgba(255, 90, 90, 0.6);
+  cursor: pointer;
+}
+
+.slot-bonus img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.slot-bonus .retirer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #ff5a5a;
+  font-weight: bold;
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.slot-bonus.rempli:hover .retirer {
+  opacity: 1;
+}
+
+#btn-confirmer-bonus {
+  background-color: rgba(62, 207, 106, 0.2);
+  border: 2px solid rgba(62, 207, 106, 0.6);
+  color: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#btn-confirmer-bonus:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ---- Phase : temps ---- */
@@ -403,4 +751,9 @@ h1 {
   border-radius: 8px;
   padding: 8px 16px;
   cursor: pointer;
+}
+
+#btn-rejouer.active {
+  background-color: rgba(62, 207, 106, 0.4);
+  border-color: rgba(62, 207, 106, 0.8);
 }

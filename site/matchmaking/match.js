@@ -18,6 +18,11 @@ const BOX_LABELS = {
   opti5: "Opti 5"
 };
 
+// Couleur du contour brillant des personnages équipés de leur arme
+// signature, selon le raffinement de cette arme (index 0 = R1 ... 4 = R5).
+// Convention reprise des paliers de rareté habituels ; à ajuster si besoin.
+const COULEURS_REFINEMENT = ["#b0b0b0", "#6fcf6f", "#5b9bd5", "#a366d9", "#e0a83e"];
+
 // Copie de la séquence fixe du backend (_lib/draft.js) : c'est de la pure
 // donnée, dupliquée ici pour pouvoir afficher "à qui le tour" sans faire
 // d'aller-retour serveur. Si la séquence change côté back, la changer ici
@@ -48,13 +53,23 @@ let roomId = null;
 let moiDiscordId = null;
 let monRole = null; // "j1" | "j2"
 let personnagesData = [];
+let armesData = [];
 let bossData = [];
 let draft = null;
 let intervalPolling = null;
 
-// Données des 2 joueurs : { discordId, nom, avatar, data } ou null
+// Données des 2 joueurs : { discordId, nom, avatar, data } ou null.
+// j1/j2 sont les rôles DE LA MANCHE EN COURS (draft.discord_j1/discord_j2),
+// tirés au sort côté serveur puis échangés à chaque revanche — pas
+// forcément "qui a créé la room".
 let joueur1 = null;
 let joueur2 = null;
+
+// ---- Filtres / recherche de la grille de draft ----
+const filtreElement = new Set();
+const filtreEtoile = new Set();
+let filtreProprietaire = null; // "j1" | "j2" | null
+let rechercheTexte = "";
 
 function getRoomIdDepuisUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -70,6 +85,12 @@ function getAutreRole(role) {
 async function chargerPersonnages() {
   const reponse = await fetch("../DB/characters.json");
   if (!reponse.ok) throw new Error("Impossible de charger les personnages.");
+  return await reponse.json();
+}
+
+async function chargerArmes() {
+  const reponse = await fetch("../DB/weapons.json");
+  if (!reponse.ok) throw new Error("Impossible de charger les armes.");
   return await reponse.json();
 }
 
@@ -162,7 +183,7 @@ async function postBox(box) {
 
   try {
     const data = await envoyerAction(`/api/rooms/${roomId}/box`, { box });
-    definirDraft(data.draft);
+    await definirDraft(data.draft);
   } catch (err) {
     draft[`box_${monRole}`] = ancienneBox;
     draft[`pret_${monRole}`] = ancienPret;
@@ -179,7 +200,7 @@ async function postReady(pret) {
 
   try {
     const data = await envoyerAction(`/api/rooms/${roomId}/ready`, { pret });
-    definirDraft(data.draft);
+    await definirDraft(data.draft);
   } catch (err) {
     draft[`pret_${monRole}`] = ancienPret;
     rendrePhase();
@@ -189,21 +210,46 @@ async function postReady(pret) {
 
 async function postActionDraft(persoId) {
   const data = await envoyerAction(`/api/rooms/${roomId}/action`, { perso_id: persoId });
-  definirDraft(data.draft);
+  await definirDraft(data.draft);
+}
+
+async function postBonusToggle(persoId) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/bonus_toggle`, { perso_id: persoId });
+  await definirDraft(data.draft);
+}
+
+async function postBonusConfirmer() {
+  const data = await envoyerAction(`/api/rooms/${roomId}/bonus_confirmer`, {});
+  await definirDraft(data.draft);
 }
 
 async function postTemps(temps) {
   const data = await envoyerAction(`/api/rooms/${roomId}/temps`, { temps });
-  definirDraft(data.draft);
+  await definirDraft(data.draft);
 }
 
-async function postRejouer() {
-  const data = await envoyerAction(`/api/rooms/${roomId}/rejouer`, {});
-  definirDraft(data.draft);
+async function postRejouer(rejouer) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/rejouer`, { rejouer });
+  await definirDraft(data.draft);
 }
 
-function definirDraft(nouveauDraft) {
+// Applique un nouvel état de draft. Si les rôles j1/j2 de la manche ont
+// changé (1er chargement, ou échange automatique après une revanche), on
+// recharge les profils concernés avant de redessiner — sinon joueur1/
+// joueur2/monRole resteraient périmés.
+async function definirDraft(nouveauDraft) {
   draft = nouveauDraft;
+
+  if (draft.discord_j1 && (!joueur1 || joueur1.discordId !== draft.discord_j1)) {
+    joueur1 = await chargerJoueurDepuisId(draft.discord_j1);
+  }
+  if (draft.discord_j2 && (!joueur2 || joueur2.discordId !== draft.discord_j2)) {
+    joueur2 = await chargerJoueurDepuisId(draft.discord_j2);
+  }
+  if (draft.discord_j1 && draft.discord_j2) {
+    monRole = moiDiscordId === draft.discord_j1 ? "j1" : "j2";
+  }
+
   rendrePhase();
 }
 
@@ -220,17 +266,105 @@ function getFondRarete(rarete) {
   return "../DB/images/others/bg_4_star.webp";
 }
 
-function creerCarteItem(personnage, { selectionnable = false, onClick = null } = {}) {
+function getJoueurDataParRole(role) {
+  return role === "j1" ? joueur1?.data : joueur2?.data;
+}
+
+// Arme signature d'un personnage : image nommée "[id_personnage]_w.webp"
+// (même convention que sur la page des box de comptes).
+function trouverArmeSignature(personnageId) {
+  return armesData.find(
+    arme => typeof arme.image === "string" && arme.image.endsWith(`${personnageId}_w.webp`)
+  );
+}
+
+// Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un personnage chez
+// un joueur donné, ou null s'il ne la possède pas / si le perso n'a pas
+// d'arme signature référencée.
+function getRefinementArmeSignature(joueurData, personnageId) {
+  const arme = trouverArmeSignature(personnageId);
+  if (!arme) return null;
+  const valeur = joueurData?.weapons?.full?.[arme.id] ?? -1;
+  return valeur >= 0 ? valeur : null;
+}
+
+// Best-effort : affiche un niveau "x/y" pour un personnage si la donnée
+// existe dans le profil, sous un des noms de champ plausibles. Ne casse
+// jamais l'affichage si le champ n'existe pas (retourne simplement null,
+// et la pastille n'est pas dessinée). À adapter si le vrai champ diffère.
+function getNiveauPersonnage(joueurData, personnageId) {
+  const collection = joueurData?.characters;
+  if (!collection) return null;
+
+  const brut =
+    collection.niveaux?.[personnageId] ??
+    collection.levels?.[personnageId] ??
+    collection.lvl?.[personnageId] ??
+    collection.details?.[personnageId]?.niveau ??
+    collection.details?.[personnageId]?.lvl ??
+    null;
+
+  if (brut === null || brut === undefined) return null;
+
+  if (typeof brut === "object") {
+    const actuel = brut.actuel ?? brut.niveau ?? brut.lvl ?? brut.value;
+    if (actuel === undefined || actuel === null) return null;
+    const max = brut.max ?? 100;
+    return `${actuel}/${max}`;
+  }
+
+  return `${brut}/100`;
+}
+
+function personnageCorrespondFiltres(personnage) {
+  if (filtreElement.size > 0 && !filtreElement.has(personnage.element)) return false;
+  if (filtreEtoile.size > 0 && !filtreEtoile.has(String(personnage.rarete))) return false;
+
+  if (filtreProprietaire) {
+    const pool = filtreProprietaire === "j1" ? draft.pool_j1 : draft.pool_j2;
+    if (!pool || !pool.includes(personnage.id)) return false;
+  }
+
+  if (rechercheTexte.trim()) {
+    const q = rechercheTexte.trim().toLowerCase();
+    if (!personnage.nom.toLowerCase().includes(q)) return false;
+  }
+
+  return true;
+}
+
+function creerCarteItem(personnage, {
+  selectionnable = false,
+  indisponible = false,
+  onClick = null,
+  niveauJ1 = null,
+  niveauJ2 = null,
+  refinementViewer = null
+} = {}) {
   const card = document.createElement("div");
-  card.className = "character-card" + (selectionnable ? " selectionnable" : "");
+  card.className = "character-card" +
+    (selectionnable ? " selectionnable" : "") +
+    (indisponible ? " indisponible" : "");
 
   const fond = getFondRarete(personnage.rarete);
   const icone = iconesElements[personnage.element] || "";
 
+  const glow = refinementViewer !== null && refinementViewer !== undefined;
+  const styleParts = [`background-image: url('${fond}')`];
+  if (glow) {
+    styleParts.push(`--couleur-glow: ${COULEURS_REFINEMENT[refinementViewer] || COULEURS_REFINEMENT[0]}`);
+  }
+
+  const niveauHtml = [
+    niveauJ1 ? `<span class="character-niveau niveau-j1">${niveauJ1}</span>` : "",
+    niveauJ2 ? `<span class="character-niveau niveau-j2">${niveauJ2}</span>` : ""
+  ].join("");
+
   card.innerHTML = `
-    <div class="character-visuel" style="background-image: url('${fond}');">
+    <div class="character-visuel${glow ? " arme-signature" : ""}" style="${styleParts.join("; ")};">
       <img src="../DB/${personnage.image}" alt="${personnage.nom}">
       ${icone ? `<img class="character-icone-type" src="${icone}" alt="">` : ""}
+      ${niveauHtml}
     </div>
     <div class="character-name">${personnage.nom}</div>
   `;
@@ -240,10 +374,6 @@ function creerCarteItem(personnage, { selectionnable = false, onClick = null } =
   }
 
   return card;
-}
-
-function getJoueurDataParRole(role) {
-  return role === "j1" ? joueur1?.data : joueur2?.data;
 }
 
 // Aperçu des personnages compris dans une box donnée (image + nom, pas
@@ -285,6 +415,8 @@ function creerBanMini(personnage) {
 }
 
 // ---- Rendu des entêtes joueurs (avatar + pastille prêt) ----
+// j1 à gauche, j2 à droite — reflète toujours les rôles de la manche en
+// cours (draft.discord_j1/discord_j2), pas "qui a créé la room".
 
 function rendreEntetesJoueurs() {
   [["entete-joueur1", joueur1, "j1"], ["entete-joueur2", joueur2, "j2"]].forEach(([containerId, joueur, role]) => {
@@ -306,81 +438,125 @@ function rendreEntetesJoueurs() {
 }
 
 // ---- Phase 1 : choix de box ----
+// Colonnes fixes j1 (gauche) / j2 (droite), alignées sur les entêtes.
+// Chacun ne peut modifier que sa propre colonne ; celle de l'adversaire est
+// en lecture seule.
 
 function rendreChoixBox() {
-  const autre = getAutreRole(monRole);
+  ["j1", "j2"].forEach(role => {
+    const estMoi = role === monRole;
+    const joueurObjet = role === "j1" ? joueur1 : joueur2;
+    const nom = joueurObjet ? joueurObjet.nom : (role === "j1" ? "Joueur 1" : "Joueur 2");
 
-  const conteneurMoi = document.getElementById("box-select-moi");
-  conteneurMoi.innerHTML = "";
-  Object.entries(BOX_LABELS).forEach(([valeur, label]) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "box-btn" + (draft[`box_${monRole}`] === valeur ? " active" : "");
-    btn.textContent = label;
-    btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));
-    conteneurMoi.appendChild(btn);
+    document.getElementById(`titre-box-${role}`).innerHTML =
+      `${nom}${estMoi ? '<span class="tag-toi">(toi)</span>' : ""}`;
+
+    const conteneur = document.getElementById(`box-select-${role}`);
+    conteneur.innerHTML = "";
+    conteneur.classList.toggle("desactive", !estMoi);
+
+    Object.entries(BOX_LABELS).forEach(([valeur, label]) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
+      btn.textContent = label;
+      btn.disabled = !estMoi;
+      if (estMoi) {
+        btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));
+      }
+      conteneur.appendChild(btn);
+    });
+
+    document.getElementById(`statut-pret-${role}`).textContent = draft[`pret_${role}`]
+      ? (estMoi ? "Tu es prêt." : `${nom} est prêt.`)
+      : (estMoi ? "Choisis ta box puis clique sur \"Je suis prêt\"." : `${nom} n'est pas encore prêt.`);
+
+    const btnPret = document.getElementById(`btn-pret-${role}`);
+    if (estMoi) {
+      btnPret.classList.remove("cache");
+      const dejaPret = draft[`pret_${role}`];
+      btnPret.textContent = dejaPret ? "Annuler (je ne suis plus prêt)" : "Je suis prêt";
+      btnPret.classList.toggle("active", dejaPret);
+      btnPret.disabled = !draft[`box_${role}`];
+      btnPret.onclick = () => postReady(!dejaPret).catch(err => alert(err.message));
+    } else {
+      btnPret.classList.add("cache");
+    }
+
+    rendreApercuBox(`apercu-box-${role}`, getJoueurDataParRole(role), draft[`box_${role}`]);
   });
-
-  const conteneurAdv = document.getElementById("box-select-adversaire");
-  conteneurAdv.innerHTML = "";
-  Object.entries(BOX_LABELS).forEach(([valeur, label]) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "box-btn" + (draft[`box_${autre}`] === valeur ? " active" : "");
-    btn.textContent = label;
-    btn.disabled = true;
-    conteneurAdv.appendChild(btn);
-  });
-
-  document.getElementById("statut-pret-moi").textContent = draft[`pret_${monRole}`]
-    ? "Tu es prêt."
-    : "Choisis ta box puis clique sur \"Je suis prêt\".";
-
-  document.getElementById("statut-pret-adversaire").textContent = draft[`pret_${autre}`]
-    ? "L'adversaire est prêt."
-    : "L'adversaire n'est pas encore prêt.";
-
-  const btnPret = document.getElementById("btn-pret");
-  const dejaPret = draft[`pret_${monRole}`];
-  btnPret.textContent = dejaPret ? "Annuler (je ne suis plus prêt)" : "Je suis prêt";
-  btnPret.classList.toggle("active", dejaPret);
-  btnPret.disabled = !draft[`box_${monRole}`];
-  btnPret.onclick = () => postReady(!dejaPret).catch(err => alert(err.message));
-
-  rendreApercuBox("apercu-box-moi", getJoueurDataParRole(monRole), draft[`box_${monRole}`]);
-  rendreApercuBox("apercu-box-adversaire", getJoueurDataParRole(autre), draft[`box_${autre}`]);
 }
 
 // ---- Phase 2 : bans bonus d'équilibrage ----
+// Les bans choisis vont dans des emplacements dédiés, modifiables (on peut
+// en retirer un et en reprendre un autre) tant qu'on n'a pas confirmé.
 
 function rendreBansBonus() {
-  const restant = draft.bans_bonus_total - draft.bans_bonus_faits;
+  const choix = draft.bans_bonus_choix || [];
+  const restant = draft.bans_bonus_total - choix.length;
   const nomJoueurConcerne = draft.bans_bonus_joueur === "j1" ? joueur1.nom : joueur2.nom;
   const ecart = Math.abs((draft.points_j1 ?? 0) - (draft.points_j2 ?? 0));
+  const cEstMonTour = draft.bans_bonus_joueur === monRole;
 
   const message = document.getElementById("message-equilibrage");
-
-  if (draft.bans_bonus_joueur === monRole) {
-    message.textContent = `Écart de ${ecart} pts entre les 2 box : tu dois bannir ${restant} personnage(s) de plus avant le tirage du boss.`;
+  if (cEstMonTour) {
+    message.textContent = restant > 0
+      ? `Écart de ${ecart} pts entre les 2 box : choisis encore ${restant} personnage(s) à bannir avant le tirage du boss (tu peux revenir sur ton choix avant de confirmer).`
+      : `Écart de ${ecart} pts entre les 2 box : tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour tirer le boss.`;
   } else {
-    message.textContent = `Écart de ${ecart} pts entre les 2 box : ${nomJoueurConcerne} doit bannir ${restant} personnage(s) de plus. En attente…`;
+    message.textContent = `Écart de ${ecart} pts entre les 2 box : ${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus. En attente…`;
+  }
+
+  const slots = document.getElementById("bans-bonus-slots");
+  slots.innerHTML = "";
+
+  for (let i = 0; i < draft.bans_bonus_total; i++) {
+    const persoId = choix[i];
+    const slot = document.createElement("div");
+
+    if (persoId) {
+      const personnage = getPersonnageParId(persoId);
+      slot.className = "slot-bonus rempli";
+      slot.innerHTML = `
+        <img src="../DB/${personnage.image}" alt="${personnage.nom}">
+        <span class="retirer">✕</span>
+      `;
+      if (cEstMonTour) {
+        slot.title = "Cliquer pour retirer";
+        slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alert(err.message)));
+      }
+    } else {
+      slot.className = "slot-bonus";
+    }
+
+    slots.appendChild(slot);
+  }
+
+  const btnConfirmer = document.getElementById("btn-confirmer-bonus");
+  if (cEstMonTour) {
+    btnConfirmer.classList.remove("cache");
+    btnConfirmer.disabled = choix.length !== draft.bans_bonus_total;
+    btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
+  } else {
+    btnConfirmer.classList.add("cache");
   }
 
   const grille = document.getElementById("grille-bans-bonus");
   grille.innerHTML = "";
 
-  const cEstMonTour = draft.bans_bonus_joueur === monRole;
-
   draft.pool_disponible.forEach(id => {
     const personnage = getPersonnageParId(id);
     if (!personnage) return;
 
-    grille.appendChild(
-      creerCarteItem(personnage, {
-        selectionnable: cEstMonTour,
-        onClick: () => postActionDraft(id).catch(err => alert(err.message))
-      })
-    );
+    const dejaChoisi = choix.includes(id);
+    const peutCliquer = cEstMonTour && (dejaChoisi || choix.length < draft.bans_bonus_total);
+
+    const carte = creerCarteItem(personnage, {
+      selectionnable: peutCliquer,
+      indisponible: dejaChoisi,
+      onClick: () => postBonusToggle(id).catch(err => alert(err.message))
+    });
+    grille.appendChild(carte);
   });
 }
 
@@ -427,25 +603,77 @@ function rendreSlotsEtBans(role) {
   });
 }
 
+// Résumé des constellations picks en haut de la draft : j1 à gauche, j2 à
+// droite, 2 couleurs distinctes (cf. CSS). Rend inutile un éventuel tag
+// "j1/j2" sur chaque carte de la grille du pool.
+function rendreConstellations() {
+  ["j1", "j2"].forEach(role => {
+    const container = document.getElementById(`constellations-${role}`);
+    if (!container) return;
+    container.innerHTML = "";
+
+    const joueurData = getJoueurDataParRole(role);
+    const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
+
+    picks.forEach(persoId => {
+      const personnage = getPersonnageParId(persoId);
+      if (!personnage) return;
+
+      const niveauC = joueurData?.characters?.full?.[persoId];
+      const label = typeof niveauC === "number" && niveauC >= 0 ? `C${niveauC}` : "";
+
+      const badge = document.createElement("span");
+      badge.className = "constellation-badge";
+      badge.innerHTML = `<img src="../DB/${personnage.image}" alt="${personnage.nom}"><span>${personnage.nom}${label ? " · " + label : ""}</span>`;
+      container.appendChild(badge);
+    });
+  });
+}
+
+// Petit rappel persistant, pendant la draft, des bans d'équilibrage joués
+// avant le tirage du boss (utile puisque la phase bans_bonus elle-même est
+// passée à ce stade).
+function rendreBansBonusRecap() {
+  const recap = document.getElementById("bans-bonus-recap");
+  const actionsBonus = draft.actions.filter(a => a.bonus);
+
+  if (actionsBonus.length === 0) {
+    recap.classList.add("cache");
+    return;
+  }
+
+  recap.classList.remove("cache");
+  const nomJoueurConcerne = draft.bans_bonus_joueur === "j1" ? joueur1.nom : joueur2.nom;
+
+  recap.innerHTML = `<span>Bans équilibrage (${nomJoueurConcerne}) :</span>`;
+  actionsBonus.forEach(a => {
+    const personnage = getPersonnageParId(a.perso_id);
+    if (personnage) recap.appendChild(creerBanMini(personnage));
+  });
+}
+
 function rendreDraft() {
   const boss = bossData.find(b => b.id === draft.boss_id);
   const bossContainer = document.getElementById("boss-affiche");
   bossContainer.innerHTML = boss
-    ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span>${boss.nom}</span>`
+    ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span class="nom-boss">${boss.nom}</span>`
     : "";
+
+  rendreConstellations();
+  rendreBansBonusRecap();
 
   const prochaine = getProchaineActionLocale();
   const tourContainer = document.getElementById("tour-actuel");
 
   if (!prochaine) {
-    tourContainer.textContent = "Draft terminée.";
+    tourContainer.innerHTML = "Draft terminée.";
   } else {
     const verbe = prochaine.type === "ban" ? "bannir" : "picker";
     if (prochaine.joueur === monRole) {
-      tourContainer.textContent = `À toi de ${verbe} un personnage.`;
+      tourContainer.innerHTML = `À toi de <strong>${verbe}</strong> un personnage.`;
     } else {
       const nomAdversaire = prochaine.joueur === "j1" ? joueur1.nom : joueur2.nom;
-      tourContainer.textContent = `En attente : ${nomAdversaire} doit ${verbe} un personnage.`;
+      tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong>${verbe}</strong> un personnage.`;
     }
   }
 
@@ -456,18 +684,123 @@ function rendreDraft() {
   grille.innerHTML = "";
 
   const cEstMonTour = !!prochaine && prochaine.joueur === monRole;
+  const restrictionPick = cEstMonTour && prochaine.type === "pick";
+  const monPool = monRole === "j1" ? draft.pool_j1 : draft.pool_j2;
+  const joueurDataViewer = getJoueurDataParRole(monRole);
 
-  draft.pool_disponible.forEach(id => {
-    const personnage = getPersonnageParId(id);
-    if (!personnage) return;
+  draft.pool_disponible
+    .map(id => getPersonnageParId(id))
+    .filter(p => p && personnageCorrespondFiltres(p))
+    .forEach(personnage => {
+      const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
+      const selectionnable = cEstMonTour && jePeuxLePicker;
 
-    grille.appendChild(
-      creerCarteItem(personnage, {
-        selectionnable: cEstMonTour,
-        onClick: () => postActionDraft(id).catch(err => alert(err.message))
-      })
-    );
+      const niveauJ1 = draft.pool_j1 && draft.pool_j1.includes(personnage.id)
+        ? getNiveauPersonnage(getJoueurDataParRole("j1"), personnage.id)
+        : null;
+      const niveauJ2 = draft.pool_j2 && draft.pool_j2.includes(personnage.id)
+        ? getNiveauPersonnage(getJoueurDataParRole("j2"), personnage.id)
+        : null;
+      const refinement = monPool && monPool.includes(personnage.id)
+        ? getRefinementArmeSignature(joueurDataViewer, personnage.id)
+        : null;
+
+      const carte = creerCarteItem(personnage, {
+        selectionnable,
+        indisponible: cEstMonTour && !jePeuxLePicker,
+        onClick: () => postActionDraft(personnage.id).catch(err => alert(err.message)),
+        niveauJ1,
+        niveauJ2,
+        refinementViewer: refinement
+      });
+      grille.appendChild(carte);
+    });
+}
+
+// ---- Barre de filtres / recherche de la grille de draft ----
+// Construite UNE SEULE FOIS (pas à chaque rendu) pour ne pas perdre le
+// focus/texte de la recherche à chaque poll.
+
+function initialiserFiltresTri() {
+  const container = document.getElementById("filtres-tri");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const zoneIcones = document.createElement("div");
+  zoneIcones.className = "filtres-icones";
+  Object.entries(iconesElements).forEach(([valeur, src]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-icone-btn";
+    btn.innerHTML = `<img src="${src}" alt="${valeur}">`;
+    btn.addEventListener("click", () => {
+      if (filtreElement.has(valeur)) filtreElement.delete(valeur); else filtreElement.add(valeur);
+      btn.classList.toggle("active");
+      rendrePhase();
+    });
+    zoneIcones.appendChild(btn);
   });
+  container.appendChild(zoneIcones);
+
+  const zoneEtoiles = document.createElement("div");
+  zoneEtoiles.className = "filtres-etoiles";
+  ["5", "4", "3"].forEach(valeur => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-etoile-btn";
+    btn.textContent = `${valeur}★`;
+    btn.addEventListener("click", () => {
+      if (filtreEtoile.has(valeur)) filtreEtoile.delete(valeur); else filtreEtoile.add(valeur);
+      btn.classList.toggle("active");
+      rendrePhase();
+    });
+    zoneEtoiles.appendChild(btn);
+  });
+  container.appendChild(zoneEtoiles);
+
+  const zoneProprio = document.createElement("div");
+  zoneProprio.className = "filtres-proprietaire";
+  [["j1", "J1"], ["j2", "J2"]].forEach(([valeur, label]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-proprietaire-btn";
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      filtreProprietaire = filtreProprietaire === valeur ? null : valeur;
+      zoneProprio.querySelectorAll(".filtre-proprietaire-btn").forEach(b => b.classList.remove("active"));
+      if (filtreProprietaire === valeur) btn.classList.add("active");
+      rendrePhase();
+    });
+    zoneProprio.appendChild(btn);
+  });
+  container.appendChild(zoneProprio);
+
+  const btnClear = document.createElement("button");
+  btnClear.type = "button";
+  btnClear.className = "btn-clear-filtres";
+  btnClear.textContent = "✕ Filtres";
+  btnClear.addEventListener("click", () => {
+    filtreElement.clear();
+    filtreEtoile.clear();
+    filtreProprietaire = null;
+    rechercheTexte = "";
+    container.querySelectorAll(".active").forEach(b => b.classList.remove("active"));
+    const input = document.getElementById("recherche-personnage");
+    if (input) input.value = "";
+    rendrePhase();
+  });
+  container.appendChild(btnClear);
+
+  const inputRecherche = document.createElement("input");
+  inputRecherche.type = "text";
+  inputRecherche.id = "recherche-personnage";
+  inputRecherche.className = "recherche-personnage";
+  inputRecherche.placeholder = "Rechercher…";
+  inputRecherche.addEventListener("input", () => {
+    rechercheTexte = inputRecherche.value;
+    rendrePhase();
+  });
+  container.appendChild(inputRecherche);
 }
 
 // ---- Phase 4 : saisie du temps ----
@@ -527,7 +860,29 @@ function rendreTermine() {
     <p>${ligneVainqueur}</p>
   `;
 
-  document.getElementById("btn-rejouer").onclick = () => postRejouer().catch(err => alert(err.message));
+  // Revanche : même principe de ready-check que le lancement de la draft —
+  // il faut que les 2 joueurs confirment avant que la manche ne redémarre
+  // (avec j1/j2 échangés automatiquement côté serveur).
+  const dejaOk = draft[`rejouer_${monRole}`];
+  const autreRole = getAutreRole(monRole);
+  const autreOk = draft[`rejouer_${autreRole}`];
+  const nomAutre = autreRole === "j1" ? joueur1.nom : joueur2.nom;
+
+  const btn = document.getElementById("btn-rejouer");
+  btn.textContent = dejaOk ? "Annuler la demande de revanche" : "Rejouer";
+  btn.classList.toggle("active", dejaOk);
+  btn.onclick = () => postRejouer(!dejaOk).catch(err => alert(err.message));
+
+  const etat = document.getElementById("etat-rejouer");
+  if (dejaOk && !autreOk) {
+    etat.textContent = `En attente que ${nomAutre} accepte la revanche…`;
+    etat.classList.remove("cache");
+  } else if (!dejaOk && autreOk) {
+    etat.textContent = `${nomAutre} veut rejouer. Clique sur "Rejouer" pour confirmer.`;
+    etat.classList.remove("cache");
+  } else {
+    etat.classList.add("cache");
+  }
 }
 
 // ---- Dispatch de phase ----
@@ -562,26 +917,12 @@ function rendrePhase() {
 async function rafraichirEtatRoomEtJoueurs() {
   const room = await rejoindreOuConsulterRoom(roomId);
 
-  const [j1, j2] = await Promise.all([
-    chargerJoueurDepuisId(room.player1_discord_id),
-    chargerJoueurDepuisId(room.player2_discord_id)
-  ]);
-
-  joueur1 = j1;
-  joueur2 = j2;
-
-  if (joueur1 && joueur2) {
-    monRole = moiDiscordId === joueur1.discordId ? "j1" : "j2";
-    // Repère de debug : à retirer une fois le point du rôle confirmé
-    // correct des 2 côtés (vérifiable dans la console F12 de chacun).
-    console.log("Mon discord_id :", moiDiscordId, "| Mon rôle :", monRole,
-      "| j1 =", joueur1.discordId, "| j2 =", joueur2.discordId);
-
+  if (room.player1_discord_id && room.player2_discord_id) {
     document.getElementById("etat-attente").classList.add("cache");
     document.getElementById("zone-match").classList.remove("cache");
 
     const { draft: draftActuel } = await chargerDraft();
-    definirDraft(draftActuel);
+    await definirDraft(draftActuel);
   } else {
     rendreEntetesJoueurs();
   }
@@ -593,7 +934,7 @@ async function tick() {
       await rafraichirEtatRoomEtJoueurs();
     } else {
       const { draft: draftActuel } = await chargerDraft();
-      definirDraft(draftActuel);
+      await definirDraft(draftActuel);
     }
   } catch (error) {
     console.error(error);
@@ -616,10 +957,13 @@ async function demarrer() {
     }
     moiDiscordId = user.id;
 
-    [personnagesData, bossData] = await Promise.all([
+    [personnagesData, bossData, armesData] = await Promise.all([
       chargerPersonnages(),
-      chargerBoss()
+      chargerBoss(),
+      chargerArmes()
     ]);
+
+    initialiserFiltresTri();
 
     await tick();
 
