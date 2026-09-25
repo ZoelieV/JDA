@@ -36,6 +36,8 @@ h1 {
 :root {
   --couleur-j1: #5b9bd5;
   --couleur-j2: #e0645a;
+  /* Côté des cartes persos ; lu aussi par ajusterGrille() dans match.js. */
+  --taille-carte: 130px;
 }
 
 /* ---- Entêtes joueurs (haut de page, toujours visibles une fois les 2 présents) ---- */
@@ -116,11 +118,15 @@ h1 {
 
 /* Boss sans fond gris, plus grand, et remonté à hauteur du titre
    "Accueil / Match" (qui est à gauche, donc pas de chevauchement). */
+/* Boss dans un rectangle gris ajusté à l'image + nom (pas à la colonne). */
 .entetes-joueurs .bandeau-boss {
   position: relative;
+  justify-self: center;
+  width: fit-content;
   margin: -90px 0 0;
-  padding: 0;
-  background: none;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .entetes-joueurs .bandeau-boss img {
@@ -509,7 +515,7 @@ h1 {
 
 .draft-layout {
   display: grid;
-  grid-template-columns: 200px 1fr 200px;
+  grid-template-columns: 270px 1fr 270px;
   gap: 20px;
   align-items: start;
 }
@@ -522,56 +528,62 @@ h1 {
 
 .equipe-joueur {
   background-color: rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.equipe-joueur h4 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  text-align: center;
 }
 
 .slots-pick {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 11px;
+  margin-bottom: 19px;
 }
 
 .slot-pick {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 48px;
+  gap: 11px;
+  min-height: 65px;
   background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 4px 8px;
+  border-radius: 11px;
+  padding: 5px 11px;
 }
 
 .slot-pick.vide {
   opacity: 0.4;
-  font-size: 12px;
+  font-size: 16px;
   justify-content: center;
 }
 
 .slot-pick img {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
   object-fit: cover;
 }
 
 .slot-pick .nom-slot {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: bold;
 }
 
 .rangee-bans {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .ban-mini {
   position: relative;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   overflow: hidden;
   opacity: 0.75;
 }
@@ -583,15 +595,19 @@ h1 {
   filter: grayscale(35%);
 }
 
+/* Colonnes et écart recalculés par ajusterGrille() (match.js) : même écart
+   entre les cartes, sur les bords, et entre les lignes. Valeurs ci-dessous
+   = repli avant le 1er calcul. */
 .grille-pool {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--taille-carte));
   gap: 10px;
-  align-content: flex-start;
+  justify-content: center;
+  align-content: start;
 }
 
 .character-card {
-  width: 162px;
+  width: var(--taille-carte);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -615,8 +631,8 @@ h1 {
 .character-visuel {
   position: relative;
   display: block;
-  width: 162px;
-  height: 162px;
+  width: var(--taille-carte);
+  height: var(--taille-carte);
   background-size: cover;
   background-position: center;
   border-radius: 8px;
@@ -653,10 +669,10 @@ h1 {
 .character-constellation,
 .character-niveau {
   position: absolute;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
-  padding: 1px 7px;
-  border-radius: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
   background-color: #000;
 }
 
@@ -688,16 +704,6 @@ h1 {
 .character-niveau.niveau-j2 {
   right: 2px;
   color: var(--couleur-j2);
-}
-
-.character-name {
-  margin-top: 4px;
-  font-size: 19px;
-  font-weight: bold;
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background-color: rgba(0, 0, 0, 0.35);
 }
 
 /* ---- Phase : bans bonus d'équilibrage ---- */

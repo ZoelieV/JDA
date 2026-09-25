@@ -371,6 +371,7 @@ function creerCarteItem(personnage, {
   refinementViewer = null
 } = {}) {
   const card = document.createElement("div");
+  card.title = personnage.nom;
   card.className = "character-card" +
     (selectionnable ? " selectionnable" : "") +
     (indisponible ? " indisponible" : "");
@@ -399,7 +400,6 @@ function creerCarteItem(personnage, {
       ${constellationHtml}
       ${niveauHtml}
     </div>
-    <div class="character-name">${personnage.nom}</div>
   `;
 
   if (selectionnable && onClick) {
@@ -805,6 +805,30 @@ function rendreDraft(phasePrecedente) {
 // Construite UNE SEULE FOIS (pas à chaque rendu) pour ne pas perdre le
 // focus/texte de la recherche à chaque poll.
 
+// ---- Grilles de persos : écarts homogènes ----
+// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE, puis
+// l'espace restant est réparti également entre les cartes ET sur les 2
+// bords (grille centrée) ; le même écart sert entre les lignes.
+
+const ECART_MIN_GRILLE = 10;
+
+function ajusterGrille(grille) {
+  const largeur = grille.clientWidth;
+  if (!largeur) return;
+
+  const taille = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--taille-carte")) || 130;
+  const colonnes = Math.max(1, Math.floor((largeur - ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
+  const ecart = Math.max(0, (largeur - colonnes * taille) / (colonnes + 1));
+
+  grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
+  grille.style.gap = `${ecart}px`;
+}
+
+function initialiserGrillesPersos() {
+  const observer = new ResizeObserver(entrees => entrees.forEach(e => ajusterGrille(e.target)));
+  document.querySelectorAll(".grille-pool").forEach(grille => observer.observe(grille));
+}
+
 function initialiserFiltresTri() {
   const container = document.getElementById("filtres-tri");
   if (!container) return;
@@ -1099,6 +1123,7 @@ async function demarrer() {
     ]);
 
     initialiserFiltresTri();
+    initialiserGrillesPersos();
 
     await tick();
 
