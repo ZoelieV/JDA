@@ -16,10 +16,13 @@
 
     <div class="entetes-joueurs">
       <div class="entete-joueur" id="entete-joueur1"></div>
-      <!-- Boss tiré : affiché entre les 2 entêtes (réduites dès les bans
-           d'équilibrage) pendant la draft et la saisie du temps, cf.
-           rendrePhase(). -->
-      <div id="boss-affiche" class="bandeau-boss cache"></div>
+      <!-- Centre des entêtes pendant la draft et la saisie du temps (cf.
+           rendrePhase()) : action à réaliser (draft uniquement) au-dessus
+           du boss tiré. -->
+      <div id="entete-centre" class="entete-centre cache">
+        <div id="tour-actuel" class="tour-actuel"></div>
+        <div id="boss-affiche" class="bandeau-boss"></div>
+      </div>
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
 
@@ -62,7 +65,7 @@
     <!-- Phase 3 : draft (boss + bans/picks) -->
     <section id="phase-draft" class="phase cache">
       <div class="draft-toolbar">
-        <div id="tour-actuel" class="tour-actuel"></div>
+        <div id="zone-recherche" class="zone-recherche"></div>
         <div class="toolbar-droite">
           <div id="bans-bonus-recap" class="bans-bonus-recap cache"></div>
           <div class="filtres-tri" id="filtres-tri"></div>
@@ -72,14 +75,14 @@
       <div class="draft-layout">
         <div class="equipe-joueur" id="equipe-j1">
           <div class="slots-pick" id="slots-pick-j1"></div>
-          <div class="rangee-bans" id="rangee-bans-j1"></div>
+          <div class="slots-ban" id="rangee-bans-j1"></div>
         </div>
 
         <div class="grille-pool" id="grille-pool-draft"></div>
 
         <div class="equipe-joueur" id="equipe-j2">
           <div class="slots-pick" id="slots-pick-j2"></div>
-          <div class="rangee-bans" id="rangee-bans-j2"></div>
+          <div class="slots-ban" id="rangee-bans-j2"></div>
         </div>
       </div>
     </section>

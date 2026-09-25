@@ -37,7 +37,7 @@ h1 {
   --couleur-j1: #5b9bd5;
   --couleur-j2: #e0645a;
   /* Côté des cartes persos ; lu aussi par ajusterGrille() dans match.js. */
-  --taille-carte: 130px;
+  --taille-carte: 110px;
 }
 
 /* ---- Entêtes joueurs (haut de page, toujours visibles une fois les 2 présents) ---- */
@@ -59,6 +59,8 @@ h1 {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 168px;
+  box-sizing: border-box;
   padding: 10px 14px;
   background-color: rgba(255, 255, 255, 0.04);
   border-radius: 10px;
@@ -91,10 +93,10 @@ h1 {
   white-space: nowrap;
 }
 
-/* Draft -> temps : chaque entête garde 1/3 de sa largeur (1/6 de la
-   ligne), le centre libéré (4/6) accueille le boss. */
+/* Draft -> temps : 3 colonnes égales, entêtes à gauche/droite, action +
+   boss au centre. */
 .entetes-joueurs.compact {
-  grid-template-columns: 1fr 4fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: start;
 }
 
@@ -102,13 +104,13 @@ h1 {
   min-width: 0;
 }
 
-/* Colonnes explicites : j2 reste à droite même si le boss n'est pas
+/* Colonnes explicites : j2 reste à droite même si le centre n'est pas
    (encore) rendu. */
 .entetes-joueurs.compact #entete-joueur1 {
   grid-column: 1;
 }
 
-.entetes-joueurs.compact #boss-affiche {
+.entetes-joueurs.compact #entete-centre {
   grid-column: 2;
 }
 
@@ -116,14 +118,23 @@ h1 {
   grid-column: 3;
 }
 
-/* Boss sans fond gris, plus grand, et remonté à hauteur du titre
-   "Accueil / Match" (qui est à gauche, donc pas de chevauchement). */
-/* Boss dans un rectangle gris ajusté à l'image + nom (pas à la colonne). */
-.entetes-joueurs .bandeau-boss {
+/* Centre remonté à hauteur du titre "Accueil / Match" (qui est à gauche,
+   donc pas de chevauchement) : action à réaliser, puis le boss. */
+.entete-centre {
   position: relative;
   justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: -90px;
+  text-align: center;
+}
+
+/* Boss dans un rectangle gris ajusté à l'image + nom (pas à la colonne). */
+.entetes-joueurs .bandeau-boss {
   width: fit-content;
-  margin: -90px 0 0;
+  margin: 0;
   padding: 12px;
   border-radius: 12px;
   background-color: rgba(255, 255, 255, 0.06);
@@ -132,15 +143,16 @@ h1 {
 .entetes-joueurs .bandeau-boss img {
   width: 380px;
   height: 380px;
+  max-width: 100%;
   object-fit: contain;
   background: none;
 }
 
-/* Pendant la draft, le boss descend aussi derrière la barre "tour actuel /
-   filtres" (qui occupe les côtés) jusqu'au début de la grille des persos.
+/* Pendant la draft, le boss descend aussi derrière la barre recherche /
+   filtres (qui occupe les côtés) jusqu'au début de la grille des persos.
    Il laisse passer les clics, la barre est dessinée au-dessus. */
-.entetes-joueurs.boss-deborde .bandeau-boss {
-  margin-bottom: -90px;
+.entetes-joueurs.boss-deborde .entete-centre {
+  margin-bottom: -110px;
   pointer-events: none;
 }
 
@@ -155,13 +167,13 @@ h1 {
   }
 
   .entetes-joueurs.compact #entete-joueur1,
-  .entetes-joueurs.compact #boss-affiche,
+  .entetes-joueurs.compact #entete-centre,
   .entetes-joueurs.compact #entete-joueur2 {
     grid-column: auto;
   }
 
-  .entetes-joueurs .bandeau-boss,
-  .entetes-joueurs.boss-deborde .bandeau-boss {
+  .entete-centre,
+  .entetes-joueurs.boss-deborde .entete-centre {
     margin-top: 0;
     margin-bottom: 0;
   }
@@ -433,7 +445,7 @@ h1 {
 .filtres-tri {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -442,14 +454,14 @@ h1 {
 .filtres-etoiles,
 .filtres-proprietaire {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .filtre-icone-btn {
-  width: 26px;
-  height: 26px;
-  padding: 3px;
-  border-radius: 6px;
+  width: 52px;
+  height: 52px;
+  padding: 6px;
+  border-radius: 12px;
   border: 2px solid transparent;
   background-color: rgba(255, 255, 255, 0.06);
   cursor: pointer;
@@ -471,12 +483,13 @@ h1 {
 
 .filtre-etoile-btn,
 .filtre-proprietaire-btn {
-  padding: 4px 8px;
-  border-radius: 6px;
+  height: 52px;
+  padding: 8px 16px;
+  border-radius: 12px;
   border: 2px solid transparent;
   background-color: rgba(255, 255, 255, 0.06);
   color: white;
-  font-size: 12px;
+  font-size: 24px;
   cursor: pointer;
 }
 
@@ -487,12 +500,13 @@ h1 {
 }
 
 .btn-clear-filtres {
-  padding: 4px 8px;
-  border-radius: 6px;
+  height: 52px;
+  padding: 8px 16px;
+  border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.2);
   background-color: transparent;
   color: white;
-  font-size: 12px;
+  font-size: 24px;
   cursor: pointer;
   opacity: 0.8;
 }
@@ -502,13 +516,15 @@ h1 {
 }
 
 .recherche-personnage {
+  box-sizing: border-box;
+  height: 52px;
   background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 5px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px 16px;
   color: white;
-  font-size: 13px;
-  width: 140px;
+  font-size: 22px;
+  width: 280px;
 }
 
 /* ---- Draft : grille pool + équipes ---- */
@@ -573,10 +589,22 @@ h1 {
   font-weight: bold;
 }
 
-.rangee-bans {
+/* Cases de bans : mêmes cases que les picks, en rouge (comme les bans
+   d'équilibrage). */
+.slots-ban {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.slot-pick.slot-ban {
+  background-color: rgba(255, 90, 90, 0.12);
+  border: 2px solid rgba(255, 90, 90, 0.6);
+  box-sizing: border-box;
+}
+
+.slot-pick.slot-ban img {
+  filter: grayscale(35%);
 }
 
 .ban-mini {

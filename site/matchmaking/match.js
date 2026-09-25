@@ -637,12 +637,29 @@ function rendreSlotsEtBans(role) {
     slotsContainer.appendChild(slot);
   }
 
+  // Cases de bans (rouges), une par ban prévu pour ce joueur dans la
+  // séquence, sous les cases de picks.
+  const nbBans = SEQUENCE_FIXE.filter(a => a.type === "ban" && a.joueur === role).length;
   const bansContainer = document.getElementById(`rangee-bans-${role}`);
   bansContainer.innerHTML = "";
-  bans.forEach(persoId => {
-    const personnage = getPersonnageParId(persoId);
-    if (personnage) bansContainer.appendChild(creerBanMini(personnage));
-  });
+
+  for (let i = 0; i < nbBans; i++) {
+    const personnage = bans[i] ? getPersonnageParId(bans[i]) : null;
+    const slot = document.createElement("div");
+
+    if (personnage) {
+      slot.className = "slot-pick slot-ban";
+      slot.innerHTML = `
+        <img src="../DB/${personnage.image}" alt="${personnage.nom}">
+        <span class="nom-slot">${personnage.nom}</span>
+      `;
+    } else {
+      slot.className = "slot-pick slot-ban vide";
+      slot.textContent = "Vide";
+    }
+
+    bansContainer.appendChild(slot);
+  }
 }
 
 // Petit rappel persistant, pendant la draft, des bans d'équilibrage joués
@@ -908,7 +925,8 @@ function initialiserFiltresTri() {
     rechercheTexte = inputRecherche.value;
     rendrePhase();
   });
-  container.appendChild(inputRecherche);
+  // Recherche à gauche de la barre, filtres à droite.
+  document.getElementById("zone-recherche").appendChild(inputRecherche);
 }
 
 // ---- Phase 4 : saisie du temps ----
@@ -1062,7 +1080,8 @@ function rendrePhase() {
   const entetes = document.querySelector(".entetes-joueurs");
   entetes.classList.toggle("compact", avecBoss);
   entetes.classList.toggle("boss-deborde", draft.phase === "draft");
-  document.getElementById("boss-affiche").classList.toggle("cache", !avecBoss);
+  document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);
+  document.getElementById("tour-actuel").classList.toggle("cache", draft.phase !== "draft");
 
   if (draft.phase === "choix_box") rendreChoixBox();
   else if (draft.phase === "bans_bonus") rendreBansBonus();
