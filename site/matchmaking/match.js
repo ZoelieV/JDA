@@ -1032,11 +1032,12 @@ function rendrePhase() {
 
   document.getElementById(idAffiche).classList.remove("cache");
 
-  // Des bans d'équilibrage jusqu'à la saisie du temps : entêtes réduites à
-  // 1/3 de leur largeur ; une fois le boss tiré, il occupe le centre libéré.
-  const compact = ["bans_bonus", "draft", "temps"].includes(draft.phase);
+  // Boss tiré (draft, temps) : entêtes réduites à 1/3 de leur largeur, le
+  // boss occupe le centre libéré (et déborde vers le bas pendant la draft).
   const avecBoss = draft.phase === "draft" || draft.phase === "temps";
-  document.querySelector(".entetes-joueurs").classList.toggle("compact", compact);
+  const entetes = document.querySelector(".entetes-joueurs");
+  entetes.classList.toggle("compact", avecBoss);
+  entetes.classList.toggle("boss-deborde", draft.phase === "draft");
   document.getElementById("boss-affiche").classList.toggle("cache", !avecBoss);
 
   if (draft.phase === "choix_box") rendreChoixBox();

@@ -89,8 +89,8 @@ h1 {
   white-space: nowrap;
 }
 
-/* Bans d'équilibrage -> temps : chaque entête garde 1/3 de sa largeur
-   (1/6 de la ligne), le centre libéré (4/6) accueille le boss. */
+/* Draft -> temps : chaque entête garde 1/3 de sa largeur (1/6 de la
+   ligne), le centre libéré (4/6) accueille le boss. */
 .entetes-joueurs.compact {
   grid-template-columns: 1fr 4fr 1fr;
   align-items: start;
@@ -100,8 +100,8 @@ h1 {
   min-width: 0;
 }
 
-/* Colonnes explicites : le boss est masqué pendant les bans d'équilibrage,
-   j2 doit quand même rester à droite. */
+/* Colonnes explicites : j2 reste à droite même si le boss n'est pas
+   (encore) rendu. */
 .entetes-joueurs.compact #entete-joueur1 {
   grid-column: 1;
 }
@@ -124,10 +124,23 @@ h1 {
 }
 
 .entetes-joueurs .bandeau-boss img {
-  width: 280px;
-  height: 280px;
+  width: 380px;
+  height: 380px;
   object-fit: contain;
   background: none;
+}
+
+/* Pendant la draft, le boss descend aussi derrière la barre "tour actuel /
+   filtres" (qui occupe les côtés) jusqu'au début de la grille des persos.
+   Il laisse passer les clics, la barre est dessinée au-dessus. */
+.entetes-joueurs.boss-deborde .bandeau-boss {
+  margin-bottom: -90px;
+  pointer-events: none;
+}
+
+.draft-toolbar {
+  position: relative;
+  z-index: 1;
 }
 
 @media (max-width: 800px) {
@@ -141,8 +154,10 @@ h1 {
     grid-column: auto;
   }
 
-  .entetes-joueurs .bandeau-boss {
+  .entetes-joueurs .bandeau-boss,
+  .entetes-joueurs.boss-deborde .bandeau-boss {
     margin-top: 0;
+    margin-bottom: 0;
   }
 
   .entetes-joueurs .bandeau-boss img {
@@ -576,7 +591,7 @@ h1 {
 }
 
 .character-card {
-  width: 108px;
+  width: 162px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -600,8 +615,8 @@ h1 {
 .character-visuel {
   position: relative;
   display: block;
-  width: 108px;
-  height: 108px;
+  width: 162px;
+  height: 162px;
   background-size: cover;
   background-position: center;
   border-radius: 8px;
@@ -638,11 +653,11 @@ h1 {
 .character-constellation,
 .character-niveau {
   position: absolute;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: bold;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.55);
+  padding: 1px 7px;
+  border-radius: 6px;
+  background-color: #000;
 }
 
 /* Constellation en haut de carte */
@@ -677,7 +692,7 @@ h1 {
 
 .character-name {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: bold;
   display: inline-block;
   padding: 1px 6px;
