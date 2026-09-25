@@ -71,6 +71,11 @@ const filtreEtoile = new Set();
 let filtreProprietaire = null; // "j1" | "j2" | null
 let rechercheTexte = "";
 
+// ---- Animation de tirage du boss ----
+let dernierePhaseVue = null; // phase locale précédente, pour détecter une transition
+let animationBossEnCours = false;
+let bossAnimeId = null; // boss_id pour lequel l'animation a déjà été jouée (ou sautée)
+
 function getRoomIdDepuisUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get("room");
@@ -240,6 +245,13 @@ async function postRejouer(rejouer) {
 async function definirDraft(nouveauDraft) {
   draft = nouveauDraft;
 
+  // Nouvelle manche (boss pas encore tiré) : on réarme l'animation pour le
+  // prochain tirage, y compris si le prochain boss tiré tombe à nouveau sur
+  // le même que la manche précédente (sinon nouveauBoss resterait faux).
+  if (!draft.boss_id) {
+    bossAnimeId = null;
+  }
+
   if (draft.discord_j1 && (!joueur1 || joueur1.discordId !== draft.discord_j1)) {
     joueur1 = await chargerJoueurDepuisId(draft.discord_j1);
   }
@@ -288,32 +300,15 @@ function getRefinementArmeSignature(joueurData, personnageId) {
   return valeur >= 0 ? valeur : null;
 }
 
-// Best-effort : affiche un niveau "x/y" pour un personnage si la donnée
-// existe dans le profil, sous un des noms de champ plausibles. Ne casse
-// jamais l'affichage si le champ n'existe pas (retourne simplement null,
-// et la pastille n'est pas dessinée). À adapter si le vrai champ diffère.
+// Niveau "95/100" ou "100/100" d'un perso, ou null si non renseigné
+// (la pastille n'est alors pas dessinée).
 function getNiveauPersonnage(joueurData, personnageId) {
-  const collection = joueurData?.characters;
-  if (!collection) return null;
+  // Renseigné sur la page Mon compte : profil.characters.niveaux[id] = 95 | 100
+  // (clé absente = non renseigné).
+  const niveau = joueurData?.characters?.niveaux?.[personnageId];
+  if (niveau !== 95 && niveau !== 100) return null;
 
-  const brut =
-    collection.niveaux?.[personnageId] ??
-    collection.levels?.[personnageId] ??
-    collection.lvl?.[personnageId] ??
-    collection.details?.[personnageId]?.niveau ??
-    collection.details?.[personnageId]?.lvl ??
-    null;
-
-  if (brut === null || brut === undefined) return null;
-
-  if (typeof brut === "object") {
-    const actuel = brut.actuel ?? brut.niveau ?? brut.lvl ?? brut.value;
-    if (actuel === undefined || actuel === null) return null;
-    const max = brut.max ?? 100;
-    return `${actuel}/${max}`;
-  }
-
-  return `${brut}/100`;
+  return `${niveau}/100`;
 }
 
 // Constellation (toujours connue : c'est la valeur de possession 0-6),
@@ -674,12 +669,78 @@ function rendreBansBonusRecap() {
   });
 }
 
-function rendreDraft() {
-  const boss = bossData.find(b => b.id === draft.boss_id);
-  const bossContainer = document.getElementById("boss-affiche");
-  bossContainer.innerHTML = boss
+// Affiche directement le boss final, sans animation (arrivée directe en
+// phase "draft" : rechargement de page, ou 2e joueur qui a raté la
+// transition entre 2 polls).
+function afficherBossFinal(bossId) {
+  const boss = bossData.find(b => b.id === bossId);
+  const container = document.getElementById("boss-affiche");
+  container.classList.remove("boss-tirage", "boss-revele");
+  container.innerHTML = boss
     ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span class="nom-boss">${boss.nom}</span>`
     : "";
+}
+
+// Petite animation "roue" : fait défiler des boss aléatoires de plus en
+// plus lentement avant de révéler le vrai boss tiré (déjà déterminé côté
+// serveur — l'aléatoire ici est purement visuel/théâtral).
+function jouerAnimationBoss(bossIdFinal) {
+  animationBossEnCours = true;
+
+  const container = document.getElementById("boss-affiche");
+  container.classList.remove("boss-revele");
+  container.classList.add("boss-tirage");
+
+  const bossFinal = bossData.find(b => b.id === bossIdFinal);
+  const autresBoss = bossData.filter(b => b.id !== bossIdFinal);
+  const nbTours = 12;
+  let tour = 0;
+
+  function etape() {
+    const propose = autresBoss.length > 0
+      ? autresBoss[Math.floor(Math.random() * autresBoss.length)]
+      : bossFinal;
+
+    container.innerHTML = propose
+      ? `<img src="../DB/${propose.image}" alt=""><span class="nom-boss">?</span>`
+      : "";
+
+    tour += 1;
+
+    if (tour < nbTours) {
+      // Ralentit progressivement, comme une roue qui perd de la vitesse.
+      setTimeout(etape, 80 + tour * 15);
+    } else {
+      container.classList.remove("boss-tirage");
+      container.classList.add("boss-revele");
+      container.innerHTML = bossFinal
+        ? `<img src="../DB/${bossFinal.image}" alt="${bossFinal.nom}"><span class="nom-boss">${bossFinal.nom}</span>`
+        : "";
+
+      setTimeout(() => container.classList.remove("boss-revele"), 700);
+
+      animationBossEnCours = false;
+      bossAnimeId = bossIdFinal;
+    }
+  }
+
+  etape();
+}
+
+function rendreDraft(phasePrecedente) {
+  const nouveauBoss = draft.boss_id !== bossAnimeId;
+  const justeTransitionne = !!phasePrecedente && phasePrecedente !== "draft";
+
+  if (nouveauBoss && !animationBossEnCours) {
+    if (justeTransitionne) {
+      jouerAnimationBoss(draft.boss_id);
+    } else {
+      afficherBossFinal(draft.boss_id);
+      bossAnimeId = draft.boss_id;
+    }
+  }
+  // Si une animation est déjà en cours ou déjà jouée pour ce boss, on ne
+  // touche pas à #boss-affiche (évite de la couper/relancer à chaque poll).
 
   rendreConstellations();
   rendreBansBonusRecap();
@@ -952,6 +1013,9 @@ function rendreTermine() {
 // ---- Dispatch de phase ----
 
 function rendrePhase() {
+  const phasePrecedente = dernierePhaseVue;
+  dernierePhaseVue = draft.phase;
+
   rendreEntetesJoueurs();
 
   document.querySelectorAll(".phase").forEach(el => el.classList.add("cache"));
@@ -971,7 +1035,7 @@ function rendrePhase() {
 
   if (draft.phase === "choix_box") rendreChoixBox();
   else if (draft.phase === "bans_bonus") rendreBansBonus();
-  else if (draft.phase === "draft") rendreDraft();
+  else if (draft.phase === "draft") rendreDraft(phasePrecedente);
   else if (draft.phase === "temps") rendreTemps();
   else if (draft.phase === "termine") rendreTermine();
 }

@@ -123,6 +123,7 @@ function creerProfilParDefaut() {
     theatre: "",
     characters: {
       full: {},
+      niveaux: {},
       selections: creerSelectionsParDefaut()
     },
     weapons: {
@@ -153,6 +154,10 @@ function normaliserProfil(profil) {
 
   if (!profil.weapons.selections) {
     profil.weapons.selections = creerSelectionsParDefaut();
+  }
+
+  if (!profil.characters.niveaux) {
+    profil.characters.niveaux = {};
   }
 
   delete profil.fullBox;
@@ -327,7 +332,24 @@ function getIconeItem(item, vueActive) {
   return iconesTypesArmes[item.type] || "";
 }
 
-function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false) {
+// Niveau d'un perso possédé : null (non renseigné), 95 ou 100.
+// Stocké dans profil.characters.niveaux[idPerso], clé absente si null.
+const NIVEAUX_PERSONNAGE = [95, 100];
+
+function creerSelectNiveau(idPerso, niveau) {
+  const options = NIVEAUX_PERSONNAGE
+    .map(n => `<option value="${n}" ${niveau === n ? "selected" : ""}>${n}</option>`)
+    .join("");
+
+  return `
+<select class="niveau-select" data-id="${idPerso}" title="Niveau du personnage">
+<option value="" ${niveau == null ? "selected" : ""}>Niv. -</option>
+${options}
+</select>
+  `;
+}
+
+function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null) {
   const config = getConfigCollection(vueActive);
   const idInstance = instanceId || item.id;
   const conteneur = document.createElement("div");
@@ -363,6 +385,10 @@ ${boutonDupliquer}
     `
     : "";
 
+  const zoneNiveau = boxActive === "full" && vueActive === "characters" && valeur >= 0
+    ? creerSelectNiveau(idInstance, niveau)
+    : "";
+
   const badgeCopie = estDuplicata ? `<span class="badge-copie">Copie</span>` : "";
 
   conteneur.innerHTML = `
@@ -374,6 +400,7 @@ ${boutonDupliquer}
     <div class="nom-personnage">${item.nom} ${badgeCopie}</div>
     ${infoNiveau}
     ${zoneAction}
+    ${zoneNiveau}
   `;
 
   if (valeur >= 0) {
@@ -449,7 +476,8 @@ function afficherCollection(personnages, armes, profil) {
       ? valeur >= 0
       : !!collectionProfil.selections[boxActive][item.id];
 
-    const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive);
+    const niveau = collectionProfil.niveaux?.[item.id] ?? null;
+    const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau);
     liste.appendChild(carte);
   });
 }
@@ -591,6 +619,9 @@ async function initialiserPage() {
             Object.keys(collectionProfil.selections).forEach(box => {
               delete collectionProfil.selections[box][id];
             });
+            if (collectionProfil.niveaux) {
+              delete collectionProfil.niveaux[id];
+            }
           }
         }
 
@@ -614,6 +645,22 @@ async function initialiserPage() {
 
       afficherCollection(personnages, armes, profil);
       mettreAJourTotalBox(personnages, armes, profil);
+    });
+
+    liste.addEventListener("change", event => {
+      const select = event.target.closest(".niveau-select");
+      if (!select) {
+        return;
+      }
+
+      const niveaux = profil.characters.niveaux;
+      const niveau = Number(select.value);
+
+      if (NIVEAUX_PERSONNAGE.includes(niveau)) {
+        niveaux[select.dataset.id] = niveau;
+      } else {
+        delete niveaux[select.dataset.id];
+      }
     });
 
     document.getElementById("profil-form").addEventListener("submit", async event => {

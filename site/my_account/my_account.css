@@ -299,3 +299,9 @@ h2 {
 .toast-erreur {
   background-color: rgba(220, 53, 69, 0.92);
 }
+.niveau-select {
+  margin-top: 4px;
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 6px;
+}
