@@ -3,8 +3,8 @@ body {
   color: white;
   font-family: Arial, sans-serif;
   margin: 20px;
-  /* Place pour l'action à réaliser, figée en bas de l'écran. */
-  padding-bottom: 70px;
+  /* Place pour les bulles figées en bas de l'écran. */
+  padding-bottom: 90px;
 }
 
 a {
@@ -323,11 +323,23 @@ h1 {
   margin-right: 6px;
 }
 
+.ligne-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* j2 en miroir : bouton prêt à gauche, box à droite. */
+#colonne-box-j2 .ligne-box {
+  flex-direction: row-reverse;
+}
+
 .box-select {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 14px;
 }
 
 #colonne-box-j2 .box-select {
@@ -370,10 +382,7 @@ h1 {
   padding: 8px 16px;
   cursor: pointer;
   font-size: 14px;
-}
-
-#colonne-box-j2 #btn-pret-j2 {
-  float: right;
+  flex-shrink: 0;
 }
 
 #btn-pret-j1.active,
@@ -409,6 +418,39 @@ h1 {
   background-color: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   margin-bottom: 16px;
+}
+
+/* Pile de bulles figée en bas au centre, par-dessus le contenu (fond
+   opaque). Une bulle vide ou hors de sa phase n'est pas affichée. */
+.bulles-bas {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.bulles-bas .bandeau-info {
+  margin: 0;
+  padding: 12px 20px;
+  text-align: center;
+  background-color: #2b2b2b;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.bulles-bas .bandeau-info:empty,
+.bulles-bas .hors-phase {
+  display: none;
 }
 
 .bandeau-boss {
@@ -475,23 +517,9 @@ h1 {
   margin-bottom: 16px;
 }
 
-/* Action à réaliser : figée en bas au centre, par-dessus la grille (fond
-   opaque), sur tous les formats d'écran. */
+/* Action à réaliser (bulle du bas pendant la draft), un peu plus grande. */
 .tour-actuel {
-  position: fixed;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  z-index: 50;
-  max-width: calc(100vw - 32px);
-  box-sizing: border-box;
-  padding: 12px 20px;
   font-size: 17px;
-  text-align: center;
-  background-color: #2b2b2b;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .tour-actuel strong {
@@ -1113,6 +1141,9 @@ h1 {
 
   .tour-actuel {
     font-size: 15px;
+  }
+
+  .bulles-bas .bandeau-info {
     padding: 10px 14px;
   }
 }

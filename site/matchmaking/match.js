@@ -1230,6 +1230,15 @@ function rendreTermine() {
 
 // ---- Dispatch de phase ----
 
+// Bulles figées en bas de l'écran (#bulles-bas) -> phases où elles s'affichent.
+const BULLES_PAR_PHASE = {
+  "message-choix-box": ["choix_box", "analyse"],
+  "message-equilibrage": ["bans_bonus"],
+  "tour-actuel": ["draft"],
+  "etat-temps": ["temps"],
+  "etat-rejouer": ["termine"]
+};
+
 function rendrePhase() {
   const phasePrecedente = dernierePhaseVue;
   dernierePhaseVue = draft.phase;
@@ -1259,7 +1268,11 @@ function rendrePhase() {
   entetes.classList.toggle("compact", avecBoss);
   entetes.classList.toggle("boss-deborde", draft.phase === "draft");
   document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);
-  document.getElementById("tour-actuel").classList.toggle("cache", draft.phase !== "draft");
+
+  // Bulles du bas : seules celles de la phase en cours sont visibles.
+  Object.entries(BULLES_PAR_PHASE).forEach(([id, phases]) => {
+    document.getElementById(id).classList.toggle("hors-phase", !phases.includes(draft.phase));
+  });
 
   const avecPersos = ["choix_box", "analyse", "bans_bonus", "draft"].includes(draft.phase);
   document.getElementById("barre-outils").classList.toggle("cache", !avecPersos);

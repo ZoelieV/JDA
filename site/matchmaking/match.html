@@ -24,9 +24,16 @@
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
 
-    <!-- Action à réaliser pendant la draft : figée en bas au centre de
-         l'écran (cf. .tour-actuel). -->
-    <div id="tour-actuel" class="tour-actuel cache"></div>
+    <!-- Bulles de texte (consignes, action à réaliser, états) : figées en
+         bas au centre de l'écran, sur tous les formats. Chaque bulle n'est
+         visible que pendant sa phase (cf. BULLES_PAR_PHASE dans match.js). -->
+    <div id="bulles-bas" class="bulles-bas">
+      <div id="message-choix-box" class="bandeau-info"></div>
+      <div id="message-equilibrage" class="bandeau-info"></div>
+      <div id="tour-actuel" class="bandeau-info tour-actuel"></div>
+      <div id="etat-temps" class="bandeau-info"></div>
+      <div id="etat-rejouer" class="bandeau-info cache"></div>
+    </div>
 
     <!-- Barre recherche / tri / filtres, commune à toutes les phases avec
          des persos (choix de box, analyse, bans d'équilibrage, draft). -->
@@ -43,20 +50,27 @@
          (droite), alignées sur les entêtes joueurs ci-dessus : chacun ne
          peut modifier que sa propre colonne. -->
     <section id="phase-choix-box" class="phase cache">
-      <div id="message-choix-box" class="bandeau-info"></div>
       <div class="colonnes-box">
         <div class="colonne-box" id="colonne-box-j1">
           <h3 id="titre-box-j1">Box</h3>
-          <div class="box-select" id="box-select-j1"></div>
+          <!-- Boutons de box et bouton prêt sur la même ligne (prêt côté
+               centre : à droite pour j1, à gauche pour j2). -->
+          <div class="ligne-box">
+            <div class="box-select" id="box-select-j1"></div>
+            <button id="btn-pret-j1" type="button" class="cache">Je suis prêt</button>
+          </div>
           <div class="statut-pret" id="statut-pret-j1"></div>
-          <button id="btn-pret-j1" type="button" class="cache">Je suis prêt</button>
           <div class="apercu-box grille-pool" id="apercu-box-j1"></div>
         </div>
         <div class="colonne-box" id="colonne-box-j2">
           <h3 id="titre-box-j2">Box</h3>
-          <div class="box-select" id="box-select-j2"></div>
+          <!-- Boutons de box et bouton prêt sur la même ligne (prêt côté
+               centre : à droite pour j1, à gauche pour j2). -->
+          <div class="ligne-box">
+            <div class="box-select" id="box-select-j2"></div>
+            <button id="btn-pret-j2" type="button" class="cache">Je suis prêt</button>
+          </div>
           <div class="statut-pret" id="statut-pret-j2"></div>
-          <button id="btn-pret-j2" type="button" class="cache">Je suis prêt</button>
           <div class="apercu-box grille-pool" id="apercu-box-j2"></div>
         </div>
       </div>
@@ -66,8 +80,6 @@
          emplacements dédiés (bans-bonus-slots) qu'on peut modifier/annuler
          avant de confirmer. -->
     <section id="phase-bans-bonus" class="phase cache">
-      <div id="message-equilibrage" class="bandeau-info"></div>
-
       <div class="bans-bonus-layout">
         <div class="bans-bonus-slots" id="bans-bonus-slots"></div>
         <button id="btn-confirmer-bonus" type="button" class="cache">Confirmer les bans</button>
@@ -107,14 +119,12 @@
           <button id="btn-valider-temps" type="button">Valider</button>
         </div>
       </div>
-      <div id="etat-temps" class="bandeau-info"></div>
     </section>
 
     <!-- Phase 5 : résultat -->
     <section id="phase-termine" class="phase cache">
       <div id="resultat-final"></div>
       <button id="btn-rejouer" type="button">Rejouer</button>
-      <div id="etat-rejouer" class="bandeau-info cache"></div>
     </section>
 
   </div>
