@@ -1,0 +1,1088 @@
+{
+ "bannieres": [
+  "namecards/Namecard_Background_Aino_Whoopsie_Ducksie.webp",
+  "namecards/Namecard_Background_Albedo_Sun_Blossom.webp",
+  "namecards/Namecard_Background_Alhaitham_Enlightenment.webp",
+  "namecards/Namecard_Background_Aloy_Dawn.webp",
+  "namecards/Namecard_Background_Alyosha_Sit.webp",
+  "namecards/Namecard_Background_Amber_Bunny.webp",
+  "namecards/Namecard_Background_Arlecchino_Edict.webp",
+  "namecards/Namecard_Background_Baizhu_Relief.webp",
+  "namecards/Namecard_Background_Barbara_Flow.webp",
+  "namecards/Namecard_Background_Beidou_Weighing_Anchor.webp",
+  "namecards/Namecard_Background_Bennett_Recognition.webp",
+  "namecards/Namecard_Background_Candace_Gray_Heron.webp",
+  "namecards/Namecard_Background_Charlotte_Exclusive.webp",
+  "namecards/Namecard_Background_Chasca_Fully_Loaded.webp",
+  "namecards/Namecard_Background_Chevreuse_Type_II.webp",
+  "namecards/Namecard_Background_Childe_Foul_Legacy.webp",
+  "namecards/Namecard_Background_Chiori_Spectacular_Sleeves.webp",
+  "namecards/Namecard_Background_Chongyun_Spirit_Blade.webp",
+  "namecards/Namecard_Background_Citlali_Opalstar.webp",
+  "namecards/Namecard_Background_Clorinde_Roleplay.webp",
+  "namecards/Namecard_Background_Collei_Good_Virtue.webp",
+  "namecards/Namecard_Background_Columbina_Someday.webp",
+  "namecards/Namecard_Background_Cyno_Silence.webp",
+  "namecards/Namecard_Background_Dahlia_Sacred_Duty.webp",
+  "namecards/Namecard_Background_Dehya_Purifying_Flame.webp",
+  "namecards/Namecard_Background_Diluc_Flames.webp",
+  "namecards/Namecard_Background_Diona_Meow!.webp",
+  "namecards/Namecard_Background_Dori_Jinni.webp",
+  "namecards/Namecard_Background_Durin_Radiant_Heart.webp",
+  "namecards/Namecard_Background_Emilie_Base_Note.webp",
+  "namecards/Namecard_Background_Escoffier_Charm.webp",
+  "namecards/Namecard_Background_Eula_Ice-Sealed.webp",
+  "namecards/Namecard_Background_Faruzan_Sealed_Secret.webp",
+  "namecards/Namecard_Background_Fischl_Night_Raven.webp",
+  "namecards/Namecard_Background_Flins_Oathkeeper's_Lantern.webp",
+  "namecards/Namecard_Background_Freminet_Progress.webp",
+  "namecards/Namecard_Background_Furina_Banquet.webp",
+  "namecards/Namecard_Background_Gaming_Man_Chai.webp",
+  "namecards/Namecard_Background_Ganyu_Qilin.webp",
+  "namecards/Namecard_Background_Gorou_Leisurely_Hound.webp",
+  "namecards/Namecard_Background_Hu_Tao_Spirit_Soother.webp",
+  "namecards/Namecard_Background_Iansan_Unyielding.webp",
+  "namecards/Namecard_Background_Ifa_Bro.webp",
+  "namecards/Namecard_Background_Illuga_Nightmare_Songbird.webp",
+  "namecards/Namecard_Background_Ineffa_Command.webp",
+  "namecards/Namecard_Background_Itto_Oni_Face.webp",
+  "namecards/Namecard_Background_Jahoda_Helping_Hand.webp",
+  "namecards/Namecard_Background_Jean_The_Winds'_Course.webp",
+  "namecards/Namecard_Background_Kachina_Twirly.webp",
+  "namecards/Namecard_Background_Kaedehara_Kazuha_Autumn_Maple-Viewing.webp",
+  "namecards/Namecard_Background_Kaeya_Pavo_Ocellus.webp",
+  "namecards/Namecard_Background_Kamisato_Ayaka_Folding_Fan.webp",
+  "namecards/Namecard_Background_Kamisato_Ayato_Ripple.webp",
+  "namecards/Namecard_Background_Kaveh_Domed_Court.webp",
+  "namecards/Namecard_Background_Keqing_Lightning_Stiletto.webp",
+  "namecards/Namecard_Background_Kinich_Ajaw.webp",
+  "namecards/Namecard_Background_Kirara_Neko_Box.webp",
+  "namecards/Namecard_Background_Klee_Explosive.webp",
+  "namecards/Namecard_Background_Kujou_Sara_Tengu.webp",
+  "namecards/Namecard_Background_Kuki_Shinobu_Net.webp",
+  "namecards/Namecard_Background_Lan_Yan_Silver_Swallow.webp",
+  "namecards/Namecard_Background_Lauma_Branched_Antlers.webp",
+  "namecards/Namecard_Background_Layla_Daydream.webp",
+  "namecards/Namecard_Background_Linnea_Rattling_Resonance.webp",
+  "namecards/Namecard_Background_Lisa_Tempus_Fugit.webp",
+  "namecards/Namecard_Background_Lohen_Benevolence.webp",
+  "namecards/Namecard_Background_Lynette_Earnestness.webp",
+  "namecards/Namecard_Background_Lyney_Pretense.webp",
+  "namecards/Namecard_Background_Mavuika_Sun-Crowned.webp",
+  "namecards/Namecard_Background_Mika_Index.webp",
+  "namecards/Namecard_Background_Mona_Starry_Sky.webp",
+  "namecards/Namecard_Background_Mualani_Sharky.webp",
+  "namecards/Namecard_Background_Nahida_Crescent.webp",
+  "namecards/Namecard_Background_Navia_Rosula.webp",
+  "namecards/Namecard_Background_Nefer_Secrets.webp",
+  "namecards/Namecard_Background_Neuvillette_Surge.webp",
+  "namecards/Namecard_Background_Nicole_Heavenly_Stairway.webp",
+  "namecards/Namecard_Background_Nilou_Lotus_Dance.webp",
+  "namecards/Namecard_Background_Ningguang_Phoenix.webp",
+  "namecards/Namecard_Background_Noelle_Protector.webp",
+  "namecards/Namecard_Background_Odette_The_Singular_Swan.webp",
+  "namecards/Namecard_Background_Ororon_Nightshade.webp",
+  "namecards/Namecard_Background_Prune_Judgment.webp",
+  "namecards/Namecard_Background_Qiqi_Cold_Storage.webp",
+  "namecards/Namecard_Background_Raiden_Shogun_Enlightenment.webp",
+  "namecards/Namecard_Background_Razor_Wolvensprint.webp",
+  "namecards/Namecard_Background_Rosaria_Indenture.webp",
+  "namecards/Namecard_Background_Sandrone_Tea_Break.webp",
+  "namecards/Namecard_Background_Sangonomiya_Kokomi_The_Deep.webp",
+  "namecards/Namecard_Background_Sayu_Muji-Muji_Daruma.webp",
+  "namecards/Namecard_Background_Sethos_Ba_Fragment.webp",
+  "namecards/Namecard_Background_Shenhe_Comb.webp",
+  "namecards/Namecard_Background_Shikanoin_Heizou_Temari.webp",
+  "namecards/Namecard_Background_Sigewinne_Treatment.webp",
+  "namecards/Namecard_Background_Skirk_Lone_Shadow.webp",
+  "namecards/Namecard_Background_Sucrose_Bio-Alchemy.webp",
+  "namecards/Namecard_Background_Thoma_Blazing_Guard.webp",
+  "namecards/Namecard_Background_Tighnari_Dew-Kissed.webp",
+  "namecards/Namecard_Background_Varesa_Powerhouse.webp",
+  "namecards/Namecard_Background_Varka_Lead_Wolf.webp",
+  "namecards/Namecard_Background_Venti_Azure_Sky.webp",
+  "namecards/Namecard_Background_Vesna_Revelry.webp",
+  "namecards/Namecard_Background_Vodyanitsa_Whirlpool.webp",
+  "namecards/Namecard_Background_Wanderer_Drifter's_Ballad.webp",
+  "namecards/Namecard_Background_Wriothesley_Detention.webp",
+  "namecards/Namecard_Background_Xiangling_Fresh_from_the_Pan.webp",
+  "namecards/Namecard_Background_Xianyun_White_Clouds.webp",
+  "namecards/Namecard_Background_Xiao_Mask.webp",
+  "namecards/Namecard_Background_Xilonen_Cue_Point.webp",
+  "namecards/Namecard_Background_Xingqiu_Rainbow.webp",
+  "namecards/Namecard_Background_Xinyan_Song's_End.webp",
+  "namecards/Namecard_Background_Yae_Miko_Kitsune_Dreaming.webp",
+  "namecards/Namecard_Background_Yanfei_Impartial.webp",
+  "namecards/Namecard_Background_Yaoyao_Yuegui.webp",
+  "namecards/Namecard_Background_Yelan_Throw.webp",
+  "namecards/Namecard_Background_Yoimiya_Auratus_Spark.webp",
+  "namecards/Namecard_Background_Yumemizuki_Mizuki_Nightmare_Devourer.webp",
+  "namecards/Namecard_Background_Yun_Jin_Rhyme.webp",
+  "namecards/Namecard_Background_Zhongli_Planet_Befall.webp",
+  "namecards/Namecard_Background_Zibai_Veiled_Vista.webp"
+ ],
+ "bannieres2": [
+  "namecards/banners/Namecard_Banner_Aino_Whoopsie_Ducksie.webp",
+  "namecards/banners/Namecard_Banner_Albedo_Sun_Blossom.webp",
+  "namecards/banners/Namecard_Banner_Alhaitham_Enlightenment.webp",
+  "namecards/banners/Namecard_Banner_Aloy_Dawn.webp",
+  "namecards/banners/Namecard_Banner_Alyosha_Sit.webp",
+  "namecards/banners/Namecard_Banner_Amber_Bunny.webp",
+  "namecards/banners/Namecard_Banner_Arlecchino_Edict.webp",
+  "namecards/banners/Namecard_Banner_Baizhu_Relief.webp",
+  "namecards/banners/Namecard_Banner_Barbara_Flow.webp",
+  "namecards/banners/Namecard_Banner_Beidou_Weighing_Anchor.webp",
+  "namecards/banners/Namecard_Banner_Bennett_Recognition.webp",
+  "namecards/banners/Namecard_Banner_Candace_Gray_Heron.webp",
+  "namecards/banners/Namecard_Banner_Charlotte_Exclusive.webp",
+  "namecards/banners/Namecard_Banner_Chasca_Fully_Loaded.webp",
+  "namecards/banners/Namecard_Banner_Chevreuse_Type_II.webp",
+  "namecards/banners/Namecard_Banner_Childe_Foul_Legacy.webp",
+  "namecards/banners/Namecard_Banner_Chiori_Spectacular_Sleeves.webp",
+  "namecards/banners/Namecard_Banner_Chongyun_Spirit_Blade.webp",
+  "namecards/banners/Namecard_Banner_Citlali_Opalstar.webp",
+  "namecards/banners/Namecard_Banner_Clorinde_Roleplay.webp",
+  "namecards/banners/Namecard_Banner_Collei_Good_Virtue.webp",
+  "namecards/banners/Namecard_Banner_Columbina_Someday.webp",
+  "namecards/banners/Namecard_Banner_Cyno_Silence.webp",
+  "namecards/banners/Namecard_Banner_Dahlia_Sacred_Duty.webp",
+  "namecards/banners/Namecard_Banner_Dehya_Purifying_Flame.webp",
+  "namecards/banners/Namecard_Banner_Diluc_Flames.webp",
+  "namecards/banners/Namecard_Banner_Diona_Meow!.webp",
+  "namecards/banners/Namecard_Banner_Dori_Jinni.webp",
+  "namecards/banners/Namecard_Banner_Durin_Radiant_Heart.webp",
+  "namecards/banners/Namecard_Banner_Emilie_Base_Note.webp",
+  "namecards/banners/Namecard_Banner_Escoffier_Charm.webp",
+  "namecards/banners/Namecard_Banner_Eula_Ice-Sealed.webp",
+  "namecards/banners/Namecard_Banner_Faruzan_Sealed_Secret.webp",
+  "namecards/banners/Namecard_Banner_Fischl_Night_Raven.webp",
+  "namecards/banners/Namecard_Banner_Flins_Oathkeeper's_Lantern.webp",
+  "namecards/banners/Namecard_Banner_Freminet_Progress.webp",
+  "namecards/banners/Namecard_Banner_Furina_Banquet.webp",
+  "namecards/banners/Namecard_Banner_Gaming_Man_Chai.webp",
+  "namecards/banners/Namecard_Banner_Ganyu_Qilin.webp",
+  "namecards/banners/Namecard_Banner_Gorou_Leisurely_Hound.webp",
+  "namecards/banners/Namecard_Banner_Hu_Tao_Spirit_Soother.webp",
+  "namecards/banners/Namecard_Banner_Iansan_Unyielding.webp",
+  "namecards/banners/Namecard_Banner_Ifa_Bro.webp",
+  "namecards/banners/Namecard_Banner_Illuga_Nightmare_Songbird.webp",
+  "namecards/banners/Namecard_Banner_Ineffa_Command.webp",
+  "namecards/banners/Namecard_Banner_Itto_Oni_Face.webp",
+  "namecards/banners/Namecard_Banner_Jahoda_Helping_Hand.webp",
+  "namecards/banners/Namecard_Banner_Jean_The_Winds'_Course.webp",
+  "namecards/banners/Namecard_Banner_Kachina_Twirly.webp",
+  "namecards/banners/Namecard_Banner_Kaedehara_Kazuha_Autumn_Maple-Viewing.webp",
+  "namecards/banners/Namecard_Banner_Kaeya_Pavo_Ocellus.webp",
+  "namecards/banners/Namecard_Banner_Kamisato_Ayaka_Folding_Fan.webp",
+  "namecards/banners/Namecard_Banner_Kamisato_Ayato_Ripple.webp",
+  "namecards/banners/Namecard_Banner_Kaveh_Domed_Court.webp",
+  "namecards/banners/Namecard_Banner_Keqing_Lightning_Stiletto.webp",
+  "namecards/banners/Namecard_Banner_Kinich_Ajaw.webp",
+  "namecards/banners/Namecard_Banner_Kirara_Neko_Box.webp",
+  "namecards/banners/Namecard_Banner_Klee_Explosive.webp",
+  "namecards/banners/Namecard_Banner_Kujou_Sara_Tengu.webp",
+  "namecards/banners/Namecard_Banner_Kuki_Shinobu_Net.webp",
+  "namecards/banners/Namecard_Banner_Lan_Yan_Silver_Swallow.webp",
+  "namecards/banners/Namecard_Banner_Lauma_Branched_Antlers.webp",
+  "namecards/banners/Namecard_Banner_Layla_Daydream.webp",
+  "namecards/banners/Namecard_Banner_Linnea_Rattling_Resonance.webp",
+  "namecards/banners/Namecard_Banner_Lisa_Tempus_Fugit.webp",
+  "namecards/banners/Namecard_Banner_Lohen_Benevolence.webp",
+  "namecards/banners/Namecard_Banner_Lynette_Earnestness.webp",
+  "namecards/banners/Namecard_Banner_Lyney_Pretense.webp",
+  "namecards/banners/Namecard_Banner_Mavuika_Sun-Crowned.webp",
+  "namecards/banners/Namecard_Banner_Mika_Index.webp",
+  "namecards/banners/Namecard_Banner_Mona_Starry_Sky.webp",
+  "namecards/banners/Namecard_Banner_Mualani_Sharky.webp",
+  "namecards/banners/Namecard_Banner_Nahida_Crescent.webp",
+  "namecards/banners/Namecard_Banner_Navia_Rosula.webp",
+  "namecards/banners/Namecard_Banner_Nefer_Secrets.webp",
+  "namecards/banners/Namecard_Banner_Neuvillette_Surge.webp",
+  "namecards/banners/Namecard_Banner_Nicole_Heavenly_Stairway.webp",
+  "namecards/banners/Namecard_Banner_Nilou_Lotus_Dance.webp",
+  "namecards/banners/Namecard_Banner_Ningguang_Phoenix.webp",
+  "namecards/banners/Namecard_Banner_Noelle_Protector.webp",
+  "namecards/banners/Namecard_Banner_Odette_The_Singular_Swan.webp",
+  "namecards/banners/Namecard_Banner_Ororon_Nightshade.webp",
+  "namecards/banners/Namecard_Banner_Prune_Judgment.webp",
+  "namecards/banners/Namecard_Banner_Qiqi_Cold_Storage.webp",
+  "namecards/banners/Namecard_Banner_Raiden_Shogun_Enlightenment.webp",
+  "namecards/banners/Namecard_Banner_Razor_Wolvensprint.webp",
+  "namecards/banners/Namecard_Banner_Rosaria_Indenture.webp",
+  "namecards/banners/Namecard_Banner_Sandrone_Tea_Break.webp",
+  "namecards/banners/Namecard_Banner_Sangonomiya_Kokomi_The_Deep.webp",
+  "namecards/banners/Namecard_Banner_Sayu_Muji-Muji_Daruma.webp",
+  "namecards/banners/Namecard_Banner_Sethos_Ba_Fragment.webp",
+  "namecards/banners/Namecard_Banner_Shenhe_Comb.webp",
+  "namecards/banners/Namecard_Banner_Shikanoin_Heizou_Temari.webp",
+  "namecards/banners/Namecard_Banner_Sigewinne_Treatment.webp",
+  "namecards/banners/Namecard_Banner_Skirk_Lone_Shadow.webp",
+  "namecards/banners/Namecard_Banner_Sucrose_Bio-Alchemy.webp",
+  "namecards/banners/Namecard_Banner_Thoma_Blazing_Guard.webp",
+  "namecards/banners/Namecard_Banner_Tighnari_Dew-Kissed.webp",
+  "namecards/banners/Namecard_Banner_Varesa_Powerhouse.webp",
+  "namecards/banners/Namecard_Banner_Varka_Lead_Wolf.webp",
+  "namecards/banners/Namecard_Banner_Venti_Azure_Sky.webp",
+  "namecards/banners/Namecard_Banner_Vesna_Revelry.webp",
+  "namecards/banners/Namecard_Banner_Vodyanitsa_Whirlpool.webp",
+  "namecards/banners/Namecard_Banner_Wanderer_Drifter's_Ballad.webp",
+  "namecards/banners/Namecard_Banner_Wriothesley_Detention.webp",
+  "namecards/banners/Namecard_Banner_Xiangling_Fresh_from_the_Pan.webp",
+  "namecards/banners/Namecard_Banner_Xianyun_White_Clouds.webp",
+  "namecards/banners/Namecard_Banner_Xiao_Mask.webp",
+  "namecards/banners/Namecard_Banner_Xilonen_Cue_Point.webp",
+  "namecards/banners/Namecard_Banner_Xingqiu_Rainbow.webp",
+  "namecards/banners/Namecard_Banner_Xinyan_Song's_End.webp",
+  "namecards/banners/Namecard_Banner_Yae_Miko_Kitsune_Dreaming.webp",
+  "namecards/banners/Namecard_Banner_Yanfei_Impartial.webp",
+  "namecards/banners/Namecard_Banner_Yaoyao_Yuegui.webp",
+  "namecards/banners/Namecard_Banner_Yelan_Throw.webp",
+  "namecards/banners/Namecard_Banner_Yoimiya_Auratus_Spark.webp",
+  "namecards/banners/Namecard_Banner_Yumemizuki_Mizuki_Nightmare_Devourer.webp",
+  "namecards/banners/Namecard_Banner_Yun_Jin_Rhyme.webp",
+  "namecards/banners/Namecard_Banner_Zhongli_Planet_Befall.webp",
+  "namecards/banners/Namecard_Banner_Zibai_Veiled_Vista.webp"
+ ],
+ "fonds": [
+  {
+   "id": "bg/autres/20260905220206.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/20260905220206.webp",
+   "miniature": "bg_miniatures/autres/20260905220206.webp"
+  },
+  {
+   "id": "bg/autres/20260905220318.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/20260905220318.webp",
+   "miniature": "bg_miniatures/autres/20260905220318.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-06 171234.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-06_171234.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-06_171234.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 231623.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_231623.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_231623.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 231807.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_231807.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_231807.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 231857.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_231857.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_231857.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 232545.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_232545.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_232545.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 232644.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_232644.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_232644.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 232746.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_232746.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_232746.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 232854.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_232854.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_232854.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 233043.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_233043.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_233043.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 233101.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_233101.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_233101.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 233447.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_233447.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_233447.webp"
+  },
+  {
+   "id": "bg/autres/Capture d'écran 2026-09-21 233907.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/Capture_d_cran_2026-09-21_233907.webp",
+   "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_233907.webp"
+  },
+  {
+   "id": "bg/autres/draft-background-D8K2XYgs.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/draft-background-D8K2XYgs.webp",
+   "miniature": "bg_miniatures/autres/draft-background-D8K2XYgs.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260915200417126.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260915200417126.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260915200417126.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260915200448369.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260915200448369.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260915200448369.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260915200533825.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260915200533825.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260915200533825.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926191937054.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926191937054.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926191937054.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926192446926.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926192446926.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926192446926.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926192626228.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926192626228.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926192626228.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926192753800.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926192753800.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926192753800.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926192819895.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926192819895.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926192819895.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926192912309.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926192912309.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926192912309.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926192935697.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926192935697.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926192935697.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193049411.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193049411.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193049411.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193053040.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193053040.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193053040.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193113894.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193113894.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193113894.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193306604.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193306604.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193306604.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193402242.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193402242.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193402242.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193406779.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193406779.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193406779.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193530445.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193530445.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193530445.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193626187.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193626187.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193626187.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193711123.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193711123.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193711123.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193941027.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193941027.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193941027.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926193953003.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926193953003.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926193953003.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194019018.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194019018.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194019018.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194112031.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194112031.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194112031.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194209179.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194209179.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194209179.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194227624.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194227624.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194227624.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194319027.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194319027.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194319027.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194353199.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194353199.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194353199.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194445016.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194445016.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194445016.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194506375.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194506375.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194506375.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194609068.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194609068.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194609068.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194647479.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194647479.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194647479.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194747747.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194747747.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194747747.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194812246.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194812246.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194812246.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194832918.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194832918.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194832918.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194925131.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194925131.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194925131.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926194953541.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926194953541.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926194953541.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195056434.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195056434.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195056434.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195130393.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195130393.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195130393.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195350385.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195350385.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195350385.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195434022.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195434022.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195434022.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195506979.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195506979.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195506979.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195634274.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195634274.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195634274.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195710452.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195710452.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195710452.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195743608.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195743608.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195743608.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195859419.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195859419.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195859419.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926195946098.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926195946098.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926195946098.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926200053629.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926200053629.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926200053629.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926200126498.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926200126498.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926200126498.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926200226863.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926200226863.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926200226863.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926200231701.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926200231701.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926200231701.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926200242698.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926200242698.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926200242698.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926200402320.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926200402320.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926200402320.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926211955838.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926211955838.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926211955838.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212059344.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212059344.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212059344.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212112548.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212112548.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212112548.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212254466.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212254466.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212254466.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212343151.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212343151.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212343151.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212350201.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212350201.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212350201.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212420754.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212420754.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212420754.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212444551.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212444551.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212444551.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212458064.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212458064.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212458064.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212615481.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212615481.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212615481.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212619019.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212619019.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212619019.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212635030.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212635030.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212635030.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212657110.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212657110.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212657110.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212726637.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212726637.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212726637.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212730362.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212730362.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212730362.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212838879.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212838879.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212838879.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212842804.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212842804.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212842804.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212846736.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212846736.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212846736.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926212911125.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926212911125.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926212911125.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213432211.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213432211.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213432211.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213436951.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213436951.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213436951.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213445719.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213445719.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213445719.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213453685.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213453685.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213453685.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213511330.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213511330.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213511330.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213534716.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213534716.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213534716.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213540866.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213540866.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213540866.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213622511.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213622511.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213622511.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20260926213644381.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260926213644381.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213644381.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/Capture d'écran 2026-09-05 195219.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/Capture_d_cran_2026-09-05_195219.webp",
+   "miniature": "bg_miniatures/boss_hebdo/Capture_d_cran_2026-09-05_195219.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/Capture d'écran 2026-09-05 195521.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/Capture_d_cran_2026-09-05_195521.webp",
+   "miniature": "bg_miniatures/boss_hebdo/Capture_d_cran_2026-09-05_195521.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/Capture d'écran 2026-09-05 195532.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/Capture_d_cran_2026-09-05_195532.webp",
+   "miniature": "bg_miniatures/boss_hebdo/Capture_d_cran_2026-09-05_195532.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/Capture d'écran 2026-09-15 225228.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/Capture_d_cran_2026-09-15_225228.webp",
+   "miniature": "bg_miniatures/boss_hebdo/Capture_d_cran_2026-09-15_225228.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/Capture d'écran 2026-09-15 225325.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/Capture_d_cran_2026-09-15_225325.webp",
+   "miniature": "bg_miniatures/boss_hebdo/Capture_d_cran_2026-09-15_225325.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/Capture d'écran 2026-09-26 184127.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/Capture_d_cran_2026-09-26_184127.webp",
+   "miniature": "bg_miniatures/boss_hebdo/Capture_d_cran_2026-09-26_184127.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/Capture d'écran 2026-09-26 185118.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/Capture_d_cran_2026-09-26_185118.webp",
+   "miniature": "bg_miniatures/boss_hebdo/Capture_d_cran_2026-09-26_185118.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926174413718.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926174413718.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926174413718.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926174514980.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926174514980.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926174514980.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926174533119.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926174533119.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926174533119.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926174604777.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926174604777.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926174604777.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175046812.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175046812.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175046812.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175216025.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175216025.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175216025.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175309060.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175309060.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175309060.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175320341.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175320341.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175320341.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175527118.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175527118.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175527118.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175810422.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175810422.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175810422.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175945131.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175945131.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175945131.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175957325.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175957325.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175957325.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926175959440.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926175959440.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926175959440.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180008512.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180008512.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180008512.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180028059.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180028059.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180028059.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180155867.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180155867.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180155867.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180227527.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180227527.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180227527.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180246380.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180246380.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180246380.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180254148.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180254148.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180254148.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180338117.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180338117.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180338117.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180438389.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180438389.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180438389.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926180751911.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926180751911.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926180751911.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926182000003.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926182000003.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926182000003.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926182031264.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926182031264.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926182031264.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926182718157.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926182718157.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926182718157.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926184643369.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926184643369.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926184643369.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926184757054.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926184757054.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926184757054.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926184804107.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926184804107.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926184804107.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926184834756.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926184834756.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926184834756.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926185337457.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926185337457.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926185337457.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926185601928.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926185601928.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926185601928.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926185830405.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926185830405.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926185830405.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact202609261858304052.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact202609261858304052.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact202609261858304052.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926191004707.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926191004707.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926191004707.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926191752938.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926191752938.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926191752938.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926191900278.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926191900278.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926191900278.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926191915991.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926191915991.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926191915991.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/MedalTVGenshinImpact20260926192044065.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/MedalTVGenshinImpact20260926192044065.webp",
+   "miniature": "bg_miniatures/boss_hebdo/MedalTVGenshinImpact20260926192044065.webp"
+  }
+ ]
+}

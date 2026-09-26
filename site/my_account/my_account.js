@@ -57,6 +57,8 @@ async function chargerSessionDiscord() {
     window.location.href = "/api/auth/logout";
   });
 
+  initialiserMenuCompte();
+
   try {
     const response = await fetch("/api/auth/me", {
       credentials: "include"
@@ -88,6 +90,31 @@ async function chargerSessionDiscord() {
     accountContent.classList.remove("actif");
     return false;
   }
+}
+
+// ---- Menu déroulant du compte (photo + nom Discord cliquables) ----
+
+function fermerMenuCompte() {
+  document.getElementById("menu-compte").classList.add("cache");
+  document.getElementById("compte-btn").setAttribute("aria-expanded", "false");
+}
+
+function initialiserMenuCompte() {
+  const bouton = document.getElementById("compte-btn");
+  const menu = document.getElementById("menu-compte");
+
+  bouton.addEventListener("click", () => {
+    const ouvert = menu.classList.toggle("cache") === false;
+    bouton.setAttribute("aria-expanded", String(ouvert));
+  });
+
+  // Clic en dehors du menu ou Échap : fermeture.
+  document.addEventListener("click", event => {
+    if (!event.target.closest("#auth-zone")) fermerMenuCompte();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") fermerMenuCompte();
+  });
 }
 
 async function chargerPersonnages() {
@@ -812,10 +839,253 @@ async function initialiserPage() {
         succes ? "succes" : "erreur"
       );
     });
+
+    // UID / théâtre (menu du compte) : même enregistrement que le formulaire.
+    document.getElementById("btn-enregistrer-compte").addEventListener("click", () => {
+      document.getElementById("profil-form").requestSubmit();
+      fermerMenuCompte();
+    });
+
+    initialiserGrille();
+    initialiserParametres(profil);
   } catch (erreur) {
     console.error(erreur);
     alert("Erreur lors du chargement de la page.");
   }
+}
+
+// ---- Grille : toute la largeur, écarts homogènes (même calcul que la draft) ----
+// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE, puis
+// l'espace restant est réparti également entre les cartes et sur les 2
+// bords ; le même écart sert entre les lignes. Téléphone : 4 par ligne,
+// cartes réduites à la largeur de l'écran.
+
+const ECART_MIN_GRILLE = 10;
+const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
+const COLONNES_TELEPHONE = 4;
+
+function ajusterGrille(grille) {
+  const largeur = grille.clientWidth;
+  if (!largeur) return;
+
+  let taille = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--taille-carte")) || 132;
+  let colonnes;
+
+  if (MEDIA_TELEPHONE.matches) {
+    colonnes = COLONNES_TELEPHONE;
+    taille = Math.floor((largeur - (colonnes + 1) * ECART_MIN_GRILLE) / colonnes);
+    grille.style.setProperty("--taille-carte", `${taille}px`);
+  } else {
+    grille.style.removeProperty("--taille-carte");
+    colonnes = Math.max(1, Math.floor((largeur - ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
+  }
+
+  const ecart = Math.max(0, (largeur - colonnes * taille) / (colonnes + 1));
+
+  grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
+  grille.style.gap = `${ecart}px`;
+}
+
+function initialiserGrille() {
+  const grille = document.getElementById("liste-collection");
+  new ResizeObserver(() => ajusterGrille(grille)).observe(grille);
+}
+
+// ---- Paramètres : bannière, deuxième bannière, fond d'écran ----
+// Choix listés dans DB/images/cosmetiques.json (généré par
+// scripts/generer_cosmetiques.py). Stockés dans profil.parametres :
+//   banniere  : "namecards/Namecard_Background_....webp"
+//   banniere2 : "namecards/banners/Namecard_Banner_....webp"
+//   fond      : id du fond = chemin de l'image source ("bg/autres/....png")
+// null = aucun (fond gris par défaut).
+
+const RACINE_IMAGES = "../DB/images/";
+
+let cosmetiques = null;
+
+async function chargerCosmetiques() {
+  if (cosmetiques) return cosmetiques;
+  const reponse = await fetch(`${RACINE_IMAGES}cosmetiques.json`);
+  if (!reponse.ok) {
+    throw new Error("Impossible de charger DB/images/cosmetiques.json");
+  }
+  cosmetiques = await reponse.json();
+  return cosmetiques;
+}
+
+function urlImage(chemin) {
+  return encodeURI(RACINE_IMAGES + chemin);
+}
+
+// "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
+function nomNamecard(chemin) {
+  return chemin
+    .split("/").pop()
+    .replace(/^Namecard_(Background|Banner)_/, "")
+    .replace(/\.[a-z]+$/i, "")
+    .replace(/_/g, " ");
+}
+
+function getFond(idFond) {
+  return cosmetiques?.fonds.find(fond => fond.id === idFond) || null;
+}
+
+function appliquerFond(idFond) {
+  const fond = getFond(idFond);
+  document.body.style.backgroundImage = fond ? `url("${urlImage(fond.image)}")` : "";
+}
+
+async function initialiserParametres(profil) {
+  const modal = document.getElementById("modal-parametres");
+  const conteneurChoix = document.getElementById("choix-parametres");
+  const inputRecherche = document.getElementById("recherche-parametres");
+
+  let ongletActif = "banniere";
+  let brouillon = null; // choix en cours, appliqués seulement à l'enregistrement
+
+  try {
+    await chargerCosmetiques();
+  } catch (erreur) {
+    console.error(erreur);
+  }
+
+  profil.parametres = { banniere: null, banniere2: null, fond: null, ...(profil.parametres || {}) };
+  appliquerFond(profil.parametres.fond);
+
+  function rendreApercus() {
+    const cases = {
+      "apercu-banniere": brouillon.banniere && urlImage(brouillon.banniere),
+      "apercu-banniere2": brouillon.banniere2 && urlImage(brouillon.banniere2),
+      "apercu-fond": getFond(brouillon.fond) && urlImage(getFond(brouillon.fond).miniature)
+    };
+    Object.entries(cases).forEach(([id, url]) => {
+      const bloc = document.getElementById(id);
+      bloc.style.backgroundImage = url ? `url("${url}")` : "";
+      bloc.textContent = url ? "" : "Aucun";
+    });
+  }
+
+  function creerChoix({ valeur, image, titre, classe }) {
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = `choix-parametre ${classe}`;
+    bouton.title = titre;
+    bouton.classList.toggle("active", brouillon[ongletActif] === valeur);
+    bouton.innerHTML = image
+      ? `<img src="${image}" alt="${titre}" loading="lazy">`
+      : `<span>Aucun</span>`;
+    bouton.addEventListener("click", () => {
+      brouillon[ongletActif] = valeur;
+      if (ongletActif === "fond") appliquerFond(valeur);
+      rendreApercus();
+      rendreChoix();
+    });
+    return bouton;
+  }
+
+  function rendreChoix() {
+    conteneurChoix.innerHTML = "";
+
+    if (!cosmetiques) {
+      conteneurChoix.textContent = "Impossible de charger la liste des images.";
+      return;
+    }
+
+    const recherche = inputRecherche.value.trim().toLowerCase();
+    const classe = `choix-${ongletActif}`;
+    const grille = document.createElement("div");
+    grille.className = `grille-choix ${classe}`;
+    grille.appendChild(creerChoix({ valeur: null, image: null, titre: "Aucun", classe }));
+
+    if (ongletActif === "fond") {
+      // Fonds groupés par sous-dossier de DB/images/bg.
+      conteneurChoix.appendChild(grille);
+      const categories = [...new Set(cosmetiques.fonds.map(fond => fond.categorie))];
+
+      categories.forEach(categorie => {
+        const fonds = cosmetiques.fonds.filter(fond =>
+          fond.categorie === categorie &&
+          (!recherche || fond.id.toLowerCase().includes(recherche))
+        );
+        if (fonds.length === 0) return;
+
+        const titre = document.createElement("h3");
+        titre.className = "categorie-choix";
+        titre.textContent = (categorie || "Divers").replace(/_/g, " ");
+        conteneurChoix.appendChild(titre);
+
+        const grilleCategorie = document.createElement("div");
+        grilleCategorie.className = `grille-choix ${classe}`;
+        fonds.forEach(fond => {
+          grilleCategorie.appendChild(creerChoix({
+            valeur: fond.id,
+            image: urlImage(fond.miniature),
+            titre: fond.id.split("/").pop(),
+            classe
+          }));
+        });
+        conteneurChoix.appendChild(grilleCategorie);
+      });
+      return;
+    }
+
+    const liste = ongletActif === "banniere" ? cosmetiques.bannieres : cosmetiques.bannieres2;
+    liste
+      .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche))
+      .forEach(chemin => {
+        grille.appendChild(creerChoix({ valeur: chemin, image: urlImage(chemin), titre: nomNamecard(chemin), classe }));
+      });
+    conteneurChoix.appendChild(grille);
+  }
+
+  function ouvrir() {
+    brouillon = { ...profil.parametres };
+    inputRecherche.value = "";
+    rendreApercus();
+    rendreChoix();
+    modal.classList.add("active");
+    fermerMenuCompte();
+  }
+
+  // Fermer sans enregistrer : on revient au fond enregistré.
+  function fermer() {
+    modal.classList.remove("active");
+    appliquerFond(profil.parametres.fond);
+  }
+
+  document.getElementById("btn-parametres").addEventListener("click", ouvrir);
+  document.getElementById("fermer-parametres").addEventListener("click", fermer);
+  document.getElementById("annuler-parametres").addEventListener("click", fermer);
+  modal.addEventListener("click", event => {
+    if (event.target === modal) fermer();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("active")) fermer();
+  });
+
+  document.querySelectorAll(".onglet-parametre").forEach(bouton => {
+    bouton.addEventListener("click", () => {
+      ongletActif = bouton.dataset.onglet;
+      document.querySelectorAll(".onglet-parametre").forEach(b => {
+        b.classList.toggle("active", b === bouton);
+      });
+      inputRecherche.value = "";
+      rendreChoix();
+    });
+  });
+
+  inputRecherche.addEventListener("input", rendreChoix);
+
+  // Enregistre le profil entier (comme le bouton Enregistrer de la page).
+  document.getElementById("enregistrer-parametres").addEventListener("click", async () => {
+    profil.parametres = { ...brouillon };
+    const succes = await sauvegarderProfil(profil);
+    afficherToast(
+      succes ? "Paramètres enregistrés" : "Erreur lors de l'enregistrement des paramètres",
+      succes ? "succes" : "erreur"
+    );
+    if (succes) fermer();
+  });
 }
 
 function afficherToast(message, type = "succes") {
