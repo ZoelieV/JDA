@@ -702,6 +702,12 @@ function getProchaineActionLocale() {
   return action || null;
 }
 
+// Titre d'un tableau joueur : pseudo, remplacé par "J1"/"J2" sur téléphone
+// (tableaux côte à côte, cf. CSS).
+function titreTableauJoueur(role, nomJoueur) {
+  return `<h4><span class="nom-complet">${nomJoueur}</span><span class="nom-court">${role.toUpperCase()}</span></h4>`;
+}
+
 function rendreSlotsEtBans(role) {
   const nomJoueur = role === "j1" ? joueur1.nom : joueur2.nom;
 
@@ -711,7 +717,7 @@ function rendreSlotsEtBans(role) {
   const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
 
   const slotsContainer = document.getElementById(`slots-pick-${role}`);
-  slotsContainer.innerHTML = `<h4>${nomJoueur}</h4>`;
+  slotsContainer.innerHTML = titreTableauJoueur(role, nomJoueur);
 
   for (let i = 0; i < 4; i++) {
     const persoId = picks[i];
@@ -934,12 +940,27 @@ function grilleAChange(grille, cle) {
 
 const ECART_MIN_GRILLE = 10;
 
+// Téléphone (même seuil que le CSS) : toujours 4 cartes par ligne, dont la
+// taille s'adapte à la largeur disponible.
+const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
+const COLONNES_TELEPHONE = 4;
+
 function ajusterGrille(grille) {
   const largeur = grille.clientWidth;
   if (!largeur) return;
 
-  const taille = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--taille-carte")) || 130;
-  const colonnes = Math.max(1, Math.floor((largeur - ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
+  let taille = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--taille-carte")) || 130;
+  let colonnes;
+
+  if (MEDIA_TELEPHONE.matches) {
+    colonnes = COLONNES_TELEPHONE;
+    taille = Math.floor((largeur - (colonnes + 1) * ECART_MIN_GRILLE) / colonnes);
+    grille.style.setProperty("--taille-carte", `${taille}px`);
+  } else {
+    grille.style.removeProperty("--taille-carte");
+    colonnes = Math.max(1, Math.floor((largeur - ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
+  }
+
   const ecart = Math.max(0, (largeur - colonnes * taille) / (colonnes + 1));
 
   grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
@@ -1097,7 +1118,7 @@ function rendrePicksSeuls(containerId, role) {
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
 
   const container = document.getElementById(containerId);
-  container.innerHTML = `<h4>${nomJoueur}</h4>`;
+  container.innerHTML = titreTableauJoueur(role, nomJoueur);
 
   const slotsWrap = document.createElement("div");
   slotsWrap.className = "slots-pick";

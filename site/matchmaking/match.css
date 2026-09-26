@@ -663,10 +663,11 @@ h1 {
   gap: 11px;
 }
 
+/* Bordure en box-shadow inset : ne change pas la taille de la case, qui
+   reste identique aux cases de picks. */
 .slot-pick.slot-ban {
   background-color: rgba(255, 90, 90, 0.12);
-  border: 2px solid rgba(255, 90, 90, 0.6);
-  box-sizing: border-box;
+  box-shadow: inset 0 0 0 2px rgba(255, 90, 90, 0.6);
 }
 
 .slot-pick.slot-ban img {
@@ -747,8 +748,8 @@ h1 {
 .character-visuel img.character-raffinement {
   position: absolute;
   top: 50%;
-  width: 26px;
-  height: 26px;
+  width: 34px;
+  height: 34px;
   transform: translateY(-50%);
   object-fit: contain;
   border-radius: 0;
@@ -760,11 +761,11 @@ h1 {
 }
 
 .character-visuel img.raffinement-j1 {
-  left: 3px;
+  left: 2px;
 }
 
 .character-visuel img.raffinement-j2 {
-  right: 3px;
+  right: 2px;
 }
 
 .character-icone-type {
@@ -977,4 +978,87 @@ h1 {
 #btn-rejouer.active {
   background-color: rgba(62, 207, 106, 0.4);
   border-color: rgba(62, 207, 106, 0.8);
+}
+
+/* Nom complet dans les tableaux des joueurs ; "J1"/"J2" sur téléphone. */
+.equipe-joueur .nom-court {
+  display: none;
+}
+
+/* ---- Téléphone : les 2 tableaux côte à côte en haut, persos en dessous
+   (4 par ligne, cf. ajusterGrille), pas de place pour les bannières. ---- */
+@media (max-width: 700px) {
+  .entete-joueur {
+    min-height: 0;
+  }
+
+  .draft-layout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "j1 j2"
+      "pool pool";
+    gap: 10px;
+  }
+
+  #equipe-j1 {
+    grid-area: j1;
+  }
+
+  #equipe-j2 {
+    grid-area: j2;
+  }
+
+  #grille-pool-draft {
+    grid-area: pool;
+  }
+
+  .recap-teams {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .equipe-joueur {
+    min-width: 0;
+    padding: 8px;
+  }
+
+  .equipe-joueur .nom-complet {
+    display: none;
+  }
+
+  .equipe-joueur .nom-court {
+    display: inline;
+  }
+
+  .slots-pick,
+  .slots-ban {
+    gap: 6px;
+  }
+
+  .slots-pick {
+    margin-bottom: 10px;
+  }
+
+  .slot-pick {
+    min-height: 44px;
+    padding: 3px 6px;
+  }
+
+  .slot-pick img {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* Cartes plus petites (4 par ligne) : cercles et logos réduits. */
+  .character-constellation,
+  .character-niveau {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+  }
+
+  .character-visuel img.character-raffinement {
+    width: 22px;
+    height: 22px;
+  }
 }
