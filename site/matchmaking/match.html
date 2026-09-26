@@ -17,14 +17,16 @@
     <div class="entetes-joueurs">
       <div class="entete-joueur" id="entete-joueur1"></div>
       <!-- Centre des entêtes pendant la draft et la saisie du temps (cf.
-           rendrePhase()) : action à réaliser (draft uniquement) au-dessus
-           du boss tiré. -->
+           rendrePhase()) : boss tiré. -->
       <div id="entete-centre" class="entete-centre cache">
-        <div id="tour-actuel" class="tour-actuel"></div>
         <div id="boss-affiche" class="bandeau-boss"></div>
       </div>
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
+
+    <!-- Action à réaliser pendant la draft : figée en bas au centre de
+         l'écran (cf. .tour-actuel). -->
+    <div id="tour-actuel" class="tour-actuel cache"></div>
 
     <!-- Barre recherche / tri / filtres, commune à toutes les phases avec
          des persos (choix de box, analyse, bans d'équilibrage, draft). -->
