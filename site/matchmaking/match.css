@@ -202,6 +202,16 @@ h1 {
   background-color: #3ecf6a;
 }
 
+/* Rôle de la manche, affiché une fois le tirage j1/j2 fait. */
+.entete-joueur .tag-role {
+  font-size: 12px;
+  font-weight: bold;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
 .entete-joueur .vide {
   opacity: 0.6;
   font-style: italic;

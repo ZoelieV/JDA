@@ -41,18 +41,22 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 
 // ---- État initial d'une manche ----
 //
-// Utilisé à la création d'une room ET au clic sur "Rejouer" (qui remet la
-// room exactement à ce stade, sans recréer de room ni toucher à match_history).
+// Déroulé : choix_box (box adverse cachée) -> analyse (les 2 box visibles,
+// ready-check) -> bans_bonus (si écart) -> tirage j1/j2 + boss -> draft ->
+// temps -> termine. Une revanche (etatRevanche) repart directement en
+// "analyse" avec les mêmes box et bans d'équilibrage, rôles inversés.
 //
-// discord_j1 / discord_j2 : qui est "j1" et "j2" POUR CETTE MANCHE. Tiré au
-// sort la première fois que la room est complète (voir _lib/room.js), puis
-// échangé automatiquement à chaque revanche (voir handleRejouer) pour que
-// le 1er pick ne reste pas indéfiniment du même côté.
+// discord_j1 / discord_j2 : qui est "j1" et "j2". Avant le tirage
+// (roles_tires = false) ce ne sont que des places provisoires (créateur de
+// la room en j1, cf. _lib/room.js) ; le tirage les échange ou non au hasard
+// (lancerTirage). En revanche, ils sont échangés sans tirage.
 function etatInitialDraft() {
   return {
-    phase: "choix_box", // choix_box -> bans_bonus (si écart) -> draft -> temps -> termine
+    phase: "choix_box", // choix_box -> analyse -> bans_bonus (si écart) -> draft -> temps -> termine
     discord_j1: null,
     discord_j2: null,
+    roles_tires: false, // true une fois j1/j2 définitifs pour la manche
+    boss_precedent_id: null, // boss de la manche précédente, exclu du tirage
     box_j1: null,
     box_j2: null,
     pret_j1: false,
@@ -139,16 +143,86 @@ function getProchaineAction(draft) {
   return null;
 }
 
-// ---- Démarrage de la draft proprement dite ----
+// ---- Échange des rôles j1 <-> j2 ----
 //
-// Appelée soit juste après l'équilibrage (si aucun ban bonus n'est dû),
-// soit une fois tous les bans bonus confirmés : tire le boss et bascule sur
-// la séquence fixe.
-function demarrerDraftApresBonus(draft, tirerBossAleatoire) {
-  const boss = tirerBossAleatoire();
+// Échange toutes les paires de champs *_j1 / *_j2 et tout ce qui désigne
+// un rôle ("j1"/"j2"), pour que chaque donnée reste attachée au même
+// joueur. Sert au tirage (si le hasard inverse les places provisoires) et
+// à la revanche.
+function echangerRoles(draft) {
+  Object.keys(draft)
+    .filter(cle => cle.endsWith("_j1"))
+    .forEach(cleJ1 => {
+      const cleJ2 = cleJ1.slice(0, -3) + "_j2";
+      const tmp = draft[cleJ1];
+      draft[cleJ1] = draft[cleJ2];
+      draft[cleJ2] = tmp;
+    });
+
+  const inverser = role => (role === "j1" ? "j2" : role === "j2" ? "j1" : role);
+  draft.bans_bonus_joueur = inverser(draft.bans_bonus_joueur);
+  draft.vainqueur = inverser(draft.vainqueur);
+  draft.actions = (draft.actions || []).map(a => ({ ...a, joueur: inverser(a.joueur) }));
+}
+
+// ---- Tirage : rôles j1/j2 (1re manche seulement) puis boss ----
+//
+// Appelé après l'analyse (si aucun ban bonus n'est dû) ou une fois les
+// bans bonus confirmés. En revanche, roles_tires est déjà vrai : seul le
+// boss est tiré, différent de celui de la manche précédente.
+function lancerTirage(draft, tirerBossAleatoire) {
+  if (!draft.roles_tires) {
+    if (Math.random() < 0.5) echangerRoles(draft);
+    draft.roles_tires = true;
+  }
+
+  const boss = tirerBossAleatoire(draft.boss_precedent_id || null);
   draft.boss_id = boss.id;
   draft.phase = "draft";
   draft.sequence_index = 0;
+}
+
+// ---- Revanche ----
+//
+// Mêmes box, points, pools et bans d'équilibrage (déjà confirmés) que la
+// manche terminée ; rôles inversés ; retour direct en phase "analyse".
+function etatRevanche(precedent) {
+  const bansBonus = (precedent.actions || []).filter(a => a.bonus);
+  const bannis = new Set(bansBonus.map(a => a.perso_id));
+
+  const suivant = {
+    ...etatInitialDraft(),
+    phase: "analyse",
+    discord_j1: precedent.discord_j1,
+    discord_j2: precedent.discord_j2,
+    roles_tires: true,
+    boss_precedent_id: precedent.boss_id,
+    box_j1: precedent.box_j1,
+    box_j2: precedent.box_j2,
+    points_j1: precedent.points_j1,
+    points_j2: precedent.points_j2,
+    pool_j1: precedent.pool_j1,
+    pool_j2: precedent.pool_j2,
+    pool_disponible: calculerPoolDisponible(precedent.pool_j1 || [], precedent.pool_j2 || [])
+      .filter(id => !bannis.has(id)),
+    bans_bonus_total: precedent.bans_bonus_total,
+    bans_bonus_faits: precedent.bans_bonus_faits,
+    bans_bonus_joueur: precedent.bans_bonus_joueur,
+    actions: bansBonus
+  };
+
+  echangerRoles(suivant);
+  return suivant;
+}
+
+// ---- Vue d'un joueur ----
+//
+// Pendant le choix des box, la box de l'adversaire n'est pas envoyée
+// (seul son statut "prêt" l'est) : elle ne se découvre qu'en analyse.
+function vuePourJoueur(draft, joueur) {
+  if (draft.phase !== "choix_box") return draft;
+  const autre = joueur === "j1" ? "j2" : "j1";
+  return { ...draft, [`box_${autre}`]: null };
 }
 
 // ---- Équipe (picks) d'un joueur, reconstruite depuis l'historique ----
@@ -167,6 +241,9 @@ module.exports = {
   calculerPoolJoueur,
   calculerPoolDisponible,
   getProchaineAction,
-  demarrerDraftApresBonus,
+  echangerRoles,
+  lancerTirage,
+  etatRevanche,
+  vuePourJoueur,
   getEquipeJoueur
 };

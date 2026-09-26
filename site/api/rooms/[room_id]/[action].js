@@ -6,7 +6,7 @@
 // ce dossier — les URLs appelées côté front ne changent donc pas.
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
-const { chargerRoomAvecRole } = require("../../_lib/room");
+const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
 const { getPersonnages, getPersonnageParId } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS } = require("../../_lib/temps");
@@ -16,10 +16,11 @@ const {
   calculerPoolJoueur,
   calculerPoolDisponible,
   calculerBansBonus,
-  demarrerDraftApresBonus,
+  lancerTirage,
+  etatRevanche,
+  vuePourJoueur,
   getProchaineAction,
-  getEquipeJoueur,
-  etatInitialDraft
+  getEquipeJoueur
 } = require("../../_lib/draft");
 
 const BOX_AUTORISEES = new Set([
@@ -33,6 +34,12 @@ function getSegments(req) {
     roomId: parts[parts.length - 2],
     action: parts[parts.length - 1]
   };
+}
+
+// Réponse standard des routes : la draft vue par ce joueur (box adverse
+// masquée pendant le choix des box).
+function repondreDraft(res, draft, joueur) {
+  return res.status(200).json({ draft: vuePourJoueur(draft, joueur) });
 }
 
 async function sauvegarderDraft(roomId, draft) {
@@ -66,11 +73,13 @@ async function handleBox(req, res, roomId, user) {
   draft[`pret_${joueur}`] = false;
 
   await sauvegarderDraft(roomId, draft);
-  return res.status(200).json({ draft });
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- ready ----
-async function lancerEquilibrage(draft) {
+// Fin du choix des box : points, pools et nombre de bans d'équilibrage.
+// Les places j1/j2 sont encore provisoires ici (le tirage vient après).
+async function calculerEquilibrage(draft) {
   // Les rôles j1/j2 (donc les comptes concernés) sont ceux de LA MANCHE en
   // cours, tirés au sort ou échangés à la revanche — pas forcément
   // room.player1_discord_id/player2_discord_id.
@@ -97,15 +106,10 @@ async function lancerEquilibrage(draft) {
   draft.pool_j2 = poolJ2;
   draft.pool_disponible = calculerPoolDisponible(poolJ1, poolJ2);
 
-  if (bansBonus > 0) {
-    draft.bans_bonus_total = bansBonus;
-    draft.bans_bonus_faits = 0;
-    draft.bans_bonus_choix = [];
-    draft.bans_bonus_joueur = ecart > 0 ? "j2" : "j1";
-    draft.phase = "bans_bonus";
-  } else {
-    demarrerDraftApresBonus(draft, tirerBossAleatoire);
-  }
+  draft.bans_bonus_total = bansBonus;
+  draft.bans_bonus_faits = 0;
+  draft.bans_bonus_choix = [];
+  draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
 }
 
 async function handleReady(req, res, roomId, user) {
@@ -119,22 +123,35 @@ async function handleReady(req, res, roomId, user) {
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
   const draft = room.draft;
 
-  if (draft.phase !== "choix_box") {
+  // Même ready-check pour 2 phases : validation de la box (choix_box), puis
+  // fin du temps d'analyse des box (analyse).
+  if (draft.phase !== "choix_box" && draft.phase !== "analyse") {
     return res.status(409).json({ error: "Impossible de changer son statut prêt à ce stade" });
   }
 
-  if (!draft[`box_${joueur}`]) {
+  if (draft.phase === "choix_box" && !draft[`box_${joueur}`]) {
     return res.status(400).json({ error: "Choisis d'abord ta box avant de te marquer prêt" });
   }
 
   draft[`pret_${joueur}`] = pret;
 
   if (draft.pret_j1 && draft.pret_j2) {
-    await lancerEquilibrage(draft);
+    draft.pret_j1 = false;
+    draft.pret_j2 = false;
+
+    if (draft.phase === "choix_box") {
+      await calculerEquilibrage(draft);
+      draft.phase = "analyse";
+    } else if ((draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0)) {
+      draft.phase = "bans_bonus";
+    } else {
+      // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
+      lancerTirage(draft, tirerBossAleatoire);
+    }
   }
 
   await sauvegarderDraft(roomId, draft);
-  return res.status(200).json({ draft });
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- action (ban/pick de la séquence fixe) ----
@@ -200,7 +217,7 @@ async function handleAction(req, res, roomId, user) {
   }
 
   await sauvegarderDraft(roomId, draft);
-  return res.status(200).json({ draft });
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- bonus_toggle (bans d'équilibrage : sélection/désélection avant confirmation) ----
@@ -244,7 +261,7 @@ async function handleBonusToggle(req, res, roomId, user) {
   }
 
   await sauvegarderDraft(roomId, draft);
-  return res.status(200).json({ draft });
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- bonus_confirmer (verrouille les bans d'équilibrage choisis, tire le boss) ----
@@ -279,10 +296,10 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   draft.bans_bonus_faits = choix.length;
   draft.bans_bonus_choix = [];
 
-  demarrerDraftApresBonus(draft, tirerBossAleatoire);
+  lancerTirage(draft, tirerBossAleatoire);
 
   await sauvegarderDraft(roomId, draft);
-  return res.status(200).json({ draft });
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- temps ----
@@ -340,7 +357,7 @@ async function handleTemps(req, res, roomId, user) {
   }
 
   await sauvegarderDraft(roomId, draft);
-  return res.status(200).json({ draft });
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- rejouer (ready-check : il faut les 2 joueurs "ok" pour relancer) ----
@@ -362,18 +379,17 @@ async function handleRejouer(req, res, roomId, user) {
   draft[`rejouer_${joueur}`] = veutRejouer;
 
   if (draft.rejouer_j1 && draft.rejouer_j2) {
-    const nouveau = etatInitialDraft();
-    // Échange automatique des rôles à chaque revanche, pour que le 1er
-    // pick ne reste pas indéfiniment du même côté.
-    nouveau.discord_j1 = draft.discord_j2;
-    nouveau.discord_j2 = draft.discord_j1;
+    // Mêmes box et bans d'équilibrage, rôles inversés (le 1er pick ne reste
+    // pas du même côté), retour direct à l'analyse ; boss différent du
+    // précédent au prochain tirage.
+    const nouveau = etatRevanche(draft);
 
     await sauvegarderDraft(roomId, nouveau);
-    return res.status(200).json({ draft: nouveau });
+    return repondreDraft(res, nouveau, getAutreJoueur(joueur));
   }
 
   await sauvegarderDraft(roomId, draft);
-  return res.status(200).json({ draft });
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- draft (lecture seule) ----
@@ -383,13 +399,13 @@ async function handleDraftGet(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { room } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
 
   return res.status(200).json({
     room_id: room.room_id,
     player1_discord_id: room.player1_discord_id,
     player2_discord_id: room.player2_discord_id,
-    draft: room.draft
+    draft: vuePourJoueur(room.draft, joueur)
   });
 }
 

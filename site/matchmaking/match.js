@@ -460,63 +460,95 @@ function rendreEntetesJoueurs() {
     }
 
     const pret = draft && draft[`pret_${role}`];
-    const afficherPastille = draft && draft.phase === "choix_box";
+    const afficherPastille = draft && (draft.phase === "choix_box" || draft.phase === "analyse");
+    // Avant le tirage, j1/j2 ne sont que des places provisoires : pas de tag.
+    const afficherRole = draft && draft.roles_tires;
 
     container.innerHTML = `
       <img src="${joueur.avatar || ""}" alt="${joueur.nom}">
       <span class="nom-joueur">${joueur.nom}</span>
+      ${afficherRole ? `<span class="tag-role">${role.toUpperCase()}</span>` : ""}
       ${afficherPastille ? `<span class="pastille ${pret ? "pret" : ""}"></span>` : ""}
     `;
   });
 }
 
-// ---- Phase 1 : choix de box ----
+// ---- Phases 1 et 2 : choix de box, puis analyse ----
 // Colonnes fixes j1 (gauche) / j2 (droite), alignées sur les entêtes.
-// Chacun ne peut modifier que sa propre colonne ; celle de l'adversaire est
-// en lecture seule.
+// choix_box : chacun ne voit et ne modifie que sa box (celle de
+// l'adversaire n'est même pas envoyée par le serveur), "Je suis prêt" la
+// valide. analyse : les 2 box sont verrouillées et visibles, chacun
+// confirme quand il a fini de regarder celle de l'adversaire.
 
 function rendreChoixBox() {
+  const enAnalyse = draft.phase === "analyse";
+
+  document.getElementById("message-choix-box").textContent = enAnalyse
+    ? (draft.roles_tires
+      ? "Revanche : mêmes box et mêmes bans d'équilibrage, rôles J1/J2 inversés. Analyse la box adverse puis clique sur \"Prêt\" pour tirer le boss."
+      : "Analyse la box adverse puis clique sur \"Prêt\". Suite : bans d'équilibrage (si écart), puis tirage J1/J2 et du boss.")
+    : "Choisis ta box et valide-la. La box adverse sera visible une fois les 2 box validées.";
+
   ["j1", "j2"].forEach(role => {
     const estMoi = role === monRole;
     const joueurObjet = role === "j1" ? joueur1 : joueur2;
     const nom = joueurObjet ? joueurObjet.nom : (role === "j1" ? "Joueur 1" : "Joueur 2");
+    const points = enAnalyse && draft[`points_${role}`] != null ? ` · ${draft[`points_${role}`]} pts` : "";
+    const peutChoisir = estMoi && !enAnalyse;
 
     document.getElementById(`titre-box-${role}`).innerHTML =
-      `${nom}${estMoi ? '<span class="tag-toi">(toi)</span>' : ""}`;
+      `${nom}${estMoi ? '<span class="tag-toi">(toi)</span>' : ""}${points}`;
 
     const conteneur = document.getElementById(`box-select-${role}`);
     conteneur.innerHTML = "";
-    conteneur.classList.toggle("desactive", !estMoi);
+    conteneur.classList.toggle("desactive", !peutChoisir);
 
     Object.entries(BOX_LABELS).forEach(([valeur, label]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
       btn.textContent = label;
-      btn.disabled = !estMoi;
-      if (estMoi) {
+      btn.disabled = !peutChoisir;
+      if (peutChoisir) {
         btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));
       }
       conteneur.appendChild(btn);
     });
 
-    document.getElementById(`statut-pret-${role}`).textContent = draft[`pret_${role}`]
-      ? (estMoi ? "Tu es prêt." : `${nom} est prêt.`)
-      : (estMoi ? "Choisis ta box puis clique sur \"Je suis prêt\"." : `${nom} n'est pas encore prêt.`);
+    const pret = draft[`pret_${role}`];
+    let statut;
+    if (enAnalyse) {
+      statut = pret
+        ? (estMoi ? "Tu as fini l'analyse." : `${nom} a fini l'analyse.`)
+        : (estMoi ? "Analyse la box adverse puis clique sur \"Prêt\"." : `${nom} analyse encore…`);
+    } else {
+      statut = pret
+        ? (estMoi ? "Box validée." : `${nom} a validé sa box.`)
+        : (estMoi ? "Choisis ta box puis clique sur \"Valider ma box\"." : `${nom} choisit sa box…`);
+    }
+    document.getElementById(`statut-pret-${role}`).textContent = statut;
 
     const btnPret = document.getElementById(`btn-pret-${role}`);
     if (estMoi) {
       btnPret.classList.remove("cache");
-      const dejaPret = draft[`pret_${role}`];
-      btnPret.textContent = dejaPret ? "Annuler (je ne suis plus prêt)" : "Je suis prêt";
-      btnPret.classList.toggle("active", dejaPret);
+      if (enAnalyse) {
+        btnPret.textContent = pret ? "Annuler (pas encore prêt)" : "Prêt";
+      } else {
+        btnPret.textContent = pret ? "Annuler (modifier ma box)" : "Valider ma box";
+      }
+      btnPret.classList.toggle("active", pret);
       btnPret.disabled = !draft[`box_${role}`];
-      btnPret.onclick = () => postReady(!dejaPret).catch(err => alert(err.message));
+      btnPret.onclick = () => postReady(!pret).catch(err => alert(err.message));
     } else {
       btnPret.classList.add("cache");
     }
 
-    rendreApercuBox(`apercu-box-${role}`, getJoueurDataParRole(role), draft[`box_${role}`]);
+    if (!estMoi && !enAnalyse) {
+      document.getElementById(`apercu-box-${role}`).innerHTML =
+        `<p class="apercu-vide">Box cachée jusqu'à l'analyse.</p>`;
+    } else {
+      rendreApercuBox(`apercu-box-${role}`, getJoueurDataParRole(role), draft[`box_${role}`]);
+    }
   });
 }
 
@@ -534,8 +566,8 @@ function rendreBansBonus() {
   const message = document.getElementById("message-equilibrage");
   if (cEstMonTour) {
     message.textContent = restant > 0
-      ? `Écart de ${ecart} pts entre les 2 box : choisis encore ${restant} personnage(s) à bannir avant le tirage du boss (tu peux revenir sur ton choix avant de confirmer).`
-      : `Écart de ${ecart} pts entre les 2 box : tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour tirer le boss.`;
+      ? `Écart de ${ecart} pts entre les 2 box : choisis encore ${restant} personnage(s) à bannir avant le tirage J1/J2 et du boss (tu peux revenir sur ton choix avant de confirmer).`
+      : `Écart de ${ecart} pts entre les 2 box : tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
   } else {
     message.textContent = `Écart de ${ecart} pts entre les 2 box : ${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus. En attente…`;
   }
@@ -1045,16 +1077,15 @@ function rendreTermine() {
     <p>${ligneVainqueur}</p>
   `;
 
-  // Revanche : même principe de ready-check que le lancement de la draft —
-  // il faut que les 2 joueurs confirment avant que la manche ne redémarre
-  // (avec j1/j2 échangés automatiquement côté serveur).
+  // Revanche : ready-check des 2 joueurs, puis retour direct à l'analyse
+  // avec les mêmes box et bans d'équilibrage, j1/j2 échangés côté serveur.
   const dejaOk = draft[`rejouer_${monRole}`];
   const autreRole = getAutreRole(monRole);
   const autreOk = draft[`rejouer_${autreRole}`];
   const nomAutre = autreRole === "j1" ? joueur1.nom : joueur2.nom;
 
   const btn = document.getElementById("btn-rejouer");
-  btn.textContent = dejaOk ? "Annuler la demande de revanche" : "Rejouer";
+  btn.textContent = dejaOk ? "Annuler la demande de revanche" : "Rejouer (mêmes box, rôles inversés)";
   btn.classList.toggle("active", dejaOk);
   btn.onclick = () => postRejouer(!dejaOk).catch(err => alert(err.message));
 
@@ -1082,6 +1113,7 @@ function rendrePhase() {
 
   const idsParPhase = {
     choix_box: "phase-choix-box",
+    analyse: "phase-choix-box",
     bans_bonus: "phase-bans-bonus",
     draft: "phase-draft",
     temps: "phase-temps",
@@ -1102,7 +1134,7 @@ function rendrePhase() {
   document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);
   document.getElementById("tour-actuel").classList.toggle("cache", draft.phase !== "draft");
 
-  if (draft.phase === "choix_box") rendreChoixBox();
+  if (draft.phase === "choix_box" || draft.phase === "analyse") rendreChoixBox();
   else if (draft.phase === "bans_bonus") rendreBansBonus();
   else if (draft.phase === "draft") rendreDraft(phasePrecedente);
   else if (draft.phase === "temps") rendreTemps();

@@ -26,10 +26,12 @@
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
 
-    <!-- Phase 1 : choix de box + prêt. Colonnes fixes j1 (gauche) / j2
+    <!-- Phases 1 et 2 : choix de box (box adverse cachée) puis analyse (les
+         2 box visibles, box verrouillées). Colonnes fixes j1 (gauche) / j2
          (droite), alignées sur les entêtes joueurs ci-dessus : chacun ne
          peut modifier que sa propre colonne. -->
     <section id="phase-choix-box" class="phase cache">
+      <div id="message-choix-box" class="bandeau-info"></div>
       <div class="colonnes-box">
         <div class="colonne-box" id="colonne-box-j1">
           <h3 id="titre-box-j1">Box</h3>

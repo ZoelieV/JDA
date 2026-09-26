@@ -1,7 +1,10 @@
+const { etatInitialDraft } = require("./draft");
+
 // Détermine si l'utilisateur connecté est j1, j2, ou ni l'un ni l'autre
 // pour une room donnée. j1/j2 sont les rôles DE LA MANCHE EN COURS
-// (draft.discord_j1 / draft.discord_j2, tirés au sort puis échangés à
-// chaque revanche — cf. assurerRolesDraft et handleRejouer), pas
+// (draft.discord_j1 / draft.discord_j2 : places provisoires, puis tirées
+// au sort et échangées à chaque revanche — cf. lancerTirage et
+// etatRevanche dans _lib/draft.js), pas
 // forcément "qui a créé la room" (room.player1_discord_id). Le repli sur
 // les colonnes de room sert uniquement de filet avant que les rôles de
 // la manche n'aient été assignés (ex : tout premier accès).
@@ -25,19 +28,19 @@ function getDiscordIdJoueur(room, joueur) {
   return draft.discord_j2 || room.player2_discord_id;
 }
 
-// Tire au sort, une seule fois par manche, qui est j1 (1er pick) et qui
-// est j2. Idempotent : ne fait rien si déjà assigné (revanche y compris,
-// où handleRejouer positionne directement discord_j1/discord_j2 en les
-// échangeant, sans repasser par un tirage aléatoire).
+// Place provisoirement les 2 joueurs (créateur de la room en j1) au 1er
+// accès à une room complète. Le vrai tirage j1/j2 n'a lieu qu'après les
+// bans d'équilibrage (lancerTirage dans _lib/draft.js), qui échange ou non
+// ces places. Idempotent : ne fait rien si déjà assigné.
 async function assurerRolesDraft(supabase, room) {
   if (room.draft && room.draft.discord_j1 && room.draft.discord_j2) {
     return room;
   }
 
-  const inverser = Math.random() < 0.5;
-  const draft = { ...(room.draft || {}) };
-  draft.discord_j1 = inverser ? room.player2_discord_id : room.player1_discord_id;
-  draft.discord_j2 = inverser ? room.player1_discord_id : room.player2_discord_id;
+  const draft = { ...etatInitialDraft(), ...(room.draft || {}) };
+  draft.discord_j1 = room.player1_discord_id;
+  draft.discord_j2 = room.player2_discord_id;
+  draft.roles_tires = false;
 
   const { error } = await supabase.from("rooms").update({ draft }).eq("room_id", room.room_id);
 
