@@ -353,6 +353,8 @@ h1, h2 {
 .character-visuel img.perso-lie-icone {
   width: 51px;
   height: 51px;
+  /* Décalée vers la droite (le bord de la carte rogne le surplus). */
+  right: -6px;
   object-fit: cover;
 }
 
@@ -421,5 +423,6 @@ h1, h2 {
   .character-visuel img.perso-lie-icone {
     width: 33px;
     height: 33px;
+    right: -4px;
   }
 }
