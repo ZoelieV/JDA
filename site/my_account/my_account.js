@@ -324,14 +324,6 @@ function getTypeValeur(item, vueActive) {
   return vueActive === "characters" ? item.arme : item.type;
 }
 
-function getIconeItem(item, vueActive) {
-  if (vueActive === "characters") {
-    return iconesElements[item.element] || "";
-  }
-
-  return iconesTypesArmes[item.type] || "";
-}
-
 // Niveau d'un perso possédé : null (non renseigné), 95 ou 100.
 // Stocké dans profil.characters.niveaux[idPerso], clé absente si null.
 const NIVEAUX_PERSONNAGE = [95, 100];
@@ -349,14 +341,61 @@ ${options}
   `;
 }
 
-function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null) {
+// ---- Coin bas droite des cartes (comme la liste des comptes) ----
+
+// Couleur du détourage du logo d'arme signature, selon son raffinement
+// (index 0 = R1 ... 4 = R5). Mêmes couleurs que la draft et la liste des comptes.
+const COULEURS_REFINEMENT = ["#b0b0b0", "#6fcf6f", "#5b9bd5", "#a366d9", "#e0a83e"];
+
+const iconesTypesArmesSignature = {
+  sword: "../DB/images/others/sword_icon.webp",
+  claymore: "../DB/images/others/claymore_icon.webp",
+  polearm: "../DB/images/others/polearm_icon.webp",
+  bow: "../DB/images/others/bow_icon.webp",
+  catalyst: "../DB/images/others/catalyst_icon.webp"
+};
+
+// Arme signature : image nommée "[id_personnage]_w.webp"
+function trouverArmeSignature(personnageId, armes) {
+  return armes.find(
+    arme => typeof arme.image === "string" && arme.image.endsWith(`${personnageId}_w.webp`)
+  );
+}
+
+// Perso : logo de son arme signature possédée, détouré de la couleur du
+// meilleur raffinement (copies "idArme#2"... comprises).
+// Arme : icône du perso dont c'est l'arme signature.
+function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
+  if (vueActive === "weapons") {
+    const personnageLie = personnages.find(perso => trouverArmeSignature(perso.id, armes)?.id === item.id);
+    return personnageLie
+      ? `<img class="perso-lie-icone" src="../DB/images/characters/side_char/${personnageLie.id}_side.webp" alt="${personnageLie.nom}" title="${personnageLie.nom}">`
+      : "";
+  }
+
+  const arme = trouverArmeSignature(item.id, armes);
+  const iconeArme = iconesTypesArmesSignature[item.arme];
+  if (!arme || !iconeArme) return "";
+
+  const refinement = Math.max(-1, ...getInstancesArme(arme.id, profil.weapons)
+    .map(instanceId => profil.weapons.full[instanceId] ?? -1));
+  if (refinement < 0) return "";
+
+  const couleur = COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0];
+  return `<img class="character-raffinement" src="${iconeArme}" alt="R${refinement + 1}" title="Arme signature R${refinement + 1}" style="--couleur-ref: ${couleur}">`;
+}
+
+// Carte : un rectangle qui englobe le visuel (constellation en haut à
+// gauche, points en haut à droite, niveau en bas à gauche, arme en bas à
+// droite), le réglage de constellation et le niveau. Nom au survol.
+function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null, coinBasDroite = "") {
   const config = getConfigCollection(vueActive);
   const idInstance = instanceId || item.id;
   const conteneur = document.createElement("div");
   conteneur.className = "carte-personnage";
+  conteneur.title = estDuplicata ? `${item.nom} (copie)` : item.nom;
 
   const fond = getFondRarete(item.rarete);
-  const icone = getIconeItem(item, vueActive);
   const affichageNiveau = valeur < 0 ? "-" : config.labels[valeur];
 
   const classeSelectionnable = boxActive === "full" ? "" : "selectionnable";
@@ -365,10 +404,6 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
   const opacite = boxActive === "full"
     ? (valeur < 0 ? "0.4" : "1")
     : (selectionne ? "1" : "0.45");
-
-  const infoNiveau = boxActive === "full"
-    ? ""
-    : `<div class="info-constellation">${affichageNiveau}</div>`;
 
   const boutonDupliquer = peutDupliquer
     ? `<button type="button" class="constellation-btn dupliquer-btn" data-base-id="${item.id}" title="Dupliquer cette arme">⧉</button>`
@@ -391,14 +426,22 @@ ${boutonDupliquer}
 
   const badgeCopie = estDuplicata ? `<span class="badge-copie">Copie</span>` : "";
 
+  const possede = valeur >= 0;
+  const badgeConstellation = possede
+    ? `<span class="badge-carte badge-constellation">${affichageNiveau}</span>`
+    : "";
+  const badgeNiveau = possede && vueActive === "characters" && niveau
+    ? `<span class="badge-carte badge-niveau">${niveau}</span>`
+    : "";
+
   conteneur.innerHTML = `
 <div class="visuel-personnage ${classeSelectionnable} ${classeSelectionnee}" data-id="${idInstance}" style="background-image: url('${fond}'); opacity: ${opacite};">
 <img class="image-personnage" src="../DB/${item.image}" alt="${item.nom}">
-      ${icone ? `<img class="icone-element" src="${icone}" alt="">` : ""}
+      ${badgeConstellation}
+      ${badgeNiveau}
+      ${possede ? coinBasDroite : ""}
 </div>
-
-    <div class="nom-personnage">${item.nom} ${badgeCopie}</div>
-    ${infoNiveau}
+    ${badgeCopie}
     ${zoneAction}
     ${zoneNiveau}
   `;
@@ -456,6 +499,7 @@ function afficherCollection(personnages, armes, profil) {
     if (vueActive === "weapons") {
       const instances = getInstancesArme(item.id, collectionProfil);
       const instancesAffichees = instances.length > 0 ? instances : [item.id];
+      const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
 
       instancesAffichees.forEach(instanceId => {
         const valeur = collectionProfil.full[instanceId] ?? -1;
@@ -465,7 +509,7 @@ function afficherCollection(personnages, armes, profil) {
         const estDuplicata = estInstanceDupliquee(instanceId);
         const peutDupliquer = boxActive === "full" && valeur >= 0;
 
-        const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata);
+        const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite);
         liste.appendChild(carte);
       });
       return;
@@ -477,7 +521,8 @@ function afficherCollection(personnages, armes, profil) {
       : !!collectionProfil.selections[boxActive][item.id];
 
     const niveau = collectionProfil.niveaux?.[item.id] ?? null;
-    const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau);
+    const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
+    const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
     liste.appendChild(carte);
   });
 }
