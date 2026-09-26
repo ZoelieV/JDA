@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=2">
+<link rel="stylesheet" href="/my_account/my_account.css?v=3">
 <style>
   /* Zone affichée si l'utilisateur n'est PAS connecté */
   #login-gate {
@@ -83,30 +83,40 @@
 
       <h2>Filtres</h2>
 
-      <div class="bloc-filtres">
-        <strong>Éléments :</strong>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="pyro"><img src="../DB/images/others/pyro.webp" alt="Pyro" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="hydro"><img src="../DB/images/others/hydro.webp" alt="Hydro" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="electro"><img src="../DB/images/others/electro.webp" alt="Electro" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="cryo"><img src="../DB/images/others/cryo.webp" alt="Cryo" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="anemo"><img src="../DB/images/others/anemo.webp" alt="Anemo" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="geo"><img src="../DB/images/others/geo.webp" alt="Geo" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="dendro"><img src="../DB/images/others/dendro.webp" alt="Dendro" width="30"></label>
-      </div>
-
-      <div class="bloc-filtres">
-        <strong>Armes :</strong>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="sword"><img src="../DB/images/others/sword.webp" alt="Sword" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="claymore"><img src="../DB/images/others/claymore.webp" alt="Claymore" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="polearm"><img src="../DB/images/others/polearm.webp" alt="Polearm" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="bow"><img src="../DB/images/others/bow.webp" alt="Bow" width="30"></label>
-        <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="catalyst"><img src="../DB/images/others/catalyst.webp" alt="Catalyst" width="30"></label>
-      </div>
-
-      <div class="bloc-filtres">
-        <strong>Rareté :</strong>
-        <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="4"><span>4★</span></label>
-        <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="5"><span>5★</span></label>
+      <!-- Recherche, tri et filtres sur une seule ligne (mêmes styles que la
+           draft et la liste des comptes). -->
+      <div class="barre-filtres">
+        <input type="text" id="recherche" class="recherche-personnage" placeholder="Rechercher…">
+        <div class="tris">
+          <span class="tris-label">Trier :</span>
+          <button type="button" class="tri-btn" data-tri="points">Points</button>
+          <button type="button" class="tri-btn" data-tri="constellation">Constel.</button>
+          <button type="button" class="tri-btn" data-tri="rarete">Rareté</button>
+          <button type="button" class="tri-btn" data-tri="element">Élément</button>
+        </div>
+        <div class="groupe-filtres">
+          <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="pyro"><img src="../DB/images/others/pyro.webp" alt="Pyro"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="hydro"><img src="../DB/images/others/hydro.webp" alt="Hydro"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="electro"><img src="../DB/images/others/electro.webp" alt="Electro"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="cryo"><img src="../DB/images/others/cryo.webp" alt="Cryo"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="anemo"><img src="../DB/images/others/anemo.webp" alt="Anemo"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="geo"><img src="../DB/images/others/geo.webp" alt="Geo"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="dendro"><img src="../DB/images/others/dendro.webp" alt="Dendro"></label>
+        </div>
+        <div class="groupe-filtres">
+          <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="sword"><img src="../DB/images/others/sword.webp" alt="Sword"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="claymore"><img src="../DB/images/others/claymore.webp" alt="Claymore"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="polearm"><img src="../DB/images/others/polearm.webp" alt="Polearm"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="bow"><img src="../DB/images/others/bow.webp" alt="Bow"></label>
+          <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="catalyst"><img src="../DB/images/others/catalyst.webp" alt="Catalyst"></label>
+        </div>
+        <div class="groupe-filtres">
+          <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="5"><span>5★</span></label>
+          <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="4"><span>4★</span></label>
+          <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="3"><span>3★</span></label>
+        </div>
+        <label class="filtre-texte" title="N'afficher que ce que je possède"><input type="checkbox" id="filtre-possedes"><span>Possédés</span></label>
+        <button type="button" id="btn-clear-filtres" class="btn-clear-filtres">✕ Filtres</button>
       </div>
 
       <div class="box-selector">
@@ -141,6 +151,6 @@
 
   </div>
 
-  <script src="/my_account/my_account.js?v=2"></script>
+  <script src="/my_account/my_account.js?v=3"></script>
 </body>
 </html>

@@ -455,6 +455,63 @@ ${boutonDupliquer}
   return conteneur;
 }
 
+// ---- Recherche / tri (choix unique, comme en draft) ----
+
+let triActif = null; // "points" | "constellation" | "rarete" | "element" | null (ordre par défaut)
+
+const LIBELLES_TRI = {
+  characters: { constellation: "Constel.", element: "Élément" },
+  weapons: { constellation: "Raffin.", element: "Type" }
+};
+
+// Valeur de possession d'un item : constellation (persos) ou meilleur
+// raffinement parmi les copies (armes) ; -1 si non possédé.
+function getValeurItem(item, vueActive, collectionProfil) {
+  if (vueActive !== "weapons") {
+    return collectionProfil.full[item.id] ?? -1;
+  }
+
+  return Math.max(-1, ...getInstancesArme(item.id, collectionProfil)
+    .map(instanceId => collectionProfil.full[instanceId] ?? -1));
+}
+
+// Décroissant, sauf élément/type (ordre des icônes de filtre). Tri stable :
+// l'ordre de base départage.
+function valeurTri(item, vueActive, collectionProfil) {
+  const valeur = getValeurItem(item, vueActive, collectionProfil);
+
+  switch (triActif) {
+    case "points":
+      return valeur < 0 ? -1 : Number(getPPC(item, valeur, vueActive) || 0);
+    case "constellation":
+      return valeur;
+    case "rarete":
+      return Number(item.rarete) || 0;
+    case "element":
+      return vueActive === "characters"
+        ? -Object.keys(iconesElements).indexOf(item.element)
+        : -Object.keys(iconesTypesArmes).indexOf(item.type);
+    default:
+      return 0;
+  }
+}
+
+function trierItems(items, vueActive, collectionProfil) {
+  if (!triActif) return items;
+  return items
+    .map((item, index) => ({ item, index, v: valeurTri(item, vueActive, collectionProfil) }))
+    .sort((a, b) => (b.v - a.v) || (a.index - b.index))
+    .map(e => e.item);
+}
+
+function mettreAJourBoutonsTri() {
+  const libelles = LIBELLES_TRI[getVueActive()];
+  document.querySelectorAll(".tri-btn").forEach(btn => {
+    if (libelles[btn.dataset.tri]) btn.textContent = libelles[btn.dataset.tri];
+    btn.classList.toggle("active", btn.dataset.tri === triActif);
+  });
+}
+
 function afficherCollection(personnages, armes, profil) {
   const liste = document.getElementById("liste-collection");
   liste.innerHTML = "";
@@ -473,7 +530,12 @@ function afficherCollection(personnages, armes, profil) {
   const rareteSelectionnees = Array.from(document.querySelectorAll(".filtre-rarete:checked"))
     .map(input => input.value);
 
-  const itemsFiltres = items.filter(item => {
+  const recherche = document.getElementById("recherche").value.trim().toLowerCase();
+  const possedesSeulement = document.getElementById("filtre-possedes").checked;
+
+  mettreAJourBoutonsTri();
+
+  const itemsFiltres = trierItems(items.filter(item => {
     const typeValeur = getTypeValeur(item, vueActive);
     const rareteValeur = item.rarete != null ? String(item.rarete) : "";
 
@@ -488,12 +550,16 @@ function afficherCollection(personnages, armes, profil) {
       rareteValeur === "" ||
       rareteSelectionnees.includes(rareteValeur);
 
-    if (boxActive !== "full" && !itemPossede(item, vueActive, collectionProfil)) {
+    if ((boxActive !== "full" || possedesSeulement) && !itemPossede(item, vueActive, collectionProfil)) {
+      return false;
+    }
+
+    if (recherche && !String(item.nom || "").toLowerCase().includes(recherche)) {
       return false;
     }
 
     return filtreElementOK && filtreArmeOK && filtreRareteOK;
-  });
+  }), vueActive, collectionProfil);
 
   itemsFiltres.forEach(item => {
     if (vueActive === "weapons") {
@@ -581,11 +647,37 @@ async function initialiserPage() {
     afficherCollection(personnages, armes, profil);
     mettreAJourTotalBox(personnages, armes, profil);
 
-    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete").forEach(input => {
+    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, #filtre-possedes").forEach(input => {
       input.addEventListener("change", () => {
         afficherCollection(personnages, armes, profil);
         mettreAJourTotalBox(personnages, armes, profil);
       });
+    });
+
+    const inputRecherche = document.getElementById("recherche");
+    inputRecherche.addEventListener("input", () => {
+      afficherCollection(personnages, armes, profil);
+    });
+    // Entrée dans la recherche ne doit pas soumettre (= enregistrer) le formulaire.
+    inputRecherche.addEventListener("keydown", event => {
+      if (event.key === "Enter") event.preventDefault();
+    });
+
+    document.querySelectorAll(".tri-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        triActif = triActif === btn.dataset.tri ? null : btn.dataset.tri;
+        afficherCollection(personnages, armes, profil);
+      });
+    });
+
+    document.getElementById("btn-clear-filtres").addEventListener("click", () => {
+      document.querySelectorAll(".barre-filtres input[type=checkbox]").forEach(input => {
+        input.checked = false;
+      });
+      inputRecherche.value = "";
+      triActif = null;
+      afficherCollection(personnages, armes, profil);
+      mettreAJourTotalBox(personnages, armes, profil);
     });
 
     document.querySelectorAll(".box-btn").forEach(btn => {

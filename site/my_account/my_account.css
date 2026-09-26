@@ -28,40 +28,99 @@ h2 {
   margin-bottom: 14px;
 }
  
-.bloc-filtres {
+/* ---- Barre recherche / tri / filtres : tout à la suite sur une ligne
+   (revient à la ligne si la place manque). Mêmes styles que la draft. ---- */
+
+.barre-filtres {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 14px;
 }
- 
+
+.tris,
+.groupe-filtres {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tris .tris-label {
+  font-size: 15px;
+  opacity: 0.8;
+}
+
+.recherche-personnage {
+  box-sizing: border-box;
+  height: 39px;
+  width: 190px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  padding: 6px 12px;
+  color: white;
+  font-size: 17px;
+}
+
 .filtre-icone input,
 .filtre-texte input {
   display: none;
 }
- 
+
 .filtre-icone img {
+  box-sizing: border-box;
+  display: block;
+  width: 39px;
+  height: 39px;
+  padding: 5px;
+  object-fit: contain;
   border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 4px;
+  border-radius: 9px;
+  background-color: rgba(255, 255, 255, 0.06);
   cursor: pointer;
 }
- 
-.filtre-icone input:checked + img {
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.12);
-}
- 
+
+.tri-btn,
 .filtre-texte span {
-  display: inline-block;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: 39px;
+  padding: 6px 12px;
   border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 4px 8px;
+  border-radius: 9px;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-size: 18px;
   cursor: pointer;
+  white-space: nowrap;
 }
- 
-.filtre-texte input:checked + span {
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.12);
+
+.filtre-icone input:checked + img,
+.filtre-texte input:checked + span,
+.tri-btn.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
 }
- 
+
+.btn-clear-filtres {
+  height: 39px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background-color: transparent;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.btn-clear-filtres:hover {
+  opacity: 1;
+}
+
 .box-selector {
   display: flex;
   flex-wrap: wrap;
@@ -109,10 +168,11 @@ h2 {
   align-items: center;
   gap: 6px;
   text-align: center;
-  background-color: rgba(0, 0, 0, 0.45);
+  /* Même gris que le fond de page (body) : invisible tant que le fond
+     n'est pas une image. */
+  background-color: #1e1e1e;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  backdrop-filter: blur(2px);
 }
 
 /* Visuel carré, image calée dans sa boîte (comme en draft). */
@@ -338,16 +398,4 @@ h2 {
   font-size: 11px;
   padding: 1px 4px;
   border-radius: 6px;
-}
-
-/* Filtres éléments / armes : logos descendus de 10px sur ordi. */
-@media (min-width: 701px) {
-  .filtre-icone img {
-    position: relative;
-    top: 10px;
-  }
-
-  .bloc-filtres:has(.filtre-icone) {
-    margin-bottom: 24px;
-  }
 }
