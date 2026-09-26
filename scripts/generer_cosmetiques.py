@@ -4,7 +4,7 @@ Un site statique ne peut pas lister un dossier depuis le navigateur : la page
 Mon compte lit donc site/DB/images/cosmetiques.json, produit par ce script.
 
 Pour les fonds d'écran (PNG de plusieurs Mo), le script crée aussi :
-  - une version web légère (WebP, 1920 px de large) : DB/images/bg_web/...
+  - une version web (WebP, résolution d'origine)     : DB/images/bg_web/...
   - une miniature pour le sélecteur (WebP, 400 px)  : DB/images/bg_miniatures/...
 Les fichiers déjà générés et à jour sont ignorés.
 
@@ -29,7 +29,7 @@ DOSSIER_FONDS_WEB = RACINE_IMAGES / "bg_web"
 DOSSIER_FONDS_MINIATURES = RACINE_IMAGES / "bg_miniatures"
 
 EXTENSIONS_IMAGES = {".png", ".jpg", ".jpeg", ".webp"}
-LARGEUR_WEB = 1920
+LARGEUR_WEB = None  # None = résolution d'origine (4K)
 LARGEUR_MINIATURE = 400
 
 
@@ -56,7 +56,7 @@ def generer_version(source, destination, largeur, qualite):
     destination.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(source) as image:
         image = image.convert("RGB")
-        if image.width > largeur:
+        if largeur and image.width > largeur:
             hauteur = round(image.height * largeur / image.width)
             image = image.resize((largeur, hauteur), Image.LANCZOS)
         image.save(destination, "WEBP", quality=qualite, method=6)

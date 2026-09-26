@@ -8,13 +8,24 @@
    gris par défaut. */
 body {
   background-color: #1e1e1e;
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  background-attachment: fixed;
   color: white;
   font-family: Arial, sans-serif;
   margin: 20px;
+}
+
+/* Fond d'écran sur un calque fixe de la taille de l'écran : reste figé et
+   centré au défilement, sur ordi comme sur téléphone (background-attachment:
+   fixed est ignoré par les navigateurs mobiles). L'image est posée par
+   appliquerFond() via --fond-ecran. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--fond-ecran, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 a {
@@ -346,9 +357,8 @@ h2 {
   align-items: center;
   gap: 6px;
   text-align: center;
-  /* Même gris que le fond de page (body) : invisible tant que le fond
-     n'est pas une image. */
-  background-color: #1e1e1e;
+  /* Gris du fond de page, fortement transparent. */
+  background-color: rgba(30, 30, 30, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
 }
@@ -488,9 +498,21 @@ h2 {
   margin-top: 20px;
 }
 
+/* Personnages / Armes à gauche, Enregistrer à droite. */
 .view-selector {
+  flex: 1;
   display: flex;
   gap: 8px;
+}
+
+.view-selector .btn-enregistrer {
+  margin-left: auto;
+}
+
+/* Grille descendue pour laisser de l'air sous Personnages / Armes /
+   Enregistrer. */
+#liste-collection {
+  margin-top: 15px;
 }
 
 .view-btn {
@@ -517,11 +539,25 @@ h2 {
   cursor: pointer;
 }
 
+/* Même taille que les boutons Personnages / Armes. */
 .btn-enregistrer {
-  margin-top: 18px;
-  padding: 8px 14px;
+  padding: 6px 10px;
+  font-size: 14px;
+  color: white;
+  border: 2px solid rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
   border-radius: 8px;
   cursor: pointer;
+}
+
+.btn-enregistrer:hover {
+  background-color: rgba(245, 197, 66, 0.25);
+}
+
+/* Enregistrer du bas : aligné à droite, comme celui du haut. */
+#profil-form > .btn-enregistrer {
+  display: block;
+  margin: 18px 0 0 auto;
 }
 
 .visuel-personnage {
@@ -772,10 +808,6 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-}
-
-.pied-parametres .btn-enregistrer {
-  margin-top: 0;
 }
 
 .btn-secondaire {

@@ -932,7 +932,8 @@ function getFond(idFond) {
 
 function appliquerFond(idFond) {
   const fond = getFond(idFond);
-  document.body.style.backgroundImage = fond ? `url("${urlImage(fond.image)}")` : "";
+  // Utilisé par le calque fixe body::before (cf. CSS).
+  document.body.style.setProperty("--fond-ecran", fond ? `url("${urlImage(fond.image)}")` : "none");
 }
 
 async function initialiserParametres(profil) {
