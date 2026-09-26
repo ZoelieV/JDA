@@ -24,26 +24,39 @@ const iconesTypesArmesSignature = {
   catalyst: "../DB/images/others/catalyst_icon.webp"
 };
 
+// Couleur du détourage du logo d'arme signature, selon son raffinement
+// (index 0 = R1 ... 4 = R5). Mêmes couleurs que dans la draft (match.js).
+const COULEURS_REFINEMENT = ["#b0b0b0", "#6fcf6f", "#5b9bd5", "#a366d9", "#e0a83e"];
+
 const configCollections = {
   characters: {
     pointsField: "PPC",
     labels: ["C0", "C1", "C2", "C3", "C4", "C5", "C6"],
-    nomVue: "Personnages"
+    champType: "element",
+    icones: iconesElements,
+    libelleConstellation: "Constel.",
+    libelleType: "Élément"
   },
   weapons: {
     pointsField: "PPW",
     labels: ["R1", "R2", "R3", "R4", "R5"],
-    nomVue: "Armes"
+    champType: "type",
+    icones: iconesTypesArmes,
+    libelleConstellation: "Raffin.",
+    libelleType: "Type"
   }
 };
 
 // État courant de la popup
 let vueActive = "characters";   // "characters" | "weapons"
 let boxActive = "full";         // "full" | "stuff"
-let etatTri = { cle: null, direction: 1 };
 
-// Filtre multi-élément/type, indépendant du tri, conservé séparément par vue
+// Filtres / recherche / tri, comme en draft (sans filtre J1/J2). Le filtre
+// élément/type est propre à chaque vue ; le reste est commun.
 let filtreType = { characters: new Set(), weapons: new Set() };
+const filtreEtoile = new Set();
+let rechercheTexte = "";
+let triActif = null; // "points" | "constellation" | "rarete" | "element" | null (ordre par défaut)
 
 // Données brutes du profil ouvert, conservées pour re-render sans refetch
 let profilCourant = null;
@@ -101,13 +114,6 @@ function getFondRarete(rarete) {
   return "../DB/images/others/bg_4_star.webp";
 }
 
-function getIconeItem(item, vue) {
-  if (vue === "characters") {
-    return iconesElements[item.element] || "";
-  }
-  return iconesTypesArmes[item.type] || "";
-}
-
 // Arme signature : image nommée "[id_personnage]_w.webp"
 function trouverArmeSignature(personnageId) {
   return armesData.find(
@@ -115,14 +121,27 @@ function trouverArmeSignature(personnageId) {
   );
 }
 
-function possedeArmeSignature(personnage) {
-  const arme = trouverArmeSignature(personnage.id);
-  if (!arme) {
-    return null;
-  }
+// Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un perso sur le
+// profil ouvert, ou null s'il ne la possède pas. Copies dupliquées
+// ("idArme#2"...) comprises : on garde la meilleure (comme en draft).
+function getRefinementArmeSignature(personnageId) {
+  const arme = trouverArmeSignature(personnageId);
+  if (!arme) return null;
 
-  const valeurArme = profilCourant.data?.weapons?.full?.[arme.id] ?? -1;
-  return valeurArme >= 0 ? arme : null;
+  const full = profilCourant.data?.weapons?.full || {};
+  let meilleur = -1;
+  Object.entries(full).forEach(([cle, valeur]) => {
+    if ((cle === arme.id || cle.startsWith(`${arme.id}#`)) && valeur > meilleur) {
+      meilleur = valeur;
+    }
+  });
+  return meilleur >= 0 ? meilleur : null;
+}
+
+// Niveau 95 / 100 renseigné sur la page Mon compte, ou null.
+function getNiveauPersonnage(personnageId) {
+  const niveau = profilCourant.data?.characters?.niveaux?.[personnageId];
+  return niveau === 95 || niveau === 100 ? String(niveau) : null;
 }
 
 // Sens inverse : à partir d'une arme, retrouve le personnage dont c'est l'arme signature
@@ -158,30 +177,24 @@ function afficherComptes(comptes) {
   });
 }
 
-// ---- Construction de la liste affichée selon vue + box ----
+// ---- Construction de la liste affichée selon vue + box + filtres ----
 
 function construireListeAffichee() {
   const config = configCollections[vueActive];
   const items = vueActive === "characters" ? personnagesData : armesData;
   const collectionProfil = profilCourant.data?.[vueActive] || { full: {}, selections: {} };
-  const champType = vueActive === "characters" ? "element" : "type";
-  const filtresActifs = filtreType[vueActive];
+  const filtresType = filtreType[vueActive];
+  const recherche = rechercheTexte.trim().toLowerCase();
 
   return items
     .filter(item => {
       const valeur = collectionProfil.full?.[item.id] ?? -1;
 
-      if (valeur < 0) {
-        return false;
-      }
-
-      if (boxActive === "stuff" && !collectionProfil.selections?.stuff?.[item.id]) {
-        return false;
-      }
-
-      if (filtresActifs.size > 0 && !filtresActifs.has(item[champType])) {
-        return false;
-      }
+      if (valeur < 0) return false;
+      if (boxActive === "stuff" && !collectionProfil.selections?.stuff?.[item.id]) return false;
+      if (filtresType.size > 0 && !filtresType.has(item[config.champType])) return false;
+      if (filtreEtoile.size > 0 && !filtreEtoile.has(String(item.rarete))) return false;
+      if (recherche && !String(item.nom || "").toLowerCase().includes(recherche)) return false;
 
       return true;
     })
@@ -192,59 +205,125 @@ function construireListeAffichee() {
     }));
 }
 
-// ---- Tri ----
+// ---- Tri (choix unique, comme en draft) ----
+// Décroissant, sauf élément/type (ordre des icônes de filtre). Tri stable :
+// l'ordre de base départage.
 
-function trierPersonnages(liste) {
-  if (!etatTri.cle) {
-    return liste;
+function valeurTri({ item, valeur, config }) {
+  switch (triActif) {
+    case "points":
+      return Number(item[config.pointsField]?.[valeur] ?? 0);
+    case "constellation":
+      return valeur;
+    case "rarete":
+      return Number(item.rarete) || 0;
+    case "element":
+      return -Object.keys(config.icones).indexOf(item[config.champType]);
+    default:
+      return 0;
+  }
+}
+
+function trierListe(liste) {
+  if (!triActif) return liste;
+  return liste
+    .map((entree, index) => ({ entree, index, v: valeurTri(entree) }))
+    .sort((a, b) => (b.v - a.v) || (a.index - b.index))
+    .map(e => e.entree);
+}
+
+// ---- Cartes (même disposition que la draft) ----
+// Haut gauche : constellation (raffinement pour une arme) ; haut droite :
+// points ; bas gauche : niveau ; bas droite : arme signature (détourée de la
+// couleur du raffinement) ou, pour une arme, le perso dont c'est l'arme.
+
+function creerCarteProfil({ item, valeur, config }) {
+  const card = document.createElement("div");
+  card.className = "character-card";
+  card.title = item.nom;
+
+  const fond = getFondRarete(item.rarete);
+  let basGaucheHtml = "";
+  let basDroiteHtml = "";
+
+  if (vueActive === "characters") {
+    const niveau = getNiveauPersonnage(item.id);
+    if (niveau) {
+      basGaucheHtml = `<span class="character-niveau">${niveau}</span>`;
+    }
+
+    const refinement = getRefinementArmeSignature(item.id);
+    const iconeArme = iconesTypesArmesSignature[item.arme];
+    if (refinement !== null && iconeArme) {
+      const couleur = COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0];
+      basDroiteHtml = `<img class="character-raffinement" src="${iconeArme}" alt="R${refinement + 1}" title="Arme signature R${refinement + 1}" style="--couleur-ref: ${couleur}">`;
+    }
+  } else {
+    const personnageLie = trouverPersonnageParArmeSignature(item.id);
+    if (personnageLie) {
+      basDroiteHtml = `<img class="perso-lie-icone" src="../DB/images/characters/side_char/${personnageLie.id}_side.webp" alt="${personnageLie.nom}" title="${personnageLie.nom}">`;
+    }
   }
 
-  const copie = [...liste];
+  card.innerHTML = `
+    <div class="character-visuel" style="background-image: url('${fond}');">
+      <img src="../DB/${item.image}" alt="${item.nom}">
+      <span class="character-constellation">${getLabelConstellation(valeur, vueActive)}</span>
+      <span class="character-points">${item[config.pointsField]?.[valeur] ?? ""}</span>
+      ${basGaucheHtml}
+      ${basDroiteHtml}
+    </div>
+  `;
 
-  copie.sort((a, b) => {
-    let valA;
-    let valB;
-
-    if (etatTri.cle === "rarete") {
-      valA = Number(a.item.rarete) || 0;
-      valB = Number(b.item.rarete) || 0;
-    } else if (etatTri.cle === "points") {
-      valA = Number(a.item[a.config.pointsField]?.[a.valeur] ?? 0);
-      valB = Number(b.item[b.config.pointsField]?.[b.valeur] ?? 0);
-    } else if (etatTri.cle === "constellation") {
-      valA = a.valeur;
-      valB = b.valeur;
-    } else {
-      return 0;
-    }
-
-    return (valA - valB) * etatTri.direction;
-  });
-
-  return copie;
+  return card;
 }
 
-function mettreAJourBoutonsTri() {
-  document.querySelectorAll(".sort-btn").forEach(btn => {
-    const cle = btn.dataset.sort;
-    const fleche = btn.querySelector(".fleche");
+function rendreProfilBox() {
+  const container = document.getElementById("profile-box");
+  container.innerHTML = "";
 
-    if (cle === etatTri.cle) {
-      btn.classList.add("active");
-      fleche.textContent = etatTri.direction === 1 ? "▲" : "▼";
-    } else {
-      btn.classList.remove("active");
-      fleche.textContent = "";
-    }
+  trierListe(construireListeAffichee()).forEach(entree => {
+    container.appendChild(creerCarteProfil(entree));
   });
 }
 
-function mettreAJourIconesFiltreType() {
-  document.querySelectorAll(".type-sort-icone").forEach(btn => {
-    const actif = filtreType[vueActive].has(btn.dataset.valeur);
-    btn.classList.toggle("active", actif);
-  });
+// ---- Grille : écarts homogènes (même calcul que la draft) ----
+// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE, puis
+// l'espace restant est réparti également entre les cartes et sur les 2
+// bords ; le même écart sert entre les lignes. Téléphone : 4 par ligne.
+
+const ECART_MIN_GRILLE = 10;
+const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
+const COLONNES_TELEPHONE = 4;
+
+function ajusterGrille(grille) {
+  const largeur = grille.clientWidth;
+  if (!largeur) return;
+
+  let taille = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--taille-carte")) || 110;
+  let colonnes;
+
+  if (MEDIA_TELEPHONE.matches) {
+    colonnes = COLONNES_TELEPHONE;
+    taille = Math.floor((largeur - (colonnes + 1) * ECART_MIN_GRILLE) / colonnes);
+    grille.style.setProperty("--taille-carte", `${taille}px`);
+  } else {
+    grille.style.removeProperty("--taille-carte");
+    colonnes = Math.max(1, Math.floor((largeur - ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
+  }
+
+  const ecart = Math.max(0, (largeur - colonnes * taille) / (colonnes + 1));
+
+  grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
+  grille.style.gap = `${ecart}px`;
 }
+
+function initialiserGrille() {
+  const grille = document.getElementById("profile-box");
+  new ResizeObserver(() => ajusterGrille(grille)).observe(grille);
+}
+
+// ---- Barre recherche / tri / filtres ----
 
 function mettreAJourBoutonsVueEtBox() {
   document.querySelectorAll(".view-btn").forEach(btn => {
@@ -256,96 +335,82 @@ function mettreAJourBoutonsVueEtBox() {
   });
 }
 
-function creerCarteProfilPersonnage({ item, valeur, config }) {
-  const card = document.createElement("div");
-  card.className = "character-card";
-
-  const fond = getFondRarete(item.rarete);
-  const icone = getIconeItem(item, vueActive);
-
-  const possedeSignature = vueActive === "characters" ? !!possedeArmeSignature(item) : false;
-  const iconeArmeHtml = possedeSignature
-    ? `<img class="character-arme-signature" src="${iconesTypesArmesSignature[item.arme] || ""}" alt="${item.arme || ""}">`
-    : "";
-
-  const personnageLie = vueActive === "weapons" ? trouverPersonnageParArmeSignature(item.id) : null;
-  const iconePersonnageLieHtml = personnageLie
-    ? `<img class="perso-lie-icone" src="../DB/images/characters/side_char/${personnageLie.id}_side.webp" alt="${personnageLie.nom}">`
-    : "";
-
-  card.innerHTML = `
-    <div class="character-visuel" style="background-image: url('${fond}');">
-      <img src="../DB/${item.image}" alt="${item.nom}">
-      ${icone ? `<img class="character-icone-type" src="${icone}" alt="">` : ""}
-      <div class="character-ppc-badge">${item[config.pointsField]?.[valeur] ?? ""}</div>
-      ${iconeArmeHtml}
-      ${iconePersonnageLieHtml}
-    </div>
-    <div class="character-name">${item.nom}</div>
-    <div class="character-level">${getLabelConstellation(valeur, vueActive)}</div>
-  `;
-
-  return card;
-}
-
-function rendreProfilBox() {
-  const container = document.getElementById("profile-box");
+// Icônes élément (persos) ou type d'arme (armes), selon la vue.
+function genererFiltresIcones() {
+  const container = document.getElementById("filtres-icones");
   container.innerHTML = "";
 
-  const liste = trierPersonnages(construireListeAffichee());
-
-  liste.forEach(entree => {
-    container.appendChild(creerCarteProfilPersonnage(entree));
-  });
-}
-
-function genererBarreTypeSort() {
-  const container = document.getElementById("type-sort-bar");
-  container.innerHTML = "";
-
-  const icones = vueActive === "characters" ? iconesElements : iconesTypesArmes;
-
-  Object.entries(icones).forEach(([valeur, src]) => {
+  Object.entries(configCollections[vueActive].icones).forEach(([valeur, src]) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "type-sort-icone";
-    btn.dataset.valeur = valeur;
+    btn.className = "filtre-icone-btn";
+    btn.classList.toggle("active", filtreType[vueActive].has(valeur));
     btn.innerHTML = `<img src="${src}" alt="${valeur}">`;
 
     btn.addEventListener("click", () => {
       const set = filtreType[vueActive];
-
-      if (set.has(valeur)) {
-        set.delete(valeur);
-      } else {
-        set.add(valeur);
-      }
-
-      mettreAJourIconesFiltreType();
+      if (set.has(valeur)) set.delete(valeur); else set.add(valeur);
+      btn.classList.toggle("active", set.has(valeur));
       rendreProfilBox();
     });
 
     container.appendChild(btn);
   });
-
-  mettreAJourIconesFiltreType();
 }
 
-function initialiserBarreTri() {
-  document.querySelectorAll(".sort-btn").forEach(btn => {
+// Libellés de tri propres à la vue (constellation/raffinement,
+// élément/type) et état actif de tous les boutons.
+function mettreAJourBarreOutils() {
+  const config = configCollections[vueActive];
+
+  document.querySelectorAll(".tri-btn").forEach(btn => {
+    if (btn.dataset.tri === "constellation") btn.textContent = config.libelleConstellation;
+    if (btn.dataset.tri === "element") btn.textContent = config.libelleType;
+    btn.classList.toggle("active", btn.dataset.tri === triActif);
+  });
+
+  document.querySelectorAll("[data-etoile]").forEach(btn => {
+    btn.classList.toggle("active", filtreEtoile.has(btn.dataset.etoile));
+  });
+
+  document.getElementById("recherche").value = rechercheTexte;
+  genererFiltresIcones();
+}
+
+function reinitialiserFiltres() {
+  filtreType = { characters: new Set(), weapons: new Set() };
+  filtreEtoile.clear();
+  rechercheTexte = "";
+  triActif = null;
+}
+
+function initialiserBarreOutils() {
+  document.querySelectorAll(".tri-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const cle = btn.dataset.sort;
-
-      if (etatTri.cle === cle) {
-        etatTri.direction *= -1;
-      } else {
-        etatTri.cle = cle;
-        etatTri.direction = 1;
-      }
-
-      mettreAJourBoutonsTri();
+      triActif = triActif === btn.dataset.tri ? null : btn.dataset.tri;
+      mettreAJourBarreOutils();
       rendreProfilBox();
     });
+  });
+
+  document.querySelectorAll("[data-etoile]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const valeur = btn.dataset.etoile;
+      if (filtreEtoile.has(valeur)) filtreEtoile.delete(valeur); else filtreEtoile.add(valeur);
+      btn.classList.toggle("active", filtreEtoile.has(valeur));
+      rendreProfilBox();
+    });
+  });
+
+  document.getElementById("recherche").addEventListener("input", event => {
+    rechercheTexte = event.target.value;
+    rendreProfilBox();
+  });
+
+  document.getElementById("btn-clear-filtres").addEventListener("click", () => {
+    reinitialiserFiltres();
+    mettreAJourBarreOutils();
+    rendreProfilBox();
   });
 }
 
@@ -353,9 +418,8 @@ function initialiserSelecteursVueEtBox() {
   document.querySelectorAll(".view-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       vueActive = btn.dataset.view;
-
       mettreAJourBoutonsVueEtBox();
-      genererBarreTypeSort();
+      mettreAJourBarreOutils();
       rendreProfilBox();
     });
   });
@@ -385,12 +449,10 @@ async function ouvrirProfil(discordId, nom) {
 
     vueActive = "characters";
     boxActive = "full";
-    etatTri = { cle: null, direction: 1 };
-    filtreType = { characters: new Set(), weapons: new Set() };
+    reinitialiserFiltres();
 
     mettreAJourBoutonsVueEtBox();
-    genererBarreTypeSort();
-    mettreAJourBoutonsTri();
+    mettreAJourBarreOutils();
 
     document.getElementById("modal-title").textContent = `Box de ${nom}`;
     rendreProfilBox();
@@ -421,8 +483,9 @@ async function demarrer() {
     const comptes = await chargerComptes();
     afficherComptes(comptes);
     initialiserModal();
-    initialiserBarreTri();
+    initialiserBarreOutils();
     initialiserSelecteursVueEtBox();
+    initialiserGrille();
   } catch (error) {
     console.error(error);
     alert("Erreur lors du chargement des comptes.");

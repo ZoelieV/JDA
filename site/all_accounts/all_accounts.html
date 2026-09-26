@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tous les comptes</title>
-<link rel="stylesheet" href="all_accounts.css?v=2">
+<link rel="stylesheet" href="all_accounts.css?v=3">
 </head>
 <body>
 <a href="../index.html" class="lien-accueil">Accueil</a>
@@ -19,28 +19,46 @@
         <button id="close-modal" type="button">×</button>
       </div>
 
-      <div id="view-selector">
-        <button type="button" class="view-btn active" data-view="characters">Personnages</button>
-        <button type="button" class="view-btn" data-view="weapons">Armes</button>
+      <!-- Vue (personnages/armes) et box (full/stuff) sur une seule ligne,
+           boutons de taille identique. -->
+      <div id="selecteurs">
+        <div id="view-selector">
+          <button type="button" class="view-btn active" data-view="characters">Personnages</button>
+          <button type="button" class="view-btn" data-view="weapons">Armes</button>
+        </div>
+        <div id="box-selector">
+          <button type="button" class="box-btn active" data-box="full">Full box</button>
+          <button type="button" class="box-btn" data-box="stuff">Stuff</button>
+        </div>
       </div>
 
-      <div id="box-selector">
-        <button type="button" class="box-btn active" data-box="full">Full box</button>
-        <button type="button" class="box-btn" data-box="stuff">Stuff</button>
+      <!-- Recherche / tri / filtres, comme en draft (sans le filtre J1/J2). -->
+      <div id="barre-outils" class="barre-outils">
+        <div class="zone-recherche">
+          <input type="text" id="recherche" class="recherche-personnage" placeholder="Rechercher…">
+          <div class="tris">
+            <span class="tris-label">Trier :</span>
+            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="points">Points</button>
+            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="constellation">Constel.</button>
+            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="rarete">Rareté</button>
+            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="element">Élément</button>
+          </div>
+        </div>
+        <div class="filtres-tri">
+          <div id="filtres-icones" class="filtres-icones"></div>
+          <div class="filtres-etoiles">
+            <button type="button" class="filtre-etoile-btn" data-etoile="5">5★</button>
+            <button type="button" class="filtre-etoile-btn" data-etoile="4">4★</button>
+            <button type="button" class="filtre-etoile-btn" data-etoile="3">3★</button>
+          </div>
+          <button type="button" id="btn-clear-filtres" class="btn-clear-filtres">✕ Filtres</button>
+        </div>
       </div>
 
-      <div id="type-sort-bar"></div>
-
-      <div id="sort-bar">
-        <button type="button" class="sort-btn" data-sort="rarete">Rareté <span class="fleche"></span></button>
-        <button type="button" class="sort-btn" data-sort="points">Points <span class="fleche"></span></button>
-        <button type="button" class="sort-btn" data-sort="constellation">Constellation <span class="fleche"></span></button>
-      </div>
-
-      <div id="profile-box"></div>
+      <div id="profile-box" class="grille-pool"></div>
     </div>
   </div>
 
-  <script src="all_accounts.js"></script>
+  <script src="all_accounts.js?v=3"></script>
 </body>
 </html>

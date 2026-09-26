@@ -1,3 +1,9 @@
+:root {
+  /* Taille des cartes persos/armes (identique à la draft). Sur téléphone,
+     recalculée par ajusterGrille() pour 4 cartes par ligne. */
+  --taille-carte: 110px;
+}
+
 body {
   background-color: #1e1e1e;
   color: white;
@@ -74,13 +80,15 @@ h1, h2 {
   display: flex;
 }
 
+/* Assez large pour la barre de filtres sur une seule ligne sur ordi. */
 #modal-content {
+  box-sizing: border-box;
   background: #2a2a2a;
   border-radius: 12px;
   padding: 20px;
-  max-width: 1000px;
-  width: 90%;
-  height: 85vh;
+  max-width: 1340px;
+  width: 95%;
+  height: 88vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -94,6 +102,10 @@ h1, h2 {
   flex-shrink: 0;
 }
 
+#modal-header h2 {
+  margin: 0;
+}
+
 #close-modal {
   background: transparent;
   border: none;
@@ -102,207 +114,305 @@ h1, h2 {
   cursor: pointer;
 }
 
-/* ---- Sélecteurs vue (perso/armes) et box (full/stuff), même style que my_account ---- */
+/* ---- Vue (persos/armes) et box (full/stuff) : une seule ligne, boutons
+   de taille identique, texte centré ---- */
+
+#selecteurs {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
 
 #view-selector,
 #box-selector {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
-  flex-shrink: 0;
 }
 
 .view-btn,
 .box-btn {
-  background: transparent;
+  box-sizing: border-box;
+  width: 140px;
+  height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.06);
   color: white;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 6px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9px;
+  padding: 0 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .view-btn.active,
 .box-btn.active {
-  border-color: rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
 }
 
-/* ---- Barre d'icônes de tri élément/type (identique à .filtre-icone de my_account) ---- */
+/* ---- Barre recherche / tri / filtres (mêmes styles que la draft) ---- */
 
-#type-sort-bar {
+.barre-outils {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-  flex-shrink: 0;
-}
-
-.type-sort-icone {
-  border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 4px;
-  cursor: pointer;
-  background: transparent;
-  display: inline-flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-}
-
-.type-sort-icone img {
-  display: block;
-  width: 30px;
-}
-
-.type-sort-icone.active {
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.12);
-}
-
-/* ---- Barre de tri (même style que .box-btn de my_account) ---- */
-
-#sort-bar {
-  display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 16px;
   flex-shrink: 0;
 }
 
-.sort-btn {
-  background: transparent;
-  color: white;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 14px;
-  display: inline-flex;
+.zone-recherche,
+.filtres-tri {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tris,
+.filtres-icones,
+.filtres-etoiles {
+  display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.sort-btn.active {
-  border-color: rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.12);
+.tris .tris-label {
+  font-size: 15px;
+  opacity: 0.8;
 }
 
-.sort-btn .fleche {
-  font-size: 11px;
-  opacity: 0.9;
+.recherche-personnage {
+  box-sizing: border-box;
+  height: 39px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  padding: 6px 12px;
+  color: white;
+  font-size: 17px;
+  width: 190px;
 }
 
-/* ---- Cartes personnages dans la popup (même logique que carte-personnage) ---- */
-
-#profile-box {
+.filtre-icone-btn {
+  box-sizing: border-box;
+  width: 39px;
+  height: 39px;
+  padding: 5px;
+  border-radius: 9px;
+  border: 2px solid transparent;
+  background-color: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.filtre-icone-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.filtre-etoile-btn {
+  height: 39px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 2px solid transparent;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filtre-icone-btn.active,
+.filtre-etoile-btn.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+.btn-clear-filtres {
+  height: 39px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background-color: transparent;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.btn-clear-filtres:hover {
+  opacity: 1;
+}
+
+/* ---- Grille des cartes : colonnes et écart recalculés par ajusterGrille()
+   (même écart entre les cartes, sur les bords et entre les lignes). Valeurs
+   ci-dessous = repli avant le 1er calcul. ---- */
+
+.grille-pool {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--taille-carte));
+  gap: 10px;
+  justify-content: center;
+  align-content: start;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  padding-bottom: 10px;
 }
 
+/* ---- Cartes (même rendu que la draft) ---- */
+
 .character-card {
-  width: 110px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  width: var(--taille-carte);
 }
 
 .character-visuel {
   position: relative;
-  display: inline-block;
+  display: block;
+  width: var(--taille-carte);
+  height: var(--taille-carte);
   background-size: cover;
   background-position: center;
-  padding: 6px;
   border-radius: 8px;
+  overflow: hidden;
 }
 
 .character-visuel img {
-  width: 80px;
-  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
+  border-radius: 8px;
 }
 
-.character-icone-type {
+/* Cercles : constellation en haut à gauche, points en haut à droite,
+   niveau en bas à gauche. */
+.character-constellation,
+.character-points,
+.character-niveau {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-}
-
-.character-visuel img.character-icone-type {
-  width: 20px;
-  height: 20px;
-}
-
-.character-ppc-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: bold;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
 }
 
-.character-arme-signature {
-  position: absolute;
-  top: 28px;
+.character-constellation {
+  top: 2px;
+  left: 2px;
+}
+
+.character-points {
+  top: 2px;
   right: 2px;
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  display: block;
 }
 
-.character-visuel img.character-arme-signature {
-  width: 26px;
-  height: 26px;
+.character-niveau {
+  bottom: 2px;
+  left: 2px;
 }
 
-.perso-lie-icone {
+/* Bas à droite : arme signature possédée (logo du type d'arme détouré de
+   la couleur du raffinement), ou perso lié pour une arme. */
+.character-visuel img.character-raffinement,
+.character-visuel img.perso-lie-icone {
   position: absolute;
-  bottom: 4px;
-  right: 1px;
-  width: 30px;
-  height: 30px;
-  object-fit: cover;
+  bottom: 2px;
+  right: 2px;
+  width: 34px;
+  height: 34px;
+  border-radius: 0;
+}
+
+.character-visuel img.character-raffinement {
+  object-fit: contain;
+  filter:
+    drop-shadow(1px 0 0 var(--couleur-ref))
+    drop-shadow(-1px 0 0 var(--couleur-ref))
+    drop-shadow(0 1px 0 var(--couleur-ref))
+    drop-shadow(0 -1px 0 var(--couleur-ref));
 }
 
 .character-visuel img.perso-lie-icone {
-  width: 30px;
-  height: 30px;
+  object-fit: cover;
 }
 
-.character-name {
-  margin-top: 6px;
-  font-size: 13px;
-  font-weight: bold;
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background-color: rgba(0, 0, 0, 0.35);
-}
+/* ---- Téléphone : popup plein écran, 4 cartes par ligne (cf.
+   ajusterGrille), barre d'outils qui revient à la ligne. ---- */
+@media (max-width: 700px) {
+  #modal-content {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    border-radius: 0;
+    padding: 12px;
+  }
 
-.character-level {
-  font-size: 12px;
-  opacity: 0.95;
-  margin-top: 2px;
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background-color: rgba(0, 0, 0, 0.35);
+  #selecteurs {
+    gap: 6px;
+  }
+
+  #view-selector,
+  #box-selector {
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .view-btn,
+  .box-btn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  .barre-outils,
+  .zone-recherche,
+  .filtres-tri,
+  .tris,
+  .filtres-icones,
+  .filtres-etoiles {
+    flex-wrap: wrap;
+  }
+
+  .barre-outils {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .recherche-personnage {
+    width: 100%;
+  }
+
+  .character-constellation,
+  .character-points,
+  .character-niveau {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+  }
+
+  .character-visuel img.character-raffinement,
+  .character-visuel img.perso-lie-icone {
+    width: 22px;
+    height: 22px;
+  }
 }
