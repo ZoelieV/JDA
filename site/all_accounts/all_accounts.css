@@ -349,7 +349,10 @@ h1, h2 {
     drop-shadow(0 -1px 0 var(--couleur-ref));
 }
 
+/* Icône du perso lié : 1.5x la taille des cercles. */
 .character-visuel img.perso-lie-icone {
+  width: 51px;
+  height: 51px;
   object-fit: cover;
 }
 
@@ -410,9 +413,13 @@ h1, h2 {
     font-size: 11px;
   }
 
-  .character-visuel img.character-raffinement,
-  .character-visuel img.perso-lie-icone {
+  .character-visuel img.character-raffinement {
     width: 22px;
     height: 22px;
+  }
+
+  .character-visuel img.perso-lie-icone {
+    width: 33px;
+    height: 33px;
   }
 }
