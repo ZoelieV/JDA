@@ -26,6 +26,16 @@
       <div class="entete-joueur" id="entete-joueur2"></div>
     </div>
 
+    <!-- Barre recherche / tri / filtres, commune à toutes les phases avec
+         des persos (choix de box, analyse, bans d'équilibrage, draft). -->
+    <div class="draft-toolbar cache" id="barre-outils">
+      <div id="zone-recherche" class="zone-recherche"></div>
+      <div class="toolbar-droite">
+        <div id="bans-bonus-recap" class="bans-bonus-recap cache"></div>
+        <div class="filtres-tri" id="filtres-tri"></div>
+      </div>
+    </div>
+
     <!-- Phases 1 et 2 : choix de box (box adverse cachée) puis analyse (les
          2 box visibles, box verrouillées). Colonnes fixes j1 (gauche) / j2
          (droite), alignées sur les entêtes joueurs ci-dessus : chacun ne
@@ -38,14 +48,14 @@
           <div class="box-select" id="box-select-j1"></div>
           <div class="statut-pret" id="statut-pret-j1"></div>
           <button id="btn-pret-j1" type="button" class="cache">Je suis prêt</button>
-          <div class="apercu-box" id="apercu-box-j1"></div>
+          <div class="apercu-box grille-pool" id="apercu-box-j1"></div>
         </div>
         <div class="colonne-box" id="colonne-box-j2">
           <h3 id="titre-box-j2">Box</h3>
           <div class="box-select" id="box-select-j2"></div>
           <div class="statut-pret" id="statut-pret-j2"></div>
           <button id="btn-pret-j2" type="button" class="cache">Je suis prêt</button>
-          <div class="apercu-box" id="apercu-box-j2"></div>
+          <div class="apercu-box grille-pool" id="apercu-box-j2"></div>
         </div>
       </div>
     </section>
@@ -66,14 +76,6 @@
 
     <!-- Phase 3 : draft (boss + bans/picks) -->
     <section id="phase-draft" class="phase cache">
-      <div class="draft-toolbar">
-        <div id="zone-recherche" class="zone-recherche"></div>
-        <div class="toolbar-droite">
-          <div id="bans-bonus-recap" class="bans-bonus-recap cache"></div>
-          <div class="filtres-tri" id="filtres-tri"></div>
-        </div>
-      </div>
-
       <div class="draft-layout">
         <div class="equipe-joueur" id="equipe-j1">
           <div class="slots-pick" id="slots-pick-j1"></div>

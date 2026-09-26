@@ -8,6 +8,18 @@ const iconesElements = {
   geo: "../DB/images/others/geo.webp"
 };
 
+// Logos des types d'armes (mêmes que la liste des comptes), utilisés pour
+// l'arme signature possédée, détourés de la couleur du raffinement.
+const iconesTypesArmesSignature = {
+  sword: "../DB/images/others/sword_icon.webp",
+  claymore: "../DB/images/others/claymore_icon.webp",
+  polearm: "../DB/images/others/polearm_icon.webp",
+  bow: "../DB/images/others/bow_icon.webp",
+  catalyst: "../DB/images/others/catalyst_icon.webp"
+};
+
+const ORDRE_ELEMENTS = Object.keys(iconesElements);
+
 const BOX_LABELS = {
   full: "Full box",
   stuff: "Stuff",
@@ -18,8 +30,8 @@ const BOX_LABELS = {
   opti5: "Opti 5"
 };
 
-// Couleur du contour brillant des personnages équipés de leur arme
-// signature, selon le raffinement de cette arme (index 0 = R1 ... 4 = R5).
+// Couleur du détourage du logo d'arme signature, selon son raffinement
+// (index 0 = R1 ... 4 = R5).
 // Convention reprise des paliers de rareté habituels ; à ajuster si besoin.
 const COULEURS_REFINEMENT = ["#b0b0b0", "#6fcf6f", "#5b9bd5", "#a366d9", "#e0a83e"];
 
@@ -70,6 +82,7 @@ const filtreElement = new Set();
 const filtreEtoile = new Set();
 let filtreProprietaire = null; // "j1" | "j2" | null
 let rechercheTexte = "";
+let triActif = null; // "points" | "constellation" | "rarete" | "element" | null (ordre par défaut)
 
 // ---- Animation de tirage du boss ----
 let dernierePhaseVue = null; // phase locale précédente, pour détecter une transition
@@ -308,23 +321,6 @@ function getRefinementArmeSignature(joueurData, personnageId) {
   return meilleur >= 0 ? meilleur : null;
 }
 
-// Raffinement affiché pour le glow d'une carte : celui du joueur filtré
-// (J1/J2), sinon le plus élevé des 2. Un joueur ne compte que s'il possède
-// le perso.
-function getRefinementAffiche(personnageId) {
-  const roles = filtreProprietaire ? [filtreProprietaire] : ["j1", "j2"];
-  let meilleur = null;
-
-  roles.forEach(role => {
-    const pool = role === "j1" ? draft.pool_j1 : draft.pool_j2;
-    if (!pool || !pool.includes(personnageId)) return;
-    const r = getRefinementArmeSignature(getJoueurDataParRole(role), personnageId);
-    if (r !== null && (meilleur === null || r > meilleur)) meilleur = r;
-  });
-
-  return meilleur;
-}
-
 // Niveau "95" ou "100" d'un perso, ou null si non renseigné
 // (la pastille n'est alors pas dessinée).
 function getNiveauPersonnage(joueurData, personnageId) {
@@ -343,13 +339,73 @@ function getConstellationLabel(joueurData, persoId) {
   return typeof c === "number" && c >= 0 ? `C${c}` : null;
 }
 
-function personnageCorrespondFiltres(personnage) {
+// Constellation (0-6) d'un perso chez un joueur, ou null s'il ne l'a pas.
+function getConstellation(role, persoId) {
+  const c = getJoueurDataParRole(role)?.characters?.full?.[persoId];
+  return typeof c === "number" && c >= 0 ? c : null;
+}
+
+// Joueurs (parmi roles) qui possèdent le perso. Le filtre J1/J2 restreint
+// à ce joueur-là, sauf pour les aperçus de box (une colonne = un joueur).
+function getRolesProprietaires(persoId, roles = ["j1", "j2"], avecFiltre = true) {
+  const candidats = avecFiltre && filtreProprietaire ? roles.filter(r => r === filtreProprietaire) : roles;
+  return candidats.filter(r => getConstellation(r, persoId) !== null);
+}
+
+// Infos affichées sur une carte, pour chaque joueur (parmi roles) qui
+// possède le perso : constellation, niveau, raffinement de l'arme signature.
+function getInfosCarte(persoId, roles = ["j1", "j2"]) {
+  const infos = {};
+  roles.forEach(role => {
+    if (getConstellation(role, persoId) === null) return;
+    const data = getJoueurDataParRole(role);
+    const suffixe = role === "j1" ? "J1" : "J2";
+    infos[`constellation${suffixe}`] = getConstellationLabel(data, persoId);
+    infos[`niveau${suffixe}`] = getNiveauPersonnage(data, persoId);
+    infos[`refinement${suffixe}`] = getRefinementArmeSignature(data, persoId);
+  });
+  return infos;
+}
+
+// ---- Tri (choix unique) ----
+// Points / constellation : meilleure valeur parmi les propriétaires pris en
+// compte (le joueur filtré, sinon les 2). Décroissant, sauf éléments (ordre
+// des icônes de filtre). Tri stable : l'ordre de base départage.
+function valeurTri(personnage, roles) {
+  // Aperçu d'une box (un seul joueur) : le filtre J1/J2 ne s'applique pas.
+  const proprietaires = getRolesProprietaires(personnage.id, roles, roles.length > 1);
+  const constellations = proprietaires.map(r => getConstellation(r, personnage.id));
+
+  switch (triActif) {
+    case "points":
+      return Math.max(-1, ...constellations.map(c => Number(personnage.PPC?.[c] ?? 0)));
+    case "constellation":
+      return Math.max(-1, ...constellations);
+    case "rarete":
+      return Number(personnage.rarete) || 0;
+    case "element":
+      return -ORDRE_ELEMENTS.indexOf(personnage.element);
+    default:
+      return 0;
+  }
+}
+
+function trierPersonnages(personnages, roles = ["j1", "j2"]) {
+  if (!triActif) return personnages;
+  return personnages
+    .map((p, index) => ({ p, index, v: valeurTri(p, roles) }))
+    .sort((a, b) => (b.v - a.v) || (a.index - b.index))
+    .map(e => e.p);
+}
+
+// Filtres + recherche. ignorerProprietaire : aperçus de box (colonne déjà
+// propre à un joueur).
+function personnageCorrespondFiltres(personnage, { ignorerProprietaire = false } = {}) {
   if (filtreElement.size > 0 && !filtreElement.has(personnage.element)) return false;
   if (filtreEtoile.size > 0 && !filtreEtoile.has(String(personnage.rarete))) return false;
 
-  if (filtreProprietaire) {
-    const pool = filtreProprietaire === "j1" ? draft.pool_j1 : draft.pool_j2;
-    if (!pool || !pool.includes(personnage.id)) return false;
+  if (filtreProprietaire && !ignorerProprietaire) {
+    if (getConstellation(filtreProprietaire, personnage.id) === null) return false;
   }
 
   if (rechercheTexte.trim()) {
@@ -368,7 +424,8 @@ function creerCarteItem(personnage, {
   constellationJ2 = null,
   niveauJ1 = null,
   niveauJ2 = null,
-  refinementViewer = null
+  refinementJ1 = null,
+  refinementJ2 = null
 } = {}) {
   const card = document.createElement("div");
   card.title = personnage.nom;
@@ -378,11 +435,13 @@ function creerCarteItem(personnage, {
 
   const fond = getFondRarete(personnage.rarete);
 
-  const glow = refinementViewer !== null && refinementViewer !== undefined;
-  const styleParts = [`background-image: url('${fond}')`];
-  if (glow) {
-    styleParts.push(`--couleur-glow: ${COULEURS_REFINEMENT[refinementViewer] || COULEURS_REFINEMENT[0]}`);
-  }
+  const iconeArme = iconesTypesArmesSignature[personnage.arme];
+  const raffinementHtml = iconeArme
+    ? [["j1", refinementJ1], ["j2", refinementJ2]]
+      .filter(([, r]) => r !== null && r !== undefined)
+      .map(([role, r]) => `<img class="character-raffinement raffinement-${role}" src="${iconeArme}" alt="R${r + 1}" title="${role.toUpperCase()} : arme signature R${r + 1}" style="--couleur-ref: ${COULEURS_REFINEMENT[r] || COULEURS_REFINEMENT[0]}">`)
+      .join("")
+    : "";
 
   const constellationHtml = [
     constellationJ1 ? `<span class="character-constellation constellation-j1">${constellationJ1}</span>` : "",
@@ -395,10 +454,11 @@ function creerCarteItem(personnage, {
   ].join("");
 
   card.innerHTML = `
-    <div class="character-visuel${glow ? " arme-signature" : ""}" style="${styleParts.join("; ")};">
+    <div class="character-visuel" style="background-image: url('${fond}');">
       <img src="../DB/${personnage.image}" alt="${personnage.nom}">
       ${constellationHtml}
       ${niveauHtml}
+      ${raffinementHtml}
     </div>
   `;
 
@@ -409,9 +469,10 @@ function creerCarteItem(personnage, {
   return card;
 }
 
-// Aperçu des personnages compris dans une box donnée (image + nom, pas
-// de points/constellation : c'est juste un aperçu de composition ici).
-function rendreApercuBox(containerId, joueurData, boxChoisie) {
+// Aperçu des personnages compris dans la box d'un joueur, avec ses infos
+// (constellation, niveau, raffinement), filtres/recherche et tri.
+function rendreApercuBox(containerId, role, boxChoisie) {
+  const joueurData = getJoueurDataParRole(role);
   const container = document.getElementById(containerId);
   container.innerHTML = "";
 
@@ -436,7 +497,8 @@ function rendreApercuBox(containerId, joueurData, boxChoisie) {
     return;
   }
 
-  persosBox.forEach(p => container.appendChild(creerCarteItem(p)));
+  trierPersonnages(persosBox.filter(p => personnageCorrespondFiltres(p, { ignorerProprietaire: true })), [role])
+    .forEach(p => container.appendChild(creerCarteItem(p, getInfosCarte(p.id, [role]))));
 }
 
 function creerBanMini(personnage) {
@@ -547,7 +609,7 @@ function rendreChoixBox() {
       document.getElementById(`apercu-box-${role}`).innerHTML =
         `<p class="apercu-vide">Box cachée jusqu'à l'analyse.</p>`;
     } else {
-      rendreApercuBox(`apercu-box-${role}`, getJoueurDataParRole(role), draft[`box_${role}`]);
+      rendreApercuBox(`apercu-box-${role}`, role, draft[`box_${role}`]);
     }
   });
 }
@@ -609,28 +671,25 @@ function rendreBansBonus() {
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
     choix, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible,
-    draft.pool_j1, draft.pool_j2, draft.discord_j1, draft.discord_j2, monRole
+    draft.pool_j1, draft.pool_j2, draft.discord_j1, draft.discord_j2, monRole,
+    ...cleFiltres()
   ]);
   if (!grilleAChange(grille, cleGrille)) return;
 
-  draft.pool_disponible.forEach(id => {
-    const personnage = getPersonnageParId(id);
-    if (!personnage) return;
+  const personnages = draft.pool_disponible
+    .map(id => getPersonnageParId(id))
+    .filter(p => p && personnageCorrespondFiltres(p));
 
+  trierPersonnages(personnages).forEach(personnage => {
+    const id = personnage.id;
     const dejaChoisi = choix.includes(id);
     const peutCliquer = cEstMonTour && (dejaChoisi || choix.length < draft.bans_bonus_total);
-
-    const dataJ1 = draft.pool_j1 && draft.pool_j1.includes(id) ? getJoueurDataParRole("j1") : null;
-    const dataJ2 = draft.pool_j2 && draft.pool_j2.includes(id) ? getJoueurDataParRole("j2") : null;
 
     const carte = creerCarteItem(personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi,
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
-      constellationJ1: dataJ1 ? getConstellationLabel(dataJ1, id) : null,
-      constellationJ2: dataJ2 ? getConstellationLabel(dataJ2, id) : null,
-      niveauJ1: dataJ1 ? getNiveauPersonnage(dataJ1, id) : null,
-      niveauJ2: dataJ2 ? getNiveauPersonnage(dataJ2, id) : null
+      ...getInfosCarte(id)
     });
     grille.appendChild(carte);
   });
@@ -824,7 +883,7 @@ function rendreDraft(phasePrecedente) {
   const cleGrille = JSON.stringify([
     draft.actions, draft.sequence_index, draft.pool_disponible, draft.pool_j1, draft.pool_j2,
     draft.discord_j1, draft.discord_j2, monRole,
-    [...filtreElement], [...filtreEtoile], filtreProprietaire, rechercheTexte
+    ...cleFiltres()
   ]);
   if (!grilleAChange(grille, cleGrille)) return;
 
@@ -832,29 +891,22 @@ function rendreDraft(phasePrecedente) {
   const restrictionPick = cEstMonTour && prochaine.type === "pick";
   const monPool = monRole === "j1" ? draft.pool_j1 : draft.pool_j2;
 
-  draft.pool_disponible
+  const personnages = draft.pool_disponible
     .map(id => getPersonnageParId(id))
-    .filter(p => p && personnageCorrespondFiltres(p))
-    .forEach(personnage => {
-      const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
-      const selectionnable = cEstMonTour && jePeuxLePicker;
+    .filter(p => p && personnageCorrespondFiltres(p));
 
-      const dataJ1 = draft.pool_j1 && draft.pool_j1.includes(personnage.id) ? getJoueurDataParRole("j1") : null;
-      const dataJ2 = draft.pool_j2 && draft.pool_j2.includes(personnage.id) ? getJoueurDataParRole("j2") : null;
-      const refinement = getRefinementAffiche(personnage.id);
+  trierPersonnages(personnages).forEach(personnage => {
+    const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
+    const selectionnable = cEstMonTour && jePeuxLePicker;
 
-      const carte = creerCarteItem(personnage, {
-        selectionnable,
-        indisponible: cEstMonTour && !jePeuxLePicker,
-        onClick: () => postActionDraft(personnage.id).catch(err => alert(err.message)),
-        constellationJ1: dataJ1 ? getConstellationLabel(dataJ1, personnage.id) : null,
-        constellationJ2: dataJ2 ? getConstellationLabel(dataJ2, personnage.id) : null,
-        niveauJ1: dataJ1 ? getNiveauPersonnage(dataJ1, personnage.id) : null,
-        niveauJ2: dataJ2 ? getNiveauPersonnage(dataJ2, personnage.id) : null,
-        refinementViewer: refinement
-      });
-      grille.appendChild(carte);
+    const carte = creerCarteItem(personnage, {
+      selectionnable,
+      indisponible: cEstMonTour && !jePeuxLePicker,
+      onClick: () => postActionDraft(personnage.id).catch(err => alert(err.message)),
+      ...getInfosCarte(personnage.id)
     });
+    grille.appendChild(carte);
+  });
 }
 
 // ---- Grilles de persos : reconstruction seulement si nécessaire ----
@@ -862,6 +914,11 @@ function rendreDraft(phasePrecedente) {
 // chaque fois recrée la carte survolée, qui rejoue alors son animation de
 // survol (effet "faux clic"). On ne la reconstruit que si ce qui l'affecte
 // (état de la draft, filtres, rôles) a changé. Vide la grille si oui.
+
+// Part de la clé de grille qui dépend de la barre recherche/tri/filtres.
+function cleFiltres() {
+  return [[...filtreElement], [...filtreEtoile], filtreProprietaire, rechercheTexte, triActif];
+}
 
 function grilleAChange(grille, cle) {
   if (grille.dataset.cle === cle) return false;
@@ -894,7 +951,7 @@ function initialiserGrillesPersos() {
   document.querySelectorAll(".grille-pool").forEach(grille => observer.observe(grille));
 }
 
-// ---- Barre de filtres / recherche de la grille de draft ----
+// ---- Barre recherche / tri / filtres (commune à toutes les phases) ----
 // Construite UNE SEULE FOIS (pas à chaque rendu) pour ne pas perdre le
 // focus/texte de la recherche à chaque poll.
 
@@ -937,10 +994,12 @@ function initialiserFiltresTri() {
 
   const zoneProprio = document.createElement("div");
   zoneProprio.className = "filtres-proprietaire";
+  zoneProprio.id = "filtres-proprietaire";
   [["j1", "J1"], ["j2", "J2"]].forEach(([valeur, label]) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-proprietaire-btn";
+    btn.dataset.role = valeur;
     btn.textContent = label;
     btn.addEventListener("click", () => {
       filtreProprietaire = filtreProprietaire === valeur ? null : valeur;
@@ -961,7 +1020,8 @@ function initialiserFiltresTri() {
     filtreEtoile.clear();
     filtreProprietaire = null;
     rechercheTexte = "";
-    container.querySelectorAll(".active").forEach(b => b.classList.remove("active"));
+    triActif = null;
+    document.getElementById("barre-outils").querySelectorAll(".active").forEach(b => b.classList.remove("active"));
     const input = document.getElementById("recherche-personnage");
     if (input) input.value = "";
     rendrePhase();
@@ -977,8 +1037,54 @@ function initialiserFiltresTri() {
     rechercheTexte = inputRecherche.value;
     rendrePhase();
   });
-  // Recherche à gauche de la barre, filtres à droite.
-  document.getElementById("zone-recherche").appendChild(inputRecherche);
+  // Recherche à gauche de la barre, tri juste à sa droite, filtres à droite.
+  const zoneRecherche = document.getElementById("zone-recherche");
+  zoneRecherche.appendChild(inputRecherche);
+
+  const zoneTris = document.createElement("div");
+  zoneTris.className = "tris";
+  zoneTris.innerHTML = `<span class="tris-label">Trier :</span>`;
+  [["points", "Points"], ["constellation", "Constel."], ["rarete", "Rareté"], ["element", "Élément"]].forEach(([valeur, label]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-etoile-btn tri-btn";
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      triActif = triActif === valeur ? null : valeur;
+      zoneTris.querySelectorAll(".tri-btn").forEach(b => b.classList.toggle("active", b === btn && triActif === valeur));
+      rendrePhase();
+    });
+    zoneTris.appendChild(btn);
+  });
+  zoneRecherche.appendChild(zoneTris);
+}
+
+// Filtre J1/J2 : inutile pendant le choix de box et l'analyse (une colonne
+// par joueur) ; avant le tirage, j1/j2 ne sont que des places provisoires,
+// donc les boutons portent le nom des joueurs.
+function mettreAJourFiltreProprietaire() {
+  const zone = document.getElementById("filtres-proprietaire");
+  if (!zone) return;
+  zone.classList.toggle("cache", draft.phase === "choix_box" || draft.phase === "analyse");
+  zone.querySelectorAll(".filtre-proprietaire-btn").forEach(btn => {
+    const joueur = btn.dataset.role === "j1" ? joueur1 : joueur2;
+    btn.textContent = draft.roles_tires || !joueur ? btn.dataset.role.toUpperCase() : joueur.nom;
+  });
+}
+
+// ---- Annonce du rôle au tirage ----
+// Affichée 5 s quand la draft démarre (tirage J1/J2 en 1re manche, rôles
+// inversés en revanche). L'animation CSS gère l'apparition/disparition.
+function annoncerRole() {
+  if (!monRole) return;
+  const annonce = document.createElement("div");
+  annonce.className = `annonce-role annonce-${monRole}`;
+  annonce.innerHTML = `
+    <div class="annonce-titre">Tu es ${monRole.toUpperCase()}</div>
+    <div class="annonce-sous-titre">${monRole === "j1" ? "Tu bannis en premier." : "Ton adversaire bannit en premier."}</div>
+  `;
+  document.body.appendChild(annonce);
+  setTimeout(() => annonce.remove(), 5000);
 }
 
 // ---- Phase 4 : saisie du temps ----
@@ -1133,6 +1239,15 @@ function rendrePhase() {
   entetes.classList.toggle("boss-deborde", draft.phase === "draft");
   document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);
   document.getElementById("tour-actuel").classList.toggle("cache", draft.phase !== "draft");
+
+  const avecPersos = ["choix_box", "analyse", "bans_bonus", "draft"].includes(draft.phase);
+  document.getElementById("barre-outils").classList.toggle("cache", !avecPersos);
+  if (draft.phase !== "draft") document.getElementById("bans-bonus-recap").classList.add("cache");
+  mettreAJourFiltreProprietaire();
+
+  if (draft.phase === "draft" && phasePrecedente && phasePrecedente !== "draft") {
+    annoncerRole();
+  }
 
   if (draft.phase === "choix_box" || draft.phase === "analyse") rendreChoixBox();
   else if (draft.phase === "bans_bonus") rendreBansBonus();
