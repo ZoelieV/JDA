@@ -17,7 +17,7 @@ const iconesTypesArmes = {
 };
 
 const nomsBoxes = {
-  full: "Full box",
+  full: "Full Box",
   stuff: "Personnages stuff",
   opti1: "Box optimisée 1",
   opti2: "Box optimisée 2",
@@ -367,10 +367,13 @@ function creerSelectNiveau(idPerso, niveau) {
     .join("");
 
   return `
-<select class="niveau-select" data-id="${idPerso}" title="Niveau du personnage">
-<option value="" ${niveau == null ? "selected" : ""}>Niv. -</option>
+<label class="niveau-choix" title="Niveau du personnage">
+<img class="niveau-logo" src="../DB/images/others/stella.webp" alt="Niveau">
+<select class="niveau-select" data-id="${idPerso}">
+<option value="" ${niveau == null ? "selected" : ""}>-</option>
 ${options}
 </select>
+</label>
   `;
 }
 
@@ -441,7 +444,7 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
   const config = getConfigCollection(vueActive);
   const idInstance = instanceId || item.id;
   const conteneur = document.createElement("div");
-  conteneur.className = "carte-personnage";
+  conteneur.className = valeur >= 0 ? "carte-personnage possede" : "carte-personnage";
   conteneur.title = estDuplicata ? `${item.nom} (copie)` : item.nom;
 
   const fond = getFondRarete(item.rarete);
@@ -651,10 +654,17 @@ function afficherCollection(personnages, armes, profil) {
   });
 }
 
+// Total de la box active : points des personnages + points des armes.
 function mettreAJourTotalBox(personnages, armes, profil) {
-  const vueActive = getVueActive();
   const boxActive = getBoxActive();
-  const items = getListeActive(personnages, armes);
+  const total = calculerTotalCollection(personnages, "characters", boxActive, profil) +
+    calculerTotalCollection(armes, "weapons", boxActive, profil);
+
+  document.getElementById("box-total-label").textContent = nomsBoxes[boxActive];
+  document.getElementById("total-ppc").textContent = total;
+}
+
+function calculerTotalCollection(items, vueActive, boxActive, profil) {
   const collectionProfil = getCollectionProfil(profil, vueActive);
   const config = getConfigCollection(vueActive);
 
@@ -683,8 +693,7 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     });
   });
 
-  document.getElementById("box-total-label").textContent = `${nomsBoxes[boxActive]} - ${config.nomVue}`;
-  document.getElementById("total-ppc").textContent = total;
+  return total;
 }
 
 async function initialiserPage() {
@@ -856,6 +865,8 @@ async function initialiserPage() {
       } else {
         delete niveaux[select.dataset.id];
       }
+
+      afficherCollection(personnages, armes, profil);
     });
 
     document.getElementById("profil-form").addEventListener("submit", async event => {
@@ -885,11 +896,12 @@ async function initialiserPage() {
   }
 }
 
-// ---- Grille : toute la largeur, écarts homogènes (même calcul que la draft) ----
-// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE, puis
-// l'espace restant est réparti également entre les cartes et sur les 2
-// bords ; le même écart sert entre les lignes. Téléphone : 4 par ligne,
-// cartes réduites à la largeur de l'écran.
+// ---- Grille : toute la largeur, alignée sur les bords ----
+// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE ; la
+// 1re et la dernière colonne touchent les bords (alignées avec les filtres
+// et le profil), l'espace restant est réparti entre les cartes ; le même
+// écart sert entre les lignes. Téléphone : 4 par ligne, cartes réduites à la
+// largeur de l'écran.
 
 const ECART_MIN_GRILLE = 10;
 const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
@@ -904,14 +916,14 @@ function ajusterGrille(grille) {
 
   if (MEDIA_TELEPHONE.matches) {
     colonnes = COLONNES_TELEPHONE;
-    taille = Math.floor((largeur - (colonnes + 1) * ECART_MIN_GRILLE) / colonnes);
+    taille = Math.floor((largeur - (colonnes - 1) * ECART_MIN_GRILLE) / colonnes);
     grille.style.setProperty("--taille-carte", `${taille}px`);
   } else {
     grille.style.removeProperty("--taille-carte");
-    colonnes = Math.max(1, Math.floor((largeur - ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
+    colonnes = Math.max(1, Math.floor((largeur + ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
   }
 
-  const ecart = Math.max(0, (largeur - colonnes * taille) / (colonnes + 1));
+  const ecart = colonnes > 1 ? Math.max(0, (largeur - colonnes * taille) / (colonnes - 1)) : 0;
 
   grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
   grille.style.gap = `${ecart}px`;

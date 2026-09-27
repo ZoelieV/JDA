@@ -54,7 +54,7 @@ h1, h2 {
   box-sizing: border-box;
   aspect-ratio: 1000 / 137;
   min-height: 56px;
-  padding: 0 14px 0 28px;
+  padding: 0 14px 0 48px;
   display: flex;
   align-items: center;
   gap: 12px;

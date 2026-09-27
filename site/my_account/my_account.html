@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=7">
+<link rel="stylesheet" href="/my_account/my_account.css?v=8">
 <link rel="stylesheet" href="../commun/entete.css">
 <script src="/commun/fond.js" data-sans-requete></script>
 </head>
@@ -99,6 +99,14 @@
         <button type="button" id="btn-clear-filtres" class="btn-clear-filtres">✕ Filtres</button>
       </div>
 
+      <!-- Personnages / Armes à gauche, box à droite, sur une seule ligne
+           (sur ordi). -->
+      <div class="ligne-vues">
+        <div class="view-selector">
+          <button type="button" class="view-btn active" data-view="characters">Personnages</button>
+          <button type="button" class="view-btn" data-view="weapons">Armes</button>
+        </div>
+
       <div class="box-selector">
         <button type="button" class="box-btn active" data-box="full">Full box</button>
         <button type="button" class="box-btn" data-box="stuff">Personnages stuff</button>
@@ -108,23 +116,18 @@
         <button type="button" class="box-btn" data-box="opti4">Box optimisée 4</button>
         <button type="button" class="box-btn" data-box="opti5">Box optimisée 5</button>
       </div>
-
-      <div id="box-total" class="box-total">
-        <strong>Total <span id="box-total-label">Full box</span> :</strong>
-        <span id="total-ppc">0</span>
       </div>
 
-      <div class="section-collection">
-        <div class="view-selector">
-          <button type="button" class="view-btn active" data-view="characters">Personnages</button>
-          <button type="button" class="view-btn" data-view="weapons">Armes</button>
-          <button type="submit" class="btn-enregistrer">Enregistrer</button>
-        </div>
+      <!-- Total (persos + armes de la box) figé en bas au centre. -->
+      <div id="box-total" class="box-total">
+        <strong>Total <span id="box-total-label">Full Box</span> :</strong>
+        <span id="total-ppc">0</span>
       </div>
 
       <div id="liste-collection" class="liste-personnages"></div>
 
-      <button type="submit" class="btn-enregistrer">Enregistrer</button>
+      <!-- Figé en bas à droite de l'écran. -->
+      <button type="submit" class="btn-enregistrer btn-enregistrer-fixe">Enregistrer</button>
     </form>
 
   </div>
@@ -140,11 +143,11 @@
 
       <div class="apercu-parametres">
         <div class="apercu-bloc">
-          <span class="apercu-titre">Bannière</span>
+          <span class="apercu-titre">Namecard</span>
           <div id="apercu-banniere" class="apercu-image apercu-banniere"></div>
         </div>
         <div class="apercu-bloc">
-          <span class="apercu-titre">Deuxième bannière</span>
+          <span class="apercu-titre">Bannière</span>
           <div id="apercu-banniere2" class="apercu-image apercu-banniere2"></div>
         </div>
         <div class="apercu-bloc">
@@ -154,8 +157,8 @@
       </div>
 
       <div class="onglets-parametres">
-        <button type="button" class="onglet-parametre active" data-onglet="banniere">Bannière</button>
-        <button type="button" class="onglet-parametre" data-onglet="banniere2">Deuxième bannière</button>
+        <button type="button" class="onglet-parametre active" data-onglet="banniere">Namecard</button>
+        <button type="button" class="onglet-parametre" data-onglet="banniere2">Bannière</button>
         <button type="button" class="onglet-parametre" data-onglet="fond">Fond d'écran</button>
         <input type="text" id="recherche-parametres" class="recherche-personnage" placeholder="Rechercher…">
       </div>
@@ -169,6 +172,6 @@
     </div>
   </div>
 
-  <script src="/my_account/my_account.js?v=10"></script>
+  <script src="/my_account/my_account.js?v=11"></script>
 </body>
 </html>

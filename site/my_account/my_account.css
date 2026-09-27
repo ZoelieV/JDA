@@ -342,7 +342,7 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--taille-carte));
   gap: 12px;
-  justify-content: center;
+  justify-content: space-between;
 }
 
 /* Rectangle qui englobe le visuel, le réglage de constellation et le niveau. */
@@ -357,7 +357,7 @@ h2 {
   align-items: center;
   gap: 6px;
   text-align: center;
-  /* Gris du fond de page, fortement transparent. */
+  /* Gris du fond de page, fortement transparent (plus opaque si possédé). */
   background-color: rgba(30, 30, 30, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
@@ -491,26 +491,13 @@ h2 {
   vertical-align: middle;
 }
 
-.section-collection {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-/* Personnages / Armes à gauche, Enregistrer à droite. */
 .view-selector {
-  flex: 1;
   display: flex;
   gap: 8px;
 }
 
-.view-selector .btn-enregistrer {
-  margin-left: auto;
-}
-
-/* Grille descendue pour laisser de l'air sous Personnages / Armes /
-   Enregistrer. */
+/* Grille descendue pour laisser de l'air sous Personnages / Armes et les
+   box. */
 #liste-collection {
   margin-top: 15px;
 }
@@ -552,12 +539,6 @@ h2 {
 
 .btn-enregistrer:hover {
   background-color: rgba(245, 197, 66, 0.25);
-}
-
-/* Enregistrer du bas : aligné à droite, comme celui du haut. */
-#profil-form > .btn-enregistrer {
-  display: block;
-  margin: 18px 0 0 auto;
 }
 
 .visuel-personnage {
@@ -854,7 +835,127 @@ textarea {
 .btn-clear-filtres,
 .box-btn,
 .view-btn {
-  background-color: rgba(20, 20, 20, 0.75);
+  background-color: rgba(20, 20, 20, 0.45);
+}
+
+/* Personnages / armes possédés : case plus opaque. */
+.carte-personnage.possede {
+  background-color: rgba(30, 30, 30, 0.75);
+}
+
+/* ---- Personnages / Armes à gauche, box à droite ---- */
+
+.ligne-vues {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 12px 0;
+}
+
+.ligne-vues .box-selector {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+/* ---- Niveau : logo stella + menu déroulant blanc sur gris ---- */
+
+.niveau-choix {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.niveau-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.niveau-select,
+.menu-champ select {
+  font-family: inherit;
+  font-size: 13px;
+  color: white;
+  background-color: #3a3a3a;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.niveau-select {
+  min-width: 0;
+  padding: 2px 4px;
+}
+
+.niveau-select option,
+.menu-champ select option {
+  color: white;
+  background-color: #3a3a3a;
+}
+
+/* ---- Enregistrer : figé en bas à droite, opaque ---- */
+
+.btn-enregistrer-fixe {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  color: #1e1e1e;
+  background-color: rgba(245, 197, 66, 0.95);
+  border: 2px solid #f5c542;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.btn-enregistrer-fixe:hover {
+  background-color: #ffd95e;
+  border-color: #ffd95e;
+}
+
+/* ---- Tout ce qui est cliquable passe au doré au survol ---- */
+
+.tri-btn:hover,
+.filtre-texte span:hover,
+.filtre-icone img:hover,
+.btn-clear-filtres:hover,
+.box-btn:hover,
+.view-btn:hover,
+.btn-secondaire:hover,
+.onglet-parametre:hover,
+.menu-btn:hover,
+.menu-champ input:hover,
+.menu-champ select:hover,
+.niveau-select:hover,
+.dupliquer-btn:hover,
+.recherche-personnage:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.18);
+}
+
+.niveau-choix:hover .niveau-select {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.visuel-personnage.selectionnable:hover,
+.choix-parametre:hover {
+  border-color: rgba(245, 197, 66, 0.9);
+  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.8);
+}
+
+.compte-btn:hover,
+.compte-btn[aria-expanded="true"] {
+  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.8);
+}
+
+.fermer-modal:hover {
+  color: #f5c542;
 }
 
 /* ---- Boutons - / + des constellations : ronds noirs, signes blancs ---- */
@@ -899,9 +1000,9 @@ textarea {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
-/* Place pour le total figé en bas. */
+/* Place pour le total et le bouton Enregistrer figés en bas. */
 body {
-  padding-bottom: 70px;
+  padding-bottom: 80px;
 }
 
 /* Les notifications s'affichent au-dessus du total. */
@@ -920,7 +1021,6 @@ body {
   .tris,
   .groupe-filtres,
   .box-selector,
-  .section-collection,
   .view-selector {
     flex-wrap: wrap;
   }
@@ -1041,4 +1141,20 @@ body {
 /* Tri masqué (niveau dans la vue Armes). */
 .tri-btn[hidden] {
   display: none;
+}
+
+/* Téléphone : total en bas à gauche pour ne pas chevaucher le bouton
+   Enregistrer (en bas à droite). */
+@media (max-width: 700px) {
+  .box-total {
+    left: 12px;
+    bottom: 12px;
+    transform: none;
+    max-width: calc(100vw - 160px);
+  }
+
+  .btn-enregistrer-fixe {
+    right: 12px;
+    bottom: 12px;
+  }
 }
