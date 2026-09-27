@@ -1,16 +1,18 @@
 /* ---- Échelle du site ----
-   Toutes les tailles sont en rem. 1rem = 26.4px (16px x 1.1 x 1.5) quand la
-   fenêtre fait la largeur de référence (--largeur-reference, celle de l'écran sur lequel le
-   site a été réglé), et suit ensuite la largeur de la fenêtre : le site garde
-   les mêmes proportions sur un écran HD, 2K ou 4K. Bornes : 18px à 52px.
-   Téléphone : taille fixe (16px), comme avant. */
+   Toutes les tailles sont en rem. Base fixe : 125 % de la taille de police
+   du navigateur (20px par défaut) sur ordi, 100 % (16px) sur téléphone.
+   Les px CSS sont déjà mis à l'échelle par le système selon la densité de
+   l'écran (ex. 150 % sur un écran 4K) : une case garde à peu près la même
+   taille à l'œil sur un écran HD ou 4K, et un grand écran affiche plus de
+   contenu (grilles fluides) au lieu de tout agrandir. Le zoom du navigateur
+   fonctionne normalement. */
 html {
-  font-size: clamp(18px, calc(100vw * 26.4 / 2560), 52px);
+  font-size: 125%;
 }
 
 @media (max-width: 700px) {
   html {
-    font-size: 16px;
+    font-size: 100%;
   }
 
   /* Cercles plus petits sur téléphone : contour du logo d'arme réduit. */

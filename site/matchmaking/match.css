@@ -800,12 +800,12 @@ h1 {
   transform: translateY(-50%);
   object-fit: contain;
   /* Logo d'arme signature : même taille extérieure que les cercles de
-     constellation / points ; contour de la couleur du raffinement (7px)
+     constellation / points ; contour de la couleur du raffinement (4px)
      tracé vers l'intérieur du cercle. */
   box-sizing: border-box;
   border-radius: 50%;
-  outline: var(--epaisseur-contour-arme, 7px) solid var(--couleur-ref);
-  outline-offset: calc(-1 * var(--epaisseur-contour-arme, 7px));
+  outline: var(--epaisseur-contour-arme, 4px) solid var(--couleur-ref);
+  outline-offset: calc(-1 * var(--epaisseur-contour-arme, 4px));
 }
 
 .character-visuel img.raffinement-j1 {
@@ -1054,12 +1054,12 @@ h1 {
   height: 1.375rem;
   object-fit: contain;
   /* Logo d'arme signature : même taille extérieure que les cercles de
-     constellation / points ; contour de la couleur du raffinement (7px)
+     constellation / points ; contour de la couleur du raffinement (4px)
      tracé vers l'intérieur du cercle. */
   box-sizing: border-box;
   border-radius: 50%;
-  outline: var(--epaisseur-contour-arme, 7px) solid var(--couleur-ref);
-  outline-offset: calc(-1 * var(--epaisseur-contour-arme, 7px));
+  outline: var(--epaisseur-contour-arme, 4px) solid var(--couleur-ref);
+  outline-offset: calc(-1 * var(--epaisseur-contour-arme, 4px));
 }
 
 .infos-j2 {
