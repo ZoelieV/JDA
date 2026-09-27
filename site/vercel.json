@@ -1,6 +1,29 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/my_account", "destination": "/my_account/my_account" }
+    {
+      "source": "/my_account",
+      "destination": "/my_account/my_account"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/DB/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/DB/(.*)\\.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=86400"
+        }
+      ]
+    }
   ]
 }

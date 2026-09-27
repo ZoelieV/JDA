@@ -114,11 +114,27 @@ function getFondRarete(rarete) {
   return "../DB/images/others/bg_4_star.webp";
 }
 
-// Arme signature : image nommée "[id_personnage]_w.webp"
+// Arme signature : image nommée "[id_personnage]_w.webp". Index construit
+// une seule fois (perso -> arme et arme -> perso) au lieu de parcourir la
+// liste des armes à chaque carte.
+let indexArmesSignature = null;       // id perso -> arme
+let indexPersosParArmeSignature = null; // id arme -> perso
+
+function construireIndexSignatures() {
+  indexArmesSignature = new Map();
+  indexPersosParArmeSignature = new Map();
+  const persosParId = new Map(personnagesData.map(perso => [perso.id, perso]));
+
+  armesData.forEach(arme => {
+    const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
+    if (!m) return;
+    indexArmesSignature.set(m[1], arme);
+    if (persosParId.has(m[1])) indexPersosParArmeSignature.set(arme.id, persosParId.get(m[1]));
+  });
+}
+
 function trouverArmeSignature(personnageId) {
-  return armesData.find(
-    arme => typeof arme.image === "string" && arme.image.endsWith(`${personnageId}_w.webp`)
-  );
+  return indexArmesSignature.get(personnageId);
 }
 
 // Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un perso sur le
@@ -146,10 +162,7 @@ function getNiveauPersonnage(personnageId) {
 
 // Sens inverse : à partir d'une arme, retrouve le personnage dont c'est l'arme signature
 function trouverPersonnageParArmeSignature(armeId) {
-  return personnagesData.find(perso => {
-    const arme = trouverArmeSignature(perso.id);
-    return arme && arme.id === armeId;
-  });
+  return indexPersosParArmeSignature.get(armeId);
 }
 
 function afficherComptes(comptes) {
@@ -270,7 +283,7 @@ function creerCarteProfil({ item, valeur, config }) {
 
   card.innerHTML = `
     <div class="character-visuel" style="background-image: url('${fond}');">
-      <img src="../DB/${item.image}" alt="${item.nom}">
+      <img src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       <span class="character-constellation">${getLabelConstellation(valeur, vueActive)}</span>
       <span class="character-points">${item[config.pointsField]?.[valeur] ?? ""}</span>
       ${basGaucheHtml}
@@ -444,15 +457,19 @@ function initialiserSelecteursVueEtBox() {
 
 async function ouvrirProfil(discordId, nom) {
   try {
+    const dejaCharges = personnagesData.length > 0 && armesData.length > 0;
     const [profil, personnages, armes] = await Promise.all([
       chargerProfil(discordId),
-      chargerPersonnages(),
-      chargerArmes()
+      dejaCharges ? personnagesData : chargerPersonnages(),
+      dejaCharges ? armesData : chargerArmes()
     ]);
 
     profilCourant = profil;
-    personnagesData = personnages;
-    armesData = armes;
+    if (!dejaCharges) {
+      personnagesData = personnages;
+      armesData = armes;
+      construireIndexSignatures();
+    }
 
     vueActive = "characters";
     boxActive = "full";

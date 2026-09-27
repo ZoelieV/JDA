@@ -256,6 +256,10 @@ async function postRejouer(rejouer) {
 // recharge les profils concernés avant de redessiner — sinon joueur1/
 // joueur2/monRole resteraient périmés.
 async function definirDraft(nouveauDraft) {
+  // Poll qui renvoie exactement l'état déjà affiché (y compris une mise à
+  // jour optimiste) : rien à re-rendre.
+  if (draft && joueur1 && joueur2 && JSON.stringify(nouveauDraft) === JSON.stringify(draft)) return;
+
   draft = nouveauDraft;
 
   // Nouvelle manche (boss pas encore tiré) : on réarme l'animation pour le
@@ -295,12 +299,20 @@ function getJoueurDataParRole(role) {
   return role === "j1" ? joueur1?.data : joueur2?.data;
 }
 
-// Arme signature d'un personnage : image nommée "[id_personnage]_w.webp"
-// (même convention que sur la page des box de comptes).
+// Arme signature : image nommée "[id_personnage]_w.webp". Index construit
+// une seule fois (perso -> arme et arme -> perso) au lieu de parcourir la
+// liste des armes à chaque carte.
+let indexArmesSignature = null;
+
 function trouverArmeSignature(personnageId) {
-  return armesData.find(
-    arme => typeof arme.image === "string" && arme.image.endsWith(`${personnageId}_w.webp`)
-  );
+  if (!indexArmesSignature) {
+    indexArmesSignature = new Map();
+    armesData.forEach(arme => {
+      const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
+      if (m) indexArmesSignature.set(m[1], arme);
+    });
+  }
+  return indexArmesSignature.get(personnageId);
 }
 
 // Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un personnage chez
@@ -458,7 +470,7 @@ function creerCarteItem(personnage, {
 
   card.innerHTML = `
     <div class="character-visuel" style="background-image: url('${fond}');">
-      <img src="../DB/${personnage.image}" alt="${personnage.nom}">
+      <img src="../DB/${personnage.image}" alt="${personnage.nom}" loading="lazy" decoding="async">
       ${constellationHtml}
       ${niveauHtml}
       ${raffinementHtml}
@@ -1350,6 +1362,17 @@ async function demarrer() {
     await tick();
 
     intervalPolling = setInterval(tick, POLL_INTERVAL_MS);
+
+    // Onglet masqué : plus de requêtes ; au retour, état rafraîchi tout de
+    // suite puis polling normal.
+    document.addEventListener("visibilitychange", () => {
+      clearInterval(intervalPolling);
+      intervalPolling = null;
+      if (!document.hidden) {
+        tick();
+        intervalPolling = setInterval(tick, POLL_INTERVAL_MS);
+      }
+    });
   } catch (error) {
     console.error(error);
     alert(error.message || "Erreur lors du chargement du match.");

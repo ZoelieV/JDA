@@ -382,11 +382,27 @@ const iconesTypesArmesSignature = {
   catalyst: "../DB/images/others/catalyst_icon.webp"
 };
 
-// Arme signature : image nommée "[id_personnage]_w.webp"
-function trouverArmeSignature(personnageId, armes) {
-  return armes.find(
-    arme => typeof arme.image === "string" && arme.image.endsWith(`${personnageId}_w.webp`)
-  );
+// Arme signature : image nommée "[id_personnage]_w.webp". Index construit
+// une seule fois (perso -> arme et arme -> perso) au lieu de parcourir la
+// liste des armes à chaque carte.
+let indexSignatures = null;
+
+function getIndexSignatures(personnages, armes) {
+  if (!indexSignatures) {
+    const armeParPerso = new Map();
+    const persoParArme = new Map();
+    const persosParId = new Map(personnages.map(perso => [perso.id, perso]));
+
+    armes.forEach(arme => {
+      const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
+      if (!m) return;
+      armeParPerso.set(m[1], arme);
+      if (persosParId.has(m[1])) persoParArme.set(arme.id, persosParId.get(m[1]));
+    });
+
+    indexSignatures = { armeParPerso, persoParArme };
+  }
+  return indexSignatures;
 }
 
 // Perso : logo de son arme signature possédée, détouré de la couleur du
@@ -394,13 +410,13 @@ function trouverArmeSignature(personnageId, armes) {
 // Arme : icône du perso dont c'est l'arme signature.
 function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
   if (vueActive === "weapons") {
-    const personnageLie = personnages.find(perso => trouverArmeSignature(perso.id, armes)?.id === item.id);
+    const personnageLie = getIndexSignatures(personnages, armes).persoParArme.get(item.id);
     return personnageLie
       ? `<img class="perso-lie-icone" src="../DB/images/characters/side_char/${personnageLie.id}_side.webp" alt="${personnageLie.nom}" title="${personnageLie.nom}">`
       : "";
   }
 
-  const arme = trouverArmeSignature(item.id, armes);
+  const arme = getIndexSignatures(personnages, armes).armeParPerso.get(item.id);
   const iconeArme = iconesTypesArmesSignature[item.arme];
   if (!arme || !iconeArme) return "";
 
@@ -463,7 +479,7 @@ ${boutonDupliquer}
 
   conteneur.innerHTML = `
 <div class="visuel-personnage ${classeSelectionnable} ${classeSelectionnee}" data-id="${idInstance}" style="background-image: url('${fond}'); opacity: ${opacite};">
-<img class="image-personnage" src="../DB/${item.image}" alt="${item.nom}">
+<img class="image-personnage" src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       ${badgeConstellation}
       ${badgeNiveau}
       ${possede ? coinBasDroite : ""}
