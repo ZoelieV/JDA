@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=12">
+<link rel="stylesheet" href="/my_account/my_account.css?v=13">
 <link rel="stylesheet" href="../commun/entete.css">
 <script src="/commun/fond.js?v=3" data-sans-requete></script>
 </head>
@@ -129,6 +129,9 @@
 
       <div id="liste-collection" class="liste-personnages"></div>
 
+      <!-- En bas à gauche, dans le flux de la page (non figé). -->
+      <button type="button" id="btn-reinitialiser" class="btn-reinitialiser">Réinitialiser la box</button>
+
       <!-- Figé en bas à droite de l'écran. -->
       <button type="submit" class="btn-enregistrer btn-enregistrer-fixe">Enregistrer</button>
     </form>
@@ -175,6 +178,19 @@
     </div>
   </div>
 
+  <!-- Confirmation de la réinitialisation de la box affichée. -->
+  <div id="modal-reinitialiser" class="modal-parametres">
+    <div class="modal-parametres-contenu modal-confirmation">
+      <h2 id="reinitialiser-titre">Réinitialiser la box ?</h2>
+      <p id="reinitialiser-texte"></p>
+      <p class="confirmation-note">Rien n'est définitif tant que tu n'as pas cliqué sur Enregistrer.</p>
+      <div class="pied-parametres">
+        <button type="button" id="reinitialiser-annuler" class="btn-secondaire">Annuler</button>
+        <button type="button" id="reinitialiser-confirmer" class="btn-danger">Réinitialiser</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Détection automatique de la box depuis une capture Hoyolab (bêta). -->
   <div id="modal-auto-box" class="modal-parametres">
     <div class="modal-parametres-contenu auto-box-contenu">
@@ -212,6 +228,6 @@
 
   <script src="/my_account/auto_box/detection.js?v=1"></script>
   <script src="/my_account/auto_box/interface.js?v=2"></script>
-  <script src="/my_account/my_account.js?v=13"></script>
+  <script src="/my_account/my_account.js?v=14"></script>
 </body>
 </html>

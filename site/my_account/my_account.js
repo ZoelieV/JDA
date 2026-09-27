@@ -457,9 +457,13 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
     ? (valeur < 0 ? "0.4" : "1")
     : (selectionne ? "1" : "0.45");
 
-  const boutonDupliquer = peutDupliquer
-    ? `<button type="button" class="constellation-btn dupliquer-btn" data-base-id="${item.id}" title="Dupliquer cette arme">⧉</button>`
-    : "";
+  // Copie : étiquette "Copie" à la place du bouton dupliquer (on ne duplique
+  // que l'arme d'origine).
+  const boutonDupliquer = estDuplicata
+    ? `<span class="badge-copie">Copie</span>`
+    : peutDupliquer
+      ? `<button type="button" class="constellation-btn dupliquer-btn" data-base-id="${item.id}" title="Dupliquer cette arme">⧉</button>`
+      : "";
 
   const zoneAction = boxActive === "full"
     ? `
@@ -476,7 +480,8 @@ ${boutonDupliquer}
     ? creerSelectNiveau(idInstance, niveau)
     : "";
 
-  const badgeCopie = estDuplicata ? `<span class="badge-copie">Copie</span>` : "";
+  // Hors Full Box (pas de réglages) : étiquette "Copie" sous l'image.
+  const badgeCopie = estDuplicata && boxActive !== "full" ? `<span class="badge-copie">Copie</span>` : "";
 
   const possede = valeur >= 0;
   const badgeConstellation = possede
@@ -882,6 +887,8 @@ async function initialiserPage() {
       );
     });
 
+    initialiserReinitialisation(personnages, armes, profil);
+
     // UID / théâtre (menu du compte) : même enregistrement que le formulaire.
     document.getElementById("btn-enregistrer-compte").addEventListener("click", () => {
       document.getElementById("profil-form").requestSubmit();
@@ -1156,6 +1163,67 @@ async function initialiserParametres(profil) {
       memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
       fermer();
     }
+  });
+}
+
+// ---- Réinitialiser la box (vue et box affichées) ----
+// Full Box : plus rien n'est possédé dans la vue (persos ou armes, copies
+// comprises), donc toutes les box de cette vue sont vidées aussi.
+// Autre box : seule la sélection de cette box est vidée.
+
+function reinitialiserBox(profil, vueActive, boxActive) {
+  const collection = profil[vueActive];
+
+  if (boxActive === "full") {
+    collection.full = {};
+    if (collection.niveaux) collection.niveaux = {};
+    Object.keys(collection.selections).forEach(box => {
+      collection.selections[box] = {};
+    });
+    return;
+  }
+
+  collection.selections[boxActive] = {};
+}
+
+function initialiserReinitialisation(personnages, armes, profil) {
+  const modal = document.getElementById("modal-reinitialiser");
+  const texte = document.getElementById("reinitialiser-texte");
+
+  function fermer() {
+    modal.classList.remove("active");
+  }
+
+  document.getElementById("btn-reinitialiser").addEventListener("click", () => {
+    const vueActive = getVueActive();
+    const boxActive = getBoxActive();
+    const armes = vueActive === "weapons";
+    const quoi = armes ? "armes" : "personnages";
+    const tous = armes ? "Toutes les armes" : "Tous les personnages";
+    const retires = armes ? "retirées (non possédées)" : "retirés (non possédés)";
+    const nomBox = boxActive === "full" ? "Full Box" : document.querySelector(`.box-btn[data-box="${boxActive}"]`).textContent;
+
+    texte.textContent = boxActive === "full"
+      ? `${tous} de ta Full Box seront ${retires}, et donc aussi de toutes tes autres box.`
+      : `${tous} de la box « ${nomBox} » seront ${retires.split(" ")[0]} de cette box.`;
+    document.getElementById("reinitialiser-titre").textContent = `Réinitialiser « ${nomBox} » (${quoi}) ?`;
+    modal.classList.add("active");
+  });
+
+  document.getElementById("reinitialiser-confirmer").addEventListener("click", () => {
+    reinitialiserBox(profil, getVueActive(), getBoxActive());
+    afficherCollection(personnages, armes, profil);
+    mettreAJourTotalBox(personnages, armes, profil);
+    fermer();
+    afficherToast("Box réinitialisée : clique sur Enregistrer pour confirmer");
+  });
+
+  document.getElementById("reinitialiser-annuler").addEventListener("click", fermer);
+  modal.addEventListener("click", event => {
+    if (event.target === modal) fermer();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("active")) fermer();
   });
 }
 
