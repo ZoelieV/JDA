@@ -959,11 +959,33 @@ h1 {
    bannière occupe la hauteur et s'aligne sur son extrémité arrondie. */
 .recap-teams .recap-equipe .slot-pick {
   aspect-ratio: auto;
-  height: 52px;
+  height: 200px;
+  padding: 0 14px;
+  gap: 14px;
 }
 
-.recap-teams .recap-equipe .slot-pick img {
-  height: 46px;
+.recap-teams .recap-equipe .slot-pick > img {
+  height: 186px;
+}
+
+/* Infos empilées (constellation, niveau, arme) à côté de l'icône. */
+.recap-teams .infos-case,
+.recap-teams .infos-j2 {
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.recap-teams .pastille-case {
+  min-width: 54px;
+  height: 54px;
+  border-radius: 27px;
+  font-size: 20px;
+}
+
+.recap-teams .arme-case {
+  width: 54px;
+  height: 54px;
 }
 
 .recap-equipe {
@@ -1034,11 +1056,13 @@ h1 {
   position: relative;
 }
 
+/* Centrée en hauteur dans la namecard. */
 .recap-temps {
   position: absolute;
-  top: 8px;
+  top: 50%;
   left: 8px;
   right: 8px;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1358,7 +1382,7 @@ h1 {
   transform: scaleX(-1);
 }
 
-.equipe-joueur .slot-pick img {
+.equipe-joueur .slot-pick > img {
   position: relative;
   height: 88%;
   width: auto;
@@ -1579,11 +1603,29 @@ h1 {
   }
 
   .recap-teams .recap-equipe .slot-pick {
-    height: 44px;
+    height: 124px;
+    padding: 0 8px;
+    gap: 8px;
   }
 
-  .recap-teams .recap-equipe .slot-pick img {
-    height: 38px;
+  .recap-teams .recap-equipe .slot-pick > img {
+    height: 114px;
+  }
+
+  .recap-teams .pastille-case {
+    min-width: 34px;
+    height: 34px;
+    border-radius: 17px;
+    font-size: 13px;
+  }
+
+  .recap-teams .arme-case {
+    width: 34px;
+    height: 34px;
+  }
+
+  .recap-teams .infos-case {
+    gap: 5px;
   }
 
   .btn-partager {
@@ -1620,7 +1662,6 @@ h1 {
   }
 
   .recap-temps {
-    top: 3px;
     left: 3px;
     right: 3px;
   }
