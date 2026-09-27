@@ -55,7 +55,7 @@ async function chargerSessionDiscord() {
 
   logoutBtn.addEventListener("click", () => {
     // Plus de fond personnalisé une fois déconnecté.
-    window.FondEcran?.memoriser(null);
+    window.FondEcran?.memoriser(null, null);
     window.location.href = "/api/auth/logout";
   });
 
@@ -104,6 +104,10 @@ function fermerMenuCompte() {
 function initialiserMenuCompte() {
   const bouton = document.getElementById("compte-btn");
   const menu = document.getElementById("menu-compte");
+
+  // Deuxième bannière en fond du bouton, depuis le cache (mise à jour au
+  // chargement du profil, cf. memoriserFondPourLeSite).
+  window.FondEcran?.appliquerBanniere2(bouton, window.FondEcran.banniere2());
 
   bouton.addEventListener("click", () => {
     const ouvert = menu.classList.toggle("cache") === false;
@@ -958,10 +962,15 @@ function getFond(idFond) {
 }
 
 // Met à jour le cache du fond partagé avec les autres pages (commun/fond.js).
-function memoriserFondPourLeSite(idFond) {
+// Met aussi à jour la deuxième bannière du bouton du compte.
+function memoriserFondPourLeSite(idFond, banniere2) {
+  const urlBanniere2 = banniere2 ? urlImage(banniere2) : null;
+  if (window.FondEcran) {
+    window.FondEcran.appliquerBanniere2(document.getElementById("compte-btn"), urlBanniere2);
+  }
   if (!cosmetiques || !window.FondEcran) return;
   const fond = getFond(idFond);
-  window.FondEcran.memoriser(fond ? urlImage(fond.image) : null);
+  window.FondEcran.memoriser(fond ? urlImage(fond.image) : null, urlBanniere2);
 }
 
 function appliquerFond(idFond) {
@@ -986,7 +995,7 @@ async function initialiserParametres(profil) {
 
   profil.parametres = { banniere: null, banniere2: null, fond: null, ...(profil.parametres || {}) };
   appliquerFond(profil.parametres.fond);
-  memoriserFondPourLeSite(profil.parametres.fond);
+  memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
 
   function rendreApercus() {
     const cases = {
@@ -1121,7 +1130,7 @@ async function initialiserParametres(profil) {
       succes ? "succes" : "erreur"
     );
     if (succes) {
-      memoriserFondPourLeSite(profil.parametres.fond);
+      memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
       fermer();
     }
   });

@@ -13,12 +13,6 @@
   gap: 12px;
 }
 
-.accueil-logo {
-  font-size: 22px;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
 .accueil-compte {
   display: flex;
   align-items: center;

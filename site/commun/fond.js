@@ -1,5 +1,7 @@
 // Fond d'écran choisi dans Mon compte (profil.parametres.fond), appliqué sur
-// toutes les pages du site sauf les rooms de match.
+// toutes les pages du site sauf les rooms de match. Garde aussi la deuxième
+// bannière (profil.parametres.banniere2), affichée dans le bouton du compte
+// (classe .avec-banniere2, cf. appliquerBanniere2).
 //
 // À inclure dans le <head> : <script src="/commun/fond.js"></script>
 //
@@ -11,6 +13,7 @@
 (function () {
   const CLE_URL = "fond-ecran-url";
   const CLE_DATE = "fond-ecran-date";
+  const CLE_BANNIERE2 = "banniere2-url";
   const DUREE_CACHE_MS = 10 * 60 * 1000;
   const sansRequete = document.currentScript?.hasAttribute("data-sans-requete");
 
@@ -27,6 +30,25 @@
       background-repeat: no-repeat;
       background-position: center;
       background-size: cover;
+    }
+
+    /* Bouton du compte avec la deuxième bannière (format 1000x137) en
+       fond, assombrie à gauche pour garder la photo et le nom lisibles. */
+    .avec-banniere2 {
+      box-sizing: border-box;
+      width: 420px;
+      max-width: calc(100vw - 110px);
+      aspect-ratio: 1000 / 137;
+      /* Sur téléphone, la bannière est recadrée plutôt que d'écraser la photo. */
+      min-height: 50px;
+      border-radius: 12px;
+      justify-content: flex-start;
+      background-image:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1) 70%),
+        var(--banniere2);
+      background-size: cover;
+      background-position: center;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
   `;
   document.head.appendChild(style);
@@ -46,9 +68,21 @@
     document.documentElement.style.setProperty("--fond-ecran", url ? `url("${url}")` : "none");
   }
 
-  function memoriser(url) {
+  // banniere2 : undefined = inchangée.
+  function memoriser(url, banniere2) {
     ecrire(CLE_URL, url);
     ecrire(CLE_DATE, String(Date.now()));
+    if (banniere2 !== undefined) {
+      ecrire(CLE_BANNIERE2, banniere2);
+      document.dispatchEvent(new CustomEvent("banniere2-change", { detail: banniere2 }));
+    }
+  }
+
+  // Pose (ou retire) la deuxième bannière dans un bouton de compte.
+  function appliquerBanniere2(element, url) {
+    element.classList.toggle("avec-banniere2", !!url);
+    if (url) element.style.setProperty("--banniere2", `url("${url}")`);
+    else element.style.removeProperty("--banniere2");
   }
 
   async function rafraichir() {
@@ -58,7 +92,7 @@
         // Non connecté : pas de fond personnalisé.
         if (reponse.status === 401) {
           appliquer(null);
-          memoriser(null);
+          memoriser(null, null);
         }
         return;
       }
@@ -73,8 +107,11 @@
         url = fond ? encodeURI(`/DB/images/${fond.image}`) : null;
       }
 
+      const cheminBanniere2 = profil?.parametres?.banniere2;
+      const banniere2 = cheminBanniere2 ? encodeURI(`/DB/images/${cheminBanniere2}`) : null;
+
       appliquer(url);
-      memoriser(url);
+      memoriser(url, banniere2);
     } catch (erreur) {
       console.error(erreur);
     }
@@ -87,6 +124,12 @@
     rafraichir();
   }
 
-  // Utilisé par Mon compte après l'enregistrement des paramètres.
-  window.FondEcran = { memoriser };
+  // memoriser : utilisé par Mon compte après l'enregistrement des paramètres.
+  // Bouton du compte : FondEcran.appliquerBanniere2(bouton, FondEcran.banniere2())
+  // puis écoute de l'événement "banniere2-change" (rafraîchissement).
+  window.FondEcran = {
+    memoriser,
+    appliquerBanniere2,
+    banniere2: () => lire(CLE_BANNIERE2)
+  };
 })();

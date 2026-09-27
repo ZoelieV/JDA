@@ -22,6 +22,12 @@ async function afficherCompte() {
       }
       lien.appendChild(document.createTextNode(nom));
       zone.appendChild(lien);
+
+      // Deuxième bannière en fond du bouton (cf. commun/fond.js).
+      window.FondEcran?.appliquerBanniere2(lien, window.FondEcran.banniere2());
+      document.addEventListener("banniere2-change", event => {
+        window.FondEcran.appliquerBanniere2(lien, event.detail);
+      });
       return;
     }
   } catch (erreur) {
