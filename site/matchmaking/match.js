@@ -64,7 +64,8 @@ const POLL_INTERVAL_MS = 2500;
 let roomId = null;
 let moiDiscordId = null;
 let monRole = null; // "j1" | "j2"
-let personnagesData = [];
+let personnagesBase = [];   // characters.json
+let personnagesData = [];   // variantes (Voyageur, Manekin) choisies par le joueur connecté
 let armesData = [];
 let bossData = [];
 let draft = null;
@@ -255,6 +256,8 @@ async function postRejouer(rejouer) {
 // changé (1er chargement, ou échange automatique après une revanche), on
 // recharge les profils concernés avant de redessiner — sinon joueur1/
 // joueur2/monRole resteraient périmés.
+let derniereCleVariantes = null;
+
 async function definirDraft(nouveauDraft) {
   // Poll qui renvoie exactement l'état déjà affiché (y compris une mise à
   // jour optimiste) : rien à re-rendre.
@@ -277,6 +280,16 @@ async function definirDraft(nouveauDraft) {
   }
   if (draft.discord_j1 && draft.discord_j2) {
     monRole = moiDiscordId === draft.discord_j1 ? "j1" : "j2";
+  }
+
+  // Voyageur / Manekin : la grille montre les variantes du joueur connecté
+  // (celles de j1 pour un spectateur) ; les picks, celles de leur joueur.
+  const parametresVue = getJoueurDataParRole(monRole || "j1")?.parametres;
+  const cleVariantes = JSON.stringify([parametresVue?.voyageur, parametresVue?.manekin]);
+  if (cleVariantes !== derniereCleVariantes) {
+    derniereCleVariantes = cleVariantes;
+    personnagesData = appliquerVariantes(personnagesBase, parametresVue);
+    document.querySelectorAll(".grille-pool").forEach(grille => delete grille.dataset.cle);
   }
 
   rendrePhase();
@@ -805,7 +818,7 @@ function rendreSlotsEtBans(role) {
 
     if (persoId) {
       slot.className = "slot-pick";
-      remplirCaseTableau(slot, getPersonnageParId(persoId));
+      remplirCaseTableau(slot, appliquerVariante(getPersonnageParId(persoId), getJoueurDataParRole(role)?.parametres));
     } else {
       slot.className = "slot-pick vide";
       slot.textContent = "Vide";
@@ -1197,9 +1210,47 @@ function annoncerRole() {
 // avec les mêmes infos qu'en draft (constellation, niveau, arme ; j1 à
 // gauche, j2 à droite). Boss au centre.
 
+// Case du récap : personnage sur sa bannière (comme en draft) + ses infos
+// chez ce joueur (constellation, niveau, arme signature).
+function creerCaseRecap(personnage, role) {
+  const slot = document.createElement("div");
+  slot.className = "slot-pick";
+  remplirCaseTableau(slot, appliquerVariante(personnage, getJoueurDataParRole(role)?.parametres));
+
+  const suffixe = role === "j1" ? "J1" : "J2";
+  const infos = getInfosCarte(personnage.id, [role]);
+  const iconeArme = iconesTypesArmesSignature[personnage.arme];
+  const refinement = infos[`refinement${suffixe}`];
+
+  const zoneInfos = document.createElement("div");
+  zoneInfos.className = `infos-case infos-${role}`;
+  zoneInfos.innerHTML = [
+    infos[`constellation${suffixe}`] ? `<span class="pastille-case">${infos[`constellation${suffixe}`]}</span>` : "",
+    infos[`niveau${suffixe}`] ? `<span class="pastille-case">${infos[`niveau${suffixe}`]}</span>` : "",
+    refinement !== null && refinement !== undefined && iconeArme
+      ? `<img class="arme-case" src="${iconeArme}" alt="R${refinement + 1}" title="Arme signature R${refinement + 1}" style="--couleur-ref: ${COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0]}">`
+      : ""
+  ].join("");
+  slot.appendChild(zoneInfos);
+  return slot;
+}
+
 function rendreTableauRecap(role) {
   const joueur = role === "j1" ? joueur1 : joueur2;
-  document.getElementById(`recap-entete-${role}`).innerHTML = titreTableauJoueur(role, joueur.nom);
+  const zone = document.getElementById(`recap-temps-${role}`);
+
+  // Namecard redessinée seulement si elle change ; la zone du temps (et le
+  // champ de saisie qu'elle contient) est posée DANS la namecard, sans être
+  // recréée (le texte tapé n'est pas perdu aux rafraîchissements).
+  const entete = document.getElementById(`recap-entete-${role}`);
+  const cleEntete = JSON.stringify([joueur.nom, joueur.avatar, joueur.data?.parametres?.banniere, draft.roles_tires]);
+  if (entete.dataset.cle !== cleEntete) {
+    entete.dataset.cle = cleEntete;
+    zone.remove();
+    entete.innerHTML = titreTableauJoueur(role, joueur.nom);
+  }
+  const namecard = entete.querySelector(".namecard-tableau");
+  if (zone.parentElement !== namecard) namecard.appendChild(zone);
 
   // Personnages : reconstruits seulement si les picks changent.
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
@@ -1207,13 +1258,12 @@ function rendreTableauRecap(role) {
   if (grilleAChange(grille, picks.join(","))) {
     picks.forEach(id => {
       const personnage = getPersonnageParId(id);
-      if (personnage) grille.appendChild(creerCarteItem(personnage, getInfosCarte(id, [role])));
+      if (personnage) grille.appendChild(creerCaseRecap(personnage, role));
     });
   }
 
-  // Temps : champ de saisie dans le tableau du joueur connecté pendant la
+  // Temps : champ de saisie dans la namecard du joueur connecté pendant la
   // saisie ; sinon un texte (temps de l'adversaire masqué jusqu'au résultat).
-  const zone = document.getElementById(`recap-temps-${role}`);
   const temps = draft[`temps_${role}`];
   const saisie = document.getElementById("saisie-temps");
   const saisieIci = draft.phase === "temps" && role === monRole && !temps;
@@ -1510,12 +1560,13 @@ async function demarrer() {
 
     appliquerFondRoom();
 
-    [personnagesData, bossData, armesData] = await Promise.all([
+    [personnagesBase, bossData, armesData] = await Promise.all([
       chargerPersonnages(),
       chargerBoss(),
       chargerArmes(),
       chargerFondsBoss()
     ]);
+    personnagesData = personnagesBase;
 
     initialiserFiltresTri();
     initialiserGrillesPersos();

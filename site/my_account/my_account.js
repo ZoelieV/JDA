@@ -421,7 +421,7 @@ function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
   if (vueActive === "weapons") {
     const personnageLie = getIndexSignatures(personnages, armes).persoParArme.get(item.id);
     return personnageLie
-      ? `<img class="perso-lie-icone" src="../DB/images/characters/side_char/${personnageLie.id}_side.webp" alt="${personnageLie.nom}" title="${personnageLie.nom}">`
+      ? `<img class="perso-lie-icone" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${personnageLie.nom}">`
       : "";
   }
 
@@ -703,7 +703,7 @@ function calculerTotalCollection(items, vueActive, boxActive, profil) {
 
 async function initialiserPage() {
   try {
-    const [personnages, armes] = await Promise.all([
+    const [personnagesBase, armes] = await Promise.all([
       chargerPersonnages(),
       chargerArmes()
     ]);
@@ -712,6 +712,21 @@ async function initialiserPage() {
 
     document.getElementById("uid").value = profil.uid || "";
     document.getElementById("theatre").value = profil.theatre || "";
+
+    // Voyageur (Aether / Lumine) et Manekin (Manekin / Manekina) : seule la
+    // variante choisie est affichée. Le tableau est mis à jour sur place
+    // pour que tous les écouteurs voient le changement.
+    profil.parametres ??= {};
+    const personnages = appliquerVariantes(personnagesBase, profil.parametres);
+    [["choix-voyageur", "voyageur"], ["choix-manekin", "manekin"]].forEach(([idSelect, cle]) => {
+      const select = document.getElementById(idSelect);
+      select.value = profil.parametres[cle] || select.options[0].value;
+      select.addEventListener("change", () => {
+        profil.parametres[cle] = select.value;
+        personnages.splice(0, personnages.length, ...appliquerVariantes(personnagesBase, profil.parametres));
+        afficherCollection(personnages, armes, profil);
+      });
+    });
 
     setBoxActive("full");
     setVueActive("characters");
@@ -1022,9 +1037,12 @@ async function initialiserParametres(profil) {
 
   // Choix manquant (ou ancien "aucun") : valeur par défaut.
   const choix = profil.parametres || {};
-  profil.parametres = Object.fromEntries(
-    Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, choix[cle] || defaut])
-  );
+  profil.parametres = {
+    ...choix,
+    ...Object.fromEntries(
+      Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, choix[cle] || defaut])
+    )
+  };
   appliquerFond(profil.parametres.fond);
   memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
 

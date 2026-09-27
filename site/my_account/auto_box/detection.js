@@ -60,14 +60,18 @@
   // Noms affichés par Hoyolab (FR) différents de characters.json.
   const ALIAS = {
     nomade: "wanderer",
-    manekina: "manekin"
+    manekina: "manekin",
+    voyageur: "traveler",
+    voyageuse: "traveler",
+    traveler: "traveler"
   };
 
   // Personnages qui peuvent apparaître 2 fois (variantes masculine /
   // féminine) : on garde la meilleure constellation, sans alerte.
   const DOUBLONS_NORMAUX = new Set(["manekin"]);
 
-  // Le Voyageur (Voyageur / Voyageuse, Traveler) n'est pas dans la liste : ignoré.
+  // Le Voyageur (Voyageur / Voyageuse, Traveler) : ignoré seulement s'il
+  // n'est pas dans la liste des personnages (sinon reconnu via ALIAS).
   const MOTIF_VOYAGEUR = /voyag|traveler/;
 
   // Python round() : arrondi au pair le plus proche sur les .5.
@@ -482,7 +486,7 @@
 
       const niveau = lireNiveau(mots);
       const nomLu = lireNom(mots);
-      const voyageur = estVoyageur(nomLu);
+      const voyageur = estVoyageur(nomLu) && !personnages.some(p => p.id === "traveler");
       const { personnage, score, second } = voyageur ? { personnage: null, score: 0, second: 0 } : trouver(nomLu);
 
       entrees.push({ case: c, caseImage, nomLu, voyageur, personnage, score, second, constellation, confiance, niveau });

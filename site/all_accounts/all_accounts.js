@@ -60,7 +60,8 @@ let triActif = null; // "points" | "constellation" | "niveau" | "rarete" | "elem
 
 // Données brutes du profil ouvert, conservées pour re-render sans refetch
 let profilCourant = null;
-let personnagesData = [];
+let personnagesBase = [];   // characters.json
+let personnagesData = [];   // avec les variantes choisies par le profil ouvert
 let armesData = [];
 
 async function chargerComptes() {
@@ -405,7 +406,7 @@ function creerCarteProfil({ item, valeur, config }) {
   } else {
     const personnageLie = trouverPersonnageParArmeSignature(item.id);
     if (personnageLie) {
-      basDroiteHtml = `<img class="perso-lie-icone" src="../DB/images/characters/side_char/${personnageLie.id}_side.webp" alt="${personnageLie.nom}" title="${personnageLie.nom}">`;
+      basDroiteHtml = `<img class="perso-lie-icone" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${personnageLie.nom}">`;
     }
   }
 
@@ -585,19 +586,19 @@ function initialiserSelecteursVueEtBox() {
 
 async function ouvrirProfil(discordId, nom) {
   try {
-    const dejaCharges = personnagesData.length > 0 && armesData.length > 0;
+    const dejaCharges = personnagesBase.length > 0 && armesData.length > 0;
     const [profil, personnages, armes] = await Promise.all([
       chargerProfil(discordId),
-      dejaCharges ? personnagesData : chargerPersonnages(),
+      dejaCharges ? personnagesBase : chargerPersonnages(),
       dejaCharges ? armesData : chargerArmes()
     ]);
 
     profilCourant = profil;
-    if (!dejaCharges) {
-      personnagesData = personnages;
-      armesData = armes;
-      construireIndexSignatures();
-    }
+    personnagesBase = personnages;
+    armesData = armes;
+    // Voyageur / Manekin : variante choisie par ce joueur.
+    personnagesData = appliquerVariantes(personnagesBase, profil.data?.parametres);
+    construireIndexSignatures();
 
     vueActive = "characters";
     boxActive = "full";

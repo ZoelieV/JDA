@@ -1,5 +1,15 @@
 [
   {
+    "id": "traveler",
+    "nom": "Voyageur",
+    "rarete": "5",
+    "element": "all",
+    "arme": "sword",
+    "categorie": "support",
+    "image": "images/characters/traveler.webp",
+    "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  {
     "id": "amber",
     "nom": "Amber",
     "rarete": "4",

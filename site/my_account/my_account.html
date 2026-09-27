@@ -49,6 +49,23 @@
             </select>
           </div>
 
+          <!-- Variantes affichées (cf. commun/variantes.js). -->
+          <div class="menu-champ">
+            <label for="choix-voyageur">Voyageur</label>
+            <select id="choix-voyageur">
+              <option value="aether">Aether / Voyageur</option>
+              <option value="lumine">Lumine / Voyageuse</option>
+            </select>
+          </div>
+
+          <div class="menu-champ">
+            <label for="choix-manekin">Manekin</label>
+            <select id="choix-manekin">
+              <option value="manekin">Manekin</option>
+              <option value="manekina">Manekina</option>
+            </select>
+          </div>
+
           <button type="button" id="btn-enregistrer-compte" class="menu-btn menu-btn-principal">Enregistrer</button>
 
           <div class="menu-separateur"></div>
@@ -226,8 +243,9 @@
     </div>
   </div>
 
-  <script src="/my_account/auto_box/detection.js?v=1"></script>
+  <script src="/commun/variantes.js?v=1"></script>
+  <script src="/my_account/auto_box/detection.js?v=2"></script>
   <script src="/my_account/auto_box/interface.js?v=2"></script>
-  <script src="/my_account/my_account.js?v=14"></script>
+  <script src="/my_account/my_account.js?v=15"></script>
 </body>
 </html>

@@ -641,9 +641,8 @@ h1 {
 
 @media (min-width: 701px) and (max-width: 900px) {
   .recap-teams {
-    grid-template-columns: 220px minmax(0, 1fr) 220px;
+    grid-template-columns: 210px minmax(0, 1fr) 210px;
     gap: 16px;
-    --taille-carte: 86px;
   }
 }
 
@@ -945,9 +944,8 @@ h1 {
 /* Récap (temps, résultat) : tableau j1 | centre (résultat, boss, rejouer)
    | tableau j2. */
 .recap-teams {
-  --taille-carte: 100px;
   display: grid;
-  grid-template-columns: 250px minmax(0, 460px) 250px;
+  grid-template-columns: 240px minmax(0, 460px) 240px;
   justify-content: center;
   align-items: start;
   gap: 30px;
@@ -963,29 +961,87 @@ h1 {
   box-shadow: 0 0 0 3px rgba(62, 207, 106, 0.85), 0 0 18px rgba(62, 207, 106, 0.4);
 }
 
+/* Personnages du récap : cases fines sur la bannière, comme en draft. */
 .recap-persos {
-  display: grid;
-  grid-template-columns: repeat(2, var(--taille-carte));
-  justify-content: center;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Zone du temps : centrée, au-dessus des personnages. */
+/* Infos du personnage dans sa case : j1 à côté du perso (gauche), j2 en
+   miroir. */
+.infos-case {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.pastille-case {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 11px;
+  background-color: rgba(0, 0, 0, 0.8);
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.infos-j1 .pastille-case {
+  color: var(--couleur-j1);
+}
+
+.infos-j2 .pastille-case {
+  color: var(--couleur-j2);
+}
+
+.arme-case {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter:
+    drop-shadow(1px 0 0 var(--couleur-ref))
+    drop-shadow(-1px 0 0 var(--couleur-ref))
+    drop-shadow(0 1px 0 var(--couleur-ref))
+    drop-shadow(0 -1px 0 var(--couleur-ref));
+}
+
+.infos-j2 {
+  flex-direction: row-reverse;
+}
+
+/* Zone du temps DANS la namecard, en haut au centre. */
+.namecard-tableau {
+  position: relative;
+}
+
 .recap-temps {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 4px;
   text-align: center;
 }
 
-.recap-temps:empty {
+.recap-temps:empty,
+.recap-temps:not(:has(> :not(.cache))) {
   display: none;
 }
 
 .texte-temps {
-  font-size: 15px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.6);
+  font-size: 14px;
   font-weight: bold;
 }
 
@@ -1025,12 +1081,24 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.55);
 }
 
 .saisie-temps label {
-  font-size: 14px;
-  opacity: 0.85;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.saisie-temps #input-temps {
+  width: 70px;
+  padding: 4px 8px;
+}
+
+.saisie-temps #btn-valider-temps {
+  padding: 4px 10px;
 }
 
 .ligne-saisie-temps {
@@ -1258,11 +1326,13 @@ h1 {
   filter: grayscale(40%) brightness(0.8);
 }
 
-#equipe-j2 .slot-pick {
+#equipe-j2 .slot-pick,
+#recap-equipe-j2 .slot-pick {
   flex-direction: row-reverse;
 }
 
-#equipe-j2 .slot-pick.avec-banniere::before {
+#equipe-j2 .slot-pick.avec-banniere::before,
+#recap-equipe-j2 .slot-pick.avec-banniere::before {
   transform: scaleX(-1);
 }
 
@@ -1453,7 +1523,6 @@ h1 {
       "centre centre"
       "j1 j2";
     gap: 10px;
-    --taille-carte: calc(((100vw - 34px) / 2 - 22px) / 2);
   }
 
   .recap-centre {
@@ -1469,7 +1538,38 @@ h1 {
   }
 
   .recap-persos {
-    gap: 6px;
+    gap: 5px;
+  }
+
+  .pastille-case {
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+    padding: 0 2px;
+  }
+
+  .arme-case {
+    width: 16px;
+    height: 16px;
+  }
+
+  .recap-temps {
+    top: 3px;
+    left: 3px;
+    right: 3px;
+  }
+
+  .saisie-temps {
+    padding: 3px 4px;
+  }
+
+  .saisie-temps label {
+    display: none;
+  }
+
+  .texte-temps {
+    font-size: 11px;
+    padding: 2px 6px;
   }
 
   .recap-centre .bandeau-boss img {
@@ -1482,8 +1582,15 @@ h1 {
     justify-content: center;
   }
 
-  #input-temps {
-    width: 70px;
+  .saisie-temps #input-temps {
+    width: 48px;
+    padding: 2px 4px;
+    font-size: 12px;
+  }
+
+  .saisie-temps #btn-valider-temps {
+    padding: 2px 6px;
+    font-size: 12px;
   }
 
   .equipe-joueur {
