@@ -930,20 +930,35 @@ const ECART_MIN_GRILLE = 10;
 const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
 const COLONNES_TELEPHONE = 4;
 
+// --taille-carte converti en px (la variable CSS est en rem, cf. l'échelle
+// du site dans commun/entete.css).
+function lireTailleCarte() {
+  const racine = getComputedStyle(document.documentElement);
+  const valeur = racine.getPropertyValue("--taille-carte").trim();
+  const nombre = parseFloat(valeur);
+  return valeur.endsWith("rem") ? nombre * (parseFloat(racine.fontSize) || 16) : nombre;
+}
+
+// Écart minimal entre les cartes, à la même échelle que le reste du site.
+function lireEcartMin() {
+  return ECART_MIN_GRILLE * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
+}
+
 function ajusterGrille(grille) {
   const largeur = grille.clientWidth;
   if (!largeur) return;
 
-  let taille = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--taille-carte")) || 132;
+  let taille = lireTailleCarte() || 132;
+  const ecartMin = lireEcartMin();
   let colonnes;
 
   if (MEDIA_TELEPHONE.matches) {
     colonnes = COLONNES_TELEPHONE;
-    taille = Math.floor((largeur - (colonnes - 1) * ECART_MIN_GRILLE) / colonnes);
+    taille = Math.floor((largeur - (colonnes - 1) * ecartMin) / colonnes);
     grille.style.setProperty("--taille-carte", `${taille}px`);
   } else {
     grille.style.removeProperty("--taille-carte");
-    colonnes = Math.max(1, Math.floor((largeur + ECART_MIN_GRILLE) / (taille + ECART_MIN_GRILLE)));
+    colonnes = Math.max(1, Math.floor((largeur + ecartMin) / (taille + ecartMin)));
   }
 
   const ecart = colonnes > 1 ? Math.max(0, (largeur - colonnes * taille) / (colonnes - 1)) : 0;

@@ -1,14 +1,14 @@
 :root {
   /* Taille des cartes persos/armes (identique à la draft). Sur téléphone,
      recalculée par ajusterGrille() pour 4 cartes par ligne. */
-  --taille-carte: 110px;
+  --taille-carte: 6.875rem;
 }
 
 body {
   background-color: #1e1e1e;
   color: white;
   font-family: Arial, sans-serif;
-  margin: 20px;
+  margin: 1.25rem;
 }
 
 a {
@@ -16,7 +16,7 @@ a {
 }
 
 h1, h2 {
-  margin-top: 20px;
+  margin-top: 1.25rem;
 }
 
 /* ---- Liste des comptes ---- */
@@ -25,16 +25,16 @@ h1, h2 {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .barre-comptes .recherche-personnage {
-  width: 240px;
+  width: 15rem;
 }
 
 .tri-compte-btn .fleche {
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .liste-vide {
@@ -44,8 +44,8 @@ h1, h2 {
 
 #accounts-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(23.75rem, 1fr));
+  gap: 0.75rem;
 }
 
 /* Carte = la deuxième bannière du joueur (1000x137), sans cadre ni
@@ -53,17 +53,17 @@ h1, h2 {
 .account-card {
   box-sizing: border-box;
   aspect-ratio: 1000 / 137;
-  min-height: 56px;
-  padding: 0 14px 0 48px;
+  min-height: 3.5rem;
+  padding: 0 0.875rem 0 3rem;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background-image: var(--banniere2);
   background-size: cover;
   background-position: center;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
@@ -76,17 +76,17 @@ h1, h2 {
 .account-stat {
   margin-left: auto;
   flex-shrink: 0;
-  padding: 3px 10px;
-  border-radius: 999px;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 62.4375rem;
   background-color: rgba(0, 0, 0, 0.55);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: bold;
   white-space: nowrap;
 }
 
 .account-card img {
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   flex-shrink: 0;
   border-radius: 50%;
   object-fit: cover;
@@ -110,7 +110,7 @@ h1, h2 {
 }
 
 .account-sub {
-  font-size: 12px;
+  font-size: 0.75rem;
   opacity: 0.85;
 }
 
@@ -149,9 +149,9 @@ h1, h2 {
 #modal-content {
   box-sizing: border-box;
   background: #2a2a2a;
-  border-radius: 12px;
-  padding: 20px;
-  max-width: 1340px;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  max-width: 83.75rem;
   width: 95%;
   height: 88vh;
   display: flex;
@@ -163,7 +163,7 @@ h1, h2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
   flex-shrink: 0;
 }
 
@@ -175,7 +175,7 @@ h1, h2 {
   background: transparent;
   border: none;
   color: white;
-  font-size: 24px;
+  font-size: 1.5rem;
   cursor: pointer;
 }
 
@@ -185,22 +185,22 @@ h1, h2 {
 #selecteurs {
   display: flex;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 12px;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
   flex-shrink: 0;
 }
 
 #view-selector,
 #box-selector {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .view-btn,
 .box-btn {
   box-sizing: border-box;
-  width: 140px;
-  height: 39px;
+  width: 8.75rem;
+  height: 2.4375rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -208,10 +208,10 @@ h1, h2 {
   background-color: rgba(20, 20, 20, 0.45);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 9px;
-  padding: 0 8px;
+  border-radius: 0.5625rem;
+  padding: 0 0.5rem;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .view-btn.active,
@@ -227,8 +227,8 @@ h1, h2 {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
   flex-shrink: 0;
 }
 
@@ -236,7 +236,7 @@ h1, h2 {
 .filtres-tri {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .tris,
@@ -244,32 +244,32 @@ h1, h2 {
 .filtres-etoiles {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .tris .tris-label {
-  font-size: 15px;
+  font-size: 0.9375rem;
   opacity: 0.8;
 }
 
 .recherche-personnage {
   box-sizing: border-box;
-  height: 39px;
+  height: 2.4375rem;
   background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 9px;
-  padding: 6px 12px;
+  border-radius: 0.5625rem;
+  padding: 0.375rem 0.75rem;
   color: white;
-  font-size: 17px;
-  width: 190px;
+  font-size: 1.0625rem;
+  width: 11.875rem;
 }
 
 .filtre-icone-btn {
   box-sizing: border-box;
-  width: 39px;
-  height: 39px;
-  padding: 5px;
-  border-radius: 9px;
+  width: 2.4375rem;
+  height: 2.4375rem;
+  padding: 0.3125rem;
+  border-radius: 0.5625rem;
   border: 2px solid transparent;
   background-color: rgba(20, 20, 20, 0.45);
   cursor: pointer;
@@ -285,13 +285,13 @@ h1, h2 {
 }
 
 .filtre-etoile-btn {
-  height: 39px;
-  padding: 6px 12px;
-  border-radius: 9px;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5625rem;
   border: 2px solid transparent;
   background-color: rgba(20, 20, 20, 0.45);
   color: white;
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -303,13 +303,13 @@ h1, h2 {
 }
 
 .btn-clear-filtres {
-  height: 39px;
-  padding: 6px 12px;
-  border-radius: 9px;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5625rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
   background-color: transparent;
   color: white;
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
   opacity: 0.8;
   white-space: nowrap;
@@ -326,13 +326,13 @@ h1, h2 {
 .grille-pool {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--taille-carte));
-  gap: 10px;
+  gap: 0.625rem;
   justify-content: center;
   align-content: start;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: 10px;
+  padding-bottom: 0.625rem;
 }
 
 /* ---- Cartes (même rendu que la draft) ---- */
@@ -348,7 +348,7 @@ h1, h2 {
   height: var(--taille-carte);
   background-size: cover;
   background-position: center;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   overflow: hidden;
 }
 
@@ -357,7 +357,7 @@ h1, h2 {
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 8px;
+  border-radius: 0.5rem;
 }
 
 /* Cercles : constellation en haut à gauche, points en haut à droite,
@@ -366,12 +366,12 @@ h1, h2 {
 .character-points,
 .character-niveau {
   position: absolute;
-  width: 34px;
-  height: 34px;
+  width: 2.125rem;
+  height: 2.125rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: bold;
   border-radius: 50%;
   background-color: rgba(0, 0, 0, 0.8);
@@ -400,8 +400,8 @@ h1, h2 {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 34px;
-  height: 34px;
+  width: 2.125rem;
+  height: 2.125rem;
   border-radius: 0;
 }
 
@@ -416,10 +416,10 @@ h1, h2 {
 
 /* Icône du perso lié : 1.5x la taille des cercles. */
 .character-visuel img.perso-lie-icone {
-  width: 51px;
-  height: 51px;
+  width: 3.1875rem;
+  height: 3.1875rem;
   /* Décalée vers la droite (le bord de la carte rogne le surplus). */
-  right: -6px;
+  right: -0.375rem;
   object-fit: cover;
 }
 
@@ -431,18 +431,18 @@ h1, h2 {
     height: 100%;
     max-width: none;
     border-radius: 0;
-    padding: 12px;
+    padding: 0.75rem;
   }
 
   #selecteurs {
-    gap: 6px;
+    gap: 0.375rem;
   }
 
   #view-selector,
   #box-selector {
     flex: 1 1 0;
     min-width: 0;
-    gap: 6px;
+    gap: 0.375rem;
   }
 
   .view-btn,
@@ -450,8 +450,8 @@ h1, h2 {
     flex: 1 1 0;
     width: auto;
     min-width: 0;
-    padding: 0 4px;
-    font-size: 13px;
+    padding: 0 0.25rem;
+    font-size: 0.8125rem;
   }
 
   .barre-outils,
@@ -475,19 +475,19 @@ h1, h2 {
   .character-constellation,
   .character-points,
   .character-niveau {
-    width: 22px;
-    height: 22px;
-    font-size: 11px;
+    width: 1.375rem;
+    height: 1.375rem;
+    font-size: 0.6875rem;
   }
 
   .character-visuel img.character-raffinement {
-    width: 22px;
-    height: 22px;
+    width: 1.375rem;
+    height: 1.375rem;
   }
 
   .character-visuel img.perso-lie-icone {
-    width: 33px;
-    height: 33px;
-    right: -4px;
+    width: 2.0625rem;
+    height: 2.0625rem;
+    right: -0.25rem;
   }
 }

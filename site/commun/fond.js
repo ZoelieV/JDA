@@ -29,7 +29,13 @@
     body::before {
       content: "";
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      /* Plus grande hauteur d'écran (barres du navigateur masquées) : le
+         fond ne bouge ni ne se redimensionne quand elles apparaissent. */
+      height: 100vh;
+      height: 100lvh;
       z-index: -1;
       background-image: var(--fond-ecran, none);
       background-repeat: no-repeat;
@@ -45,20 +51,20 @@
     .compte-btn.avec-banniere2,
     .accueil-compte.avec-banniere2 {
       box-sizing: border-box;
-      width: 420px;
-      max-width: calc(100vw - 110px);
+      width: 26.25rem;
+      max-width: calc(100vw - 6.875rem);
       aspect-ratio: 1000 / 137;
       /* Sur téléphone, la bannière est recadrée plutôt que d'écraser la photo. */
-      min-height: 50px;
-      padding: 5px 14px 5px 45px;
+      min-height: 3.125rem;
+      padding: 0.3125rem 0.875rem 0.3125rem 2.8125rem;
       border: none;
-      border-radius: 8px;
+      border-radius: 0.5rem;
       justify-content: flex-start;
       background-color: transparent;
       background-image: var(--banniere2);
       background-size: cover;
       background-position: center;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
       box-shadow: none;
       transition: transform 0.15s ease, filter 0.15s ease;
     }

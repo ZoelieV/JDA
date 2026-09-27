@@ -2,9 +2,9 @@ body {
   background-color: #1e1e1e;
   color: white;
   font-family: Arial, sans-serif;
-  margin: 20px;
+  margin: 1.25rem;
   /* Place pour les bulles figées en bas de l'écran. */
-  padding-bottom: 90px;
+  padding-bottom: 5.625rem;
 }
 
 /* Fond d'écran de la room (défaut, puis image du boss tiré) : calque fixe
@@ -12,7 +12,13 @@ body {
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* Plus grande hauteur d'écran (barres du navigateur masquées) : le fond
+     ne bouge ni ne se redimensionne quand elles apparaissent. */
+  height: 100vh;
+  height: 100lvh;
   z-index: -1;
   background-image: var(--fond-ecran, none);
   background-repeat: no-repeat;
@@ -25,7 +31,7 @@ a {
 }
 
 h1 {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .cache {
@@ -33,11 +39,11 @@ h1 {
 }
 
 #etat-attente {
-  padding: 10px 14px;
+  padding: 0.625rem 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   width: fit-content;
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 /* ---- Couleurs distinctes j1 / j2, réutilisées partout (entêtes,
@@ -47,7 +53,7 @@ h1 {
   --couleur-j1: #5b9bd5;
   --couleur-j2: #e0645a;
   /* Côté des cartes persos ; lu aussi par ajusterGrille() dans match.js. */
-  --taille-carte: 110px;
+  --taille-carte: 6.875rem;
 }
 
 /* ---- Entêtes joueurs (haut de page, toujours visibles une fois les 2 présents) ---- */
@@ -55,8 +61,8 @@ h1 {
 .entetes-joueurs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 20px;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 @media (max-width: 800px) {
@@ -68,13 +74,13 @@ h1 {
 .entete-joueur {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 168px;
+  gap: 0.625rem;
+  min-height: 10.5rem;
   box-sizing: border-box;
-  padding: 10px 14px;
+  padding: 0.625rem 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
-  border-radius: 10px;
-  border-left: 3px solid var(--couleur-j1);
+  border-radius: 0.625rem;
+  border-left: 0.1875rem solid var(--couleur-j1);
 }
 
 /* j2 est le miroir de j1 : pseudo aligné à droite, avatar à droite du
@@ -83,12 +89,12 @@ h1 {
   flex-direction: row-reverse;
   text-align: right;
   border-left: none;
-  border-right: 3px solid var(--couleur-j2);
+  border-right: 0.1875rem solid var(--couleur-j2);
 }
 
 .entete-joueur img {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   object-fit: cover;
   background: #333;
@@ -135,7 +141,7 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
   text-align: center;
 }
 
@@ -143,14 +149,14 @@ h1 {
 .entetes-joueurs .bandeau-boss {
   width: fit-content;
   margin: 0;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
   background-color: rgba(20, 20, 20, 0.45);
 }
 
 .entetes-joueurs .bandeau-boss img {
-  width: 380px;
-  height: 380px;
+  width: 23.75rem;
+  height: 23.75rem;
   max-width: 100%;
   object-fit: contain;
   background: none;
@@ -160,7 +166,7 @@ h1 {
    filtres (qui occupe les côtés) jusqu'au début de la grille des persos.
    Il laisse passer les clics, la barre est dessinée au-dessus. */
 .entetes-joueurs.boss-deborde .entete-centre {
-  margin-bottom: -110px;
+  margin-bottom: -6.875rem;
   pointer-events: none;
 }
 
@@ -187,15 +193,15 @@ h1 {
   }
 
   .entetes-joueurs .bandeau-boss img {
-    width: 200px;
-    height: 200px;
+    width: 12.5rem;
+    height: 12.5rem;
   }
 }
 
 .entete-joueur .pastille {
   margin-left: auto;
-  width: 12px;
-  height: 12px;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 50%;
   background-color: #666;
   flex-shrink: 0;
@@ -219,14 +225,14 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 0.75rem;
   background-color: rgba(0, 0, 0, 0.65);
   pointer-events: none;
   animation: annonceRole 5s ease forwards;
 }
 
 .annonce-role .annonce-titre {
-  font-size: 72px;
+  font-size: 4.5rem;
   font-weight: bold;
 }
 
@@ -239,7 +245,7 @@ h1 {
 }
 
 .annonce-role .annonce-sous-titre {
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 
 @keyframes annonceRole {
@@ -254,26 +260,26 @@ h1 {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .tris {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .tris .tris-label {
-  font-size: 15px;
+  font-size: 0.9375rem;
   opacity: 0.8;
 }
 
 /* Rôle de la manche, affiché une fois le tirage j1/j2 fait. */
 .entete-joueur .tag-role {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
-  padding: 1px 6px;
-  border-radius: 5px;
+  padding: 1px 0.375rem;
+  border-radius: 0.3125rem;
   background-color: rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
 }
@@ -288,7 +294,7 @@ h1 {
 .colonnes-box {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 1.5rem;
 }
 
 @media (max-width: 800px) {
@@ -299,9 +305,9 @@ h1 {
 
 .colonne-box {
   background-color: rgba(20, 20, 20, 0.45);
-  border-radius: 12px;
-  padding: 16px;
-  border-top: 3px solid var(--couleur-j1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border-top: 0.1875rem solid var(--couleur-j1);
 }
 
 #colonne-box-j2 {
@@ -318,23 +324,23 @@ h1 {
 }
 
 .colonne-box h3 .tag-toi {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: normal;
   opacity: 0.7;
-  margin-left: 6px;
+  margin-left: 0.375rem;
 }
 
 #colonne-box-j2 h3 .tag-toi {
   margin-left: 0;
-  margin-right: 6px;
+  margin-right: 0.375rem;
 }
 
 .ligne-box {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
 }
 
 /* j2 en miroir : bouton prêt à gauche, box à droite. */
@@ -345,7 +351,7 @@ h1 {
 .box-select {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 #colonne-box-j2 .box-select {
@@ -361,10 +367,10 @@ h1 {
   background: transparent;
   color: white;
   border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 6px 10px;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.625rem;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
 }
 
@@ -374,8 +380,8 @@ h1 {
 }
 
 .statut-pret {
-  margin-bottom: 12px;
-  font-size: 13px;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
   opacity: 0.85;
 }
 
@@ -384,10 +390,10 @@ h1 {
   background-color: rgba(62, 207, 106, 0.2);
   border: 2px solid rgba(62, 207, 106, 0.6);
   color: white;
-  border-radius: 8px;
-  padding: 8px 16px;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
   flex-shrink: 0;
 }
 
@@ -399,18 +405,18 @@ h1 {
 .apercu-box {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 0.5rem;
+  margin-top: 0.875rem;
   clear: both;
 }
 
 
 .apercu-vide {
   grid-column: 1 / -1;
-  font-size: 12px;
+  font-size: 0.75rem;
   opacity: 0.6;
   font-style: italic;
-  margin-top: 14px;
+  margin-top: 0.875rem;
 }
 
 #colonne-box-j2 .apercu-vide {
@@ -420,10 +426,10 @@ h1 {
 /* ---- Bandeaux d'info / boss / tour ---- */
 
 .bandeau-info {
-  padding: 10px 14px;
+  padding: 0.625rem 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
-  border-radius: 8px;
-  margin-bottom: 16px;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 /* Pile de bulles figée en bas au centre, par-dessus le contenu (fond
@@ -431,26 +437,26 @@ h1 {
 .bulles-bas {
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  bottom: 1rem;
   transform: translateX(-50%);
   z-index: 50;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   width: max-content;
-  max-width: calc(100vw - 32px);
+  max-width: calc(100vw - 2rem);
   pointer-events: none;
 }
 
 .bulles-bas .bandeau-info {
   margin: 0;
-  padding: 12px 20px;
+  padding: 0.75rem 1.25rem;
   text-align: center;
   background-color: #2b2b2b;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  border-radius: 0.625rem;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
   pointer-events: auto;
 }
 
@@ -464,30 +470,30 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px;
+  gap: 0.5rem;
+  padding: 1rem;
   background-color: rgba(20, 20, 20, 0.45);
-  border-radius: 8px;
-  margin-bottom: 12px;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
   text-align: center;
 }
 
 .bandeau-boss img {
-  width: 110px;
-  height: 110px;
-  border-radius: 12px;
+  width: 6.875rem;
+  height: 6.875rem;
+  border-radius: 0.75rem;
   object-fit: cover;
   background: #333;
 }
 
 .bandeau-boss .nom-boss {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: bold;
 }
 
 /* Tirage du boss : léger pulse + halo doré pendant que ça "roule" */
 .bandeau-boss.boss-tirage {
-  box-shadow: 0 0 24px 4px rgba(245, 197, 66, 0.4);
+  box-shadow: 0 0 1.5rem 0.25rem rgba(245, 197, 66, 0.4);
 }
 
 .bandeau-boss.boss-tirage img {
@@ -519,13 +525,13 @@ h1 {
   justify-content: space-between;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
 }
 
 /* Action à réaliser (bulle du bas pendant la draft), un peu plus grande. */
 .tour-actuel {
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 
 .tour-actuel strong {
@@ -536,13 +542,13 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .filtres-tri {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -551,14 +557,14 @@ h1 {
 .filtres-etoiles,
 .filtres-proprietaire {
   display: flex;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .filtre-icone-btn {
-  width: 39px;
-  height: 39px;
-  padding: 5px;
-  border-radius: 9px;
+  width: 2.4375rem;
+  height: 2.4375rem;
+  padding: 0.3125rem;
+  border-radius: 0.5625rem;
   border: 2px solid transparent;
   background-color: rgba(20, 20, 20, 0.45);
   cursor: pointer;
@@ -580,13 +586,13 @@ h1 {
 
 .filtre-etoile-btn,
 .filtre-proprietaire-btn {
-  height: 39px;
-  padding: 6px 12px;
-  border-radius: 9px;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5625rem;
   border: 2px solid transparent;
   background-color: rgba(20, 20, 20, 0.45);
   color: white;
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
 }
 
@@ -597,13 +603,13 @@ h1 {
 }
 
 .btn-clear-filtres {
-  height: 39px;
-  padding: 6px 12px;
-  border-radius: 9px;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5625rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
   background-color: transparent;
   color: white;
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
   opacity: 0.8;
 }
@@ -614,22 +620,22 @@ h1 {
 
 .recherche-personnage {
   box-sizing: border-box;
-  height: 39px;
+  height: 2.4375rem;
   background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 9px;
-  padding: 6px 12px;
+  border-radius: 0.5625rem;
+  padding: 0.375rem 0.75rem;
   color: white;
-  font-size: 17px;
-  width: 210px;
+  font-size: 1.0625rem;
+  width: 13.125rem;
 }
 
 /* ---- Draft : grille pool + équipes ---- */
 
 .draft-layout {
   display: grid;
-  grid-template-columns: 270px 1fr 270px;
-  gap: 20px;
+  grid-template-columns: 16.875rem 1fr 16.875rem;
+  gap: 1.25rem;
   align-items: start;
 }
 
@@ -641,58 +647,58 @@ h1 {
 
 @media (min-width: 701px) and (max-width: 900px) {
   .recap-teams {
-    gap: 16px;
+    gap: 1rem;
   }
 
   .recap-teams .recap-centre .bandeau-boss img {
-    width: 520px;
+    width: 32.5rem;
   }
 }
 
 .equipe-joueur {
   background-color: rgba(20, 20, 20, 0.45);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 1rem;
+  padding: 1rem;
 }
 
 .equipe-joueur h4 {
-  margin: 0 0 4px;
-  font-size: 22px;
+  margin: 0 0 0.25rem;
+  font-size: 1.375rem;
   text-align: center;
 }
 
 .slots-pick {
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  margin-bottom: 19px;
+  gap: 0.6875rem;
+  margin-bottom: 1.1875rem;
 }
 
 .slot-pick {
   display: flex;
   align-items: center;
-  gap: 11px;
-  min-height: 65px;
+  gap: 0.6875rem;
+  min-height: 4.0625rem;
   background-color: rgba(20, 20, 20, 0.45);
-  border-radius: 11px;
-  padding: 5px 11px;
+  border-radius: 0.6875rem;
+  padding: 0.3125rem 0.6875rem;
 }
 
 .slot-pick.vide {
   opacity: 0.4;
-  font-size: 16px;
+  font-size: 1rem;
   justify-content: center;
 }
 
 .slot-pick img {
-  width: 54px;
-  height: 54px;
-  border-radius: 8px;
+  width: 3.375rem;
+  height: 3.375rem;
+  border-radius: 0.5rem;
   object-fit: cover;
 }
 
 .slot-pick .nom-slot {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: bold;
 }
 
@@ -701,7 +707,7 @@ h1 {
 .slots-ban {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 0.6875rem;
 }
 
 /* Bordure en box-shadow inset : ne change pas la taille de la case, qui
@@ -717,9 +723,9 @@ h1 {
 
 .ban-mini {
   position: relative;
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 0.5rem;
   overflow: hidden;
   opacity: 0.75;
 }
@@ -737,7 +743,7 @@ h1 {
 .grille-pool {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--taille-carte));
-  gap: 10px;
+  gap: 0.625rem;
   justify-content: center;
   align-content: start;
 }
@@ -771,7 +777,7 @@ h1 {
   height: var(--taille-carte);
   background-size: cover;
   background-position: center;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   overflow: hidden;
 }
 
@@ -780,7 +786,7 @@ h1 {
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 8px;
+  border-radius: 0.5rem;
 }
 
 /* Arme signature possédée : icône du type d'arme (mêmes logos que la liste
@@ -789,8 +795,8 @@ h1 {
 .character-visuel img.character-raffinement {
   position: absolute;
   top: 50%;
-  width: 34px;
-  height: 34px;
+  width: 2.125rem;
+  height: 2.125rem;
   transform: translateY(-50%);
   object-fit: contain;
   border-radius: 0;
@@ -813,25 +819,25 @@ h1 {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
 }
 
 .character-visuel img.character-icone-type {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* Cercles, comme les points dans la liste des comptes. */
 .character-constellation,
 .character-niveau {
   position: absolute;
-  width: 34px;
-  height: 34px;
+  width: 2.125rem;
+  height: 2.125rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: bold;
   border-radius: 50%;
   background-color: rgba(0, 0, 0, 0.8);
@@ -872,22 +878,22 @@ h1 {
 .bans-bonus-layout {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 1rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
 .bans-bonus-slots {
   display: flex;
-  gap: 10px;
+  gap: 0.625rem;
   flex-wrap: wrap;
 }
 
 .slot-bonus {
   position: relative;
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.5rem;
   background-color: rgba(20, 20, 20, 0.45);
   border: 2px dashed rgba(255, 255, 255, 0.2);
   display: flex;
@@ -918,7 +924,7 @@ h1 {
   background-color: rgba(0, 0, 0, 0.55);
   color: #ff5a5a;
   font-weight: bold;
-  font-size: 20px;
+  font-size: 1.25rem;
   opacity: 0;
   transition: opacity 0.1s ease;
 }
@@ -931,10 +937,10 @@ h1 {
   background-color: rgba(62, 207, 106, 0.2);
   border: 2px solid rgba(62, 207, 106, 0.6);
   color: white;
-  border-radius: 8px;
-  padding: 8px 16px;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 #btn-confirmer-bonus:disabled {
@@ -948,23 +954,23 @@ h1 {
    | tableau j2. */
 .recap-teams {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 760px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 47.5rem) minmax(0, 1fr);
   align-items: start;
-  gap: 30px;
-  margin-bottom: 20px;
+  gap: 1.875rem;
+  margin-bottom: 1.25rem;
 }
 
 /* Cases du récap : hauteur fixe (icônes à peu près comme en draft), la
    bannière occupe la hauteur et s'aligne sur son extrémité arrondie. */
 .recap-teams .recap-equipe .slot-pick {
   aspect-ratio: auto;
-  height: 132px;
-  padding: 0 12px;
-  gap: 12px;
+  height: 8.25rem;
+  padding: 0 0.75rem;
+  gap: 0.75rem;
 }
 
 .recap-teams .recap-equipe .slot-pick > img {
-  height: 122px;
+  height: 7.625rem;
 }
 
 /* Infos empilées (constellation, niveau, arme) à côté de l'icône. */
@@ -972,20 +978,20 @@ h1 {
 .recap-teams .infos-j2 {
   flex-direction: column;
   justify-content: center;
-  gap: 5px;
+  gap: 0.3125rem;
 }
 
 /* 3 ronds empilés : 3 x 36 + 2 x 5 = 118 px, dans une case de 132 px. */
 .recap-teams .pastille-case {
-  min-width: 36px;
-  height: 36px;
-  border-radius: 18px;
-  font-size: 14px;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 1.125rem;
+  font-size: 0.875rem;
 }
 
 .recap-teams .arme-case {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .recap-equipe {
@@ -994,14 +1000,14 @@ h1 {
 }
 
 .recap-equipe.gagnant {
-  box-shadow: 0 0 0 3px rgba(62, 207, 106, 0.85), 0 0 18px rgba(62, 207, 106, 0.4);
+  box-shadow: 0 0 0 0.1875rem rgba(62, 207, 106, 0.85), 0 0 1.125rem rgba(62, 207, 106, 0.4);
 }
 
 /* Personnages du récap : cases fines sur la bannière, comme en draft. */
 .recap-persos {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 /* Infos du personnage dans sa case : j1 à côté du perso (gauche), j2 en
@@ -1010,7 +1016,7 @@ h1 {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
   height: 100%;
 }
 
@@ -1018,13 +1024,13 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 3px;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  padding: 0 0.1875rem;
   box-sizing: border-box;
-  border-radius: 11px;
+  border-radius: 0.6875rem;
   background-color: rgba(0, 0, 0, 0.8);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: bold;
 }
 
@@ -1037,8 +1043,8 @@ h1 {
 }
 
 .arme-case {
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
   object-fit: contain;
   filter:
     drop-shadow(1px 0 0 var(--couleur-ref))
@@ -1060,15 +1066,15 @@ h1 {
    ligne photo + pseudo. */
 .recap-temps {
   position: absolute;
-  top: 10px;
-  bottom: calc(var(--taille-avatar) + 16px);
-  left: 8px;
-  right: 8px;
+  top: 0.625rem;
+  bottom: calc(var(--taille-avatar) + 1rem);
+  left: 0.5rem;
+  right: 0.5rem;
   justify-content: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
   text-align: center;
 }
 
@@ -1078,10 +1084,10 @@ h1 {
 }
 
 .texte-temps {
-  padding: 5px 15px;
-  border-radius: 999px;
+  padding: 0.3125rem 0.9375rem;
+  border-radius: 62.4375rem;
   background-color: rgba(0, 0, 0, 0.6);
-  font-size: 21px;
+  font-size: 1.3125rem;
   font-weight: bold;
 }
 
@@ -1089,7 +1095,7 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 1rem;
   text-align: center;
 }
 
@@ -1097,17 +1103,17 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   width: fit-content;
   max-width: 100%;
   margin: 0;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
 }
 
 /* Boss x2 (720 px) ; se réduit si la colonne est plus étroite. */
 .recap-centre .bandeau-boss img {
-  width: 720px;
+  width: 45rem;
   height: auto;
   aspect-ratio: 1;
   max-width: 100%;
@@ -1116,16 +1122,16 @@ h1 {
 }
 
 #resultat-final {
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+  text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.95);
 }
 
 .saisie-temps {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 9px 12px;
-  border-radius: 15px;
+  gap: 0.375rem;
+  padding: 0.5625rem 0.75rem;
+  border-radius: 0.9375rem;
   background-color: rgba(0, 0, 0, 0.55);
 }
 
@@ -1141,39 +1147,39 @@ h1 {
 }
 
 .saisie-temps #input-temps {
-  width: 105px;
-  padding: 6px 12px;
-  font-size: 21px;
-  border-radius: 12px;
+  width: 6.5625rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1.3125rem;
+  border-radius: 0.75rem;
 }
 
 .saisie-temps #btn-valider-temps {
-  padding: 6px 15px;
-  font-size: 20px;
-  border-radius: 12px;
+  padding: 0.375rem 0.9375rem;
+  font-size: 1.25rem;
+  border-radius: 0.75rem;
 }
 
 .ligne-saisie-temps {
   display: flex;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 #input-temps {
   background-color: rgba(20, 20, 20, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
   color: white;
-  font-size: 14px;
-  width: 100px;
+  font-size: 0.875rem;
+  width: 6.25rem;
 }
 
 #btn-valider-temps {
   background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
-  border-radius: 8px;
-  padding: 8px 16px;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
 }
 
@@ -1184,12 +1190,12 @@ h1 {
 }
 
 #resultat-final .ligne-vainqueur {
-  font-size: 26px;
-  margin-bottom: 6px;
+  font-size: 1.625rem;
+  margin-bottom: 0.375rem;
 }
 
 #resultat-final .ligne-temps {
-  font-size: 15px;
+  font-size: 0.9375rem;
   opacity: 0.9;
 }
 
@@ -1212,8 +1218,8 @@ h1 {
   background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
-  border-radius: 8px;
-  padding: 8px 16px;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
 }
 
@@ -1233,7 +1239,7 @@ h1 {
    fixe, largeur = celle de la namecard (840x400) à cette hauteur. ---- */
 
 .entete-joueur.avec-namecard {
-  height: 168px;
+  height: 10.5rem;
   min-height: 0;
   width: auto;
   max-width: 100%;
@@ -1243,7 +1249,7 @@ h1 {
   background-image: var(--namecard);
   background-size: cover;
   background-position: center;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
 }
 
 #entete-joueur1.avec-namecard {
@@ -1263,26 +1269,26 @@ h1 {
 /* ---- Tableaux des joueurs : namecard (photo + pseudo) en haut ---- */
 
 /* Remplit tout le haut du tableau : déborde du padding de .equipe-joueur
-   (16px, 8px sur téléphone). */
+   (1rem, 0.5rem sur téléphone). */
 .namecard-tableau {
-  --debord: 16px;
+  --debord: 1rem;
   box-sizing: border-box;
   /* Contenu x1.5 (photo, pseudo, J1/J2, temps). */
-  --taille-avatar: 60px;
+  --taille-avatar: 3.75rem;
   display: flex;
   align-items: flex-end;
-  gap: 12px;
+  gap: 0.75rem;
   width: calc(100% + 2 * var(--debord));
   aspect-ratio: 840 / 400;
-  margin: calc(-1 * var(--debord)) calc(-1 * var(--debord)) 12px;
-  padding: 10px 12px;
-  border-radius: 16px 16px 0 0;
+  margin: calc(-1 * var(--debord)) calc(-1 * var(--debord)) 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 1rem 1rem 0 0;
   background-image: var(--namecard);
   background-size: cover;
   background-position: center;
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: bold;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
 }
 
 /* j2 en miroir : photo et pseudo à droite. */
@@ -1299,7 +1305,7 @@ h1 {
   border-radius: 50%;
   object-fit: cover;
   background: #333;
-  border: 3px solid rgba(255, 255, 255, 0.6);
+  border: 0.1875rem solid rgba(255, 255, 255, 0.6);
 }
 
 /* Pseudo centré en hauteur sur la photo de profil. */
@@ -1318,11 +1324,11 @@ h1 {
 .namecard-tableau .tag-role {
   margin-left: auto;
   margin-bottom: calc((var(--taille-avatar) - 1.5em) / 2);
-  padding: 0 9px;
+  padding: 0 0.5625rem;
   line-height: 1.5em;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background-color: rgba(0, 0, 0, 0.6);
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 #equipe-j2 .namecard-tableau .tag-role,
@@ -1336,23 +1342,23 @@ h1 {
 .bans-equilibrage {
   box-sizing: border-box;
   width: 100%;
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 16px;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 1rem;
   background-color: rgba(20, 20, 20, 0.45);
   box-shadow: inset 0 0 0 2px rgba(255, 90, 90, 0.5);
 }
 
 .bans-equilibrage h4 {
-  margin: 0 0 10px;
+  margin: 0 0 0.625rem;
   text-align: center;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .bans-eq-grille {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .bans-eq-grille .ban-mini {
@@ -1374,13 +1380,13 @@ h1 {
   overflow: hidden;
   min-height: 0;
   aspect-ratio: 800 / 151;
-  padding: 0 8px;
-  border-radius: 6px 999px 999px 6px;
+  padding: 0 0.5rem;
+  border-radius: 0.375rem 62.4375rem 62.4375rem 0.375rem;
 }
 
 #equipe-j2 .slot-pick,
 #recap-equipe-j2 .slot-pick {
-  border-radius: 999px 6px 6px 999px;
+  border-radius: 62.4375rem 0.375rem 0.375rem 62.4375rem;
 }
 
 .equipe-joueur .slot-pick.avec-banniere::before {
@@ -1439,7 +1445,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .barre-room .lien-accueil {
@@ -1447,13 +1453,13 @@ h1 {
 }
 
 .btn-partager {
-  padding: 6px 16px;
+  padding: 0.375rem 1rem;
   border: 2px solid rgba(245, 197, 66, 0.8);
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   background-color: rgba(20, 20, 20, 0.45);
   color: white;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: bold;
   cursor: pointer;
 }
@@ -1470,13 +1476,13 @@ h1 {
 @media (min-width: 1001px) {
   #zone-match.mode-draft {
     display: grid;
-    grid-template-columns: 270px minmax(0, 1fr) 270px;
+    grid-template-columns: 16.875rem minmax(0, 1fr) 16.875rem;
     grid-template-rows: auto auto 1fr;
     grid-template-areas:
       "j1 boss j2"
       "j1 outils j2"
       "j1 pool j2";
-    column-gap: 20px;
+    column-gap: 1.25rem;
     align-items: start;
   }
 
@@ -1488,7 +1494,7 @@ h1 {
 
   #zone-match.mode-draft #entete-centre {
     grid-area: boss;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
   }
 
   #zone-match.mode-draft #barre-outils {
@@ -1496,16 +1502,16 @@ h1 {
     position: sticky;
     top: 0;
     z-index: 5;
-    margin-bottom: 16px;
-    padding: 10px;
-    border-radius: 12px;
+    margin-bottom: 1rem;
+    padding: 0.625rem;
+    border-radius: 0.75rem;
     background-color: rgba(20, 20, 20, 0.45);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(0.5rem);
   }
 
   /* Le boss descend derrière la barre de filtres (cf. .boss-deborde). */
   #zone-match.mode-draft .entetes-joueurs.boss-deborde .entete-centre {
-    margin-bottom: -60px;
+    margin-bottom: -3.75rem;
   }
 
   #zone-match.mode-draft #grille-pool-draft {
@@ -1515,8 +1521,8 @@ h1 {
   #zone-match.mode-draft #colonne-j1,
   #zone-match.mode-draft #colonne-j2 {
     position: sticky;
-    top: 12px;
-    max-height: calc(100vh - 24px);
+    top: 0.75rem;
+    max-height: calc(100vh - 1.5rem);
     overflow-y: auto;
     scrollbar-width: thin;
   }
@@ -1568,7 +1574,7 @@ h1 {
       "j1 j2"
       "bans bans"
       "pool pool";
-    gap: 10px;
+    gap: 0.625rem;
   }
 
   /* Bans d'équilibrage sous le double tableau, 4 par ligne. */
@@ -1587,12 +1593,12 @@ h1 {
 
   /* Namecard réduite en haut de chaque tableau. */
   .namecard-tableau {
-    --debord: 8px;
-    --taille-avatar: 30px;
-    margin-bottom: 8px;
-    padding: 4px 6px;
-    gap: 6px;
-    font-size: 18px;
+    --debord: 0.5rem;
+    --taille-avatar: 1.875rem;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0.375rem;
+    gap: 0.375rem;
+    font-size: 1.125rem;
   }
 
   .avatar-tableau {
@@ -1623,38 +1629,38 @@ h1 {
       "centre"
       "j1"
       "j2";
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   .recap-teams .recap-equipe .slot-pick {
-    height: 124px;
-    padding: 0 8px;
-    gap: 8px;
+    height: 7.75rem;
+    padding: 0 0.5rem;
+    gap: 0.5rem;
   }
 
   .recap-teams .recap-equipe .slot-pick > img {
-    height: 114px;
+    height: 7.125rem;
   }
 
   .recap-teams .pastille-case {
-    min-width: 34px;
-    height: 34px;
-    border-radius: 17px;
-    font-size: 13px;
+    min-width: 2.125rem;
+    height: 2.125rem;
+    border-radius: 1.0625rem;
+    font-size: 0.8125rem;
   }
 
   .recap-teams .arme-case {
-    width: 34px;
-    height: 34px;
+    width: 2.125rem;
+    height: 2.125rem;
   }
 
   .recap-teams .infos-case {
-    gap: 5px;
+    gap: 0.3125rem;
   }
 
   .btn-partager {
-    font-size: 13px;
-    padding: 5px 12px;
+    font-size: 0.8125rem;
+    padding: 0.3125rem 0.75rem;
   }
 
   .recap-centre {
@@ -1670,37 +1676,37 @@ h1 {
   }
 
   .recap-persos {
-    gap: 5px;
+    gap: 0.3125rem;
   }
 
   .pastille-case {
-    min-width: 16px;
-    height: 16px;
-    font-size: 9px;
+    min-width: 1rem;
+    height: 1rem;
+    font-size: 0.5625rem;
     padding: 0 2px;
   }
 
   .arme-case {
-    width: 16px;
-    height: 16px;
+    width: 1rem;
+    height: 1rem;
   }
 
   .recap-temps {
-    left: 3px;
-    right: 3px;
+    left: 0.1875rem;
+    right: 0.1875rem;
   }
 
   .saisie-temps {
-    padding: 5px 6px;
+    padding: 0.3125rem 0.375rem;
   }
 
   .texte-temps {
-    font-size: 16px;
-    padding: 3px 9px;
+    font-size: 1rem;
+    padding: 0.1875rem 0.5625rem;
   }
 
   .recap-teams .recap-centre .bandeau-boss img {
-    width: 400px;
+    width: 25rem;
   }
 
   .ligne-saisie-temps {
@@ -1709,19 +1715,19 @@ h1 {
   }
 
   .saisie-temps #input-temps {
-    width: 105px;
-    padding: 3px 6px;
-    font-size: 18px;
+    width: 6.5625rem;
+    padding: 0.1875rem 0.375rem;
+    font-size: 1.125rem;
   }
 
   .saisie-temps #btn-valider-temps {
-    padding: 3px 9px;
-    font-size: 18px;
+    padding: 0.1875rem 0.5625rem;
+    font-size: 1.125rem;
   }
 
   .equipe-joueur {
     min-width: 0;
-    padding: 8px;
+    padding: 0.5rem;
   }
 
   .equipe-joueur .nom-complet {
@@ -1734,34 +1740,34 @@ h1 {
 
   .slots-pick,
   .slots-ban {
-    gap: 6px;
+    gap: 0.375rem;
   }
 
   .slots-pick {
-    margin-bottom: 10px;
+    margin-bottom: 0.625rem;
   }
 
   .slot-pick {
-    min-height: 44px;
-    padding: 3px 6px;
+    min-height: 2.75rem;
+    padding: 0.1875rem 0.375rem;
   }
 
   .slot-pick img {
-    width: 38px;
-    height: 38px;
+    width: 2.375rem;
+    height: 2.375rem;
   }
 
   /* Cartes plus petites (4 par ligne) : cercles et logos réduits. */
   .character-constellation,
   .character-niveau {
-    width: 22px;
-    height: 22px;
-    font-size: 11px;
+    width: 1.375rem;
+    height: 1.375rem;
+    font-size: 0.6875rem;
   }
 
   .character-visuel img.character-raffinement {
-    width: 22px;
-    height: 22px;
+    width: 1.375rem;
+    height: 1.375rem;
   }
 
   /* Barre recherche / tri / filtres et récap des bans d'équilibrage :
@@ -1797,11 +1803,11 @@ h1 {
   }
 
   .tour-actuel {
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
 
   .bulles-bas .bandeau-info {
-    padding: 10px 14px;
+    padding: 0.625rem 0.875rem;
   }
 }
 
@@ -1828,7 +1834,7 @@ h1 {
       "figes figes"
       "clear clear"
       "pool pool";
-    column-gap: 10px;
+    column-gap: 0.625rem;
     align-items: start;
   }
 
@@ -1843,11 +1849,11 @@ h1 {
 
   #zone-match.mode-draft #entete-centre {
     grid-area: boss;
-    margin-bottom: 12px;
+    margin-bottom: 0.75rem;
   }
 
   #zone-match.mode-draft .entetes-joueurs.boss-deborde .entete-centre {
-    margin-bottom: 12px;
+    margin-bottom: 0.75rem;
   }
 
   #zone-match.mode-draft #equipe-j1 {
@@ -1864,7 +1870,7 @@ h1 {
 
   #zone-match.mode-draft .zone-recherche {
     grid-area: recherche;
-    margin-top: 12px;
+    margin-top: 0.75rem;
   }
 
   #zone-match.mode-draft .filtres-figeables {
@@ -1874,18 +1880,18 @@ h1 {
     z-index: 5;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 12px;
-    margin-top: 10px;
-    padding: 8px;
-    border-radius: 12px;
+    gap: 0.375rem 0.75rem;
+    margin-top: 0.625rem;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
     background-color: rgba(20, 20, 20, 0.45);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(0.5rem);
   }
 
   #zone-match.mode-draft .btn-clear-filtres {
     grid-area: clear;
     justify-self: start;
-    margin: 10px 0;
+    margin: 0.625rem 0;
   }
 
   #zone-match.mode-draft #grille-pool-draft {

@@ -1,3 +1,19 @@
+/* ---- Échelle du site ----
+   Toutes les tailles sont en rem. 1rem = 16px quand la fenêtre fait la
+   largeur de référence (--largeur-reference, celle de l'écran sur lequel le
+   site a été réglé), et suit ensuite la largeur de la fenêtre : le site garde
+   les mêmes proportions sur un écran HD, 2K ou 4K. Bornes : 11px à 32px.
+   Téléphone : taille fixe (16px), comme avant. */
+html {
+  font-size: clamp(11px, calc(100vw * 16 / 2560), 32px);
+}
+
+@media (max-width: 700px) {
+  html {
+    font-size: 16px;
+  }
+}
+
 /* En-tête commun à toutes les pages : lien de retour à l'accueil et titre
    de la page. */
 
@@ -5,15 +21,15 @@
 .lien-accueil {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  padding: 6px 16px 6px 12px;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+  padding: 0.375rem 1rem 0.375rem 0.75rem;
   background-color: rgba(30, 30, 30, 0.6);
   border: 2px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
+  border-radius: 62.4375rem;
   color: white;
   font-family: Arial, sans-serif;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: bold;
   text-decoration: none;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -21,7 +37,7 @@
 
 .lien-accueil::before {
   content: "←";
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1;
 }
 
@@ -39,16 +55,16 @@
 /* Titre principal des pages : centré, même police et même taille que
    "Jugement des Archons" sur l'accueil. */
 .titre-page {
-  margin: 24px 0 24px;
+  margin: 1.5rem 0 1.5rem;
   text-align: center;
   font-family: Arial, sans-serif;
-  font-size: 40px;
+  font-size: 2.5rem;
   font-weight: bold;
   line-height: 1.2;
 }
 
 @media (max-width: 700px) {
   .titre-page {
-    font-size: 30px;
+    font-size: 1.875rem;
   }
 }
