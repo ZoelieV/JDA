@@ -438,12 +438,12 @@ h2 {
 .visuel-personnage .character-raffinement {
   object-fit: contain;
   /* Logo d'arme signature : même taille extérieure que les cercles de
-     constellation / points ; contour de la couleur du raffinement (2px)
+     constellation / points ; contour de la couleur du raffinement (7px)
      tracé vers l'intérieur du cercle. */
   box-sizing: border-box;
   border-radius: 50%;
-  outline: 2px solid var(--couleur-ref);
-  outline-offset: -2px;
+  outline: var(--epaisseur-contour-arme, 7px) solid var(--couleur-ref);
+  outline-offset: calc(-1 * var(--epaisseur-contour-arme, 7px));
 }
 
 .visuel-personnage .perso-lie-icone {
