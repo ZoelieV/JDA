@@ -890,6 +890,7 @@ async function initialiserPage() {
 
     initialiserGrille();
     initialiserParametres(profil);
+    initialiserAutoBox(profil, personnages, armes);
   } catch (erreur) {
     console.error(erreur);
     alert("Erreur lors du chargement de la page.");

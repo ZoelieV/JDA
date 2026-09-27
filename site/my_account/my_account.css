@@ -791,8 +791,12 @@ h2 {
 }
 
 .btn-secondaire {
-  padding: 8px 14px;
+  padding: 6px 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
   cursor: pointer;
 }
 
@@ -1018,6 +1022,196 @@ body {
   bottom: 76px;
 }
 
+/* ---- Ligne des box : bouton de détection automatique à droite ---- */
+
+.ligne-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 12px 0;
+}
+
+.ligne-box .box-selector {
+  margin: 0;
+}
+
+.btn-auto-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 2px solid rgba(245, 197, 66, 0.8);
+  border-radius: 8px;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.btn-auto-box:hover {
+  background-color: rgba(245, 197, 66, 0.18);
+}
+
+.badge-beta {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background-color: #f5c542;
+  color: #1e1e1e;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+
+/* ---- Fenêtre de détection automatique ---- */
+
+/* Hauteur ajustée au contenu (fenêtre des paramètres : hauteur fixe). */
+.auto-box-contenu {
+  height: auto;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.auto-box-consigne p {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+}
+
+.auto-box-consigne p + p {
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.zone-depot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 180px;
+  padding: 20px;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  background-color: rgba(20, 20, 20, 0.45);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.zone-depot:hover,
+.zone-depot.survol {
+  border-color: rgba(245, 197, 66, 0.9);
+  background-color: rgba(245, 197, 66, 0.12);
+}
+
+.zone-depot input {
+  display: none;
+}
+
+.zone-depot-titre {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.zone-depot-sous-titre {
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.auto-box-etat {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background-color: rgba(20, 20, 20, 0.6);
+  font-size: 15px;
+}
+
+.auto-box-etat.erreur {
+  background-color: rgba(220, 53, 69, 0.3);
+}
+
+.modal-parametres.occupe .fermer-modal,
+.modal-parametres.occupe .pied-parametres button {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.auto-box-resume {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+}
+
+.auto-box-resultat h3 {
+  margin: 10px 0;
+  font-size: 17px;
+}
+
+.auto-box-incertains {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Une ligne par personnage incertain : case de la capture, case du
+   personnage (- / +, stella) + choix du personnage, raisons. */
+.auto-box-ligne {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: rgba(20, 20, 20, 0.45);
+}
+
+.auto-box-vignette {
+  flex-shrink: 0;
+  max-width: 40%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.auto-box-carte {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  width: var(--taille-carte);
+}
+
+.auto-box-carte .carte-personnage {
+  width: 100%;
+}
+
+.auto-box-choix {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  color: white;
+  background-color: #3a3a3a;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.auto-box-choix:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.auto-box-raisons {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.pied-parametres button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* ---- Téléphone : la largeur de l'écran est la limite, tout revient à la
    ligne ; 4 cartes par ligne (cf. ajusterGrille). ---- */
 @media (max-width: 700px) {
@@ -1170,5 +1364,21 @@ body {
     width: 26px;
     height: 26px;
     padding: 2px;
+  }
+}
+
+/* Téléphone : détection automatique, une ligne par personnage en colonne. */
+@media (max-width: 700px) {
+  .auto-box-ligne {
+    flex-wrap: wrap;
+  }
+
+  .auto-box-vignette {
+    max-width: 100%;
+  }
+
+  .auto-box-carte {
+    width: 110px;
+    --taille-carte: 110px;
   }
 }

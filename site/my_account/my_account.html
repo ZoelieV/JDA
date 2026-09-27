@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=10">
+<link rel="stylesheet" href="/my_account/my_account.css?v=12">
 <link rel="stylesheet" href="../commun/entete.css">
 <script src="/commun/fond.js?v=3" data-sans-requete></script>
 </head>
@@ -62,7 +62,8 @@
     <h1 class="titre-page">Mon compte</h1>
 
     <form id="profil-form">
-      <!-- Ligne 1 : box, alignées à gauche. -->
+      <!-- Ligne 1 : box alignées à gauche, détection automatique à droite. -->
+      <div class="ligne-box">
       <div class="box-selector">
         <button type="button" class="box-btn active" data-box="full">Full box</button>
         <button type="button" class="box-btn" data-box="stuff">Personnages stuff</button>
@@ -71,6 +72,8 @@
         <button type="button" class="box-btn" data-box="opti3">Box optimisée 3</button>
         <button type="button" class="box-btn" data-box="opti4">Box optimisée 4</button>
         <button type="button" class="box-btn" data-box="opti5">Box optimisée 5</button>
+      </div>
+        <button type="button" id="btn-auto-box" class="btn-auto-box">Détection auto <span class="badge-beta">Bêta</span></button>
       </div>
 
       <!-- Ligne 2 : Personnages / Armes à gauche, recherche / tris / filtres à
@@ -172,6 +175,43 @@
     </div>
   </div>
 
-  <script src="/my_account/my_account.js?v=12"></script>
+  <!-- Détection automatique de la box depuis une capture Hoyolab (bêta). -->
+  <div id="modal-auto-box" class="modal-parametres">
+    <div class="modal-parametres-contenu auto-box-contenu">
+      <div class="modal-parametres-entete">
+        <h2>Détection automatique de la box <span class="badge-beta">Bêta</span></h2>
+        <button type="button" id="fermer-auto-box" class="fermer-modal" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="auto-box-consigne">
+        <p><strong>Veuillez aller récupérer votre full box sur Hoyolab en français.</strong></p>
+        <p>Sur Hoyolab : Fiche de combat → Personnages, en liste. Fais une capture de toute la liste (capture longue), sans la recadrer. L'image est analysée sur ton appareil et n'est envoyée nulle part.</p>
+      </div>
+
+      <label id="zone-depot" class="zone-depot">
+        <input type="file" id="auto-box-fichier" accept="image/*">
+        <span class="zone-depot-titre">Glisse ta capture ici</span>
+        <span class="zone-depot-sous-titre">ou clique pour choisir une image</span>
+      </label>
+
+      <div id="auto-box-etat" class="auto-box-etat cache"></div>
+
+      <div id="auto-box-resultat" class="auto-box-resultat cache">
+        <p id="auto-box-resume" class="auto-box-resume"></p>
+        <h3>Incertitude sur les personnages suivants</h3>
+        <div id="auto-box-incertains" class="auto-box-incertains"></div>
+      </div>
+
+      <div class="pied-parametres">
+        <button type="button" id="auto-box-recommencer" class="btn-secondaire cache">Autre image</button>
+        <button type="button" id="auto-box-annuler" class="btn-secondaire">Annuler</button>
+        <button type="button" id="auto-box-appliquer" class="btn-enregistrer" disabled>Appliquer à ma Full Box</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/my_account/auto_box/detection.js?v=1"></script>
+  <script src="/my_account/auto_box/interface.js?v=2"></script>
+  <script src="/my_account/my_account.js?v=13"></script>
 </body>
 </html>

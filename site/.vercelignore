@@ -1,1 +1,4 @@
 node_modules/
+# Outils Python de détection (entraînement, captures de test) :
+# seule la version web (my_account/auto_box/) est déployée.
+/auto_box/
