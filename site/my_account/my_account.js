@@ -54,6 +54,8 @@ async function chargerSessionDiscord() {
   });
 
   logoutBtn.addEventListener("click", () => {
+    // Plus de fond personnalisé une fois déconnecté.
+    window.FondEcran?.memoriser(null);
     window.location.href = "/api/auth/logout";
   });
 
@@ -955,6 +957,13 @@ function getFond(idFond) {
   return cosmetiques?.fonds.find(fond => fond.id === idFond) || null;
 }
 
+// Met à jour le cache du fond partagé avec les autres pages (commun/fond.js).
+function memoriserFondPourLeSite(idFond) {
+  if (!cosmetiques || !window.FondEcran) return;
+  const fond = getFond(idFond);
+  window.FondEcran.memoriser(fond ? urlImage(fond.image) : null);
+}
+
 function appliquerFond(idFond) {
   const fond = getFond(idFond);
   // Utilisé par le calque fixe body::before (cf. CSS).
@@ -977,6 +986,7 @@ async function initialiserParametres(profil) {
 
   profil.parametres = { banniere: null, banniere2: null, fond: null, ...(profil.parametres || {}) };
   appliquerFond(profil.parametres.fond);
+  memoriserFondPourLeSite(profil.parametres.fond);
 
   function rendreApercus() {
     const cases = {
@@ -1110,7 +1120,10 @@ async function initialiserParametres(profil) {
       succes ? "Paramètres enregistrés" : "Erreur lors de l'enregistrement des paramètres",
       succes ? "succes" : "erreur"
     );
-    if (succes) fermer();
+    if (succes) {
+      memoriserFondPourLeSite(profil.parametres.fond);
+      fermer();
+    }
   });
 }
 
