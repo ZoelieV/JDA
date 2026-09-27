@@ -1333,15 +1333,16 @@ function rendreTemps() {
   if (monTemps && !tempsAdversaire) {
     etat.textContent = "Temps enregistré. En attente du temps de l'adversaire…";
   } else if (!monTemps) {
-    etat.textContent = "Entre ton temps au format mm:ss (ex : 7:32).";
+    etat.textContent = "Entre ton temps en minutes et secondes (ex : 7:32, 7,32 ou 7.32).";
   } else {
     etat.textContent = "";
   }
 
   btn.onclick = () => {
-    const valeur = input.value.trim();
+    // "7,32" et "7.32" (clavier numérique du téléphone) valent "7:32".
+    const valeur = input.value.trim().replace(/[.,]/, ":");
     if (!/^[0-9]{1,3}:[0-5][0-9]$/.test(valeur)) {
-      alert("Format invalide. Utilise mm:ss, par exemple 7:32.");
+      alert("Format invalide. Entre les minutes puis les secondes sur 2 chiffres, par exemple 7:32, 7,32 ou 7.32.");
       return;
     }
     postTemps(valeur).catch(err => alert(err.message));

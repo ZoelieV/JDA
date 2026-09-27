@@ -959,13 +959,13 @@ h1 {
    bannière occupe la hauteur et s'aligne sur son extrémité arrondie. */
 .recap-teams .recap-equipe .slot-pick {
   aspect-ratio: auto;
-  height: 200px;
-  padding: 0 14px;
-  gap: 14px;
+  height: 132px;
+  padding: 0 12px;
+  gap: 12px;
 }
 
 .recap-teams .recap-equipe .slot-pick > img {
-  height: 186px;
+  height: 122px;
 }
 
 /* Infos empilées (constellation, niveau, arme) à côté de l'icône. */
@@ -973,19 +973,20 @@ h1 {
 .recap-teams .infos-j2 {
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
+  gap: 5px;
 }
 
+/* 3 ronds empilés : 3 x 36 + 2 x 5 = 118 px, dans une case de 132 px. */
 .recap-teams .pastille-case {
-  min-width: 54px;
-  height: 54px;
-  border-radius: 27px;
-  font-size: 20px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  font-size: 14px;
 }
 
 .recap-teams .arme-case {
-  width: 54px;
-  height: 54px;
+  width: 36px;
+  height: 36px;
 }
 
 .recap-equipe {
