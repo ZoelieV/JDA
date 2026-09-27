@@ -48,8 +48,8 @@ h1, h2 {
   gap: 12px;
 }
 
-/* Carte au format de la deuxième bannière (1000x137), qu'elle soit choisie
-   ou non ; assombrie à gauche pour garder la photo et le nom lisibles. */
+/* Carte = la deuxième bannière du joueur (1000x137), sans cadre ni
+   dégradé ajouté (les images sont déjà assombries à gauche). */
 .account-card {
   box-sizing: border-box;
   aspect-ratio: 1000 / 137;
@@ -59,21 +59,29 @@ h1, h2 {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  background-color: rgba(255, 255, 255, 0.08);
-  background-image:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1) 70%),
-    var(--banniere2, none);
+  border-radius: 8px;
+  background-image: var(--banniere2);
   background-size: cover;
   background-position: center;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .account-card:hover {
-  border-color: rgba(245, 197, 66, 0.8);
   transform: translateY(-2px);
+  filter: brightness(1.12);
+}
+
+/* Valeur du tri en cours (points, victoires...), à droite de la carte. */
+.account-stat {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.55);
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
 }
 
 .account-card img {
@@ -87,6 +95,7 @@ h1, h2 {
 
 .account-infos {
   min-width: 0;
+  flex: 1;
 }
 
 .account-name,

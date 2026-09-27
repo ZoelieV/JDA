@@ -957,6 +957,13 @@ function nomNamecard(chemin) {
     .replace(/_/g, " ");
 }
 
+// Choix attribués par défaut à tout le monde.
+const PARAMETRES_DEFAUT = {
+  banniere: "namecards/Namecard_Background_Default.webp",
+  banniere2: "namecards/banners/Namecard_Banner_Default.webp",
+  fond: "bg/autres/default_bg.webp"
+};
+
 function getFond(idFond) {
   return cosmetiques?.fonds.find(fond => fond.id === idFond) || null;
 }
@@ -993,7 +1000,11 @@ async function initialiserParametres(profil) {
     console.error(erreur);
   }
 
-  profil.parametres = { banniere: null, banniere2: null, fond: null, ...(profil.parametres || {}) };
+  // Choix manquant (ou ancien "aucun") : valeur par défaut.
+  const choix = profil.parametres || {};
+  profil.parametres = Object.fromEntries(
+    Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, choix[cle] || defaut])
+  );
   appliquerFond(profil.parametres.fond);
   memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
 
@@ -1040,11 +1051,8 @@ async function initialiserParametres(profil) {
     const classe = `choix-${ongletActif}`;
     const grille = document.createElement("div");
     grille.className = `grille-choix ${classe}`;
-    grille.appendChild(creerChoix({ valeur: null, image: null, titre: "Aucun", classe }));
-
     if (ongletActif === "fond") {
       // Fonds groupés par sous-dossier de DB/images/bg.
-      conteneurChoix.appendChild(grille);
       const categories = [...new Set(cosmetiques.fonds.map(fond => fond.categorie))];
 
       categories.forEach(categorie => {
@@ -1074,8 +1082,10 @@ async function initialiserParametres(profil) {
       return;
     }
 
+    // Bannière par défaut en premier.
     const liste = ongletActif === "banniere" ? cosmetiques.bannieres : cosmetiques.bannieres2;
-    liste
+    [...liste]
+      .sort((a, b) => (b === PARAMETRES_DEFAUT[ongletActif]) - (a === PARAMETRES_DEFAUT[ongletActif]))
       .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche))
       .forEach(chemin => {
         grille.appendChild(creerChoix({ valeur: chemin, image: urlImage(chemin), titre: nomNamecard(chemin), classe }));

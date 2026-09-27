@@ -55,6 +55,11 @@ def generer_version(source, destination, largeur, qualite):
     if destination.exists() and destination.stat().st_mtime >= source.stat().st_mtime:
         return
     destination.parent.mkdir(parents=True, exist_ok=True)
+    # Source déjà en WebP et pas de redimensionnement : copiée telle quelle
+    # (pas de recompression, donc aucune perte).
+    if source.suffix.lower() == ".webp" and not largeur:
+        shutil.copy2(source, destination)
+        return
     with Image.open(source) as image:
         image = image.convert("RGB")
         if largeur and image.width > largeur:

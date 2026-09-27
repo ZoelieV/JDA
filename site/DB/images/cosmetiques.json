@@ -24,6 +24,7 @@
   "namecards/Namecard_Background_Columbina_Someday.webp",
   "namecards/Namecard_Background_Cyno_Silence.webp",
   "namecards/Namecard_Background_Dahlia_Sacred_Duty.webp",
+  "namecards/Namecard_Background_Default.webp",
   "namecards/Namecard_Background_Dehya_Purifying_Flame.webp",
   "namecards/Namecard_Background_Diluc_Flames.webp",
   "namecards/Namecard_Background_Diona_Meow!.webp",
@@ -146,6 +147,7 @@
   "namecards/banners/Namecard_Banner_Columbina_Someday.webp",
   "namecards/banners/Namecard_Banner_Cyno_Silence.webp",
   "namecards/banners/Namecard_Banner_Dahlia_Sacred_Duty.webp",
+  "namecards/banners/Namecard_Banner_Default.webp",
   "namecards/banners/Namecard_Banner_Dehya_Purifying_Flame.webp",
   "namecards/banners/Namecard_Banner_Diluc_Flames.webp",
   "namecards/banners/Namecard_Banner_Diona_Meow!.webp",
@@ -327,6 +329,12 @@
    "categorie": "autres",
    "image": "bg_web/autres/Capture_d_cran_2026-09-21_233907.webp",
    "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_233907.webp"
+  },
+  {
+   "id": "bg/autres/default_bg.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/default_bg.webp",
+   "miniature": "bg_miniatures/autres/default_bg.webp"
   },
   {
    "id": "bg/autres/draft-background-D8K2XYgs.webp",

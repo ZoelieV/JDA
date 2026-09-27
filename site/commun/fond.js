@@ -14,6 +14,11 @@
   const CLE_URL = "fond-ecran-url";
   const CLE_DATE = "fond-ecran-date";
   const CLE_BANNIERE2 = "banniere2-url";
+
+  // Choix par défaut (profil sans choix, ou visiteur non connecté pour le fond).
+  const FOND_DEFAUT_ID = "bg/autres/default_bg.webp";
+  const FOND_DEFAUT_URL = "/DB/images/bg_web/autres/default_bg.webp";
+  const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
   const DUREE_CACHE_MS = 10 * 60 * 1000;
   const sansRequete = document.currentScript?.hasAttribute("data-sans-requete");
 
@@ -32,23 +37,31 @@
       background-size: cover;
     }
 
-    /* Bouton du compte avec la deuxième bannière (format 1000x137) en
-       fond, assombrie à gauche pour garder la photo et le nom lisibles. */
-    .avec-banniere2 {
+    /* Bouton du compte = la deuxième bannière (format 1000x137), sans
+       cadre ni dégradé ajouté (les images sont déjà assombries à gauche). */
+    .avec-banniere2,
+    .avec-banniere2:hover,
+    .avec-banniere2[aria-expanded="true"] {
       box-sizing: border-box;
       width: 420px;
       max-width: calc(100vw - 110px);
       aspect-ratio: 1000 / 137;
       /* Sur téléphone, la bannière est recadrée plutôt que d'écraser la photo. */
       min-height: 50px;
-      border-radius: 12px;
+      border: none;
+      border-radius: 8px;
       justify-content: flex-start;
-      background-image:
-        linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1) 70%),
-        var(--banniere2);
+      background-color: transparent;
+      background-image: var(--banniere2);
       background-size: cover;
       background-position: center;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      transition: filter 0.15s ease;
+    }
+
+    .avec-banniere2:hover,
+    .avec-banniere2[aria-expanded="true"] {
+      filter: brightness(1.12);
     }
   `;
   document.head.appendChild(style);
@@ -89,26 +102,26 @@
     try {
       const reponse = await fetch("/api/auth/profile", { credentials: "include" });
       if (!reponse.ok) {
-        // Non connecté : pas de fond personnalisé.
+        // Non connecté : fond par défaut.
         if (reponse.status === 401) {
-          appliquer(null);
-          memoriser(null, null);
+          appliquer(FOND_DEFAUT_URL);
+          memoriser(FOND_DEFAUT_URL, null);
         }
         return;
       }
 
       const { profil } = await reponse.json();
-      const idFond = profil?.parametres?.fond;
-      let url = null;
+      const idFond = profil?.parametres?.fond || FOND_DEFAUT_ID;
+      let url = FOND_DEFAUT_URL;
 
-      if (idFond) {
+      if (idFond !== FOND_DEFAUT_ID) {
         const cosmetiques = await (await fetch("/DB/images/cosmetiques.json")).json();
         const fond = cosmetiques.fonds.find(f => f.id === idFond);
-        url = fond ? encodeURI(`/DB/images/${fond.image}`) : null;
+        if (fond) url = encodeURI(`/DB/images/${fond.image}`);
       }
 
-      const cheminBanniere2 = profil?.parametres?.banniere2;
-      const banniere2 = cheminBanniere2 ? encodeURI(`/DB/images/${cheminBanniere2}`) : null;
+      const cheminBanniere2 = profil?.parametres?.banniere2 || BANNIERE2_DEFAUT;
+      const banniere2 = encodeURI(`/DB/images/${cheminBanniere2}`);
 
       appliquer(url);
       memoriser(url, banniere2);
@@ -117,7 +130,7 @@
     }
   }
 
-  appliquer(lire(CLE_URL));
+  appliquer(lire(CLE_URL) || FOND_DEFAUT_URL);
 
   const age = Date.now() - Number(lire(CLE_DATE) || 0);
   if (!sansRequete && age > DUREE_CACHE_MS) {
@@ -130,6 +143,6 @@
   window.FondEcran = {
     memoriser,
     appliquerBanniere2,
-    banniere2: () => lire(CLE_BANNIERE2)
+    banniere2: () => lire(CLE_BANNIERE2) || encodeURI(`/DB/images/${BANNIERE2_DEFAUT}`)
   };
 })();

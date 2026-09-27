@@ -172,14 +172,52 @@ const TRI_COMPTES_DEFAUT = { cle: "activite", sens: -1 };
 let triComptes = { ...TRI_COMPTES_DEFAUT };
 
 // Sens par défaut au 1er clic sur un tri : plus récents d'abord pour
-// l'activité, plus anciens d'abord pour l'arrivée, A -> Z pour l'alphabet.
-const SENS_INITIAL_TRI = { activite: -1, arrivee: 1, alpha: 1 };
+// l'activité, plus anciens d'abord pour l'arrivée, A -> Z pour l'alphabet,
+// plus grande valeur d'abord pour les stats.
+const SENS_INITIAL_TRI = {
+  activite: -1, arrivee: 1, alpha: 1,
+  points: -1, nb_persos: -1, nb_c6: -1, theatre: -1, victoires: -1, ratio: -1
+};
+
+// Deuxième bannière par défaut (joueur qui n'en a pas choisi).
+const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+
+// Pourcentage de victoires, null si aucun match joué.
+function getRatio(compte) {
+  return compte.matchs > 0 ? compte.victoires / compte.matchs : null;
+}
+
+// Valeur numérique d'un tri de stats ; les comptes sans valeur (théâtre non
+// renseigné, aucun match) passent toujours en dernier.
+function getStatTri(compte, cle) {
+  return cle === "ratio" ? getRatio(compte) : compte[cle] ?? null;
+}
+
+// Texte de la pastille à droite de la carte pour le tri en cours.
+function texteStat(compte) {
+  switch (triComptes.cle) {
+    case "points": return `${compte.points ?? 0} pts`;
+    case "nb_persos": return `${compte.nb_persos ?? 0} persos`;
+    case "nb_c6": return `${compte.nb_c6 ?? 0} C6`;
+    case "theatre": return compte.theatre ? `Théâtre ${compte.theatre}` : "Théâtre -";
+    case "victoires": return `${compte.victoires ?? 0} V / ${compte.matchs ?? 0} matchs`;
+    case "ratio": return getRatio(compte) === null ? "Aucun match" : `${Math.round(getRatio(compte) * 100)} %`;
+    default: return "";
+  }
+}
 
 function getNomCompte(compte) {
   return compte.discord_global_name || compte.discord_username || "Utilisateur inconnu";
 }
 
 function comparerComptes(a, b) {
+  if (SENS_INITIAL_TRI[triComptes.cle] && !["activite", "arrivee", "alpha"].includes(triComptes.cle)) {
+    const va = getStatTri(a, triComptes.cle);
+    const vb = getStatTri(b, triComptes.cle);
+    if (va === null || vb === null) return 0; // géré dans afficherComptes
+    return va - vb;
+  }
+
   switch (triComptes.cle) {
     case "alpha":
       return getNomCompte(a).localeCompare(getNomCompte(b), "fr", { sensitivity: "base" });
@@ -203,11 +241,20 @@ function afficherComptes() {
   liste.innerHTML = "";
 
   const recherche = document.getElementById("recherche-comptes").value.trim().toLowerCase();
+  const estTriStat = !["activite", "arrivee", "alpha"].includes(triComptes.cle);
   const comptes = tousLesComptes
     .filter(compte => !recherche ||
       getNomCompte(compte).toLowerCase().includes(recherche) ||
       String(compte.discord_username || "").toLowerCase().includes(recherche))
-    .sort((a, b) => comparerComptes(a, b) * triComptes.sens);
+    .sort((a, b) => {
+      // Stats sans valeur : toujours en fin de liste, quel que soit le sens.
+      if (estTriStat) {
+        const sansA = getStatTri(a, triComptes.cle) === null;
+        const sansB = getStatTri(b, triComptes.cle) === null;
+        if (sansA !== sansB) return sansA ? 1 : -1;
+      }
+      return comparerComptes(a, b) * triComptes.sens;
+    });
 
   if (comptes.length === 0) {
     liste.innerHTML = `<p class="liste-vide">Aucun joueur trouvé.</p>`;
@@ -222,10 +269,9 @@ function afficherComptes() {
     const nom = getNomCompte(compte);
     const username = compte.discord_username ? `@${compte.discord_username}` : "";
 
-    // Deuxième bannière choisie dans Mon compte, en fond de la carte.
-    if (compte.banniere2) {
-      card.style.setProperty("--banniere2", `url("${encodeURI(`../DB/images/${compte.banniere2}`)}")`);
-    }
+    // Deuxième bannière choisie dans Mon compte (sinon celle par défaut).
+    const banniere2 = compte.banniere2 || BANNIERE2_DEFAUT;
+    card.style.setProperty("--banniere2", `url("${encodeURI(`../DB/images/${banniere2}`)}")`);
 
     card.innerHTML = `
       <img src="${compte.discord_avatar_url || ""}" alt="">
@@ -233,9 +279,11 @@ function afficherComptes() {
         <div class="account-name"></div>
         <div class="account-sub"></div>
       </div>
+      ${estTriStat ? `<span class="account-stat"></span>` : ""}
     `;
     card.querySelector(".account-name").textContent = nom;
     card.querySelector(".account-sub").textContent = username;
+    if (estTriStat) card.querySelector(".account-stat").textContent = texteStat(compte);
 
     card.addEventListener("click", () => ouvrirProfil(compte.discord_id, nom));
     liste.appendChild(card);
