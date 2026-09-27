@@ -5,3 +5,6 @@ admin_ppc/
 # Le site utilise les versions générées (bg_web / bg_miniatures) par
 # scripts/generer_cosmetiques.py.
 site/DB/images/bg/
+
+# Fonds retirés du site (originaux gardés en local).
+site/DB/images/bg_retires/

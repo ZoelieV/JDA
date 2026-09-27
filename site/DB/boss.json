@@ -1,19 +1,5 @@
 [
   {
-    "id": "childe_boss",
-    "nom": "Tartaglia",
-    "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/childe_boss.webp"
-  },
-  {
-    "id": "azhdaha_boss",
-    "nom": "Azhdaha",
-    "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/azhdaha_boss.webp"
-  },
-  {
     "id": "signora_boss",
     "nom": "Signora",
     "type": "weekly_boss",
@@ -56,18 +42,18 @@
     "image": "images/boss/arle_boss.webp"
   },
   {
-    "id": "tartaglia_boss",
-    "nom": "Tartaglia",
-    "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/childe_boss.webp"
-  },
-  {
     "id": "erode_boss",
     "nom": "Érodé seigneur du feu primordial",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
     "image": "images/boss/erode_boss.webp"
+  },
+    {
+    "id": "chess_boss",
+    "nom": "The Game Before the Gate",
+    "type": "weekly_boss",
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/chess_boss.webp"
   },
   {
     "id": "dottoreI_boss",

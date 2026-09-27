@@ -69,8 +69,8 @@ function etatInitialDraft() {
     bans_bonus_choix: [], // ids en cours de sélection, pas encore confirmés
     boss_id: null,
     pool_disponible: null, // liste d'ids (union), remplie une fois les 2 joueurs prêts
-    pool_j1: null, // ids possédés par j1 (sa Full box) — restreint ses picks
-    pool_j2: null, // ids possédés par j2 (sa Full box) — restreint ses picks
+    pool_j1: null, // ids de la box choisie par j1 — restreint ses picks
+    pool_j2: null, // ids de la box choisie par j2 — restreint ses picks
     actions: [], // { joueur, type: "ban" | "pick", perso_id, bonus: bool }
     sequence_index: 0,
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
@@ -101,12 +101,16 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
   return total;
 }
 
-// ---- Pool d'un joueur (tout ce qu'il possède, peu importe la box choisie
-// pour l'équilibrage : on regarde sa Full box) ----
-function calculerPoolJoueur(profilData, personnages) {
-  const full = profilData?.characters?.full || {};
+// ---- Pool d'un joueur : les personnages de la box choisie pour le match
+// (Full Box = tout ce qu'il possède ; autre box = sa sélection) ----
+function calculerPoolJoueur(profilData, personnages, boxChoisie = "full") {
+  const collection = profilData?.characters || { full: {}, selections: {} };
   return personnages
-    .filter(p => (full[p.id] ?? -1) >= 0)
+    .filter(p => {
+      if ((collection.full?.[p.id] ?? -1) < 0) return false;
+      if (boxChoisie === "full") return true;
+      return !!collection.selections?.[boxChoisie]?.[p.id];
+    })
     .map(p => p.id);
 }
 

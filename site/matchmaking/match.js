@@ -352,7 +352,20 @@ function getConstellationLabel(joueurData, persoId) {
 }
 
 // Constellation (0-6) d'un perso chez un joueur, ou null s'il ne l'a pas.
+// Dès que les pools sont calculés (après le choix des box), seuls les
+// personnages de la box choisie pour le match comptent comme possédés.
+const cachePools = {};
+
+function getPoolMatch(role) {
+  const pool = draft?.[`pool_${role}`];
+  if (!draft || draft.phase === "choix_box" || !Array.isArray(pool)) return null;
+  if (cachePools[role]?.source !== pool) cachePools[role] = { source: pool, set: new Set(pool) };
+  return cachePools[role].set;
+}
+
 function getConstellation(role, persoId) {
+  const pool = getPoolMatch(role);
+  if (pool && !pool.has(persoId)) return null;
   const c = getJoueurDataParRole(role)?.characters?.full?.[persoId];
   return typeof c === "number" && c >= 0 ? c : null;
 }
@@ -528,6 +541,8 @@ function creerBanMini(personnage) {
 // j1 à gauche, j2 à droite — reflète toujours les rôles de la manche en
 // cours (draft.discord_j1/discord_j2), pas "qui a créé la room".
 
+const NAMECARD_DEFAUT = "namecards/Namecard_Background_Default.webp";
+
 function rendreEntetesJoueurs() {
   [["entete-joueur1", joueur1, "j1"], ["entete-joueur2", joueur2, "j2"]].forEach(([containerId, joueur, role]) => {
     const container = document.getElementById(containerId);
@@ -540,6 +555,12 @@ function rendreEntetesJoueurs() {
     const afficherPastille = draft && (draft.phase === "choix_box" || draft.phase === "analyse");
     // Avant le tirage, j1/j2 ne sont que des places provisoires : pas de tag.
     const afficherRole = draft && draft.roles_tires;
+
+    // Namecard du joueur (choisie dans Mon compte, sinon celle par défaut)
+    // en fond du rectangle.
+    const namecard = joueur.data?.parametres?.banniere || NAMECARD_DEFAUT;
+    container.classList.add("avec-namecard");
+    container.style.setProperty("--namecard", `url("${encodeURI(`/DB/images/${namecard}`)}")`);
 
     container.innerHTML = `
       <img src="${joueur.avatar || ""}" alt="${joueur.nom}">
@@ -850,6 +871,7 @@ function jouerAnimationBoss(bossIdFinal) {
 
       animationBossEnCours = false;
       bossAnimeId = bossIdFinal;
+      appliquerFondRoom();
     }
   }
 
@@ -1254,7 +1276,54 @@ const BULLES_PAR_PHASE = {
   "etat-rejouer": ["termine"]
 };
 
+// ---- Fond d'écran de la room ----
+// Fond par défaut, puis, une fois le boss tiré (et son animation finie), une
+// des images de DB/images/bg_web/boss_hebdo/ nommées "<boss>_<n>" (id du
+// boss sans "_boss"). Le choix dépend de la room et du boss : les deux
+// joueurs voient la même image.
+
+const FOND_ROOM_DEFAUT = "/DB/images/bg_web/autres/default_bg.webp";
+let fondsBoss = null;
+let fondRoomApplique = null;
+
+async function chargerFondsBoss() {
+  try {
+    const reponse = await fetch("/DB/images/cosmetiques.json");
+    const cosmetiques = await reponse.json();
+    fondsBoss = cosmetiques.fonds.filter(fond => fond.categorie === "boss_hebdo");
+  } catch (erreur) {
+    console.error(erreur);
+    fondsBoss = [];
+  }
+}
+
+function hashTexte(texte) {
+  let h = 0;
+  for (const caractere of texte) h = (h * 31 + caractere.charCodeAt(0)) >>> 0;
+  return h;
+}
+
+function appliquerFondRoom() {
+  let url = FOND_ROOM_DEFAUT;
+
+  if (draft?.boss_id && fondsBoss && !animationBossEnCours) {
+    const prefixe = draft.boss_id.replace(/_boss$/, "");
+    const images = fondsBoss.filter(fond => fond.image.split("/").pop().replace(/_\d+\.webp$/, "") === prefixe);
+    if (images.length > 0) {
+      const choisi = images[hashTexte(`${roomId}:${draft.boss_id}`) % images.length];
+      url = encodeURI(`/DB/images/${choisi.image}`);
+    }
+  }
+
+  if (url !== fondRoomApplique) {
+    fondRoomApplique = url;
+    document.body.style.setProperty("--fond-ecran", `url("${url}")`);
+  }
+}
+
 function rendrePhase() {
+  appliquerFondRoom();
+
   const phasePrecedente = dernierePhaseVue;
   dernierePhaseVue = draft.phase;
 
@@ -1350,10 +1419,13 @@ async function demarrer() {
     }
     moiDiscordId = user.id;
 
+    appliquerFondRoom();
+
     [personnagesData, bossData, armesData] = await Promise.all([
       chargerPersonnages(),
       chargerBoss(),
-      chargerArmes()
+      chargerArmes(),
+      chargerFondsBoss()
     ]);
 
     initialiserFiltresTri();

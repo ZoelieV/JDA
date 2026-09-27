@@ -99,8 +99,9 @@ async function calculerEquilibrage(draft) {
   const ecart = pointsJ1 - pointsJ2;
   const bansBonus = calculerBansBonus(ecart);
 
-  const poolJ1 = calculerPoolJoueur(profilJ1.data?.data, personnages);
-  const poolJ2 = calculerPoolJoueur(profilJ2.data?.data, personnages);
+  // Pools = personnages de la box choisie par chaque joueur (et non sa Full Box).
+  const poolJ1 = calculerPoolJoueur(profilJ1.data?.data, personnages, draft.box_j1);
+  const poolJ2 = calculerPoolJoueur(profilJ2.data?.data, personnages, draft.box_j2);
 
   draft.pool_j1 = poolJ1;
   draft.pool_j2 = poolJ2;

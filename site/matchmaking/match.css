@@ -7,6 +7,19 @@ body {
   padding-bottom: 90px;
 }
 
+/* Fond d'écran de la room (défaut, puis image du boss tiré) : calque fixe
+   posé par appliquerFondRoom() via --fond-ecran. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--fond-ecran, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
 a {
   color: white;
 }
@@ -1025,6 +1038,31 @@ h1 {
 
 /* ---- Téléphone : les 2 tableaux côte à côte en haut, persos en dessous
    (4 par ligne, cf. ajusterGrille), pas de place pour les bannières. ---- */
+/* ---- Namecard des joueurs dans leur rectangle : hauteur du rectangle
+   fixe, largeur = celle de la namecard (840x400) à cette hauteur. ---- */
+
+.entete-joueur.avec-namecard {
+  height: 168px;
+  min-height: 0;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 840 / 400;
+  align-items: flex-end;
+  background-color: transparent;
+  background-image: var(--namecard);
+  background-size: cover;
+  background-position: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+#entete-joueur1.avec-namecard {
+  justify-self: start;
+}
+
+#entete-joueur2.avec-namecard {
+  justify-self: end;
+}
+
 @media (max-width: 700px) {
   .entete-joueur {
     min-height: 0;
@@ -1140,5 +1178,13 @@ h1 {
 
   .bulles-bas .bandeau-info {
     padding: 10px 14px;
+  }
+}
+
+/* Téléphone : namecard sur toute la largeur du rectangle, hauteur déduite. */
+@media (max-width: 700px) {
+  .entete-joueur.avec-namecard {
+    width: 100%;
+    height: auto;
   }
 }
