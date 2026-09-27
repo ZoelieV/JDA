@@ -61,7 +61,6 @@
 
 .accueil-hero h1 {
   margin: 0 0 10px;
-  font-size: 40px;
 }
 
 .accueil-hero p {
@@ -132,10 +131,6 @@
 @media (max-width: 700px) {
   .accueil-hero {
     margin: 24px 0 20px;
-  }
-
-  .accueil-hero h1 {
-    font-size: 30px;
   }
 
   .accueil-hero p {
