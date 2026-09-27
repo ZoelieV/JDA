@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=4">
+<link rel="stylesheet" href="match.css?v=5">
 <link rel="stylesheet" href="../commun/entete.css">
 </head>
 <body>
@@ -121,30 +121,43 @@
       </div>
     </section>
 
-    <!-- Phase 4 : saisie du temps -->
-    <section id="phase-temps" class="phase cache">
+    <!-- Phases 4 et 5 : récap des équipes. Tableau de chaque joueur
+         (namecard, temps, personnages avec leurs infos) à gauche / droite ;
+         au centre : résultat (phase 5), boss, bouton Rejouer (phase 5).
+         Le champ de saisie du temps est déplacé dans le tableau du joueur
+         connecté (cf. rendreRecap). -->
+    <section id="phase-recap" class="phase cache">
       <div class="recap-teams">
-        <div class="equipe-joueur" id="recap-equipe-j1"></div>
-        <div class="equipe-joueur" id="recap-equipe-j2"></div>
+        <div class="equipe-joueur recap-equipe" id="recap-equipe-j1">
+          <div id="recap-entete-j1"></div>
+          <div class="recap-temps" id="recap-temps-j1"></div>
+          <div class="recap-persos" id="recap-persos-j1"></div>
+        </div>
+
+        <div class="recap-centre">
+          <div id="resultat-final" class="resultat-final cache"></div>
+          <div id="recap-boss" class="bandeau-boss"></div>
+          <button id="btn-rejouer" type="button" class="cache">Rejouer</button>
+        </div>
+
+        <div class="equipe-joueur recap-equipe" id="recap-equipe-j2">
+          <div id="recap-entete-j2"></div>
+          <div class="recap-temps" id="recap-temps-j2"></div>
+          <div class="recap-persos" id="recap-persos-j2"></div>
+        </div>
       </div>
 
-      <div class="saisie-temps">
-        <label for="input-temps">Ton temps de complétion (mm:ss)</label>
+      <div id="saisie-temps" class="saisie-temps cache">
+        <label for="input-temps">Ton temps (mm:ss)</label>
         <div class="ligne-saisie-temps">
-          <input id="input-temps" type="text" placeholder="7:32">
+          <input id="input-temps" type="text" placeholder="7:32" inputmode="numeric">
           <button id="btn-valider-temps" type="button">Valider</button>
         </div>
       </div>
     </section>
 
-    <!-- Phase 5 : résultat -->
-    <section id="phase-termine" class="phase cache">
-      <div id="resultat-final"></div>
-      <button id="btn-rejouer" type="button">Rejouer</button>
-    </section>
-
   </div>
 
-  <script src="match.js?v=6"></script>
+  <script src="match.js?v=7"></script>
 </body>
 </html>

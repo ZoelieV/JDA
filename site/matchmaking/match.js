@@ -1192,39 +1192,81 @@ function annoncerRole() {
 // Recap des picks d'un joueur (sans la rangée de bans, contrairement à
 // rendreSlotsEtBans) — utilisé sur la page de saisie du temps pour se
 // souvenir des 2 teams pendant qu'on tape son temps.
-function rendrePicksSeuls(containerId, role) {
-  const nomJoueur = role === "j1" ? joueur1.nom : joueur2.nom;
+// ---- Phases 4 et 5 : récap des équipes ----
+// Tableau de chaque joueur : namecard, zone du temps, puis ses personnages
+// avec les mêmes infos qu'en draft (constellation, niveau, arme ; j1 à
+// gauche, j2 à droite). Boss au centre.
+
+function rendreTableauRecap(role) {
+  const joueur = role === "j1" ? joueur1 : joueur2;
+  document.getElementById(`recap-entete-${role}`).innerHTML = titreTableauJoueur(role, joueur.nom);
+
+  // Personnages : reconstruits seulement si les picks changent.
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
-
-  const container = document.getElementById(containerId);
-  container.innerHTML = titreTableauJoueur(role, nomJoueur);
-
-  const slotsWrap = document.createElement("div");
-  slotsWrap.className = "slots-pick";
-
-  for (let i = 0; i < 4; i++) {
-    const persoId = picks[i];
-    const slot = document.createElement("div");
-
-    if (persoId) {
-      slot.className = "slot-pick";
-      remplirCaseTableau(slot, getPersonnageParId(persoId));
-    } else {
-      slot.className = "slot-pick vide";
-      slot.textContent = "Vide";
-    }
-
-    slotsWrap.appendChild(slot);
+  const grille = document.getElementById(`recap-persos-${role}`);
+  if (grilleAChange(grille, picks.join(","))) {
+    picks.forEach(id => {
+      const personnage = getPersonnageParId(id);
+      if (personnage) grille.appendChild(creerCarteItem(personnage, getInfosCarte(id, [role])));
+    });
   }
 
-  container.appendChild(slotsWrap);
+  // Temps : champ de saisie dans le tableau du joueur connecté pendant la
+  // saisie ; sinon un texte (temps de l'adversaire masqué jusqu'au résultat).
+  const zone = document.getElementById(`recap-temps-${role}`);
+  const temps = draft[`temps_${role}`];
+  const saisie = document.getElementById("saisie-temps");
+  const saisieIci = draft.phase === "temps" && role === monRole && !temps;
+
+  let texte = "";
+  if (draft.phase === "termine") {
+    texte = temps ? `Temps : ${temps.affiche}` : "";
+  } else if (role === monRole) {
+    texte = temps ? `Ton temps : ${temps.affiche}` : "";
+  } else {
+    texte = temps ? "Temps enregistré ✓" : "En attente de son temps…";
+  }
+
+  let ligne = zone.querySelector(".texte-temps");
+  if (!ligne) {
+    ligne = document.createElement("div");
+    ligne.className = "texte-temps";
+    zone.prepend(ligne);
+  }
+  ligne.textContent = texte;
+  ligne.classList.toggle("cache", !texte);
+
+  if (saisieIci && saisie.parentElement !== zone) zone.appendChild(saisie);
+  if (role === monRole) saisie.classList.toggle("cache", !saisieIci);
+
+  document.getElementById(`recap-equipe-${role}`).classList.toggle(
+    "gagnant", draft.phase === "termine" && draft.vainqueur === role
+  );
+}
+
+function rendreRecap() {
+  assurerBossAffiche();
+  rendreTableauRecap("j1");
+  rendreTableauRecap("j2");
+  if (!monRole) document.getElementById("saisie-temps").classList.add("cache");
+
+  const boss = bossData.find(b => b.id === draft.boss_id);
+  const blocBoss = document.getElementById("recap-boss");
+  const cleBoss = boss ? boss.id : "";
+  if (blocBoss.dataset.cle !== cleBoss) {
+    blocBoss.dataset.cle = cleBoss;
+    blocBoss.innerHTML = boss
+      ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span class="nom-boss">${boss.nom}</span>`
+      : "";
+  }
+
+  const termine = draft.phase === "termine";
+  document.getElementById("resultat-final").classList.toggle("cache", !termine);
+  document.getElementById("btn-rejouer").classList.toggle("cache", !termine);
 }
 
 function rendreTemps() {
-  assurerBossAffiche();
-
-  rendrePicksSeuls("recap-equipe-j1", "j1");
-  rendrePicksSeuls("recap-equipe-j2", "j2");
+  rendreRecap();
 
   const monTemps = draft[`temps_${monRole}`];
   const tempsAdversaire = draft[`temps_${getAutreRole(monRole)}`];
@@ -1233,14 +1275,8 @@ function rendreTemps() {
   const btn = document.getElementById("btn-valider-temps");
   const etat = document.getElementById("etat-temps");
 
-  if (monTemps) {
-    input.value = monTemps.affiche;
-    input.disabled = true;
-    btn.disabled = true;
-  } else {
-    input.disabled = false;
-    btn.disabled = false;
-  }
+  input.disabled = !!monTemps;
+  btn.disabled = !!monTemps;
 
   if (monTemps && !tempsAdversaire) {
     etat.textContent = "Temps enregistré. En attente du temps de l'adversaire…";
@@ -1263,21 +1299,24 @@ function rendreTemps() {
 // ---- Phase 5 : résultat ----
 
 function rendreTermine() {
-  const boss = bossData.find(b => b.id === draft.boss_id);
+  rendreRecap();
   const container = document.getElementById("resultat-final");
 
+  // Résultat au-dessus du boss (les temps sont dans les tableaux).
   let ligneVainqueur;
   if (draft.vainqueur === "egalite") {
     ligneVainqueur = `<span class="egalite">Égalité !</span>`;
+  } else if (monRole) {
+    const gagne = draft.vainqueur === monRole;
+    ligneVainqueur = `<span class="${gagne ? "vainqueur" : "perdant"}">${gagne ? "Tu as gagné !" : "Tu as perdu."}</span>`;
   } else {
-    const gagnant = draft.vainqueur === monRole ? "Tu as gagné !" : "Tu as perdu.";
-    ligneVainqueur = `<span class="vainqueur">${gagnant}</span>`;
+    const nomGagnant = draft.vainqueur === "j1" ? joueur1.nom : joueur2.nom;
+    ligneVainqueur = `<span class="vainqueur">${nomGagnant} gagne !</span>`;
   }
 
   container.innerHTML = `
-    <p>Boss : ${boss ? boss.nom : draft.boss_id}</p>
-    <p>${joueur1.nom} : ${draft.temps_j1.affiche} — ${joueur2.nom} : ${draft.temps_j2.affiche}</p>
-    <p>${ligneVainqueur}</p>
+    <p class="ligne-vainqueur">${ligneVainqueur}</p>
+    <p class="ligne-temps">${joueur1.nom} : ${draft.temps_j1.affiche} — ${joueur2.nom} : ${draft.temps_j2.affiche}</p>
   `;
 
   // Revanche : ready-check des 2 joueurs, puis retour direct à l'analyse
@@ -1378,8 +1417,8 @@ function rendrePhase() {
     analyse: "phase-choix-box",
     bans_bonus: "phase-bans-bonus",
     draft: "phase-draft",
-    temps: "phase-temps",
-    termine: "phase-termine"
+    temps: "phase-recap",
+    termine: "phase-recap"
   };
 
   const idAffiche = idsParPhase[draft.phase];
@@ -1389,8 +1428,11 @@ function rendrePhase() {
 
   // Boss tiré (draft, temps) : entêtes réduites à 1/3 de leur largeur, le
   // boss occupe le centre libéré (et déborde vers le bas pendant la draft).
-  const avecBoss = draft.phase === "draft" || draft.phase === "temps";
+  // Temps / résultat : le boss est au centre du récap, plus d'entêtes.
+  const avecBoss = draft.phase === "draft";
+  const enRecap = draft.phase === "temps" || draft.phase === "termine";
   const entetes = document.querySelector(".entetes-joueurs");
+  entetes.classList.toggle("cache", enRecap);
   entetes.classList.toggle("compact", avecBoss);
   entetes.classList.toggle("boss-deborde", draft.phase === "draft");
   // Boss tiré : plus de rectangles joueurs (namecard, photo et pseudo sont

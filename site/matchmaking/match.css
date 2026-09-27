@@ -639,6 +639,14 @@ h1 {
   }
 }
 
+@media (min-width: 701px) and (max-width: 900px) {
+  .recap-teams {
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
+    gap: 16px;
+    --taille-carte: 86px;
+  }
+}
+
 .equipe-joueur {
   background-color: rgba(20, 20, 20, 0.45);
   border-radius: 16px;
@@ -934,26 +942,95 @@ h1 {
 
 /* ---- Phase : temps ---- */
 
+/* Récap (temps, résultat) : tableau j1 | centre (résultat, boss, rejouer)
+   | tableau j2. */
 .recap-teams {
+  --taille-carte: 100px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: 250px minmax(0, 460px) 250px;
+  justify-content: center;
+  align-items: start;
+  gap: 30px;
   margin-bottom: 20px;
 }
 
-@media (max-width: 800px) {
-  .recap-teams {
-    grid-template-columns: 1fr;
-  }
+.recap-equipe {
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease;
+}
+
+.recap-equipe.gagnant {
+  box-shadow: 0 0 0 3px rgba(62, 207, 106, 0.85), 0 0 18px rgba(62, 207, 106, 0.4);
+}
+
+.recap-persos {
+  display: grid;
+  grid-template-columns: repeat(2, var(--taille-carte));
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Zone du temps : centrée, au-dessus des personnages. */
+.recap-temps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.recap-temps:empty {
+  display: none;
+}
+
+.texte-temps {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.recap-centre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.recap-centre .bandeau-boss {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.recap-centre .bandeau-boss img {
+  width: 300px;
+  height: 300px;
+  max-width: 100%;
+  object-fit: contain;
+  background: none;
+}
+
+#resultat-final {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 }
 
 .saisie-temps {
-  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .saisie-temps label {
-  display: block;
-  margin-bottom: 8px;
+  font-size: 14px;
+  opacity: 0.85;
 }
 
 .ligne-saisie-temps {
@@ -982,9 +1059,23 @@ h1 {
 
 /* ---- Phase : résultat ---- */
 
-#resultat-final {
-  font-size: 18px;
-  margin-bottom: 16px;
+#resultat-final p {
+  margin: 0;
+}
+
+#resultat-final .ligne-vainqueur {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+#resultat-final .ligne-temps {
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+#resultat-final .perdant {
+  font-weight: bold;
+  color: #ff7a85;
 }
 
 #resultat-final .vainqueur {
@@ -1167,13 +1258,11 @@ h1 {
   filter: grayscale(40%) brightness(0.8);
 }
 
-#equipe-j2 .slot-pick,
-#recap-equipe-j2 .slot-pick {
+#equipe-j2 .slot-pick {
   flex-direction: row-reverse;
 }
 
-#equipe-j2 .slot-pick.avec-banniere::before,
-#recap-equipe-j2 .slot-pick.avec-banniere::before {
+#equipe-j2 .slot-pick.avec-banniere::before {
   transform: scaleX(-1);
 }
 
@@ -1357,9 +1446,44 @@ h1 {
     grid-area: pool;
   }
 
+  /* Récap : résultat + boss + rejouer en haut, les 2 tableaux dessous. */
   .recap-teams {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "centre centre"
+      "j1 j2";
     gap: 10px;
+    --taille-carte: calc(((100vw - 34px) / 2 - 22px) / 2);
+  }
+
+  .recap-centre {
+    grid-area: centre;
+  }
+
+  #recap-equipe-j1 {
+    grid-area: j1;
+  }
+
+  #recap-equipe-j2 {
+    grid-area: j2;
+  }
+
+  .recap-persos {
+    gap: 6px;
+  }
+
+  .recap-centre .bandeau-boss img {
+    width: 200px;
+    height: 200px;
+  }
+
+  .ligne-saisie-temps {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #input-temps {
+    width: 70px;
   }
 
   .equipe-joueur {
