@@ -1,0 +1,54 @@
+/* En-tête commun à toutes les pages : lien de retour à l'accueil et titre
+   de la page. */
+
+/* Retour à l'accueil : bouton pilule avec flèche. */
+.lien-accueil {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 6px 16px 6px 12px;
+  background-color: rgba(30, 30, 30, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: white;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.lien-accueil::before {
+  content: "←";
+  font-size: 17px;
+  line-height: 1;
+}
+
+.lien-accueil:hover,
+.lien-accueil:focus-visible {
+  background-color: rgba(245, 197, 66, 0.15);
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+/* Barre du haut de Mon compte : aligné avec le bouton du compte. */
+.barre-haut .lien-accueil {
+  margin-bottom: 0;
+}
+
+/* Titre principal des pages : centré, même police et même taille que
+   "Jeu des Archons" sur l'accueil. */
+.titre-page {
+  margin: 24px 0 24px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 40px;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+@media (max-width: 700px) {
+  .titre-page {
+    font-size: 30px;
+  }
+}

@@ -29,11 +29,6 @@ h2 {
   margin-top: 20px;
 }
 
-.lien-accueil {
-  display: inline-block;
-  margin-bottom: 10px;
-}
-
 /* Bouton principal (même style que Enregistrer). */
 .btn-principal {
   display: inline-flex;

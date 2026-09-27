@@ -165,29 +165,109 @@ function trouverPersonnageParArmeSignature(armeId) {
   return indexPersosParArmeSignature.get(armeId);
 }
 
-function afficherComptes(comptes) {
+// ---- Liste des comptes : recherche + tri (sens inversé par un 2e clic) ----
+
+let tousLesComptes = [];
+const TRI_COMPTES_DEFAUT = { cle: "activite", sens: -1 };
+let triComptes = { ...TRI_COMPTES_DEFAUT };
+
+// Sens par défaut au 1er clic sur un tri : plus récents d'abord pour
+// l'activité, plus anciens d'abord pour l'arrivée, A -> Z pour l'alphabet.
+const SENS_INITIAL_TRI = { activite: -1, arrivee: 1, alpha: 1 };
+
+function getNomCompte(compte) {
+  return compte.discord_global_name || compte.discord_username || "Utilisateur inconnu";
+}
+
+function comparerComptes(a, b) {
+  switch (triComptes.cle) {
+    case "alpha":
+      return getNomCompte(a).localeCompare(getNomCompte(b), "fr", { sensitivity: "base" });
+    case "arrivee":
+      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    default:
+      return String(a.updated_at || "").localeCompare(String(b.updated_at || ""));
+  }
+}
+
+function mettreAJourBoutonsTriComptes() {
+  document.querySelectorAll(".tri-compte-btn").forEach(btn => {
+    const actif = btn.dataset.tri === triComptes.cle;
+    btn.classList.toggle("active", actif);
+    btn.querySelector(".fleche").textContent = actif ? (triComptes.sens === 1 ? "▲" : "▼") : "";
+  });
+}
+
+function afficherComptes() {
   const liste = document.getElementById("accounts-list");
   liste.innerHTML = "";
+
+  const recherche = document.getElementById("recherche-comptes").value.trim().toLowerCase();
+  const comptes = tousLesComptes
+    .filter(compte => !recherche ||
+      getNomCompte(compte).toLowerCase().includes(recherche) ||
+      String(compte.discord_username || "").toLowerCase().includes(recherche))
+    .sort((a, b) => comparerComptes(a, b) * triComptes.sens);
+
+  if (comptes.length === 0) {
+    liste.innerHTML = `<p class="liste-vide">Aucun joueur trouvé.</p>`;
+    return;
+  }
 
   comptes.forEach(compte => {
     const card = document.createElement("div");
     card.className = "account-card";
     card.dataset.id = compte.discord_id;
 
-    const nom = compte.discord_global_name || compte.discord_username || "Utilisateur inconnu";
+    const nom = getNomCompte(compte);
     const username = compte.discord_username ? `@${compte.discord_username}` : "";
 
+    // Deuxième bannière choisie dans Mon compte, en fond de la carte.
+    if (compte.banniere2) {
+      card.style.setProperty("--banniere2", `url("${encodeURI(`../DB/images/${compte.banniere2}`)}")`);
+    }
+
     card.innerHTML = `
-      <img src="${compte.discord_avatar_url || ""}" alt="${nom}">
-      <div>
-        <div class="account-name">${nom}</div>
-        <div class="account-sub">${username}</div>
+      <img src="${compte.discord_avatar_url || ""}" alt="">
+      <div class="account-infos">
+        <div class="account-name"></div>
+        <div class="account-sub"></div>
       </div>
     `;
+    card.querySelector(".account-name").textContent = nom;
+    card.querySelector(".account-sub").textContent = username;
 
     card.addEventListener("click", () => ouvrirProfil(compte.discord_id, nom));
     liste.appendChild(card);
   });
+}
+
+function initialiserBarreComptes() {
+  // Tri "Arrivée" masqué si la date d'arrivée n'est pas disponible.
+  const avecArrivee = tousLesComptes.some(compte => compte.created_at);
+  document.querySelector('.tri-compte-btn[data-tri="arrivee"]').hidden = !avecArrivee;
+
+  document.querySelectorAll(".tri-compte-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cle = btn.dataset.tri;
+      triComptes = triComptes.cle === cle
+        ? { cle, sens: -triComptes.sens }
+        : { cle, sens: SENS_INITIAL_TRI[cle] };
+      mettreAJourBoutonsTriComptes();
+      afficherComptes();
+    });
+  });
+
+  document.getElementById("recherche-comptes").addEventListener("input", afficherComptes);
+
+  document.getElementById("clear-comptes").addEventListener("click", () => {
+    document.getElementById("recherche-comptes").value = "";
+    triComptes = { ...TRI_COMPTES_DEFAUT };
+    mettreAJourBoutonsTriComptes();
+    afficherComptes();
+  });
+
+  mettreAJourBoutonsTriComptes();
 }
 
 // ---- Construction de la liste affichée selon vue + box + filtres ----
@@ -504,8 +584,9 @@ function initialiserModal() {
 
 async function demarrer() {
   try {
-    const comptes = await chargerComptes();
-    afficherComptes(comptes);
+    tousLesComptes = await chargerComptes();
+    initialiserBarreComptes();
+    afficherComptes();
     initialiserModal();
     initialiserBarreOutils();
     initialiserSelecteursVueEtBox();

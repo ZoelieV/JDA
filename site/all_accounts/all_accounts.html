@@ -4,13 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tous les comptes</title>
-<link rel="stylesheet" href="all_accounts.css?v=5">
-<link rel="stylesheet" href="../commun/titre.css">
+<link rel="stylesheet" href="all_accounts.css?v=6">
+<link rel="stylesheet" href="../commun/entete.css">
 <script src="/commun/fond.js"></script>
 </head>
 <body>
 <a href="../index.html" class="lien-accueil">Accueil</a>
 <h1 class="titre-page">Tous les comptes</h1>
+
+  <!-- Recherche et tris de la liste des comptes (sens inversé par un 2e clic). -->
+  <div class="barre-comptes">
+    <input type="text" id="recherche-comptes" class="recherche-personnage" placeholder="Rechercher un joueur…">
+    <div class="tris">
+      <span class="tris-label">Trier :</span>
+      <button type="button" class="filtre-etoile-btn tri-compte-btn" data-tri="activite">Activité <span class="fleche"></span></button>
+      <button type="button" class="filtre-etoile-btn tri-compte-btn" data-tri="arrivee">Arrivée <span class="fleche"></span></button>
+      <button type="button" class="filtre-etoile-btn tri-compte-btn" data-tri="alpha">A → Z <span class="fleche"></span></button>
+    </div>
+    <button type="button" id="clear-comptes" class="btn-clear-filtres">✕ Filtres</button>
+  </div>
 
   <div id="accounts-list"></div>
 
@@ -62,6 +74,6 @@
     </div>
   </div>
 
-  <script src="all_accounts.js?v=5"></script>
+  <script src="all_accounts.js?v=6"></script>
 </body>
 </html>
