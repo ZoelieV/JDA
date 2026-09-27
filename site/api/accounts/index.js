@@ -65,7 +65,8 @@ async function chargerResultats() {
 // Stats calculées ici : on ne renvoie pas les box complètes à la page.
 function resumerProfil(profil, resultats) {
   const data = profil.data || {};
-  const constellations = Object.values(data.characters?.full || {}).filter(c => c >= 0);
+  const full = data.characters?.full || {};
+  const constellations = Object.values(full).filter(c => c >= 0);
   const { matchs = 0, victoires = 0 } = resultats[profil.discord_id] || {};
 
   return {
@@ -78,7 +79,8 @@ function resumerProfil(profil, resultats) {
     banniere2: data.parametres?.banniere2 || null,
     points: calculerPointsBox(data, "full", getPersonnages()),
     nb_persos: constellations.length,
-    nb_c6: constellations.filter(c => c === 6).length,
+    // C6 comptés sur les 5 étoiles uniquement.
+    nb_c6: getPersonnages().filter(p => String(p.rarete) === "5" && full[p.id] === 6).length,
     theatre: PALIERS_THEATRE[data.theatre] ?? null,
     matchs,
     victoires

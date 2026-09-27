@@ -5,12 +5,11 @@
   margin: 0 auto;
 }
 
-/* Barre du haut : nom du site à gauche, compte Discord à droite. */
+/* Barre du haut : compte Discord calé à droite de l'écran. */
 .accueil-barre {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-end;
 }
 
 .accueil-compte {
@@ -142,15 +141,23 @@
     gap: 12px;
   }
 
-  /* Cartes compactes : image à gauche, texte à droite. */
+  /* Cartes compactes : image à gauche (sur toute la hauteur de la carte),
+     texte à droite. */
   .carte-section {
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
   }
 
   .carte-section img {
     width: 42%;
+    height: auto;
+    aspect-ratio: auto;
+    align-self: stretch;
     flex-shrink: 0;
+  }
+
+  .carte-section-texte {
+    align-self: center;
   }
 
   .carte-section-texte {

@@ -198,7 +198,7 @@ function texteStat(compte) {
   switch (triComptes.cle) {
     case "points": return `${compte.points ?? 0} pts`;
     case "nb_persos": return `${compte.nb_persos ?? 0} persos`;
-    case "nb_c6": return `${compte.nb_c6 ?? 0} C6`;
+    case "nb_c6": return `${compte.nb_c6 ?? 0} C6 5★`;
     case "theatre": return compte.theatre ? `Théâtre ${compte.theatre}` : "Théâtre -";
     case "victoires": return `${compte.victoires ?? 0} V / ${compte.matchs ?? 0} matchs`;
     case "ratio": return getRatio(compte) === null ? "Aucun match" : `${Math.round(getRatio(compte) * 100)} %`;

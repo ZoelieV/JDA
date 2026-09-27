@@ -48,6 +48,7 @@
       aspect-ratio: 1000 / 137;
       /* Sur téléphone, la bannière est recadrée plutôt que d'écraser la photo. */
       min-height: 50px;
+      padding: 5px 14px 5px 25px;
       border: none;
       border-radius: 8px;
       justify-content: flex-start;

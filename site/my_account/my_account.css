@@ -816,6 +816,99 @@ h2 {
   cursor: pointer;
 }
 
+/* ---- Polices normalisées : même police et même taille pour tous les
+   boutons, champs et libellés (le titre garde sa taille). ---- */
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.recherche-personnage,
+.tris .tris-label,
+.tri-btn,
+.filtre-texte span,
+.btn-clear-filtres,
+.box-btn,
+.view-btn,
+.btn-enregistrer,
+.btn-secondaire,
+.compte-btn,
+.menu-btn,
+.menu-champ input,
+.menu-champ select,
+.onglet-parametre,
+.box-total {
+  font-size: 15px;
+}
+
+/* ---- Filtres, tris, box : cases foncées légèrement transparentes (l'état
+   actif doré reste prioritaire). ---- */
+
+.recherche-personnage,
+.filtre-icone img,
+.tri-btn,
+.filtre-texte span,
+.btn-clear-filtres,
+.box-btn,
+.view-btn {
+  background-color: rgba(20, 20, 20, 0.75);
+}
+
+/* ---- Boutons - / + des constellations : ronds noirs, signes blancs ---- */
+
+.moins-btn,
+.plus-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.moins-btn:hover,
+.plus-btn:hover {
+  background-color: black;
+  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.8);
+}
+
+/* ---- Total de la box : figé en bas au centre de l'écran ---- */
+
+.box-total {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 50;
+  margin: 0;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  text-align: center;
+  background-color: rgba(20, 20, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Place pour le total figé en bas. */
+body {
+  padding-bottom: 70px;
+}
+
+/* Les notifications s'affichent au-dessus du total. */
+#toast-conteneur {
+  bottom: 76px;
+}
+
 /* ---- Téléphone : la largeur de l'écran est la limite, tout revient à la
    ligne ; 4 cartes par ligne (cf. ajusterGrille). ---- */
 @media (max-width: 700px) {
