@@ -82,7 +82,7 @@ const filtreElement = new Set();
 const filtreEtoile = new Set();
 let filtreProprietaire = null; // "j1" | "j2" | null
 let rechercheTexte = "";
-let triActif = null; // "points" | "constellation" | "rarete" | "element" | null (ordre par défaut)
+let triActif = null; // "points" | "constellation" | "niveau" | "rarete" | "element" | null (ordre par défaut)
 
 // ---- Animation de tirage du boss ----
 let dernierePhaseVue = null; // phase locale précédente, pour détecter une transition
@@ -381,6 +381,9 @@ function valeurTri(personnage, roles) {
       return Math.max(-1, ...constellations.map(c => Number(personnage.PPC?.[c] ?? 0)));
     case "constellation":
       return Math.max(-1, ...constellations);
+    case "niveau":
+      // 100 > 95 > non renseigné ; meilleur niveau parmi les propriétaires.
+      return Math.max(0, ...proprietaires.map(r => Number(getNiveauPersonnage(getJoueurDataParRole(r), personnage.id)) || 0));
     case "rarete":
       return Number(personnage.rarete) || 0;
     case "element":
@@ -1065,7 +1068,7 @@ function initialiserFiltresTri() {
   const zoneTris = document.createElement("div");
   zoneTris.className = "tris";
   zoneTris.innerHTML = `<span class="tris-label">Trier :</span>`;
-  [["points", "Points"], ["constellation", "Constel."], ["rarete", "Rareté"], ["element", "Élément"]].forEach(([valeur, label]) => {
+  [["points", "Points"], ["constellation", "Constel."], ["niveau", "Niveau"], ["rarete", "Rareté"], ["element", "Élément"]].forEach(([valeur, label]) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-etoile-btn tri-btn";

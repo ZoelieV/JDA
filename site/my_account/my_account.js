@@ -484,7 +484,7 @@ ${boutonDupliquer}
 
 // ---- Recherche / tri (choix unique, comme en draft) ----
 
-let triActif = null; // "points" | "constellation" | "rarete" | "element" | null (ordre par défaut)
+let triActif = null; // "points" | "constellation" | "niveau" | "rarete" | "element" | null (ordre par défaut)
 
 const LIBELLES_TRI = {
   characters: { constellation: "Constel.", element: "Élément" },
@@ -512,6 +512,9 @@ function valeurTri(item, vueActive, collectionProfil) {
       return valeur < 0 ? -1 : Number(getPPC(item, valeur, vueActive) || 0);
     case "constellation":
       return valeur;
+    case "niveau":
+      // 100 > 95 > non renseigné (persos uniquement).
+      return vueActive === "characters" ? Number(collectionProfil.niveaux?.[item.id]) || 0 : 0;
     case "rarete":
       return Number(item.rarete) || 0;
     case "element":
@@ -532,8 +535,14 @@ function trierItems(items, vueActive, collectionProfil) {
 }
 
 function mettreAJourBoutonsTri() {
-  const libelles = LIBELLES_TRI[getVueActive()];
+  const vueActive = getVueActive();
+  const libelles = LIBELLES_TRI[vueActive];
+
+  // Pas de niveau pour les armes : tri masqué dans cette vue.
+  if (vueActive === "weapons" && triActif === "niveau") triActif = null;
+
   document.querySelectorAll(".tri-btn").forEach(btn => {
+    btn.hidden = btn.dataset.tri === "niveau" && vueActive === "weapons";
     if (libelles[btn.dataset.tri]) btn.textContent = libelles[btn.dataset.tri];
     btn.classList.toggle("active", btn.dataset.tri === triActif);
   });

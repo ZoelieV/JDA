@@ -56,7 +56,7 @@ let boxActive = "full";         // "full" | "stuff"
 let filtreType = { characters: new Set(), weapons: new Set() };
 const filtreEtoile = new Set();
 let rechercheTexte = "";
-let triActif = null; // "points" | "constellation" | "rarete" | "element" | null (ordre par défaut)
+let triActif = null; // "points" | "constellation" | "niveau" | "rarete" | "element" | null (ordre par défaut)
 
 // Données brutes du profil ouvert, conservées pour re-render sans refetch
 let profilCourant = null;
@@ -215,6 +215,9 @@ function valeurTri({ item, valeur, config }) {
       return Number(item[config.pointsField]?.[valeur] ?? 0);
     case "constellation":
       return valeur;
+    case "niveau":
+      // 100 > 95 > non renseigné (persos uniquement).
+      return vueActive === "characters" ? Number(getNiveauPersonnage(item.id)) || 0 : 0;
     case "rarete":
       return Number(item.rarete) || 0;
     case "element":
@@ -363,7 +366,11 @@ function genererFiltresIcones() {
 function mettreAJourBarreOutils() {
   const config = configCollections[vueActive];
 
+  // Pas de niveau pour les armes : tri masqué dans cette vue.
+  if (vueActive === "weapons" && triActif === "niveau") triActif = null;
+
   document.querySelectorAll(".tri-btn").forEach(btn => {
+    btn.hidden = btn.dataset.tri === "niveau" && vueActive === "weapons";
     if (btn.dataset.tri === "constellation") btn.textContent = config.libelleConstellation;
     if (btn.dataset.tri === "element") btn.textContent = config.libelleType;
     btn.classList.toggle("active", btn.dataset.tri === triActif);

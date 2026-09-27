@@ -944,3 +944,8 @@ h2 {
     white-space: normal;
   }
 }
+
+/* Tri masqué (niveau dans la vue Armes). */
+.tri-btn[hidden] {
+  display: none;
+}
