@@ -30,6 +30,7 @@ DOSSIER_FONDS_MINIATURES = RACINE_IMAGES / "bg_miniatures"
 
 EXTENSIONS_IMAGES = {".png", ".jpg", ".jpeg", ".webp"}
 LARGEUR_WEB = None  # None = résolution d'origine (4K)
+QUALITE_WEB = 100  # WebP avec perte, qualité maximale (sans perte = ~6x plus lourd)
 LARGEUR_MINIATURE = 400
 
 
@@ -75,7 +76,7 @@ def generer_fonds():
         web = DOSSIER_FONDS_WEB / sous_dossier / nom
         miniature = DOSSIER_FONDS_MINIATURES / sous_dossier / nom
 
-        generer_version(source, web, LARGEUR_WEB, 82)
+        generer_version(source, web, LARGEUR_WEB, QUALITE_WEB)
         generer_version(source, miniature, LARGEUR_MINIATURE, 70)
         attendus.update({web, miniature})
 
