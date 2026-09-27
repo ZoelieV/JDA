@@ -1,0 +1,71 @@
+/* Thème sombre commun aux pages simples (accueil, règles, tutoriel,
+   classement, créer un match). Mêmes couleurs que les autres pages. */
+
+:root {
+  --fond-page: #1e1e1e;
+  --fond-carte: rgba(30, 30, 30, 0.72);
+  --bordure: rgba(255, 255, 255, 0.18);
+  --texte: #ffffff;
+  --texte-doux: rgba(255, 255, 255, 0.72);
+  --accent: #f5c542;
+  --accent-bordure: rgba(245, 197, 66, 0.8);
+  --accent-fond: rgba(245, 197, 66, 0.15);
+}
+
+body {
+  margin: 20px;
+  background-color: var(--fond-page);
+  color: var(--texte);
+  font-family: Arial, sans-serif;
+  line-height: 1.45;
+}
+
+a {
+  color: var(--texte);
+}
+
+h1,
+h2 {
+  margin-top: 20px;
+}
+
+.lien-accueil {
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+/* Bouton principal (même style que Enregistrer). */
+.btn-principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 2px solid var(--accent-bordure);
+  border-radius: 10px;
+  background-color: var(--accent-fond);
+  color: var(--texte);
+  font-size: 17px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-principal:hover {
+  background-color: rgba(245, 197, 66, 0.28);
+}
+
+/* Bloc de contenu lisible par-dessus le fond d'écran. */
+.panneau {
+  padding: 16px 20px;
+  background-color: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+}
+
+@media (max-width: 700px) {
+  body {
+    margin: 12px;
+  }
+}

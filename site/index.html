@@ -3,16 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mon site</title>
-<script src="/commun/fond.js"></script>
+  <title>JDA</title>
+  <link rel="stylesheet" href="commun/theme.css">
+  <link rel="stylesheet" href="accueil.css">
+  <script src="/commun/fond.js"></script>
 </head>
 <body>
-  <h1><a href="matchmaking/matchmaking.html">Créer un match</a></h1>
-  <h1><a href="rules.html">Règles</a></h1>
-  <h1><a href="tutorial.html">Tutoriel</a></h1>
-  <h1><a href="leaderboard.html">Classement</a></h1>
-  <h1><a href="all_accounts/all_accounts.html">Tous les comptes</a></h1>
+  <div class="accueil">
+    <header class="accueil-barre">
+      <span class="accueil-logo">JDA</span>
+      <!-- Rempli par accueil.js : compte Discord (lien vers Mon compte) ou
+           bouton de connexion. -->
+      <div id="accueil-compte"></div>
+    </header>
 
-  <h1><a href="my_account/my_account.html">Mon compte</a></h1>
+    <section class="accueil-hero">
+      <h1>Courses de boss en 1v1</h1>
+      <p>Choisis ta box, bannis et pioche tes personnages en draft face à ton adversaire, puis affrontez le même boss : le meilleur temps l'emporte.</p>
+      <a href="matchmaking/matchmaking.html" class="btn-principal">Créer un match</a>
+    </section>
+
+    <nav class="accueil-sections">
+      <a class="carte-section principale" href="matchmaking/matchmaking.html">
+        <img src="DB/images/namecards/Namecard_Background_Raiden_Shogun_Enlightenment.webp" alt="" loading="lazy">
+        <div class="carte-section-texte">
+          <h2>Créer un match</h2>
+          <p>Ouvre une room et envoie le lien à ton adversaire.</p>
+        </div>
+      </a>
+
+      <a class="carte-section" href="my_account/my_account.html">
+        <img src="DB/images/namecards/Namecard_Background_Furina_Banquet.webp" alt="" loading="lazy">
+        <div class="carte-section-texte">
+          <h2>Mon compte</h2>
+          <p>Renseigne tes personnages, tes armes et tes box.</p>
+        </div>
+      </a>
+
+      <a class="carte-section" href="all_accounts/all_accounts.html">
+        <img src="DB/images/namecards/Namecard_Background_Nahida_Crescent.webp" alt="" loading="lazy">
+        <div class="carte-section-texte">
+          <h2>Tous les comptes</h2>
+          <p>Consulte les box des autres joueurs.</p>
+        </div>
+      </a>
+
+      <a class="carte-section" href="leaderboard.html">
+        <img src="DB/images/namecards/Namecard_Background_Mavuika_Sun-Crowned.webp" alt="" loading="lazy">
+        <div class="carte-section-texte">
+          <h2>Classement</h2>
+          <p>Les meilleurs joueurs et leurs résultats.</p>
+        </div>
+      </a>
+
+      <a class="carte-section" href="rules.html">
+        <img src="DB/images/namecards/Namecard_Background_Neuvillette_Surge.webp" alt="" loading="lazy">
+        <div class="carte-section-texte">
+          <h2>Règles</h2>
+          <p>Le déroulé d'un match et ce qui est autorisé.</p>
+        </div>
+      </a>
+
+      <a class="carte-section" href="tutorial.html">
+        <img src="DB/images/namecards/Namecard_Background_Klee_Explosive.webp" alt="" loading="lazy">
+        <div class="carte-section-texte">
+          <h2>Tutoriel</h2>
+          <p>Premiers pas : de la création du compte au premier match.</p>
+        </div>
+      </a>
+    </nav>
+  </div>
+
+  <script src="accueil.js"></script>
 </body>
 </html>

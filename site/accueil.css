@@ -1,0 +1,178 @@
+/* ---- Page d'accueil ---- */
+
+.accueil {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Barre du haut : nom du site à gauche, compte Discord à droite. */
+.accueil-barre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.accueil-logo {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.accueil-compte {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px 5px 5px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: var(--texte);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.accueil-compte:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.accueil-compte img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.accueil-connexion {
+  padding: 8px 16px;
+  background-color: #5865F2;
+  border: none;
+  border-radius: 999px;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.accueil-connexion:hover {
+  background-color: #4752c4;
+}
+
+/* Bandeau d'accueil */
+.accueil-hero {
+  margin: 36px 0 28px;
+  text-align: center;
+}
+
+.accueil-hero h1 {
+  margin: 0 0 10px;
+  font-size: 40px;
+}
+
+.accueil-hero p {
+  margin: 0 auto 22px;
+  max-width: 620px;
+  color: var(--texte-doux);
+  font-size: 17px;
+}
+
+/* Grille des sections */
+.accueil-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.carte-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  color: var(--texte);
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.carte-section:hover,
+.carte-section:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--accent-bordure);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+
+/* Namecard en image d'illustration (format 840x400). */
+.carte-section img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 42 / 20;
+  object-fit: cover;
+}
+
+.carte-section-texte {
+  padding: 14px 16px 16px;
+}
+
+.carte-section h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.carte-section p {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 15px;
+}
+
+/* Section mise en avant : Créer un match. */
+.carte-section.principale {
+  border-color: var(--accent-bordure);
+}
+
+.carte-section.principale h2 {
+  color: var(--accent);
+}
+
+@media (max-width: 700px) {
+  .accueil-hero {
+    margin: 24px 0 20px;
+  }
+
+  .accueil-hero h1 {
+    font-size: 30px;
+  }
+
+  .accueil-hero p {
+    font-size: 15px;
+  }
+
+  .accueil-sections {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Cartes compactes : image à gauche, texte à droite. */
+  .carte-section {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .carte-section img {
+    width: 42%;
+    flex-shrink: 0;
+  }
+
+  .carte-section-texte {
+    padding: 10px 12px;
+  }
+
+  .carte-section h2 {
+    font-size: 17px;
+  }
+
+  .carte-section p {
+    font-size: 13px;
+  }
+}
