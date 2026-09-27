@@ -4,11 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=6">
+<link rel="stylesheet" href="match.css?v=7">
 <link rel="stylesheet" href="../commun/entete.css">
 </head>
 <body>
-<a href="../index.html" class="lien-accueil">Accueil</a>
+<!-- Accueil à gauche, partage du lien de la room à droite. -->
+<div class="barre-room">
+  <a href="../index.html" class="lien-accueil">Accueil</a>
+  <button id="btn-partager" type="button" class="btn-partager" title="Copier le lien de la room pour l'envoyer à ton adversaire">Partager le lien</button>
+</div>
 <h1 class="titre-page">Match</h1>
 
   <div id="etat-attente">En attente du second joueur…</div>
@@ -159,6 +163,6 @@
   </div>
 
   <script src="/commun/variantes.js?v=1"></script>
-  <script src="match.js?v=9"></script>
+  <script src="match.js?v=10"></script>
 </body>
 </html>

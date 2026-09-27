@@ -641,8 +641,12 @@ h1 {
 
 @media (min-width: 701px) and (max-width: 900px) {
   .recap-teams {
-    grid-template-columns: 210px minmax(0, 1fr) 210px;
     gap: 16px;
+  }
+
+  .recap-teams .recap-centre .bandeau-boss img {
+    width: 260px;
+    height: 260px;
   }
 }
 
@@ -945,11 +949,21 @@ h1 {
    | tableau j2. */
 .recap-teams {
   display: grid;
-  grid-template-columns: 240px minmax(0, 460px) 240px;
-  justify-content: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px) minmax(0, 1fr);
   align-items: start;
   gap: 30px;
   margin-bottom: 20px;
+}
+
+/* Cases du récap : hauteur fixe (icônes à peu près comme en draft), la
+   bannière occupe la hauteur et s'aligne sur son extrémité arrondie. */
+.recap-teams .recap-equipe .slot-pick {
+  aspect-ratio: auto;
+  height: 52px;
+}
+
+.recap-teams .recap-equipe .slot-pick img {
+  height: 46px;
 }
 
 .recap-equipe {
@@ -1066,8 +1080,8 @@ h1 {
 }
 
 .recap-centre .bandeau-boss img {
-  width: 300px;
-  height: 300px;
+  width: 360px;
+  height: 360px;
   max-width: 100%;
   object-fit: contain;
   background: none;
@@ -1303,13 +1317,21 @@ h1 {
    (1000x137) privée de ses 20 % de gauche -> 800x137 ; tableau de droite en
    miroir. Les cases vides ont le même format. ---- */
 
+/* Hauteur +10 % ; la bannière remplit la hauteur, calée sur son extrémité
+   arrondie. Contour de la case = forme de la bannière : demi-cercle du côté
+   de son extrémité (droite pour j1, gauche pour j2 en miroir). */
 .equipe-joueur .slot-pick {
   position: relative;
   overflow: hidden;
   min-height: 0;
-  aspect-ratio: 800 / 137;
+  aspect-ratio: 800 / 151;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 6px 999px 999px 6px;
+}
+
+#equipe-j2 .slot-pick,
+#recap-equipe-j2 .slot-pick {
+  border-radius: 999px 6px 6px 999px;
 }
 
 .equipe-joueur .slot-pick.avec-banniere::before {
@@ -1317,7 +1339,7 @@ h1 {
   position: absolute;
   inset: 0;
   background-image: var(--banniere-perso);
-  background-size: 125% 100%;
+  background-size: auto 100%;
   background-position: right center;
   background-repeat: no-repeat;
 }
@@ -1360,6 +1382,35 @@ h1 {
 /* Filtres figeables : un bloc sur téléphone, sans effet sur ordi. */
 .filtres-figeables {
   display: contents;
+}
+
+/* ---- Barre du haut de la room : Accueil / Partager le lien ---- */
+
+.barre-room {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.barre-room .lien-accueil {
+  margin-bottom: 0;
+}
+
+.btn-partager {
+  padding: 6px 16px;
+  border: 2px solid rgba(245, 197, 66, 0.8);
+  border-radius: 999px;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-partager:hover {
+  background-color: rgba(245, 197, 66, 0.18);
 }
 
 /* ---- Draft sur ordi : tableaux à gauche / droite figés à l'écran ; boss,
@@ -1517,12 +1568,27 @@ h1 {
   }
 
   /* Récap : résultat + boss + rejouer en haut, les 2 tableaux dessous. */
+  /* Récap : résultat, boss, rejouer, puis j1, puis j2 en dessous. */
   .recap-teams {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "centre centre"
-      "j1 j2";
-    gap: 10px;
+      "centre"
+      "j1"
+      "j2";
+    gap: 12px;
+  }
+
+  .recap-teams .recap-equipe .slot-pick {
+    height: 44px;
+  }
+
+  .recap-teams .recap-equipe .slot-pick img {
+    height: 38px;
+  }
+
+  .btn-partager {
+    font-size: 13px;
+    padding: 5px 12px;
   }
 
   .recap-centre {
@@ -1572,7 +1638,7 @@ h1 {
     padding: 2px 6px;
   }
 
-  .recap-centre .bandeau-boss img {
+  .recap-teams .recap-centre .bandeau-boss img {
     width: 200px;
     height: 200px;
   }

@@ -1231,7 +1231,9 @@ function creerCaseRecap(personnage, role) {
       ? `<img class="arme-case" src="${iconeArme}" alt="R${refinement + 1}" title="Arme signature R${refinement + 1}" style="--couleur-ref: ${COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0]}">`
       : ""
   ].join("");
-  slot.appendChild(zoneInfos);
+  // Côté extérieur : à gauche de l'icône pour j1, à droite pour j2 (la case
+  // de j2 est en miroir).
+  slot.prepend(zoneInfos);
   return slot;
 }
 
@@ -1542,6 +1544,25 @@ async function tick() {
   }
 }
 
+// ---- Partage du lien de la room (copié dans le presse-papiers) ----
+
+function initialiserPartage() {
+  const bouton = document.getElementById("btn-partager");
+  const texteInitial = bouton.textContent;
+
+  bouton.addEventListener("click", async () => {
+    const lien = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
+    try {
+      await navigator.clipboard.writeText(lien);
+      bouton.textContent = "Lien copié ✓";
+    } catch {
+      // Presse-papiers indisponible : on affiche le lien à copier à la main.
+      window.prompt("Copie ce lien et envoie-le à ton adversaire :", lien);
+    }
+    setTimeout(() => { bouton.textContent = texteInitial; }, 2000);
+  });
+}
+
 async function demarrer() {
   try {
     roomId = getRoomIdDepuisUrl();
@@ -1557,6 +1578,7 @@ async function demarrer() {
       return;
     }
     moiDiscordId = user.id;
+    initialiserPartage();
 
     appliquerFondRoom();
 
