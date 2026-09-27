@@ -1051,16 +1051,19 @@ h1 {
 
 /* ---- Tableaux des joueurs : namecard (photo + pseudo) en haut ---- */
 
+/* Remplit tout le haut du tableau : déborde du padding de .equipe-joueur
+   (16px, 8px sur téléphone). */
 .namecard-tableau {
+  --debord: 16px;
   box-sizing: border-box;
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  width: 100%;
+  width: calc(100% + 2 * var(--debord));
   aspect-ratio: 840 / 400;
-  margin-bottom: 12px;
+  margin: calc(-1 * var(--debord)) calc(-1 * var(--debord)) 12px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: 16px 16px 0 0;
   background-image: var(--namecard);
   background-size: cover;
   background-position: center;
@@ -1111,7 +1114,7 @@ h1 {
 .bans-equilibrage {
   box-sizing: border-box;
   width: 100%;
-  margin-bottom: 12px;
+  margin-top: 12px;
   padding: 12px;
   border-radius: 16px;
   background-color: rgba(20, 20, 20, 0.45);
@@ -1135,6 +1138,69 @@ h1 {
   height: auto;
   aspect-ratio: 1;
   opacity: 0.85;
+}
+
+/* ---- Cases des tableaux au format de la bannière du personnage : bannière
+   (1000x137) privée de ses 20 % de gauche -> 800x137 ; tableau de droite en
+   miroir. Les cases vides ont le même format. ---- */
+
+.equipe-joueur .slot-pick {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  aspect-ratio: 800 / 137;
+  padding: 0 8px;
+  border-radius: 6px;
+}
+
+.equipe-joueur .slot-pick.avec-banniere::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--banniere-perso);
+  background-size: 125% 100%;
+  background-position: right center;
+  background-repeat: no-repeat;
+}
+
+.equipe-joueur .slot-pick.slot-ban.avec-banniere::before {
+  filter: grayscale(40%) brightness(0.8);
+}
+
+#equipe-j2 .slot-pick,
+#recap-equipe-j2 .slot-pick {
+  flex-direction: row-reverse;
+}
+
+#equipe-j2 .slot-pick.avec-banniere::before,
+#recap-equipe-j2 .slot-pick.avec-banniere::before {
+  transform: scaleX(-1);
+}
+
+.equipe-joueur .slot-pick img {
+  position: relative;
+  height: 88%;
+  width: auto;
+  aspect-ratio: 1;
+}
+
+.equipe-joueur .slot-pick.slot-ban {
+  z-index: 0;
+}
+
+/* Contour rouge des bans au-dessus de la bannière. */
+.equipe-joueur .slot-pick.slot-ban.avec-banniere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px rgba(255, 90, 90, 0.8);
+  pointer-events: none;
+}
+
+/* Filtres figeables : un bloc sur téléphone, sans effet sur ordi. */
+.filtres-figeables {
+  display: contents;
 }
 
 /* ---- Draft sur ordi : tableaux à gauche / droite figés à l'écran ; boss,
@@ -1262,11 +1328,11 @@ h1 {
 
   /* Namecard réduite en haut de chaque tableau. */
   .namecard-tableau {
+    --debord: 8px;
     margin-bottom: 8px;
     padding: 4px 5px;
     gap: 4px;
     font-size: 12px;
-    border-radius: 6px;
   }
 
   .avatar-tableau {
@@ -1387,5 +1453,85 @@ h1 {
   .entete-joueur.avec-namecard {
     width: 100%;
     height: auto;
+  }
+}
+
+/* ---- Téléphone, draft : boss, double tableau, bans d'équilibrage, puis
+   recherche / tris, puis éléments + étoiles + J1/J2 (figés en haut de
+   l'écran au défilement), puis la grille. ---- */
+@media (max-width: 700px) {
+  #zone-match.mode-draft {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "boss boss"
+      "j1 j2"
+      "bans bans"
+      "recherche recherche"
+      "figes figes"
+      "clear clear"
+      "pool pool";
+    column-gap: 10px;
+    align-items: start;
+  }
+
+  #zone-match.mode-draft .entetes-joueurs,
+  #zone-match.mode-draft #phase-draft,
+  #zone-match.mode-draft .draft-layout,
+  #zone-match.mode-draft #barre-outils,
+  #zone-match.mode-draft .toolbar-droite,
+  #zone-match.mode-draft .filtres-tri {
+    display: contents;
+  }
+
+  #zone-match.mode-draft #entete-centre {
+    grid-area: boss;
+    margin-bottom: 12px;
+  }
+
+  #zone-match.mode-draft .entetes-joueurs.boss-deborde .entete-centre {
+    margin-bottom: 12px;
+  }
+
+  #zone-match.mode-draft #equipe-j1 {
+    grid-area: j1;
+  }
+
+  #zone-match.mode-draft #equipe-j2 {
+    grid-area: j2;
+  }
+
+  #zone-match.mode-draft .bans-equilibrage {
+    grid-area: bans;
+  }
+
+  #zone-match.mode-draft .zone-recherche {
+    grid-area: recherche;
+    margin-top: 12px;
+  }
+
+  #zone-match.mode-draft .filtres-figeables {
+    grid-area: figes;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 12px;
+    background-color: rgba(20, 20, 20, 0.45);
+    backdrop-filter: blur(8px);
+  }
+
+  #zone-match.mode-draft .btn-clear-filtres {
+    grid-area: clear;
+    justify-self: start;
+    margin: 10px 0;
+  }
+
+  #zone-match.mode-draft #grille-pool-draft {
+    grid-area: pool;
   }
 }

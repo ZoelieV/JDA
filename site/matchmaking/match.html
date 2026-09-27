@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=3">
+<link rel="stylesheet" href="match.css?v=4">
 <link rel="stylesheet" href="../commun/entete.css">
 </head>
 <body>
@@ -91,31 +91,31 @@
     <!-- Phase 3 : draft (boss + bans/picks) -->
     <section id="phase-draft" class="phase cache">
       <div class="draft-layout">
-        <!-- Colonne j1 : bans d'équilibrage éventuels (faits par ce joueur)
-             au-dessus de son tableau (namecard en haut, picks, bans). -->
+        <!-- Colonne j1 : tableau du joueur (namecard en haut, picks, bans),
+             puis ses bans d'équilibrage éventuels en dessous. -->
         <div class="colonne-joueur" id="colonne-j1">
-          <div class="bans-equilibrage cache" id="bans-eq-j1">
-            <h4>Bans d'équilibrage</h4>
-            <div class="bans-eq-grille" id="bans-eq-grille-j1"></div>
-          </div>
           <div class="equipe-joueur" id="equipe-j1">
             <div class="slots-pick" id="slots-pick-j1"></div>
             <div class="slots-ban" id="rangee-bans-j1"></div>
+          </div>
+          <div class="bans-equilibrage cache" id="bans-eq-j1">
+            <h4>Bans d'équilibrage</h4>
+            <div class="bans-eq-grille" id="bans-eq-grille-j1"></div>
           </div>
         </div>
 
         <div class="grille-pool" id="grille-pool-draft"></div>
 
-        <!-- Colonne j2 : bans d'équilibrage éventuels (faits par ce joueur)
-             au-dessus de son tableau (namecard en haut, picks, bans). -->
+        <!-- Colonne j2 : tableau du joueur (namecard en haut, picks, bans),
+             puis ses bans d'équilibrage éventuels en dessous. -->
         <div class="colonne-joueur" id="colonne-j2">
-          <div class="bans-equilibrage cache" id="bans-eq-j2">
-            <h4>Bans d'équilibrage</h4>
-            <div class="bans-eq-grille" id="bans-eq-grille-j2"></div>
-          </div>
           <div class="equipe-joueur" id="equipe-j2">
             <div class="slots-pick" id="slots-pick-j2"></div>
             <div class="slots-ban" id="rangee-bans-j2"></div>
+          </div>
+          <div class="bans-equilibrage cache" id="bans-eq-j2">
+            <h4>Bans d'équilibrage</h4>
+            <div class="bans-eq-grille" id="bans-eq-grille-j2"></div>
           </div>
         </div>
       </div>
@@ -145,6 +145,6 @@
 
   </div>
 
-  <script src="match.js?v=5"></script>
+  <script src="match.js?v=6"></script>
 </body>
 </html>

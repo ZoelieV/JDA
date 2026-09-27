@@ -742,6 +742,38 @@ function getProchaineActionLocale() {
 // (tableaux côte à côte, cf. CSS).
 // En-tête d'un tableau joueur : sa namecard (largeur du tableau) avec photo
 // et pseudo ("J1"/"J2" sur téléphone).
+// ---- Bannière d'un personnage (namecards/banners/Namecard_Banner_<Nom>_...) ----
+// Retrouvée par son nom ; alias quand le fichier porte un autre nom.
+// Sans bannière : celle par défaut.
+
+const ALIAS_BANNIERES = { tartaglia: "childe", itto: "itto" };
+const BANNIERE_PERSO_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+let bannieresPersos = [];
+const cacheBannieres = new Map();
+
+function normaliserNomFichier(texte) {
+  return texte.normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+
+function getBannierePersonnage(personnage) {
+  if (cacheBannieres.has(personnage.id)) return cacheBannieres.get(personnage.id);
+  const cle = ALIAS_BANNIERES[personnage.id] || normaliserNomFichier(personnage.nom);
+  const fichier = bannieresPersos.find(chemin => {
+    const nom = normaliserNomFichier(chemin.split("/").pop().replace(/^Namecard_Banner_/, "").replace(/\.webp$/, ""));
+    return nom === cle || nom.startsWith(`${cle}_`);
+  });
+  const url = encodeURI(`/DB/images/${fichier || BANNIERE_PERSO_DEFAUT}`);
+  if (bannieresPersos.length > 0) cacheBannieres.set(personnage.id, url);
+  return url;
+}
+
+// Case de tableau (pick ou ban) : personnage sur sa bannière.
+function remplirCaseTableau(slot, personnage) {
+  slot.classList.add("avec-banniere");
+  slot.style.setProperty("--banniere-perso", `url("${getBannierePersonnage(personnage)}")`);
+  slot.innerHTML = `<img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">`;
+}
+
 function titreTableauJoueur(role, nomJoueur) {
   const joueur = role === "j1" ? joueur1 : joueur2;
   const namecard = encodeURI(`/DB/images/${joueur?.data?.parametres?.banniere || NAMECARD_DEFAUT}`);
@@ -772,11 +804,8 @@ function rendreSlotsEtBans(role) {
     const slot = document.createElement("div");
 
     if (persoId) {
-      const personnage = getPersonnageParId(persoId);
       slot.className = "slot-pick";
-      slot.innerHTML = `
-        <img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">
-      `;
+      remplirCaseTableau(slot, getPersonnageParId(persoId));
     } else {
       slot.className = "slot-pick vide";
       slot.textContent = "Vide";
@@ -797,9 +826,7 @@ function rendreSlotsEtBans(role) {
 
     if (personnage) {
       slot.className = "slot-pick slot-ban";
-      slot.innerHTML = `
-        <img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">
-      `;
+      remplirCaseTableau(slot, personnage);
     } else {
       slot.className = "slot-pick slot-ban vide";
       slot.textContent = "Vide";
@@ -1027,6 +1054,12 @@ function initialiserFiltresTri() {
   if (!container) return;
   container.innerHTML = "";
 
+  // Éléments, étoiles et J1/J2 regroupés : sur téléphone, ce bloc reste figé
+  // en haut de l'écran pendant la draft (cf. CSS .filtres-figeables).
+  const figeables = document.createElement("div");
+  figeables.className = "filtres-figeables";
+  container.appendChild(figeables);
+
   const zoneIcones = document.createElement("div");
   zoneIcones.className = "filtres-icones";
   Object.entries(iconesElements).forEach(([valeur, src]) => {
@@ -1041,7 +1074,7 @@ function initialiserFiltresTri() {
     });
     zoneIcones.appendChild(btn);
   });
-  container.appendChild(zoneIcones);
+  figeables.appendChild(zoneIcones);
 
   const zoneEtoiles = document.createElement("div");
   zoneEtoiles.className = "filtres-etoiles";
@@ -1057,7 +1090,7 @@ function initialiserFiltresTri() {
     });
     zoneEtoiles.appendChild(btn);
   });
-  container.appendChild(zoneEtoiles);
+  figeables.appendChild(zoneEtoiles);
 
   const zoneProprio = document.createElement("div");
   zoneProprio.className = "filtres-proprietaire";
@@ -1076,7 +1109,7 @@ function initialiserFiltresTri() {
     });
     zoneProprio.appendChild(btn);
   });
-  container.appendChild(zoneProprio);
+  figeables.appendChild(zoneProprio);
 
   const btnClear = document.createElement("button");
   btnClear.type = "button";
@@ -1174,11 +1207,8 @@ function rendrePicksSeuls(containerId, role) {
     const slot = document.createElement("div");
 
     if (persoId) {
-      const personnage = getPersonnageParId(persoId);
       slot.className = "slot-pick";
-      slot.innerHTML = `
-        <img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">
-      `;
+      remplirCaseTableau(slot, getPersonnageParId(persoId));
     } else {
       slot.className = "slot-pick vide";
       slot.textContent = "Vide";
@@ -1295,14 +1325,17 @@ const FOND_ROOM_DEFAUT = "/DB/images/bg_web/autres/default_bg.webp";
 let fondsBoss = null;
 let fondRoomApplique = null;
 
+// cosmetiques.json : fonds des boss + bannières des personnages.
 async function chargerFondsBoss() {
   try {
     const reponse = await fetch("/DB/images/cosmetiques.json");
     const cosmetiques = await reponse.json();
     fondsBoss = cosmetiques.fonds.filter(fond => fond.categorie === "boss_hebdo");
+    bannieresPersos = cosmetiques.bannieres2 || [];
   } catch (erreur) {
     console.error(erreur);
     fondsBoss = [];
+    bannieresPersos = [];
   }
 }
 
