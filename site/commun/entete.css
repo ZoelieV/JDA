@@ -1,11 +1,11 @@
 /* ---- Échelle du site ----
-   Toutes les tailles sont en rem. 1rem = 16px quand la fenêtre fait la
-   largeur de référence (--largeur-reference, celle de l'écran sur lequel le
+   Toutes les tailles sont en rem. 1rem = 17.6px (16px + 10 %) quand la
+   fenêtre fait la largeur de référence (--largeur-reference, celle de l'écran sur lequel le
    site a été réglé), et suit ensuite la largeur de la fenêtre : le site garde
-   les mêmes proportions sur un écran HD, 2K ou 4K. Bornes : 11px à 32px.
+   les mêmes proportions sur un écran HD, 2K ou 4K. Bornes : 12px à 35px.
    Téléphone : taille fixe (16px), comme avant. */
 html {
-  font-size: clamp(11px, calc(100vw * 16 / 2560), 32px);
+  font-size: clamp(12px, calc(100vw * 17.6 / 2560), 35px);
 }
 
 @media (max-width: 700px) {

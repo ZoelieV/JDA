@@ -407,11 +407,13 @@ h1, h2 {
 
 .character-visuel img.character-raffinement {
   object-fit: contain;
-  filter:
-    drop-shadow(1px 0 0 var(--couleur-ref))
-    drop-shadow(-1px 0 0 var(--couleur-ref))
-    drop-shadow(0 1px 0 var(--couleur-ref))
-    drop-shadow(0 -1px 0 var(--couleur-ref));
+  /* Logo d'arme signature : même taille extérieure que les cercles de
+     constellation / points ; contour de la couleur du raffinement (2px)
+     tracé vers l'intérieur du cercle. */
+  box-sizing: border-box;
+  border-radius: 50%;
+  outline: 2px solid var(--couleur-ref);
+  outline-offset: -2px;
 }
 
 /* Icône du perso lié : 1.5x la taille des cercles. */
