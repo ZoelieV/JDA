@@ -369,7 +369,7 @@ function creerSelectNiveau(idPerso, niveau) {
   return `
 <label class="niveau-choix" title="Niveau du personnage">
 <img class="niveau-logo" src="../DB/images/others/stella.webp" alt="Niveau">
-<select class="niveau-select" data-id="${idPerso}">
+<select class="niveau-select" data-id="${idPerso}" aria-label="Niveau du personnage">
 <option value="" ${niveau == null ? "selected" : ""}>-</option>
 ${options}
 </select>

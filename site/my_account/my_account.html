@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=8">
+<link rel="stylesheet" href="/my_account/my_account.css?v=9">
 <link rel="stylesheet" href="../commun/entete.css">
-<script src="/commun/fond.js" data-sans-requete></script>
+<script src="/commun/fond.js?v=2" data-sans-requete></script>
 </head>
 <body>
 
@@ -62,6 +62,25 @@
     <h1 class="titre-page">Mon compte</h1>
 
     <form id="profil-form">
+      <!-- Personnages / Armes à gauche, box à droite, sur une seule ligne
+           (sur ordi). -->
+      <div class="ligne-vues">
+        <div class="view-selector">
+          <button type="button" class="view-btn active" data-view="characters">Personnages</button>
+          <button type="button" class="view-btn" data-view="weapons">Armes</button>
+        </div>
+
+      <div class="box-selector">
+        <button type="button" class="box-btn active" data-box="full">Full box</button>
+        <button type="button" class="box-btn" data-box="stuff">Personnages stuff</button>
+        <button type="button" class="box-btn" data-box="opti1">Box optimisée 1</button>
+        <button type="button" class="box-btn" data-box="opti2">Box optimisée 2</button>
+        <button type="button" class="box-btn" data-box="opti3">Box optimisée 3</button>
+        <button type="button" class="box-btn" data-box="opti4">Box optimisée 4</button>
+        <button type="button" class="box-btn" data-box="opti5">Box optimisée 5</button>
+      </div>
+      </div>
+
       <!-- Recherche, tri et filtres sur une seule ligne (mêmes styles que la
            draft et la liste des comptes). -->
       <div class="barre-filtres">
@@ -97,25 +116,6 @@
         </div>
         <label class="filtre-texte" title="N'afficher que ce que je possède"><input type="checkbox" id="filtre-possedes"><span>Possédés</span></label>
         <button type="button" id="btn-clear-filtres" class="btn-clear-filtres">✕ Filtres</button>
-      </div>
-
-      <!-- Personnages / Armes à gauche, box à droite, sur une seule ligne
-           (sur ordi). -->
-      <div class="ligne-vues">
-        <div class="view-selector">
-          <button type="button" class="view-btn active" data-view="characters">Personnages</button>
-          <button type="button" class="view-btn" data-view="weapons">Armes</button>
-        </div>
-
-      <div class="box-selector">
-        <button type="button" class="box-btn active" data-box="full">Full box</button>
-        <button type="button" class="box-btn" data-box="stuff">Personnages stuff</button>
-        <button type="button" class="box-btn" data-box="opti1">Box optimisée 1</button>
-        <button type="button" class="box-btn" data-box="opti2">Box optimisée 2</button>
-        <button type="button" class="box-btn" data-box="opti3">Box optimisée 3</button>
-        <button type="button" class="box-btn" data-box="opti4">Box optimisée 4</button>
-        <button type="button" class="box-btn" data-box="opti5">Box optimisée 5</button>
-      </div>
       </div>
 
       <!-- Total (persos + armes de la box) figé en bas au centre. -->
@@ -172,6 +172,6 @@
     </div>
   </div>
 
-  <script src="/my_account/my_account.js?v=11"></script>
+  <script src="/my_account/my_account.js?v=12"></script>
 </body>
 </html>

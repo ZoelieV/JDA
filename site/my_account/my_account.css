@@ -359,7 +359,6 @@ h2 {
   text-align: center;
   /* Gris du fond de page, fortement transparent (plus opaque si possédé). */
   background-color: rgba(30, 30, 30, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
 }
 
@@ -840,7 +839,7 @@ textarea {
 
 /* Personnages / armes possédés : case plus opaque. */
 .carte-personnage.possede {
-  background-color: rgba(30, 30, 30, 0.75);
+  background-color: rgba(30, 30, 30, 0.45);
 }
 
 /* ---- Personnages / Armes à gauche, box à droite ---- */
@@ -859,21 +858,35 @@ textarea {
   justify-content: flex-end;
 }
 
-/* ---- Niveau : logo stella + menu déroulant blanc sur gris ---- */
+/* ---- Niveau : la stella est le menu déroulant (menu invisible posé
+   dessus : un clic sur le logo ouvre la liste, blanc sur gris) ---- */
 
 .niveau-choix {
+  position: relative;
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
+  width: 30px;
+  height: 30px;
   cursor: pointer;
 }
 
 .niveau-logo {
-  width: 22px;
-  height: 22px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  flex-shrink: 0;
+  transition: filter 0.15s ease;
+}
+
+.niveau-choix .niveau-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.niveau-choix:hover .niveau-logo {
+  filter: drop-shadow(0 0 4px rgba(245, 197, 66, 0.9));
 }
 
 .niveau-select,
@@ -937,10 +950,6 @@ textarea {
 .recherche-personnage:hover {
   border-color: rgba(245, 197, 66, 0.8);
   background-color: rgba(245, 197, 66, 0.18);
-}
-
-.niveau-choix:hover .niveau-select {
-  border-color: rgba(245, 197, 66, 0.8);
 }
 
 .visuel-personnage.selectionnable:hover,
@@ -1156,5 +1165,10 @@ body {
   .btn-enregistrer-fixe {
     right: 12px;
     bottom: 12px;
+  }
+
+  .niveau-choix {
+    width: 24px;
+    height: 24px;
   }
 }

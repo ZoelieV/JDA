@@ -41,7 +41,9 @@
        cadre ni dégradé ajouté (les images sont déjà assombries à gauche). */
     .avec-banniere2,
     .avec-banniere2:hover,
-    .avec-banniere2[aria-expanded="true"] {
+    .avec-banniere2[aria-expanded="true"],
+    .compte-btn.avec-banniere2,
+    .accueil-compte.avec-banniere2 {
       box-sizing: border-box;
       width: 420px;
       max-width: calc(100vw - 110px);
