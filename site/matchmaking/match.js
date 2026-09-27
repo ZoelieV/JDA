@@ -740,16 +740,28 @@ function getProchaineActionLocale() {
 
 // Titre d'un tableau joueur : pseudo, remplacé par "J1"/"J2" sur téléphone
 // (tableaux côte à côte, cf. CSS).
+// En-tête d'un tableau joueur : sa namecard (largeur du tableau) avec photo
+// et pseudo ("J1"/"J2" sur téléphone).
 function titreTableauJoueur(role, nomJoueur) {
-  return `<h4><span class="nom-complet">${nomJoueur}</span><span class="nom-court">${role.toUpperCase()}</span></h4>`;
+  const joueur = role === "j1" ? joueur1 : joueur2;
+  const namecard = encodeURI(`/DB/images/${joueur?.data?.parametres?.banniere || NAMECARD_DEFAUT}`);
+  const tagRole = draft?.roles_tires ? `<span class="tag-role">${role.toUpperCase()}</span>` : "";
+  return `
+    <div class="namecard-tableau" style="--namecard: url(&quot;${namecard}&quot;)">
+      ${joueur?.avatar ? `<img class="avatar-tableau" src="${joueur.avatar}" alt="">` : ""}
+      <span class="nom-complet">${nomJoueur}</span>
+      <span class="nom-court">${role.toUpperCase()}</span>
+      ${tagRole}
+    </div>
+  `;
 }
 
 function rendreSlotsEtBans(role) {
   const nomJoueur = role === "j1" ? joueur1.nom : joueur2.nom;
 
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
-  // Les bans bonus d'équilibrage ont leur propre récap (bans-bonus-recap,
-  // affiché en haut) : on ne les remet pas ici pour éviter le doublon.
+  // Les bans bonus d'équilibrage ont leur propre bloc (au-dessus du tableau
+  // du joueur qui les a faits) : on ne les remet pas ici.
   const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
 
   const slotsContainer = document.getElementById(`slots-pick-${role}`);
@@ -800,22 +812,19 @@ function rendreSlotsEtBans(role) {
 // Petit rappel persistant, pendant la draft, des bans d'équilibrage joués
 // avant le tirage du boss (utile puisque la phase bans_bonus elle-même est
 // passée à ce stade).
-function rendreBansBonusRecap() {
-  const recap = document.getElementById("bans-bonus-recap");
-  const actionsBonus = draft.actions.filter(a => a.bonus);
+// Bans d'équilibrage : bloc au-dessus du tableau du joueur qui les a faits.
+function rendreBansEquilibrage() {
+  ["j1", "j2"].forEach(role => {
+    const bans = draft.actions.filter(a => a.bonus && a.joueur === role);
+    const bloc = document.getElementById(`bans-eq-${role}`);
+    bloc.classList.toggle("cache", bans.length === 0);
 
-  if (actionsBonus.length === 0) {
-    recap.classList.add("cache");
-    return;
-  }
-
-  recap.classList.remove("cache");
-  const nomJoueurConcerne = draft.bans_bonus_joueur === "j1" ? joueur1.nom : joueur2.nom;
-
-  recap.innerHTML = `<span>Bans équilibrage (${nomJoueurConcerne}) :</span>`;
-  actionsBonus.forEach(a => {
-    const personnage = getPersonnageParId(a.perso_id);
-    if (personnage) recap.appendChild(creerBanMini(personnage));
+    const grille = document.getElementById(`bans-eq-grille-${role}`);
+    grille.innerHTML = "";
+    bans.forEach(a => {
+      const personnage = getPersonnageParId(a.perso_id);
+      if (personnage) grille.appendChild(creerBanMini(personnage));
+    });
   });
 }
 
@@ -902,7 +911,7 @@ function rendreDraft(phasePrecedente) {
   // Si une animation est déjà en cours ou déjà jouée pour ce boss, on ne
   // touche pas à #boss-affiche (évite de la couper/relancer à chaque poll).
 
-  rendreBansBonusRecap();
+  rendreBansEquilibrage();
 
   const prochaine = getProchaineActionLocale();
   const tourContainer = document.getElementById("tour-actuel");
@@ -1351,6 +1360,12 @@ function rendrePhase() {
   const entetes = document.querySelector(".entetes-joueurs");
   entetes.classList.toggle("compact", avecBoss);
   entetes.classList.toggle("boss-deborde", draft.phase === "draft");
+  // Boss tiré : plus de rectangles joueurs (namecard, photo et pseudo sont
+  // en haut des tableaux).
+  entetes.classList.toggle("sans-joueurs", avecBoss);
+  // Draft sur ordi : tableaux à gauche / droite (figés), boss, filtres et
+  // grille au centre (cf. CSS #zone-match.mode-draft).
+  document.getElementById("zone-match").classList.toggle("mode-draft", draft.phase === "draft");
   document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);
 
   // Bulles du bas : seules celles de la phase en cours sont visibles.
@@ -1360,7 +1375,6 @@ function rendrePhase() {
 
   const avecPersos = ["choix_box", "analyse", "bans_bonus", "draft"].includes(draft.phase);
   document.getElementById("barre-outils").classList.toggle("cache", !avecPersos);
-  if (draft.phase !== "draft") document.getElementById("bans-bonus-recap").classList.add("cache");
   mettreAJourFiltreProprietaire();
 
   if (draft.phase === "draft" && phasePrecedente && phasePrecedente !== "draft") {

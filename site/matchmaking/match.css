@@ -34,7 +34,7 @@ h1 {
 
 #etat-attente {
   padding: 10px 14px;
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(20, 20, 20, 0.45);
   border-radius: 8px;
   width: fit-content;
   margin-bottom: 16px;
@@ -72,7 +72,7 @@ h1 {
   min-height: 168px;
   box-sizing: border-box;
   padding: 10px 14px;
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: rgba(20, 20, 20, 0.45);
   border-radius: 10px;
   border-left: 3px solid var(--couleur-j1);
 }
@@ -128,8 +128,7 @@ h1 {
   grid-column: 3;
 }
 
-/* Centre remonté à hauteur du titre "Accueil / Match" (qui est à gauche,
-   donc pas de chevauchement) : action à réaliser, puis le boss. */
+/* Centre des entêtes : le boss tiré (sous le titre "Match", centré). */
 .entete-centre {
   position: relative;
   justify-self: center;
@@ -137,7 +136,6 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  margin-top: -90px;
   text-align: center;
 }
 
@@ -147,7 +145,7 @@ h1 {
   margin: 0;
   padding: 12px;
   border-radius: 12px;
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(20, 20, 20, 0.45);
 }
 
 .entetes-joueurs .bandeau-boss img {
@@ -300,7 +298,7 @@ h1 {
 }
 
 .colonne-box {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: rgba(20, 20, 20, 0.45);
   border-radius: 12px;
   padding: 16px;
   border-top: 3px solid var(--couleur-j1);
@@ -367,7 +365,7 @@ h1 {
   padding: 6px 10px;
   cursor: pointer;
   font-size: 14px;
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(20, 20, 20, 0.45);
 }
 
 .box-btn.active {
@@ -423,7 +421,7 @@ h1 {
 
 .bandeau-info {
   padding: 10px 14px;
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(20, 20, 20, 0.45);
   border-radius: 8px;
   margin-bottom: 16px;
 }
@@ -468,7 +466,7 @@ h1 {
   justify-content: center;
   gap: 8px;
   padding: 16px;
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(20, 20, 20, 0.45);
   border-radius: 8px;
   margin-bottom: 12px;
   text-align: center;
@@ -541,24 +539,6 @@ h1 {
   gap: 6px;
 }
 
-.bans-bonus-recap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: bold;
-  padding: 8px 12px;
-  background-color: rgba(255, 90, 90, 0.1);
-  border: 1px solid rgba(255, 90, 90, 0.3);
-  border-radius: 8px;
-}
-
-.bans-bonus-recap .ban-mini {
-  width: 40px;
-  height: 40px;
-  opacity: 0.9;
-}
-
 .filtres-tri {
   display: flex;
   align-items: center;
@@ -580,7 +560,7 @@ h1 {
   padding: 5px;
   border-radius: 9px;
   border: 2px solid transparent;
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(20, 20, 20, 0.45);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -604,7 +584,7 @@ h1 {
   padding: 6px 12px;
   border-radius: 9px;
   border: 2px solid transparent;
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(20, 20, 20, 0.45);
   color: white;
   font-size: 18px;
   cursor: pointer;
@@ -635,7 +615,7 @@ h1 {
 .recherche-personnage {
   box-sizing: border-box;
   height: 39px;
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 9px;
   padding: 6px 12px;
@@ -660,7 +640,7 @@ h1 {
 }
 
 .equipe-joueur {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: rgba(20, 20, 20, 0.45);
   border-radius: 16px;
   padding: 16px;
 }
@@ -683,7 +663,7 @@ h1 {
   align-items: center;
   gap: 11px;
   min-height: 65px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(20, 20, 20, 0.45);
   border-radius: 11px;
   padding: 5px 11px;
 }
@@ -898,7 +878,7 @@ h1 {
   width: 64px;
   height: 64px;
   border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(20, 20, 20, 0.45);
   border: 2px dashed rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
@@ -982,7 +962,7 @@ h1 {
 }
 
 #input-temps {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(20, 20, 20, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 8px 10px;
@@ -992,7 +972,7 @@ h1 {
 }
 
 #btn-valider-temps {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
   border-radius: 8px;
@@ -1018,7 +998,7 @@ h1 {
 }
 
 #btn-rejouer {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
   border-radius: 8px;
@@ -1063,6 +1043,195 @@ h1 {
   justify-self: end;
 }
 
+/* ---- Boss tiré : plus de rectangles joueurs au-dessus ---- */
+
+.entetes-joueurs.sans-joueurs .entete-joueur {
+  display: none;
+}
+
+/* ---- Tableaux des joueurs : namecard (photo + pseudo) en haut ---- */
+
+.namecard-tableau {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+  aspect-ratio: 840 / 400;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background-image: var(--namecard);
+  background-size: cover;
+  background-position: center;
+  font-size: 17px;
+  font-weight: bold;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* j2 en miroir : photo et pseudo à droite. */
+#equipe-j2 .namecard-tableau,
+#recap-equipe-j2 .namecard-tableau {
+  flex-direction: row-reverse;
+}
+
+.avatar-tableau {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #333;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.namecard-tableau .nom-complet {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.namecard-tableau .tag-role {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+}
+
+#equipe-j2 .namecard-tableau .tag-role,
+#recap-equipe-j2 .namecard-tableau .tag-role {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* ---- Bans d'équilibrage : bloc de la largeur du tableau, au-dessus ---- */
+
+.bans-equilibrage {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background-color: rgba(20, 20, 20, 0.45);
+  box-shadow: inset 0 0 0 2px rgba(255, 90, 90, 0.5);
+}
+
+.bans-equilibrage h4 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.bans-eq-grille {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.bans-eq-grille .ban-mini {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  opacity: 0.85;
+}
+
+/* ---- Draft sur ordi : tableaux à gauche / droite figés à l'écran ; boss,
+   filtres (figés en haut au défilement) et grille au centre. Les blocs
+   intermédiaires passent en display: contents pour que leurs enfants se
+   placent directement dans la grille de #zone-match. ---- */
+
+@media (min-width: 1001px) {
+  #zone-match.mode-draft {
+    display: grid;
+    grid-template-columns: 270px minmax(0, 1fr) 270px;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "j1 boss j2"
+      "j1 outils j2"
+      "j1 pool j2";
+    column-gap: 20px;
+    align-items: start;
+  }
+
+  #zone-match.mode-draft .entetes-joueurs,
+  #zone-match.mode-draft #phase-draft,
+  #zone-match.mode-draft .draft-layout {
+    display: contents;
+  }
+
+  #zone-match.mode-draft #entete-centre {
+    grid-area: boss;
+    margin-bottom: 16px;
+  }
+
+  #zone-match.mode-draft #barre-outils {
+    grid-area: outils;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin-bottom: 16px;
+    padding: 10px;
+    border-radius: 12px;
+    background-color: rgba(20, 20, 20, 0.45);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Le boss descend derrière la barre de filtres (cf. .boss-deborde). */
+  #zone-match.mode-draft .entetes-joueurs.boss-deborde .entete-centre {
+    margin-bottom: -60px;
+  }
+
+  #zone-match.mode-draft #grille-pool-draft {
+    grid-area: pool;
+  }
+
+  #zone-match.mode-draft #colonne-j1,
+  #zone-match.mode-draft #colonne-j2 {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  #zone-match.mode-draft #colonne-j1 {
+    grid-area: j1;
+  }
+
+  #zone-match.mode-draft #colonne-j2 {
+    grid-area: j2;
+  }
+}
+
+/* ---- Doré au survol de tout ce qui est cliquable ---- */
+
+.box-btn:hover,
+.filtre-icone-btn:hover,
+.filtre-etoile-btn:hover,
+.filtre-proprietaire-btn:hover,
+.btn-clear-filtres:hover,
+.recherche-personnage:hover,
+#btn-pret-j1:hover,
+#btn-pret-j2:hover,
+#btn-confirmer-bonus:hover,
+#input-temps:hover,
+#btn-valider-temps:hover,
+#btn-rejouer:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.18);
+}
+
+.character-card.selectionnable:hover .character-visuel,
+.slot-bonus.rempli:hover {
+  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.9);
+}
+
+.lien-accueil:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
 @media (max-width: 700px) {
   .entete-joueur {
     min-height: 0;
@@ -1072,8 +1241,42 @@ h1 {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "j1 j2"
+      "bans bans"
       "pool pool";
     gap: 10px;
+  }
+
+  /* Bans d'équilibrage sous le double tableau, 4 par ligne. */
+  .colonne-joueur {
+    display: contents;
+  }
+
+  .bans-equilibrage {
+    grid-area: bans;
+    margin-bottom: 0;
+  }
+
+  .bans-eq-grille {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Namecard réduite en haut de chaque tableau. */
+  .namecard-tableau {
+    margin-bottom: 8px;
+    padding: 4px 5px;
+    gap: 4px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .avatar-tableau {
+    width: 20px;
+    height: 20px;
+    border-width: 1px;
+  }
+
+  .namecard-tableau .tag-role {
+    display: none;
   }
 
   #equipe-j1 {
@@ -1148,8 +1351,7 @@ h1 {
 
   .toolbar-droite,
   .zone-recherche,
-  .filtres-tri,
-  .bans-bonus-recap {
+  .filtres-tri {
     min-width: 0;
     max-width: 100%;
   }
@@ -1159,8 +1361,7 @@ h1 {
   .filtres-tri,
   .filtres-icones,
   .filtres-etoiles,
-  .filtres-proprietaire,
-  .bans-bonus-recap {
+  .filtres-proprietaire {
     flex-wrap: wrap;
   }
 
