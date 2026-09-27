@@ -842,19 +842,19 @@ textarea {
   background-color: rgba(30, 30, 30, 0.45);
 }
 
-/* ---- Personnages / Armes à gauche, box à droite ---- */
+/* ---- Ligne 2 : Personnages / Armes à gauche, filtres à droite ---- */
 
 .ligne-vues {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
-  margin: 16px 0 12px 0;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
-.ligne-vues .box-selector {
-  margin: 0;
+.ligne-vues .barre-filtres {
+  margin-bottom: 0;
   justify-content: flex-end;
 }
 
@@ -863,9 +863,13 @@ textarea {
 
 .niveau-choix {
   position: relative;
+  box-sizing: border-box;
   display: inline-flex;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
+  padding: 3px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.8);
   cursor: pointer;
 }
 
@@ -955,11 +959,6 @@ textarea {
 .visuel-personnage.selectionnable:hover,
 .choix-parametre:hover {
   border-color: rgba(245, 197, 66, 0.9);
-  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.8);
-}
-
-.compte-btn:hover,
-.compte-btn[aria-expanded="true"] {
   box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.8);
 }
 
@@ -1168,7 +1167,8 @@ body {
   }
 
   .niveau-choix {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
+    padding: 2px;
   }
 }

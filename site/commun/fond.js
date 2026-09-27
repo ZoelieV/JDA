@@ -59,11 +59,14 @@
       background-size: cover;
       background-position: center;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-      transition: filter 0.15s ease;
+      box-shadow: none;
+      transition: transform 0.15s ease, filter 0.15s ease;
     }
 
+    /* Survol : comme les cartes de Tous les comptes. */
     .avec-banniere2:hover,
     .avec-banniere2[aria-expanded="true"] {
+      transform: translateY(-2px);
       filter: brightness(1.12);
     }
   `;
