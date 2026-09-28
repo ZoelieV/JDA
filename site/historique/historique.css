@@ -191,6 +191,10 @@
   padding: 0.3125rem 0.5rem 0.3125rem 0.875rem;
 }
 
+.match-j2 .match-banniere::before {
+  transform: scaleX(-1);
+}
+
 /* Trait vertical de la couleur du joueur, du côté de la photo de profil
    (gauche pour j1, droite pour j2). */
 .match-banniere::after {
