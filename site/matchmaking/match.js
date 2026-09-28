@@ -63,9 +63,14 @@ let joueur2 = null;
 const filtreElement = new Set();
 const filtreEtoile = new Set();
 const filtreVoeux = new Set();
+const filtreArme = new Set();
 let filtreProprietaire = null; // "j1" | "j2" | null
 let rechercheTexte = "";
 const etatTri = creerEtatTri();
+
+// Draft : personnage sélectionné dans la grille, envoyé au clic sur
+// "Confirmer". { persoId, element, index (sequence_index) } ou null.
+let selectionDraft = null;
 
 // ---- Animation de tirage du boss ----
 let dernierePhaseVue = null; // phase locale précédente, pour détecter une transition
@@ -399,6 +404,7 @@ function trierPersonnages(personnages, roles = ["j1", "j2"]) {
     vue: "characters",
     valeurs: getValeursTri(roles),
     elements: filtreElement,
+    armes: filtreArme,
     rareteParDefaut: filtreEtoile.size > 0 || filtreVoeux.size > 0 || (roles.length > 1 && !!filtreProprietaire)
   });
 }
@@ -409,6 +415,7 @@ function personnageCorrespondFiltres(personnage, { ignorerProprietaire = false }
   if (filtreElement.size > 0 && !filtreElement.has(personnage.element)) return false;
   if (filtreEtoile.size > 0 && !filtreEtoile.has(String(personnage.rarete))) return false;
   if (filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(personnage))) return false;
+  if (filtreArme.size > 0 && !filtreArme.has(personnage.arme)) return false;
 
   if (filtreProprietaire && !ignorerProprietaire) {
     if (getConstellation(filtreProprietaire, personnage.id) === null) return false;
@@ -431,13 +438,15 @@ function creerCarteItem(personnage, {
   niveauJ1 = null,
   niveauJ2 = null,
   refinementJ1 = null,
-  refinementJ2 = null
+  refinementJ2 = null,
+  selectionnee = false
 } = {}) {
   const card = document.createElement("div");
   card.title = personnage.nom;
   card.className = "character-card" +
     (selectionnable ? " selectionnable" : "") +
-    (indisponible ? " indisponible" : "");
+    (indisponible ? " indisponible" : "") +
+    (selectionnee ? " selectionnee" : "");
 
   const raffinementHtml = [["j1", refinementJ1], ["j2", refinementJ2]]
     .map(([role, r]) => htmlArmeSignature(personnage.arme, r, {
@@ -801,6 +810,7 @@ function remplirCaseTableau(slot, personnage, element = null) {
     (element && ICONES_ELEMENTS_TRI[element] ? `<img class="element-case" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}" title="${NOMS_ELEMENTS[element] || element}">` : "");
 }
 
+// Namecard du tableau, puis trait de la couleur du joueur.
 function titreTableauJoueur(role, nomJoueur) {
   const joueur = role === "j1" ? joueur1 : joueur2;
   const namecard = encodeURI(`/DB/images/${joueur?.data?.parametres?.banniere || NAMECARD_DEFAUT}`);
@@ -812,55 +822,79 @@ function titreTableauJoueur(role, nomJoueur) {
       <span class="nom-court">${role.toUpperCase()}</span>
       ${tagRole}
     </div>
+    <div class="trait-joueur trait-${role}"></div>
   `;
 }
 
-function rendreSlotsEtBans(role) {
-  const nomJoueur = role === "j1" ? joueur1.nom : joueur2.nom;
+// Tableau d'un joueur, identique pendant la draft et en fin de match :
+// namecard (+ temps en fin de match), 4 picks avec leurs infos
+// (constellation, niveau, arme signature), puis ses bans. Chaque partie
+// n'est redessinée que si elle change (pas à chaque rafraîchissement).
+function rendreTableauJoueur(role) {
+  const joueur = role === "j1" ? joueur1 : joueur2;
+  const enRecap = draft.phase === "temps" || draft.phase === "termine";
 
+  // Namecard redessinée seulement si elle change ; la zone du temps (et le
+  // champ de saisie qu'elle contient) y est posée sans être recréée (le
+  // texte tapé n'est pas perdu aux rafraîchissements).
+  const entete = document.getElementById(`entete-tableau-${role}`);
+  const zone = document.getElementById(`recap-temps-${role}`);
+  const cleEntete = JSON.stringify([joueur.nom, joueur.avatar, joueur.data?.parametres?.banniere, draft.roles_tires]);
+  if (entete.dataset.cle !== cleEntete) {
+    entete.dataset.cle = cleEntete;
+    zone.remove();
+    entete.innerHTML = titreTableauJoueur(role, joueur.nom);
+  }
+  const namecard = entete.querySelector(".namecard-tableau");
+  if (zone.parentElement !== namecard) namecard.appendChild(zone);
+  zone.classList.toggle("cache", !enRecap);
+
+  document.getElementById(`titre-picks-${role}`).textContent = enRecap ? "Équipe" : "Picks";
+
+  // Picks : personnage sur sa bannière avec ses infos chez ce joueur.
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role);
-  // Les bans bonus d'équilibrage ont leur propre bloc (au-dessus du tableau
-  // du joueur qui les a faits) : on ne les remet pas ici.
-  const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
-
-  const slotsContainer = document.getElementById(`slots-pick-${role}`);
-  slotsContainer.innerHTML = titreTableauJoueur(role, nomJoueur);
-
-  for (let i = 0; i < 4; i++) {
-    const pick = picks[i];
-    const slot = document.createElement("div");
-
-    if (pick) {
-      slot.className = "slot-pick";
-      remplirCaseTableau(slot, appliquerVariante(getPersonnageParId(pick.perso_id), getJoueurDataParRole(role)?.parametres), pick.element);
-    } else {
-      slot.className = "slot-pick vide";
-      slot.textContent = "Vide";
-    }
-
-    slotsContainer.appendChild(slot);
+  const slotsPicks = document.getElementById(`slots-pick-${role}`);
+  if (grilleAChange(slotsPicks, JSON.stringify([joueur.discordId, picks.map(a => [a.perso_id, a.element]), derniereCleVariantes]))) {
+    slotsPicks.replaceChildren(...Array.from({ length: 4 }, (_, i) => {
+      const personnage = picks[i] && getPersonnageParId(picks[i].perso_id);
+      return personnage ? creerCaseRecap(personnage, role, picks[i].element) : creerCaseVide("slot-pick");
+    }));
   }
 
-  // Cases de bans (rouges), une par ban prévu pour ce joueur dans la
-  // séquence, sous les cases de picks.
+  // Bans (hors bans d'équilibrage, dans leur propre bloc) : une case par
+  // ban prévu pour ce joueur dans la séquence.
+  const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
   const nbBans = SEQUENCE_FIXE.filter(a => a.type === "ban" && a.joueur === role).length;
-  const bansContainer = document.getElementById(`rangee-bans-${role}`);
-  bansContainer.innerHTML = "";
-
-  for (let i = 0; i < nbBans; i++) {
-    const personnage = bans[i] ? getPersonnageParId(bans[i]) : null;
-    const slot = document.createElement("div");
-
-    if (personnage) {
+  const slotsBans = document.getElementById(`rangee-bans-${role}`);
+  if (grilleAChange(slotsBans, JSON.stringify([joueur.discordId, bans]))) {
+    slotsBans.replaceChildren(...Array.from({ length: nbBans }, (_, i) => {
+      const personnage = bans[i] && getPersonnageParId(bans[i]);
+      if (!personnage) return creerCaseVide("slot-pick slot-ban");
+      const slot = document.createElement("div");
       slot.className = "slot-pick slot-ban";
       remplirCaseTableau(slot, personnage);
-    } else {
-      slot.className = "slot-pick slot-ban vide";
-      slot.textContent = "Vide";
-    }
-
-    bansContainer.appendChild(slot);
+      return slot;
+    }));
   }
+
+  if (enRecap) rendreTempsJoueur(role, zone);
+
+  document.getElementById(`equipe-${role}`).classList.toggle(
+    "gagnant", draft.phase === "termine" && draft.vainqueur === role
+  );
+}
+
+function creerCaseVide(classes) {
+  const slot = document.createElement("div");
+  slot.className = `${classes} vide`;
+  slot.textContent = "Vide";
+  return slot;
+}
+
+function rendreTableaux() {
+  rendreBansEquilibrage();
+  rendreTableauJoueur("j1");
+  rendreTableauJoueur("j2");
 }
 
 // Petit rappel persistant, pendant la draft, des bans d'équilibrage joués
@@ -874,11 +908,11 @@ function rendreBansEquilibrage() {
     bloc.classList.toggle("cache", bans.length === 0);
 
     const grille = document.getElementById(`bans-eq-grille-${role}`);
-    grille.innerHTML = "";
-    bans.forEach(a => {
-      const personnage = getPersonnageParId(a.perso_id);
-      if (personnage) grille.appendChild(creerBanMini(personnage));
-    });
+    if (!grilleAChange(grille, JSON.stringify(bans.map(a => a.perso_id)))) return;
+    grille.replaceChildren(...bans
+      .map(a => getPersonnageParId(a.perso_id))
+      .filter(Boolean)
+      .map(creerBanMini));
   });
 }
 
@@ -965,36 +999,60 @@ function rendreDraft(phasePrecedente) {
   // Si une animation est déjà en cours ou déjà jouée pour ce boss, on ne
   // touche pas à #boss-affiche (évite de la couper/relancer à chaque poll).
 
-  rendreBansEquilibrage();
+  rendreTableaux();
 
   const prochaine = getProchaineActionLocale();
-  const tourContainer = document.getElementById("tour-actuel");
+  const cEstMonTour = !!prochaine && prochaine.joueur === monRole;
+  const restrictionPick = cEstMonTour && prochaine.type === "pick";
 
+  // Sélection périmée (action jouée, personnage plus disponible) : oubliée.
+  if (selectionDraft && (!cEstMonTour || selectionDraft.index !== draft.sequence_index ||
+      !draft.pool_disponible.includes(selectionDraft.persoId))) {
+    selectionDraft = null;
+  }
+  const persoSelectionne = selectionDraft && getPersonnageParId(selectionDraft.persoId);
+
+  const tourContainer = document.getElementById("tour-actuel");
   if (!prochaine) {
     tourContainer.innerHTML = "Draft terminée.";
   } else {
     const verbe = prochaine.type === "ban" ? "bannir" : "pick";
-    if (prochaine.joueur === monRole) {
-      tourContainer.innerHTML = `À toi de <strong>${verbe}</strong> un personnage.`;
+    if (cEstMonTour) {
+      const choix = persoSelectionne
+        ? ` : <strong>${persoSelectionne.nom}${selectionDraft.element ? ` ${NOMS_ELEMENTS[selectionDraft.element] || ""}` : ""}</strong>`
+        : " un personnage, puis confirme.";
+      tourContainer.innerHTML = `À toi de <strong>${verbe}</strong>${choix}`;
     } else {
       const nomAdversaire = prochaine.joueur === "j1" ? joueur1.nom : joueur2.nom;
       tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong>${verbe}</strong> un personnage.`;
     }
   }
 
-  rendreSlotsEtBans("j1");
-  rendreSlotsEtBans("j2");
+  // Bouton "Confirmer" au-dessus du message, seulement à son tour.
+  const btnConfirmer = document.getElementById("btn-confirmer-action");
+  btnConfirmer.classList.toggle("cache", !cEstMonTour);
+  btnConfirmer.disabled = !selectionDraft;
+  btnConfirmer.textContent = prochaine?.type === "ban" ? "Confirmer le ban" : "Confirmer le pick";
+  btnConfirmer.onclick = () => {
+    const selection = selectionDraft;
+    if (!selection) return;
+    btnConfirmer.disabled = true;
+    postActionDraft(selection.persoId, selection.element)
+      .then(() => { selectionDraft = null; })
+      .catch(err => {
+        btnConfirmer.disabled = false;
+        alert(err.message);
+      });
+  };
 
   const grille = document.getElementById("grille-pool-draft");
   const cleGrille = JSON.stringify([
     draft.actions, draft.sequence_index, draft.pool_disponible, draft.pool_j1, draft.pool_j2,
-    draft.discord_j1, draft.discord_j2, monRole,
+    draft.discord_j1, draft.discord_j2, monRole, selectionDraft,
     ...cleFiltres()
   ]);
   if (!grilleAChange(grille, cleGrille)) return;
 
-  const cEstMonTour = !!prochaine && prochaine.joueur === monRole;
-  const restrictionPick = cEstMonTour && prochaine.type === "pick";
   const monPool = monRole === "j1" ? draft.pool_j1 : draft.pool_j2;
 
   const personnages = draft.pool_disponible
@@ -1008,12 +1066,24 @@ function rendreDraft(phasePrecedente) {
     return obtenirCarteItem(grille, personnage, {
       selectionnable,
       indisponible: cEstMonTour && !jePeuxLePicker,
+      selectionnee: selectionDraft?.persoId === personnage.id,
+      // Clic : sélectionne (ou désélectionne) le personnage ; l'action n'est
+      // envoyée qu'avec "Confirmer". Pick du Voyageur / Manekin : élément
+      // choisi à la sélection.
       onClick: () => {
+        if (selectionDraft?.persoId === personnage.id) {
+          selectionDraft = null;
+          rendrePhase();
+          return;
+        }
+        const choisir = element => {
+          selectionDraft = { persoId: personnage.id, element, index: draft.sequence_index };
+          rendrePhase();
+        };
         const choix = restrictionPick ? getElementsAuPick(personnage.id) : null;
-        const envoyer = element => postActionDraft(personnage.id, element).catch(err => alert(err.message));
-        if (!choix) envoyer(null);
-        else if (choix.length === 1) envoyer(choix[0]);
-        else ouvrirChoixElement(personnage, choix, envoyer);
+        if (!choix) choisir(null);
+        else if (choix.length === 1) choisir(choix[0]);
+        else ouvrirChoixElement(personnage, choix, choisir);
       },
       ...getInfosCarte(personnage.id)
     }, restrictionPick ? "pick" : "");
@@ -1028,7 +1098,7 @@ function rendreDraft(phasePrecedente) {
 
 // Part de la clé de grille qui dépend de la barre recherche/tri/filtres.
 function cleFiltres() {
-  return [[...filtreElement], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, rechercheTexte, etatTri.tris];
+  return [[...filtreElement], [...filtreArme], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, rechercheTexte, etatTri.tris];
 }
 
 // Le contenu est ensuite remplacé en une fois (remplirGrilleGroupee), en
@@ -1076,6 +1146,22 @@ function initialiserFiltresTri() {
     zoneIcones.appendChild(btn);
   });
   figeables.appendChild(zoneIcones);
+
+  const zoneArmes = document.createElement("div");
+  zoneArmes.className = "filtres-icones";
+  Object.entries(ICONES_TYPES_ARMES_TRI).forEach(([valeur, src]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-icone-btn";
+    btn.innerHTML = `<img src="${src}" alt="${valeur}">`;
+    btn.addEventListener("click", () => {
+      basculerSelection(filtreArme, valeur);
+      btn.classList.toggle("active");
+      rendrePhase();
+    });
+    zoneArmes.appendChild(btn);
+  });
+  figeables.appendChild(zoneArmes);
 
   const zoneEtoiles = document.createElement("div");
   zoneEtoiles.className = "filtres-etoiles";
@@ -1136,6 +1222,7 @@ function initialiserFiltresTri() {
   btnClear.innerHTML = '<img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres">';
   btnClear.addEventListener("click", () => {
     filtreElement.clear();
+    filtreArme.clear();
     filtreEtoile.clear();
     filtreVoeux.clear();
     filtreProprietaire = null;
@@ -1209,18 +1296,13 @@ function annoncerRole() {
   setTimeout(() => annonce.remove(), 5000);
 }
 
-// ---- Phase 4 : saisie du temps ----
+// ---- Phases 4 et 5 : saisie du temps, résultat ----
+// Mêmes tableaux qu'en draft (cf. rendreTableauJoueur) ; résultat, boss et
+// Rejouer au centre.
 
-// Recap des picks d'un joueur (sans la rangée de bans, contrairement à
-// rendreSlotsEtBans) — utilisé sur la page de saisie du temps pour se
-// souvenir des 2 teams pendant qu'on tape son temps.
-// ---- Phases 4 et 5 : récap des équipes ----
-// Tableau de chaque joueur : namecard, zone du temps, puis ses personnages
-// avec les mêmes infos qu'en draft (constellation, niveau, arme ; j1 à
-// gauche, j2 à droite). Boss au centre.
-
-// Case du récap : personnage sur sa bannière (comme en draft) + ses infos
-// chez ce joueur (constellation, niveau, arme signature).
+// Case d'un pick : personnage sur sa bannière + ses infos chez ce joueur
+// (constellation, niveau, arme signature) ; élément pour le Voyageur /
+// Manekin.
 function creerCaseRecap(personnage, role, element = null) {
   const slot = document.createElement("div");
   slot.className = "slot-pick";
@@ -1243,35 +1325,10 @@ function creerCaseRecap(personnage, role, element = null) {
   return slot;
 }
 
-function rendreTableauRecap(role) {
-  const joueur = role === "j1" ? joueur1 : joueur2;
-  const zone = document.getElementById(`recap-temps-${role}`);
-
-  // Namecard redessinée seulement si elle change ; la zone du temps (et le
-  // champ de saisie qu'elle contient) est posée DANS la namecard, sans être
-  // recréée (le texte tapé n'est pas perdu aux rafraîchissements).
-  const entete = document.getElementById(`recap-entete-${role}`);
-  const cleEntete = JSON.stringify([joueur.nom, joueur.avatar, joueur.data?.parametres?.banniere, draft.roles_tires]);
-  if (entete.dataset.cle !== cleEntete) {
-    entete.dataset.cle = cleEntete;
-    zone.remove();
-    entete.innerHTML = titreTableauJoueur(role, joueur.nom);
-  }
-  const namecard = entete.querySelector(".namecard-tableau");
-  if (zone.parentElement !== namecard) namecard.appendChild(zone);
-
-  // Personnages : reconstruits seulement si les picks changent.
-  const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role);
-  const grille = document.getElementById(`recap-persos-${role}`);
-  if (grilleAChange(grille, JSON.stringify(picks.map(a => [a.perso_id, a.element])))) {
-    grille.replaceChildren(...picks
-      .map(pick => [getPersonnageParId(pick.perso_id), pick.element])
-      .filter(([personnage]) => personnage)
-      .map(([personnage, element]) => creerCaseRecap(personnage, role, element)));
-  }
-
-  // Temps : champ de saisie dans la namecard du joueur connecté pendant la
-  // saisie ; sinon un texte (temps de l'adversaire masqué jusqu'au résultat).
+// Temps d'un joueur dans sa namecard : champ de saisie pour le joueur
+// connecté pendant la saisie ; sinon un texte (temps de l'adversaire masqué
+// jusqu'au résultat).
+function rendreTempsJoueur(role, zone) {
   const temps = draft[`temps_${role}`];
   const saisie = document.getElementById("saisie-temps");
   const saisieIci = draft.phase === "temps" && role === monRole && !temps;
@@ -1296,16 +1353,11 @@ function rendreTableauRecap(role) {
 
   if (saisieIci && saisie.parentElement !== zone) zone.appendChild(saisie);
   if (role === monRole) saisie.classList.toggle("cache", !saisieIci);
-
-  document.getElementById(`recap-equipe-${role}`).classList.toggle(
-    "gagnant", draft.phase === "termine" && draft.vainqueur === role
-  );
 }
 
 function rendreRecap() {
   assurerBossAffiche();
-  rendreTableauRecap("j1");
-  rendreTableauRecap("j2");
+  rendreTableaux();
   if (!monRole) document.getElementById("saisie-temps").classList.add("cache");
 
   const boss = bossData.find(b => b.id === draft.boss_id);
@@ -1408,6 +1460,7 @@ function rendreTermine() {
 const BULLES_PAR_PHASE = {
   "message-choix-box": ["choix_box", "analyse"],
   "message-equilibrage": ["bans_bonus"],
+  "btn-confirmer-action": ["draft"],
   "tour-actuel": ["draft"],
   "etat-temps": ["temps"],
   "etat-rejouer": ["termine"]
@@ -1476,8 +1529,8 @@ function rendrePhase() {
     analyse: "phase-choix-box",
     bans_bonus: "phase-bans-bonus",
     draft: "phase-draft",
-    temps: "phase-recap",
-    termine: "phase-recap"
+    temps: "phase-draft",
+    termine: "phase-draft"
   };
 
   const idAffiche = idsParPhase[draft.phase];
@@ -1499,7 +1552,12 @@ function rendrePhase() {
   entetes.classList.toggle("sans-joueurs", avecBoss);
   // Draft sur ordi : tableaux à gauche / droite (figés), boss, filtres et
   // grille au centre (cf. CSS #zone-match.mode-draft).
-  document.getElementById("zone-match").classList.toggle("mode-draft", draft.phase === "draft");
+  // Fin de match : mêmes colonnes que la draft, résultat et boss au centre.
+  const zoneMatch = document.getElementById("zone-match");
+  zoneMatch.classList.toggle("mode-draft", draft.phase === "draft" || enRecap);
+  zoneMatch.classList.toggle("mode-recap", enRecap);
+  document.getElementById("grille-pool-draft").classList.toggle("cache", enRecap);
+  document.getElementById("recap-centre").classList.toggle("cache", !enRecap);
   document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);
 
   // Bulles du bas : seules celles de la phase en cours sont visibles.

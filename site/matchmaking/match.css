@@ -41,6 +41,8 @@ h1 {
 #etat-attente {
   padding: 0.625rem 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 0.5rem;
   width: fit-content;
   margin-bottom: 1rem;
@@ -79,6 +81,8 @@ h1 {
   box-sizing: border-box;
   padding: 0.625rem 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 0.625rem;
   border-left: 0.1875rem solid var(--couleur-j1);
 }
@@ -152,6 +156,8 @@ h1 {
   padding: 0.75rem;
   border-radius: 0.75rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .entetes-joueurs .bandeau-boss img {
@@ -227,6 +233,8 @@ h1 {
   justify-content: center;
   gap: 0.75rem;
   background-color: rgba(0, 0, 0, 0.65);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   pointer-events: none;
   animation: annonceRole 5s ease forwards;
 }
@@ -281,6 +289,8 @@ h1 {
   padding: 1px 0.375rem;
   border-radius: 0.3125rem;
   background-color: rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   flex-shrink: 0;
 }
 
@@ -305,6 +315,8 @@ h1 {
 
 .colonne-box {
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 0.75rem;
   padding: 1rem;
   border-top: 0.1875rem solid var(--couleur-j1);
@@ -372,11 +384,15 @@ h1 {
   cursor: pointer;
   font-size: 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .box-btn.active {
   border-color: rgba(62, 207, 106, 0.8);
   background-color: rgba(62, 207, 106, 0.15);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .statut-pret {
@@ -388,6 +404,8 @@ h1 {
 #btn-pret-j1,
 #btn-pret-j2 {
   background-color: rgba(62, 207, 106, 0.2);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 2px solid rgba(62, 207, 106, 0.6);
   color: white;
   border-radius: 0.5rem;
@@ -400,6 +418,8 @@ h1 {
 #btn-pret-j1.active,
 #btn-pret-j2.active {
   background-color: rgba(62, 207, 106, 0.55);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .apercu-box {
@@ -428,6 +448,8 @@ h1 {
 .bandeau-info {
   padding: 0.625rem 0.875rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -473,6 +495,8 @@ h1 {
   gap: 0.5rem;
   padding: 1rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 0.5rem;
   margin-bottom: 0.75rem;
   text-align: center;
@@ -567,6 +591,8 @@ h1 {
   border-radius: 0.5625rem;
   border: 2px solid transparent;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -582,6 +608,8 @@ h1 {
 .filtre-icone-btn.active {
   border-color: rgba(245, 197, 66, 0.8);
   background-color: rgba(245, 197, 66, 0.15);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .filtre-etoile-btn,
@@ -591,6 +619,8 @@ h1 {
   border-radius: 0.5625rem;
   border: 2px solid transparent;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   color: white;
   font-size: 1.125rem;
   cursor: pointer;
@@ -600,6 +630,8 @@ h1 {
 .filtre-proprietaire-btn.active {
   border-color: rgba(245, 197, 66, 0.8);
   background-color: rgba(245, 197, 66, 0.15);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 
@@ -607,6 +639,8 @@ h1 {
   box-sizing: border-box;
   height: 2.4375rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5625rem;
   padding: 0.375rem 0.75rem;
@@ -630,20 +664,35 @@ h1 {
   }
 }
 
-@media (min-width: 701px) and (max-width: 900px) {
-  .recap-teams {
-    gap: 1rem;
-  }
-
-  .recap-teams .recap-centre .bandeau-boss img {
-    width: 32.5rem;
-  }
-}
-
 .equipe-joueur {
+  /* Débord de la namecard et du trait sur le padding du tableau. */
+  --debord: 1rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 1rem;
   padding: 1rem;
+}
+
+/* Titres "Picks" / "Équipe" et "Bans" juste au-dessus de leurs cases. */
+.equipe-joueur h4.titre-zone {
+  margin: 0 0 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  text-align: center;
+  opacity: 0.85;
+}
+
+/* Trait de la couleur du joueur entre la namecard et le reste du tableau,
+   sur toute la largeur. */
+.trait-joueur {
+  height: 0.375rem;
+  margin: 0 calc(-1 * var(--debord)) 0.75rem;
+  background-color: var(--couleur-j1);
+}
+
+.trait-joueur.trait-j2 {
+  background-color: var(--couleur-j2);
 }
 
 .equipe-joueur h4 {
@@ -665,6 +714,8 @@ h1 {
   gap: 0.6875rem;
   min-height: 4.0625rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 0.6875rem;
   padding: 0.3125rem 0.6875rem;
 }
@@ -699,6 +750,8 @@ h1 {
    reste identique aux cases de picks. */
 .slot-pick.slot-ban {
   background-color: rgba(255, 90, 90, 0.12);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   box-shadow: inset 0 0 0 2px rgba(255, 90, 90, 0.6);
 }
 
@@ -827,6 +880,8 @@ h1 {
   font-weight: bold;
   border-radius: 50%;
   background-color: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 /* Constellation en haut de carte */
@@ -881,6 +936,8 @@ h1 {
   height: 4rem;
   border-radius: 0.5rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 2px dashed rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
@@ -908,6 +965,8 @@ h1 {
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   color: #ff5a5a;
   font-weight: bold;
   font-size: 1.25rem;
@@ -921,6 +980,8 @@ h1 {
 
 #btn-confirmer-bonus {
   background-color: rgba(62, 207, 106, 0.2);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 2px solid rgba(62, 207, 106, 0.6);
   color: white;
   border-radius: 0.5rem;
@@ -936,64 +997,13 @@ h1 {
 
 /* ---- Phase : temps ---- */
 
-/* Récap (temps, résultat) : tableau j1 | centre (résultat, boss, rejouer)
-   | tableau j2. */
-.recap-teams {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 47.5rem) minmax(0, 1fr);
-  align-items: start;
-  gap: 1.875rem;
-  margin-bottom: 1.25rem;
-}
-
-/* Cases du récap : hauteur fixe (icônes à peu près comme en draft), la
-   bannière occupe la hauteur et s'aligne sur son extrémité arrondie. */
-.recap-teams .recap-equipe .slot-pick {
-  aspect-ratio: auto;
-  height: 8.25rem;
-  padding: 0 0.75rem;
-  gap: 0.75rem;
-}
-
-.recap-teams .recap-equipe .slot-pick > img {
-  height: 7.625rem;
-}
-
-/* Infos empilées (constellation, niveau, arme) à côté de l'icône. */
-.recap-teams .infos-case,
-.recap-teams .infos-j2 {
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.3125rem;
-}
-
-/* 3 ronds empilés : 3 x 36 + 2 x 5 = 118 px, dans une case de 132 px. */
-.recap-teams .pastille-case {
-  min-width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 1.125rem;
-  font-size: 0.875rem;
-}
-
-.recap-teams .arme-case {
-  width: 2.25rem;
-  height: 2.25rem;
-}
-
-.recap-equipe {
-  box-sizing: border-box;
+/* Fin de match : le tableau du gagnant s'illumine. */
+.equipe-joueur {
   transition: box-shadow 0.2s ease;
 }
 
-.recap-equipe.gagnant {
+.equipe-joueur.gagnant {
   box-shadow: 0 0 0 0.1875rem rgba(62, 207, 106, 0.85), 0 0 1.125rem rgba(62, 207, 106, 0.4);
-}
-
-/* Personnages du récap : cases fines sur la bannière, comme en draft. */
-.recap-persos {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 
 /* Infos du personnage dans sa case : j1 à côté du perso (gauche), j2 en
@@ -1016,6 +1026,8 @@ h1 {
   box-sizing: border-box;
   border-radius: 0.6875rem;
   background-color: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   font-size: 0.6875rem;
   font-weight: bold;
 }
@@ -1056,14 +1068,12 @@ h1 {
   position: relative;
 }
 
-/* Centrée en hauteur dans l'espace libre de la namecard, au-dessus de la
-   ligne photo + pseudo. */
+/* Centrée sur toute la namecard (pas seulement sur l'espace laissé par la
+   photo et le pseudo). */
 .recap-temps {
   position: absolute;
-  top: 0.625rem;
-  bottom: calc(var(--taille-avatar) + 1rem);
-  left: 0.5rem;
-  right: 0.5rem;
+  inset: 0;
+  z-index: 1;
   justify-content: center;
   display: flex;
   flex-direction: column;
@@ -1081,6 +1091,8 @@ h1 {
   padding: 0.3125rem 0.9375rem;
   border-radius: 62.4375rem;
   background-color: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   font-size: 1.3125rem;
   font-weight: bold;
 }
@@ -1090,27 +1102,31 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
   text-align: center;
 }
 
+/* Boss : remplit la largeur libre du centre (sans dépasser la hauteur de
+   l'écran). */
 .recap-centre .bandeau-boss {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  width: fit-content;
+  box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0.75rem;
   border-radius: 0.75rem;
 }
 
-/* Boss x2 (720 px) ; se réduit si la colonne est plus étroite. */
 .recap-centre .bandeau-boss img {
-  width: 45rem;
+  width: 100%;
   height: auto;
   aspect-ratio: 1;
   max-width: 100%;
+  max-height: calc(100vh - 14rem);
   object-fit: contain;
   background: none;
 }
@@ -1127,6 +1143,8 @@ h1 {
   padding: 0.5625rem 0.75rem;
   border-radius: 0.9375rem;
   background-color: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 /* Libellé gardé pour les lecteurs d'écran ; le champ l'affiche en
@@ -1160,6 +1178,8 @@ h1 {
 
 #input-temps {
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
   padding: 0.5rem 0.625rem;
@@ -1170,6 +1190,8 @@ h1 {
 
 #btn-valider-temps {
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
   border-radius: 0.5rem;
@@ -1210,6 +1232,8 @@ h1 {
 
 #btn-rejouer {
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
   border-radius: 0.5rem;
@@ -1219,6 +1243,8 @@ h1 {
 
 #btn-rejouer.active {
   background-color: rgba(62, 207, 106, 0.4);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-color: rgba(62, 207, 106, 0.8);
 }
 
@@ -1265,7 +1291,6 @@ h1 {
 /* Remplit tout le haut du tableau : déborde du padding de .equipe-joueur
    (1rem, 0.5rem sur téléphone). */
 .namecard-tableau {
-  --debord: 1rem;
   box-sizing: border-box;
   /* Contenu x1.5 (photo, pseudo, J1/J2, temps). */
   --taille-avatar: 3.75rem;
@@ -1274,7 +1299,7 @@ h1 {
   gap: 0.75rem;
   width: calc(100% + 2 * var(--debord));
   aspect-ratio: 840 / 400;
-  margin: calc(-1 * var(--debord)) calc(-1 * var(--debord)) 0.75rem;
+  margin: calc(-1 * var(--debord)) calc(-1 * var(--debord)) 0;
   padding: 0.625rem 0.75rem;
   border-radius: 1rem 1rem 0 0;
   background-image: var(--namecard);
@@ -1286,8 +1311,7 @@ h1 {
 }
 
 /* j2 en miroir : photo et pseudo à droite. */
-#equipe-j2 .namecard-tableau,
-#recap-equipe-j2 .namecard-tableau {
+#equipe-j2 .namecard-tableau {
   flex-direction: row-reverse;
 }
 
@@ -1322,11 +1346,12 @@ h1 {
   line-height: 1.5em;
   border-radius: 0.5rem;
   background-color: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   font-size: 1.125rem;
 }
 
-#equipe-j2 .namecard-tableau .tag-role,
-#recap-equipe-j2 .namecard-tableau .tag-role {
+#equipe-j2 .namecard-tableau .tag-role {
   margin-left: 0;
   margin-right: auto;
 }
@@ -1340,6 +1365,8 @@ h1 {
   padding: 0.75rem;
   border-radius: 1rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   box-shadow: inset 0 0 0 2px rgba(255, 90, 90, 0.5);
 }
 
@@ -1378,8 +1405,7 @@ h1 {
   border-radius: 0.375rem 62.4375rem 62.4375rem 0.375rem;
 }
 
-#equipe-j2 .slot-pick,
-#recap-equipe-j2 .slot-pick {
+#equipe-j2 .slot-pick {
   border-radius: 62.4375rem 0.375rem 0.375rem 62.4375rem;
 }
 
@@ -1397,13 +1423,11 @@ h1 {
   filter: grayscale(40%) brightness(0.8);
 }
 
-#equipe-j2 .slot-pick,
-#recap-equipe-j2 .slot-pick {
+#equipe-j2 .slot-pick {
   flex-direction: row-reverse;
 }
 
-#equipe-j2 .slot-pick.avec-banniere::before,
-#recap-equipe-j2 .slot-pick.avec-banniere::before {
+#equipe-j2 .slot-pick.avec-banniere::before {
   transform: scaleX(-1);
 }
 
@@ -1451,6 +1475,8 @@ h1 {
   border: 2px solid rgba(245, 197, 66, 0.8);
   border-radius: 62.4375rem;
   background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   color: white;
   font-family: inherit;
   font-size: 0.9375rem;
@@ -1460,6 +1486,8 @@ h1 {
 
 .btn-partager:hover {
   background-color: rgba(245, 197, 66, 0.18);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 /* ---- Draft sur ordi : tableaux à gauche / droite figés à l'écran ; boss,
@@ -1528,6 +1556,16 @@ h1 {
   #zone-match.mode-draft #colonne-j2 {
     grid-area: j2;
   }
+
+  /* Fin de match : résultat, boss et Rejouer au centre. */
+  #zone-match.mode-draft.mode-recap {
+    grid-template-rows: auto;
+    grid-template-areas: "j1 centre j2";
+  }
+
+  #zone-match.mode-draft #recap-centre {
+    grid-area: centre;
+  }
 }
 
 /* ---- Doré au survol de tout ce qui est cliquable ---- */
@@ -1546,11 +1584,49 @@ h1 {
 #btn-rejouer:hover {
   border-color: rgba(245, 197, 66, 0.8);
   background-color: rgba(245, 197, 66, 0.18);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .character-card.selectionnable:hover .character-visuel,
 .slot-bonus.rempli:hover {
   box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.9);
+}
+
+/* Draft : personnage sélectionné, en attente de "Confirmer". */
+.character-card.selectionnee .character-visuel,
+.character-card.selectionnee:hover .character-visuel {
+  box-shadow: 0 0 0 0.1875rem #f5c542, 0 0 0.875rem rgba(245, 197, 66, 0.7);
+}
+
+/* Bouton "Confirmer" au-dessus du message de l'action à réaliser. */
+.btn-confirmer-action {
+  pointer-events: auto;
+  padding: 0.625rem 1.5rem;
+  border: 2px solid #f5c542;
+  border-radius: 0.625rem;
+  background-color: rgba(245, 197, 66, 0.9);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+  color: #1e1e1e;
+  font-family: inherit;
+  font-size: 1.0625rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
+}
+
+.btn-confirmer-action:hover:not(:disabled) {
+  background-color: #ffd95e;
+}
+
+.btn-confirmer-action:disabled {
+  border-color: rgba(120, 120, 120, 0.95);
+  background-color: rgba(80, 80, 80, 0.95);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: default;
 }
 
 .lien-accueil:hover {
@@ -1586,10 +1662,16 @@ h1 {
   }
 
   /* Namecard réduite en haut de chaque tableau. */
-  .namecard-tableau {
+  .equipe-joueur {
     --debord: 0.5rem;
-    --taille-avatar: 1.875rem;
+  }
+
+  .trait-joueur {
     margin-bottom: 0.5rem;
+  }
+
+  .namecard-tableau {
+    --taille-avatar: 1.875rem;
     padding: 0.25rem 0.375rem;
     gap: 0.375rem;
     font-size: 1.125rem;
@@ -1615,62 +1697,9 @@ h1 {
     grid-area: pool;
   }
 
-  /* Récap : résultat + boss + rejouer en haut, les 2 tableaux dessous. */
-  /* Récap : résultat, boss, rejouer, puis j1, puis j2 en dessous. */
-  .recap-teams {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "centre"
-      "j1"
-      "j2";
-    gap: 0.75rem;
-  }
-
-  .recap-teams .recap-equipe .slot-pick {
-    height: 7.75rem;
-    padding: 0 0.5rem;
-    gap: 0.5rem;
-  }
-
-  .recap-teams .recap-equipe .slot-pick > img {
-    height: 7.125rem;
-  }
-
-  .recap-teams .pastille-case {
-    min-width: 2.125rem;
-    height: 2.125rem;
-    border-radius: 1.0625rem;
-    font-size: 0.8125rem;
-  }
-
-  .recap-teams .arme-case {
-    width: 2.125rem;
-    height: 2.125rem;
-  }
-
-  .recap-teams .infos-case {
-    gap: 0.3125rem;
-  }
-
   .btn-partager {
     font-size: 0.8125rem;
     padding: 0.3125rem 0.75rem;
-  }
-
-  .recap-centre {
-    grid-area: centre;
-  }
-
-  #recap-equipe-j1 {
-    grid-area: j1;
-  }
-
-  #recap-equipe-j2 {
-    grid-area: j2;
-  }
-
-  .recap-persos {
-    gap: 0.3125rem;
   }
 
   .pastille-case {
@@ -1685,11 +1714,6 @@ h1 {
     height: 1rem;
   }
 
-  .recap-temps {
-    left: 0.1875rem;
-    right: 0.1875rem;
-  }
-
   .saisie-temps {
     padding: 0.3125rem 0.375rem;
   }
@@ -1697,10 +1721,6 @@ h1 {
   .texte-temps {
     font-size: 1rem;
     padding: 0.1875rem 0.5625rem;
-  }
-
-  .recap-teams .recap-centre .bandeau-boss img {
-    width: 25rem;
   }
 
   .ligne-saisie-temps {
@@ -1891,6 +1911,19 @@ h1 {
   #zone-match.mode-draft #grille-pool-draft {
     grid-area: pool;
   }
+
+  /* Fin de match : résultat et boss, puis les 2 tableaux. */
+  #zone-match.mode-draft.mode-recap {
+    grid-template-areas:
+      "centre centre"
+      "j1 j2"
+      "bans bans";
+  }
+
+  #zone-match.mode-draft #recap-centre {
+    grid-area: centre;
+    margin-bottom: 0.75rem;
+  }
 }
 
 /* ---- Pick du Voyageur / Manekin : choix de l'élément ---- */
@@ -1903,6 +1936,8 @@ h1 {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .choix-element-contenu {
@@ -1938,6 +1973,8 @@ h1 {
 .choix-element-liste .filtre-icone-btn:hover {
   border-color: rgba(245, 197, 66, 0.8);
   background-color: rgba(245, 197, 66, 0.18);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .choix-element-annuler {
@@ -1972,5 +2009,13 @@ h1 {
   padding: 0.125rem;
   border-radius: 50%;
   background-color: rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   object-fit: contain;
+}
+
+/* J2 (tableau en miroir) : infos à droite, élément à gauche. */
+#equipe-j2 .slot-pick > img.element-case.element-case {
+  right: auto;
+  left: 0.125rem;
 }

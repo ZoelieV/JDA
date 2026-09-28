@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem10">
+<link rel="stylesheet" href="match.css?v=rem11">
 <link rel="stylesheet" href="../commun/entete.css?v=rem4">
 <link rel="stylesheet" href="../commun/tri.css?v=5">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
@@ -37,6 +37,8 @@
     <div id="bulles-bas" class="bulles-bas">
       <div id="message-choix-box" class="bandeau-info"></div>
       <div id="message-equilibrage" class="bandeau-info"></div>
+      <!-- Draft : valide le personnage sélectionné dans la grille. -->
+      <button id="btn-confirmer-action" type="button" class="btn-confirmer-action cache" disabled>Confirmer</button>
       <div id="tour-actuel" class="bandeau-info tour-actuel"></div>
       <div id="etat-temps" class="bandeau-info"></div>
       <div id="etat-rejouer" class="bandeau-info cache"></div>
@@ -94,15 +96,22 @@
       <div id="grille-bans-bonus" class="grille-pool"></div>
     </section>
 
-    <!-- Phase 3 : draft (boss + bans/picks) -->
+    <!-- Phases 3 à 5 : draft, saisie du temps, résultat. Mêmes tableaux
+         des joueurs à gauche / droite (namecard, picks, bans, puis bans
+         d'équilibrage) ; au centre, la grille des persos pendant la draft,
+         puis le résultat, le boss et Rejouer. -->
     <section id="phase-draft" class="phase cache">
       <div class="draft-layout">
-        <!-- Colonne j1 : tableau du joueur (namecard en haut, picks, bans),
-             puis ses bans d'équilibrage éventuels en dessous. -->
         <div class="colonne-joueur" id="colonne-j1">
           <div class="equipe-joueur" id="equipe-j1">
+            <!-- Namecard (photo, pseudo, temps en fin de match) + trait de
+                 la couleur du joueur. -->
+            <div class="entete-tableau" id="entete-tableau-j1"></div>
+            <h4 class="titre-zone" id="titre-picks-j1">Picks</h4>
             <div class="slots-pick" id="slots-pick-j1"></div>
+            <h4 class="titre-zone">Bans</h4>
             <div class="slots-ban" id="rangee-bans-j1"></div>
+            <div class="recap-temps cache" id="recap-temps-j1"></div>
           </div>
           <div class="bans-equilibrage cache" id="bans-eq-j1">
             <h4>Bans d'équilibrage</h4>
@@ -112,12 +121,22 @@
 
         <div class="grille-pool" id="grille-pool-draft"></div>
 
-        <!-- Colonne j2 : tableau du joueur (namecard en haut, picks, bans),
-             puis ses bans d'équilibrage éventuels en dessous. -->
+        <div class="recap-centre cache" id="recap-centre">
+          <div id="resultat-final" class="resultat-final cache"></div>
+          <div id="recap-boss" class="bandeau-boss"></div>
+          <button id="btn-rejouer" type="button" class="cache">Rejouer</button>
+        </div>
+
         <div class="colonne-joueur" id="colonne-j2">
           <div class="equipe-joueur" id="equipe-j2">
+            <!-- Namecard (photo, pseudo, temps en fin de match) + trait de
+                 la couleur du joueur. -->
+            <div class="entete-tableau" id="entete-tableau-j2"></div>
+            <h4 class="titre-zone" id="titre-picks-j2">Picks</h4>
             <div class="slots-pick" id="slots-pick-j2"></div>
+            <h4 class="titre-zone">Bans</h4>
             <div class="slots-ban" id="rangee-bans-j2"></div>
+            <div class="recap-temps cache" id="recap-temps-j2"></div>
           </div>
           <div class="bans-equilibrage cache" id="bans-eq-j2">
             <h4>Bans d'équilibrage</h4>
@@ -125,34 +144,9 @@
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- Phases 4 et 5 : récap des équipes. Tableau de chaque joueur
-         (namecard, temps, personnages avec leurs infos) à gauche / droite ;
-         au centre : résultat (phase 5), boss, bouton Rejouer (phase 5).
-         Le champ de saisie du temps est déplacé dans le tableau du joueur
-         connecté (cf. rendreRecap). -->
-    <section id="phase-recap" class="phase cache">
-      <div class="recap-teams">
-        <div class="equipe-joueur recap-equipe" id="recap-equipe-j1">
-          <div id="recap-entete-j1"></div>
-          <div class="recap-temps" id="recap-temps-j1"></div>
-          <div class="recap-persos" id="recap-persos-j1"></div>
-        </div>
-
-        <div class="recap-centre">
-          <div id="resultat-final" class="resultat-final cache"></div>
-          <div id="recap-boss" class="bandeau-boss"></div>
-          <button id="btn-rejouer" type="button" class="cache">Rejouer</button>
-        </div>
-
-        <div class="equipe-joueur recap-equipe" id="recap-equipe-j2">
-          <div id="recap-entete-j2"></div>
-          <div class="recap-temps" id="recap-temps-j2"></div>
-          <div class="recap-persos" id="recap-persos-j2"></div>
-        </div>
-      </div>
-
+      <!-- Saisie du temps : déplacée dans la namecard du joueur connecté
+           (cf. rendreTableauJoueur). -->
       <div id="saisie-temps" class="saisie-temps cache">
         <label for="input-temps">Ton temps</label>
         <div class="ligne-saisie-temps">
@@ -167,6 +161,6 @@
   <script src="/commun/variantes.js?v=2"></script>
   <script src="/commun/cartes.js?v=1"></script>
   <script src="/commun/tri.js?v=7"></script>
-  <script src="match.js?v=15"></script>
+  <script src="match.js?v=16"></script>
 </body>
 </html>
