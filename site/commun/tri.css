@@ -5,14 +5,16 @@
   grid-column-start: 1;
 }
 
-/* Logos à la place du texte des tris (élément, constellation, niveau). */
-.tri-btn {
+/* Logos à la place du texte des tris (points, élément, constellation, niveau). */
+.tri-btn,
+.tri-compte-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.tri-btn[hidden] {
+.tri-btn[hidden],
+.tri-compte-btn[hidden] {
   display: none;
 }
 

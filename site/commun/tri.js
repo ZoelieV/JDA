@@ -31,6 +31,7 @@ const ICONES_TYPES_ARMES_TRI = {
 const LOGO_TRI_ELEMENT = `${RACINE_LOGOS}omni_element.webp`;
 const LOGO_TRI_CONSTELLATION = `${RACINE_LOGOS}stella_fortuna_5.webp`;
 const LOGO_TRI_NIVEAU = `${RACINE_LOGOS}stella.webp`;
+const LOGO_TRI_POINTS = `${RACINE_LOGOS}scale.webp`;
 
 // Vœux : Acquaint Fate = 4★ + personnages standards (dont le Voyageur),
 // Intertwined Fate = les autres 5★. Aloy et Manekin : ni l'un ni l'autre.
@@ -93,16 +94,18 @@ function majBoutonTri(btn, etat, vue = "characters") {
   const cle = btn.dataset.tri;
   const sens = getSensTri(etat, cle);
   const libelles = {
-    points: "Points",
+    points: `<img class="tri-logo" src="${LOGO_TRI_POINTS}" alt="Points">`,
     constellation: vue === "weapons" ? "Raffin." : `<img class="tri-logo" src="${LOGO_TRI_CONSTELLATION}" alt="Constellation">`,
     niveau: `<img class="tri-logo" src="${LOGO_TRI_NIVEAU}" alt="Niveau">`,
-    rarete: "Rareté",
+    rarete: "★",
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;
   const titres = {
     constellation: vue === "weapons" ? "Trier par raffinement" : "Trier par constellation",
+    points: "Trier par points",
     niveau: "Trier par niveau",
+    rarete: "Trier par rareté",
     element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément"
   };
   btn.title = titres[cle] || "";
