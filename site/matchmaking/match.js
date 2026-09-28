@@ -614,6 +614,7 @@ function rendreChoixBox() {
     document.getElementById(`statut-pret-${role}`).textContent = statut;
 
     const btnPret = document.getElementById(`btn-pret-${role}`);
+    placerBoutonPret(btnPret);
     if (estMoi) {
       btnPret.classList.remove("cache");
       if (enAnalyse) {
@@ -635,6 +636,18 @@ function rendreChoixBox() {
       rendreApercuBox(`apercu-box-${role}`, role, draft[`box_${role}`]);
     }
   });
+}
+
+// Téléphone : bouton "prêt" figé en bas de l'écran, au-dessus de la
+// consigne (dans la pile de bulles) ; sur ordi, dans sa colonne.
+function placerBoutonPret(bouton) {
+  const bulles = document.getElementById("bulles-bas");
+  const ligne = document.querySelector(`#colonne-box-${bouton.id.slice(-2)} .ligne-box`);
+  if (MEDIA_TELEPHONE.matches) {
+    if (bouton.parentElement !== bulles) bulles.prepend(bouton);
+  } else if (bouton.parentElement !== ligne) {
+    ligne.appendChild(bouton);
+  }
 }
 
 // ---- Phase 2 : bans bonus d'équilibrage ----
@@ -1468,6 +1481,8 @@ function rendreTermine() {
 
 // Bulles figées en bas de l'écran (#bulles-bas) -> phases où elles s'affichent.
 const BULLES_PAR_PHASE = {
+  "btn-pret-j1": ["choix_box", "analyse"],
+  "btn-pret-j2": ["choix_box", "analyse"],
   "message-choix-box": ["choix_box", "analyse"],
   "message-equilibrage": ["bans_bonus"],
   "btn-confirmer-action": ["draft"],
@@ -1667,6 +1682,9 @@ async function demarrer() {
 
     initialiserFiltresTri();
     initialiserGrillesPersos();
+
+    // Passage ordi <-> téléphone : bouton "prêt" replacé.
+    MEDIA_TELEPHONE.addEventListener("change", () => { if (draft) rendrePhase(); });
 
     await tick();
 

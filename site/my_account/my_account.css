@@ -360,10 +360,9 @@ h2 {
   align-items: center;
   gap: 0.375rem;
   text-align: center;
-  /* Même fond semi-transparent flouté que la barre des box / tris. */
+  /* Même fond semi-transparent que la barre des box / tris (sans flou :
+     trop coûteux sur ~130 cartes). */
   background-color: rgba(20, 20, 20, 0.45);
-  -webkit-backdrop-filter: blur(0.5rem);
-  backdrop-filter: blur(0.5rem);
   border-radius: 0.625rem;
 }
 
@@ -470,7 +469,6 @@ h2 {
   padding: 1px 0.375rem;
   border-radius: 0.375rem;
   background-color: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(2px);
 }
 
 .controle-constellation {
