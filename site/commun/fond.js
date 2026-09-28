@@ -22,61 +22,8 @@
   const DUREE_CACHE_MS = 10 * 60 * 1000;
   const sansRequete = document.currentScript?.hasAttribute("data-sans-requete");
 
-  // Calque fixe de la taille de l'écran : reste figé et centré au défilement,
-  // y compris sur téléphone (background-attachment: fixed y est ignoré).
-  const style = document.createElement("style");
-  style.textContent = `
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      /* Plus grande hauteur d'écran (barres du navigateur masquées) : le
-         fond ne bouge ni ne se redimensionne quand elles apparaissent. */
-      height: 100vh;
-      height: 100lvh;
-      z-index: -1;
-      background-image: var(--fond-ecran, none);
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: cover;
-    }
-
-    /* Bouton du compte = la deuxième bannière (format 1000x137), sans
-       cadre ni dégradé ajouté (les images sont déjà assombries à gauche). */
-    .avec-banniere2,
-    .avec-banniere2:hover,
-    .avec-banniere2[aria-expanded="true"],
-    .compte-btn.avec-banniere2,
-    .accueil-compte.avec-banniere2 {
-      box-sizing: border-box;
-      width: 26.25rem;
-      max-width: calc(100vw - 6.875rem);
-      aspect-ratio: 1000 / 137;
-      /* Sur téléphone, la bannière est recadrée plutôt que d'écraser la photo. */
-      min-height: 3.125rem;
-      padding: 0.3125rem 0.875rem 0.3125rem 2.8125rem;
-      border: none;
-      border-radius: 0.5rem;
-      justify-content: flex-start;
-      background-color: transparent;
-      background-image: var(--banniere2);
-      background-size: cover;
-      background-position: center;
-      text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
-      box-shadow: none;
-      transition: transform 0.15s ease, filter 0.15s ease;
-    }
-
-    /* Survol : comme les cartes de Tous les comptes. */
-    .avec-banniere2:hover,
-    .avec-banniere2[aria-expanded="true"] {
-      transform: translateY(-2px);
-      filter: brightness(1.12);
-    }
-  `;
-  document.head.appendChild(style);
+  // Styles du fond (calque fixe body::before) et du bouton du compte
+  // (.avec-banniere2) : commun/entete.css.
 
   function lire(cle) {
     try { return localStorage.getItem(cle); } catch { return null; }

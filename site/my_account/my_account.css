@@ -13,26 +13,7 @@ body {
   margin: 1.25rem;
 }
 
-/* Fond d'écran sur un calque fixe de la taille de l'écran : reste figé et
-   centré au défilement, sur ordi comme sur téléphone (background-attachment:
-   fixed est ignoré par les navigateurs mobiles). L'image est posée par
-   appliquerFond() via --fond-ecran. */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  /* Plus grande hauteur d'écran (barres du navigateur masquées) : le fond
-     ne bouge ni ne se redimensionne quand elles apparaissent. */
-  height: 100vh;
-  height: 100lvh;
-  z-index: -1;
-  background-image: var(--fond-ecran, none);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-}
+/* Fond d'écran (calque fixe body::before) : commun/entete.css. */
 
 a {
   color: white;

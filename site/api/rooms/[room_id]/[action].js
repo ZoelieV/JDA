@@ -319,8 +319,11 @@ function determinerVainqueur(tempsJ1, tempsJ2) {
   return tempsJ1.secondes < tempsJ2.secondes ? "j1" : "j2";
 }
 
+// Codes "colonne inexistante" (Postgres / PostgREST).
+const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
+
 async function archiverMatch(draft) {
-  const { error } = await supabase.from("match_history").insert({
+  const match = {
     boss_id: draft.boss_id,
     player1_discord_id: draft.discord_j1,
     player2_discord_id: draft.discord_j2,
@@ -332,8 +335,19 @@ async function archiverMatch(draft) {
     temps_j1_secondes: draft.temps_j1.secondes,
     temps_j2_affiche: draft.temps_j2.affiche,
     temps_j2_secondes: draft.temps_j2.secondes,
-    vainqueur: draft.vainqueur
-  });
+    vainqueur: draft.vainqueur,
+    // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
+    // Voyageur / Manekin) : affichées dans l'historique des matchs.
+    actions: draft.actions
+  };
+
+  let { error } = await supabase.from("match_history").insert(match);
+
+  // Colonne "actions" pas encore créée dans la table : archivage sans elle.
+  if (error && COLONNES_INEXISTANTES.has(error.code)) {
+    const { actions, ...sansActions } = match;
+    ({ error } = await supabase.from("match_history").insert(sansActions));
+  }
 
   if (error) {
     console.error("Erreur archivage match_history :", error);

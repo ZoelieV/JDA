@@ -1,0 +1,380 @@
+/* ---- Historique des matchs ---- */
+
+:root {
+  --couleur-j1: #5b9bd5;
+  --couleur-j2: #e0645a;
+  --couleur-victoire: #3ecf6a;
+  --couleur-ban: #ff5a5a;
+  --taille-perso: 3rem;
+}
+
+.cache {
+  display: none !important;
+}
+
+/* ---- Barre : recherche, tris, mes matchs ---- */
+
+.barre-historique {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem 1rem;
+  max-width: 90rem;
+  margin: 0 auto 1.25rem;
+}
+
+.recherche-historique {
+  box-sizing: border-box;
+  width: 20rem;
+  max-width: 100%;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 1.0625rem;
+}
+
+.recherche-historique:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.tris {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.tris-label {
+  opacity: 0.8;
+}
+
+.bouton-historique {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 1.0625rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bouton-historique:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.bouton-historique.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+.bouton-historique .fleche {
+  font-size: 0.75em;
+}
+
+.etat-historique {
+  text-align: center;
+  color: var(--texte-doux);
+}
+
+/* ---- Liste : une ligne par match (j1 | boss | j2) ---- */
+
+.liste-matchs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 90rem;
+  margin: 0 auto;
+}
+
+.match {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 10rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+  padding: 0.875rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.875rem;
+  background-color: rgba(20, 20, 20, 0.55);
+}
+
+.match-joueur {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.match-joueur.gagnant {
+  box-shadow: 0 0 0 0.125rem var(--couleur-victoire), 0 0 0.875rem rgba(62, 207, 106, 0.35);
+}
+
+/* Bannière du joueur (deuxième bannière, 1000x137) : photo, pseudo,
+   résultat et temps ; j2 en miroir. */
+.match-banniere {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  aspect-ratio: 1000 / 137;
+  min-height: 3rem;
+  box-sizing: border-box;
+  padding: 0.3125rem 0.875rem 0.3125rem 0.5rem;
+  border-radius: 0.5rem;
+  border-bottom: 0.25rem solid var(--couleur-j1);
+  font-weight: bold;
+  text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
+}
+
+.match-banniere::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: var(--banniere2);
+  background-size: cover;
+  background-position: center;
+}
+
+.match-j2 .match-banniere {
+  flex-direction: row-reverse;
+  padding: 0.3125rem 0.5rem 0.3125rem 0.875rem;
+  border-bottom-color: var(--couleur-j2);
+}
+
+.match-j2 .match-banniere::before {
+  transform: scaleX(-1);
+}
+
+.match-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.match-nom {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-temps {
+  margin-left: auto;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 62.4375rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-j2 .match-temps {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.gagnant .match-temps {
+  color: var(--couleur-victoire);
+}
+
+.etiquette-resultat {
+  flex-shrink: 0;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  font-size: 0.8125rem;
+}
+
+.etiquette-resultat.victoire {
+  color: var(--couleur-victoire);
+}
+
+.etiquette-resultat.egalite {
+  color: var(--accent);
+}
+
+/* Équipe / bans / équilibrage : libellé puis icônes. */
+.match-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.match-j2 .match-ligne {
+  flex-direction: row-reverse;
+}
+
+.match-label {
+  flex: 0 0 5.5rem;
+  font-size: 0.8125rem;
+  color: var(--texte-doux);
+}
+
+.match-j2 .match-label {
+  text-align: right;
+}
+
+.match-persos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.match-j2 .match-persos {
+  flex-direction: row-reverse;
+}
+
+.perso-mini {
+  position: relative;
+  width: var(--taille-perso);
+  height: var(--taille-perso);
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background-size: cover;
+  background-position: center;
+}
+
+.perso-mini > img:first-child {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.perso-mini.banni {
+  opacity: 0.8;
+  box-shadow: inset 0 0 0 2px var(--couleur-ban);
+}
+
+.perso-mini.banni > img:first-child {
+  filter: grayscale(60%);
+}
+
+.element-mini {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  width: 1rem;
+  height: 1rem;
+  padding: 0.0625rem;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  object-fit: contain;
+}
+
+/* Centre : boss, date. */
+.match-centre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.match-boss {
+  width: 7rem;
+  height: 7rem;
+  object-fit: contain;
+}
+
+.match-boss-nom {
+  font-weight: bold;
+}
+
+.match-date,
+.match-note {
+  font-size: 0.8125rem;
+  color: var(--texte-doux);
+}
+
+.match-note {
+  font-style: italic;
+}
+
+/* ---- Téléphone : boss et date en haut, les 2 joueurs côte à côte ---- */
+
+@media (max-width: 700px) {
+  :root {
+    --taille-perso: 2.125rem;
+  }
+
+  .match {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "centre centre"
+      "j1 j2";
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .match-centre {
+    grid-area: centre;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 0.625rem;
+  }
+
+  .match-boss {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .match-j1 {
+    grid-area: j1;
+  }
+
+  .match-j2 {
+    grid-area: j2;
+  }
+
+  .match-joueur {
+    padding: 0.25rem;
+  }
+
+  .match-banniere {
+    aspect-ratio: auto;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.375rem;
+    font-size: 0.8125rem;
+  }
+
+  .match-avatar {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .match-temps {
+    font-size: 0.875rem;
+  }
+
+  .match-ligne,
+  .match-j2 .match-ligne {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+
+  .match-label {
+    flex: none;
+  }
+}

@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jugement des Archons</title>
   <link rel="stylesheet" href="commun/theme.css?v=rem4">
-  <link rel="stylesheet" href="accueil.css?v=rem4">
-  <link rel="stylesheet" href="commun/entete.css?v=rem4">
-<script src="/commun/fond.js?v=4"></script>
+  <link rel="stylesheet" href="accueil.css?v=rem5">
+  <link rel="stylesheet" href="commun/entete.css?v=rem5">
+<script src="/commun/fond.js?v=5"></script>
+<script src="/commun/compte.js?v=1" defer></script>
 </head>
 <body>
-  <!-- Hors du conteneur centré : profil calé tout à droite de l'écran.
-       Rempli par accueil.js : compte Discord (lien vers Mon compte) ou
-       bouton de connexion. -->
+  <!-- Hors du conteneur centré : bouton du compte calé tout à droite de
+       l'écran (cf. commun/compte.js). -->
   <header class="accueil-barre">
-    <div id="accueil-compte"></div>
+    <div id="zone-compte" class="zone-compte"></div>
   </header>
 
   <div class="accueil">
@@ -72,9 +72,16 @@
           <p>Premiers pas : de la création du compte au premier match.</p>
         </div>
       </a>
+
+      <a class="carte-section carte-historique" href="historique/historique.html">
+        <img src="DB/images/namecards/Namecard_Background_Neuvillette_Surge.webp" alt="" loading="lazy">
+        <div class="carte-section-texte">
+          <h2>Historique des matchs</h2>
+          <p>Tous les duels joués : équipes, bans et temps.</p>
+        </div>
+      </a>
     </nav>
   </div>
 
-  <script src="accueil.js?v=2"></script>
 </body>
 </html>

@@ -5,53 +5,6 @@
   margin: 0 auto;
 }
 
-/* Barre du haut : compte Discord calé à droite de l'écran. */
-.accueil-barre {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.accueil-compte {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.3125rem 0.875rem 0.3125rem 0.3125rem;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 62.4375rem;
-  color: var(--texte);
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.accueil-compte:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
-.accueil-compte img {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.accueil-connexion {
-  padding: 0.5rem 1rem;
-  background-color: #5865F2;
-  border: none;
-  border-radius: 62.4375rem;
-  color: white;
-  font-size: 0.9375rem;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.accueil-connexion:hover {
-  background-color: #4752c4;
-}
-
 /* Bandeau d'accueil */
 .accueil-hero {
   margin: 2.25rem 0 1.75rem;
@@ -116,6 +69,30 @@
   margin: 0;
   color: var(--texte-doux);
   font-size: 0.9375rem;
+}
+
+/* Ordi : 3 cartes par ligne, Historique des matchs seul au milieu de la
+   dernière ligne. Entre-deux : 2 par ligne, Historique centré. */
+@media (min-width: 1001px) {
+  .accueil-sections {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .carte-historique {
+    grid-column: 2;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1000px) {
+  .accueil-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .carte-historique {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(50% - 0.5625rem);
+  }
 }
 
 /* Section mise en avant : Créer un match. */

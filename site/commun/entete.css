@@ -75,3 +75,132 @@ html {
     font-size: 1.875rem;
   }
 }
+
+/* ---- Fond d'écran choisi dans Mon compte (cf. commun/fond.js) ----
+   Calque fixe de la taille de l'écran : reste figé et centré au défilement,
+   y compris sur téléphone (background-attachment: fixed y est ignoré). */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* Plus grande hauteur d'écran (barres du navigateur masquées) : le fond
+     ne bouge ni ne se redimensionne quand elles apparaissent. */
+  height: 100vh;
+  height: 100lvh;
+  z-index: -1;
+  background-image: var(--fond-ecran, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* ---- Bouton du compte (cf. commun/compte.js) : photo + pseudo, lien vers
+   Mon compte ; en haut à droite des pages. ---- */
+
+.zone-compte {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.zone-compte.flottante {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 100;
+}
+
+.compte-lien {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.3125rem 0.875rem 0.3125rem 0.3125rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 62.4375rem;
+  color: white;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.compte-lien:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.compte-lien img {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.compte-connexion {
+  padding: 0.5rem 1rem;
+  background-color: #5865F2;
+  border-radius: 62.4375rem;
+  color: white;
+  font-family: Arial, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.compte-connexion:hover {
+  background-color: #4752c4;
+}
+
+/* Bouton du compte = la deuxième bannière (format 1000x137), inversée
+   gauche / droite : photo et pseudo calés à droite, sur la partie sombre de
+   l'image. Sans cadre ni dégradé ajouté. */
+.avec-banniere2,
+.avec-banniere2:hover,
+.avec-banniere2[aria-expanded="true"] {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: 26.25rem;
+  max-width: calc(100vw - 6.875rem);
+  aspect-ratio: 1000 / 137;
+  /* Sur téléphone, la bannière est recadrée plutôt que d'écraser la photo. */
+  min-height: 3.125rem;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  padding: 0.3125rem 2.8125rem 0.3125rem 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  background-image: none;
+  text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
+  box-shadow: none;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.avec-banniere2::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: var(--banniere2);
+  background-size: cover;
+  background-position: center;
+  transform: scaleX(-1);
+}
+
+/* Survol : comme les cartes de Tous les comptes. */
+.avec-banniere2:hover,
+.avec-banniere2[aria-expanded="true"] {
+  transform: translateY(-2px);
+  filter: brightness(1.12);
+}
+
+@media (max-width: 700px) {
+  /* Téléphone : bouton du compte au-dessus du reste, calé à droite. */
+  .zone-compte.flottante {
+    position: static;
+    margin-bottom: 0.5rem;
+  }
+}

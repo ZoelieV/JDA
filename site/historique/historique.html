@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historique des matchs</title>
+<link rel="stylesheet" href="../commun/theme.css?v=rem4">
+<link rel="stylesheet" href="historique.css?v=1">
+<link rel="stylesheet" href="../commun/entete.css?v=rem5">
+<link rel="stylesheet" href="../commun/tri.css?v=6">
+<link rel="stylesheet" href="../commun/cartes.css?v=1">
+<script src="/commun/fond.js?v=5"></script>
+<script src="/commun/compte.js?v=1" defer></script>
+</head>
+<body>
+<a href="../index.html" class="lien-accueil">Accueil</a>
+<h1 class="titre-page">Historique des matchs</h1>
+
+  <!-- Recherche, tris (sens inversé par un 2e clic) et filtre "mes matchs". -->
+  <div class="barre-historique">
+    <input type="text" id="recherche" class="recherche-historique" placeholder="Rechercher un joueur, un boss, un perso…">
+    <div class="tris">
+      <span class="tris-label">Trier :</span>
+      <button type="button" class="bouton-historique tri-historique" data-tri="date">Date <span class="fleche"></span></button>
+      <button type="button" class="bouton-historique tri-historique" data-tri="temps" title="Meilleur temps du match">Temps <span class="fleche"></span></button>
+      <button type="button" class="bouton-historique tri-historique" data-tri="ecart" title="Écart de temps entre les 2 joueurs">Écart <span class="fleche"></span></button>
+    </div>
+    <button type="button" id="mes-matchs" class="bouton-historique cache" title="N'afficher que mes matchs">Mes matchs</button>
+    <button type="button" id="clear-historique" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
+  </div>
+
+  <p id="etat-historique" class="etat-historique">Chargement…</p>
+  <div id="liste-matchs" class="liste-matchs"></div>
+
+  <script src="/commun/variantes.js?v=2"></script>
+  <script src="/commun/cartes.js?v=1"></script>
+  <script src="/commun/tri.js?v=8"></script>
+  <script src="historique.js?v=1"></script>
+</body>
+</html>

@@ -1,7 +1,18 @@
-// Accueil : compte Discord en haut à droite (lien vers Mon compte), ou
-// bouton de connexion si l'utilisateur n'est pas connecté.
-async function afficherCompte() {
-  const zone = document.getElementById("accueil-compte");
+// Bouton du compte (deuxième bannière, photo, pseudo) en haut à droite des
+// pages, lien vers Mon compte ; bouton de connexion Discord si l'utilisateur
+// n'est pas connecté. Pas sur Mon compte (menu du compte propre) ni dans les
+// rooms de match.
+//
+// Placé dans #zone-compte si la page en a un (accueil), sinon dans une zone
+// ajoutée en haut à droite de la page. À inclure avec defer, après fond.js.
+(async function () {
+  let zone = document.getElementById("zone-compte");
+  if (!zone) {
+    zone = document.createElement("div");
+    zone.id = "zone-compte";
+    zone.className = "zone-compte flottante";
+    document.body.prepend(zone);
+  }
 
   try {
     const reponse = await fetch("/api/auth/me", { credentials: "include" });
@@ -11,8 +22,8 @@ async function afficherCompte() {
       const nom = user.global_name || user.username || "Mon compte";
 
       const lien = document.createElement("a");
-      lien.className = "accueil-compte";
-      lien.href = "my_account/my_account.html";
+      lien.className = "compte-lien";
+      lien.href = "/my_account/my_account.html";
       lien.title = "Mon compte";
       if (user.avatar) {
         const avatar = document.createElement("img");
@@ -20,7 +31,9 @@ async function afficherCompte() {
         avatar.alt = "";
         lien.appendChild(avatar);
       }
-      lien.appendChild(document.createTextNode(nom));
+      const texte = document.createElement("span");
+      texte.textContent = nom;
+      lien.appendChild(texte);
       zone.appendChild(lien);
 
       // Deuxième bannière en fond du bouton (cf. commun/fond.js).
@@ -35,10 +48,8 @@ async function afficherCompte() {
   }
 
   const connexion = document.createElement("a");
-  connexion.className = "accueil-connexion";
+  connexion.className = "compte-connexion";
   connexion.href = "/api/auth/discord/login";
   connexion.textContent = "Connexion Discord";
   zone.appendChild(connexion);
-}
-
-afficherCompte();
+})();
