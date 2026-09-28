@@ -1142,7 +1142,8 @@ function initialiserFiltresTri() {
   const btnClear = document.createElement("button");
   btnClear.type = "button";
   btnClear.className = "btn-clear-filtres";
-  btnClear.textContent = "✕ Filtres";
+  btnClear.title = "Réinitialiser les filtres";
+  btnClear.innerHTML = '<img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres">';
   btnClear.addEventListener("click", () => {
     filtreElement.clear();
     filtreEtoile.clear();
