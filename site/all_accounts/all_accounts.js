@@ -363,9 +363,15 @@ function creerCarteProfil({ item, valeur, config }) {
   let basDroiteHtml = "";
 
   if (vueActive === "characters") {
+    // Voyageur (un par élément) : niveau centré en bas, élément en bas à
+    // gauche.
+    const avecElement = item.groupe && ICONES_ELEMENTS_TRI[item.element];
     const niveau = getNiveauPersonnage(cleNiveau(item));
     if (niveau) {
-      basGaucheHtml = `<span class="character-niveau">${niveau}</span>`;
+      basGaucheHtml = `<span class="character-niveau${avecElement ? " niveau-centre" : ""}">${niveau}</span>`;
+    }
+    if (avecElement) {
+      basGaucheHtml += `<img class="character-element" src="${ICONES_ELEMENTS_TRI[item.element]}" alt="${item.element}" title="${NOMS_ELEMENTS[item.element] || item.element}">`;
     }
 
     const refinement = getRefinementArmeSignature(item.groupe || item.id);

@@ -508,3 +508,31 @@ h1, h2 {
     right: -0.25rem;
   }
 }
+
+/* ---- Voyageur : niveau centré en bas, élément en bas à gauche ---- */
+
+.character-niveau.niveau-centre {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.character-visuel img.character-element {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  box-sizing: border-box;
+  width: 2.125rem;
+  height: 2.125rem;
+  padding: 0.25rem;
+  object-fit: contain;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+@media (max-width: 700px) {
+  .character-visuel img.character-element {
+    width: 1.375rem;
+    height: 1.375rem;
+    padding: 0.125rem;
+  }
+}

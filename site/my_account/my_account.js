@@ -488,8 +488,14 @@ ${boutonDupliquer}
   const badgeConstellation = possede
     ? `<span class="badge-carte badge-constellation">${affichageNiveau}</span>`
     : "";
+  // Voyageur (un par élément) : niveau centré en bas, élément en bas à
+  // gauche.
+  const avecElement = vueActive === "characters" && item.groupe && ICONES_ELEMENTS_TRI[item.element];
   const badgeNiveau = possede && vueActive === "characters" && niveau
-    ? `<span class="badge-carte badge-niveau">${niveau}</span>`
+    ? `<span class="badge-carte ${avecElement ? "badge-niveau-centre" : "badge-niveau"}">${niveau}</span>`
+    : "";
+  const badgeElement = avecElement
+    ? `<img class="badge-carte badge-element" src="${ICONES_ELEMENTS_TRI[item.element]}" alt="${item.element}" title="${NOMS_ELEMENTS[item.element] || item.element}">`
     : "";
 
   conteneur.innerHTML = `
@@ -497,6 +503,7 @@ ${boutonDupliquer}
 <img class="image-personnage" src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       ${badgeConstellation}
       ${badgeNiveau}
+      ${badgeElement}
       ${possede ? coinBasDroite : ""}
 </div>
     ${badgeCopie}

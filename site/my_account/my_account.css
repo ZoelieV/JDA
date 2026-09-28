@@ -1590,3 +1590,25 @@ body {
     min-width: 3.5rem;
   }
 }
+
+/* ---- Voyageur : niveau centré en bas, élément en bas à gauche ---- */
+
+.badge-niveau-centre {
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.badge-element {
+  bottom: 2px;
+  left: 2px;
+  box-sizing: border-box;
+  padding: 0.25rem;
+  object-fit: contain;
+}
+
+@media (max-width: 700px) {
+  .badge-element {
+    padding: 0.125rem;
+  }
+}
