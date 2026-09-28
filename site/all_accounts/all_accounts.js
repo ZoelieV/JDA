@@ -1,11 +1,12 @@
+// Même ordre que les tris (commun/tri.js).
 const iconesElements = {
   pyro: "../DB/images/others/pyro.webp",
   hydro: "../DB/images/others/hydro.webp",
-  anemo: "../DB/images/others/anemo.webp",
   electro: "../DB/images/others/electro.webp",
   cryo: "../DB/images/others/cryo.webp",
-  dendro: "../DB/images/others/dendro.webp",
-  geo: "../DB/images/others/geo.webp"
+  anemo: "../DB/images/others/anemo.webp",
+  geo: "../DB/images/others/geo.webp",
+  dendro: "../DB/images/others/dendro.webp"
 };
 
 const iconesTypesArmes = {
@@ -33,17 +34,13 @@ const configCollections = {
     pointsField: "PPC",
     labels: ["C0", "C1", "C2", "C3", "C4", "C5", "C6"],
     champType: "element",
-    icones: iconesElements,
-    libelleConstellation: "Constel.",
-    libelleType: "Élément"
+    icones: iconesElements
   },
   weapons: {
     pointsField: "PPW",
     labels: ["R1", "R2", "R3", "R4", "R5"],
     champType: "type",
-    icones: iconesTypesArmes,
-    libelleConstellation: "Raffin.",
-    libelleType: "Type"
+    icones: iconesTypesArmes
   }
 };
 
@@ -51,12 +48,14 @@ const configCollections = {
 let vueActive = "characters";   // "characters" | "weapons"
 let boxActive = "full";         // "full" | "stuff"
 
-// Filtres / recherche / tri, comme en draft (sans filtre J1/J2). Le filtre
-// élément/type est propre à chaque vue ; le reste est commun.
+// Filtres / recherche / tris, comme en draft (sans filtre J1/J2). Le filtre
+// élément/type est propre à chaque vue (ordre des clics = ordre des
+// groupes) ; le reste est commun. Tris combinables : cf. commun/tri.js.
 let filtreType = { characters: new Set(), weapons: new Set() };
 const filtreEtoile = new Set();
+const filtreVoeux = new Set(); // personnages uniquement
 let rechercheTexte = "";
-let triActif = null; // "points" | "constellation" | "niveau" | "rarete" | "element" | null (ordre par défaut)
+const etatTri = creerEtatTri();
 
 // Données brutes du profil ouvert, conservées pour re-render sans refetch
 let profilCourant = null;
@@ -336,6 +335,7 @@ function construireListeAffichee() {
       if (boxActive === "stuff" && !collectionProfil.selections?.stuff?.[item.id]) return false;
       if (filtresType.size > 0 && !filtresType.has(item[config.champType])) return false;
       if (filtreEtoile.size > 0 && !filtreEtoile.has(String(item.rarete))) return false;
+      if (vueActive === "characters" && filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(item))) return false;
       if (recherche && !String(item.nom || "").toLowerCase().includes(recherche)) return false;
 
       return true;
@@ -345,36 +345,6 @@ function construireListeAffichee() {
       valeur: collectionProfil.full[item.id],
       config
     }));
-}
-
-// ---- Tri (choix unique, comme en draft) ----
-// Décroissant, sauf élément/type (ordre des icônes de filtre). Tri stable :
-// l'ordre de base départage.
-
-function valeurTri({ item, valeur, config }) {
-  switch (triActif) {
-    case "points":
-      return Number(item[config.pointsField]?.[valeur] ?? 0);
-    case "constellation":
-      return valeur;
-    case "niveau":
-      // 100 > 95 > non renseigné (persos uniquement).
-      return vueActive === "characters" ? Number(getNiveauPersonnage(item.id)) || 0 : 0;
-    case "rarete":
-      return Number(item.rarete) || 0;
-    case "element":
-      return -Object.keys(config.icones).indexOf(item[config.champType]);
-    default:
-      return 0;
-  }
-}
-
-function trierListe(liste) {
-  if (!triActif) return liste;
-  return liste
-    .map((entree, index) => ({ entree, index, v: valeurTri(entree) }))
-    .sort((a, b) => (b.v - a.v) || (a.index - b.index))
-    .map(e => e.entree);
 }
 
 // ---- Cartes (même disposition que la draft) ----
@@ -427,9 +397,24 @@ function rendreProfilBox() {
   const container = document.getElementById("profile-box");
   container.innerHTML = "";
 
-  trierListe(construireListeAffichee()).forEach(entree => {
-    container.appendChild(creerCarteProfil(entree));
+  const config = configCollections[vueActive];
+  const entrees = construireListeAffichee();
+  const parItem = new Map(entrees.map(entree => [entree.item, entree]));
+
+  const groupes = trierEtGrouper(entrees.map(entree => entree.item), etatTri, {
+    vue: vueActive,
+    valeurs: {
+      points: item => Number(item[config.pointsField]?.[parItem.get(item).valeur] ?? 0),
+      constellation: item => parItem.get(item).valeur,
+      // 100 > 95 > non renseigné (persos uniquement).
+      niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(item.id)) || 0 : 0
+    },
+    elements: vueActive === "characters" ? filtreType.characters : [],
+    armes: vueActive === "weapons" ? filtreType.weapons : [],
+    rareteParDefaut: filtreEtoile.size > 0 || (vueActive === "characters" && filtreVoeux.size > 0)
   });
+
+  remplirGrilleGroupee(container, groupes, item => creerCarteProfil(parItem.get(item)));
 }
 
 // ---- Grille : écarts homogènes (même calcul que la draft) ----
@@ -509,7 +494,7 @@ function genererFiltresIcones() {
 
     btn.addEventListener("click", () => {
       const set = filtreType[vueActive];
-      if (set.has(valeur)) set.delete(valeur); else set.add(valeur);
+      basculerSelection(set, valeur);
       btn.classList.toggle("active", set.has(valeur));
       rendreProfilBox();
     });
@@ -521,20 +506,24 @@ function genererFiltresIcones() {
 // Libellés de tri propres à la vue (constellation/raffinement,
 // élément/type) et état actif de tous les boutons.
 function mettreAJourBarreOutils() {
-  const config = configCollections[vueActive];
-
   // Pas de niveau pour les armes : tri masqué dans cette vue.
-  if (vueActive === "weapons" && triActif === "niveau") triActif = null;
+  if (vueActive === "weapons" && getSensTri(etatTri, "niveau")) {
+    etatTri.tris = etatTri.tris.filter(t => t.cle !== "niveau");
+  }
 
   document.querySelectorAll(".tri-btn").forEach(btn => {
     btn.hidden = btn.dataset.tri === "niveau" && vueActive === "weapons";
-    if (btn.dataset.tri === "constellation") btn.textContent = config.libelleConstellation;
-    if (btn.dataset.tri === "element") btn.textContent = config.libelleType;
-    btn.classList.toggle("active", btn.dataset.tri === triActif);
+    majBoutonTri(btn, etatTri, vueActive);
   });
 
   document.querySelectorAll("[data-etoile]").forEach(btn => {
     btn.classList.toggle("active", filtreEtoile.has(btn.dataset.etoile));
+  });
+
+  // Vœux : personnages uniquement.
+  document.getElementById("filtres-voeux").hidden = vueActive === "weapons";
+  document.querySelectorAll("[data-voeu]").forEach(btn => {
+    btn.classList.toggle("active", filtreVoeux.has(btn.dataset.voeu));
   });
 
   document.getElementById("recherche").value = rechercheTexte;
@@ -544,14 +533,15 @@ function mettreAJourBarreOutils() {
 function reinitialiserFiltres() {
   filtreType = { characters: new Set(), weapons: new Set() };
   filtreEtoile.clear();
+  filtreVoeux.clear();
   rechercheTexte = "";
-  triActif = null;
+  viderTris(etatTri);
 }
 
 function initialiserBarreOutils() {
   document.querySelectorAll(".tri-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      triActif = triActif === btn.dataset.tri ? null : btn.dataset.tri;
+      cyclerTri(etatTri, btn.dataset.tri);
       mettreAJourBarreOutils();
       rendreProfilBox();
     });
@@ -562,6 +552,14 @@ function initialiserBarreOutils() {
       const valeur = btn.dataset.etoile;
       if (filtreEtoile.has(valeur)) filtreEtoile.delete(valeur); else filtreEtoile.add(valeur);
       btn.classList.toggle("active", filtreEtoile.has(valeur));
+      rendreProfilBox();
+    });
+  });
+
+  document.querySelectorAll("[data-voeu]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      basculerSelection(filtreVoeux, btn.dataset.voeu);
+      btn.classList.toggle("active", filtreVoeux.has(btn.dataset.voeu));
       rendreProfilBox();
     });
   });

@@ -6,6 +6,7 @@
 <title>Mon compte</title>
 <link rel="stylesheet" href="/my_account/my_account.css?v=rem4">
 <link rel="stylesheet" href="../commun/entete.css?v=rem4">
+<link rel="stylesheet" href="../commun/tri.css?v=1">
 <script src="/commun/fond.js?v=4" data-sans-requete></script>
 </head>
 <body>
@@ -110,7 +111,7 @@
             <button type="button" class="tri-btn" data-tri="constellation">Constel.</button>
             <button type="button" class="tri-btn" data-tri="niveau">Niveau</button>
             <button type="button" class="tri-btn" data-tri="rarete">Rareté</button>
-            <button type="button" class="tri-btn" data-tri="element">Élément</button>
+            <button type="button" class="tri-btn" data-tri="element"><img class="tri-logo" src="../DB/images/others/omni_element.webp" alt="Élément"></button>
           </div>
           <div class="groupe-filtres">
             <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="pyro"><img src="../DB/images/others/pyro.webp" alt="Pyro"></label>
@@ -132,6 +133,10 @@
             <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="5"><span>5★</span></label>
             <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="4"><span>4★</span></label>
             <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="3"><span>3★</span></label>
+          </div>
+          <div class="groupe-filtres filtre-voeu" id="filtres-voeux">
+            <label class="filtre-icone" title="Vœu lié (5★ limités)"><input type="checkbox" class="filtre-voeu-input" value="intertwined"><img src="../DB/images/others/Item_Intertwined_Fate.webp" alt="Intertwined Fate"></label>
+            <label class="filtre-icone" title="Vœu d'accointance (4★ et 5★ standards)"><input type="checkbox" class="filtre-voeu-input" value="acquaint"><img src="../DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></label>
           </div>
           <label class="filtre-texte" title="N'afficher que ce que je possède"><input type="checkbox" id="filtre-possedes"><span>Possédés</span></label>
           <button type="button" id="btn-clear-filtres" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
@@ -246,6 +251,7 @@
   <script src="/commun/variantes.js?v=1"></script>
   <script src="/my_account/auto_box/detection.js?v=2"></script>
   <script src="/my_account/auto_box/interface.js?v=2"></script>
-  <script src="/my_account/my_account.js?v=16"></script>
+  <script src="/commun/tri.js?v=1"></script>
+  <script src="/my_account/my_account.js?v=17"></script>
 </body>
 </html>

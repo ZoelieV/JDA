@@ -1,21 +1,3 @@
-const iconesElements = {
-  pyro: "../DB/images/others/pyro.webp",
-  hydro: "../DB/images/others/hydro.webp",
-  anemo: "../DB/images/others/anemo.webp",
-  electro: "../DB/images/others/electro.webp",
-  cryo: "../DB/images/others/cryo.webp",
-  dendro: "../DB/images/others/dendro.webp",
-  geo: "../DB/images/others/geo.webp"
-};
-
-const iconesTypesArmes = {
-  sword: "../DB/images/others/sword.webp",
-  claymore: "../DB/images/others/claymore.webp",
-  polearm: "../DB/images/others/polearm.webp",
-  bow: "../DB/images/others/bow.webp",
-  catalyst: "../DB/images/others/catalyst.webp"
-};
-
 const nomsBoxes = {
   full: "Full Box",
   stuff: "Personnages stuff",
@@ -526,14 +508,12 @@ ${boutonDupliquer}
   return conteneur;
 }
 
-// ---- Recherche / tri (choix unique, comme en draft) ----
+// ---- Recherche / tris combinables (cf. commun/tri.js) ----
 
-let triActif = null; // "points" | "constellation" | "niveau" | "rarete" | "element" | null (ordre par défaut)
-
-const LIBELLES_TRI = {
-  characters: { constellation: "Constel.", element: "Élément" },
-  weapons: { constellation: "Raffin.", element: "Type" }
-};
+const etatTri = creerEtatTri();
+// Filtres élément / type d'arme, dans l'ordre des clics (ordre des groupes).
+const selectionElements = new Set();
+const selectionArmes = new Set();
 
 // Valeur de possession d'un item : constellation (persos) ou meilleur
 // raffinement parmi les copies (armes) ; -1 si non possédé.
@@ -546,50 +526,33 @@ function getValeurItem(item, vueActive, collectionProfil) {
     .map(instanceId => collectionProfil.full[instanceId] ?? -1));
 }
 
-// Décroissant, sauf élément/type (ordre des icônes de filtre). Tri stable :
-// l'ordre de base départage.
-function valeurTri(item, vueActive, collectionProfil) {
-  const valeur = getValeurItem(item, vueActive, collectionProfil);
-
-  switch (triActif) {
-    case "points":
+function getValeursTri(vueActive, collectionProfil) {
+  return {
+    points: item => {
+      const valeur = getValeurItem(item, vueActive, collectionProfil);
       return valeur < 0 ? -1 : Number(getPPC(item, valeur, vueActive) || 0);
-    case "constellation":
-      return valeur;
-    case "niveau":
-      // 100 > 95 > non renseigné (persos uniquement).
-      return vueActive === "characters" ? Number(collectionProfil.niveaux?.[item.id]) || 0 : 0;
-    case "rarete":
-      return Number(item.rarete) || 0;
-    case "element":
-      return vueActive === "characters"
-        ? -Object.keys(iconesElements).indexOf(item.element)
-        : -Object.keys(iconesTypesArmes).indexOf(item.type);
-    default:
-      return 0;
-  }
-}
-
-function trierItems(items, vueActive, collectionProfil) {
-  if (!triActif) return items;
-  return items
-    .map((item, index) => ({ item, index, v: valeurTri(item, vueActive, collectionProfil) }))
-    .sort((a, b) => (b.v - a.v) || (a.index - b.index))
-    .map(e => e.item);
+    },
+    constellation: item => getValeurItem(item, vueActive, collectionProfil),
+    // 100 > 95 > non renseigné (persos uniquement).
+    niveau: item => vueActive === "characters" ? Number(collectionProfil.niveaux?.[item.id]) || 0 : 0
+  };
 }
 
 function mettreAJourBoutonsTri() {
   const vueActive = getVueActive();
-  const libelles = LIBELLES_TRI[vueActive];
 
   // Pas de niveau pour les armes : tri masqué dans cette vue.
-  if (vueActive === "weapons" && triActif === "niveau") triActif = null;
+  if (vueActive === "weapons" && getSensTri(etatTri, "niveau")) {
+    etatTri.tris = etatTri.tris.filter(t => t.cle !== "niveau");
+  }
 
   document.querySelectorAll(".tri-btn").forEach(btn => {
     btn.hidden = btn.dataset.tri === "niveau" && vueActive === "weapons";
-    if (libelles[btn.dataset.tri]) btn.textContent = libelles[btn.dataset.tri];
-    btn.classList.toggle("active", btn.dataset.tri === triActif);
+    majBoutonTri(btn, etatTri, vueActive);
   });
+
+  // Vœux : personnages uniquement.
+  document.getElementById("filtres-voeux").hidden = vueActive === "weapons";
 }
 
 function afficherCollection(personnages, armes, profil) {
@@ -610,6 +573,10 @@ function afficherCollection(personnages, armes, profil) {
   const rareteSelectionnees = Array.from(document.querySelectorAll(".filtre-rarete:checked"))
     .map(input => input.value);
 
+  const voeuxSelectionnes = vueActive === "characters"
+    ? Array.from(document.querySelectorAll(".filtre-voeu-input:checked")).map(input => input.value)
+    : [];
+
   const recherche = document.getElementById("recherche").value.trim().toLowerCase();
   // Même case à cocher, sens différent selon la box : "Possédés" en Full Box,
   // "Sélectionnés" dans les autres (où seuls les possédés sont déjà listés).
@@ -624,7 +591,7 @@ function afficherCollection(personnages, armes, profil) {
 
   mettreAJourBoutonsTri();
 
-  const itemsFiltres = trierItems(items.filter(item => {
+  const itemsFiltres = items.filter(item => {
     const typeValeur = getTypeValeur(item, vueActive);
     const rareteValeur = item.rarete != null ? String(item.rarete) : "";
 
@@ -651,10 +618,22 @@ function afficherCollection(personnages, armes, profil) {
       return false;
     }
 
-    return filtreElementOK && filtreArmeOK && filtreRareteOK;
-  }), vueActive, collectionProfil);
+    const filtreVoeuOK =
+      voeuxSelectionnes.length === 0 || voeuxSelectionnes.includes(getVoeu(item));
 
-  itemsFiltres.forEach(item => {
+    return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK;
+  });
+
+  // Possédés / sélectionnés, étoiles, vœux : regroupés par rareté par défaut.
+  const groupes = trierEtGrouper(itemsFiltres, etatTri, {
+    vue: vueActive,
+    valeurs: getValeursTri(vueActive, collectionProfil),
+    elements: selectionElements,
+    armes: selectionArmes,
+    rareteParDefaut: filtreCoche || rareteSelectionnees.length > 0 || voeuxSelectionnes.length > 0
+  });
+
+  remplirGrilleGroupee(liste, groupes, item => {
     if (vueActive === "weapons") {
       const instances = getInstancesArme(item.id, collectionProfil);
       const instancesAffichees = selectionnesSeulement
@@ -662,7 +641,7 @@ function afficherCollection(personnages, armes, profil) {
         : instances.length > 0 ? instances : [item.id];
       const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
 
-      instancesAffichees.forEach(instanceId => {
+      return instancesAffichees.map(instanceId => {
         const valeur = collectionProfil.full[instanceId] ?? -1;
         const selectionne = boxActive === "full"
           ? valeur >= 0
@@ -670,10 +649,8 @@ function afficherCollection(personnages, armes, profil) {
         const estDuplicata = estInstanceDupliquee(instanceId);
         const peutDupliquer = boxActive === "full" && valeur >= 0;
 
-        const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite);
-        liste.appendChild(carte);
+        return creerCarteItem(item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite);
       });
-      return;
     }
 
     const valeur = collectionProfil.full[item.id] ?? -1;
@@ -683,8 +660,7 @@ function afficherCollection(personnages, armes, profil) {
 
     const niveau = collectionProfil.niveaux?.[item.id] ?? null;
     const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
-    const carte = creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
-    liste.appendChild(carte);
+    return creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
   });
 }
 
@@ -763,8 +739,10 @@ async function initialiserPage() {
     afficherCollection(personnages, armes, profil);
     mettreAJourTotalBox(personnages, armes, profil);
 
-    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, #filtre-possedes").forEach(input => {
+    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, #filtre-possedes").forEach(input => {
       input.addEventListener("change", () => {
+        if (input.classList.contains("filtre-element")) basculerSelection(selectionElements, input.value);
+        if (input.classList.contains("filtre-arme")) basculerSelection(selectionArmes, input.value);
         afficherCollection(personnages, armes, profil);
         mettreAJourTotalBox(personnages, armes, profil);
       });
@@ -781,7 +759,7 @@ async function initialiserPage() {
 
     document.querySelectorAll(".tri-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        triActif = triActif === btn.dataset.tri ? null : btn.dataset.tri;
+        cyclerTri(etatTri, btn.dataset.tri);
         afficherCollection(personnages, armes, profil);
       });
     });
@@ -791,7 +769,9 @@ async function initialiserPage() {
         input.checked = false;
       });
       inputRecherche.value = "";
-      triActif = null;
+      viderTris(etatTri);
+      selectionElements.clear();
+      selectionArmes.clear();
       afficherCollection(personnages, armes, profil);
       mettreAJourTotalBox(personnages, armes, profil);
     });

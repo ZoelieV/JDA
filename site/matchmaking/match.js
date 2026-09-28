@@ -1,11 +1,12 @@
+// Même ordre que les tris (commun/tri.js).
 const iconesElements = {
   pyro: "../DB/images/others/pyro.webp",
   hydro: "../DB/images/others/hydro.webp",
-  anemo: "../DB/images/others/anemo.webp",
   electro: "../DB/images/others/electro.webp",
   cryo: "../DB/images/others/cryo.webp",
-  dendro: "../DB/images/others/dendro.webp",
-  geo: "../DB/images/others/geo.webp"
+  anemo: "../DB/images/others/anemo.webp",
+  geo: "../DB/images/others/geo.webp",
+  dendro: "../DB/images/others/dendro.webp"
 };
 
 // Logos des types d'armes (mêmes que la liste des comptes), utilisés pour
@@ -17,8 +18,6 @@ const iconesTypesArmesSignature = {
   bow: "../DB/images/others/bow_icon.webp",
   catalyst: "../DB/images/others/catalyst_icon.webp"
 };
-
-const ORDRE_ELEMENTS = Object.keys(iconesElements);
 
 const BOX_LABELS = {
   full: "Full box",
@@ -78,12 +77,15 @@ let intervalPolling = null;
 let joueur1 = null;
 let joueur2 = null;
 
-// ---- Filtres / recherche de la grille de draft ----
+// ---- Filtres / recherche / tris de la grille de draft ----
+// Filtre élément : ordre des clics = ordre des groupes. Tris combinables :
+// cf. commun/tri.js.
 const filtreElement = new Set();
 const filtreEtoile = new Set();
+const filtreVoeux = new Set();
 let filtreProprietaire = null; // "j1" | "j2" | null
 let rechercheTexte = "";
-let triActif = null; // "points" | "constellation" | "niveau" | "rarete" | "element" | null (ordre par défaut)
+const etatTri = creerEtatTri();
 
 // ---- Animation de tirage du boss ----
 let dernierePhaseVue = null; // phase locale précédente, pour détecter une transition
@@ -405,38 +407,32 @@ function getInfosCarte(persoId, roles = ["j1", "j2"]) {
   return infos;
 }
 
-// ---- Tri (choix unique) ----
-// Points / constellation : meilleure valeur parmi les propriétaires pris en
-// compte (le joueur filtré, sinon les 2). Décroissant, sauf éléments (ordre
-// des icônes de filtre). Tri stable : l'ordre de base départage.
-function valeurTri(personnage, roles) {
+// ---- Tris ----
+// Points / constellation / niveau : meilleure valeur parmi les
+// propriétaires pris en compte (le joueur filtré, sinon les 2).
+function getValeursTri(roles) {
   // Aperçu d'une box (un seul joueur) : le filtre J1/J2 ne s'applique pas.
-  const proprietaires = getRolesProprietaires(personnage.id, roles, roles.length > 1);
-  const constellations = proprietaires.map(r => getConstellation(r, personnage.id));
+  const constellations = personnage => getRolesProprietaires(personnage.id, roles, roles.length > 1)
+    .map(r => getConstellation(r, personnage.id));
 
-  switch (triActif) {
-    case "points":
-      return Math.max(-1, ...constellations.map(c => Number(personnage.PPC?.[c] ?? 0)));
-    case "constellation":
-      return Math.max(-1, ...constellations);
-    case "niveau":
-      // 100 > 95 > non renseigné ; meilleur niveau parmi les propriétaires.
-      return Math.max(0, ...proprietaires.map(r => Number(getNiveauPersonnage(getJoueurDataParRole(r), personnage.id)) || 0));
-    case "rarete":
-      return Number(personnage.rarete) || 0;
-    case "element":
-      return -ORDRE_ELEMENTS.indexOf(personnage.element);
-    default:
-      return 0;
-  }
+  return {
+    points: personnage => Math.max(-1, ...constellations(personnage).map(c => Number(personnage.PPC?.[c] ?? 0))),
+    constellation: personnage => Math.max(-1, ...constellations(personnage)),
+    // 100 > 95 > non renseigné ; meilleur niveau parmi les propriétaires.
+    niveau: personnage => Math.max(0, ...getRolesProprietaires(personnage.id, roles, roles.length > 1)
+      .map(r => Number(getNiveauPersonnage(getJoueurDataParRole(r), personnage.id)) || 0))
+  };
 }
 
+// Groupes à afficher (cf. trierEtGrouper) ; le filtre J1/J2 compte comme un
+// filtre "possédés" (regroupement par rareté par défaut).
 function trierPersonnages(personnages, roles = ["j1", "j2"]) {
-  if (!triActif) return personnages;
-  return personnages
-    .map((p, index) => ({ p, index, v: valeurTri(p, roles) }))
-    .sort((a, b) => (b.v - a.v) || (a.index - b.index))
-    .map(e => e.p);
+  return trierEtGrouper(personnages, etatTri, {
+    vue: "characters",
+    valeurs: getValeursTri(roles),
+    elements: filtreElement,
+    rareteParDefaut: filtreEtoile.size > 0 || filtreVoeux.size > 0 || (roles.length > 1 && !!filtreProprietaire)
+  });
 }
 
 // Filtres + recherche. ignorerProprietaire : aperçus de box (colonne déjà
@@ -444,6 +440,7 @@ function trierPersonnages(personnages, roles = ["j1", "j2"]) {
 function personnageCorrespondFiltres(personnage, { ignorerProprietaire = false } = {}) {
   if (filtreElement.size > 0 && !filtreElement.has(personnage.element)) return false;
   if (filtreEtoile.size > 0 && !filtreEtoile.has(String(personnage.rarete))) return false;
+  if (filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(personnage))) return false;
 
   if (filtreProprietaire && !ignorerProprietaire) {
     if (getConstellation(filtreProprietaire, personnage.id) === null) return false;
@@ -538,8 +535,11 @@ function rendreApercuBox(containerId, role, boxChoisie) {
     return;
   }
 
-  trierPersonnages(persosBox.filter(p => personnageCorrespondFiltres(p, { ignorerProprietaire: true })), [role])
-    .forEach(p => container.appendChild(creerCarteItem(p, getInfosCarte(p.id, [role]))));
+  remplirGrilleGroupee(
+    container,
+    trierPersonnages(persosBox.filter(p => personnageCorrespondFiltres(p, { ignorerProprietaire: true })), [role]),
+    p => creerCarteItem(p, getInfosCarte(p.id, [role]))
+  );
 }
 
 function creerBanMini(personnage) {
@@ -729,18 +729,17 @@ function rendreBansBonus() {
     .map(id => getPersonnageParId(id))
     .filter(p => p && personnageCorrespondFiltres(p));
 
-  trierPersonnages(personnages).forEach(personnage => {
+  remplirGrilleGroupee(grille, trierPersonnages(personnages), personnage => {
     const id = personnage.id;
     const dejaChoisi = choix.includes(id);
     const peutCliquer = cEstMonTour && (dejaChoisi || choix.length < draft.bans_bonus_total);
 
-    const carte = creerCarteItem(personnage, {
+    return creerCarteItem(personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi,
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
       ...getInfosCarte(id)
     });
-    grille.appendChild(carte);
   });
 }
 
@@ -987,17 +986,16 @@ function rendreDraft(phasePrecedente) {
     .map(id => getPersonnageParId(id))
     .filter(p => p && personnageCorrespondFiltres(p));
 
-  trierPersonnages(personnages).forEach(personnage => {
+  remplirGrilleGroupee(grille, trierPersonnages(personnages), personnage => {
     const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
     const selectionnable = cEstMonTour && jePeuxLePicker;
 
-    const carte = creerCarteItem(personnage, {
+    return creerCarteItem(personnage, {
       selectionnable,
       indisponible: cEstMonTour && !jePeuxLePicker,
       onClick: () => postActionDraft(personnage.id).catch(err => alert(err.message)),
       ...getInfosCarte(personnage.id)
     });
-    grille.appendChild(carte);
   });
 }
 
@@ -1009,7 +1007,7 @@ function rendreDraft(phasePrecedente) {
 
 // Part de la clé de grille qui dépend de la barre recherche/tri/filtres.
 function cleFiltres() {
-  return [[...filtreElement], [...filtreEtoile], filtreProprietaire, rechercheTexte, triActif];
+  return [[...filtreElement], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, rechercheTexte, etatTri.tris];
 }
 
 function grilleAChange(grille, cle) {
@@ -1096,7 +1094,7 @@ function initialiserFiltresTri() {
     btn.className = "filtre-icone-btn";
     btn.innerHTML = `<img src="${src}" alt="${valeur}">`;
     btn.addEventListener("click", () => {
-      if (filtreElement.has(valeur)) filtreElement.delete(valeur); else filtreElement.add(valeur);
+      basculerSelection(filtreElement, valeur);
       btn.classList.toggle("active");
       rendrePhase();
     });
@@ -1119,6 +1117,23 @@ function initialiserFiltresTri() {
     zoneEtoiles.appendChild(btn);
   });
   figeables.appendChild(zoneEtoiles);
+
+  const zoneVoeux = document.createElement("div");
+  zoneVoeux.className = "filtres-icones filtre-voeu";
+  Object.entries(VOEUX).forEach(([valeur, voeu]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-icone-btn";
+    btn.title = voeu.nom;
+    btn.innerHTML = `<img src="${voeu.image}" alt="${voeu.nom}">`;
+    btn.addEventListener("click", () => {
+      basculerSelection(filtreVoeux, valeur);
+      btn.classList.toggle("active");
+      rendrePhase();
+    });
+    zoneVoeux.appendChild(btn);
+  });
+  figeables.appendChild(zoneVoeux);
 
   const zoneProprio = document.createElement("div");
   zoneProprio.className = "filtres-proprietaire";
@@ -1147,10 +1162,12 @@ function initialiserFiltresTri() {
   btnClear.addEventListener("click", () => {
     filtreElement.clear();
     filtreEtoile.clear();
+    filtreVoeux.clear();
     filtreProprietaire = null;
     rechercheTexte = "";
-    triActif = null;
+    viderTris(etatTri);
     document.getElementById("barre-outils").querySelectorAll(".active").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll("#barre-outils .tri-btn").forEach(b => majBoutonTri(b, etatTri));
     const input = document.getElementById("recherche-personnage");
     if (input) input.value = "";
     rendrePhase();
@@ -1173,14 +1190,15 @@ function initialiserFiltresTri() {
   const zoneTris = document.createElement("div");
   zoneTris.className = "tris";
   zoneTris.innerHTML = `<span class="tris-label">Trier :</span>`;
-  [["points", "Points"], ["constellation", "Constel."], ["niveau", "Niveau"], ["rarete", "Rareté"], ["element", "Élément"]].forEach(([valeur, label]) => {
+  ["points", "constellation", "niveau", "rarete", "element"].forEach(valeur => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-etoile-btn tri-btn";
-    btn.textContent = label;
+    btn.dataset.tri = valeur;
+    majBoutonTri(btn, etatTri);
     btn.addEventListener("click", () => {
-      triActif = triActif === valeur ? null : valeur;
-      zoneTris.querySelectorAll(".tri-btn").forEach(b => b.classList.toggle("active", b === btn && triActif === valeur));
+      cyclerTri(etatTri, valeur);
+      zoneTris.querySelectorAll(".tri-btn").forEach(b => majBoutonTri(b, etatTri));
       rendrePhase();
     });
     zoneTris.appendChild(btn);
