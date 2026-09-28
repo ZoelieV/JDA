@@ -123,7 +123,8 @@ let indexPersosParArmeSignature = null; // id arme -> perso
 function construireIndexSignatures() {
   indexArmesSignature = new Map();
   indexPersosParArmeSignature = new Map();
-  const persosParId = new Map(personnagesData.map(perso => [perso.id, perso]));
+  // Voyageur : arme signature commune à tous ses éléments.
+  const persosParId = new Map(personnagesData.map(perso => [perso.groupe || perso.id, perso]));
 
   armesData.forEach(arme => {
     const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
@@ -362,12 +363,12 @@ function creerCarteProfil({ item, valeur, config }) {
   let basDroiteHtml = "";
 
   if (vueActive === "characters") {
-    const niveau = getNiveauPersonnage(item.id);
+    const niveau = getNiveauPersonnage(cleNiveau(item));
     if (niveau) {
       basGaucheHtml = `<span class="character-niveau">${niveau}</span>`;
     }
 
-    const refinement = getRefinementArmeSignature(item.id);
+    const refinement = getRefinementArmeSignature(item.groupe || item.id);
     const iconeArme = iconesTypesArmesSignature[item.arme];
     if (refinement !== null && iconeArme) {
       const couleur = COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0];
@@ -407,7 +408,7 @@ function rendreProfilBox() {
       points: item => Number(item[config.pointsField]?.[parItem.get(item).valeur] ?? 0),
       constellation: item => parItem.get(item).valeur,
       // 100 > 95 > non renseigné (persos uniquement).
-      niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(item.id)) || 0 : 0
+      niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(cleNiveau(item))) || 0 : 0
     },
     elements: vueActive === "characters" ? filtreType.characters : [],
     armes: vueActive === "weapons" ? filtreType.weapons : [],
@@ -607,6 +608,8 @@ async function ouvrirProfil(discordId, nom) {
     ]);
 
     profilCourant = profil;
+    // Ancien Voyageur unique -> Voyageur Anemo (cf. commun/variantes.js).
+    migrerCollectionPersos(profil.data?.characters);
     personnagesBase = personnages;
     armesData = armes;
     // Voyageur / Manekin : variante choisie par ce joueur.

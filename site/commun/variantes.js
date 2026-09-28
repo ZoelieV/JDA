@@ -40,11 +40,14 @@ const VARIANTES_PERSONNAGES = {
 
 // Personnage tel que le joueur l'a choisi (copie ; les autres sont
 // renvoyés tels quels).
+// Voyageur par élément ("traveler_pyro"...) : même variante, élément ajouté
+// au nom ("Aether Pyro").
 function appliquerVariante(personnage, parametres) {
-  const variante = VARIANTES_PERSONNAGES[personnage.id];
+  const variante = VARIANTES_PERSONNAGES[personnage.groupe || personnage.id];
   if (!variante) return personnage;
   const choix = variante.options[parametres?.[variante.parametre]] || variante.options[variante.defaut];
-  return { ...personnage, ...choix };
+  const nom = personnage.groupe ? `${choix.nom} ${NOMS_ELEMENTS[personnage.element] || ""}`.trim() : choix.nom;
+  return { ...personnage, ...choix, nom };
 }
 
 function appliquerVariantes(personnages, parametres) {
@@ -54,4 +57,57 @@ function appliquerVariantes(personnages, parametres) {
 // Chemin (depuis DB/) de l'icône de profil d'un personnage.
 function getIconeLaterale(personnage) {
   return personnage.side || `images/characters/side_char/${personnage.id}_side.webp`;
+}
+
+// ---- Groupes : un personnage par élément dans les comptes (Voyageur) ----
+// "traveler_pyro"..., champ "groupe" : constellations et points propres à
+// chaque élément, niveau commun (niveaux[groupe]). En draft, un seul
+// personnage (id = le groupe) dont on choisit l'élément au pick.
+
+const NOMS_ELEMENTS = {
+  pyro: "Pyro", hydro: "Hydro", electro: "Electro", cryo: "Cryo",
+  anemo: "Anemo", geo: "Geo", dendro: "Dendro"
+};
+
+// Manekin : élément choisi au pick parmi tous (non suivi dans les comptes).
+const ELEMENTS_LIBRES = { manekin: Object.keys(NOMS_ELEMENTS) };
+
+// Clé du niveau (commun aux éléments d'un groupe).
+function cleNiveau(personnage) {
+  return personnage.groupe || personnage.id;
+}
+
+// Ancien format : un seul "traveler". Sa constellation et ses sélections
+// passent au Voyageur Anemo ; son niveau reste sous "traveler" (commun).
+// Modifie la collection en place.
+function migrerCollectionPersos(collection) {
+  if (!collection?.full || collection.full.traveler === undefined) return collection;
+
+  if (collection.full.traveler_anemo === undefined) collection.full.traveler_anemo = collection.full.traveler;
+  delete collection.full.traveler;
+
+  Object.values(collection.selections || {}).forEach(selection => {
+    if (selection.traveler) {
+      selection.traveler_anemo = true;
+      delete selection.traveler;
+    }
+  });
+  return collection;
+}
+
+// Catalogue de la draft : chaque groupe réduit à un seul personnage.
+function regrouperPourDraft(personnages) {
+  const vus = new Set();
+  return personnages.flatMap(personnage => {
+    if (!personnage.groupe) return [personnage];
+    if (vus.has(personnage.groupe)) return [];
+    vus.add(personnage.groupe);
+    const { groupe, ...reste } = personnage;
+    return [{ ...reste, id: groupe, element: "all" }];
+  });
+}
+
+// Membres d'un groupe (catalogue complet), ou [] si ce n'est pas un groupe.
+function membresGroupe(personnages, groupe) {
+  return personnages.filter(personnage => personnage.groupe === groupe);
 }

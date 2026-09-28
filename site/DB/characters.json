@@ -1,9 +1,65 @@
 [
   {
-    "id": "traveler",
-    "nom": "Voyageur",
+    "id": "traveler_pyro",
+    "groupe": "traveler",
+    "nom": "Voyageur Pyro",
     "rarete": "5",
-    "element": "all",
+    "element": "pyro",
+    "arme": "sword",
+    "categorie": "support",
+    "image": "images/characters/traveler.webp",
+    "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  {
+    "id": "traveler_hydro",
+    "groupe": "traveler",
+    "nom": "Voyageur Hydro",
+    "rarete": "5",
+    "element": "hydro",
+    "arme": "sword",
+    "categorie": "support",
+    "image": "images/characters/traveler.webp",
+    "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  {
+    "id": "traveler_electro",
+    "groupe": "traveler",
+    "nom": "Voyageur Electro",
+    "rarete": "5",
+    "element": "electro",
+    "arme": "sword",
+    "categorie": "support",
+    "image": "images/characters/traveler.webp",
+    "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  {
+    "id": "traveler_anemo",
+    "groupe": "traveler",
+    "nom": "Voyageur Anemo",
+    "rarete": "5",
+    "element": "anemo",
+    "arme": "sword",
+    "categorie": "support",
+    "image": "images/characters/traveler.webp",
+    "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  {
+    "id": "traveler_geo",
+    "groupe": "traveler",
+    "nom": "Voyageur Geo",
+    "rarete": "5",
+    "element": "geo",
+    "arme": "sword",
+    "categorie": "support",
+    "image": "images/characters/traveler.webp",
+    "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  {
+    "id": "traveler_dendro",
+    "groupe": "traveler",
+    "nom": "Voyageur Dendro",
+    "rarete": "5",
+    "element": "dendro",
     "arme": "sword",
     "categorie": "support",
     "image": "images/characters/traveler.webp",

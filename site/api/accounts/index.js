@@ -1,6 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox } = require("../_lib/draft");
-const { getPersonnages } = require("../_lib/personnages");
+const { getPersonnages, migrerCollectionPersos } = require("../_lib/personnages");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -65,8 +65,13 @@ async function chargerResultats() {
 // Stats calculées ici : on ne renvoie pas les box complètes à la page.
 function resumerProfil(profil, resultats) {
   const data = profil.data || {};
-  const full = data.characters?.full || {};
-  const constellations = Object.values(full).filter(c => c >= 0);
+  const full = migrerCollectionPersos(data.characters)?.full || {};
+  // Voyageur (un par élément) compté une seule fois.
+  const possedes = getPersonnages().filter(p => (full[p.id] ?? -1) >= 0);
+  const nbPersos = new Set(possedes.map(p => p.groupe || p.id)).size;
+  const nbC6 = new Set(possedes
+    .filter(p => String(p.rarete) === "5" && full[p.id] === 6)
+    .map(p => p.groupe || p.id)).size;
   const { matchs = 0, victoires = 0 } = resultats[profil.discord_id] || {};
 
   return {
@@ -78,9 +83,9 @@ function resumerProfil(profil, resultats) {
     created_at: profil.created_at ?? null,
     banniere2: data.parametres?.banniere2 || null,
     points: calculerPointsBox(data, "full", getPersonnages()),
-    nb_persos: constellations.length,
+    nb_persos: nbPersos,
     // C6 comptés sur les 5 étoiles uniquement.
-    nb_c6: getPersonnages().filter(p => String(p.rarete) === "5" && full[p.id] === 6).length,
+    nb_c6: nbC6,
     theatre: PALIERS_THEATRE[data.theatre] ?? null,
     matchs,
     victoires

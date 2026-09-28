@@ -179,6 +179,9 @@ function normaliserProfil(profil) {
   delete profil.personnages;
   delete profil.selections;
 
+  // Ancien Voyageur unique -> Voyageur Anemo (cf. commun/variantes.js).
+  migrerCollectionPersos(profil.characters);
+
   return profil;
 }
 
@@ -354,7 +357,8 @@ function getTypeValeur(item, vueActive) {
 }
 
 // Niveau d'un perso possédé : null (non renseigné), 95 ou 100.
-// Stocké dans profil.characters.niveaux[idPerso], clé absente si null.
+// Stocké dans profil.characters.niveaux[idPerso], clé absente si null ;
+// Voyageur : niveau commun à tous ses éléments (niveaux["traveler"]).
 const NIVEAUX_PERSONNAGE = [95, 100];
 
 function creerSelectNiveau(idPerso, niveau) {
@@ -396,7 +400,8 @@ function getIndexSignatures(personnages, armes) {
   if (!indexSignatures) {
     const armeParPerso = new Map();
     const persoParArme = new Map();
-    const persosParId = new Map(personnages.map(perso => [perso.id, perso]));
+    // Voyageur : arme signature commune à tous ses éléments.
+    const persosParId = new Map(personnages.map(perso => [perso.groupe || perso.id, perso]));
 
     armes.forEach(arme => {
       const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
@@ -421,7 +426,7 @@ function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
       : "";
   }
 
-  const arme = getIndexSignatures(personnages, armes).armeParPerso.get(item.id);
+  const arme = getIndexSignatures(personnages, armes).armeParPerso.get(item.groupe || item.id);
   const iconeArme = iconesTypesArmesSignature[item.arme];
   if (!arme || !iconeArme) return "";
 
@@ -473,7 +478,7 @@ ${boutonDupliquer}
     : "";
 
   const zoneNiveau = boxActive === "full" && vueActive === "characters" && valeur >= 0
-    ? creerSelectNiveau(idInstance, niveau)
+    ? creerSelectNiveau(cleNiveau(item), niveau)
     : "";
 
   // Hors Full Box (pas de réglages) : étiquette "Copie" sous l'image.
@@ -534,7 +539,7 @@ function getValeursTri(vueActive, collectionProfil) {
     },
     constellation: item => getValeurItem(item, vueActive, collectionProfil),
     // 100 > 95 > non renseigné (persos uniquement).
-    niveau: item => vueActive === "characters" ? Number(collectionProfil.niveaux?.[item.id]) || 0 : 0
+    niveau: item => vueActive === "characters" ? Number(collectionProfil.niveaux?.[cleNiveau(item)]) || 0 : 0
   };
 }
 
@@ -658,7 +663,7 @@ function afficherCollection(personnages, armes, profil) {
       ? valeur >= 0
       : !!collectionProfil.selections[boxActive][item.id];
 
-    const niveau = collectionProfil.niveaux?.[item.id] ?? null;
+    const niveau = collectionProfil.niveaux?.[cleNiveau(item)] ?? null;
     const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
     return creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
   });
@@ -709,6 +714,8 @@ function calculerTotalCollection(items, vueActive, boxActive, profil) {
   const config = getConfigCollection(vueActive);
 
   let total = 0;
+  // Groupe (Voyageur) : seul l'élément qui vaut le plus de points compte.
+  const meilleurParGroupe = {};
 
   items.forEach(item => {
     const instances = vueActive === "weapons"
@@ -727,13 +734,18 @@ function calculerTotalCollection(items, vueActive, boxActive, profil) {
         ? true
         : !!collectionProfil.selections[boxActive][instanceId];
 
-      if (inclus) {
-        total += Number(item[config.pointsField]?.[valeur] ?? 0);
+      if (!inclus) return;
+
+      const points = Number(item[config.pointsField]?.[valeur] ?? 0);
+      if (item.groupe) {
+        meilleurParGroupe[item.groupe] = Math.max(meilleurParGroupe[item.groupe] ?? 0, points);
+      } else {
+        total += points;
       }
     });
   });
 
-  return total;
+  return total + Object.values(meilleurParGroupe).reduce((somme, points) => somme + points, 0);
 }
 
 async function initialiserPage() {
@@ -882,8 +894,12 @@ async function initialiserPage() {
             Object.keys(collectionProfil.selections).forEach(box => {
               delete collectionProfil.selections[box][id];
             });
-            if (collectionProfil.niveaux) {
-              delete collectionProfil.niveaux[id];
+            // Niveau commun d'un groupe (Voyageur) : effacé quand plus aucun
+            // de ses éléments n'est possédé.
+            const personnage = items.find(p => p.id === id);
+            const membres = personnage?.groupe ? membresGroupe(items, personnage.groupe) : [];
+            if (collectionProfil.niveaux && !membres.some(p => (collectionProfil.full[p.id] ?? -1) >= 0)) {
+              delete collectionProfil.niveaux[personnage ? cleNiveau(personnage) : id];
             }
           }
         }

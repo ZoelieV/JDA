@@ -1922,3 +1922,85 @@ h1 {
     grid-area: pool;
   }
 }
+
+/* ---- Pick du Voyageur / Manekin : choix de l'élément ---- */
+
+.choix-element {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.choix-element-contenu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: calc(100vw - 2rem);
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(20, 20, 20, 0.85);
+  backdrop-filter: blur(0.5rem);
+  color: white;
+}
+
+.choix-element-contenu p {
+  margin: 0;
+}
+
+.choix-element-liste {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.choix-element-liste .filtre-icone-btn {
+  width: 3rem;
+  height: 3rem;
+}
+
+.choix-element-liste .filtre-icone-btn:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.18);
+}
+
+.choix-element-annuler {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background-color: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.choix-element-annuler:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+/* Élément choisi au pick (Voyageur / Manekin), en coin de la case. */
+.slot-pick {
+  position: relative;
+}
+
+/* Classe doublée : prioritaire sur les règles des images de case
+   (.equipe-joueur .slot-pick > img...). */
+.slot-pick > img.element-case.element-case {
+  position: absolute;
+  z-index: 1;
+  aspect-ratio: auto;
+  box-sizing: border-box;
+  top: 0.125rem;
+  right: 0.125rem;
+  width: 1.375rem;
+  height: 1.375rem;
+  padding: 0.125rem;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  object-fit: contain;
+}

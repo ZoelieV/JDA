@@ -1,3 +1,5 @@
+const { migrerCollectionPersos } = require("./personnages");
+
 // ---- Équilibrage ----
 //
 // Nombre de bans bonus accordés au joueur avec la box la plus faible,
@@ -71,7 +73,9 @@ function etatInitialDraft() {
     pool_disponible: null, // liste d'ids (union), remplie une fois les 2 joueurs prêts
     pool_j1: null, // ids de la box choisie par j1 — restreint ses picks
     pool_j2: null, // ids de la box choisie par j2 — restreint ses picks
-    actions: [], // { joueur, type: "ban" | "pick", perso_id, bonus: bool }
+    elements_j1: null, // { traveler: ["pyro", ...] } : éléments du Voyageur dans la box de j1
+    elements_j2: null,
+    actions: [], // { joueur, type: "ban" | "pick", perso_id, bonus: bool, element? (pick Voyageur / Manekin) }
     sequence_index: 0,
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
@@ -81,37 +85,54 @@ function etatInitialDraft() {
   };
 }
 
-// ---- Points d'une box (uniquement personnages / PPC) ----
-function calculerPointsBox(profilData, boxChoisie, personnages) {
-  const collection = profilData?.characters || { full: {}, selections: {} };
-  let total = 0;
-
-  personnages.forEach(personnage => {
-    const valeur = collection.full?.[personnage.id] ?? -1;
-    if (valeur < 0) return;
-
-    if (boxChoisie !== "full") {
-      const inclus = collection.selections?.[boxChoisie]?.[personnage.id];
-      if (!inclus) return;
-    }
-
-    total += Number(personnage.PPC?.[valeur] ?? 0);
-  });
-
-  return total;
-}
-
-// ---- Pool d'un joueur : les personnages de la box choisie pour le match
-// (Full Box = tout ce qu'il possède ; autre box = sa sélection) ----
-function calculerPoolJoueur(profilData, personnages, boxChoisie = "full") {
-  const collection = profilData?.characters || { full: {}, selections: {} };
+// Personnages (catalogue complet, un Voyageur par élément) de la box
+// choisie : Full Box = tout ce qui est possédé ; autre box = la sélection.
+function getPersonnagesBox(profilData, personnages, boxChoisie = "full") {
+  const collection = migrerCollectionPersos(profilData?.characters) || { full: {}, selections: {} };
   return personnages
     .filter(p => {
       if ((collection.full?.[p.id] ?? -1) < 0) return false;
       if (boxChoisie === "full") return true;
       return !!collection.selections?.[boxChoisie]?.[p.id];
     })
-    .map(p => p.id);
+    .map(p => ({ personnage: p, valeur: collection.full[p.id] }));
+}
+
+// ---- Points d'une box (uniquement personnages / PPC) ----
+// Groupe (Voyageur) : seul l'élément qui vaut le plus de points compte.
+function calculerPointsBox(profilData, boxChoisie, personnages) {
+  let total = 0;
+  const meilleurParGroupe = {};
+
+  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur }) => {
+    const points = Number(personnage.PPC?.[valeur] ?? 0);
+    if (personnage.groupe) {
+      meilleurParGroupe[personnage.groupe] = Math.max(meilleurParGroupe[personnage.groupe] ?? 0, points);
+    } else {
+      total += points;
+    }
+  });
+
+  return total + Object.values(meilleurParGroupe).reduce((somme, points) => somme + points, 0);
+}
+
+// ---- Pool d'un joueur : les personnages de la box choisie pour le match,
+// un seul Voyageur (id du groupe) quel que soit le nombre d'éléments ----
+function calculerPoolJoueur(profilData, personnages, boxChoisie = "full") {
+  const ids = getPersonnagesBox(profilData, personnages, boxChoisie)
+    .map(({ personnage }) => personnage.groupe || personnage.id);
+  return Array.from(new Set(ids));
+}
+
+// Éléments de chaque groupe présents dans la box : { traveler: ["pyro", ...] }.
+// Seuls ceux-là peuvent être choisis au pick.
+function calculerElementsGroupes(profilData, personnages, boxChoisie = "full") {
+  const elements = {};
+  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage }) => {
+    if (!personnage.groupe) return;
+    (elements[personnage.groupe] ??= []).push(personnage.element);
+  });
+  return elements;
 }
 
 // ---- Pool de personnages draftables (union des 2 joueurs) ----
@@ -207,6 +228,8 @@ function etatRevanche(precedent) {
     points_j2: precedent.points_j2,
     pool_j1: precedent.pool_j1,
     pool_j2: precedent.pool_j2,
+    elements_j1: precedent.elements_j1,
+    elements_j2: precedent.elements_j2,
     pool_disponible: calculerPoolDisponible(precedent.pool_j1 || [], precedent.pool_j2 || [])
       .filter(id => !bannis.has(id)),
     bans_bonus_total: precedent.bans_bonus_total,
@@ -243,6 +266,7 @@ module.exports = {
   etatInitialDraft,
   calculerPointsBox,
   calculerPoolJoueur,
+  calculerElementsGroupes,
   calculerPoolDisponible,
   getProchaineAction,
   echangerRoles,

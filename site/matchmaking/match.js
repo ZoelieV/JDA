@@ -63,8 +63,8 @@ const POLL_INTERVAL_MS = 2500;
 let roomId = null;
 let moiDiscordId = null;
 let monRole = null; // "j1" | "j2"
-let personnagesBase = [];   // characters.json
-let personnagesData = [];   // variantes (Voyageur, Manekin) choisies par le joueur connecté
+let personnagesBase = [];   // characters.json (un Voyageur par élément)
+let personnagesData = [];   // catalogue de draft (un seul Voyageur), variantes (Voyageur, Manekin) du joueur connecté
 let armesData = [];
 let bossData = [];
 let draft = null;
@@ -156,6 +156,8 @@ async function chargerCompte(discordId) {
 async function chargerJoueurDepuisId(discordId) {
   if (!discordId) return null;
   const compte = await chargerCompte(discordId);
+  // Ancien Voyageur unique -> Voyageur Anemo (cf. commun/variantes.js).
+  migrerCollectionPersos(compte.data?.characters);
   const nom = compte.discord_global_name || compte.discord_username || "Utilisateur inconnu";
   return {
     discordId: compte.discord_id,
@@ -229,8 +231,8 @@ async function postReady(pret) {
   }
 }
 
-async function postActionDraft(persoId) {
-  const data = await envoyerAction(`/api/rooms/${roomId}/action`, { perso_id: persoId });
+async function postActionDraft(persoId, element = null) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/action`, { perso_id: persoId, element });
   await definirDraft(data.draft);
 }
 
@@ -290,7 +292,7 @@ async function definirDraft(nouveauDraft) {
   const cleVariantes = JSON.stringify([parametresVue?.voyageur, parametresVue?.manekin]);
   if (cleVariantes !== derniereCleVariantes) {
     derniereCleVariantes = cleVariantes;
-    personnagesData = appliquerVariantes(personnagesBase, parametresVue);
+    personnagesData = appliquerVariantes(regrouperPourDraft(personnagesBase), parametresVue);
     document.querySelectorAll(".grille-pool").forEach(grille => delete grille.dataset.cle);
   }
 
@@ -359,13 +361,6 @@ function getNiveauPersonnage(joueurData, personnageId) {
   return String(niveau);
 }
 
-// Constellation (toujours connue : c'est la valeur de possession 0-6),
-// affichée séparément du niveau (en haut de carte, cf. creerCarteItem).
-function getConstellationLabel(joueurData, persoId) {
-  const c = joueurData?.characters?.full?.[persoId];
-  return typeof c === "number" && c >= 0 ? `C${c}` : null;
-}
-
 // Constellation (0-6) d'un perso chez un joueur, ou null s'il ne l'a pas.
 // Dès que les pools sont calculés (après le choix des box), seuls les
 // personnages de la box choisie pour le match comptent comme possédés.
@@ -378,11 +373,53 @@ function getPoolMatch(role) {
   return cachePools[role].set;
 }
 
-function getConstellation(role, persoId) {
+// Constellation et points d'un perso chez un joueur, ou null s'il ne l'a
+// pas. Voyageur : un par élément dans les comptes, un seul en draft ; on
+// garde l'élément qui vaut le plus de points parmi ceux de sa box (ou
+// l'élément donné, une fois pické).
+function getPossession(role, persoId, element = null) {
   const pool = getPoolMatch(role);
   if (pool && !pool.has(persoId)) return null;
-  const c = getJoueurDataParRole(role)?.characters?.full?.[persoId];
-  return typeof c === "number" && c >= 0 ? c : null;
+
+  const collection = getJoueurDataParRole(role)?.characters;
+  const membres = membresGroupe(personnagesBase, persoId);
+
+  if (membres.length === 0) {
+    const c = collection?.full?.[persoId];
+    if (typeof c !== "number" || c < 0) return null;
+    return { valeur: c, points: Number(getPersonnageParId(persoId)?.PPC?.[c] ?? 0) };
+  }
+
+  // Éléments permis : celui pické, sinon ceux de la box du match (calculés
+  // par le serveur), sinon ceux de la box choisie (choix de box en cours).
+  const box = draft?.[`box_${role}`];
+  const permis = element ? [element] : pool ? draft?.[`elements_${role}`]?.[persoId] || [] : null;
+
+  let meilleur = null;
+  membres.forEach(membre => {
+    const c = collection?.full?.[membre.id];
+    if (typeof c !== "number" || c < 0) return;
+    if (permis && !permis.includes(membre.element)) return;
+    if (!permis && box && box !== "full" && !collection.selections?.[box]?.[membre.id]) return;
+
+    const points = Number(membre.PPC?.[c] ?? 0);
+    if (!meilleur || points > meilleur.points || (points === meilleur.points && c > meilleur.valeur)) {
+      meilleur = { valeur: c, points, element: membre.element };
+    }
+  });
+  return meilleur;
+}
+
+function getConstellation(role, persoId, element = null) {
+  return getPossession(role, persoId, element)?.valeur ?? null;
+}
+
+// Perso de la box choisie par un joueur (aperçus pendant le choix des box).
+function estDansBox(collection, persoId, box) {
+  const membres = membresGroupe(personnagesBase, persoId);
+  const ids = membres.length ? membres.map(membre => membre.id) : [persoId];
+  return ids.some(id => (collection?.full?.[id] ?? -1) >= 0 &&
+    (box === "full" || !!collection?.selections?.[box]?.[id]));
 }
 
 // Joueurs (parmi roles) qui possèdent le perso. Le filtre J1/J2 restreint
@@ -394,13 +431,14 @@ function getRolesProprietaires(persoId, roles = ["j1", "j2"], avecFiltre = true)
 
 // Infos affichées sur une carte, pour chaque joueur (parmi roles) qui
 // possède le perso : constellation, niveau, raffinement de l'arme signature.
-function getInfosCarte(persoId, roles = ["j1", "j2"]) {
+function getInfosCarte(persoId, roles = ["j1", "j2"], element = null) {
   const infos = {};
   roles.forEach(role => {
-    if (getConstellation(role, persoId) === null) return;
+    const constellation = getConstellation(role, persoId, element);
+    if (constellation === null) return;
     const data = getJoueurDataParRole(role);
     const suffixe = role === "j1" ? "J1" : "J2";
-    infos[`constellation${suffixe}`] = getConstellationLabel(data, persoId);
+    infos[`constellation${suffixe}`] = `C${constellation}`;
     infos[`niveau${suffixe}`] = getNiveauPersonnage(data, persoId);
     infos[`refinement${suffixe}`] = getRefinementArmeSignature(data, persoId);
   });
@@ -412,12 +450,12 @@ function getInfosCarte(persoId, roles = ["j1", "j2"]) {
 // propriétaires pris en compte (le joueur filtré, sinon les 2).
 function getValeursTri(roles) {
   // Aperçu d'une box (un seul joueur) : le filtre J1/J2 ne s'applique pas.
-  const constellations = personnage => getRolesProprietaires(personnage.id, roles, roles.length > 1)
-    .map(r => getConstellation(r, personnage.id));
+  const possessions = personnage => getRolesProprietaires(personnage.id, roles, roles.length > 1)
+    .map(r => getPossession(r, personnage.id));
 
   return {
-    points: personnage => Math.max(-1, ...constellations(personnage).map(c => Number(personnage.PPC?.[c] ?? 0))),
-    constellation: personnage => Math.max(-1, ...constellations(personnage)),
+    points: personnage => Math.max(-1, ...possessions(personnage).map(p => p.points)),
+    constellation: personnage => Math.max(-1, ...possessions(personnage).map(p => p.valeur)),
     // 100 > 95 > non renseigné ; meilleur niveau parmi les propriétaires.
     niveau: personnage => Math.max(0, ...getRolesProprietaires(personnage.id, roles, roles.length > 1)
       .map(r => Number(getNiveauPersonnage(getJoueurDataParRole(r), personnage.id)) || 0))
@@ -521,14 +559,7 @@ function rendreApercuBox(containerId, role, boxChoisie) {
 
   const collection = joueurData?.characters || { full: {}, selections: {} };
 
-  const persosBox = personnagesData.filter(p => {
-    const valeur = collection.full?.[p.id] ?? -1;
-    if (valeur < 0) return false;
-    if (boxChoisie !== "full") {
-      return !!collection.selections?.[boxChoisie]?.[p.id];
-    }
-    return true;
-  });
+  const persosBox = personnagesData.filter(p => estDansBox(collection, p.id, boxChoisie));
 
   if (persosBox.length === 0) {
     container.innerHTML = `<p class="apercu-vide">Cette box ne contient aucun personnage.</p>`;
@@ -745,6 +776,54 @@ function rendreBansBonus() {
 
 // ---- Phase 3 : draft (boss + bans/picks) ----
 
+// Éléments proposés au pick : Voyageur = ceux de sa box, Manekin = tous ;
+// null pour un personnage sans choix d'élément.
+function getElementsAuPick(persoId) {
+  if (membresGroupe(personnagesBase, persoId).length) {
+    const elements = draft[`elements_${monRole}`]?.[persoId] || [];
+    return Object.keys(ICONES_ELEMENTS_TRI).filter(e => elements.includes(e));
+  }
+  return ELEMENTS_LIBRES[persoId] || null;
+}
+
+// Fenêtre de choix de l'élément au pick (Voyageur / Manekin).
+function ouvrirChoixElement(personnage, elements, valider) {
+  document.getElementById("choix-element")?.remove();
+
+  const fond = document.createElement("div");
+  fond.id = "choix-element";
+  fond.className = "choix-element";
+  fond.innerHTML = `
+    <div class="choix-element-contenu">
+      <p>Élément de ${personnage.nom} :</p>
+      <div class="choix-element-liste">
+        ${elements.map(e => `<button type="button" class="filtre-icone-btn" data-element="${e}" title="${NOMS_ELEMENTS[e] || e}"><img src="${ICONES_ELEMENTS_TRI[e]}" alt="${NOMS_ELEMENTS[e] || e}"></button>`).join("")}
+      </div>
+      <button type="button" class="choix-element-annuler">Annuler</button>
+    </div>
+  `;
+
+  const fermer = () => {
+    fond.remove();
+    document.removeEventListener("keydown", surTouche);
+  };
+  const surTouche = event => {
+    if (event.key === "Escape") fermer();
+  };
+
+  fond.addEventListener("click", event => {
+    const bouton = event.target.closest("[data-element]");
+    if (bouton) {
+      fermer();
+      valider(bouton.dataset.element);
+    } else if (event.target === fond || event.target.closest(".choix-element-annuler")) {
+      fermer();
+    }
+  });
+  document.addEventListener("keydown", surTouche);
+  document.body.appendChild(fond);
+}
+
 function getProchaineActionLocale() {
   const action = SEQUENCE_FIXE[draft.sequence_index];
   return action || null;
@@ -780,10 +859,12 @@ function getBannierePersonnage(personnage) {
 }
 
 // Case de tableau (pick ou ban) : personnage sur sa bannière.
-function remplirCaseTableau(slot, personnage) {
+function remplirCaseTableau(slot, personnage, element = null) {
   slot.classList.add("avec-banniere");
   slot.style.setProperty("--banniere-perso", `url("${getBannierePersonnage(personnage)}")`);
-  slot.innerHTML = `<img src="../DB/${personnage.image}" alt="${personnage.nom}" title="${personnage.nom}">`;
+  const nom = element ? `${personnage.nom} ${NOMS_ELEMENTS[element] || ""}`.trim() : personnage.nom;
+  slot.innerHTML = `<img src="../DB/${personnage.image}" alt="${nom}" title="${nom}">` +
+    (element && ICONES_ELEMENTS_TRI[element] ? `<img class="element-case" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}" title="${NOMS_ELEMENTS[element] || element}">` : "");
 }
 
 function titreTableauJoueur(role, nomJoueur) {
@@ -803,7 +884,7 @@ function titreTableauJoueur(role, nomJoueur) {
 function rendreSlotsEtBans(role) {
   const nomJoueur = role === "j1" ? joueur1.nom : joueur2.nom;
 
-  const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
+  const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role);
   // Les bans bonus d'équilibrage ont leur propre bloc (au-dessus du tableau
   // du joueur qui les a faits) : on ne les remet pas ici.
   const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
@@ -812,12 +893,12 @@ function rendreSlotsEtBans(role) {
   slotsContainer.innerHTML = titreTableauJoueur(role, nomJoueur);
 
   for (let i = 0; i < 4; i++) {
-    const persoId = picks[i];
+    const pick = picks[i];
     const slot = document.createElement("div");
 
-    if (persoId) {
+    if (pick) {
       slot.className = "slot-pick";
-      remplirCaseTableau(slot, appliquerVariante(getPersonnageParId(persoId), getJoueurDataParRole(role)?.parametres));
+      remplirCaseTableau(slot, appliquerVariante(getPersonnageParId(pick.perso_id), getJoueurDataParRole(role)?.parametres), pick.element);
     } else {
       slot.className = "slot-pick vide";
       slot.textContent = "Vide";
@@ -993,7 +1074,13 @@ function rendreDraft(phasePrecedente) {
     return creerCarteItem(personnage, {
       selectionnable,
       indisponible: cEstMonTour && !jePeuxLePicker,
-      onClick: () => postActionDraft(personnage.id).catch(err => alert(err.message)),
+      onClick: () => {
+        const choix = restrictionPick ? getElementsAuPick(personnage.id) : null;
+        const envoyer = element => postActionDraft(personnage.id, element).catch(err => alert(err.message));
+        if (!choix) envoyer(null);
+        else if (choix.length === 1) envoyer(choix[0]);
+        else ouvrirChoixElement(personnage, choix, envoyer);
+      },
       ...getInfosCarte(personnage.id)
     });
   });
@@ -1246,13 +1333,13 @@ function annoncerRole() {
 
 // Case du récap : personnage sur sa bannière (comme en draft) + ses infos
 // chez ce joueur (constellation, niveau, arme signature).
-function creerCaseRecap(personnage, role) {
+function creerCaseRecap(personnage, role, element = null) {
   const slot = document.createElement("div");
   slot.className = "slot-pick";
-  remplirCaseTableau(slot, appliquerVariante(personnage, getJoueurDataParRole(role)?.parametres));
+  remplirCaseTableau(slot, appliquerVariante(personnage, getJoueurDataParRole(role)?.parametres), element);
 
   const suffixe = role === "j1" ? "J1" : "J2";
-  const infos = getInfosCarte(personnage.id, [role]);
+  const infos = getInfosCarte(personnage.id, [role], element);
   const iconeArme = iconesTypesArmesSignature[personnage.arme];
   const refinement = infos[`refinement${suffixe}`];
 
@@ -1289,12 +1376,12 @@ function rendreTableauRecap(role) {
   if (zone.parentElement !== namecard) namecard.appendChild(zone);
 
   // Personnages : reconstruits seulement si les picks changent.
-  const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role).map(a => a.perso_id);
+  const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role);
   const grille = document.getElementById(`recap-persos-${role}`);
-  if (grilleAChange(grille, picks.join(","))) {
-    picks.forEach(id => {
-      const personnage = getPersonnageParId(id);
-      if (personnage) grille.appendChild(creerCaseRecap(personnage, role));
+  if (grilleAChange(grille, JSON.stringify(picks.map(a => [a.perso_id, a.element])))) {
+    picks.forEach(pick => {
+      const personnage = getPersonnageParId(pick.perso_id);
+      if (personnage) grille.appendChild(creerCaseRecap(personnage, role, pick.element));
     });
   }
 
@@ -1623,7 +1710,7 @@ async function demarrer() {
       chargerArmes(),
       chargerFondsBoss()
     ]);
-    personnagesData = personnagesBase;
+    personnagesData = regrouperPourDraft(personnagesBase);
 
     initialiserFiltresTri();
     initialiserGrillesPersos();

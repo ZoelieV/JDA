@@ -48,7 +48,7 @@ const PERSOS_STANDARDS = new Set([
 const HORS_VOEUX = new Set(["aloy", "manekin"]);
 
 function rangRarete(item) {
-  if (PERSOS_STANDARDS.has(item.id)) return 4.5;
+  if (PERSOS_STANDARDS.has(item.groupe || item.id)) return 4.5;
   return Number(item.rarete) || 0;
 }
 

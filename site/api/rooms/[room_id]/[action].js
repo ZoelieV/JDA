@@ -7,13 +7,14 @@
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
-const { getPersonnages, getPersonnageParId } = require("../../_lib/personnages");
+const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS } = require("../../_lib/temps");
 const {
   SEQUENCE_FIXE,
   calculerPointsBox,
   calculerPoolJoueur,
+  calculerElementsGroupes,
   calculerPoolDisponible,
   calculerBansBonus,
   lancerTirage,
@@ -105,6 +106,8 @@ async function calculerEquilibrage(draft) {
 
   draft.pool_j1 = poolJ1;
   draft.pool_j2 = poolJ2;
+  draft.elements_j1 = calculerElementsGroupes(profilJ1.data?.data, personnages, draft.box_j1);
+  draft.elements_j2 = calculerElementsGroupes(profilJ2.data?.data, personnages, draft.box_j2);
   draft.pool_disponible = calculerPoolDisponible(poolJ1, poolJ2);
 
   draft.bans_bonus_total = bansBonus;
@@ -162,13 +165,13 @@ async function handleAction(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { perso_id: persoId } = req.body || {};
+  const { perso_id: persoId, element } = req.body || {};
 
   if (!persoId || typeof persoId !== "string") {
     return res.status(400).json({ error: "perso_id manquant" });
   }
 
-  if (!getPersonnageParId(persoId)) {
+  if (!getPersonnageDraftParId(persoId)) {
     return res.status(400).json({ error: "Personnage inconnu" });
   }
 
@@ -201,15 +204,22 @@ async function handleAction(req, res, roomId, user) {
     if (!poolJoueur || !poolJoueur.includes(persoId)) {
       return res.status(403).json({ error: "Tu ne possèdes pas ce personnage : impossible de le picker" });
     }
+
+    // Voyageur : un des éléments mis dans sa box ; Manekin : élément libre.
+    const elementsPossibles = estGroupe(persoId)
+      ? draft[`elements_${joueur}`]?.[persoId] || []
+      : ELEMENTS_LIBRES[persoId];
+    if (elementsPossibles && !elementsPossibles.includes(element)) {
+      return res.status(400).json({ error: "Choisis l'élément de ce personnage" });
+    }
   }
 
   draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
-  draft.actions.push({
-    joueur,
-    type: prochaine.type,
-    perso_id: persoId,
-    bonus: false
-  });
+  const action = { joueur, type: prochaine.type, perso_id: persoId, bonus: false };
+  if (prochaine.type === "pick" && (estGroupe(persoId) || ELEMENTS_LIBRES[persoId])) {
+    action.element = element;
+  }
+  draft.actions.push(action);
 
   draft.sequence_index += 1;
 
