@@ -33,6 +33,17 @@
     "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   },
   {
+    "id": "traveler_cryo",
+    "groupe": "traveler",
+    "nom": "Voyageur Cryo",
+    "rarete": "5",
+    "element": "cryo",
+    "arme": "sword",
+    "categorie": "support",
+    "image": "images/characters/traveler.webp",
+    "PPC": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  {
     "id": "traveler_anemo",
     "groupe": "traveler",
     "nom": "Voyageur Anemo",
