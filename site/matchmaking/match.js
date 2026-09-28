@@ -1012,7 +1012,13 @@ function rendreDraft(phasePrecedente) {
   }
   const persoSelectionne = selectionDraft && getPersonnageParId(selectionDraft.persoId);
 
+  // Message de l'action : "pick" / "bannir" en gras ; à son tour, en
+  // couleur de l'action (pick vert, ban rouge).
+  const typeAction = prochaine?.type === "ban" ? "ban" : "pick";
   const tourContainer = document.getElementById("tour-actuel");
+  tourContainer.classList.toggle("a-mon-tour", cEstMonTour);
+  tourContainer.classList.toggle("action-ban", typeAction === "ban");
+  tourContainer.classList.toggle("action-pick", typeAction === "pick");
   if (!prochaine) {
     tourContainer.innerHTML = "Draft terminée.";
   } else {
@@ -1021,18 +1027,24 @@ function rendreDraft(phasePrecedente) {
       const choix = persoSelectionne
         ? ` : <strong>${persoSelectionne.nom}${selectionDraft.element ? ` ${NOMS_ELEMENTS[selectionDraft.element] || ""}` : ""}</strong>`
         : " un personnage, puis confirme.";
-      tourContainer.innerHTML = `À toi de <strong>${verbe}</strong>${choix}`;
+      tourContainer.innerHTML = `À toi de <strong class="verbe-action">${verbe}</strong>${choix}`;
     } else {
       const nomAdversaire = prochaine.joueur === "j1" ? joueur1.nom : joueur2.nom;
-      tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong>${verbe}</strong> un personnage.`;
+      tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong class="verbe-action">${verbe}</strong> un personnage.`;
     }
   }
 
-  // Bouton "Confirmer" au-dessus du message, seulement à son tour.
+  // Bouton "Confirmer" au-dessus du message : gris hors de son tour ; à son
+  // tour, contour de la couleur de l'action, puis rempli une fois un
+  // personnage sélectionné.
   const btnConfirmer = document.getElementById("btn-confirmer-action");
-  btnConfirmer.classList.toggle("cache", !cEstMonTour);
-  btnConfirmer.disabled = !selectionDraft;
-  btnConfirmer.textContent = prochaine?.type === "ban" ? "Confirmer le ban" : "Confirmer le pick";
+  btnConfirmer.classList.toggle("cache", !prochaine);
+  btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
+  btnConfirmer.classList.toggle("action-ban", typeAction === "ban");
+  btnConfirmer.classList.toggle("action-pick", typeAction === "pick");
+  btnConfirmer.classList.toggle("pret", cEstMonTour && !!selectionDraft);
+  btnConfirmer.disabled = !cEstMonTour || !selectionDraft;
+  btnConfirmer.textContent = typeAction === "ban" ? "Confirmer le ban" : "Confirmer le pick";
   btnConfirmer.onclick = () => {
     const selection = selectionDraft;
     if (!selection) return;

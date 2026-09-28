@@ -54,6 +54,9 @@ h1 {
 :root {
   --couleur-j1: #5b9bd5;
   --couleur-j2: #e0645a;
+  /* Actions de la draft (message et bouton "Confirmer"). */
+  --couleur-pick: #3ecf6a;
+  --couleur-ban: #ff5a5a;
   /* Côté des cartes persos ; lu aussi par ajusterGrille() dans match.js. */
   --taille-carte: 6.875rem;
 }
@@ -558,8 +561,17 @@ h1 {
   font-size: 1.0625rem;
 }
 
+/* Pick / ban : en gras et blanc ; à son tour, couleur de l'action. */
 .tour-actuel strong {
-  color: #f5c542;
+  color: white;
+}
+
+.tour-actuel.a-mon-tour.action-pick .verbe-action {
+  color: var(--couleur-pick);
+}
+
+.tour-actuel.a-mon-tour.action-ban .verbe-action {
+  color: var(--couleur-ban);
 }
 
 .toolbar-droite {
@@ -1599,34 +1611,43 @@ h1 {
   box-shadow: 0 0 0 0.1875rem #f5c542, 0 0 0.875rem rgba(245, 197, 66, 0.7);
 }
 
-/* Bouton "Confirmer" au-dessus du message de l'action à réaliser. */
+/* Bouton "Confirmer" au-dessus du message de l'action à réaliser : gris
+   hors de son tour ; à son tour, gris avec contour vert (pick) / rouge
+   (ban), puis entièrement vert / rouge une fois un personnage choisi. */
 .btn-confirmer-action {
+  --couleur-action: rgba(120, 120, 120, 0.95);
   pointer-events: auto;
   padding: 0.625rem 1.5rem;
-  border: 2px solid #f5c542;
+  border: 2px solid var(--couleur-action);
   border-radius: 0.625rem;
-  background-color: rgba(245, 197, 66, 0.9);
-  -webkit-backdrop-filter: blur(0.5rem);
-  backdrop-filter: blur(0.5rem);
-  color: #1e1e1e;
+  background-color: rgba(80, 80, 80, 0.95);
+  color: rgba(255, 255, 255, 0.55);
   font-family: inherit;
   font-size: 1.0625rem;
   font-weight: bold;
-  cursor: pointer;
+  cursor: default;
   box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
 }
 
-.btn-confirmer-action:hover:not(:disabled) {
-  background-color: #ffd95e;
+.btn-confirmer-action.a-mon-tour.action-pick {
+  --couleur-action: var(--couleur-pick);
 }
 
-.btn-confirmer-action:disabled {
-  border-color: rgba(120, 120, 120, 0.95);
-  background-color: rgba(80, 80, 80, 0.95);
-  -webkit-backdrop-filter: blur(0.5rem);
-  backdrop-filter: blur(0.5rem);
-  color: rgba(255, 255, 255, 0.55);
-  cursor: default;
+.btn-confirmer-action.a-mon-tour.action-ban {
+  --couleur-action: var(--couleur-ban);
+}
+
+.btn-confirmer-action.a-mon-tour {
+  color: white;
+}
+
+.btn-confirmer-action.pret {
+  background-color: var(--couleur-action);
+  cursor: pointer;
+}
+
+.btn-confirmer-action.pret:hover {
+  filter: brightness(1.12);
 }
 
 .lien-accueil:hover {
