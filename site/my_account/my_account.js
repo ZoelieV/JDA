@@ -662,6 +662,36 @@ function afficherCollection(personnages, armes, profil) {
     const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
     return creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
   });
+
+  mettreAJourBoutonEnregistrer(profil);
+}
+
+// ---- Bouton Enregistrer : grisé tant qu'il n'y a rien à enregistrer ----
+// Compare ce qu'enregistre le bouton (collection, variantes, UID, théâtre)
+// à l'état du dernier enregistrement.
+
+let etatEnregistre = null;
+
+function etatAEnregistrer(profil, uid, theatre) {
+  return JSON.stringify([
+    profil.characters, profil.weapons,
+    profil.parametres?.voyageur ?? null, profil.parametres?.manekin ?? null,
+    uid, theatre
+  ]);
+}
+
+function etatFormulaire(profil) {
+  return etatAEnregistrer(profil, document.getElementById("uid").value, document.getElementById("theatre").value);
+}
+
+function mettreAJourBoutonEnregistrer(profil) {
+  const bouton = document.querySelector(".btn-enregistrer-fixe");
+  if (bouton) bouton.disabled = etatEnregistre !== null && etatFormulaire(profil) === etatEnregistre;
+}
+
+function marquerEnregistre(profil, etat = etatFormulaire(profil)) {
+  etatEnregistre = etat;
+  mettreAJourBoutonEnregistrer(profil);
 }
 
 // Total de la box active : points des personnages + points des armes.
@@ -909,6 +939,13 @@ async function initialiserPage() {
         succes ? "Profil enregistré avec succès" : "Erreur lors de l'enregistrement du profil",
         succes ? "succes" : "erreur"
       );
+      if (succes) marquerEnregistre(profil);
+    });
+
+    ["uid", "theatre"].forEach(id => {
+      const champ = document.getElementById(id);
+      champ.addEventListener("input", () => mettreAJourBoutonEnregistrer(profil));
+      champ.addEventListener("change", () => mettreAJourBoutonEnregistrer(profil));
     });
 
     initialiserReinitialisation(personnages, armes, profil);
@@ -922,6 +959,9 @@ async function initialiserPage() {
     initialiserGrille();
     initialiserParametres(profil);
     initialiserAutoBox(profil, personnages, armes);
+
+    // Rien à enregistrer tant que rien n'a changé.
+    marquerEnregistre(profil);
   } catch (erreur) {
     console.error(erreur);
     alert("Erreur lors du chargement de la page.");
@@ -1202,6 +1242,7 @@ async function initialiserParametres(profil) {
       succes ? "succes" : "erreur"
     );
     if (succes) {
+      marquerEnregistre(profil, etatAEnregistrer(profil, profil.uid || "", profil.theatre || ""));
       memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
       fermer();
     }

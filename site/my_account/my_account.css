@@ -208,6 +208,19 @@ h2 {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.menu-btn:has(.menu-icone) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu-icone {
+  width: 1.375rem;
+  height: 1.375rem;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
 .menu-btn-principal {
   text-align: center;
   background-color: rgba(245, 197, 66, 0.15);
@@ -378,8 +391,10 @@ h2 {
   align-items: center;
   gap: 0.375rem;
   text-align: center;
-  /* Gris du fond de page, fortement transparent (plus opaque si possédé). */
-  background-color: rgba(30, 30, 30, 0.25);
+  /* Même fond semi-transparent flouté que la barre des box / tris. */
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border-radius: 0.625rem;
 }
 
@@ -415,7 +430,7 @@ h2 {
   width: 2.125rem;
   height: 2.125rem;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.7);
   color: white;
   display: flex;
   align-items: center;
@@ -877,11 +892,6 @@ textarea {
   background-color: rgba(20, 20, 20, 0.45);
 }
 
-/* Personnages / armes possédés : case plus opaque. */
-.carte-personnage.possede {
-  background-color: rgba(30, 30, 30, 0.45);
-}
-
 /* ---- Ligne 2 : Personnages / Armes à gauche, filtres à droite ---- */
 
 .ligne-vues {
@@ -909,7 +919,7 @@ textarea {
   height: 2.125rem;
   padding: 0.1875rem;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.7);
   cursor: pointer;
 }
 
@@ -976,6 +986,15 @@ textarea {
   border-color: #ffd95e;
 }
 
+/* Rien à enregistrer : grisé. */
+.btn-enregistrer-fixe:disabled,
+.btn-enregistrer-fixe:disabled:hover {
+  color: rgba(255, 255, 255, 0.55);
+  background-color: rgba(80, 80, 80, 0.95);
+  border-color: rgba(120, 120, 120, 0.95);
+  cursor: default;
+}
+
 /* ---- Tout ce qui est cliquable passe au doré au survol ---- */
 
 .tri-btn:hover,
@@ -1018,7 +1037,7 @@ textarea {
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 0.7);
   color: white;
   font-size: 1.125rem;
   font-weight: bold;
@@ -1493,5 +1512,81 @@ body {
 
   .barre-figee .ligne-vues {
     margin-bottom: 0;
+  }
+}
+
+/* ---- Menus déroulants (stella, théâtre, Voyageur, Manekin) : texte
+   toujours blanc sur l'option survolée ----
+   Navigateurs récents : liste entièrement stylée (fond gris, survol doré
+   transparent). Sinon : on force au moins le texte blanc. */
+.niveau-select option:hover,
+.niveau-select option:focus,
+.niveau-select option:checked,
+.menu-champ select option:hover,
+.menu-champ select option:focus,
+.menu-champ select option:checked {
+  color: white;
+}
+
+@supports (appearance: base-select) {
+  .niveau-select,
+  .menu-champ select,
+  .niveau-select::picker(select),
+  .menu-champ select::picker(select) {
+    appearance: base-select;
+  }
+
+  .menu-champ select {
+    display: flex;
+    align-items: center;
+  }
+
+  .niveau-select::picker(select),
+  .menu-champ select::picker(select) {
+    padding: 0.25rem;
+    color: white;
+    background-color: #3a3a3a;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 0.5rem;
+  }
+
+  .niveau-select option,
+  .menu-champ select option {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    color: white;
+    background-color: transparent;
+  }
+
+  .niveau-select option:hover,
+  .niveau-select option:focus-visible,
+  .menu-champ select option:hover,
+  .menu-champ select option:focus-visible {
+    color: white;
+    background-color: rgba(245, 197, 66, 0.35);
+  }
+
+  .niveau-select option:checked,
+  .menu-champ select option:checked {
+    color: #f5c542;
+  }
+
+  /* Stella : le menu reste invisible (mais pas transparent, sinon sa liste
+     le serait aussi) ; la liste, elle, s'affiche normalement. */
+  .niveau-choix .niveau-select,
+  .niveau-choix .niveau-select:hover {
+    opacity: 1;
+    color: transparent;
+    background: transparent;
+    border: 0;
+  }
+
+  .niveau-choix .niveau-select::picker-icon,
+  .niveau-choix .niveau-select selectedcontent {
+    display: none;
+  }
+
+  .niveau-choix .niveau-select::picker(select) {
+    min-width: 3.5rem;
   }
 }
