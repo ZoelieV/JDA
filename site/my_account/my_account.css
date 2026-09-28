@@ -1469,3 +1469,29 @@ body {
     --taille-carte: 6.875rem;
   }
 }
+
+/* ---- Lignes box + tris figées (ordinateur) ----
+   Collées en haut de l'écran seulement quand elles l'atteignent, dans un
+   rectangle semi-transparent flouté (comme les filtres de la draft sur
+   téléphone). */
+@media (min-width: 701px) {
+  .barre-figee {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    margin: 1rem 0 0.875rem 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    background-color: rgba(20, 20, 20, 0.45);
+    -webkit-backdrop-filter: blur(0.5rem);
+    backdrop-filter: blur(0.5rem);
+  }
+
+  .barre-figee .ligne-box {
+    margin: 0 0 0.625rem 0;
+  }
+
+  .barre-figee .ligne-vues {
+    margin-bottom: 0;
+  }
+}

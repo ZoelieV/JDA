@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem5">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem6">
 <link rel="stylesheet" href="../commun/entete.css?v=rem4">
 <link rel="stylesheet" href="../commun/tri.css?v=4">
 <script src="/commun/fond.js?v=4" data-sans-requete></script>
@@ -80,6 +80,9 @@
     <h1 class="titre-page">Mon compte</h1>
 
     <form id="profil-form">
+      <!-- Lignes 1 et 2 regroupées : figées en haut de l'écran une fois
+           atteint (ordinateur), dans un rectangle flouté. -->
+      <div class="barre-figee">
       <!-- Ligne 1 : box alignées à gauche, détection automatique à droite. -->
       <div class="ligne-box">
       <div class="box-selector">
@@ -141,6 +144,7 @@
           <label class="filtre-texte" title="N'afficher que ce que je possède"><input type="checkbox" id="filtre-possedes"><span>Possédés</span></label>
           <button type="button" id="btn-clear-filtres" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
         </div>
+      </div>
       </div>
 
       <!-- Total (persos + armes de la box) figé en bas au centre. -->
