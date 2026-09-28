@@ -54,7 +54,8 @@ module.exports = async (req, res) => {
       return res.status(200).json(data);
     }
 
-    // ---- Rejoindre la room en tant que player2 ----
+    // ---- Rejoindre la room : le créateur est player1, le premier à
+    // rejoindre player2, tous les suivants sont spectateurs ----
     if (req.method === "POST") {
       const { data: room, error: fetchError } = await supabase
         .from("rooms")
@@ -71,9 +72,9 @@ module.exports = async (req, res) => {
         return res.status(200).json(room);
       }
 
-      // La place de player2 est déjà prise par quelqu'un d'autre
+      // Room complète : spectateur (lecture seule de la draft).
       if (room.player2_discord_id) {
-        return res.status(403).json({ error: "Room déjà complète" });
+        return res.status(200).json({ ...room, spectateur: true });
       }
 
       const { data: updated, error: updateError } = await supabase

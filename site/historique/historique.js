@@ -2,7 +2,8 @@
 // avec pour chaque joueur sa bannière, sa photo, son temps, son équipe, ses
 // bans et ses bans d'équilibrage ; boss et date au centre.
 
-let matchs = [];
+let matchs = [];     // terminés
+let matchsEnCours = [];
 let personnagesParId = new Map(); // catalogue de draft (un seul Voyageur)
 let bossParId = new Map();
 let moiDiscordId = null;
@@ -11,9 +12,18 @@ const TRI_DEFAUT = { cle: "date", sens: -1 };
 let tri = { ...TRI_DEFAUT };
 let mesMatchsSeulement = false;
 
-// Sens au 1er clic : plus récents, meilleurs temps et matchs les plus serrés
-// d'abord.
-const SENS_INITIAL = { date: -1, temps: 1, ecart: 1 };
+// Sens au 1er clic : plus récents, meilleurs temps, matchs les plus serrés
+// et boss de A à Z d'abord.
+const SENS_INITIAL = { date: -1, temps: 1, ecart: 1, boss: 1 };
+
+// Phase d'une room en cours, affichée au centre de sa ligne.
+const LIBELLES_PHASES = {
+  choix_box: "Choix des box",
+  analyse: "Analyse des box",
+  bans_bonus: "Bans d'équilibrage",
+  draft: "Draft",
+  temps: "Saisie des temps"
+};
 
 // ---- Chargement ----
 
@@ -46,6 +56,8 @@ function valeurTri(match) {
       return t1 === null && t2 === null ? null : Math.min(...[t1, t2].filter(t => t !== null));
     case "ecart":
       return t1 === null || t2 === null ? null : Math.abs(t1 - t2);
+    case "boss":
+      return match.boss_id ? (bossParId.get(match.boss_id)?.nom || match.boss_id) : null;
     default:
       return match.date ? Date.parse(match.date) : null;
   }
@@ -72,7 +84,10 @@ function matchsAffiches() {
     // Sans valeur (temps manquant, date inconnue) : toujours en fin de liste.
     .sort((a, b) => {
       if ((a.v === null) !== (b.v === null)) return a.v === null ? 1 : -1;
-      return ((a.v - b.v) * tri.sens) || (a.index - b.index);
+      const ecart = typeof a.v === "string"
+        ? a.v.localeCompare(b.v, "fr", { sensitivity: "base" })
+        : a.v - b.v;
+      return (ecart * tri.sens) || (a.index - b.index);
     })
     .map(e => e.match);
 }
@@ -142,20 +157,27 @@ function htmlJoueur(match, role, bansConnus) {
   `;
 }
 
+// Ligne d'un match terminé, ou d'un match en cours (phase et lien pour le
+// regarder en spectateur à la place de la date).
 function creerLigneMatch(match) {
   const ligne = document.createElement("article");
-  ligne.className = "match";
+  const enCours = !!match.room_id;
+  ligne.className = enCours ? "match en-cours" : "match";
   const boss = bossParId.get(match.boss_id);
+  const infos = enCours
+    ? `<span class="match-phase">${LIBELLES_PHASES[match.phase] || match.phase}</span>
+       <a class="match-regarder" href="/matchmaking/match.html?room=${encodeURIComponent(match.room_id)}">Regarder</a>`
+    : `<span class="match-date">${formaterDate(match.date)}</span>
+       ${match.bans_connus ? "" : `<span class="match-note">Bans non enregistrés</span>`}`;
 
   ligne.innerHTML = `
-    ${htmlJoueur(match, "j1", match.bans_connus)}
+    ${htmlJoueur(match, "j1", enCours || match.bans_connus)}
     <div class="match-centre">
       ${boss ? `<img class="match-boss" src="../DB/${boss.image}" alt="${boss.nom}" loading="lazy">` : ""}
-      <span class="match-boss-nom">${boss ? boss.nom : ""}</span>
-      <span class="match-date">${formaterDate(match.date)}</span>
-      ${match.bans_connus ? "" : `<span class="match-note">Bans non enregistrés</span>`}
+      <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
+      ${infos}
     </div>
-    ${htmlJoueur(match, "j2", match.bans_connus)}
+    ${htmlJoueur(match, "j2", enCours || match.bans_connus)}
   `;
   // Pseudos en texte (pas d'HTML venant des comptes).
   ligne.querySelector(".match-j1 .match-nom").textContent = match.j1.nom;
@@ -176,6 +198,11 @@ function afficherMatchs() {
 
   liste.replaceChildren(...affiches.map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
   terminerRendu(liste);
+}
+
+function afficherMatchsEnCours() {
+  document.getElementById("section-en-cours").classList.toggle("cache", matchsEnCours.length === 0);
+  document.getElementById("liste-en-cours").replaceChildren(...matchsEnCours.map(creerLigneMatch));
 }
 
 // ---- Démarrage ----
@@ -211,12 +238,14 @@ async function demarrer() {
     const [historique, personnages, boss, utilisateur] = await Promise.all([
       chargerHistorique(), chargerPersonnages(), chargerBoss(), chargerSession()
     ]);
-    matchs = historique;
+    matchs = historique.termines || [];
+    matchsEnCours = historique.en_cours || [];
     personnagesParId = new Map(regrouperPourDraft(personnages).map(p => [p.id, p]));
     bossParId = new Map(boss.map(b => [b.id, b]));
     moiDiscordId = utilisateur?.id || null;
 
     initialiserBarre();
+    afficherMatchsEnCours();
     afficherMatchs();
   } catch (erreur) {
     console.error(erreur);

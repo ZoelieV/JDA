@@ -424,9 +424,11 @@ async function handleDraftGet(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  // Lecture ouverte aux spectateurs (joueur = null).
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
 
   return res.status(200).json({
+    spectateur: !joueur,
     room_id: room.room_id,
     player1_discord_id: room.player1_discord_id,
     player2_discord_id: room.player2_discord_id,

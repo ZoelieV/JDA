@@ -246,8 +246,10 @@ function etatRevanche(precedent) {
 //
 // Pendant le choix des box, la box de l'adversaire n'est pas envoyée
 // (seul son statut "prêt" l'est) : elle ne se découvre qu'en analyse.
+// Spectateur (joueur = null) : aucune des 2 box.
 function vuePourJoueur(draft, joueur) {
   if (draft.phase !== "choix_box") return draft;
+  if (!joueur) return { ...draft, box_j1: null, box_j2: null };
   const autre = joueur === "j1" ? "j2" : "j1";
   return { ...draft, [`box_${autre}`]: null };
 }

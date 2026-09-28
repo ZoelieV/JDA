@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem15">
+<link rel="stylesheet" href="match.css?v=rem16">
 <link rel="stylesheet" href="../commun/entete.css?v=rem5">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
@@ -37,6 +37,8 @@
     <div id="bulles-bas" class="bulles-bas">
       <div id="message-choix-box" class="bandeau-info"></div>
       <div id="message-equilibrage" class="bandeau-info"></div>
+      <!-- Room complète : les suivants regardent en spectateur. -->
+      <div id="etat-spectateur" class="bandeau-info etat-spectateur cache">👁 Tu regardes ce match en spectateur.</div>
       <!-- Draft : valide le personnage sélectionné dans la grille. -->
       <button id="btn-confirmer-action" type="button" class="btn-confirmer-action cache" disabled>Confirmer</button>
       <div id="tour-actuel" class="bandeau-info tour-actuel"></div>
@@ -165,6 +167,6 @@
   <script src="/commun/variantes.js?v=2"></script>
   <script src="/commun/cartes.js?v=1"></script>
   <script src="/commun/tri.js?v=8"></script>
-  <script src="match.js?v=19"></script>
+  <script src="match.js?v=20"></script>
 </body>
 </html>

@@ -54,7 +54,9 @@ async function assurerRolesDraft(supabase, room) {
 // Charge la room (avec sa draft) et vérifie que l'utilisateur en fait
 // partie. Retourne { room, joueur } ou lève une erreur { status, message }
 // à catcher dans la route pour répondre directement au client.
-async function chargerRoomAvecRole(supabase, roomId, discordId) {
+// autoriserSpectateur : lecture seule ouverte à tous (joueur = null pour
+// quelqu'un qui n'est ni j1 ni j2).
+async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpectateur = false } = {}) {
   const { data: room, error } = await supabase
     .from("rooms")
     .select("room_id, player1_discord_id, player2_discord_id, draft")
@@ -72,8 +74,8 @@ async function chargerRoomAvecRole(supabase, roomId, discordId) {
   const roomAvecRoles = await assurerRolesDraft(supabase, room);
   const joueur = determinerRole(roomAvecRoles, discordId);
 
-  if (!joueur) {
-    throw { status: 403, message: "Tu ne fais pas partie de cette room" };
+  if (!joueur && !autoriserSpectateur) {
+    throw { status: 403, message: "Tu ne fais pas partie de cette room (spectateur)" };
   }
 
   return { room: roomAvecRoles, joueur };

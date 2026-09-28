@@ -42,7 +42,7 @@ const POLL_INTERVAL_MS = 2500;
 
 let roomId = null;
 let moiDiscordId = null;
-let monRole = null; // "j1" | "j2"
+let monRole = null; // "j1" | "j2" | null (spectateur)
 let personnagesBase = [];   // characters.json (un Voyageur par élément)
 let personnagesData = [];   // catalogue de draft (un seul Voyageur), variantes (Voyageur, Manekin) du joueur connecté
 let armesData = [];
@@ -250,7 +250,8 @@ async function definirDraft(nouveauDraft) {
     joueur2 = await chargerJoueurDepuisId(draft.discord_j2);
   }
   if (draft.discord_j1 && draft.discord_j2) {
-    monRole = moiDiscordId === draft.discord_j1 ? "j1" : "j2";
+    // Ni j1 ni j2 : spectateur (lecture seule, filtres et tris utilisables).
+    monRole = moiDiscordId === draft.discord_j1 ? "j1" : moiDiscordId === draft.discord_j2 ? "j2" : null;
   }
 
   // Voyageur / Manekin : la grille montre les variantes du joueur connecté
@@ -1045,11 +1046,12 @@ function rendreDraft(phasePrecedente) {
     }
   }
 
-  // Bouton "Confirmer" au-dessus du message : gris hors de son tour ; à son
+  // Bouton "Confirmer" au-dessus du message (joueurs seulement) : gris hors
+  // de son tour ; à son
   // tour, contour de la couleur de l'action, puis rempli une fois un
   // personnage sélectionné.
   const btnConfirmer = document.getElementById("btn-confirmer-action");
-  btnConfirmer.classList.toggle("cache", !prochaine);
+  btnConfirmer.classList.toggle("cache", !prochaine || !monRole);
   btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
   btnConfirmer.classList.toggle("action-ban", typeAction === "ban");
   btnConfirmer.classList.toggle("action-pick", typeAction === "pick");
@@ -1401,6 +1403,13 @@ function rendreRecap() {
 function rendreTemps() {
   rendreRecap();
 
+  if (!monRole) {
+    const enAttente = ["j1", "j2"].filter(role => !draft[`temps_${role}`]).length;
+    document.getElementById("etat-temps").textContent =
+      `En attente ${enAttente === 2 ? "des temps des 2 joueurs" : "du dernier temps"}…`;
+    return;
+  }
+
   const monTemps = draft[`temps_${monRole}`];
   const tempsAdversaire = draft[`temps_${getAutreRole(monRole)}`];
 
@@ -1452,6 +1461,16 @@ function rendreTermine() {
     <p class="ligne-vainqueur">${ligneVainqueur}</p>
     <p class="ligne-temps">${joueur1.nom} : ${draft.temps_j1.affiche} — ${joueur2.nom} : ${draft.temps_j2.affiche}</p>
   `;
+
+  // Spectateur : pas de revanche à demander.
+  if (!monRole) {
+    document.getElementById("btn-rejouer").classList.add("cache");
+    const etat = document.getElementById("etat-rejouer");
+    const demandes = ["j1", "j2"].filter(role => draft[`rejouer_${role}`]).length;
+    etat.textContent = demandes ? `Revanche demandée (${demandes}/2)…` : "";
+    etat.classList.toggle("cache", !demandes);
+    return;
+  }
 
   // Revanche : ready-check des 2 joueurs, puis retour direct à l'analyse
   // avec les mêmes box et bans d'équilibrage, j1/j2 échangés côté serveur.
@@ -1589,6 +1608,7 @@ function rendrePhase() {
   Object.entries(BULLES_PAR_PHASE).forEach(([id, phases]) => {
     document.getElementById(id).classList.toggle("hors-phase", !phases.includes(draft.phase));
   });
+  document.getElementById("etat-spectateur").classList.toggle("cache", !!monRole || !draft.discord_j2);
 
   const avecPersos = ["choix_box", "analyse", "bans_bonus", "draft"].includes(draft.phase);
   document.getElementById("barre-outils").classList.toggle("cache", !avecPersos);
