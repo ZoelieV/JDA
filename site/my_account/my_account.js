@@ -337,6 +337,20 @@ function itemPossede(item, vueActive, collectionProfil) {
     .some(instanceId => (collectionProfil.full[instanceId] ?? -1) >= 0);
 }
 
+// Instance (perso ou copie d'arme) possédée et sélectionnée dans une box
+// autre que la Full Box.
+function instanceSelectionnee(instanceId, boxActive, collectionProfil) {
+  return (collectionProfil.full[instanceId] ?? -1) >= 0 &&
+    !!collectionProfil.selections[boxActive][instanceId];
+}
+
+function itemSelectionne(item, vueActive, boxActive, collectionProfil) {
+  const instances = vueActive === "weapons"
+    ? getInstancesArme(item.id, collectionProfil)
+    : [item.id];
+  return instances.some(instanceId => instanceSelectionnee(instanceId, boxActive, collectionProfil));
+}
+
 function getPPC(item, valeur, vueActive) {
   if (valeur < 0) {
     return "";
@@ -597,7 +611,16 @@ function afficherCollection(personnages, armes, profil) {
     .map(input => input.value);
 
   const recherche = document.getElementById("recherche").value.trim().toLowerCase();
-  const possedesSeulement = document.getElementById("filtre-possedes").checked;
+  // Même case à cocher, sens différent selon la box : "Possédés" en Full Box,
+  // "Sélectionnés" dans les autres (où seuls les possédés sont déjà listés).
+  const filtreCoche = document.getElementById("filtre-possedes").checked;
+  const possedesSeulement = boxActive === "full" && filtreCoche;
+  const selectionnesSeulement = boxActive !== "full" && filtreCoche;
+  const labelFiltre = document.getElementById("filtre-possedes").closest("label");
+  labelFiltre.querySelector("span").textContent = boxActive === "full" ? "Possédés" : "Sélectionnés";
+  labelFiltre.title = boxActive === "full"
+    ? "N'afficher que ce que je possède"
+    : "N'afficher que ce qui est sélectionné dans cette box";
 
   mettreAJourBoutonsTri();
 
@@ -620,6 +643,10 @@ function afficherCollection(personnages, armes, profil) {
       return false;
     }
 
+    if (selectionnesSeulement && !itemSelectionne(item, vueActive, boxActive, collectionProfil)) {
+      return false;
+    }
+
     if (recherche && !String(item.nom || "").toLowerCase().includes(recherche)) {
       return false;
     }
@@ -630,7 +657,9 @@ function afficherCollection(personnages, armes, profil) {
   itemsFiltres.forEach(item => {
     if (vueActive === "weapons") {
       const instances = getInstancesArme(item.id, collectionProfil);
-      const instancesAffichees = instances.length > 0 ? instances : [item.id];
+      const instancesAffichees = selectionnesSeulement
+        ? instances.filter(instanceId => instanceSelectionnee(instanceId, boxActive, collectionProfil))
+        : instances.length > 0 ? instances : [item.id];
       const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
 
       instancesAffichees.forEach(instanceId => {
