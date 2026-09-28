@@ -170,8 +170,8 @@
   min-height: 3rem;
   box-sizing: border-box;
   padding: 0.3125rem 0.875rem 0.3125rem 0.5rem;
+  margin-bottom: 0.25rem;
   border-radius: 0.5rem;
-  border-bottom: 0.25rem solid var(--couleur-j1);
   font-weight: bold;
   text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
 }
@@ -190,7 +190,26 @@
 .match-j2 .match-banniere {
   flex-direction: row-reverse;
   padding: 0.3125rem 0.5rem 0.3125rem 0.875rem;
-  border-bottom-color: var(--couleur-j2);
+}
+
+/* Trait de la couleur du joueur sous la bannière, raccourci côté arrondi
+   de la bannière (droite pour j1, gauche pour j2). */
+.match-banniere::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 1.875rem;
+  bottom: -0.25rem;
+  height: 0.25rem;
+  border-radius: 0 0 0 0.5rem;
+  background-color: var(--couleur-j1);
+}
+
+.match-j2 .match-banniere::after {
+  left: 1.875rem;
+  right: 0;
+  border-radius: 0 0 0.5rem 0;
+  background-color: var(--couleur-j2);
 }
 
 .match-j2 .match-banniere::before {
