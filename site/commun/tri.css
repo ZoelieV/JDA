@@ -5,31 +5,75 @@
   grid-column-start: 1;
 }
 
-/* Logos à la place du texte des tris (points, élément, constellation, niveau). */
+/* Boutons de tri et "réinitialiser les filtres" : même carré que les
+   filtres d'élément, contenu centré. */
 .tri-btn,
+.btn-clear-filtres {
+  box-sizing: border-box;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.4375rem;
+  min-width: 2.4375rem;
+  height: 2.4375rem;
+  padding: 0;
+  overflow: visible;
+}
+
+.tri-btn[hidden] {
+  display: none;
+}
+
+/* Liste des comptes : libellé + flèche alignés. */
 .tri-compte-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.tri-btn[hidden],
 .tri-compte-btn[hidden] {
   display: none;
 }
 
+/* Logos à la place du texte des tris (points, élément, constellation, niveau). */
 .tri-logo {
   display: block;
   height: 1.5rem;
   width: auto;
 }
 
-.fleche-tri:not(:empty) {
-  margin-left: 0.3rem;
-  font-size: 0.75em;
+/* Stella fortuna : +4 px ; stella (niveau) : +5 px. */
+.tri-logo-constellation {
+  height: 1.75rem;
 }
 
-/* Filtres Vœux (Intertwined / Acquaint Fate). */
+.tri-logo-niveau {
+  height: 1.8125rem;
+}
+
+/* Rareté : étoile seule, plus grande. */
+.tri-etoile {
+  font-size: 1.5em;
+  line-height: 1;
+}
+
+/* Sens du tri : petite flèche dans le coin, sans décaler le logo. */
+.fleche-tri:not(:empty) {
+  position: absolute;
+  right: 0.125rem;
+  bottom: 0.0625rem;
+  font-size: 0.5625rem;
+  line-height: 1;
+}
+
+/* Filtres Vœux (Intertwined / Acquaint Fate) : logos +4 px. */
 .filtre-voeu[hidden] {
   display: none !important;
+}
+
+.filtre-voeu .filtre-icone-btn,
+.filtre-voeu .filtre-icone img {
+  padding: 0.1875rem;
 }

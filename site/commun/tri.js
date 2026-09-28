@@ -36,8 +36,8 @@ const LOGO_TRI_POINTS = `${RACINE_LOGOS}scale.webp`;
 // Vœux : Acquaint Fate = 4★ + personnages standards (dont le Voyageur),
 // Intertwined Fate = les autres 5★. Aloy et Manekin : ni l'un ni l'autre.
 const VOEUX = {
-  intertwined: { nom: "Vœu lié (5★ limités)", image: `${RACINE_LOGOS}Item_Intertwined_Fate.webp` },
-  acquaint: { nom: "Vœu d'accointance (4★ et 5★ standards)", image: `${RACINE_LOGOS}Item_Acquaint_Fate.webp` }
+  intertwined: { nom: "Personnages limités", image: `${RACINE_LOGOS}Item_Intertwined_Fate.webp` },
+  acquaint: { nom: "Personnages Standards", image: `${RACINE_LOGOS}Item_Acquaint_Fate.webp` }
 };
 
 // 5★ de la bannière standard : comptés comme 4.5★ pour le tri par rareté
@@ -95,9 +95,9 @@ function majBoutonTri(btn, etat, vue = "characters") {
   const sens = getSensTri(etat, cle);
   const libelles = {
     points: `<img class="tri-logo" src="${LOGO_TRI_POINTS}" alt="Points">`,
-    constellation: vue === "weapons" ? "Raffin." : `<img class="tri-logo" src="${LOGO_TRI_CONSTELLATION}" alt="Constellation">`,
-    niveau: `<img class="tri-logo" src="${LOGO_TRI_NIVEAU}" alt="Niveau">`,
-    rarete: "★",
+    constellation: vue === "weapons" ? "Raffin." : `<img class="tri-logo tri-logo-constellation" src="${LOGO_TRI_CONSTELLATION}" alt="Constellation">`,
+    niveau: `<img class="tri-logo tri-logo-niveau" src="${LOGO_TRI_NIVEAU}" alt="Niveau">`,
+    rarete: `<span class="tri-etoile">★</span>`,
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;

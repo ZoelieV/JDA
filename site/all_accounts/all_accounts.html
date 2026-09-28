@@ -6,7 +6,7 @@
 <title>Tous les comptes</title>
 <link rel="stylesheet" href="all_accounts.css?v=rem4">
 <link rel="stylesheet" href="../commun/entete.css?v=rem4">
-<link rel="stylesheet" href="../commun/tri.css?v=3">
+<link rel="stylesheet" href="../commun/tri.css?v=4">
 <script src="/commun/fond.js?v=4"></script>
 </head>
 <body>
@@ -60,9 +60,9 @@
           <div class="tris">
             <span class="tris-label">Trier :</span>
             <button type="button" class="filtre-etoile-btn tri-btn" data-tri="points"><img class="tri-logo" src="../DB/images/others/scale.webp" alt="Points"></button>
-            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="constellation"><img class="tri-logo" src="../DB/images/others/stella_fortuna_5.webp" alt="Constellation"></button>
-            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="niveau"><img class="tri-logo" src="../DB/images/others/stella.webp" alt="Niveau"></button>
-            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="rarete" title="Trier par rareté">★</button>
+            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="constellation"><img class="tri-logo tri-logo-constellation" src="../DB/images/others/stella_fortuna_5.webp" alt="Constellation"></button>
+            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="niveau"><img class="tri-logo tri-logo-niveau" src="../DB/images/others/stella.webp" alt="Niveau"></button>
+            <button type="button" class="filtre-etoile-btn tri-btn" data-tri="rarete" title="Trier par rareté"><span class="tri-etoile">★</span></button>
             <button type="button" class="filtre-etoile-btn tri-btn" data-tri="element"><img class="tri-logo" src="../DB/images/others/omni_element.webp" alt="Élément"></button>
           </div>
         </div>
@@ -74,8 +74,8 @@
             <button type="button" class="filtre-etoile-btn" data-etoile="3">3★</button>
           </div>
           <div id="filtres-voeux" class="filtres-icones filtre-voeu">
-            <button type="button" class="filtre-icone-btn" data-voeu="intertwined" title="Vœu lié (5★ limités)"><img src="../DB/images/others/Item_Intertwined_Fate.webp" alt="Intertwined Fate"></button>
-            <button type="button" class="filtre-icone-btn" data-voeu="acquaint" title="Vœu d'accointance (4★ et 5★ standards)"><img src="../DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></button>
+            <button type="button" class="filtre-icone-btn" data-voeu="intertwined" title="Personnages limités"><img src="../DB/images/others/Item_Intertwined_Fate.webp" alt="Intertwined Fate"></button>
+            <button type="button" class="filtre-icone-btn" data-voeu="acquaint" title="Personnages Standards"><img src="../DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></button>
           </div>
           <button type="button" id="btn-clear-filtres" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
         </div>
@@ -86,7 +86,7 @@
   </div>
 
   <script src="/commun/variantes.js?v=1"></script>
-  <script src="/commun/tri.js?v=4"></script>
+  <script src="/commun/tri.js?v=5"></script>
   <script src="all_accounts.js?v=10"></script>
 </body>
 </html>
