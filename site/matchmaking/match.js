@@ -827,26 +827,24 @@ function titreTableauJoueur(role, nomJoueur) {
 }
 
 // Tableau d'un joueur, identique pendant la draft et en fin de match :
-// namecard (+ temps en fin de match), 4 picks avec leurs infos
+// namecard, 4 picks avec leurs infos
 // (constellation, niveau, arme signature), puis ses bans. Chaque partie
 // n'est redessinée que si elle change (pas à chaque rafraîchissement).
 function rendreTableauJoueur(role) {
   const joueur = role === "j1" ? joueur1 : joueur2;
   const enRecap = draft.phase === "temps" || draft.phase === "termine";
 
-  // Namecard redessinée seulement si elle change ; la zone du temps (et le
-  // champ de saisie qu'elle contient) y est posée sans être recréée (le
-  // texte tapé n'est pas perdu aux rafraîchissements).
+  // Namecard redessinée seulement si elle change.
   const entete = document.getElementById(`entete-tableau-${role}`);
-  const zone = document.getElementById(`recap-temps-${role}`);
   const cleEntete = JSON.stringify([joueur.nom, joueur.avatar, joueur.data?.parametres?.banniere, draft.roles_tires]);
   if (entete.dataset.cle !== cleEntete) {
     entete.dataset.cle = cleEntete;
-    zone.remove();
     entete.innerHTML = titreTableauJoueur(role, joueur.nom);
   }
-  const namecard = entete.querySelector(".namecard-tableau");
-  if (zone.parentElement !== namecard) namecard.appendChild(zone);
+
+  // Temps (fin de match) au-dessus du tableau ; le champ de saisie y est
+  // déplacé sans être recréé (le texte tapé n'est pas perdu).
+  const zone = document.getElementById(`recap-temps-${role}`);
   zone.classList.toggle("cache", !enRecap);
 
   document.getElementById(`titre-picks-${role}`).textContent = enRecap ? "Équipe" : "Picks";
@@ -1337,7 +1335,7 @@ function creerCaseRecap(personnage, role, element = null) {
   return slot;
 }
 
-// Temps d'un joueur dans sa namecard : champ de saisie pour le joueur
+// Temps d'un joueur, au-dessus de son tableau : champ de saisie pour le joueur
 // connecté pendant la saisie ; sinon un texte (temps de l'adversaire masqué
 // jusqu'au résultat).
 function rendreTempsJoueur(role, zone) {

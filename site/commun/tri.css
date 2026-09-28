@@ -101,3 +101,16 @@
 .filtre-voeu .filtre-icone img {
   padding: 0.1875rem;
 }
+
+/* Filtres et tris : au survol, seul le contour devient doré ; le fond doré
+   est réservé aux boutons sélectionnés. */
+.tri-btn:not(.active):hover,
+.filtre-icone-btn:not(.active):hover,
+.filtre-etoile-btn:not(.active):hover,
+.filtre-proprietaire-btn:not(.active):hover,
+.btn-clear-filtres:hover,
+.filtre-texte input:not(:checked) + span:hover,
+.filtre-icone input:not(:checked) + img:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(20, 20, 20, 0.45);
+}
