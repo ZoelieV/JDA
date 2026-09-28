@@ -69,8 +69,9 @@ function resumerProfil(profil, resultats) {
   // Voyageur (un par élément) compté une seule fois.
   const possedes = getPersonnages().filter(p => (full[p.id] ?? -1) >= 0);
   const nbPersos = new Set(possedes.map(p => p.groupe || p.id)).size;
+  // C6 : 5★ limités uniquement (pas les persos de la bannière standard).
   const nbC6 = new Set(possedes
-    .filter(p => String(p.rarete) === "5" && full[p.id] === 6)
+    .filter(p => String(p.rarete) === "5" && !p.standard && full[p.id] === 6)
     .map(p => p.groupe || p.id)).size;
   const { matchs = 0, victoires = 0 } = resultats[profil.discord_id] || {};
 
@@ -84,7 +85,6 @@ function resumerProfil(profil, resultats) {
     banniere2: data.parametres?.banniere2 || null,
     points: calculerPointsBox(data, "full", getPersonnages()),
     nb_persos: nbPersos,
-    // C6 comptés sur les 5 étoiles uniquement.
     nb_c6: nbC6,
     theatre: PALIERS_THEATRE[data.theatre] ?? null,
     matchs,

@@ -40,15 +40,12 @@ const VOEUX = {
   acquaint: { nom: "Personnages Standards", image: `${RACINE_LOGOS}Item_Acquaint_Fate.webp` }
 };
 
-// 5★ de la bannière standard : comptés comme 4.5★ pour le tri par rareté
-// (rien ne change à l'affichage).
-const PERSOS_STANDARDS = new Set([
-  "keqing", "diluc", "mizuki", "dehya", "qiqi", "tighnari", "jean", "mona", "traveler"
-]);
+// 5★ de la bannière standard (champ "standard" de DB/characters.json) :
+// comptés comme 4.5★ pour le tri par rareté (rien ne change à l'affichage).
 const HORS_VOEUX = new Set(["aloy", "manekin"]);
 
 function rangRarete(item) {
-  if (PERSOS_STANDARDS.has(item.groupe || item.id)) return 4.5;
+  if (item.standard) return 4.5;
   return Number(item.rarete) || 0;
 }
 
