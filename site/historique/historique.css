@@ -170,7 +170,6 @@
   min-height: 3rem;
   box-sizing: border-box;
   padding: 0.3125rem 0.875rem 0.3125rem 0.5rem;
-  margin-bottom: 0.25rem;
   border-radius: 0.5rem;
   font-weight: bold;
   text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
@@ -192,29 +191,24 @@
   padding: 0.3125rem 0.5rem 0.3125rem 0.875rem;
 }
 
-/* Trait de la couleur du joueur sous la bannière, raccourci côté arrondi
-   de la bannière (droite pour j1, gauche pour j2). */
+/* Trait vertical de la couleur du joueur, du côté de la photo de profil
+   (gauche pour j1, droite pour j2). */
 .match-banniere::after {
   content: "";
   position: absolute;
+  top: 0;
+  bottom: 0;
   left: 0;
-  right: 1.875rem;
-  bottom: -0.25rem;
-  height: 0.25rem;
-  /* Bout raccourci arrondi ; l'autre suit le coin de la bannière. */
-  border-radius: 0 62.4375rem 62.4375rem 0.5rem;
+  width: 0.25rem;
+  border-radius: 0.5rem 0 0 0.5rem;
   background-color: var(--couleur-j1);
 }
 
 .match-j2 .match-banniere::after {
-  left: 1.875rem;
+  left: auto;
   right: 0;
-  border-radius: 62.4375rem 0 0.5rem 62.4375rem;
+  border-radius: 0 0.5rem 0.5rem 0;
   background-color: var(--couleur-j2);
-}
-
-.match-j2 .match-banniere::before {
-  transform: scaleX(-1);
 }
 
 .match-avatar {
