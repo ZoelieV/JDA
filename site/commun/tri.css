@@ -1,37 +1,11 @@
 /* Tris et regroupements communs (cf. commun/tri.js). */
 
-/* Case de groupe : toujours en 1re colonne, donc chaque groupe commence
-   une nouvelle ligne de la grille. */
-.tuile-groupe {
+/* Changement d'élément / de type d'arme : nouvelle ligne de la grille. */
+.debut-ligne {
   grid-column-start: 1;
-  box-sizing: border-box;
-  width: 100%;
-  aspect-ratio: 1;
-  align-self: start;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 0.75rem;
-  background-color: rgba(20, 20, 20, 0.45);
-  color: white;
 }
 
-.tuile-groupe img {
-  width: 45%;
-  height: auto;
-  object-fit: contain;
-}
-
-.tuile-groupe .tuile-rarete {
-  font-size: 1.125rem;
-  font-weight: bold;
-  color: #f5c542;
-}
-
-/* Logo omni-élément à la place du texte "Élément". */
+/* Logos à la place du texte des tris (élément, constellation, niveau). */
 .tri-btn {
   display: inline-flex;
   align-items: center;

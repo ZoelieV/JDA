@@ -534,6 +534,19 @@ h2 {
   font-size: 0.875rem;
 }
 
+/* Logos Personnages / Armes. */
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-btn img {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+}
+
 .view-btn.active {
   border-color: rgba(255, 255, 255, 0.5);
   background-color: rgba(255, 255, 255, 0.12);

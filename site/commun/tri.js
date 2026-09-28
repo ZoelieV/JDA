@@ -2,9 +2,9 @@
 //
 // Tris combinables (points, constellation, niveau, rareté, élément/type) :
 // 1er clic = un sens, 2e clic = l'autre sens, 3e clic = désactivé.
-// Élément/type d'arme et rareté sont des regroupements : chaque groupe
-// commence une nouvelle ligne, précédée d'une case avec son logo. Les autres
-// tris s'appliquent à l'intérieur des groupes, dans l'ordre des clics.
+// Élément/type d'arme puis rareté sont des regroupements (un changement
+// d'élément / de type revient à la ligne). Les autres tris s'appliquent à
+// l'intérieur des groupes, dans l'ordre des clics.
 
 const RACINE_LOGOS = "../DB/images/others/";
 
@@ -29,6 +29,8 @@ const ICONES_TYPES_ARMES_TRI = {
 };
 
 const LOGO_TRI_ELEMENT = `${RACINE_LOGOS}omni_element.webp`;
+const LOGO_TRI_CONSTELLATION = `${RACINE_LOGOS}stella_fortuna_5.webp`;
+const LOGO_TRI_NIVEAU = `${RACINE_LOGOS}stella.webp`;
 
 // Vœux : Acquaint Fate = 4★ + personnages standards (dont le Voyageur),
 // Intertwined Fate = les autres 5★. Aloy et Manekin : ni l'un ni l'autre.
@@ -92,13 +94,18 @@ function majBoutonTri(btn, etat, vue = "characters") {
   const sens = getSensTri(etat, cle);
   const libelles = {
     points: "Points",
-    constellation: vue === "weapons" ? "Raffin." : "Constel.",
-    niveau: "Niveau",
+    constellation: vue === "weapons" ? "Raffin." : `<img class="tri-logo" src="${LOGO_TRI_CONSTELLATION}" alt="Constellation">`,
+    niveau: `<img class="tri-logo" src="${LOGO_TRI_NIVEAU}" alt="Niveau">`,
     rarete: "Rareté",
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;
-  btn.title = cle === "element" ? (vue === "weapons" ? "Trier par type d'arme" : "Trier par élément") : "";
+  const titres = {
+    constellation: vue === "weapons" ? "Trier par raffinement" : "Trier par constellation",
+    niveau: "Trier par niveau",
+    element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément"
+  };
+  btn.title = titres[cle] || "";
   btn.classList.toggle("active", sens !== 0);
 }
 
@@ -188,30 +195,21 @@ function trierEtGrouper(items, etat, options = {}) {
   return resultat;
 }
 
-// Case en début de ligne : logo de l'élément / du type d'arme et rareté.
-function creerTuileGroupe(cles) {
-  const tuile = document.createElement("div");
-  tuile.className = "tuile-groupe";
-
-  const logos = [];
-  if (cles.element) logos.push([ICONES_ELEMENTS_TRI[cles.element], cles.element]);
-  if (cles.arme) logos.push([ICONES_TYPES_ARMES_TRI[cles.arme], cles.arme]);
-
-  tuile.innerHTML = logos
-    .filter(([src]) => src)
-    .map(([src, nom]) => `<img src="${src}" alt="${nom}" title="${nom}">`)
-    .join("") +
-    (cles.rarete ? `<span class="tuile-rarete">${String(cles.rarete).replace(".", ",")}★</span>` : "");
-  return tuile;
-}
-
-// Remplit une grille : case de groupe (si regroupement) puis les cartes.
+// Remplit une grille. Chaque changement d'élément / de type d'arme commence
+// une nouvelle ligne (pas les changements de rareté).
 // creerCartes(item) renvoie une carte ou une liste de cartes.
 function remplirGrilleGroupee(container, groupes, creerCartes) {
+  let cleLigne = null;
   groupes.forEach(groupe => {
-    if (Object.keys(groupe.cles).length) container.appendChild(creerTuileGroupe(groupe.cles));
-    groupe.items.forEach(item => {
-      [].concat(creerCartes(item)).forEach(carte => container.appendChild(carte));
+    const cle = JSON.stringify([groupe.cles.element, groupe.cles.arme]);
+    const nouvelleLigne = cleLigne !== null && cle !== cleLigne;
+    cleLigne = cle;
+
+    groupe.items.forEach((item, index) => {
+      [].concat(creerCartes(item)).forEach((carte, indexCarte) => {
+        if (nouvelleLigne && index === 0 && indexCarte === 0) carte.classList.add("debut-ligne");
+        container.appendChild(carte);
+      });
     });
   });
 }
