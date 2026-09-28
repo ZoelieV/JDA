@@ -602,36 +602,6 @@ h1 {
   background-color: rgba(245, 197, 66, 0.15);
 }
 
-.btn-clear-filtres {
-  height: 2.4375rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5625rem;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  background-color: transparent;
-  color: white;
-  font-size: 1.125rem;
-  cursor: pointer;
-  opacity: 0.8;
-}
-
-.btn-clear-filtres:hover {
-  opacity: 1;
-}
-
-/* Logo "filtre barré" à la place du texte. */
-.btn-clear-filtres {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.3rem 0.6rem;
-}
-
-.btn-clear-filtres img {
-  height: 1.5rem;
-  width: auto;
-  display: block;
-}
-
 
 .recherche-personnage {
   box-sizing: border-box;

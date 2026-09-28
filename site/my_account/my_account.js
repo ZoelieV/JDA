@@ -105,22 +105,6 @@ function initialiserMenuCompte() {
   });
 }
 
-async function chargerPersonnages() {
-  const reponse = await fetch("../DB/characters.json");
-  if (!reponse.ok) {
-    throw new Error("Impossible de charger DB/characters.json");
-  }
-  return await reponse.json();
-}
-
-async function chargerArmes() {
-  const reponse = await fetch("../DB/weapons.json");
-  if (!reponse.ok) {
-    throw new Error("Impossible de charger DB/weapons.json");
-  }
-  return await reponse.json();
-}
-
 function creerSelectionsParDefaut() {
   return {
     stuff: {},
@@ -251,20 +235,6 @@ function setVueActive(view) {
   });
 }
 
-function getFondRarete(rarete) {
-  const valeur = String(rarete);
-
-  if (valeur === "5") {
-    return "../DB/images/others/bg_5_star.webp";
-  }
-
-  if (valeur === "3") {
-    return "../DB/images/others/bg_3_star.webp";
-  }
-
-  return "../DB/images/others/bg_4_star.webp";
-}
-
 function getConfigCollection(vueActive) {
   return configCollections[vueActive];
 }
@@ -379,63 +349,19 @@ ${options}
 
 // ---- Coin bas droite des cartes (comme la liste des comptes) ----
 
-// Couleur du détourage du logo d'arme signature, selon son raffinement
-// (index 0 = R1 ... 4 = R5). Mêmes couleurs que la draft et la liste des comptes.
-const COULEURS_REFINEMENT = ["#b0b0b0", "#6fcf6f", "#5b9bd5", "#a366d9", "#e0a83e"];
-
-const iconesTypesArmesSignature = {
-  sword: "../DB/images/others/sword_icon.webp",
-  claymore: "../DB/images/others/claymore_icon.webp",
-  polearm: "../DB/images/others/polearm_icon.webp",
-  bow: "../DB/images/others/bow_icon.webp",
-  catalyst: "../DB/images/others/catalyst_icon.webp"
-};
-
-// Arme signature : image nommée "[id_personnage]_w.webp". Index construit
-// une seule fois (perso -> arme et arme -> perso) au lieu de parcourir la
-// liste des armes à chaque carte.
-let indexSignatures = null;
-
-function getIndexSignatures(personnages, armes) {
-  if (!indexSignatures) {
-    const armeParPerso = new Map();
-    const persoParArme = new Map();
-    // Voyageur : arme signature commune à tous ses éléments.
-    const persosParId = new Map(personnages.map(perso => [perso.groupe || perso.id, perso]));
-
-    armes.forEach(arme => {
-      const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
-      if (!m) return;
-      armeParPerso.set(m[1], arme);
-      if (persosParId.has(m[1])) persoParArme.set(arme.id, persosParId.get(m[1]));
-    });
-
-    indexSignatures = { armeParPerso, persoParArme };
-  }
-  return indexSignatures;
-}
-
 // Perso : logo de son arme signature possédée, détouré de la couleur du
 // meilleur raffinement (copies "idArme#2"... comprises).
 // Arme : icône du perso dont c'est l'arme signature.
 function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
   if (vueActive === "weapons") {
-    const personnageLie = getIndexSignatures(personnages, armes).persoParArme.get(item.id);
+    const personnageLie = trouverPersonnageSignature(armes, personnages, item.id);
     return personnageLie
       ? `<img class="perso-lie-icone" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${personnageLie.nom}">`
       : "";
   }
 
-  const arme = getIndexSignatures(personnages, armes).armeParPerso.get(item.groupe || item.id);
-  const iconeArme = iconesTypesArmesSignature[item.arme];
-  if (!arme || !iconeArme) return "";
-
-  const refinement = Math.max(-1, ...getInstancesArme(arme.id, profil.weapons)
-    .map(instanceId => profil.weapons.full[instanceId] ?? -1));
-  if (refinement < 0) return "";
-
-  const couleur = COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0];
-  return `<img class="character-raffinement" src="${iconeArme}" alt="R${refinement + 1}" title="Arme signature R${refinement + 1}" style="--couleur-ref: ${couleur}">`;
+  const arme = trouverArmeSignature(armes, item);
+  return arme ? htmlArmeSignature(item.arme, meilleurRaffinement(profil.weapons.full, arme.id)) : "";
 }
 
 // Carte : un rectangle qui englobe le visuel (constellation en haut à
@@ -448,15 +374,15 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
   conteneur.className = valeur >= 0 ? "carte-personnage possede" : "carte-personnage";
   conteneur.title = estDuplicata ? `${item.nom} (copie)` : item.nom;
 
-  const fond = getFondRarete(item.rarete);
   const affichageNiveau = valeur < 0 ? "-" : config.labels[valeur];
 
   const classeSelectionnable = boxActive === "full" ? "" : "selectionnable";
   const classeSelectionnee = boxActive !== "full" && selectionne ? "selectionnee" : "";
 
-  const opacite = boxActive === "full"
-    ? (valeur < 0 ? "0.4" : "1")
-    : (selectionne ? "1" : "0.45");
+  // Non possédé (Full Box) / non sélectionné (autres box) : estompé.
+  const classeEstompee = boxActive === "full"
+    ? (valeur < 0 ? "estompe" : "")
+    : (selectionne ? "" : "estompe-box");
 
   // Copie : étiquette "Copie" à la place du bouton dupliquer (on ne duplique
   // que l'arme d'origine).
@@ -499,7 +425,7 @@ ${boutonDupliquer}
     : "";
 
   conteneur.innerHTML = `
-<div class="visuel-personnage ${classeSelectionnable} ${classeSelectionnee}" data-id="${idInstance}" style="background-image: url('${fond}'); opacity: ${opacite};">
+<div class="visuel-personnage ${classeFondRarete(item.rarete)} ${classeSelectionnable} ${classeSelectionnee} ${classeEstompee}" data-id="${idInstance}">
 <img class="image-personnage" src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       ${badgeConstellation}
       ${badgeNiveau}
@@ -567,9 +493,15 @@ function mettreAJourBoutonsTri() {
   document.getElementById("filtres-voeux").hidden = vueActive === "weapons";
 }
 
+// Carte recyclée si rien de ce qu'elle affiche n'a changé depuis le
+// dernier rendu (cf. obtenirCarte, commun/cartes.js).
+function obtenirCarteItem(grille, item, ...parametres) {
+  const cle = JSON.stringify([item.id, item.nom, item.image, ...parametres]);
+  return obtenirCarte(grille, cle, () => creerCarteItem(item, ...parametres));
+}
+
 function afficherCollection(personnages, armes, profil) {
   const liste = document.getElementById("liste-collection");
-  liste.innerHTML = "";
 
   const vueActive = getVueActive();
   const boxActive = getBoxActive();
@@ -661,7 +593,7 @@ function afficherCollection(personnages, armes, profil) {
         const estDuplicata = estInstanceDupliquee(instanceId);
         const peutDupliquer = boxActive === "full" && valeur >= 0;
 
-        return creerCarteItem(item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite);
+        return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite);
       });
     }
 
@@ -672,7 +604,7 @@ function afficherCollection(personnages, armes, profil) {
 
     const niveau = collectionProfil.niveaux?.[cleNiveau(item)] ?? null;
     const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
-    return creerCarteItem(item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
+    return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
   });
 
   mettreAJourBoutonEnregistrer(profil);
@@ -991,57 +923,11 @@ async function initialiserPage() {
   }
 }
 
-// ---- Grille : toute la largeur, alignée sur les bords ----
-// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE ; la
-// 1re et la dernière colonne touchent les bords (alignées avec les filtres
-// et le profil), l'espace restant est réparti entre les cartes ; le même
-// écart sert entre les lignes. Téléphone : 4 par ligne, cartes réduites à la
-// largeur de l'écran.
-
-const ECART_MIN_GRILLE = 10;
-const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
-const COLONNES_TELEPHONE = 4;
-
-// --taille-carte converti en px (la variable CSS est en rem, cf. l'échelle
-// du site dans commun/entete.css).
-function lireTailleCarte() {
-  const racine = getComputedStyle(document.documentElement);
-  const valeur = racine.getPropertyValue("--taille-carte").trim();
-  const nombre = parseFloat(valeur);
-  return valeur.endsWith("rem") ? nombre * (parseFloat(racine.fontSize) || 16) : nombre;
-}
-
-// Écart minimal entre les cartes, à la même échelle que le reste du site.
-function lireEcartMin() {
-  return ECART_MIN_GRILLE * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
-}
-
-function ajusterGrille(grille) {
-  const largeur = grille.clientWidth;
-  if (!largeur) return;
-
-  let taille = lireTailleCarte() || 132;
-  const ecartMin = lireEcartMin();
-  let colonnes;
-
-  if (MEDIA_TELEPHONE.matches) {
-    colonnes = COLONNES_TELEPHONE;
-    taille = Math.floor((largeur - (colonnes - 1) * ecartMin) / colonnes);
-    grille.style.setProperty("--taille-carte", `${taille}px`);
-  } else {
-    grille.style.removeProperty("--taille-carte");
-    colonnes = Math.max(1, Math.floor((largeur + ecartMin) / (taille + ecartMin)));
-  }
-
-  const ecart = colonnes > 1 ? Math.max(0, (largeur - colonnes * taille) / (colonnes - 1)) : 0;
-
-  grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
-  grille.style.gap = `${ecart}px`;
-}
+// ---- Grille : toute la largeur, 1re et dernière colonnes alignées sur les
+// bords (avec les filtres et le profil), cf. ajusterGrille (commun/cartes.js).
 
 function initialiserGrille() {
-  const grille = document.getElementById("liste-collection");
-  new ResizeObserver(() => ajusterGrille(grille)).observe(grille);
+  observerGrilles([document.getElementById("liste-collection")], { bordsAlignes: true, tailleDefaut: 132 });
 }
 
 // ---- Paramètres : bannière, deuxième bannière, fond d'écran ----

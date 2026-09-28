@@ -200,9 +200,13 @@ function trierEtGrouper(items, etat, options = {}) {
 
 // Remplit une grille. Chaque changement d'élément / de type d'arme commence
 // une nouvelle ligne (pas les changements de rareté).
-// creerCartes(item) renvoie une carte ou une liste de cartes.
+// creerCartes(item) renvoie une carte ou une liste de cartes (idéalement
+// recyclées via obtenirCarte, cf. commun/cartes.js). Le contenu de la
+// grille est remplacé en une seule fois.
 function remplirGrilleGroupee(container, groupes, creerCartes) {
+  const cartes = [];
   let cleLigne = null;
+
   groupes.forEach(groupe => {
     const cle = JSON.stringify([groupe.cles.element, groupe.cles.arme]);
     const nouvelleLigne = cleLigne !== null && cle !== cleLigne;
@@ -210,9 +214,16 @@ function remplirGrilleGroupee(container, groupes, creerCartes) {
 
     groupe.items.forEach((item, index) => {
       [].concat(creerCartes(item)).forEach((carte, indexCarte) => {
-        if (nouvelleLigne && index === 0 && indexCarte === 0) carte.classList.add("debut-ligne");
-        container.appendChild(carte);
+        carte.classList.toggle("debut-ligne", nouvelleLigne && index === 0 && indexCarte === 0);
+        cartes.push(carte);
       });
     });
   });
+
+  // Mêmes cartes dans le même ordre (rafraîchissement sans changement) : on
+  // ne touche pas au DOM (pas d'animation de survol rejouée).
+  const inchangee = container.children.length === cartes.length &&
+    cartes.every((carte, index) => container.children[index] === carte);
+  if (!inchangee) container.replaceChildren(...cartes);
+  if (typeof terminerRendu === "function") terminerRendu(container);
 }

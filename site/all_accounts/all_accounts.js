@@ -1,33 +1,8 @@
-// Même ordre que les tris (commun/tri.js).
-const iconesElements = {
-  pyro: "../DB/images/others/pyro.webp",
-  hydro: "../DB/images/others/hydro.webp",
-  electro: "../DB/images/others/electro.webp",
-  cryo: "../DB/images/others/cryo.webp",
-  anemo: "../DB/images/others/anemo.webp",
-  geo: "../DB/images/others/geo.webp",
-  dendro: "../DB/images/others/dendro.webp"
-};
-
-const iconesTypesArmes = {
-  sword: "../DB/images/others/sword.webp",
-  claymore: "../DB/images/others/claymore.webp",
-  polearm: "../DB/images/others/polearm.webp",
-  bow: "../DB/images/others/bow.webp",
-  catalyst: "../DB/images/others/catalyst.webp"
-};
-
-const iconesTypesArmesSignature = {
-  sword: "../DB/images/others/sword_icon.webp",
-  claymore: "../DB/images/others/claymore_icon.webp",
-  polearm: "../DB/images/others/polearm_icon.webp",
-  bow: "../DB/images/others/bow_icon.webp",
-  catalyst: "../DB/images/others/catalyst_icon.webp"
-};
-
-// Couleur du détourage du logo d'arme signature, selon son raffinement
-// (index 0 = R1 ... 4 = R5). Mêmes couleurs que dans la draft (match.js).
-const COULEURS_REFINEMENT = ["#b0b0b0", "#6fcf6f", "#5b9bd5", "#a366d9", "#e0a83e"];
+// Logos des filtres : mêmes listes (et même ordre) que les tris
+// (commun/tri.js), sans "all" (Voyageur / Manekin).
+const iconesElements = Object.fromEntries(
+  Object.entries(ICONES_ELEMENTS_TRI).filter(([element]) => element !== "all")
+);
 
 const configCollections = {
   characters: {
@@ -40,7 +15,7 @@ const configCollections = {
     pointsField: "PPW",
     labels: ["R1", "R2", "R3", "R4", "R5"],
     champType: "type",
-    icones: iconesTypesArmes
+    icones: ICONES_TYPES_ARMES_TRI
   }
 };
 
@@ -71,22 +46,6 @@ async function chargerComptes() {
   return await reponse.json();
 }
 
-async function chargerPersonnages() {
-  const reponse = await fetch("../DB/characters.json");
-  if (!reponse.ok) {
-    throw new Error("Impossible de charger les personnages.");
-  }
-  return await reponse.json();
-}
-
-async function chargerArmes() {
-  const reponse = await fetch("../DB/weapons.json");
-  if (!reponse.ok) {
-    throw new Error("Impossible de charger les armes.");
-  }
-  return await reponse.json();
-}
-
 async function chargerProfil(discordId) {
   const reponse = await fetch(`/api/accounts/${discordId}`);
   if (!reponse.ok) {
@@ -100,70 +59,17 @@ function getLabelConstellation(valeur, vue) {
   return configCollections[vue].labels[valeur];
 }
 
-function getFondRarete(rarete) {
-  const valeur = String(rarete);
-
-  if (valeur === "5") {
-    return "../DB/images/others/bg_5_star.webp";
-  }
-
-  if (valeur === "3") {
-    return "../DB/images/others/bg_3_star.webp";
-  }
-
-  return "../DB/images/others/bg_4_star.webp";
-}
-
-// Arme signature : image nommée "[id_personnage]_w.webp". Index construit
-// une seule fois (perso -> arme et arme -> perso) au lieu de parcourir la
-// liste des armes à chaque carte.
-let indexArmesSignature = null;       // id perso -> arme
-let indexPersosParArmeSignature = null; // id arme -> perso
-
-function construireIndexSignatures() {
-  indexArmesSignature = new Map();
-  indexPersosParArmeSignature = new Map();
-  // Voyageur : arme signature commune à tous ses éléments.
-  const persosParId = new Map(personnagesData.map(perso => [perso.groupe || perso.id, perso]));
-
-  armesData.forEach(arme => {
-    const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
-    if (!m) return;
-    indexArmesSignature.set(m[1], arme);
-    if (persosParId.has(m[1])) indexPersosParArmeSignature.set(arme.id, persosParId.get(m[1]));
-  });
-}
-
-function trouverArmeSignature(personnageId) {
-  return indexArmesSignature.get(personnageId);
-}
-
 // Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un perso sur le
-// profil ouvert, ou null s'il ne la possède pas. Copies dupliquées
-// ("idArme#2"...) comprises : on garde la meilleure (comme en draft).
-function getRefinementArmeSignature(personnageId) {
-  const arme = trouverArmeSignature(personnageId);
-  if (!arme) return null;
-
-  const full = profilCourant.data?.weapons?.full || {};
-  let meilleur = -1;
-  Object.entries(full).forEach(([cle, valeur]) => {
-    if ((cle === arme.id || cle.startsWith(`${arme.id}#`)) && valeur > meilleur) {
-      meilleur = valeur;
-    }
-  });
-  return meilleur >= 0 ? meilleur : null;
+// profil ouvert (meilleure copie), ou -1 s'il ne la possède pas.
+function getRefinementArmeSignature(personnage) {
+  const arme = trouverArmeSignature(armesData, personnage);
+  return arme ? meilleurRaffinement(profilCourant.data?.weapons?.full, arme.id) : -1;
 }
 
 // Niveau 95 / 100 renseigné sur la page Mon compte, ou null.
 function getNiveauPersonnage(personnageId) {
   const niveau = profilCourant.data?.characters?.niveaux?.[personnageId];
   return niveau === 95 || niveau === 100 ? String(niveau) : null;
-}
-
-// Sens inverse : à partir d'une arme, retrouve le personnage dont c'est l'arme signature
-function trouverPersonnageParArmeSignature(armeId) {
-  return indexPersosParArmeSignature.get(armeId);
 }
 
 // ---- Liste des comptes : recherche + tri (sens inversé par un 2e clic) ----
@@ -239,7 +145,6 @@ function mettreAJourBoutonsTriComptes() {
 
 function afficherComptes() {
   const liste = document.getElementById("accounts-list");
-  liste.innerHTML = "";
 
   const recherche = document.getElementById("recherche-comptes").value.trim().toLowerCase();
   const estTriStat = !["activite", "arrivee", "alpha"].includes(triComptes.cle);
@@ -262,33 +167,42 @@ function afficherComptes() {
     return;
   }
 
-  comptes.forEach(compte => {
-    const card = document.createElement("div");
-    card.className = "account-card";
-    card.dataset.id = compte.discord_id;
+  // Cartes recyclées d'une frappe à l'autre dans la recherche (cf.
+  // obtenirCarte) ; la liste est remplacée en une fois.
+  liste.replaceChildren(...comptes.map(compte => obtenirCarte(
+    liste,
+    JSON.stringify([compte.discord_id, estTriStat && texteStat(compte)]),
+    () => creerCarteCompte(compte, estTriStat)
+  )));
+  terminerRendu(liste);
+}
 
-    const nom = getNomCompte(compte);
-    const username = compte.discord_username ? `@${compte.discord_username}` : "";
+function creerCarteCompte(compte, estTriStat) {
+  const card = document.createElement("div");
+  card.className = "account-card";
+  card.dataset.id = compte.discord_id;
 
-    // Deuxième bannière choisie dans Mon compte (sinon celle par défaut).
-    const banniere2 = compte.banniere2 || BANNIERE2_DEFAUT;
-    card.style.setProperty("--banniere2", `url("${encodeURI(`../DB/images/${banniere2}`)}")`);
+  const nom = getNomCompte(compte);
+  const username = compte.discord_username ? `@${compte.discord_username}` : "";
 
-    card.innerHTML = `
-      <img src="${compte.discord_avatar_url || ""}" alt="">
-      <div class="account-infos">
-        <div class="account-name"></div>
-        <div class="account-sub"></div>
-      </div>
-      ${estTriStat ? `<span class="account-stat"></span>` : ""}
-    `;
-    card.querySelector(".account-name").textContent = nom;
-    card.querySelector(".account-sub").textContent = username;
-    if (estTriStat) card.querySelector(".account-stat").textContent = texteStat(compte);
+  // Deuxième bannière choisie dans Mon compte (sinon celle par défaut).
+  const banniere2 = compte.banniere2 || BANNIERE2_DEFAUT;
+  card.style.setProperty("--banniere2", `url("${encodeURI(`../DB/images/${banniere2}`)}")`);
 
-    card.addEventListener("click", () => ouvrirProfil(compte.discord_id, nom));
-    liste.appendChild(card);
-  });
+  card.innerHTML = `
+    <img src="${compte.discord_avatar_url || ""}" alt="">
+    <div class="account-infos">
+      <div class="account-name"></div>
+      <div class="account-sub"></div>
+    </div>
+    ${estTriStat ? `<span class="account-stat"></span>` : ""}
+  `;
+  card.querySelector(".account-name").textContent = nom;
+  card.querySelector(".account-sub").textContent = username;
+  if (estTriStat) card.querySelector(".account-stat").textContent = texteStat(compte);
+
+  card.addEventListener("click", () => ouvrirProfil(compte.discord_id, nom));
+  return card;
 }
 
 function initialiserBarreComptes() {
@@ -358,7 +272,6 @@ function creerCarteProfil({ item, valeur, config }) {
   card.className = "character-card";
   card.title = item.nom;
 
-  const fond = getFondRarete(item.rarete);
   let basGaucheHtml = "";
   let basDroiteHtml = "";
 
@@ -374,21 +287,16 @@ function creerCarteProfil({ item, valeur, config }) {
       basGaucheHtml += `<img class="character-element" src="${ICONES_ELEMENTS_TRI[item.element]}" alt="${item.element}" title="${NOMS_ELEMENTS[item.element] || item.element}">`;
     }
 
-    const refinement = getRefinementArmeSignature(item.groupe || item.id);
-    const iconeArme = iconesTypesArmesSignature[item.arme];
-    if (refinement !== null && iconeArme) {
-      const couleur = COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0];
-      basDroiteHtml = `<img class="character-raffinement" src="${iconeArme}" alt="R${refinement + 1}" title="Arme signature R${refinement + 1}" style="--couleur-ref: ${couleur}">`;
-    }
+    basDroiteHtml = htmlArmeSignature(item.arme, getRefinementArmeSignature(item));
   } else {
-    const personnageLie = trouverPersonnageParArmeSignature(item.id);
+    const personnageLie = trouverPersonnageSignature(armesData, personnagesData, item.id);
     if (personnageLie) {
       basDroiteHtml = `<img class="perso-lie-icone" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${personnageLie.nom}">`;
     }
   }
 
   card.innerHTML = `
-    <div class="character-visuel" style="background-image: url('${fond}');">
+    <div class="character-visuel ${classeFondRarete(item.rarete)}">
       <img src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       <span class="character-constellation">${getLabelConstellation(valeur, vueActive)}</span>
       <span class="character-points">${item[config.pointsField]?.[valeur] ?? ""}</span>
@@ -402,7 +310,6 @@ function creerCarteProfil({ item, valeur, config }) {
 
 function rendreProfilBox() {
   const container = document.getElementById("profile-box");
-  container.innerHTML = "";
 
   const config = configCollections[vueActive];
   const entrees = construireListeAffichee();
@@ -421,58 +328,20 @@ function rendreProfilBox() {
     rareteParDefaut: filtreEtoile.size > 0 || (vueActive === "characters" && filtreVoeux.size > 0)
   });
 
-  remplirGrilleGroupee(container, groupes, item => creerCarteProfil(parItem.get(item)));
+  // Cartes recyclées (cf. obtenirCarte) : le cache est vidé à l'ouverture
+  // d'un autre profil.
+  remplirGrilleGroupee(container, groupes, item => obtenirCarte(
+    container,
+    JSON.stringify([vueActive, item.id, item.nom, item.image, parItem.get(item).valeur]),
+    () => creerCarteProfil(parItem.get(item))
+  ));
 }
 
-// ---- Grille : écarts homogènes (même calcul que la draft) ----
-// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE, puis
-// l'espace restant est réparti également entre les cartes et sur les 2
-// bords ; le même écart sert entre les lignes. Téléphone : 4 par ligne.
-
-const ECART_MIN_GRILLE = 10;
-const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
-const COLONNES_TELEPHONE = 4;
-
-// --taille-carte converti en px (la variable CSS est en rem, cf. l'échelle
-// du site dans commun/entete.css).
-function lireTailleCarte() {
-  const racine = getComputedStyle(document.documentElement);
-  const valeur = racine.getPropertyValue("--taille-carte").trim();
-  const nombre = parseFloat(valeur);
-  return valeur.endsWith("rem") ? nombre * (parseFloat(racine.fontSize) || 16) : nombre;
-}
-
-// Écart minimal entre les cartes, à la même échelle que le reste du site.
-function lireEcartMin() {
-  return ECART_MIN_GRILLE * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
-}
-
-function ajusterGrille(grille) {
-  const largeur = grille.clientWidth;
-  if (!largeur) return;
-
-  let taille = lireTailleCarte() || 110;
-  const ecartMin = lireEcartMin();
-  let colonnes;
-
-  if (MEDIA_TELEPHONE.matches) {
-    colonnes = COLONNES_TELEPHONE;
-    taille = Math.floor((largeur - (colonnes + 1) * ecartMin) / colonnes);
-    grille.style.setProperty("--taille-carte", `${taille}px`);
-  } else {
-    grille.style.removeProperty("--taille-carte");
-    colonnes = Math.max(1, Math.floor((largeur - ecartMin) / (taille + ecartMin)));
-  }
-
-  const ecart = Math.max(0, (largeur - colonnes * taille) / (colonnes + 1));
-
-  grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
-  grille.style.gap = `${ecart}px`;
-}
+// ---- Grille : écarts homogènes, même écart sur les bords (comme la
+// draft), cf. ajusterGrille (commun/cartes.js).
 
 function initialiserGrille() {
-  const grille = document.getElementById("profile-box");
-  new ResizeObserver(() => ajusterGrille(grille)).observe(grille);
+  observerGrilles([document.getElementById("profile-box")], { tailleDefaut: 110 });
 }
 
 // ---- Barre recherche / tri / filtres ----
@@ -620,7 +489,7 @@ async function ouvrirProfil(discordId, nom) {
     armesData = armes;
     // Voyageur / Manekin : variante choisie par ce joueur.
     personnagesData = appliquerVariantes(personnagesBase, profil.data?.parametres);
-    construireIndexSignatures();
+    viderCacheCartes(document.getElementById("profile-box"));
 
     vueActive = "characters";
     boxActive = "full";

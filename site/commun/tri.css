@@ -5,6 +5,30 @@
   grid-column-start: 1;
 }
 
+/* "Réinitialiser les filtres" (logo filtre barré) : apparence de base,
+   sans priorité (:where) pour que chaque page puisse la surcharger (fond,
+   survol doré...). */
+:where(.btn-clear-filtres) {
+  border-radius: 0.5625rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background-color: transparent;
+  color: white;
+  font-size: 1.125rem;
+  cursor: pointer;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+:where(.btn-clear-filtres:hover) {
+  opacity: 1;
+}
+
+.btn-clear-filtres img {
+  display: block;
+  width: auto;
+  height: 1.5rem;
+}
+
 /* Boutons de tri et "réinitialiser les filtres" : même carré que les
    filtres d'élément, contenu centré. */
 .tri-btn,

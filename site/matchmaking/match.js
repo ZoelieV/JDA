@@ -1,23 +1,8 @@
-// Même ordre que les tris (commun/tri.js).
-const iconesElements = {
-  pyro: "../DB/images/others/pyro.webp",
-  hydro: "../DB/images/others/hydro.webp",
-  electro: "../DB/images/others/electro.webp",
-  cryo: "../DB/images/others/cryo.webp",
-  anemo: "../DB/images/others/anemo.webp",
-  geo: "../DB/images/others/geo.webp",
-  dendro: "../DB/images/others/dendro.webp"
-};
-
-// Logos des types d'armes (mêmes que la liste des comptes), utilisés pour
-// l'arme signature possédée, détourés de la couleur du raffinement.
-const iconesTypesArmesSignature = {
-  sword: "../DB/images/others/sword_icon.webp",
-  claymore: "../DB/images/others/claymore_icon.webp",
-  polearm: "../DB/images/others/polearm_icon.webp",
-  bow: "../DB/images/others/bow_icon.webp",
-  catalyst: "../DB/images/others/catalyst_icon.webp"
-};
+// Logos des filtres d'élément : même liste (et même ordre) que les tris
+// (commun/tri.js), sans "all" (Voyageur / Manekin).
+const iconesElements = Object.fromEntries(
+  Object.entries(ICONES_ELEMENTS_TRI).filter(([element]) => element !== "all")
+);
 
 const BOX_LABELS = {
   full: "Full box",
@@ -28,11 +13,6 @@ const BOX_LABELS = {
   opti4: "Opti 4",
   opti5: "Opti 5"
 };
-
-// Couleur du détourage du logo d'arme signature, selon son raffinement
-// (index 0 = R1 ... 4 = R5).
-// Convention reprise des paliers de rareté habituels ; à ajuster si besoin.
-const COULEURS_REFINEMENT = ["#b0b0b0", "#6fcf6f", "#5b9bd5", "#a366d9", "#e0a83e"];
 
 // Copie de la séquence fixe du backend (_lib/draft.js) : c'est de la pure
 // donnée, dupliquée ici pour pouvoir afficher "à qui le tour" sans faire
@@ -102,24 +82,6 @@ function getAutreRole(role) {
 }
 
 // ---- Chargements ----
-
-async function chargerPersonnages() {
-  const reponse = await fetch("../DB/characters.json");
-  if (!reponse.ok) throw new Error("Impossible de charger les personnages.");
-  return await reponse.json();
-}
-
-async function chargerArmes() {
-  const reponse = await fetch("../DB/weapons.json");
-  if (!reponse.ok) throw new Error("Impossible de charger les armes.");
-  return await reponse.json();
-}
-
-async function chargerBoss() {
-  const reponse = await fetch("../DB/boss.json");
-  if (!reponse.ok) throw new Error("Impossible de charger les boss.");
-  return await reponse.json();
-}
 
 async function chargerSessionUtilisateur() {
   const reponse = await fetch("/api/auth/me", { credentials: "include" });
@@ -305,49 +267,17 @@ function getPersonnageParId(id) {
   return personnagesData.find(p => p.id === id) || null;
 }
 
-function getFondRarete(rarete) {
-  const valeur = String(rarete);
-  if (valeur === "5") return "../DB/images/others/bg_5_star.webp";
-  if (valeur === "3") return "../DB/images/others/bg_3_star.webp";
-  return "../DB/images/others/bg_4_star.webp";
-}
-
 function getJoueurDataParRole(role) {
   return role === "j1" ? joueur1?.data : joueur2?.data;
 }
 
-// Arme signature : image nommée "[id_personnage]_w.webp". Index construit
-// une seule fois (perso -> arme et arme -> perso) au lieu de parcourir la
-// liste des armes à chaque carte.
-let indexArmesSignature = null;
-
-function trouverArmeSignature(personnageId) {
-  if (!indexArmesSignature) {
-    indexArmesSignature = new Map();
-    armesData.forEach(arme => {
-      const m = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/);
-      if (m) indexArmesSignature.set(m[1], arme);
-    });
-  }
-  return indexArmesSignature.get(personnageId);
-}
-
 // Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un personnage chez
-// un joueur donné, ou null s'il ne la possède pas / si le perso n'a pas
-// d'arme signature référencée. Copies dupliquées ("idArme#2"...) comprises :
-// on garde la meilleure.
+// un joueur donné (meilleure copie), ou null s'il ne la possède pas.
 function getRefinementArmeSignature(joueurData, personnageId) {
-  const arme = trouverArmeSignature(personnageId);
-  if (!arme) return null;
-
-  const full = joueurData?.weapons?.full || {};
-  let meilleur = -1;
-  Object.entries(full).forEach(([cle, valeur]) => {
-    if ((cle === arme.id || cle.startsWith(`${arme.id}#`)) && valeur > meilleur) {
-      meilleur = valeur;
-    }
-  });
-  return meilleur >= 0 ? meilleur : null;
+  const personnage = getPersonnageParId(personnageId);
+  const arme = personnage && trouverArmeSignature(armesData, personnage);
+  const raffinement = arme ? meilleurRaffinement(joueurData?.weapons?.full, arme.id) : -1;
+  return raffinement >= 0 ? raffinement : null;
 }
 
 // Niveau "95" ou "100" d'un perso, ou null si non renseigné
@@ -509,15 +439,12 @@ function creerCarteItem(personnage, {
     (selectionnable ? " selectionnable" : "") +
     (indisponible ? " indisponible" : "");
 
-  const fond = getFondRarete(personnage.rarete);
-
-  const iconeArme = iconesTypesArmesSignature[personnage.arme];
-  const raffinementHtml = iconeArme
-    ? [["j1", refinementJ1], ["j2", refinementJ2]]
-      .filter(([, r]) => r !== null && r !== undefined)
-      .map(([role, r]) => `<img class="character-raffinement raffinement-${role}" src="${iconeArme}" alt="R${r + 1}" title="${role.toUpperCase()} : arme signature R${r + 1}" style="--couleur-ref: ${COULEURS_REFINEMENT[r] || COULEURS_REFINEMENT[0]}">`)
-      .join("")
-    : "";
+  const raffinementHtml = [["j1", refinementJ1], ["j2", refinementJ2]]
+    .map(([role, r]) => htmlArmeSignature(personnage.arme, r, {
+      classe: `character-raffinement raffinement-${role}`,
+      titre: `${role.toUpperCase()} : arme signature R${r + 1}`
+    }))
+    .join("");
 
   const constellationHtml = [
     constellationJ1 ? `<span class="character-constellation constellation-j1">${constellationJ1}</span>` : "",
@@ -530,7 +457,7 @@ function creerCarteItem(personnage, {
   ].join("");
 
   card.innerHTML = `
-    <div class="character-visuel" style="background-image: url('${fond}');">
+    <div class="character-visuel ${classeFondRarete(personnage.rarete)}">
       <img src="../DB/${personnage.image}" alt="${personnage.nom}" loading="lazy" decoding="async">
       ${constellationHtml}
       ${niveauHtml}
@@ -545,12 +472,19 @@ function creerCarteItem(personnage, {
   return card;
 }
 
+// Carte recyclée si rien de ce qu'elle affiche (ni son comportement au clic,
+// cf. mode) n'a changé depuis le dernier rendu de la grille.
+function obtenirCarteItem(grille, personnage, options = {}, mode = "") {
+  const { onClick, ...affichage } = options;
+  const cle = JSON.stringify([personnage.id, personnage.nom, personnage.image, affichage, mode]);
+  return obtenirCarte(grille, cle, () => creerCarteItem(personnage, options));
+}
+
 // Aperçu des personnages compris dans la box d'un joueur, avec ses infos
 // (constellation, niveau, raffinement), filtres/recherche et tri.
 function rendreApercuBox(containerId, role, boxChoisie) {
   const joueurData = getJoueurDataParRole(role);
   const container = document.getElementById(containerId);
-  container.innerHTML = "";
 
   if (!boxChoisie) {
     container.innerHTML = `<p class="apercu-vide">Aucune box choisie pour l'instant.</p>`;
@@ -569,7 +503,7 @@ function rendreApercuBox(containerId, role, boxChoisie) {
   remplirGrilleGroupee(
     container,
     trierPersonnages(persosBox.filter(p => personnageCorrespondFiltres(p, { ignorerProprietaire: true })), [role]),
-    p => creerCarteItem(p, getInfosCarte(p.id, [role]))
+    p => obtenirCarteItem(container, p, getInfosCarte(p.id, [role]))
   );
 }
 
@@ -765,7 +699,7 @@ function rendreBansBonus() {
     const dejaChoisi = choix.includes(id);
     const peutCliquer = cEstMonTour && (dejaChoisi || choix.length < draft.bans_bonus_total);
 
-    return creerCarteItem(personnage, {
+    return obtenirCarteItem(grille, personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi,
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
@@ -1071,7 +1005,7 @@ function rendreDraft(phasePrecedente) {
     const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
     const selectionnable = cEstMonTour && jePeuxLePicker;
 
-    return creerCarteItem(personnage, {
+    return obtenirCarteItem(grille, personnage, {
       selectionnable,
       indisponible: cEstMonTour && !jePeuxLePicker,
       onClick: () => {
@@ -1082,7 +1016,7 @@ function rendreDraft(phasePrecedente) {
         else ouvrirChoixElement(personnage, choix, envoyer);
       },
       ...getInfosCarte(personnage.id)
-    });
+    }, restrictionPick ? "pick" : "");
   });
 }
 
@@ -1097,65 +1031,19 @@ function cleFiltres() {
   return [[...filtreElement], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, rechercheTexte, etatTri.tris];
 }
 
+// Le contenu est ensuite remplacé en une fois (remplirGrilleGroupee), en
+// recyclant les cartes inchangées.
 function grilleAChange(grille, cle) {
   if (grille.dataset.cle === cle) return false;
   grille.dataset.cle = cle;
-  grille.innerHTML = "";
   return true;
 }
 
-// ---- Grilles de persos : écarts homogènes ----
-// Autant de colonnes que possible avec un écart >= ECART_MIN_GRILLE, puis
-// l'espace restant est réparti également entre les cartes ET sur les 2
-// bords (grille centrée) ; le même écart sert entre les lignes.
-
-const ECART_MIN_GRILLE = 10;
-
-// Téléphone (même seuil que le CSS) : toujours 4 cartes par ligne, dont la
-// taille s'adapte à la largeur disponible.
-const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
-const COLONNES_TELEPHONE = 4;
-
-// --taille-carte converti en px (la variable CSS est en rem, cf. l'échelle
-// du site dans commun/entete.css).
-function lireTailleCarte() {
-  const racine = getComputedStyle(document.documentElement);
-  const valeur = racine.getPropertyValue("--taille-carte").trim();
-  const nombre = parseFloat(valeur);
-  return valeur.endsWith("rem") ? nombre * (parseFloat(racine.fontSize) || 16) : nombre;
-}
-
-// Écart minimal entre les cartes, à la même échelle que le reste du site.
-function lireEcartMin() {
-  return ECART_MIN_GRILLE * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
-}
-
-function ajusterGrille(grille) {
-  const largeur = grille.clientWidth;
-  if (!largeur) return;
-
-  let taille = lireTailleCarte() || 130;
-  const ecartMin = lireEcartMin();
-  let colonnes;
-
-  if (MEDIA_TELEPHONE.matches) {
-    colonnes = COLONNES_TELEPHONE;
-    taille = Math.floor((largeur - (colonnes + 1) * ecartMin) / colonnes);
-    grille.style.setProperty("--taille-carte", `${taille}px`);
-  } else {
-    grille.style.removeProperty("--taille-carte");
-    colonnes = Math.max(1, Math.floor((largeur - ecartMin) / (taille + ecartMin)));
-  }
-
-  const ecart = Math.max(0, (largeur - colonnes * taille) / (colonnes + 1));
-
-  grille.style.gridTemplateColumns = `repeat(${colonnes}, ${taille}px)`;
-  grille.style.gap = `${ecart}px`;
-}
+// ---- Grilles de persos : écarts homogènes, grille centrée (même écart sur
+// les bords), cf. ajusterGrille (commun/cartes.js).
 
 function initialiserGrillesPersos() {
-  const observer = new ResizeObserver(entrees => entrees.forEach(e => ajusterGrille(e.target)));
-  document.querySelectorAll(".grille-pool").forEach(grille => observer.observe(grille));
+  observerGrilles(document.querySelectorAll(".grille-pool"), { tailleDefaut: 130 });
 }
 
 // ---- Barre recherche / tri / filtres (commune à toutes les phases) ----
@@ -1340,7 +1228,6 @@ function creerCaseRecap(personnage, role, element = null) {
 
   const suffixe = role === "j1" ? "J1" : "J2";
   const infos = getInfosCarte(personnage.id, [role], element);
-  const iconeArme = iconesTypesArmesSignature[personnage.arme];
   const refinement = infos[`refinement${suffixe}`];
 
   const zoneInfos = document.createElement("div");
@@ -1348,9 +1235,7 @@ function creerCaseRecap(personnage, role, element = null) {
   zoneInfos.innerHTML = [
     infos[`constellation${suffixe}`] ? `<span class="pastille-case">${infos[`constellation${suffixe}`]}</span>` : "",
     infos[`niveau${suffixe}`] ? `<span class="pastille-case">${infos[`niveau${suffixe}`]}</span>` : "",
-    refinement !== null && refinement !== undefined && iconeArme
-      ? `<img class="arme-case" src="${iconeArme}" alt="R${refinement + 1}" title="Arme signature R${refinement + 1}" style="--couleur-ref: ${COULEURS_REFINEMENT[refinement] || COULEURS_REFINEMENT[0]}">`
-      : ""
+    htmlArmeSignature(personnage.arme, refinement, { classe: "arme-case" })
   ].join("");
   // Côté extérieur : à gauche de l'icône pour j1, à droite pour j2 (la case
   // de j2 est en miroir).
@@ -1379,10 +1264,10 @@ function rendreTableauRecap(role) {
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role);
   const grille = document.getElementById(`recap-persos-${role}`);
   if (grilleAChange(grille, JSON.stringify(picks.map(a => [a.perso_id, a.element])))) {
-    picks.forEach(pick => {
-      const personnage = getPersonnageParId(pick.perso_id);
-      if (personnage) grille.appendChild(creerCaseRecap(personnage, role, pick.element));
-    });
+    grille.replaceChildren(...picks
+      .map(pick => [getPersonnageParId(pick.perso_id), pick.element])
+      .filter(([personnage]) => personnage)
+      .map(([personnage, element]) => creerCaseRecap(personnage, role, element)));
   }
 
   // Temps : champ de saisie dans la namecard du joueur connecté pendant la

@@ -1,0 +1,23 @@
+/* Styles communs des cartes de personnages / armes (cf. commun/cartes.js).
+   Chargé après le CSS de la page. */
+
+/* Fond selon la rareté (classeFondRarete). */
+.fond-5 {
+  background-image: url("../DB/images/others/bg_5_star.webp");
+}
+
+.fond-4 {
+  background-image: url("../DB/images/others/bg_4_star.webp");
+}
+
+.fond-3 {
+  background-image: url("../DB/images/others/bg_3_star.webp");
+}
+
+/* Couleur du détourage du logo d'arme signature selon son raffinement
+   (htmlArmeSignature) : R1 ... R5. */
+.ref-1 { --couleur-ref: #b0b0b0; }
+.ref-2 { --couleur-ref: #6fcf6f; }
+.ref-3 { --couleur-ref: #5b9bd5; }
+.ref-4 { --couleur-ref: #a366d9; }
+.ref-5 { --couleur-ref: #e0a83e; }
