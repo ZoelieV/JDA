@@ -540,14 +540,16 @@ function rendreApercuBox(containerId, role, boxChoisie) {
       armes: filtreArme,
       rareteParDefaut: filtreEtoile.size > 0
     }
-  ).map(groupe => ({ ...groupe, section: "armes" }));
+  ).map(groupe => ({
+    ...groupe,
+    section: "armes",
+    items: groupe.items.map(arme => ({ ...arme, infosArme: { [role]: arme.raffinement } }))
+  }));
 
   remplirGrilleGroupee(
     container,
     [...groupesPersos, ...groupesArmes],
-    item => item.instanceId
-      ? obtenirCarte(container, JSON.stringify(["arme", item.instanceId, item.raffinement, role]), () => creerCarteArme(item, role))
-      : obtenirCarteItem(container, item, getInfosCarte(item.id, [role]))
+    carteDraftOuArme(container, item => obtenirCarteItem(container, item, getInfosCarte(item.id, [role])))
   );
 }
 
@@ -577,19 +579,67 @@ function armeCorrespondFiltres(arme) {
   return !q || arme.nom.toLowerCase().includes(q);
 }
 
-// Carte d'une arme dans l'aperçu d'une box : raffinement en haut, du côté
-// du joueur (comme les constellations).
-function creerCarteArme(arme, role) {
+// Carte d'une arme (non cliquable) : raffinement de chaque joueur qui la
+// possède en haut, de son côté et dans sa couleur (comme les
+// constellations) ; en bas à droite, l'icône du personnage dont c'est
+// l'arme signature. raffinements : { j1?, j2? } (0 = R1 ... 4 = R5).
+function creerCarteArme(arme, raffinements) {
   const card = document.createElement("div");
   card.className = "character-card carte-arme";
-  card.title = arme.instanceId.includes("#") ? `${arme.nom} (copie)` : arme.nom;
+  card.title = arme.instanceId?.includes("#") ? `${arme.nom} (copie)` : arme.nom;
+  const personnageLie = trouverPersonnageSignature(armesData, personnagesData, arme.id);
   card.innerHTML = `
     <div class="character-visuel ${classeFondRarete(arme.rarete)}">
       <img src="../DB/${arme.image}" alt="${arme.nom}" loading="lazy" decoding="async">
-      <span class="character-constellation constellation-${role}">R${arme.raffinement + 1}</span>
+      ${["j1", "j2"].filter(role => raffinements[role] != null)
+        .map(role => `<span class="character-constellation constellation-${role}">R${raffinements[role] + 1}</span>`).join("")}
+      ${personnageLie ? `<img class="perso-lie-icone" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${personnageLie.nom}">` : ""}
     </div>
   `;
   return card;
+}
+
+// Carte d'une grille qui mêle personnages et armes : les armes (champ
+// infosArme) ont leur propre carte, recyclée elle aussi.
+function carteDraftOuArme(grille, creerCartePerso) {
+  return item => item.infosArme
+    ? obtenirCarte(grille, JSON.stringify(["arme", item.instanceId || item.id, item.infosArme]), () => creerCarteArme(item, item.infosArme))
+    : creerCartePerso(item);
+}
+
+// Draft et bans d'équilibrage : armes des box des 2 joueurs (meilleure
+// copie de chacun), à la suite des personnages ; filtre J1/J2 respecté.
+function groupesArmesDraft() {
+  const parId = new Map();
+  ["j1", "j2"].forEach(role => {
+    if (filtreProprietaire && filtreProprietaire !== role) return;
+    getArmesBox(getJoueurDataParRole(role), draft[`box_${role}`] || "full").forEach(arme => {
+      const entree = parId.get(arme.id) || { ...arme, instanceId: null, infosArme: {} };
+      entree.infosArme[role] = Math.max(entree.infosArme[role] ?? -1, arme.raffinement);
+      parId.set(arme.id, entree);
+    });
+  });
+
+  const raffinements = arme => Object.values(arme.infosArme);
+  return trierEtGrouper([...parId.values()].filter(armeCorrespondFiltres), etatTri, {
+    vue: "weapons",
+    valeurs: {
+      points: arme => Math.max(...raffinements(arme).map(r => Number(arme.PPW?.[r] ?? 0))),
+      constellation: arme => Math.max(...raffinements(arme))
+    },
+    elements: filtreElement,
+    armes: filtreArme,
+    rareteParDefaut: filtreEtoile.size > 0
+  }).map(groupe => ({ ...groupe, section: "armes" }));
+}
+
+// Groupes d'une grille de draft : personnages puis armes, selon le filtre
+// Personnages / Armes.
+function groupesDraft(personnages) {
+  return [
+    ...(filtreVue === "weapons" ? [] : trierPersonnages(personnages)),
+    ...(filtreVue === "characters" ? [] : groupesArmesDraft())
+  ];
 }
 
 function creerBanMini(personnage) {
@@ -792,7 +842,7 @@ function rendreBansBonus() {
     .map(id => getPersonnageParId(id))
     .filter(p => p && personnageCorrespondFiltres(p));
 
-  remplirGrilleGroupee(grille, trierPersonnages(personnages), personnage => {
+  remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
     const id = personnage.id;
     const dejaChoisi = choix.includes(id);
     const peutCliquer = cEstMonTour && (dejaChoisi || choix.length < draft.bans_bonus_total);
@@ -803,7 +853,7 @@ function rendreBansBonus() {
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
       ...getInfosCarte(id)
     });
-  });
+  }));
 }
 
 // ---- Phase 3 : draft (boss + bans/picks) ----
@@ -1165,7 +1215,7 @@ function rendreDraft(phasePrecedente) {
     .map(id => getPersonnageParId(id))
     .filter(p => p && personnageCorrespondFiltres(p));
 
-  remplirGrilleGroupee(grille, trierPersonnages(personnages), personnage => {
+  remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
     const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
     const selectionnable = cEstMonTour && jePeuxLePicker;
 
@@ -1193,7 +1243,7 @@ function rendreDraft(phasePrecedente) {
       },
       ...getInfosCarte(personnage.id)
     }, restrictionPick ? "pick" : "");
-  });
+  }));
 }
 
 // ---- Grilles de persos : reconstruction seulement si nécessaire ----
@@ -1404,11 +1454,7 @@ function mettreAJourFiltreProprietaire() {
   const btnFavoris = document.querySelector('#barre-outils .tri-btn[data-tri="favoris"]');
   if (btnFavoris) btnFavoris.hidden = !monRole;
 
-  // Personnages / Armes : seulement quand les box sont affichées (les armes
-  // ne se draftent pas).
   const enBox = draft.phase === "choix_box" || draft.phase === "analyse";
-  const zoneVue = document.getElementById("filtres-vue");
-  if (zoneVue) zoneVue.classList.toggle("cache", !enBox);
 
   const zone = document.getElementById("filtres-proprietaire");
   if (!zone) return;

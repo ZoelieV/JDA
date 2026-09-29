@@ -2002,3 +2002,15 @@ h1 {
 .slot-ban .infos-case.infos-j2 {
   background-color: rgba(224, 100, 90, 0.3);
 }
+
+/* Carte d'arme : icône du personnage dont c'est l'arme signature, en bas à
+   droite (décalée, le bord de la carte rogne le surplus). */
+.character-visuel img.perso-lie-icone {
+  position: absolute;
+  bottom: 0;
+  right: -0.375rem;
+  width: 46%;
+  height: 46%;
+  border-radius: 0;
+  object-fit: cover;
+}
