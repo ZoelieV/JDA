@@ -168,7 +168,9 @@ body::before {
   min-height: 3.125rem;
   flex-direction: row-reverse;
   justify-content: flex-start;
-  padding: 0.3125rem 2.8125rem 0.3125rem 0.875rem;
+  /* Décalée de 20 px vers la droite. */
+  left: 1.25rem;
+  padding: 0 2.8125rem 0 0.875rem;
   border: none;
   border-radius: 0.5rem;
   background-color: transparent;
@@ -176,6 +178,16 @@ body::before {
   text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
   box-shadow: none;
   transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+/* Photo de profil de la hauteur de la bannière. */
+.avec-banniere2 > img,
+.avec-banniere2 #discord-avatar {
+  align-self: stretch;
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
 }
 
 .avec-banniere2::before {

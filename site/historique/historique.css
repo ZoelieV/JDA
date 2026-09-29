@@ -185,7 +185,7 @@
   aspect-ratio: 1000 / 137;
   min-height: 3rem;
   box-sizing: border-box;
-  padding: 0.3125rem 0.875rem 0.3125rem 0.5rem;
+  padding: 0 0.875rem 0 0.5rem;
   border-radius: 0.5rem;
   font-weight: bold;
   text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
@@ -204,7 +204,7 @@
 
 .match-j2 .match-banniere {
   flex-direction: row-reverse;
-  padding: 0.3125rem 0.5rem 0.3125rem 0.875rem;
+  padding: 0 0.5rem 0 0.875rem;
 }
 
 .match-j2 .match-banniere::before {
@@ -231,9 +231,13 @@
   background-color: var(--couleur-j2);
 }
 
+/* Photo de profil de la hauteur de la bannière. */
 .match-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
+  align-self: stretch;
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
+  box-sizing: border-box;
   flex-shrink: 0;
   border: 2px solid rgba(255, 255, 255, 0.6);
   border-radius: 50%;

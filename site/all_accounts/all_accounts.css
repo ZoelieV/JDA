@@ -102,9 +102,12 @@ h1, h2 {
   white-space: nowrap;
 }
 
+/* Photo de profil de la hauteur de la bannière. */
 .account-card img {
-  width: 2.75rem;
-  height: 2.75rem;
+  align-self: stretch;
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
   flex-shrink: 0;
   border-radius: 50%;
   object-fit: cover;
