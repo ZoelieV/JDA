@@ -189,8 +189,8 @@ function htmlJoueur(match, role, bansConnus) {
 
   return `
     <div class="match-joueur match-${role}${gagnant ? " gagnant" : ""}">
-      <div class="match-banniere" style="--banniere2: url(&quot;${banniere}&quot;)">
-        ${joueur.avatar ? `<img class="match-avatar" src="${joueur.avatar}" alt="">` : ""}
+      <div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${banniere}&quot;)">
+        ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
         <span class="match-nom"></span>
         ${etiquette}
         <span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span>

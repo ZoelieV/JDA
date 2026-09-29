@@ -181,7 +181,7 @@ function afficherComptes() {
 
 function creerCarteCompte(compte, estTriStat) {
   const card = document.createElement("div");
-  card.className = "account-card";
+  card.className = "account-card banniere-joueur";
   card.dataset.id = compte.discord_id;
 
   const nom = getNomCompte(compte);
@@ -192,7 +192,7 @@ function creerCarteCompte(compte, estTriStat) {
   card.style.setProperty("--banniere2", `url("${encodeURI(`../DB/images/${banniere2}`)}")`);
 
   card.innerHTML = `
-    <img src="${compte.discord_avatar_url || ""}" alt="">
+    <img class="photo-joueur" src="${compte.discord_avatar_url || ""}" alt="">
     <div class="account-infos">
       <div class="account-name"></div>
       <div class="account-sub"></div>

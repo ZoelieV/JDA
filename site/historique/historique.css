@@ -174,74 +174,22 @@
   box-shadow: 0 0 0 0.125rem var(--couleur-victoire), 0 0 0.875rem rgba(62, 207, 106, 0.35);
 }
 
-/* Bannière du joueur (deuxième bannière, 1000x137) : photo, pseudo,
-   résultat et temps ; j2 en miroir. */
+/* Bannière du joueur au format commun (.banniere-joueur, commun/entete.css) :
+   j1 photo à gauche, j2 photo à droite (image inversée). */
 .match-banniere {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  align-items: center;
   gap: 0.625rem;
-  aspect-ratio: 1000 / 137;
   min-height: 3rem;
-  box-sizing: border-box;
-  padding: 0 0.875rem 0 0.5rem;
-  border-radius: 0.5rem;
   font-weight: bold;
-  text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
 }
 
-.match-banniere::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background-image: var(--banniere2);
-  background-size: cover;
-  background-position: center;
-}
-
-.match-j2 .match-banniere {
-  flex-direction: row-reverse;
-  padding: 0 0.5rem 0 0.875rem;
-}
-
-.match-j2 .match-banniere::before {
-  transform: scaleX(-1);
-}
-
-/* Trait vertical de la couleur du joueur, du côté de la photo de profil
-   (gauche pour j1, droite pour j2). */
-.match-banniere::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 0.25rem;
-  border-radius: 0.5rem 0 0 0.5rem;
-  background-color: var(--couleur-j1);
-}
-
-.match-j2 .match-banniere::after {
-  left: auto;
-  right: 0;
-  border-radius: 0 0.5rem 0.5rem 0;
-  background-color: var(--couleur-j2);
-}
-
-/* Photo de profil de la hauteur de la bannière. */
+/* Photo entourée de la couleur du joueur (5 px, 2 px sur téléphone),
+   comprise dans sa taille : elle ne dépasse pas en hauteur. */
 .match-avatar {
-  align-self: stretch;
-  width: auto;
-  height: auto;
-  aspect-ratio: 1;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  object-fit: cover;
+  border: 5px solid var(--couleur-j1);
+}
+
+.match-j2 .match-avatar {
+  border-color: var(--couleur-j2);
 }
 
 .match-nom {
@@ -519,8 +467,7 @@ img.arme-mini {
   }
 
   .match-avatar {
-    width: 1.75rem;
-    height: 1.75rem;
+    border-width: 2px;
   }
 
   .match-temps {
