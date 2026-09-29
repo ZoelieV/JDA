@@ -235,7 +235,10 @@ function rendreCorps() {
           ${vue === "characters" ? `<button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points">Aperçu</button>` : ""}
         </td>
         ${valeurs[vue][item.id].map((valeur, index) => `
-          <td>
+          <td class="${index >= 1 && index <= COLONNES[vue].derniereChaine ? "avec-ecart" : ""}">
+            ${index >= 1 && index <= COLONNES[vue].derniereChaine
+              ? `<span class="ecart-points" data-id="${item.id}" data-index="${index}">${texteEcart(valeurs[vue][item.id], index)}</span>`
+              : ""}
             <span class="case-admin">
               <input class="case-points" data-id="${item.id}" data-index="${index}" value="${valeur}" inputmode="decimal">
               <span class="apercu-points"></span>
@@ -300,6 +303,7 @@ function enregistrerCase(input, valeur) {
   const propre = normaliser(index, valeur);
   valeurs[vue][input.dataset.id][index] = propre;
   input.value = propre;
+  mettreAJourEcarts(input.dataset.id);
   input.classList.remove("avec-apercu", "invalide");
   input.nextElementSibling.textContent = "";
   mettreAJourPied();
@@ -316,6 +320,7 @@ function initialiserSaisie() {
     const saisie = lireSaisie(input.value);
     if (saisie && "valeur" in saisie) {
       valeurs[vue][input.dataset.id][Number(input.dataset.index)] = normaliser(Number(input.dataset.index), saisie.valeur);
+      mettreAJourEcarts(input.dataset.id);
       mettreAJourPied();
     }
   });
@@ -367,6 +372,22 @@ function initialiserSaisie() {
   });
 }
 
+// Augmentation entre une constellation et la précédente, en pourcentage
+// (x1,2 = +20 %) ; vide si la précédente vaut 0.
+function texteEcart(liste, index) {
+  const avant = liste[index - 1];
+  if (!avant) return "";
+  const pourcentage = Math.round((liste[index] / avant - 1) * 100);
+  return `${pourcentage >= 0 ? "+" : "−"}${Math.abs(pourcentage)} %`;
+}
+
+// Pourcentages d'une ligne, après une modification.
+function mettreAJourEcarts(id) {
+  document.querySelectorAll(`#corps-admin .ecart-points[data-id="${id}"]`).forEach(span => {
+    span.textContent = texteEcart(valeurs[vue][id], Number(span.dataset.index));
+  });
+}
+
 function copierJusquAuBout(id, index) {
   const liste = valeurs[vue][id];
   const derniere = COLONNES[vue].derniereChaine;
@@ -375,6 +396,7 @@ function copierJusquAuBout(id, index) {
     const i = Number(input.dataset.index);
     if (i > index && i <= derniere) input.value = liste[i];
   });
+  mettreAJourEcarts(id);
   mettreAJourPied();
 }
 

@@ -559,3 +559,21 @@ body {
 .tableau-admin tbody td.col-nom {
   vertical-align: middle;
 }
+
+/* Augmentation entre deux constellations (x1,2 = +20 %), à cheval sur la
+   séparation entre les deux cases, à hauteur des champs. */
+.tableau-admin td.avec-ecart {
+  position: relative;
+}
+
+.ecart-points {
+  position: absolute;
+  left: 0;
+  top: 0.75rem;
+  z-index: 1;
+  transform: translateX(-50%);
+  font-size: 0.6875rem;
+  color: #f5c542;
+  white-space: nowrap;
+  pointer-events: none;
+}
