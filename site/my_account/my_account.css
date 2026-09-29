@@ -80,6 +80,24 @@ h2 {
   position: relative;
 }
 
+/* Engrenage à gauche dans la bannière du compte : ici elle ouvre le menu
+   des paramètres (sur les autres pages, elle ramène à Mon compte). Bouton
+   en miroir (photo à droite) : la marge auto le pousse au bord gauche. */
+.compte-btn .icone-parametres {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  margin-right: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0.1875rem rgba(0, 0, 0, 0.9));
+  transition: transform 0.2s ease;
+}
+
+.compte-btn:hover .icone-parametres,
+.compte-btn[aria-expanded="true"] .icone-parametres {
+  transform: rotate(30deg);
+}
+
 /* Photo + nom Discord alignés, cliquables. */
 .compte-btn {
   display: flex;
@@ -114,11 +132,6 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.compte-btn .chevron {
-  font-size: 0.75rem;
-  opacity: 0.8;
 }
 
 /* Menu déroulant sous le bouton du compte. */
@@ -1635,4 +1648,12 @@ body {
 .favori-btn.actif {
   opacity: 1;
   filter: drop-shadow(0 0 0.25rem rgba(245, 197, 66, 0.9));
+}
+
+/* Téléphone : engrenage plus petit. */
+@media (max-width: 700px) {
+  .compte-btn .icone-parametres {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
 }

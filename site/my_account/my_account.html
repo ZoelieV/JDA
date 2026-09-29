@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem14">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem16">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
@@ -28,10 +28,12 @@
       <!-- Compte Discord : photo + nom cliquables, ouvrent un menu déroulant
            (UID, théâtre, paramètres, déconnexion). -->
       <div id="auth-zone" class="auth-zone">
-        <button id="compte-btn" class="compte-btn" type="button" aria-haspopup="true" aria-expanded="false">
+        <!-- Ici le bouton du compte ouvre le menu des paramètres (ailleurs il
+             ramène à Mon compte) : engrenage à gauche dans la bannière. -->
+        <button id="compte-btn" class="compte-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Paramètres du compte">
           <img id="discord-avatar" alt="Avatar Discord">
           <span id="discord-name"></span>
-          <span class="chevron">▾</span>
+          <img class="icone-parametres" src="../DB/images/others/Icon_Settings.webp" alt="">
         </button>
 
         <div id="menu-compte" class="menu-compte cache">
@@ -259,6 +261,6 @@
   <script src="/my_account/auto_box/interface.js?v=2"></script>
   <script src="/commun/cartes.js?v=1"></script>
   <script src="/commun/tri.js?v=10"></script>
-  <script src="/my_account/my_account.js?v=24"></script>
+  <script src="/my_account/my_account.js?v=26"></script>
 </body>
 </html>

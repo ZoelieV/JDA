@@ -302,6 +302,43 @@
   --taille-perso: 3.4rem;
 }
 
+/* Bans : 3 infos empilées de chaque côté (constellation, arme, niveau) ;
+   pastilles plus petites et plus près des bords pour ne pas se chevaucher
+   (3 x 0.9375rem + marges, dans 3.4rem). */
+.ligne-bans .coin {
+  min-width: 0.9375rem;
+  height: 0.9375rem;
+  padding: 0 0.0625rem;
+  font-size: 0.5rem;
+}
+
+.ligne-bans img.arme-mini,
+.ligne-bans img.element-mini {
+  width: 0.9375rem;
+}
+
+.ligne-bans .coin-hg,
+.ligne-bans .coin-hd {
+  top: 0.0625rem;
+}
+
+.ligne-bans .coin-bg,
+.ligne-bans .coin-bd {
+  bottom: 0.0625rem;
+}
+
+.ligne-bans .coin-hg,
+.ligne-bans .coin-mg,
+.ligne-bans .coin-bg {
+  left: 0.0625rem;
+}
+
+.ligne-bans .coin-hd,
+.ligne-bans .coin-md,
+.ligne-bans .coin-bd {
+  right: 0.0625rem;
+}
+
 .coin {
   position: absolute;
   box-sizing: border-box;
