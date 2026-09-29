@@ -367,8 +367,8 @@ function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
 // Carte : un rectangle qui englobe le visuel (constellation en haut à
 // gauche, points en haut à droite, niveau en bas à gauche, arme en bas à
 // droite), le réglage de constellation et le niveau. Nom au survol.
-// favori : true / false pour afficher le cœur des favoris (persos possédés,
-// Full Box), null sinon.
+// favori : true / false pour afficher le cœur des favoris (persos et armes
+// d'origine possédés, Full Box), null sinon.
 function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null, coinBasDroite = "", favori = null) {
   const config = getConfigCollection(vueActive);
   const idInstance = instanceId || item.id;
@@ -400,14 +400,21 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
 <button type="button" class="constellation-btn moins-btn" data-id="${idInstance}">-</button>
 <span class="info-constellation">${affichageNiveau}</span>
 <button type="button" class="constellation-btn plus-btn" data-id="${idInstance}">+</button>
-${boutonDupliquer}
-${favori === null ? "" : `<button type="button" class="favori-btn${favori ? " actif" : ""}" data-id="${idInstance}" title="${favori ? "Retirer des favoris" : "Ajouter aux favoris"}"><img src="../DB/images/others/favourite.webp" alt="Favori"></button>`}
 </div>
     `
     : "";
 
-  const zoneNiveau = boxActive === "full" && vueActive === "characters" && valeur >= 0
-    ? creerSelectNiveau(cleNiveau(item), niveau)
+  // Sous les constellations, côte à côte et de la même taille : stella
+  // (niveau) + cœur pour un perso, dupliquer (ou "Copie") + cœur pour une
+  // arme.
+  const boutonFavori = favori === null
+    ? ""
+    : `<button type="button" class="favori-btn${favori ? " actif" : ""}" data-id="${item.id}" title="${favori ? "Retirer des favoris" : "Ajouter aux favoris"}"><img src="../DB/images/others/favourite.webp" alt="Favori"></button>`;
+  const outils = vueActive === "characters"
+    ? (valeur >= 0 ? creerSelectNiveau(cleNiveau(item), niveau) : "") + boutonFavori
+    : boutonDupliquer + boutonFavori;
+  const zoneOutils = boxActive === "full" && outils
+    ? `<div class="ligne-outils outils-${vueActive}">${outils}</div>`
     : "";
 
   // Hors Full Box (pas de réglages) : étiquette "Copie" sous l'image.
@@ -437,7 +444,7 @@ ${favori === null ? "" : `<button type="button" class="favori-btn${favori ? " ac
 </div>
     ${badgeCopie}
     ${zoneAction}
-    ${zoneNiveau}
+    ${zoneOutils}
   `;
 
   if (valeur >= 0) {
@@ -476,16 +483,16 @@ function getValeursTri(vueActive, collectionProfil) {
     constellation: item => getValeurItem(item, vueActive, collectionProfil),
     // 100 > 95 > non renseigné (persos uniquement).
     niveau: item => vueActive === "characters" ? Number(collectionProfil.niveaux?.[cleNiveau(item)]) || 0 : 0,
-    // Favoris d'abord (persos uniquement).
-    favoris: item => vueActive === "characters" && collectionProfil.favoris?.[item.id] ? 1 : 0
+    // Favoris d'abord (persos et armes).
+    favoris: item => collectionProfil.favoris?.[item.id] ? 1 : 0
   };
 }
 
 function mettreAJourBoutonsTri() {
   const vueActive = getVueActive();
 
-  // Pas de niveau ni de favoris pour les armes : tris masqués dans cette vue.
-  const trisPersos = ["niveau", "favoris"];
+  // Pas de niveau pour les armes : tri masqué dans cette vue.
+  const trisPersos = ["niveau"];
   if (vueActive === "weapons") {
     etatTri.tris = etatTri.tris.filter(t => !trisPersos.includes(t.cle));
   }
@@ -598,8 +605,11 @@ function afficherCollection(personnages, armes, profil) {
           : !!collectionProfil.selections[boxActive][instanceId];
         const estDuplicata = estInstanceDupliquee(instanceId);
         const peutDupliquer = boxActive === "full" && valeur >= 0;
+        // Cœur des favoris : sur l'arme d'origine possédée (favori commun à
+        // toutes ses copies).
+        const favori = !estDuplicata && valeur >= 0 ? !!collectionProfil.favoris?.[item.id] : null;
 
-        return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite);
+        return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite, favori);
       });
     }
 
@@ -791,10 +801,11 @@ async function initialiserPage() {
       const config = getConfigCollection(vueActive);
 
       if (boxActive === "full") {
-        // Cœur : ajoute / retire le perso des favoris (profil.characters.favoris).
+        // Cœur : ajoute / retire des favoris (profil.characters.favoris ou
+        // profil.weapons.favoris selon la vue).
         const boutonFavori = event.target.closest(".favori-btn");
         if (boutonFavori) {
-          const favoris = profil.characters.favoris ??= {};
+          const favoris = collectionProfil.favoris ??= {};
           const id = boutonFavori.dataset.id;
           if (favoris[id]) delete favoris[id];
           else favoris[id] = true;

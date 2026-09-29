@@ -325,7 +325,7 @@ function rendreProfilBox() {
       constellation: item => parItem.get(item).valeur,
       // 100 > 95 > non renseigné (persos uniquement).
       niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(cleNiveau(item))) || 0 : 0,
-      favoris: item => vueActive === "characters" && profilCourant.data?.characters?.favoris?.[item.id] ? 1 : 0
+      favoris: item => profilCourant.data?.[vueActive]?.favoris?.[item.id] ? 1 : 0
     },
     elements: vueActive === "characters" ? filtreType.characters : [],
     armes: vueActive === "weapons" ? filtreType.weapons : filtreArmePersos,
@@ -413,9 +413,9 @@ function mettreAJourBarreOutils() {
   // Pas de niveau pour les armes : tri masqué dans cette vue.
   // Pas de niveau ni de tri par type d'arme (déjà le tri "Type") pour les
   // armes : tris masqués dans cette vue.
-  // Favoris : seulement sur son propre profil (vue personnages).
+  // Favoris : seulement sur son propre profil (persos et armes).
   const trisPersos = ["niveau", "arme"];
-  const favorisVisibles = vueActive === "characters" && !!moiDiscordId && profilCourant?.discord_id === moiDiscordId;
+  const favorisVisibles = !!moiDiscordId && profilCourant?.discord_id === moiDiscordId;
   const masques = [...(vueActive === "weapons" ? trisPersos : []), ...(favorisVisibles ? [] : ["favoris"])];
   etatTri.tris = etatTri.tris.filter(t => !masques.includes(t.cle));
 
