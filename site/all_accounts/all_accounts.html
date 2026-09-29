@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tous les comptes</title>
-<link rel="stylesheet" href="all_accounts.css?v=rem16">
+<link rel="stylesheet" href="all_accounts.css?v=rem17">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
@@ -51,8 +51,9 @@
           <button type="button" class="view-btn" data-view="weapons">Armes</button>
         </div>
         <div id="box-selector">
-          <button type="button" class="box-btn active" data-box="full">Full box</button>
-          <button type="button" class="box-btn" data-box="stuff">Stuff</button>
+          <!-- Points de chaque box (persos + armes, comme dans Mon compte). -->
+          <button type="button" class="box-btn active" data-box="full">Full box<span class="points-box"></span></button>
+          <button type="button" class="box-btn" data-box="stuff">Stuff<span class="points-box"></span></button>
         </div>
       </div>
 
@@ -95,6 +96,6 @@
   <script src="/commun/variantes.js?v=2"></script>
   <script src="/commun/cartes.js?v=1"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="all_accounts.js?v=21"></script>
+  <script src="all_accounts.js?v=22"></script>
 </body>
 </html>

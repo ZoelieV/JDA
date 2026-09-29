@@ -351,6 +351,38 @@ function initialiserGrille() {
 
 // ---- Barre recherche / tri / filtres ----
 
+// Points d'une box du profil ouvert : personnages + armes (copies
+// comprises), comme le total de Mon compte ; Voyageur : seul l'élément qui
+// vaut le plus de points compte.
+function calculerPointsBox(box) {
+  let total = 0;
+  const meilleurParGroupe = {};
+
+  [["characters", personnagesData], ["weapons", armesData]].forEach(([vue, items]) => {
+    const collection = profilCourant.data?.[vue] || {};
+    const champPoints = configCollections[vue].pointsField;
+    const parId = new Map(items.map(item => [item.id, item]));
+
+    Object.entries(collection.full || {}).forEach(([instanceId, valeur]) => {
+      if (valeur < 0) return;
+      if (box !== "full" && !collection.selections?.[box]?.[instanceId]) return;
+      const item = parId.get(instanceId.split("#")[0]);
+      if (!item) return;
+      const points = Number(item[champPoints]?.[valeur] ?? 0);
+      if (item.groupe) meilleurParGroupe[item.groupe] = Math.max(meilleurParGroupe[item.groupe] ?? 0, points);
+      else total += points;
+    });
+  });
+
+  return total + Object.values(meilleurParGroupe).reduce((somme, points) => somme + points, 0);
+}
+
+function afficherPointsBox() {
+  document.querySelectorAll(".box-btn").forEach(btn => {
+    btn.querySelector(".points-box").textContent = ` · ${calculerPointsBox(btn.dataset.box)} pts`;
+  });
+}
+
 function mettreAJourBoutonsVueEtBox() {
   document.querySelectorAll(".view-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.view === vueActive);
@@ -532,6 +564,7 @@ async function ouvrirProfil(discordId, nom) {
 
     mettreAJourBoutonsVueEtBox();
     mettreAJourBarreOutils();
+    afficherPointsBox();
 
     document.getElementById("modal-title").textContent = `Box de ${nom}`;
     rendreProfilBox();

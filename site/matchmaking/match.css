@@ -1502,12 +1502,7 @@ h1 {
 .filtre-proprietaire-btn:hover,
 .btn-clear-filtres:hover,
 .recherche-personnage:hover,
-#btn-pret-j1:hover,
-#btn-pret-j2:hover,
-#btn-confirmer-bonus:hover,
-#input-temps:hover,
-#btn-valider-temps:hover,
-#btn-rejouer:hover {
+#input-temps:hover {
   border-color: rgba(245, 197, 66, 0.8);
   background-color: rgba(245, 197, 66, 0.18);
 }
@@ -1914,30 +1909,6 @@ h1 {
 
 
 
-/* Téléphone, choix de box / analyse : bouton "prêt" figé en bas de
-   l'écran, au-dessus de la consigne (cf. placerBoutonPret). Fond opaque
-   pour rester lisible par-dessus les cartes. */
-.bulles-bas #btn-pret-j1,
-.bulles-bas #btn-pret-j2 {
-  pointer-events: auto;
-  padding: 0.625rem 1.5rem;
-  font-size: 1rem;
-  font-weight: bold;
-  background-color: #1f4a2c;
-  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
-}
-
-.bulles-bas #btn-pret-j1.active,
-.bulles-bas #btn-pret-j2.active {
-  background-color: #2f8a4c;
-}
-
-.bulles-bas #btn-pret-j1:disabled,
-.bulles-bas #btn-pret-j2:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
 /* Bulle "spectateur" (au-dessus des autres bulles du bas). */
 .bulles-bas .etat-spectateur {
   font-size: 0.875rem;
@@ -2019,4 +1990,64 @@ h1 {
 .character-visuel img.perso-lie-icone.lie-j1 {
   right: auto;
   left: -0.375rem;
+}
+
+/* ---- Boutons verts (Prêt, Rejouer, Valider le temps, Confirmer les bans) :
+   grisés avec un contour vert, vert foncé au survol, vert plein une fois
+   cliqués (ou possibles pour Confirmer les bans) ; jamais de doré. ---- */
+#btn-pret-j1,
+#btn-pret-j2,
+#btn-rejouer,
+#btn-valider-temps.btn-valider-temps,
+#btn-confirmer-bonus {
+  --vert: #3ecf6a;
+  border: 2px solid var(--vert);
+  background-color: rgba(80, 80, 80, 0.95);
+  color: white;
+  font-weight: bold;
+  transition: background-color 0.15s ease, filter 0.15s ease;
+}
+
+#btn-pret-j1:hover:not(:disabled):not(.active),
+#btn-pret-j2:hover:not(:disabled):not(.active),
+#btn-rejouer:hover:not(.active),
+#btn-valider-temps.btn-valider-temps:hover:not(:disabled) {
+  background-color: #1f5a33;
+}
+
+#btn-pret-j1.active,
+#btn-pret-j2.active,
+#btn-rejouer.active,
+#btn-confirmer-bonus:not(:disabled) {
+  background-color: var(--vert);
+}
+
+/* Valider le temps : vert plein une fois le temps envoyé (bouton désactivé). */
+#btn-valider-temps.btn-valider-temps:disabled {
+  background-color: var(--vert);
+  cursor: default;
+}
+
+#btn-pret-j1.active:hover,
+#btn-pret-j2.active:hover,
+#btn-rejouer.active:hover,
+#btn-confirmer-bonus:not(:disabled):hover {
+  filter: brightness(1.1);
+}
+
+#btn-pret-j1:disabled,
+#btn-pret-j2:disabled,
+#btn-confirmer-bonus:disabled {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: default;
+}
+
+/* Prêt : dans la pile de bulles figée en bas (cf. placerBoutonPret). */
+.bulles-bas #btn-pret-j1,
+.bulles-bas #btn-pret-j2 {
+  pointer-events: auto;
+  padding: 0.625rem 1.5rem;
+  font-size: 1rem;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
 }

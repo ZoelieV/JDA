@@ -1716,3 +1716,26 @@ body {
     height: 1.25rem;
   }
 }
+
+/* Détection auto : "Appliquer à ma Full Box" suit la règle des boutons
+   verts (grisé contour vert tant qu'il n'y a rien à appliquer, vert plein
+   ensuite ; pas de doré). */
+#auto-box-appliquer {
+  border: 2px solid #3ecf6a;
+  background-color: #3ecf6a;
+  color: white;
+  font-weight: bold;
+}
+
+#auto-box-appliquer:hover:not(:disabled) {
+  background-color: #3ecf6a;
+  border-color: #3ecf6a;
+  filter: brightness(1.1);
+}
+
+#auto-box-appliquer:disabled {
+  background-color: rgba(80, 80, 80, 0.95);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: default;
+  opacity: 1;
+}

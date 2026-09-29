@@ -579,18 +579,20 @@ function armeCorrespondFiltres(arme) {
   return !q || arme.nom.toLowerCase().includes(q);
 }
 
-// Joueurs (parmi roles) qui possèdent le personnage dont l'arme est la
-// signature (dans la box du match une fois les pools calculés).
+// Joueurs (parmi roles) qui ont l'arme (R1 ou plus) ET le personnage dont
+// c'est la signature (dans la box du match une fois les pools calculés).
 function getProprietairesPersoLie(arme, roles) {
   const personnageLie = trouverPersonnageSignature(armesData, personnagesData, arme.id);
-  return personnageLie ? roles.filter(role => getConstellation(role, personnageLie.id) !== null) : [];
+  return personnageLie
+    ? roles.filter(role => arme.infosArme?.[role] != null && getConstellation(role, personnageLie.id) !== null)
+    : [];
 }
 
 // Carte d'une arme (non cliquable) : raffinement de chaque joueur qui la
 // possède en haut, de son côté et dans sa couleur (comme les
 // constellations) ; en bas, le portrait du personnage dont c'est l'arme
-// signature, à gauche si j1 possède ce personnage, à droite si j2 le
-// possède. raffinements : { j1?, j2? } (0 = R1 ... 4 = R5).
+// signature, à gauche si j1 a l'arme et ce personnage, à droite pour j2.
+// raffinements : { j1?, j2? } (0 = R1 ... 4 = R5).
 function creerCarteArme(arme, raffinements, proprietairesPerso = []) {
   const card = document.createElement("div");
   card.className = "character-card carte-arme";
@@ -762,7 +764,7 @@ function rendreChoixBox() {
       } else {
         btnPret.textContent = pret ? "Annuler (modifier ma box)" : "Valider ma box";
       }
-      btnPret.classList.toggle("active", pret);
+      btnPret.classList.toggle("active", !!pret);
       btnPret.disabled = !draft[`box_${role}`];
       btnPret.onclick = () => postReady(!pret).catch(err => alert(err.message));
     } else {
@@ -778,16 +780,11 @@ function rendreChoixBox() {
   });
 }
 
-// Téléphone : bouton "prêt" figé en bas de l'écran, au-dessus de la
-// consigne (dans la pile de bulles) ; sur ordi, dans sa colonne.
+// Bouton "prêt" figé en bas de l'écran, au-dessus de la consigne (dans la
+// pile de bulles), sur ordi comme sur téléphone.
 function placerBoutonPret(bouton) {
   const bulles = document.getElementById("bulles-bas");
-  const ligne = document.querySelector(`#colonne-box-${bouton.id.slice(-2)} .ligne-box`);
-  if (MEDIA_TELEPHONE.matches) {
-    if (bouton.parentElement !== bulles) bulles.prepend(bouton);
-  } else if (bouton.parentElement !== ligne) {
-    ligne.appendChild(bouton);
-  }
+  if (bouton.parentElement !== bulles) bulles.prepend(bouton);
 }
 
 // ---- Phase 2 : bans bonus d'équilibrage ----
@@ -1888,9 +1885,6 @@ async function demarrer() {
 
     initialiserFiltresTri();
     initialiserGrillesPersos();
-
-    // Passage ordi <-> téléphone : bouton "prêt" replacé.
-    MEDIA_TELEPHONE.addEventListener("change", () => { if (draft) rendrePhase(); });
 
     await tick();
 
