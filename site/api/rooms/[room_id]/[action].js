@@ -6,22 +6,21 @@
 // ce dossier — les URLs appelées côté front ne changent donc pas.
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
-const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
-const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur } = require("../../_lib/personnages");
+const { chargerRoomAvecRole } = require("../../_lib/room");
+const { getPersonnages, getPersonnageParId } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS } = require("../../_lib/temps");
 const {
   SEQUENCE_FIXE,
   calculerPointsBox,
   calculerPoolJoueur,
-  calculerElementsGroupes,
   calculerPoolDisponible,
   calculerBansBonus,
-  lancerTirage,
-  etatRevanche,
-  vuePourJoueur,
+  demarrerDraftApresBonus,
   getProchaineAction,
-  getEquipeJoueur
+  getEquipeJoueur,
+  getBansJoueur,
+  etatInitialDraft
 } = require("../../_lib/draft");
 
 const BOX_AUTORISEES = new Set([
@@ -35,12 +34,6 @@ function getSegments(req) {
     roomId: parts[parts.length - 2],
     action: parts[parts.length - 1]
   };
-}
-
-// Réponse standard des routes : la draft vue par ce joueur (box adverse
-// masquée pendant le choix des box).
-function repondreDraft(res, draft, joueur) {
-  return res.status(200).json({ draft: vuePourJoueur(draft, joueur) });
 }
 
 async function sauvegarderDraft(roomId, draft) {
@@ -74,13 +67,11 @@ async function handleBox(req, res, roomId, user) {
   draft[`pret_${joueur}`] = false;
 
   await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+  return res.status(200).json({ draft });
 }
 
 // ---- ready ----
-// Fin du choix des box : points, pools et nombre de bans d'équilibrage.
-// Les places j1/j2 sont encore provisoires ici (le tirage vient après).
-async function calculerEquilibrage(draft) {
+async function lancerEquilibrage(draft) {
   // Les rôles j1/j2 (donc les comptes concernés) sont ceux de LA MANCHE en
   // cours, tirés au sort ou échangés à la revanche — pas forcément
   // room.player1_discord_id/player2_discord_id.
@@ -100,20 +91,22 @@ async function calculerEquilibrage(draft) {
   const ecart = pointsJ1 - pointsJ2;
   const bansBonus = calculerBansBonus(ecart);
 
-  // Pools = personnages de la box choisie par chaque joueur (et non sa Full Box).
-  const poolJ1 = calculerPoolJoueur(profilJ1.data?.data, personnages, draft.box_j1);
-  const poolJ2 = calculerPoolJoueur(profilJ2.data?.data, personnages, draft.box_j2);
+  const poolJ1 = calculerPoolJoueur(profilJ1.data?.data, personnages);
+  const poolJ2 = calculerPoolJoueur(profilJ2.data?.data, personnages);
 
   draft.pool_j1 = poolJ1;
   draft.pool_j2 = poolJ2;
-  draft.elements_j1 = calculerElementsGroupes(profilJ1.data?.data, personnages, draft.box_j1);
-  draft.elements_j2 = calculerElementsGroupes(profilJ2.data?.data, personnages, draft.box_j2);
   draft.pool_disponible = calculerPoolDisponible(poolJ1, poolJ2);
 
-  draft.bans_bonus_total = bansBonus;
-  draft.bans_bonus_faits = 0;
-  draft.bans_bonus_choix = [];
-  draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
+  if (bansBonus > 0) {
+    draft.bans_bonus_total = bansBonus;
+    draft.bans_bonus_faits = 0;
+    draft.bans_bonus_choix = [];
+    draft.bans_bonus_joueur = ecart > 0 ? "j2" : "j1";
+    draft.phase = "bans_bonus";
+  } else {
+    demarrerDraftApresBonus(draft, tirerBossAleatoire);
+  }
 }
 
 async function handleReady(req, res, roomId, user) {
@@ -127,35 +120,22 @@ async function handleReady(req, res, roomId, user) {
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
   const draft = room.draft;
 
-  // Même ready-check pour 2 phases : validation de la box (choix_box), puis
-  // fin du temps d'analyse des box (analyse).
-  if (draft.phase !== "choix_box" && draft.phase !== "analyse") {
+  if (draft.phase !== "choix_box") {
     return res.status(409).json({ error: "Impossible de changer son statut prêt à ce stade" });
   }
 
-  if (draft.phase === "choix_box" && !draft[`box_${joueur}`]) {
+  if (!draft[`box_${joueur}`]) {
     return res.status(400).json({ error: "Choisis d'abord ta box avant de te marquer prêt" });
   }
 
   draft[`pret_${joueur}`] = pret;
 
   if (draft.pret_j1 && draft.pret_j2) {
-    draft.pret_j1 = false;
-    draft.pret_j2 = false;
-
-    if (draft.phase === "choix_box") {
-      await calculerEquilibrage(draft);
-      draft.phase = "analyse";
-    } else if ((draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0)) {
-      draft.phase = "bans_bonus";
-    } else {
-      // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
-      lancerTirage(draft, tirerBossAleatoire);
-    }
+    await lancerEquilibrage(draft);
   }
 
   await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+  return res.status(200).json({ draft });
 }
 
 // ---- action (ban/pick de la séquence fixe) ----
@@ -165,13 +145,13 @@ async function handleAction(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { perso_id: persoId, element } = req.body || {};
+  const { perso_id: persoId } = req.body || {};
 
   if (!persoId || typeof persoId !== "string") {
     return res.status(400).json({ error: "perso_id manquant" });
   }
 
-  if (!getPersonnageDraftParId(persoId)) {
+  if (!getPersonnageParId(persoId)) {
     return res.status(400).json({ error: "Personnage inconnu" });
   }
 
@@ -204,22 +184,15 @@ async function handleAction(req, res, roomId, user) {
     if (!poolJoueur || !poolJoueur.includes(persoId)) {
       return res.status(403).json({ error: "Tu ne possèdes pas ce personnage : impossible de le picker" });
     }
-
-    // Voyageur : un des éléments mis dans sa box ; Manekin : élément libre.
-    const elementsPossibles = estGroupe(persoId)
-      ? draft[`elements_${joueur}`]?.[persoId] || []
-      : ELEMENTS_LIBRES[persoId];
-    if (elementsPossibles && !elementsPossibles.includes(element)) {
-      return res.status(400).json({ error: "Choisis l'élément de ce personnage" });
-    }
   }
 
   draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
-  const action = { joueur, type: prochaine.type, perso_id: persoId, bonus: false };
-  if (prochaine.type === "pick" && (estGroupe(persoId) || ELEMENTS_LIBRES[persoId])) {
-    action.element = element;
-  }
-  draft.actions.push(action);
+  draft.actions.push({
+    joueur,
+    type: prochaine.type,
+    perso_id: persoId,
+    bonus: false
+  });
 
   draft.sequence_index += 1;
 
@@ -228,7 +201,7 @@ async function handleAction(req, res, roomId, user) {
   }
 
   await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+  return res.status(200).json({ draft });
 }
 
 // ---- bonus_toggle (bans d'équilibrage : sélection/désélection avant confirmation) ----
@@ -272,7 +245,7 @@ async function handleBonusToggle(req, res, roomId, user) {
   }
 
   await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+  return res.status(200).json({ draft });
 }
 
 // ---- bonus_confirmer (verrouille les bans d'équilibrage choisis, tire le boss) ----
@@ -307,10 +280,10 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   draft.bans_bonus_faits = choix.length;
   draft.bans_bonus_choix = [];
 
-  lancerTirage(draft, tirerBossAleatoire);
+  demarrerDraftApresBonus(draft, tirerBossAleatoire);
 
   await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+  return res.status(200).json({ draft });
 }
 
 // ---- temps ----
@@ -319,29 +292,8 @@ function determinerVainqueur(tempsJ1, tempsJ2) {
   return tempsJ1.secondes < tempsJ2.secondes ? "j1" : "j2";
 }
 
-// Codes "colonne inexistante" (Postgres / PostgREST).
-const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
-
 async function archiverMatch(draft) {
-  // Picks figés avec les infos du joueur à la fin du match (constellation,
-  // niveau, raffinement de l'arme signature) pour l'historique ; bans avec
-  // les infos des 2 joueurs (comme les cartes de la draft).
-  const [profilJ1, profilJ2] = await Promise.all([
-    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j1).single(),
-    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j2).single()
-  ]);
-  const profils = { j1: profilJ1.data?.data, j2: profilJ2.data?.data };
-  const actions = draft.actions.map(action => action.type === "pick"
-    ? { ...action, ...infosPersoJoueur(profils[action.joueur], action.perso_id, action.element) }
-    : {
-      ...action,
-      infos: {
-        j1: infosPersoJoueur(profils.j1, action.perso_id),
-        j2: infosPersoJoueur(profils.j2, action.perso_id)
-      }
-    });
-
-  const match = {
+  const { error } = await supabase.from("match_history").insert({
     boss_id: draft.boss_id,
     player1_discord_id: draft.discord_j1,
     player2_discord_id: draft.discord_j2,
@@ -349,23 +301,14 @@ async function archiverMatch(draft) {
     box_j2: draft.box_j2,
     team_j1: getEquipeJoueur(draft, "j1"),
     team_j2: getEquipeJoueur(draft, "j2"),
+    bans_j1: getBansJoueur(draft, "j1"),
+    bans_j2: getBansJoueur(draft, "j2"),
     temps_j1_affiche: draft.temps_j1.affiche,
     temps_j1_secondes: draft.temps_j1.secondes,
     temps_j2_affiche: draft.temps_j2.affiche,
     temps_j2_secondes: draft.temps_j2.secondes,
-    vainqueur: draft.vainqueur,
-    // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
-    // Voyageur / Manekin) : affichées dans l'historique des matchs.
-    actions
-  };
-
-  let { error } = await supabase.from("match_history").insert(match);
-
-  // Colonne "actions" pas encore créée dans la table : archivage sans elle.
-  if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { actions, ...sansActions } = match;
-    ({ error } = await supabase.from("match_history").insert(sansActions));
-  }
+    vainqueur: draft.vainqueur
+  });
 
   if (error) {
     console.error("Erreur archivage match_history :", error);
@@ -400,7 +343,7 @@ async function handleTemps(req, res, roomId, user) {
   }
 
   await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+  return res.status(200).json({ draft });
 }
 
 // ---- rejouer (ready-check : il faut les 2 joueurs "ok" pour relancer) ----
@@ -422,17 +365,18 @@ async function handleRejouer(req, res, roomId, user) {
   draft[`rejouer_${joueur}`] = veutRejouer;
 
   if (draft.rejouer_j1 && draft.rejouer_j2) {
-    // Mêmes box et bans d'équilibrage, rôles inversés (le 1er pick ne reste
-    // pas du même côté), retour direct à l'analyse ; boss différent du
-    // précédent au prochain tirage.
-    const nouveau = etatRevanche(draft);
+    const nouveau = etatInitialDraft();
+    // Échange automatique des rôles à chaque revanche, pour que le 1er
+    // pick ne reste pas indéfiniment du même côté.
+    nouveau.discord_j1 = draft.discord_j2;
+    nouveau.discord_j2 = draft.discord_j1;
 
     await sauvegarderDraft(roomId, nouveau);
-    return repondreDraft(res, nouveau, getAutreJoueur(joueur));
+    return res.status(200).json({ draft: nouveau });
   }
 
   await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+  return res.status(200).json({ draft });
 }
 
 // ---- draft (lecture seule) ----
@@ -442,15 +386,13 @@ async function handleDraftGet(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  // Lecture ouverte aux spectateurs (joueur = null).
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
+  const { room } = await chargerRoomAvecRole(supabase, roomId, user.id);
 
   return res.status(200).json({
-    spectateur: !joueur,
     room_id: room.room_id,
     player1_discord_id: room.player1_discord_id,
     player2_discord_id: room.player2_discord_id,
-    draft: vuePourJoueur(room.draft, joueur)
+    draft: room.draft
   });
 }
 
