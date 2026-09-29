@@ -367,7 +367,9 @@ function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
 // Carte : un rectangle qui englobe le visuel (constellation en haut à
 // gauche, points en haut à droite, niveau en bas à gauche, arme en bas à
 // droite), le réglage de constellation et le niveau. Nom au survol.
-function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null, coinBasDroite = "") {
+// favori : true / false pour afficher le cœur des favoris (persos possédés,
+// Full Box), null sinon.
+function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null, coinBasDroite = "", favori = null) {
   const config = getConfigCollection(vueActive);
   const idInstance = instanceId || item.id;
   const conteneur = document.createElement("div");
@@ -399,6 +401,7 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
 <span class="info-constellation">${affichageNiveau}</span>
 <button type="button" class="constellation-btn plus-btn" data-id="${idInstance}">+</button>
 ${boutonDupliquer}
+${favori === null ? "" : `<button type="button" class="favori-btn${favori ? " actif" : ""}" data-id="${idInstance}" title="${favori ? "Retirer des favoris" : "Ajouter aux favoris"}"><img src="../DB/images/others/favourite.webp" alt="Favori"></button>`}
 </div>
     `
     : "";
@@ -472,20 +475,23 @@ function getValeursTri(vueActive, collectionProfil) {
     },
     constellation: item => getValeurItem(item, vueActive, collectionProfil),
     // 100 > 95 > non renseigné (persos uniquement).
-    niveau: item => vueActive === "characters" ? Number(collectionProfil.niveaux?.[cleNiveau(item)]) || 0 : 0
+    niveau: item => vueActive === "characters" ? Number(collectionProfil.niveaux?.[cleNiveau(item)]) || 0 : 0,
+    // Favoris d'abord (persos uniquement).
+    favoris: item => vueActive === "characters" && collectionProfil.favoris?.[item.id] ? 1 : 0
   };
 }
 
 function mettreAJourBoutonsTri() {
   const vueActive = getVueActive();
 
-  // Pas de niveau pour les armes : tri masqué dans cette vue.
-  if (vueActive === "weapons" && getSensTri(etatTri, "niveau")) {
-    etatTri.tris = etatTri.tris.filter(t => t.cle !== "niveau");
+  // Pas de niveau ni de favoris pour les armes : tris masqués dans cette vue.
+  const trisPersos = ["niveau", "favoris"];
+  if (vueActive === "weapons") {
+    etatTri.tris = etatTri.tris.filter(t => !trisPersos.includes(t.cle));
   }
 
   document.querySelectorAll(".tri-btn").forEach(btn => {
-    btn.hidden = btn.dataset.tri === "niveau" && vueActive === "weapons";
+    btn.hidden = trisPersos.includes(btn.dataset.tri) && vueActive === "weapons";
     majBoutonTri(btn, etatTri, vueActive);
   });
 
@@ -604,7 +610,9 @@ function afficherCollection(personnages, armes, profil) {
 
     const niveau = collectionProfil.niveaux?.[cleNiveau(item)] ?? null;
     const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
-    return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite);
+    // Cœur des favoris : persos possédés uniquement.
+    const favori = valeur >= 0 ? !!collectionProfil.favoris?.[item.id] : null;
+    return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite, favori);
   });
 
   mettreAJourBoutonEnregistrer(profil);
@@ -783,6 +791,17 @@ async function initialiserPage() {
       const config = getConfigCollection(vueActive);
 
       if (boxActive === "full") {
+        // Cœur : ajoute / retire le perso des favoris (profil.characters.favoris).
+        const boutonFavori = event.target.closest(".favori-btn");
+        if (boutonFavori) {
+          const favoris = profil.characters.favoris ??= {};
+          const id = boutonFavori.dataset.id;
+          if (favoris[id]) delete favoris[id];
+          else favoris[id] = true;
+          afficherCollection(personnages, armes, profil);
+          return;
+        }
+
         const boutonDupliquer = event.target.closest(".dupliquer-btn");
 
         if (boutonDupliquer) {

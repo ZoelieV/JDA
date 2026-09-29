@@ -394,8 +394,18 @@ function getValeursTri(roles) {
     constellation: personnage => Math.max(-1, ...possessions(personnage).map(p => p.valeur)),
     // 100 > 95 > non renseigné ; meilleur niveau parmi les propriétaires.
     niveau: personnage => Math.max(0, ...getRolesProprietaires(personnage.id, roles, roles.length > 1)
-      .map(r => Number(getNiveauPersonnage(getJoueurDataParRole(r), personnage.id)) || 0))
+      .map(r => Number(getNiveauPersonnage(getJoueurDataParRole(r), personnage.id)) || 0)),
+    favoris: personnage => estFavori(personnage.id) ? 1 : 0
   };
+}
+
+// Favoris du joueur connecté (cœurs de Mon compte) ; Voyageur : favori si
+// un de ses éléments l'est. Aucun pour un spectateur.
+function estFavori(persoId) {
+  const favoris = monRole ? getJoueurDataParRole(monRole)?.characters?.favoris : null;
+  if (!favoris) return false;
+  const membres = membresGroupe(personnagesBase, persoId);
+  return membres.length ? membres.some(m => favoris[m.id]) : !!favoris[persoId];
 }
 
 // Groupes à afficher (cf. trierEtGrouper) ; le filtre J1/J2 compte comme un
@@ -1283,7 +1293,7 @@ function initialiserFiltresTri() {
   const zoneTris = document.createElement("div");
   zoneTris.className = "tris";
   zoneTris.innerHTML = `<span class="tris-label">Trier :</span>`;
-  ["points", "constellation", "niveau", "rarete", "element"].forEach(valeur => {
+  ["points", "constellation", "niveau", "rarete", "element", "favoris"].forEach(valeur => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-etoile-btn tri-btn";
@@ -1303,6 +1313,10 @@ function initialiserFiltresTri() {
 // par joueur) ; avant le tirage, j1/j2 ne sont que des places provisoires,
 // donc les boutons portent le nom des joueurs.
 function mettreAJourFiltreProprietaire() {
+  // Favoris : ceux du joueur connecté, pas de sens pour un spectateur.
+  const btnFavoris = document.querySelector('#barre-outils .tri-btn[data-tri="favoris"]');
+  if (btnFavoris) btnFavoris.hidden = !monRole;
+
   const zone = document.getElementById("filtres-proprietaire");
   if (!zone) return;
   zone.classList.toggle("cache", draft.phase === "choix_box" || draft.phase === "analyse");

@@ -35,6 +35,7 @@ const etatTri = creerEtatTri();
 
 // Données brutes du profil ouvert, conservées pour re-render sans refetch
 let profilCourant = null;
+let moiDiscordId = null; // compte connecté : favoris visibles sur son propre profil
 let personnagesBase = [];   // characters.json
 let personnagesData = [];   // avec les variantes choisies par le profil ouvert
 let armesData = [];
@@ -323,7 +324,8 @@ function rendreProfilBox() {
       points: item => Number(item[config.pointsField]?.[parItem.get(item).valeur] ?? 0),
       constellation: item => parItem.get(item).valeur,
       // 100 > 95 > non renseigné (persos uniquement).
-      niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(cleNiveau(item))) || 0 : 0
+      niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(cleNiveau(item))) || 0 : 0,
+      favoris: item => vueActive === "characters" && profilCourant.data?.characters?.favoris?.[item.id] ? 1 : 0
     },
     elements: vueActive === "characters" ? filtreType.characters : [],
     armes: vueActive === "weapons" ? filtreType.weapons : filtreArmePersos,
@@ -411,13 +413,14 @@ function mettreAJourBarreOutils() {
   // Pas de niveau pour les armes : tri masqué dans cette vue.
   // Pas de niveau ni de tri par type d'arme (déjà le tri "Type") pour les
   // armes : tris masqués dans cette vue.
+  // Favoris : seulement sur son propre profil (vue personnages).
   const trisPersos = ["niveau", "arme"];
-  if (vueActive === "weapons") {
-    etatTri.tris = etatTri.tris.filter(t => !trisPersos.includes(t.cle));
-  }
+  const favorisVisibles = vueActive === "characters" && !!moiDiscordId && profilCourant?.discord_id === moiDiscordId;
+  const masques = [...(vueActive === "weapons" ? trisPersos : []), ...(favorisVisibles ? [] : ["favoris"])];
+  etatTri.tris = etatTri.tris.filter(t => !masques.includes(t.cle));
 
   document.querySelectorAll(".tri-btn").forEach(btn => {
-    btn.hidden = trisPersos.includes(btn.dataset.tri) && vueActive === "weapons";
+    btn.hidden = masques.includes(btn.dataset.tri);
     majBoutonTri(btn, etatTri, vueActive);
   });
 
@@ -555,6 +558,12 @@ function initialiserModal() {
 
 async function demarrer() {
   try {
+    // Compte connecté (sans bloquer la page) : pour le tri des favoris.
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(reponse => reponse.ok ? reponse.json() : null)
+      .then(session => { moiDiscordId = session?.user?.id || null; })
+      .catch(() => {});
+
     tousLesComptes = await chargerComptes();
     initialiserBarreComptes();
     afficherComptes();

@@ -33,6 +33,7 @@ const LOGO_TRI_CONSTELLATION = `${RACINE_LOGOS}stella_fortuna_5.webp`;
 const LOGO_TRI_NIVEAU = `${RACINE_LOGOS}stella.webp`;
 const LOGO_TRI_POINTS = `${RACINE_LOGOS}scale.webp`;
 const LOGO_TRI_ARME = `${RACINE_LOGOS}Icon_Inventory_Weapons.webp`;
+const LOGO_TRI_FAVORIS = `${RACINE_LOGOS}favourite.webp`;
 
 // Vœux : Acquaint Fate = 4★ + personnages standards (dont le Voyageur),
 // Intertwined Fate = les autres 5★. Aloy et Manekin : ni l'un ni l'autre.
@@ -97,7 +98,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
     niveau: `<img class="tri-logo tri-logo-niveau" src="${LOGO_TRI_NIVEAU}" alt="Niveau">`,
     rarete: `<span class="tri-etoile">★</span>`,
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`,
-    arme: `<img class="tri-logo" src="${LOGO_TRI_ARME}" alt="Type d'arme">`
+    arme: `<img class="tri-logo" src="${LOGO_TRI_ARME}" alt="Type d'arme">`,
+    favoris: `<img class="tri-logo" src="${LOGO_TRI_FAVORIS}" alt="Favoris">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;
   const titres = {
@@ -106,7 +108,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
     niveau: "Trier par niveau",
     rarete: "Trier par rareté",
     element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément",
-    arme: "Trier par type d'arme"
+    arme: "Trier par type d'arme",
+    favoris: "Favoris d'abord"
   };
   btn.title = titres[cle] || "";
   btn.classList.toggle("active", sens !== 0);
