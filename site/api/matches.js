@@ -60,14 +60,19 @@ async function chargerJoueurs(ids) {
   return new Map((data || []).map(profil => [profil.discord_id, profil]));
 }
 
-// Côté d'un joueur dans un match. Sans la colonne "actions" (anciens
-// matchs) : équipe seulement, bans inconnus.
+// Côté d'un joueur dans un match. Bans : colonne "actions" si elle existe,
+// sinon colonnes bans_j1 / bans_j2. Anciens matchs sans l'une ni l'autre :
+// équipe seulement, bans inconnus.
 // profils : { j1, j2 } (profils des 2 joueurs du match).
 function resumerJoueur(match, role, profils) {
   const profil = profils[role];
   const actions = Array.isArray(match.actions) ? match.actions : null;
   const discordId = match[`player${role === "j1" ? 1 : 2}_discord_id`];
   const siennes = actions ? actions.filter(a => a.joueur === role) : [];
+  const bansColonne = Array.isArray(match[`bans_${role}`]) ? match[`bans_${role}`] : [];
+  const bans = actions
+    ? siennes.filter(a => a.type === "ban")
+    : bansColonne.map(b => ({ ...b, type: "ban", joueur: role }));
   const parametres = profil?.data?.parametres || {};
 
   return {
@@ -92,8 +97,8 @@ function resumerJoueur(match, role, profils) {
         ? { constellation: pick.constellation, niveau: pick.niveau, raffinement: pick.raffinement }
         : infosPersoJoueur(profil?.data, pick.id, pick.element))
     })),
-    bans: siennes.filter(a => a.type === "ban" && !a.bonus).map(a => resumerBan(a, profils)),
-    bans_equilibrage: siennes.filter(a => a.type === "ban" && a.bonus).map(a => resumerBan(a, profils))
+    bans: bans.filter(a => !a.bonus).map(a => resumerBan(a, profils)),
+    bans_equilibrage: bans.filter(a => a.bonus).map(a => resumerBan(a, profils))
   };
 }
 
@@ -155,7 +160,10 @@ module.exports = async (req, res) => {
         date: match.created_at || null,
         boss_id: match.boss_id,
         vainqueur: match.vainqueur,
-        bans_connus: Array.isArray(match.actions),
+        // Bans enregistrés (colonne actions, ou bans_j1 / bans_j2 remplies).
+        bans_connus: Array.isArray(match.actions) ||
+          (Array.isArray(match.bans_j1) && match.bans_j1.length > 0) ||
+          (Array.isArray(match.bans_j2) && match.bans_j2.length > 0),
         ...deuxJoueurs(match)
       }))
     });
