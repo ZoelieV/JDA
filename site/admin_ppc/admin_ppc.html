@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration des points</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
-<link rel="stylesheet" href="admin_ppc.css?v=3">
+<link rel="stylesheet" href="admin_ppc.css?v=4">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
+<link rel="stylesheet" href="../commun/tri.css?v=6">
 <script src="/commun/fond.js?v=5"></script>
 <script src="/commun/compte.js?v=2" defer></script>
 </head>
@@ -18,19 +19,25 @@
   <p id="etat-admin" class="etat-admin">Chargement…</p>
 
   <div id="zone-admin" class="zone-admin cache">
-    <!-- Personnages / Armes, recherche. -->
+    <!-- Personnages / Armes, recherche, filtres : figés en haut au
+         défilement. -->
     <div class="barre-admin">
-      <div class="vues-admin">
-        <button type="button" class="vue-admin active" data-vue="characters" title="Personnages"><img src="../DB/images/others/Icon_Character.webp" alt="Personnages"></button>
-        <button type="button" class="vue-admin" data-vue="weapons" title="Armes"><img src="../DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
+      <div class="ligne-admin">
+        <div class="vues-admin">
+          <button type="button" class="vue-admin active" data-vue="characters" title="Personnages"><img src="../DB/images/others/Icon_Character.webp" alt="Personnages"></button>
+          <button type="button" class="vue-admin" data-vue="weapons" title="Armes"><img src="../DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
+        </div>
+        <input type="text" id="recherche-admin" class="recherche-admin" placeholder="Rechercher…">
+        <span id="compte-admin" class="compte-admin"></span>
+        <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
-      <input type="text" id="recherche-admin" class="recherche-admin" placeholder="Rechercher…">
+      <div id="filtres-admin" class="filtres-admin"></div>
     </div>
 
     <p class="aide-admin">
       Écris les points dans une case, ou un coefficient comme <strong>*1,2</strong> pour calculer la case
       à partir de la précédente (+20 %) : la valeur s'affiche en gris, <strong>Entrée</strong> la valide
-      (arrondie au point près) et passe à la case suivante.
+      (arrondie au point près) et passe à la case suivante. Clic sur un titre de colonne pour trier.
     </p>
 
     <div class="tableau-admin-conteneur">
@@ -48,6 +55,7 @@
   </div>
 
   <script src="/commun/cartes.js?v=2"></script>
-  <script src="admin_ppc.js?v=2"></script>
+  <script src="/commun/tri.js?v=11"></script>
+  <script src="admin_ppc.js?v=3"></script>
 </body>
 </html>

@@ -452,7 +452,7 @@
   {
     "id": "yelan_w",
     "nom": "Simulacre d'eau",
-    "element": "hdyro",
+    "element": "hydro",
     "type": "bow",
     "image": "images/weapons/yelan_w.webp",
     "rarete": "5",
