@@ -240,6 +240,9 @@ function rendreCorps() {
               <input class="case-points" data-id="${item.id}" data-index="${index}" value="${valeur}" inputmode="decimal">
               <span class="apercu-points"></span>
             </span>
+            ${index < COLONNES[vue].derniereChaine
+              ? `<button type="button" class="copie-suite" data-id="${item.id}" data-index="${index}" title="Copier cette valeur jusqu'à ${COLONNES[vue].libelles[COLONNES[vue].derniereChaine]}">→</button>`
+              : ""}
           </td>`).join("")}
       </tr>`)
     .join("");
@@ -356,7 +359,23 @@ function initialiserSaisie() {
   document.getElementById("corps-admin").addEventListener("click", event => {
     const bouton = event.target.closest(".btn-apercu");
     if (bouton) ouvrirApercu(bouton.dataset.id);
+
+    // Flèche sous une case : copie sa valeur dans les cases suivantes, jusqu'à
+    // C6 (R5 pour une arme).
+    const copie = event.target.closest(".copie-suite");
+    if (copie) copierJusquAuBout(copie.dataset.id, Number(copie.dataset.index));
   });
+}
+
+function copierJusquAuBout(id, index) {
+  const liste = valeurs[vue][id];
+  const derniere = COLONNES[vue].derniereChaine;
+  for (let i = index + 1; i <= derniere; i++) liste[i] = liste[index];
+  document.querySelectorAll(`#corps-admin .case-points[data-id="${id}"]`).forEach(input => {
+    const i = Number(input.dataset.index);
+    if (i > index && i <= derniere) input.value = liste[i];
+  });
+  mettreAJourPied();
 }
 
 // ---- Modificateurs (niveau 95, niveau 100, théâtre) ----

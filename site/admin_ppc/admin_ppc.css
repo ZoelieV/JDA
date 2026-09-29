@@ -277,10 +277,11 @@ body {
   border-color: #ff5a5a;
 }
 
+/* Au-dessus de la case (la flèche de copie est en dessous). */
 .apercu-points {
   position: absolute;
   left: 50%;
-  top: 100%;
+  bottom: 100%;
   z-index: 1;
   transform: translateX(-50%);
   padding: 0 0.25rem;
@@ -529,4 +530,32 @@ body {
 .apercu-tableau td {
   font-weight: bold;
   font-variant-numeric: tabular-nums;
+}
+
+/* Flèche sous une case : copie sa valeur jusqu'à C6 / R5. */
+.copie-suite {
+  display: block;
+  margin: 0.125rem auto 0;
+  padding: 0 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.875rem;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.copie-suite:hover {
+  color: #f5c542;
+  background-color: rgba(245, 197, 66, 0.12);
+}
+
+/* Cases alignées en haut de la ligne (avec ou sans flèche en dessous). */
+.tableau-admin tbody td {
+  vertical-align: top;
+}
+
+.tableau-admin tbody td.col-nom {
+  vertical-align: middle;
 }
