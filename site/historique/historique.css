@@ -344,6 +344,11 @@
   --taille-perso: 4rem;
 }
 
+/* Bans et bans d'équilibrage : 15 % plus petits que l'équipe. */
+.ligne-bans .perso-mini.perso-mini {
+  --taille-perso: 3.4rem;
+}
+
 .coin {
   position: absolute;
   box-sizing: border-box;
