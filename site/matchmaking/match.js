@@ -549,7 +549,7 @@ function rendreApercuBox(containerId, role, boxChoisie) {
   remplirGrilleGroupee(
     container,
     [...groupesPersos, ...groupesArmes],
-    carteDraftOuArme(container, item => obtenirCarteItem(container, item, getInfosCarte(item.id, [role])))
+    carteDraftOuArme(container, item => obtenirCarteItem(container, item, getInfosCarte(item.id, [role])), [role])
   );
 }
 
@@ -579,11 +579,19 @@ function armeCorrespondFiltres(arme) {
   return !q || arme.nom.toLowerCase().includes(q);
 }
 
+// Joueurs (parmi roles) qui possèdent le personnage dont l'arme est la
+// signature (dans la box du match une fois les pools calculés).
+function getProprietairesPersoLie(arme, roles) {
+  const personnageLie = trouverPersonnageSignature(armesData, personnagesData, arme.id);
+  return personnageLie ? roles.filter(role => getConstellation(role, personnageLie.id) !== null) : [];
+}
+
 // Carte d'une arme (non cliquable) : raffinement de chaque joueur qui la
 // possède en haut, de son côté et dans sa couleur (comme les
-// constellations) ; en bas à droite, l'icône du personnage dont c'est
-// l'arme signature. raffinements : { j1?, j2? } (0 = R1 ... 4 = R5).
-function creerCarteArme(arme, raffinements) {
+// constellations) ; en bas, le portrait du personnage dont c'est l'arme
+// signature, à gauche si j1 possède ce personnage, à droite si j2 le
+// possède. raffinements : { j1?, j2? } (0 = R1 ... 4 = R5).
+function creerCarteArme(arme, raffinements, proprietairesPerso = []) {
   const card = document.createElement("div");
   card.className = "character-card carte-arme";
   card.title = arme.instanceId?.includes("#") ? `${arme.nom} (copie)` : arme.nom;
@@ -593,18 +601,24 @@ function creerCarteArme(arme, raffinements) {
       <img src="../DB/${arme.image}" alt="${arme.nom}" loading="lazy" decoding="async">
       ${["j1", "j2"].filter(role => raffinements[role] != null)
         .map(role => `<span class="character-constellation constellation-${role}">R${raffinements[role] + 1}</span>`).join("")}
-      ${personnageLie ? `<img class="perso-lie-icone" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${personnageLie.nom}">` : ""}
+      ${personnageLie ? proprietairesPerso.map(role =>
+        `<img class="perso-lie-icone lie-${role}" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${role.toUpperCase()} : ${personnageLie.nom}">`).join("") : ""}
     </div>
   `;
   return card;
 }
 
 // Carte d'une grille qui mêle personnages et armes : les armes (champ
-// infosArme) ont leur propre carte, recyclée elle aussi.
-function carteDraftOuArme(grille, creerCartePerso) {
-  return item => item.infosArme
-    ? obtenirCarte(grille, JSON.stringify(["arme", item.instanceId || item.id, item.infosArme]), () => creerCarteArme(item, item.infosArme))
-    : creerCartePerso(item);
+// infosArme) ont leur propre carte, recyclée elle aussi. rolesPersos :
+// joueurs dont on regarde s'ils possèdent le perso lié (aperçu d'une box :
+// son seul joueur ; draft : les 2).
+function carteDraftOuArme(grille, creerCartePerso, rolesPersos = ["j1", "j2"]) {
+  return item => {
+    if (!item.infosArme) return creerCartePerso(item);
+    const proprietaires = getProprietairesPersoLie(item, rolesPersos);
+    return obtenirCarte(grille, JSON.stringify(["arme", item.instanceId || item.id, item.infosArme, proprietaires]),
+      () => creerCarteArme(item, item.infosArme, proprietaires));
+  };
 }
 
 // Draft et bans d'équilibrage : armes des box des 2 joueurs (meilleure
