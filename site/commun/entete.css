@@ -17,7 +17,7 @@ html {
 
   /* Cercles plus petits sur téléphone : contour du logo d'arme réduit. */
   :root {
-    --epaisseur-contour-arme: 3px;
+    --epaisseur-contour-arme: 1px;
   }
 }
 

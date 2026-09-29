@@ -1912,34 +1912,7 @@ h1 {
   border-color: rgba(245, 197, 66, 0.8);
 }
 
-/* Élément choisi au pick (Voyageur / Manekin), en coin de la case. */
-.slot-pick {
-  position: relative;
-}
 
-/* Classe doublée : prioritaire sur les règles des images de case
-   (.equipe-joueur .slot-pick > img...). */
-.slot-pick > img.element-case.element-case {
-  position: absolute;
-  z-index: 1;
-  aspect-ratio: auto;
-  box-sizing: border-box;
-  top: 50%;
-  right: 0.125rem;
-  transform: translateY(-50%);
-  width: 1.375rem;
-  height: 1.375rem;
-  padding: 0.125rem;
-  border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.7);
-  object-fit: contain;
-}
-
-/* J2 (tableau en miroir) : infos à droite, élément à gauche. */
-#equipe-j2 .slot-pick > img.element-case.element-case {
-  right: auto;
-  left: 0.125rem;
-}
 
 /* Téléphone, choix de box / analyse : bouton "prêt" figé en bas de
    l'écran, au-dessus de la consigne (cf. placerBoutonPret). Fond opaque
@@ -1969,4 +1942,48 @@ h1 {
 .bulles-bas .etat-spectateur {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* ---- Cases des picks : constellation, niveau, arme signature et élément
+   (Voyageur / Manekin) à côté du personnage, centrés en hauteur, tous à la
+   même taille (classe doublée : prioritaire sur .slot-pick img). ---- */
+.slot-pick .infos-case {
+  --taille-info: 1.375rem;
+  align-self: center;
+  height: auto;
+  gap: 0.25rem;
+}
+
+.slot-pick .infos-case .pastille-case.pastille-case,
+.slot-pick .infos-case img.arme-case.arme-case,
+.slot-pick .infos-case img.element-case.element-case {
+  box-sizing: border-box;
+  width: var(--taille-info);
+  min-width: var(--taille-info);
+  height: var(--taille-info);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.slot-pick .infos-case .pastille-case.pastille-case {
+  width: auto;
+  padding: 0 0.1875rem;
+  border-radius: calc(var(--taille-info) / 2);
+}
+
+.slot-pick .infos-case img.arme-case.arme-case {
+  object-fit: contain;
+}
+
+.slot-pick .infos-case img.element-case.element-case {
+  padding: 0.125rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  object-fit: contain;
+}
+
+@media (max-width: 700px) {
+  .slot-pick .infos-case {
+    --taille-info: 1rem;
+    gap: 0.125rem;
+  }
 }

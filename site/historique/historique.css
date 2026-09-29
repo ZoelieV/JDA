@@ -14,14 +14,30 @@
 
 /* ---- Barre : recherche, tris, mes matchs ---- */
 
+/* Recherche + tris centrés, dans un rectangle flou figé en haut de l'écran
+   au défilement (même flou que la barre de Mon compte). */
 .barre-historique {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.625rem 1rem;
+  box-sizing: border-box;
   max-width: 90rem;
   margin: 0 auto 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+}
+
+.barre-historique .tris {
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .recherche-historique {
@@ -375,11 +391,18 @@ img.element-mini {
 /* Arme signature : contour de la couleur du raffinement (classes .ref-N,
    commun/cartes.css). */
 img.arme-mini {
+  --epaisseur-arme-mini: 2px;
   width: 1.25rem;
   padding: 0;
   object-fit: contain;
-  outline: 2px solid var(--couleur-ref);
-  outline-offset: -2px;
+  outline: var(--epaisseur-arme-mini) solid var(--couleur-ref);
+  outline-offset: calc(-1 * var(--epaisseur-arme-mini));
+}
+
+@media (max-width: 700px) {
+  img.arme-mini {
+    --epaisseur-arme-mini: 1px;
+  }
 }
 
 /* Centre : boss, date. */

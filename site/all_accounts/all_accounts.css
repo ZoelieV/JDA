@@ -21,12 +21,27 @@ h1, h2 {
 
 /* ---- Liste des comptes ---- */
 
+/* Recherche + tris centrés, dans un rectangle flou figé en haut de l'écran
+   au défilement (même flou que la barre de Mon compte). */
 .barre-comptes {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+}
+
+.barre-comptes .tris {
+  justify-content: center;
 }
 
 .barre-comptes .recherche-personnage {

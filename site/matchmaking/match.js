@@ -820,8 +820,7 @@ function remplirCaseTableau(slot, personnage, element = null) {
   slot.classList.add("avec-banniere");
   slot.style.setProperty("--banniere-perso", `url("${getBannierePersonnage(personnage)}")`);
   const nom = element ? `${personnage.nom} ${NOMS_ELEMENTS[element] || ""}`.trim() : personnage.nom;
-  slot.innerHTML = `<img src="../DB/${personnage.image}" alt="${nom}" title="${nom}">` +
-    (element && ICONES_ELEMENTS_TRI[element] ? `<img class="element-case" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}" title="${NOMS_ELEMENTS[element] || element}">` : "");
+  slot.innerHTML = `<img class="perso-case" src="../DB/${personnage.image}" alt="${nom}" title="${nom}">`;
 }
 
 // Namecard du tableau, puis trait de la couleur du joueur.
@@ -1342,11 +1341,14 @@ function creerCaseRecap(personnage, role, element = null) {
   zoneInfos.innerHTML = [
     infos[`constellation${suffixe}`] ? `<span class="pastille-case">${infos[`constellation${suffixe}`]}</span>` : "",
     infos[`niveau${suffixe}`] ? `<span class="pastille-case">${infos[`niveau${suffixe}`]}</span>` : "",
-    htmlArmeSignature(personnage.arme, refinement, { classe: "arme-case" })
+    htmlArmeSignature(personnage.arme, refinement, { classe: "arme-case" }),
+    element && ICONES_ELEMENTS_TRI[element]
+      ? `<img class="element-case" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}" title="${NOMS_ELEMENTS[element] || element}">`
+      : ""
   ].join("");
-  // Côté extérieur : à gauche de l'icône pour j1, à droite pour j2 (la case
-  // de j2 est en miroir).
-  slot.prepend(zoneInfos);
+  // À côté du personnage, côté centre de l'écran : à sa droite pour j1, à
+  // sa gauche pour j2 (la case de j2 est en miroir).
+  slot.appendChild(zoneInfos);
   return slot;
 }
 
