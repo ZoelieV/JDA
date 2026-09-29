@@ -85,7 +85,7 @@ let triComptes = { ...TRI_COMPTES_DEFAUT };
 // plus grande valeur d'abord pour les stats.
 const SENS_INITIAL_TRI = {
   activite: -1, arrivee: 1, alpha: 1,
-  points: -1, nb_persos: -1, nb_c6: -1, theatre: -1, matchs: -1, ratio: -1
+  points: -1, nb_persos: -1, nb_c6: -1, constellations_5: -1, theatre: -1, matchs: -1, ratio: -1
 };
 
 // Deuxième bannière par défaut (joueur qui n'en a pas choisi).
@@ -108,6 +108,7 @@ function texteStat(compte) {
     case "points": return `${compte.points ?? 0} pts`;
     case "nb_persos": return `${compte.nb_persos ?? 0} persos`;
     case "nb_c6": return `${compte.nb_c6 ?? 0} C6 5★`;
+    case "constellations_5": return `${compte.constellations_5 ?? 0} constellation${(compte.constellations_5 ?? 0) > 1 ? "s" : ""} 5★`;
     case "theatre": return compte.theatre ? `Théâtre ${compte.theatre}` : "Théâtre -";
     case "matchs": return `${compte.matchs ?? 0} match${(compte.matchs ?? 0) > 1 ? "s" : ""}`;
     case "ratio": return getRatio(compte) === null ? "Aucun match" : `${Math.round(getRatio(compte) * 100)} %`;

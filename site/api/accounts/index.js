@@ -86,6 +86,11 @@ function resumerProfil(profil, resultats) {
     points: calculerPointsBox(data, "full", getPersonnages()),
     nb_persos: nbPersos,
     nb_c6: nbC6,
+    // Somme des constellations des 5★ limités (Full Box, sans les persos
+    // standards) : C0 ne compte pas, C3 + C2 = 5.
+    constellations_5: possedes
+      .filter(p => String(p.rarete) === "5" && !p.standard)
+      .reduce((somme, p) => somme + full[p.id], 0),
     theatre: PALIERS_THEATRE[data.theatre] ?? null,
     matchs,
     victoires
