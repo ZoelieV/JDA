@@ -171,7 +171,8 @@ body::before {
      bord droit du bouton. Décalage : photo 20 px plus à droite qu'avec
      l'ancienne bannière (déjà décalée de 20 px), soit
      1.25rem - 2.8125rem + 1.25rem. */
-  width: calc(var(--largeur-banniere) - 2.8125rem);
+  /* Puis 20 px plus court (côté gauche, la photo ne bouge pas). */
+  width: calc(var(--largeur-banniere) - 2.8125rem - 1.25rem);
   height: var(--hauteur-banniere);
   left: -0.3125rem;
   flex-direction: row-reverse;
