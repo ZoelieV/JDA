@@ -1,4 +1,5 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
+const { estAdmin } = require("../_lib/admin");
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
@@ -11,7 +12,8 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       authenticated: true,
-      user
+      // admin : accès à la page d'administration des points (carte de l'accueil).
+      user: { ...user, admin: estAdmin(user.id) }
     });
   } catch (error) {
     console.error(error);

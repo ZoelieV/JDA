@@ -21,6 +21,12 @@
       const { user } = await reponse.json();
       const nom = user.global_name || user.username || "Mon compte";
 
+      // Accès réservés aux administrateurs (ex. carte Administration de
+      // l'accueil).
+      if (user.admin) {
+        document.querySelectorAll(".carte-admin").forEach(carte => { carte.hidden = false; });
+      }
+
       const lien = document.createElement("a");
       lien.className = "compte-lien";
       lien.href = "/my_account/my_account.html";

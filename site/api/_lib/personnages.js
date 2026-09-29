@@ -23,6 +23,40 @@ function getPersonnages() {
   return personnages;
 }
 
+function getArmes() {
+  return armes;
+}
+
+// ---- Points modifiés par les administrateurs (table Supabase "points",
+// cf. api/points.js), appliqués par-dessus les JSON ----
+// PPC : C0..C6, puis niveau 95, niveau 100 et théâtre, chacun ajouté ou
+// multiplié aux points de constellation selon le mode choisi par les admins.
+const MODES_POINTS = { niveau95: 7, niveau100: 8, theatre: 9 };
+
+// Relue au plus toutes les 30 s (les points changent rarement).
+const DUREE_CACHE_POINTS_MS = 30 * 1000;
+let pointsLusA = 0;
+
+async function actualiserPoints() {
+  if (Date.now() - pointsLusA < DUREE_CACHE_POINTS_MS) return;
+  try {
+    const { supabase } = require("./supabase");
+    const { data, error } = await supabase.from("points").select("data").eq("id", "config").maybeSingle();
+    if (error) throw error;
+    const config = data?.data || {};
+    personnages.forEach(p => {
+      if (Array.isArray(config.characters?.[p.id])) p.PPC = config.characters[p.id];
+    });
+    armes.forEach(a => {
+      if (Array.isArray(config.weapons?.[a.id])) a.PPW = config.weapons[a.id];
+    });
+    pointsLusA = Date.now();
+  } catch (erreur) {
+    // Pas bloquant : on garde les points des JSON.
+    console.error("Erreur lecture des points admin :", erreur);
+  }
+}
+
 function getPersonnageParId(id) {
   return personnages.find(p => p.id === id) || null;
 }
@@ -117,6 +151,9 @@ function infosPersoJoueur(profilData, persoId, element = null) {
 }
 
 module.exports = {
+  MODES_POINTS,
+  actualiserPoints,
+  getArmes,
   infosPersoJoueur,
   ELEMENTS,
   ELEMENTS_LIBRES,

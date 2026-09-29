@@ -149,3 +149,9 @@
     font-size: 0.8125rem;
   }
 }
+
+/* Carte réservée aux administrateurs : masquée tant que commun/compte.js ne
+   l'a pas affichée. */
+.carte-section[hidden] {
+  display: none;
+}

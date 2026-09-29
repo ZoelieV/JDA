@@ -7,7 +7,7 @@
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
-const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur } = require("../../_lib/personnages");
+const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS } = require("../../_lib/temps");
 const {
@@ -87,7 +87,8 @@ async function calculerEquilibrage(draft) {
   // room.player1_discord_id/player2_discord_id.
   const [profilJ1, profilJ2] = await Promise.all([
     supabase.from("profiles").select("data").eq("discord_id", draft.discord_j1).single(),
-    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j2).single()
+    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j2).single(),
+    actualiserPoints()
   ]);
 
   const personnages = getPersonnages();

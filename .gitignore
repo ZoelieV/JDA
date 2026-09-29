@@ -1,5 +1,4 @@
 node_modules/
-admin_ppc/
 
 # Fonds d'écran originaux (PNG lourds) : gardés en local uniquement.
 # Le site utilise les versions générées (bg_web / bg_miniatures) par

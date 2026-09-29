@@ -1,0 +1,260 @@
+/* ---- Administration des points ---- */
+
+.cache {
+  display: none !important;
+}
+
+body {
+  /* Place pour les boutons figés en bas. */
+  padding-bottom: 5rem;
+}
+
+.etat-admin {
+  text-align: center;
+  color: var(--texte-doux);
+}
+
+.etat-admin.erreur {
+  color: #ff7a85;
+}
+
+.etat-admin.succes {
+  color: #3ecf6a;
+}
+
+.zone-admin {
+  max-width: 90rem;
+  margin: 0 auto;
+}
+
+/* Personnages / Armes + recherche, dans un rectangle flou figé en haut. */
+.barre-admin {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+}
+
+.vues-admin {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.vue-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.625rem;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  cursor: pointer;
+}
+
+.vue-admin img {
+  display: block;
+  height: 1.75rem;
+}
+
+.vue-admin:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.vue-admin.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+.recherche-admin {
+  box-sizing: border-box;
+  width: 17.8125rem;
+  max-width: 100%;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 1.0625rem;
+}
+
+.aide-admin {
+  margin: 0 auto 0.75rem;
+  max-width: 55rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--texte-doux);
+}
+
+/* ---- Tableau ---- */
+
+.tableau-admin-conteneur {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+}
+
+.tableau-admin {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tableau-admin th,
+.tableau-admin td {
+  padding: 0.25rem 0.375rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tableau-admin thead th {
+  background-color: rgba(20, 20, 20, 0.6);
+  font-weight: bold;
+}
+
+.tableau-admin .col-nom {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.col-nom .miniature {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-size: cover;
+}
+
+.col-nom .miniature img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mode-bonus {
+  width: 100%;
+  min-width: 7rem;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: #3a3a3a;
+  color: white;
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+
+/* Case : saisie + valeur calculée en gris (coefficient "*1,2"). */
+.case-admin {
+  position: relative;
+  display: inline-block;
+}
+
+.case-points {
+  box-sizing: border-box;
+  width: 4rem;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.case-points:focus {
+  outline: none;
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.case-points.avec-apercu {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.case-points.invalide {
+  border-color: #ff5a5a;
+}
+
+.apercu-points {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  background-color: rgba(20, 20, 20, 0.9);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.apercu-points:empty {
+  display: none;
+}
+
+/* ---- Annuler (bas gauche) / Enregistrer (bas droite), figés ----
+   Grisés avec un contour rouge / vert sans modification, remplis avec. */
+.pied-admin {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.pied-admin button {
+  pointer-events: auto;
+  padding: 0.625rem 1.25rem;
+  border: 2px solid var(--couleur-bouton);
+  border-radius: 0.5rem;
+  background-color: rgba(80, 80, 80, 0.95);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
+}
+
+.bouton-enregistrer {
+  --couleur-bouton: #3ecf6a;
+}
+
+.bouton-annuler {
+  --couleur-bouton: #ff5a5a;
+}
+
+.pied-admin button.modifie {
+  background-color: var(--couleur-bouton);
+  color: white;
+}
+
+.pied-admin button.modifie:hover {
+  filter: brightness(1.1);
+}
+
+.pied-admin button:disabled {
+  cursor: default;
+}

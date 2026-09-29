@@ -1,6 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox } = require("../_lib/draft");
-const { getPersonnages, migrerCollectionPersos } = require("../_lib/personnages");
+const { getPersonnages, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -99,7 +99,7 @@ function resumerProfil(profil, resultats) {
 
 module.exports = async (req, res) => {
   try {
-    const [profils, resultats] = await Promise.all([chargerProfils(), chargerResultats()]);
+    const [profils, resultats] = await Promise.all([chargerProfils(), chargerResultats(), actualiserPoints()]);
     return res.status(200).json(profils.map(profil => resumerProfil(profil, resultats)));
   } catch (error) {
     console.error(error);

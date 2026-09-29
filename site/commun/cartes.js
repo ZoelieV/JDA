@@ -25,8 +25,28 @@ function chargerJSON(chemin) {
   return cacheJSON.get(chemin);
 }
 
-const chargerPersonnages = () => chargerJSON("characters.json");
-const chargerArmes = () => chargerJSON("weapons.json");
+// Points modifiés par les administrateurs (api/points.js), appliqués
+// par-dessus les JSON : PPC des personnages, PPW des armes.
+let promessePointsAdmin = null;
+
+function chargerPointsAdmin() {
+  promessePointsAdmin ??= fetch("/api/points", { cache: "no-cache" })
+    .then(reponse => (reponse.ok ? reponse.json() : {}))
+    .catch(() => ({}));
+  return promessePointsAdmin;
+}
+
+function appliquerPointsAdmin(liste, points, champ) {
+  liste.forEach(item => {
+    if (Array.isArray(points?.[item.id])) item[champ] = points[item.id];
+  });
+  return liste;
+}
+
+const chargerPersonnages = () => Promise.all([chargerJSON("characters.json"), chargerPointsAdmin()])
+  .then(([liste, points]) => appliquerPointsAdmin(liste, points.characters, "PPC"));
+const chargerArmes = () => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
+  .then(([liste, points]) => appliquerPointsAdmin(liste, points.weapons, "PPW"));
 const chargerBoss = () => chargerJSON("boss.json");
 
 // ---- Fond de carte selon la rareté (classes de commun/cartes.css) ----
