@@ -625,23 +625,27 @@ h2 {
   z-index: 1000;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .modal-parametres.active {
   display: flex;
 }
 
+/* Fenêtre de la largeur de la page (comme la grille des cartes), fond
+   semi-transparent flouté comme la barre des filtres. */
 .modal-parametres-contenu {
   box-sizing: border-box;
-  width: 95%;
-  max-width: 75rem;
+  width: calc(100% - 2.5rem);
   height: 88vh;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
-  background: #2a2a2a;
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 0.75rem;
   overflow: hidden;
 }
@@ -664,16 +668,43 @@ h2 {
   cursor: pointer;
 }
 
+/* Aperçus cliquables : fond d'écran, namecard, bannière (centrée en
+   hauteur) ; l'actif (ce qu'on modifie) est entouré de doré. */
 .apercu-parametres {
   display: flex;
   flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
   gap: 1rem;
+}
+
+/* Blocs de même hauteur : l'image de la bannière (moins haute) est centrée
+   dans l'espace sous son titre, donc à la hauteur des autres images. */
+.apercu-bloc .apercu-image {
+  margin: auto 0;
 }
 
 .apercu-bloc {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 0.375rem;
+  padding: 0.375rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  background: none;
+  color: white;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.apercu-bloc:hover {
+  border-color: rgba(245, 197, 66, 0.5);
+}
+
+.apercu-bloc.active {
+  border-color: rgba(245, 197, 66, 0.9);
+  background-color: rgba(245, 197, 66, 0.12);
 }
 
 .apercu-titre {
@@ -708,32 +739,11 @@ h2 {
   width: 10rem;
 }
 
-.onglets-parametres {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.onglet-parametre {
-  box-sizing: border-box;
-  height: 2.4375rem;
-  padding: 0 0.875rem;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 0.5625rem;
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.onglet-parametre.active {
-  border-color: rgba(245, 197, 66, 0.8);
-  background-color: rgba(245, 197, 66, 0.15);
-}
-
-.onglets-parametres .recherche-personnage {
-  margin-left: auto;
+/* Recherche au-dessus de la grille, centrée, 1,5 x plus large. */
+.recherche-personnage.recherche-parametres {
+  align-self: center;
+  width: calc(11.875rem * 1.5);
+  max-width: 100%;
 }
 
 .choix-parametres {
@@ -805,10 +815,48 @@ h2 {
   border-color: rgba(245, 197, 66, 0.9);
 }
 
+/* Annuler en bas à gauche, Enregistrer en bas à droite. */
 .pied-parametres {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 0.625rem;
+}
+
+/* Sans changement : grisés, contour vert (Enregistrer) / rouge (Annuler) ;
+   avec un changement : remplis de leur couleur. */
+.pied-parametres #enregistrer-parametres,
+.pied-parametres #annuler-parametres {
+  padding: 0.5rem 1.25rem;
+  border: 2px solid var(--couleur-bouton);
+  border-radius: 0.5rem;
+  background-color: rgba(80, 80, 80, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.pied-parametres #enregistrer-parametres {
+  --couleur-bouton: #3ecf6a;
+}
+
+.pied-parametres #annuler-parametres {
+  --couleur-bouton: #ff5a5a;
+}
+
+.pied-parametres #enregistrer-parametres.modifie,
+.pied-parametres #annuler-parametres.modifie {
+  background-color: var(--couleur-bouton);
+  color: white;
+}
+
+.pied-parametres #enregistrer-parametres:disabled {
+  cursor: default;
+}
+
+.pied-parametres #enregistrer-parametres.modifie:hover,
+.pied-parametres #annuler-parametres.modifie:hover {
+  filter: brightness(1.1);
 }
 
 .btn-secondaire {
@@ -844,7 +892,6 @@ textarea {
 .menu-btn,
 .menu-champ input,
 .menu-champ select,
-.onglet-parametre,
 .box-total {
   font-size: 0.9375rem;
 }
@@ -974,7 +1021,6 @@ textarea {
 .box-btn:hover,
 .view-btn:hover,
 .btn-secondaire:hover,
-.onglet-parametre:hover,
 .menu-btn:hover,
 .menu-champ input:hover,
 .menu-champ select:hover,
@@ -1369,6 +1415,7 @@ body {
   .modal-parametres-contenu {
     width: 100%;
     height: 100%;
+    border: none;
     max-width: none;
     border-radius: 0;
     padding: 0.75rem;
@@ -1391,15 +1438,6 @@ body {
     width: calc(100vw - 1.5rem);
     height: auto;
     aspect-ratio: 1000 / 137;
-  }
-
-  .onglet-parametre {
-    flex: 1 1 auto;
-    font-size: 0.875rem;
-  }
-
-  .onglets-parametres .recherche-personnage {
-    margin-left: 0;
   }
 
   .grille-choix.choix-banniere,

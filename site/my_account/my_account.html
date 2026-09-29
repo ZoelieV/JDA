@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem16">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem18">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
@@ -177,27 +177,23 @@
         <button type="button" id="fermer-parametres" class="fermer-modal" aria-label="Fermer">×</button>
       </div>
 
+      <!-- Aperçus cliquables : choisissent aussi ce qu'on modifie. -->
       <div class="apercu-parametres">
-        <div class="apercu-bloc">
-          <span class="apercu-titre">Namecard</span>
-          <div id="apercu-banniere" class="apercu-image apercu-banniere"></div>
-        </div>
-        <div class="apercu-bloc">
-          <span class="apercu-titre">Bannière</span>
-          <div id="apercu-banniere2" class="apercu-image apercu-banniere2"></div>
-        </div>
-        <div class="apercu-bloc">
+        <button type="button" class="apercu-bloc active" data-onglet="fond">
           <span class="apercu-titre">Fond d'écran</span>
-          <div id="apercu-fond" class="apercu-image apercu-fond"></div>
-        </div>
+          <span id="apercu-fond" class="apercu-image apercu-fond"></span>
+        </button>
+        <button type="button" class="apercu-bloc" data-onglet="banniere">
+          <span class="apercu-titre">Namecard</span>
+          <span id="apercu-banniere" class="apercu-image apercu-banniere"></span>
+        </button>
+        <button type="button" class="apercu-bloc" data-onglet="banniere2">
+          <span class="apercu-titre">Bannière</span>
+          <span id="apercu-banniere2" class="apercu-image apercu-banniere2"></span>
+        </button>
       </div>
 
-      <div class="onglets-parametres">
-        <button type="button" class="onglet-parametre active" data-onglet="banniere">Namecard</button>
-        <button type="button" class="onglet-parametre" data-onglet="banniere2">Bannière</button>
-        <button type="button" class="onglet-parametre" data-onglet="fond">Fond d'écran</button>
-        <input type="text" id="recherche-parametres" class="recherche-personnage" placeholder="Rechercher…">
-      </div>
+      <input type="text" id="recherche-parametres" class="recherche-personnage recherche-parametres" placeholder="Rechercher…">
 
       <div id="choix-parametres" class="choix-parametres"></div>
 
@@ -261,6 +257,6 @@
   <script src="/my_account/auto_box/interface.js?v=2"></script>
   <script src="/commun/cartes.js?v=1"></script>
   <script src="/commun/tri.js?v=10"></script>
-  <script src="/my_account/my_account.js?v=26"></script>
+  <script src="/my_account/my_account.js?v=27"></script>
 </body>
 </html>

@@ -1029,8 +1029,30 @@ async function initialiserParametres(profil) {
   const conteneurChoix = document.getElementById("choix-parametres");
   const inputRecherche = document.getElementById("recherche-parametres");
 
-  let ongletActif = "banniere";
+  let ongletActif = "fond";
   let brouillon = null; // choix en cours, appliqués seulement à l'enregistrement
+
+  const btnEnregistrer = document.getElementById("enregistrer-parametres");
+  const btnAnnuler = document.getElementById("annuler-parametres");
+
+  // Enregistrer / Annuler : grisés (contour vert / rouge) tant que rien n'a
+  // changé, remplis dès qu'un choix diffère de ce qui est enregistré.
+  function mettreAJourPied() {
+    const modifie = Object.keys(PARAMETRES_DEFAUT).some(cle => brouillon[cle] !== profil.parametres[cle]);
+    btnEnregistrer.classList.toggle("modifie", modifie);
+    btnAnnuler.classList.toggle("modifie", modifie);
+    btnEnregistrer.disabled = !modifie;
+  }
+
+  // Aperçu actif = ce qu'on modifie.
+  function choisirOnglet(onglet) {
+    ongletActif = onglet;
+    document.querySelectorAll(".apercu-bloc").forEach(bloc => {
+      bloc.classList.toggle("active", bloc.dataset.onglet === onglet);
+    });
+    inputRecherche.value = "";
+    rendreChoix();
+  }
 
   try {
     await chargerCosmetiques();
@@ -1076,6 +1098,7 @@ async function initialiserParametres(profil) {
       if (ongletActif === "fond") appliquerFond(valeur);
       rendreApercus();
       rendreChoix();
+      mettreAJourPied();
     });
     return bouton;
   }
@@ -1136,9 +1159,9 @@ async function initialiserParametres(profil) {
 
   function ouvrir() {
     brouillon = { ...profil.parametres };
-    inputRecherche.value = "";
     rendreApercus();
-    rendreChoix();
+    choisirOnglet("fond");
+    mettreAJourPied();
     modal.classList.add("active");
     fermerMenuCompte();
   }
@@ -1159,21 +1182,14 @@ async function initialiserParametres(profil) {
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
   });
 
-  document.querySelectorAll(".onglet-parametre").forEach(bouton => {
-    bouton.addEventListener("click", () => {
-      ongletActif = bouton.dataset.onglet;
-      document.querySelectorAll(".onglet-parametre").forEach(b => {
-        b.classList.toggle("active", b === bouton);
-      });
-      inputRecherche.value = "";
-      rendreChoix();
-    });
+  document.querySelectorAll(".apercu-bloc").forEach(bloc => {
+    bloc.addEventListener("click", () => choisirOnglet(bloc.dataset.onglet));
   });
 
   inputRecherche.addEventListener("input", rendreChoix);
 
   // Enregistre le profil entier (comme le bouton Enregistrer de la page).
-  document.getElementById("enregistrer-parametres").addEventListener("click", async () => {
+  btnEnregistrer.addEventListener("click", async () => {
     profil.parametres = { ...brouillon };
     const succes = await sauvegarderProfil(profil);
     afficherToast(
