@@ -232,6 +232,7 @@ function rendreCorps() {
         <td class="col-nom">
           <span class="miniature ${classeFondRarete(item.rarete)}"><img src="../DB/${item.image}" alt="" loading="lazy"></span>
           <span class="nom-admin"></span>
+          ${vue === "characters" ? `<button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points">Aperçu</button>` : ""}
         </td>
         ${valeurs[vue][item.id].map((valeur, index) => `
           <td>
@@ -347,8 +348,158 @@ function initialiserSaisie() {
   document.getElementById("entete-admin").addEventListener("change", event => {
     const select = event.target.closest(".mode-bonus");
     if (!select) return;
-    modes[select.dataset.cle] = select.value;
+    changerMode(select.dataset.cle, select.value);
+    rendreCorps();
     mettreAJourPied();
+  });
+
+  document.getElementById("corps-admin").addEventListener("click", event => {
+    const bouton = event.target.closest(".btn-apercu");
+    if (bouton) ouvrirApercu(bouton.dataset.id);
+  });
+}
+
+// ---- Modificateurs (niveau 95, niveau 100, théâtre) ----
+// Appliqués aux points de constellation : niveau (95 ou 100, aucun au 90)
+// puis théâtre, chacun ajouté ou multiplié selon son mode ; résultat
+// arrondi à l'entier.
+
+function appliquerModificateur(points, cle, valeur) {
+  return modes[cle] === "multiplication" ? points * valeur : points + valeur;
+}
+
+function pointsCombinaison(liste, constellation, niveau, theatre) {
+  let points = liste[constellation];
+  if (niveau === 95) points = appliquerModificateur(points, "niveau95", liste[7]);
+  if (niveau === 100) points = appliquerModificateur(points, "niveau100", liste[8]);
+  if (theatre) points = appliquerModificateur(points, "theatre", liste[9]);
+  return Math.round(points);
+}
+
+// Convertisseur : en changeant le mode d'un modificateur (commun à tous les
+// personnages), la valeur de chaque personnage est convertie pour garder le
+// même résultat à C0 (ex. C0 = 50 : x1,2 <-> +10).
+function convertirValeur(c0, valeur, versMode) {
+  if (versMode === "addition") return Math.round(c0 * (valeur - 1));
+  return c0 > 0 ? Math.round(((c0 + valeur) / c0) * 100) / 100 : 1;
+}
+
+function changerMode(cle, nouveauMode) {
+  if (modes[cle] === nouveauMode) return;
+  const index = BONUS.find(b => b.cle === cle).index;
+  Object.values(valeurs.characters).forEach(liste => {
+    liste[index] = convertirValeur(liste[0], liste[index], nouveauMode);
+  });
+  modes[cle] = nouveauMode;
+}
+
+// Saisie d'un modificateur : un nombre, ou "*1,2" (+20 % à C0), converti en
+// addition si le modificateur est en mode addition.
+function lireModificateur(texte, cle, c0) {
+  const saisie = lireSaisie(texte);
+  if (!saisie) return null;
+  if ("valeur" in saisie) {
+    return modes[cle] === "multiplication" ? Math.round(saisie.valeur * 100) / 100 : Math.round(saisie.valeur);
+  }
+  return modes[cle] === "multiplication"
+    ? Math.round(saisie.multiplicateur * 100) / 100
+    : convertirValeur(c0, saisie.multiplicateur, "addition");
+}
+
+// ---- Aperçu : toutes les combinaisons d'un personnage ----
+
+let persoApercu = null;
+const LIBELLES_MODIFICATEURS = { niveau95: "Niveau 95", niveau100: "Niveau 100", theatre: "Théâtre" };
+
+function ouvrirApercu(id) {
+  persoApercu = personnages.find(p => p.id === id);
+  if (!persoApercu) return;
+  document.getElementById("apercu-titre").textContent = persoApercu.nom;
+  document.getElementById("apercu-image").src = `../DB/${persoApercu.image}`;
+  document.getElementById("apercu-image").className = "";
+  document.getElementById("apercu-miniature").className = `apercu-miniature ${classeFondRarete(persoApercu.rarete)}`;
+  rendreApercu();
+  document.getElementById("modal-apercu").classList.add("active");
+}
+
+function fermerApercu() {
+  document.getElementById("modal-apercu").classList.remove("active");
+  persoApercu = null;
+  rendreCorps();
+}
+
+function rendreApercu() {
+  const liste = valeurs.characters[persoApercu.id];
+
+  document.getElementById("apercu-modificateurs").innerHTML = BONUS.map(({ cle, index }) => `
+    <div class="bloc-modificateur">
+      <span class="titre-modificateur">${LIBELLES_MODIFICATEURS[cle]}</span>
+      <div class="modes-modificateur">
+        <button type="button" class="mode-modificateur${modes[cle] === "addition" ? " active" : ""}" data-cle="${cle}" data-mode="addition">+ Addition</button>
+        <button type="button" class="mode-modificateur${modes[cle] === "multiplication" ? " active" : ""}" data-cle="${cle}" data-mode="multiplication">× Multiplication</button>
+      </div>
+      <input class="valeur-modificateur" data-cle="${cle}" data-index="${index}" value="${modes[cle] === "multiplication" ? "×" : "+"}${liste[index]}" inputmode="decimal" title="Nombre, ou *1,2 pour +20 % à C0">
+    </div>
+  `).join("");
+
+  const colonnes = [[90, false], [90, true], [95, false], [95, true], [100, false], [100, true]];
+  document.getElementById("apercu-tableau").innerHTML = `
+    <thead>
+      <tr>
+        <th></th>
+        ${colonnes.map(([niveau, theatre]) => `<th>Niv. ${niveau}${theatre ? "<br><span class=\"avec-theatre\">+ théâtre</span>" : ""}</th>`).join("")}
+      </tr>
+    </thead>
+    <tbody>
+      ${liste.slice(0, 7).map((_, c) => `
+        <tr>
+          <th>C${c}</th>
+          ${colonnes.map(([niveau, theatre]) => `<td>${pointsCombinaison(liste, c, niveau, theatre)}</td>`).join("")}
+        </tr>`).join("")}
+    </tbody>
+  `;
+}
+
+function initialiserApercu() {
+  const modal = document.getElementById("modal-apercu");
+  document.getElementById("fermer-apercu").addEventListener("click", fermerApercu);
+  modal.addEventListener("click", event => {
+    if (event.target === modal) fermerApercu();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("active")) fermerApercu();
+  });
+
+  const zone = document.getElementById("apercu-modificateurs");
+  zone.addEventListener("click", event => {
+    const bouton = event.target.closest(".mode-modificateur");
+    if (!bouton) return;
+    changerMode(bouton.dataset.cle, bouton.dataset.mode);
+    rendreEntete();
+    rendreApercu();
+    mettreAJourPied();
+  });
+
+  // Entrée ou sortie du champ : valeur lue (nombre ou *1,2), convertie
+  // selon le mode, puis combinaisons recalculées.
+  const valider = input => {
+    const liste = valeurs.characters[persoApercu.id];
+    const valeur = lireModificateur(input.value.replace(/^[+×]/, ""), input.dataset.cle, liste[0]);
+    if (valeur !== null) liste[Number(input.dataset.index)] = valeur;
+    rendreApercu();
+    mettreAJourPied();
+  };
+  // Entrée : on quitte le champ, ce qui le valide (une seule validation).
+  zone.addEventListener("keydown", event => {
+    const input = event.target.closest(".valeur-modificateur");
+    if (input && event.key === "Enter") {
+      event.preventDefault();
+      input.blur();
+    }
+  });
+  zone.addEventListener("focusout", event => {
+    const input = event.target.closest(".valeur-modificateur");
+    if (input && persoApercu) valider(input);
   });
 }
 
@@ -432,6 +583,7 @@ async function demarrer() {
 
   initialiserSaisie();
   initialiserFiltres();
+  initialiserApercu();
   suivreHauteurBarre();
   rendre();
 }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration des points</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
-<link rel="stylesheet" href="admin_ppc.css?v=4">
+<link rel="stylesheet" href="admin_ppc.css?v=5">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -48,6 +48,25 @@
     </div>
   </div>
 
+  <!-- Aperçu d'un personnage : toutes les combinaisons de points (niveau 90 /
+       95 / 100, avec ou sans théâtre) et ses modificateurs. -->
+  <div id="modal-apercu" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <span id="apercu-miniature" class="apercu-miniature"><img id="apercu-image" src="" alt=""></span>
+        <h2 id="apercu-titre">Personnage</h2>
+        <button type="button" id="fermer-apercu" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Niveau (95 ou 100) puis théâtre, chacun ajouté ou multiplié aux points de constellation.
+        Changer de mode convertit la valeur pour garder le même résultat à C0. Dans un champ, écris un
+        nombre ou <strong>*1,2</strong> (+20 % à C0), puis <strong>Entrée</strong>.
+      </p>
+      <div id="apercu-modificateurs" class="apercu-modificateurs"></div>
+      <table id="apercu-tableau" class="apercu-tableau"></table>
+    </div>
+  </div>
+
   <!-- Annuler en bas à gauche, Enregistrer en bas à droite (figés). -->
   <div id="pied-admin" class="pied-admin cache">
     <button type="button" id="annuler-admin" class="bouton-annuler">Annuler</button>
@@ -56,6 +75,6 @@
 
   <script src="/commun/cartes.js?v=2"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="admin_ppc.js?v=3"></script>
+  <script src="admin_ppc.js?v=4"></script>
 </body>
 </html>
