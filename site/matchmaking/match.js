@@ -64,6 +64,9 @@ const filtreElement = new Set();
 const filtreEtoile = new Set();
 const filtreVoeux = new Set();
 const filtreArme = new Set();
+// Choix de box / analyse : personnages seulement, armes seulement, ou les
+// deux (null).
+let filtreVue = null; // "characters" | "weapons" | null
 let filtreProprietaire = null; // "j1" | "j2" | null
 let rechercheTexte = "";
 const etatTri = creerEtatTri();
@@ -514,17 +517,79 @@ function rendreApercuBox(containerId, role, boxChoisie) {
   const collection = joueurData?.characters || { full: {}, selections: {} };
 
   const persosBox = personnagesData.filter(p => estDansBox(collection, p.id, boxChoisie));
+  const armesBox = getArmesBox(joueurData, boxChoisie);
 
-  if (persosBox.length === 0) {
-    container.innerHTML = `<p class="apercu-vide">Cette box ne contient aucun personnage.</p>`;
+  if (persosBox.length === 0 && armesBox.length === 0) {
+    container.innerHTML = `<p class="apercu-vide">Cette box est vide.</p>`;
     return;
   }
 
+  // Personnages, puis armes à la suite (nouvelle ligne), selon le filtre
+  // Personnages / Armes.
+  const groupesPersos = filtreVue === "weapons" ? [] : trierPersonnages(
+    persosBox.filter(p => personnageCorrespondFiltres(p, { ignorerProprietaire: true })), [role]
+  );
+  const groupesArmes = filtreVue === "characters" ? [] : trierEtGrouper(
+    armesBox.filter(armeCorrespondFiltres), etatTri, {
+      vue: "weapons",
+      valeurs: {
+        points: a => Number(a.PPW?.[a.raffinement] ?? 0),
+        constellation: a => a.raffinement
+      },
+      elements: filtreElement,
+      armes: filtreArme,
+      rareteParDefaut: filtreEtoile.size > 0
+    }
+  ).map(groupe => ({ ...groupe, section: "armes" }));
+
   remplirGrilleGroupee(
     container,
-    trierPersonnages(persosBox.filter(p => personnageCorrespondFiltres(p, { ignorerProprietaire: true })), [role]),
-    p => obtenirCarteItem(container, p, getInfosCarte(p.id, [role]))
+    [...groupesPersos, ...groupesArmes],
+    item => item.instanceId
+      ? obtenirCarte(container, JSON.stringify(["arme", item.instanceId, item.raffinement, role]), () => creerCarteArme(item, role))
+      : obtenirCarteItem(container, item, getInfosCarte(item.id, [role]))
   );
+}
+
+// Armes (copies comprises) de la box choisie d'un joueur : Full Box = toutes
+// ses armes possédées, autre box = sa sélection.
+function getArmesBox(joueurData, box) {
+  const collection = joueurData?.weapons || {};
+  const armesParId = new Map(armesData.map(arme => [arme.id, arme]));
+  return Object.entries(collection.full || {})
+    .filter(([instanceId, valeur]) => valeur >= 0 &&
+      (box === "full" || !!collection.selections?.[box]?.[instanceId]))
+    .map(([instanceId, valeur]) => {
+      const arme = armesParId.get(instanceId.split("#")[0]);
+      return arme ? { ...arme, instanceId, raffinement: valeur } : null;
+    })
+    .filter(Boolean);
+}
+
+// Filtres appliqués aux armes : élément, type, étoiles, recherche ; les
+// vœux ne concernent que les personnages.
+function armeCorrespondFiltres(arme) {
+  if (filtreVoeux.size > 0) return false;
+  if (filtreElement.size > 0 && !filtreElement.has(arme.element)) return false;
+  if (filtreArme.size > 0 && !filtreArme.has(arme.type)) return false;
+  if (filtreEtoile.size > 0 && !filtreEtoile.has(String(arme.rarete))) return false;
+  const q = rechercheTexte.trim().toLowerCase();
+  return !q || arme.nom.toLowerCase().includes(q);
+}
+
+// Carte d'une arme dans l'aperçu d'une box : raffinement en haut, du côté
+// du joueur (comme les constellations).
+function creerCarteArme(arme, role) {
+  const card = document.createElement("div");
+  card.className = "character-card carte-arme";
+  card.title = arme.instanceId.includes("#") ? `${arme.nom} (copie)` : arme.nom;
+  card.innerHTML = `
+    <div class="character-visuel ${classeFondRarete(arme.rarete)}">
+      <img src="../DB/${arme.image}" alt="${arme.nom}" loading="lazy" decoding="async">
+      <span class="character-constellation constellation-${role}">R${arme.raffinement + 1}</span>
+    </div>
+  `;
+  return card;
 }
 
 function creerBanMini(personnage) {
@@ -1139,7 +1204,7 @@ function rendreDraft(phasePrecedente) {
 
 // Part de la clé de grille qui dépend de la barre recherche/tri/filtres.
 function cleFiltres() {
-  return [[...filtreElement], [...filtreArme], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, rechercheTexte, etatTri.tris];
+  return [filtreVue, [...filtreElement], [...filtreArme], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, rechercheTexte, etatTri.tris];
 }
 
 // Le contenu est ensuite remplacé en une fois (remplirGrilleGroupee), en
@@ -1171,6 +1236,27 @@ function initialiserFiltresTri() {
   const figeables = document.createElement("div");
   figeables.className = "filtres-figeables";
   container.appendChild(figeables);
+
+  // Personnages / Armes (mêmes logos que Mon compte), en premier ; un seul à
+  // la fois, un 2e clic le désactive.
+  const zoneVue = document.createElement("div");
+  zoneVue.className = "filtres-icones filtres-vue";
+  zoneVue.id = "filtres-vue";
+  [["characters", "Icon_Character.webp", "Personnages"], ["weapons", "Icon_Inventory_Weapons.webp", "Armes"]].forEach(([valeur, logo, nom]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-icone-btn";
+    btn.dataset.vue = valeur;
+    btn.title = nom;
+    btn.innerHTML = `<img src="../DB/images/others/${logo}" alt="${nom}">`;
+    btn.addEventListener("click", () => {
+      filtreVue = filtreVue === valeur ? null : valeur;
+      zoneVue.querySelectorAll(".filtre-icone-btn").forEach(b => b.classList.toggle("active", b.dataset.vue === filtreVue));
+      rendrePhase();
+    });
+    zoneVue.appendChild(btn);
+  });
+  figeables.appendChild(zoneVue);
 
   const zoneIcones = document.createElement("div");
   zoneIcones.className = "filtres-icones";
@@ -1262,6 +1348,7 @@ function initialiserFiltresTri() {
   btnClear.title = "Réinitialiser les filtres";
   btnClear.innerHTML = '<img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres">';
   btnClear.addEventListener("click", () => {
+    filtreVue = null;
     filtreElement.clear();
     filtreArme.clear();
     filtreEtoile.clear();
@@ -1317,9 +1404,15 @@ function mettreAJourFiltreProprietaire() {
   const btnFavoris = document.querySelector('#barre-outils .tri-btn[data-tri="favoris"]');
   if (btnFavoris) btnFavoris.hidden = !monRole;
 
+  // Personnages / Armes : seulement quand les box sont affichées (les armes
+  // ne se draftent pas).
+  const enBox = draft.phase === "choix_box" || draft.phase === "analyse";
+  const zoneVue = document.getElementById("filtres-vue");
+  if (zoneVue) zoneVue.classList.toggle("cache", !enBox);
+
   const zone = document.getElementById("filtres-proprietaire");
   if (!zone) return;
-  zone.classList.toggle("cache", draft.phase === "choix_box" || draft.phase === "analyse");
+  zone.classList.toggle("cache", enBox);
   zone.querySelectorAll(".filtre-proprietaire-btn").forEach(btn => {
     const joueur = btn.dataset.role === "j1" ? joueur1 : joueur2;
     btn.textContent = draft.roles_tires || !joueur ? btn.dataset.role.toUpperCase() : joueur.nom;

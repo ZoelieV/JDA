@@ -212,7 +212,9 @@ function remplirGrilleGroupee(container, groupes, creerCartes) {
   let cleLigne = null;
 
   groupes.forEach(groupe => {
-    const cle = JSON.stringify([groupe.cles.element, groupe.cles.arme]);
+    // section : liste différente dans la même grille (ex. armes après les
+    // personnages), toujours sur une nouvelle ligne.
+    const cle = JSON.stringify([groupe.section, groupe.cles.element, groupe.cles.arme]);
     const nouvelleLigne = cleLigne !== null && cle !== cleLigne;
     cleLigne = cle;
 
