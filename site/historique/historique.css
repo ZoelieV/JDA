@@ -151,7 +151,8 @@
 
 .match {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 10rem minmax(0, 1fr);
+  /* Bannières plus courtes (format commun) : la place libérée va au boss. */
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.75fr) minmax(0, 1fr);
   align-items: start;
   gap: 1rem;
   padding: 0.875rem;
@@ -399,8 +400,10 @@ img.arme-mini {
 }
 
 .match-boss {
-  width: 7rem;
-  height: 7rem;
+  width: 100%;
+  max-width: 16rem;
+  height: auto;
+  aspect-ratio: 1;
   object-fit: contain;
 }
 

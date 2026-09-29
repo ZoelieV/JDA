@@ -181,7 +181,7 @@ function afficherComptes() {
 
 function creerCarteCompte(compte, estTriStat) {
   const card = document.createElement("div");
-  card.className = "account-card banniere-joueur";
+  card.className = "account-card banniere-joueur cote-gauche";
   card.dataset.id = compte.discord_id;
 
   const nom = getNomCompte(compte);

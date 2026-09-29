@@ -62,14 +62,15 @@ h1, h2 {
 
 #accounts-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(23.75rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
   gap: 0.75rem;
 }
 
 /* Carte = la deuxième bannière du joueur (1000x137), sans cadre ni
    dégradé ajouté (les images sont déjà assombries à gauche). */
-/* Bannière du joueur au format commun (.banniere-joueur, commun/entete.css) :
-   photo et pseudo à droite, valeur du tri en cours à gauche. */
+/* Bannière du joueur au format commun (.banniere-joueur, commun/entete.css),
+   en miroir du bouton du compte : photo et pseudo à gauche, valeur du tri
+   en cours à droite. */
 .account-card {
   min-height: 3.5rem;
   gap: 0.75rem;
@@ -82,9 +83,9 @@ h1, h2 {
   filter: brightness(1.12);
 }
 
-/* Valeur du tri en cours (points, victoires...), à gauche de la carte. */
+/* Valeur du tri en cours (points, victoires...), à droite de la carte. */
 .account-stat {
-  margin-right: auto;
+  margin-left: auto;
   flex-shrink: 0;
   padding: 0.1875rem 0.625rem;
   border-radius: 62.4375rem;
@@ -97,7 +98,6 @@ h1, h2 {
 .account-infos {
   min-width: 0;
   flex: 1;
-  text-align: right;
 }
 
 .account-name,
