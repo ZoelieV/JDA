@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem22">
+<link rel="stylesheet" href="match.css?v=rem23">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
@@ -36,6 +36,8 @@
          visible que pendant sa phase (cf. BULLES_PAR_PHASE dans match.js). -->
     <div id="bulles-bas" class="bulles-bas">
       <div id="message-choix-box" class="bandeau-info"></div>
+      <!-- Bans d'équilibrage : même bouton que "Confirmer" de la draft (rouge). -->
+      <button id="btn-confirmer-bonus" type="button" class="btn-confirmer-action action-ban cache" disabled>Confirmer les bans</button>
       <div id="message-equilibrage" class="bandeau-info"></div>
       <!-- Room complète : les suivants regardent en spectateur. -->
       <div id="etat-spectateur" class="bandeau-info etat-spectateur cache">👁 Tu regardes ce match en spectateur.</div>
@@ -92,7 +94,6 @@
     <section id="phase-bans-bonus" class="phase cache">
       <div class="bans-bonus-layout">
         <div class="bans-bonus-slots" id="bans-bonus-slots"></div>
-        <button id="btn-confirmer-bonus" type="button" class="cache">Confirmer les bans</button>
       </div>
 
       <div id="grille-bans-bonus" class="grille-pool"></div>
@@ -167,6 +168,6 @@
   <script src="/commun/variantes.js?v=2"></script>
   <script src="/commun/cartes.js?v=1"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="match.js?v=28"></script>
+  <script src="match.js?v=29"></script>
 </body>
 </html>

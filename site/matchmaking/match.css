@@ -927,21 +927,6 @@ h1 {
   opacity: 1;
 }
 
-#btn-confirmer-bonus {
-  background-color: rgba(62, 207, 106, 0.2);
-  border: 2px solid rgba(62, 207, 106, 0.6);
-  color: white;
-  border-radius: 0.5rem;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-#btn-confirmer-bonus:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 /* ---- Phase : temps ---- */
 
 /* Fin de match : le tableau du gagnant s'illumine. */
@@ -1992,14 +1977,13 @@ h1 {
   left: -0.375rem;
 }
 
-/* ---- Boutons verts (Prêt, Rejouer, Valider le temps, Confirmer les bans) :
-   grisés avec un contour vert, vert foncé au survol, vert plein une fois
-   cliqués (ou possibles pour Confirmer les bans) ; jamais de doré. ---- */
+/* ---- Boutons verts (Prêt, Rejouer, Valider le temps) : grisés avec un
+   contour vert, vert foncé au survol, vert plein une fois cliqués ; jamais
+   de doré. ---- */
 #btn-pret-j1,
 #btn-pret-j2,
 #btn-rejouer,
-#btn-valider-temps.btn-valider-temps,
-#btn-confirmer-bonus {
+#btn-valider-temps.btn-valider-temps {
   --vert: #3ecf6a;
   border: 2px solid var(--vert);
   background-color: rgba(80, 80, 80, 0.95);
@@ -2017,8 +2001,7 @@ h1 {
 
 #btn-pret-j1.active,
 #btn-pret-j2.active,
-#btn-rejouer.active,
-#btn-confirmer-bonus:not(:disabled) {
+#btn-rejouer.active {
   background-color: var(--vert);
 }
 
@@ -2030,14 +2013,12 @@ h1 {
 
 #btn-pret-j1.active:hover,
 #btn-pret-j2.active:hover,
-#btn-rejouer.active:hover,
-#btn-confirmer-bonus:not(:disabled):hover {
+#btn-rejouer.active:hover {
   filter: brightness(1.1);
 }
 
 #btn-pret-j1:disabled,
-#btn-pret-j2:disabled,
-#btn-confirmer-bonus:disabled {
+#btn-pret-j2:disabled {
   opacity: 1;
   color: rgba(255, 255, 255, 0.6);
   cursor: default;

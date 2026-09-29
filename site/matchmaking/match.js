@@ -832,14 +832,16 @@ function rendreBansBonus() {
     slots.appendChild(slot);
   }
 
+  // Même bouton que "Confirmer" de la draft, en rouge (ban) : grisé pour
+  // l'autre joueur ; pour celui qui bannit, contour rouge puis rouge plein
+  // une fois tous ses bans choisis. Masqué pour un spectateur.
   const btnConfirmer = document.getElementById("btn-confirmer-bonus");
-  if (cEstMonTour) {
-    btnConfirmer.classList.remove("cache");
-    btnConfirmer.disabled = choix.length !== draft.bans_bonus_total;
-    btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
-  } else {
-    btnConfirmer.classList.add("cache");
-  }
+  const tousChoisis = choix.length === draft.bans_bonus_total;
+  btnConfirmer.classList.toggle("cache", !monRole);
+  btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
+  btnConfirmer.classList.toggle("pret", cEstMonTour && tousChoisis);
+  btnConfirmer.disabled = !cEstMonTour || !tousChoisis;
+  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
 
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
@@ -1686,6 +1688,7 @@ const BULLES_PAR_PHASE = {
   "btn-pret-j1": ["choix_box", "analyse"],
   "btn-pret-j2": ["choix_box", "analyse"],
   "message-choix-box": ["choix_box", "analyse"],
+  "btn-confirmer-bonus": ["bans_bonus"],
   "message-equilibrage": ["bans_bonus"],
   "btn-confirmer-action": ["draft"],
   "tour-actuel": ["draft"],
