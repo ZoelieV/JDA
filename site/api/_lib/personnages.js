@@ -6,6 +6,7 @@
 // comme pour le reste du site. Le require() d'un JSON est repéré et inclus
 // automatiquement par Vercel au build (pas besoin de config supplémentaire).
 const personnages = require("../../DB/characters.json");
+const armes = require("../../DB/weapons.json");
 
 // ---- Groupes (Voyageur) ----
 // Un personnage par élément dans les comptes ("traveler_pyro"...,
@@ -79,7 +80,44 @@ function migrerCollectionPersos(collection) {
   return { ...collection, full, selections };
 }
 
+// ---- Infos d'un personnage chez un joueur (historique des matchs) ----
+// Constellation (Voyageur : de l'élément donné, sinon du meilleur),
+// niveau 95 / 100 et meilleur raffinement de son arme signature (image
+// "[id]_w.webp", copies "idArme#2"... comprises). null si inconnu.
+function infosPersoJoueur(profilData, persoId, element = null) {
+  const collection = migrerCollectionPersos(profilData?.characters) || {};
+  const full = collection.full || {};
+  const membres = personnages.filter(p => p.groupe === persoId);
+
+  let constellation = null;
+  const valeurs = membres.length
+    ? membres.filter(p => !element || p.element === element).map(p => full[p.id])
+    : [full[persoId]];
+  valeurs.forEach(c => {
+    if (typeof c === "number" && c >= 0 && (constellation === null || c > constellation)) constellation = c;
+  });
+
+  const niveau = collection.niveaux?.[persoId];
+
+  const arme = armes.find(a => typeof a.image === "string" && a.image.endsWith(`/${persoId}_w.webp`));
+  let raffinement = null;
+  if (arme) {
+    Object.entries(profilData?.weapons?.full || {}).forEach(([cle, valeur]) => {
+      if ((cle === arme.id || cle.startsWith(`${arme.id}#`)) && valeur >= 0 && (raffinement === null || valeur > raffinement)) {
+        raffinement = valeur;
+      }
+    });
+  }
+
+  return {
+    constellation,
+    niveau: niveau === 95 || niveau === 100 ? niveau : null,
+    raffinement
+  };
+}
+
 module.exports = {
+  infosPersoJoueur,
   ELEMENTS,
   ELEMENTS_LIBRES,
   getPersonnages,

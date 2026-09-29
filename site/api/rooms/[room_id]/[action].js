@@ -7,7 +7,7 @@
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
-const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("../../_lib/personnages");
+const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS } = require("../../_lib/temps");
 const {
@@ -323,6 +323,17 @@ function determinerVainqueur(tempsJ1, tempsJ2) {
 const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 
 async function archiverMatch(draft) {
+  // Picks figés avec les infos du joueur à la fin du match (constellation,
+  // niveau, raffinement de l'arme signature) pour l'historique.
+  const [profilJ1, profilJ2] = await Promise.all([
+    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j1).single(),
+    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j2).single()
+  ]);
+  const profils = { j1: profilJ1.data?.data, j2: profilJ2.data?.data };
+  const actions = draft.actions.map(action => action.type === "pick"
+    ? { ...action, ...infosPersoJoueur(profils[action.joueur], action.perso_id, action.element) }
+    : action);
+
   const match = {
     boss_id: draft.boss_id,
     player1_discord_id: draft.discord_j1,
@@ -338,7 +349,7 @@ async function archiverMatch(draft) {
     vainqueur: draft.vainqueur,
     // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
     // Voyageur / Manekin) : affichées dans l'historique des matchs.
-    actions: draft.actions
+    actions
   };
 
   let { error } = await supabase.from("match_history").insert(match);

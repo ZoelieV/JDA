@@ -8,11 +8,14 @@ let personnagesParId = new Map(); // catalogue de draft (un seul Voyageur)
 let bossParId = new Map();
 let moiDiscordId = null;
 
-const TRI_DEFAUT = { cle: "date", sens: -1 };
-let tri = { ...TRI_DEFAUT };
+// Tris combinables (cf. commun/tri.js) : 1er clic = un sens, 2e clic =
+// l'autre, 3e clic = désactivé ; appliqués dans l'ordre des clics (ex. boss
+// puis temps : les matchs de chaque boss triés par temps). Sans tri : plus
+// récents d'abord.
+const etatTri = creerEtatTri();
 let mesMatchsSeulement = false;
 
-// Sens au 1er clic : plus récents, meilleurs temps, matchs les plus serrés
+// Sens du 1er clic : plus récents, meilleurs temps, matchs les plus serrés
 // et boss de A à Z d'abord.
 const SENS_INITIAL = { date: -1, temps: 1, ecart: 1, boss: 1 };
 
@@ -48,10 +51,10 @@ function secondes(joueur) {
   return joueur.temps?.secondes ?? null;
 }
 
-function valeurTri(match) {
+function valeurTri(match, cle) {
   const t1 = secondes(match.j1);
   const t2 = secondes(match.j2);
-  switch (tri.cle) {
+  switch (cle) {
     case "temps":
       return t1 === null && t2 === null ? null : Math.min(...[t1, t2].filter(t => t !== null));
     case "ecart":
@@ -75,28 +78,43 @@ function texteRecherche(match) {
   return match.texte;
 }
 
+// Tris actifs dans l'ordre des clics, sens réel (1 = croissant) ; la date
+// (plus récents d'abord) départage toujours en dernier.
+function trisActifs() {
+  const tris = etatTri.tris.map(t => ({ cle: t.cle, sens: SENS_INITIAL[t.cle] * t.sens }));
+  if (!tris.some(t => t.cle === "date")) tris.push({ cle: "date", sens: -1 });
+  return tris;
+}
+
 function matchsAffiches() {
   const recherche = document.getElementById("recherche").value.trim().toLowerCase();
+  const tris = trisActifs();
   return matchs
     .filter(match => !mesMatchsSeulement || match.j1.discord_id === moiDiscordId || match.j2.discord_id === moiDiscordId)
     .filter(match => !recherche || texteRecherche(match).includes(recherche))
-    .map((match, index) => ({ match, index, v: valeurTri(match) }))
-    // Sans valeur (temps manquant, date inconnue) : toujours en fin de liste.
+    .map((match, index) => ({ match, index, v: tris.map(t => valeurTri(match, t.cle)) }))
     .sort((a, b) => {
-      if ((a.v === null) !== (b.v === null)) return a.v === null ? 1 : -1;
-      const ecart = typeof a.v === "string"
-        ? a.v.localeCompare(b.v, "fr", { sensitivity: "base" })
-        : a.v - b.v;
-      return (ecart * tri.sens) || (a.index - b.index);
+      for (let i = 0; i < tris.length; i++) {
+        const va = a.v[i];
+        const vb = b.v[i];
+        if (va === vb) continue;
+        // Sans valeur (temps manquant, date inconnue) : toujours en fin.
+        if (va === null || vb === null) return va === null ? 1 : -1;
+        const ecart = typeof va === "string"
+          ? va.localeCompare(vb, "fr", { sensitivity: "base" })
+          : va - vb;
+        if (ecart) return ecart * tris[i].sens;
+      }
+      return a.index - b.index;
     })
     .map(e => e.match);
 }
 
 function mettreAJourBoutons() {
   document.querySelectorAll(".tri-historique").forEach(btn => {
-    const actif = btn.dataset.tri === tri.cle;
-    btn.classList.toggle("active", actif);
-    btn.querySelector(".fleche").textContent = actif ? (tri.sens === 1 ? "▲" : "▼") : "";
+    const sens = getSensTri(etatTri, btn.dataset.tri);
+    btn.classList.toggle("active", sens !== 0);
+    btn.querySelector(".fleche").textContent = sens === 1 ? "▼" : sens === -1 ? "▲" : "";
   });
   document.getElementById("mes-matchs").classList.toggle("active", mesMatchsSeulement);
 }
@@ -110,18 +128,27 @@ function formaterDate(date) {
   });
 }
 
-// Petite icône de personnage (fond de rareté), élément du Voyageur / Manekin
-// dans le coin ; banni : grisé avec contour rouge.
-function htmlPerso(id, parametres, { element = null, banni = false } = {}) {
+// Icône de personnage (fond de rareté). Équipe : une info par coin, comme
+// dans Mon compte — constellation en haut à gauche, niveau en bas à gauche,
+// arme signature (détourée de la couleur du raffinement) en bas à droite ;
+// Voyageur / Manekin : élément en bas à gauche et niveau centré en bas.
+// Banni : grisé avec contour rouge.
+function htmlPerso(id, parametres, { element = null, banni = false, infos = null } = {}) {
   const base = personnagesParId.get(id);
   if (!base) return "";
   const personnage = appliquerVariante(base, parametres);
   const nom = element ? `${personnage.nom} ${NOMS_ELEMENTS[element] || ""}`.trim() : personnage.nom;
-  const logoElement = element && ICONES_ELEMENTS_TRI[element]
-    ? `<img class="element-mini" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}">`
-    : "";
-  return `<div class="perso-mini ${classeFondRarete(personnage.rarete)}${banni ? " banni" : ""}" title="${nom}">` +
-    `<img src="../DB/${personnage.image}" alt="${nom}" loading="lazy" decoding="async">${logoElement}</div>`;
+  const avecElement = element && ICONES_ELEMENTS_TRI[element];
+
+  const coins = [
+    infos?.constellation != null ? `<span class="coin coin-hg">C${infos.constellation}</span>` : "",
+    infos?.niveau ? `<span class="coin ${avecElement ? "coin-bas" : "coin-bg"}">${infos.niveau}</span>` : "",
+    avecElement ? `<img class="coin coin-bg element-mini" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}" title="${NOMS_ELEMENTS[element] || element}">` : "",
+    infos ? htmlArmeSignature(personnage.arme, infos.raffinement, { classe: "coin coin-bd arme-mini" }) : ""
+  ].join("");
+
+  return `<div class="perso-mini${infos ? " perso-equipe" : ""} ${classeFondRarete(personnage.rarete)}${banni ? " banni" : ""}" title="${nom}">` +
+    `<img src="../DB/${personnage.image}" alt="${nom}" loading="lazy" decoding="async">${coins}</div>`;
 }
 
 function htmlLigne(titre, contenu, classe = "") {
@@ -138,7 +165,7 @@ function htmlJoueur(match, role, bansConnus) {
   const etiquette = gagnant ? `<span class="etiquette-resultat victoire">Victoire</span>`
     : egalite ? `<span class="etiquette-resultat egalite">Égalité</span>` : "";
 
-  const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element })).join("");
+  const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p })).join("");
   const bans = joueur.bans.map(id => htmlPerso(id, joueur.parametres, { banni: true })).join("");
   const equilibrage = joueur.bans_equilibrage.map(id => htmlPerso(id, joueur.parametres, { banni: true })).join("");
 
@@ -210,8 +237,7 @@ function afficherMatchsEnCours() {
 function initialiserBarre() {
   document.querySelectorAll(".tri-historique").forEach(btn => {
     btn.addEventListener("click", () => {
-      const cle = btn.dataset.tri;
-      tri = tri.cle === cle ? { cle, sens: -tri.sens } : { cle, sens: SENS_INITIAL[cle] };
+      cyclerTri(etatTri, btn.dataset.tri);
       afficherMatchs();
     });
   });
@@ -227,7 +253,7 @@ function initialiserBarre() {
 
   document.getElementById("clear-historique").addEventListener("click", () => {
     document.getElementById("recherche").value = "";
-    tri = { ...TRI_DEFAUT };
+    viderTris(etatTri);
     mesMatchsSeulement = false;
     afficherMatchs();
   });

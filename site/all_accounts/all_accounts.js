@@ -29,6 +29,7 @@ let boxActive = "full";         // "full" | "stuff"
 let filtreType = { characters: new Set(), weapons: new Set() };
 const filtreEtoile = new Set();
 const filtreVoeux = new Set(); // personnages uniquement
+const filtreArmePersos = new Set(); // personnages : type d'arme (ordre des clics)
 let rechercheTexte = "";
 const etatTri = creerEtatTri();
 
@@ -251,6 +252,7 @@ function construireListeAffichee() {
       if (filtresType.size > 0 && !filtresType.has(item[config.champType])) return false;
       if (filtreEtoile.size > 0 && !filtreEtoile.has(String(item.rarete))) return false;
       if (vueActive === "characters" && filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(item))) return false;
+      if (vueActive === "characters" && filtreArmePersos.size > 0 && !filtreArmePersos.has(item.arme)) return false;
       if (recherche && !String(item.nom || "").toLowerCase().includes(recherche)) return false;
 
       return true;
@@ -324,7 +326,7 @@ function rendreProfilBox() {
       niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(cleNiveau(item))) || 0 : 0
     },
     elements: vueActive === "characters" ? filtreType.characters : [],
-    armes: vueActive === "weapons" ? filtreType.weapons : [],
+    armes: vueActive === "weapons" ? filtreType.weapons : filtreArmePersos,
     rareteParDefaut: filtreEtoile.size > 0 || (vueActive === "characters" && filtreVoeux.size > 0)
   });
 
@@ -379,16 +381,43 @@ function genererFiltresIcones() {
   });
 }
 
+// Personnages : filtre par type d'arme (combinable, ordre des clics = ordre
+// des groupes, comme les éléments).
+function genererFiltresArmesPersos() {
+  const container = document.getElementById("filtres-armes-persos");
+  container.hidden = vueActive !== "characters";
+  container.innerHTML = "";
+  if (vueActive !== "characters") return;
+
+  Object.entries(ICONES_TYPES_ARMES_TRI).forEach(([valeur, src]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-icone-btn";
+    btn.title = valeur;
+    btn.classList.toggle("active", filtreArmePersos.has(valeur));
+    btn.innerHTML = `<img src="${src}" alt="${valeur}">`;
+    btn.addEventListener("click", () => {
+      basculerSelection(filtreArmePersos, valeur);
+      btn.classList.toggle("active", filtreArmePersos.has(valeur));
+      rendreProfilBox();
+    });
+    container.appendChild(btn);
+  });
+}
+
 // Libellés de tri propres à la vue (constellation/raffinement,
 // élément/type) et état actif de tous les boutons.
 function mettreAJourBarreOutils() {
   // Pas de niveau pour les armes : tri masqué dans cette vue.
-  if (vueActive === "weapons" && getSensTri(etatTri, "niveau")) {
-    etatTri.tris = etatTri.tris.filter(t => t.cle !== "niveau");
+  // Pas de niveau ni de tri par type d'arme (déjà le tri "Type") pour les
+  // armes : tris masqués dans cette vue.
+  const trisPersos = ["niveau", "arme"];
+  if (vueActive === "weapons") {
+    etatTri.tris = etatTri.tris.filter(t => !trisPersos.includes(t.cle));
   }
 
   document.querySelectorAll(".tri-btn").forEach(btn => {
-    btn.hidden = btn.dataset.tri === "niveau" && vueActive === "weapons";
+    btn.hidden = trisPersos.includes(btn.dataset.tri) && vueActive === "weapons";
     majBoutonTri(btn, etatTri, vueActive);
   });
 
@@ -404,12 +433,14 @@ function mettreAJourBarreOutils() {
 
   document.getElementById("recherche").value = rechercheTexte;
   genererFiltresIcones();
+  genererFiltresArmesPersos();
 }
 
 function reinitialiserFiltres() {
   filtreType = { characters: new Set(), weapons: new Set() };
   filtreEtoile.clear();
   filtreVoeux.clear();
+  filtreArmePersos.clear();
   rechercheTexte = "";
   viderTris(etatTri);
 }

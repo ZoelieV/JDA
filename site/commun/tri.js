@@ -32,6 +32,7 @@ const LOGO_TRI_ELEMENT = `${RACINE_LOGOS}omni_element.webp`;
 const LOGO_TRI_CONSTELLATION = `${RACINE_LOGOS}stella_fortuna_5.webp`;
 const LOGO_TRI_NIVEAU = `${RACINE_LOGOS}stella.webp`;
 const LOGO_TRI_POINTS = `${RACINE_LOGOS}scale.webp`;
+const LOGO_TRI_ARME = `${RACINE_LOGOS}Icon_Inventory_Weapons.webp`;
 
 // Vœux : Acquaint Fate = 4★ + personnages standards (dont le Voyageur),
 // Intertwined Fate = les autres 5★. Aloy et Manekin : ni l'un ni l'autre.
@@ -95,7 +96,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
     constellation: vue === "weapons" ? "Raffin." : `<img class="tri-logo tri-logo-constellation" src="${LOGO_TRI_CONSTELLATION}" alt="Constellation">`,
     niveau: `<img class="tri-logo tri-logo-niveau" src="${LOGO_TRI_NIVEAU}" alt="Niveau">`,
     rarete: `<span class="tri-etoile">★</span>`,
-    element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`
+    element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`,
+    arme: `<img class="tri-logo" src="${LOGO_TRI_ARME}" alt="Type d'arme">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;
   const titres = {
@@ -103,7 +105,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
     points: "Trier par points",
     niveau: "Trier par niveau",
     rarete: "Trier par rareté",
-    element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément"
+    element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément",
+    arme: "Trier par type d'arme"
   };
   btn.title = titres[cle] || "";
   btn.classList.toggle("active", sens !== 0);
@@ -128,8 +131,9 @@ function trierEtGrouper(items, etat, options = {}) {
   // Groupes : élément puis type d'arme, par les filtres (dans l'ordre des
   // clics) ou par le tri élément (= type d'arme dans la vue armes).
   const groupes = [];
+  // Type d'arme : tri "élément" dans la vue armes, tri "arme" pour les persos.
   const triSurElement = vue !== "weapons" && sensElement;
-  const triSurType = vue === "weapons" && sensElement;
+  const triSurType = vue === "weapons" ? sensElement : getSensTri(etat, "arme");
   if (triSurElement || elements.length) {
     groupes.push({
       cle: "element", champ: "element",

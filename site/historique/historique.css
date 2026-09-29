@@ -323,17 +323,63 @@
   filter: grayscale(60%);
 }
 
-.element-mini {
+/* Équipe : icônes plus grandes, une info par coin (cf. htmlPerso). */
+.perso-mini.perso-equipe {
+  --taille-perso: 4rem;
+}
+
+.coin {
   position: absolute;
-  top: 0.125rem;
-  right: 0.125rem;
-  width: 1rem;
-  height: 1rem;
-  padding: 0.0625rem;
   box-sizing: border-box;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.125rem;
+  border-radius: 62.4375rem;
   background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.coin-hg {
+  top: 0.125rem;
+  left: 0.125rem;
+}
+
+.coin-bg {
+  bottom: 0.125rem;
+  left: 0.125rem;
+}
+
+.coin-bas {
+  bottom: 0.125rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.coin-bd {
+  bottom: 0.125rem;
+  right: 0.125rem;
+}
+
+img.element-mini {
+  width: 1.25rem;
+  padding: 0.125rem;
   object-fit: contain;
+}
+
+/* Arme signature : contour de la couleur du raffinement (classes .ref-N,
+   commun/cartes.css). */
+img.arme-mini {
+  width: 1.25rem;
+  padding: 0;
+  object-fit: contain;
+  outline: 2px solid var(--couleur-ref);
+  outline-offset: -2px;
 }
 
 /* Centre : boss, date. */

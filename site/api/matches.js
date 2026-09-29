@@ -3,6 +3,7 @@
 // pour chaque joueur son nom, sa photo, sa deuxième bannière, son temps, son
 // équipe, ses bans et ses bans d'équilibrage.
 const { supabase } = require("./_lib/supabase");
+const { infosPersoJoueur } = require("./_lib/personnages");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -78,9 +79,17 @@ function resumerJoueur(match, role, profil) {
     temps: match[`temps_${role}_affiche`]
       ? { affiche: match[`temps_${role}_affiche`], secondes: match[`temps_${role}_secondes`] }
       : null,
-    equipe: actions
-      ? siennes.filter(a => a.type === "pick").map(a => ({ id: a.perso_id, element: a.element || null }))
-      : (match[`team_${role}`] || []).map(id => ({ id, element: null })),
+    // Infos figées à l'archivage si présentes, sinon celles du profil actuel.
+    equipe: (actions
+      ? siennes.filter(a => a.type === "pick").map(a => ({ ...a, id: a.perso_id }))
+      : (match[`team_${role}`] || []).map(id => ({ id }))
+    ).map(pick => ({
+      id: pick.id,
+      element: pick.element || null,
+      ...("constellation" in pick
+        ? { constellation: pick.constellation, niveau: pick.niveau, raffinement: pick.raffinement }
+        : infosPersoJoueur(profil?.data, pick.id, pick.element))
+    })),
     bans: siennes.filter(a => a.type === "ban" && !a.bonus).map(a => a.perso_id),
     bans_equilibrage: siennes.filter(a => a.type === "ban" && a.bonus).map(a => a.perso_id)
   };
