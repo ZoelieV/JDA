@@ -237,7 +237,7 @@ function rendreCorps() {
         ${valeurs[vue][item.id].map((valeur, index) => `
           <td class="${index >= 1 && index <= COLONNES[vue].derniereChaine ? "avec-ecart" : ""}">
             ${index >= 1 && index <= COLONNES[vue].derniereChaine
-              ? `<span class="ecart-points" data-id="${item.id}" data-index="${index}">${texteEcart(valeurs[vue][item.id], index)}</span>`
+              ? `<span class="ecart-points" data-id="${item.id}" data-index="${index}" data-signe="${signeEcart(valeurs[vue][item.id], index)}">${texteEcart(valeurs[vue][item.id], index)}</span>`
               : ""}
             <span class="case-admin">
               <input class="case-points" data-id="${item.id}" data-index="${index}" value="${valeur}" inputmode="decimal">
@@ -374,17 +374,29 @@ function initialiserSaisie() {
 
 // Augmentation entre une constellation et la précédente, en pourcentage
 // (x1,2 = +20 %) ; vide si la précédente vaut 0.
-function texteEcart(liste, index) {
+function pourcentageEcart(liste, index) {
   const avant = liste[index - 1];
-  if (!avant) return "";
-  const pourcentage = Math.round((liste[index] / avant - 1) * 100);
+  return avant ? Math.round((liste[index] / avant - 1) * 100) : null;
+}
+
+function texteEcart(liste, index) {
+  const pourcentage = pourcentageEcart(liste, index);
+  if (pourcentage === null) return "";
   return `${pourcentage >= 0 ? "+" : "−"}${Math.abs(pourcentage)} %`;
+}
+
+// Couleur du pourcentage : vert si hausse, rouge si baisse, blanc si nul.
+function signeEcart(liste, index) {
+  const pourcentage = pourcentageEcart(liste, index);
+  return pourcentage > 0 ? "positif" : pourcentage < 0 ? "negatif" : "nul";
 }
 
 // Pourcentages d'une ligne, après une modification.
 function mettreAJourEcarts(id) {
   document.querySelectorAll(`#corps-admin .ecart-points[data-id="${id}"]`).forEach(span => {
-    span.textContent = texteEcart(valeurs[vue][id], Number(span.dataset.index));
+    const index = Number(span.dataset.index);
+    span.textContent = texteEcart(valeurs[vue][id], index);
+    span.dataset.signe = signeEcart(valeurs[vue][id], index);
   });
 }
 

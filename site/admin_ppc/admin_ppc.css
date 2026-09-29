@@ -573,7 +573,10 @@ body {
   z-index: 1;
   transform: translateX(-50%);
   font-size: 0.6875rem;
-  color: #f5c542;
+  color: #ffffff;
   white-space: nowrap;
   pointer-events: none;
 }
+
+.ecart-points[data-signe="positif"] { color: #3ecf6a; }
+.ecart-points[data-signe="negatif"] { color: #ff5a5a; }
