@@ -1,4 +1,4 @@
-/* ---- Administration des points ---- */
+/* ---- Administration ---- */
 
 .cache {
   display: none !important;
@@ -360,6 +360,47 @@ body {
 
 .btn-apercu:hover {
   background-color: rgba(245, 197, 66, 0.15);
+}
+
+/* ---- Masquer / Afficher (pas encore sorti dans le jeu) ---- */
+.btn-masquer {
+  margin-left: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 0.375rem;
+  background: none;
+  color: var(--texte-doux);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.btn-masquer:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.ligne-masquee .btn-masquer {
+  border-color: rgba(62, 207, 106, 0.6);
+  color: #3ecf6a;
+}
+
+.ligne-masquee .btn-masquer:hover {
+  background-color: rgba(62, 207, 106, 0.15);
+}
+
+.ligne-masquee .miniature,
+.ligne-masquee .nom-admin {
+  opacity: 0.45;
+}
+
+.tag-masque {
+  margin-left: 0.5rem;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 90, 90, 0.2);
+  color: #ff5a5a;
+  font-size: 0.6875rem;
 }
 
 /* ---- Fenêtre d'aperçu (comme la fenêtre d'un joueur dans Tous les
@@ -903,4 +944,71 @@ body {
   .statut-image {
     grid-column: auto;
   }
+}
+
+/* ---- Fenêtre des boss ---- */
+.liste-boss {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+}
+
+.tableau-boss {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableau-boss th,
+.tableau-boss td {
+  padding: 0.375rem;
+  text-align: center;
+}
+
+.tableau-boss th img {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.tableau-boss tbody tr {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tableau-boss .col-nom {
+  text-align: left;
+}
+
+.entete-boss {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.miniature-boss {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.miniature-boss img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.infos-boss {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 12rem;
+}
+
+.details-boss {
+  font-size: 0.75rem;
+  color: var(--texte-doux);
+}
+
+.nom-boss.invalide {
+  border-color: #ff5a5a;
 }

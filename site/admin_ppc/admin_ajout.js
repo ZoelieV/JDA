@@ -355,13 +355,22 @@ async function envoyerAjout(corps) {
   return donnees;
 }
 
-// Points enregistrés (bouton Annuler, filtre "Modifiés") : l'ajout n'est pas
-// une modification en attente.
+// Points et masqués enregistrés (bouton Annuler, filtre "Modifiés") : l'ajout
+// n'est pas une modification en attente. Un ajout est créé masqué (cf.
+// api/points.js), sa suppression le retire des masqués.
 function majEtatEnregistre(genre, id, points) {
-  const [valeursEnreg, modesEnreg] = JSON.parse(etatEnregistre);
-  if (points) valeursEnreg[genre][id] = [...points];
-  else delete valeursEnreg[genre][id];
-  etatEnregistre = JSON.stringify([valeursEnreg, modesEnreg]);
+  const [valeursEnreg, modesEnreg, masquesEnreg] = JSON.parse(etatEnregistre);
+  const sansId = liste => liste.filter(m => m !== id);
+  if (points) {
+    valeursEnreg[genre][id] = [...points];
+    masquesEnreg[genre] = [...sansId(masquesEnreg[genre]), id].sort();
+    masques[genre] = [...sansId(masques[genre]), id].sort();
+  } else {
+    delete valeursEnreg[genre][id];
+    masquesEnreg[genre] = sansId(masquesEnreg[genre]);
+    masques[genre] = sansId(masques[genre]);
+  }
+  etatEnregistre = JSON.stringify([valeursEnreg, modesEnreg, masquesEnreg]);
 }
 
 function entreeDepuisBrouillon(genre, b) {
@@ -391,7 +400,9 @@ async function creerAjout() {
     idSaisiALaMain[genre] = false;
     rendreFormulaire();
     rendreListeAjouts();
-    message.textContent = `${NOMS_GENRES[genre]} « ${entree.nom} » ajouté${genre === "weapons" ? "e" : ""}, avec 0 point partout.`;
+    message.textContent = genre === "boss"
+      ? `Boss « ${entree.nom} » ajouté.`
+      : `${NOMS_GENRES[genre]} « ${entree.nom} » ajouté${genre === "weapons" ? "e" : ""}, avec 0 point partout, masqué${genre === "weapons" ? "e" : ""} (bouton Afficher pour le rendre visible sur le site).`;
     message.className = "message-ajout succes";
   } catch (erreur) {
     console.error(erreur);

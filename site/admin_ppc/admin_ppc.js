@@ -1,7 +1,8 @@
-// Administration des points : PPC des personnages (C0..C6, niveau 95,
-// niveau 100, théâtre) et PPW des armes (R1..R5), enregistrés dans Supabase
-// via api/points.js (réservé aux administrateurs) et appliqués sur tout le
-// site.
+// Administration : PPC des personnages (C0..C6, niveau 95, niveau 100,
+// théâtre), PPW des armes (R1..R5) et personnages / armes masqués (pas
+// encore sortis dans le jeu, visibles seulement ici), enregistrés dans
+// Supabase via api/points.js (réservé aux administrateurs) et appliqués sur
+// tout le site.
 
 const COLONNES = {
   characters: {
@@ -30,7 +31,25 @@ let personnages = [];
 let armes = [];
 let valeurs = { characters: {}, weapons: {} }; // id -> liste de points
 let modes = {};                                  // cle bonus -> "addition" | "multiplication"
+let masques = { characters: [], weapons: [] };  // ids masqués (triés)
 let etatEnregistre = "";
+
+function estMasque(id) {
+  return masques[vue].includes(id);
+}
+
+function basculerMasque(id) {
+  masques[vue] = estMasque(id)
+    ? masques[vue].filter(m => m !== id)
+    : [...masques[vue], id].sort();
+}
+
+function lireMasquesConfig(config) {
+  return {
+    characters: Array.isArray(config?.masques?.characters) ? [...config.masques.characters].sort() : [],
+    weapons: Array.isArray(config?.masques?.weapons) ? [...config.masques.weapons].sort() : []
+  };
+}
 
 // ---- Filtres et tri ----
 // Personnages : élément, arme, étoiles, vœux, catégorie ; armes : élément,
@@ -50,7 +69,8 @@ function creerFiltres() {
     voeux: new Set(),
     categories: new Set(),
     aRenseigner: false,
-    modifies: false
+    modifies: false,
+    masques: false
   };
 }
 
@@ -79,6 +99,7 @@ function itemsAffiches() {
     if (persos && filtres.categories.size && !filtres.categories.has(item.categorie)) return false;
     if (filtres.aRenseigner && points.slice(0, nbConstellations).some(p => p !== 0)) return false;
     if (filtres.modifies && JSON.stringify(points) === JSON.stringify(valeursEnregistrees(item.id))) return false;
+    if (filtres.masques && !estMasque(item.id)) return false;
     return true;
   });
 
@@ -122,6 +143,7 @@ function rendreFiltres() {
     <div class="groupe-admin">
       <button type="button" class="filtre-admin filtre-texte${filtres.aRenseigner ? " active" : ""}" data-bascule="aRenseigner" title="Tous les points de ${persos ? "constellation" : "raffinement"} à 0">À renseigner</button>
       <button type="button" class="filtre-admin filtre-texte${filtres.modifies ? " active" : ""}" data-bascule="modifies" title="Modifiés depuis le dernier enregistrement">Modifiés</button>
+      <button type="button" class="filtre-admin filtre-texte${filtres.masques ? " active" : ""}" data-bascule="masques" title="Masqués sur le reste du site">Masqués</button>
     </div>
   `;
 }
@@ -156,7 +178,7 @@ function initialiserFiltres() {
 }
 
 function etatActuel() {
-  return JSON.stringify([valeurs, modes]);
+  return JSON.stringify([valeurs, modes, masques]);
 }
 
 // ---- Chargement ----
@@ -178,8 +200,9 @@ function copierValeurs(liste, champ, taille) {
 }
 
 async function chargerDonnees() {
-  // Points déjà appliqués par cartes.js (JSON + modifications des admins).
-  const [listePersos, listeArmes, config, boss] = await Promise.all([chargerPersonnages(), chargerArmes(), chargerPointsAdmin(), chargerBoss()]);
+  // Points déjà appliqués par cartes.js (JSON + modifications des admins),
+  // masqués compris.
+  const [listePersos, listeArmes, config, boss] = await Promise.all([chargerPersonnages(true), chargerArmes(true), chargerPointsAdmin(), chargerBoss()]);
   personnages = listePersos;
   armes = listeArmes;
   listeBoss = boss;                  // cf. admin_ajout.js
@@ -189,6 +212,7 @@ async function chargerDonnees() {
     weapons: copierValeurs(armes, "PPW", COLONNES.weapons.libelles.length)
   };
   modes = Object.fromEntries(BONUS.map(({ cle }) => [cle, config?.modes?.[cle] === "multiplication" ? "multiplication" : "addition"]));
+  masques = lireMasquesConfig(config);
   etatEnregistre = etatActuel();
 }
 
@@ -230,12 +254,16 @@ function rendreCorps() {
 
   corps.innerHTML = items
     .map(item => `
-      <tr>
+      <tr class="${estMasque(item.id) ? "ligne-masquee" : ""}">
         <td class="col-nom">
           <span class="miniature ${classeFondRarete(item.rarete)}"><img src="../DB/${item.image}" alt="" loading="lazy"></span>
           <span class="nom-admin"></span>
           ${item.ajout ? `<span class="tag-ajout" title="Ajouté depuis cette page (pas dans le JSON)">Ajouté</span>` : ""}
+          ${estMasque(item.id) ? `<span class="tag-masque" title="Invisible sur le reste du site">Masqué</span>` : ""}
           ${vue === "characters" ? `<button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points">Aperçu</button>` : ""}
+          <button type="button" class="btn-masquer" data-id="${item.id}" title="${estMasque(item.id)
+            ? "Rendre visible sur tout le site"
+            : "Cacher partout sauf ici (pas encore sorti dans le jeu)"}">${estMasque(item.id) ? "Afficher" : "Masquer"}</button>
         </td>
         ${valeurs[vue][item.id].map((valeur, index) => `
           <td class="${index >= 1 && index <= COLONNES[vue].derniereChaine ? "avec-ecart" : ""}">
@@ -367,6 +395,13 @@ function initialiserSaisie() {
   document.getElementById("corps-admin").addEventListener("click", event => {
     const bouton = event.target.closest(".btn-apercu");
     if (bouton) ouvrirApercu(bouton.dataset.id);
+
+    const masquer = event.target.closest(".btn-masquer");
+    if (masquer) {
+      basculerMasque(masquer.dataset.id);
+      rendreCorps();
+      mettreAJourPied();
+    }
 
     // Flèche sous une case : copie sa valeur dans les cases suivantes, jusqu'à
     // C6 (R5 pour une arme).
@@ -577,11 +612,11 @@ async function enregistrer() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes })
+      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques })
     });
     if (!reponse.ok) throw new Error((await reponse.json().catch(() => ({}))).error || "Erreur d'enregistrement.");
     etatEnregistre = etatActuel();
-    afficherEtat("Points enregistrés : ils s'appliquent sur tout le site.", "succes");
+    afficherEtat("Modifications enregistrées : elles s'appliquent sur tout le site.", "succes");
   } catch (erreur) {
     console.error(erreur);
     afficherEtat(erreur.message, "erreur");
@@ -590,7 +625,7 @@ async function enregistrer() {
 }
 
 function annuler() {
-  [valeurs, modes] = JSON.parse(etatEnregistre);
+  [valeurs, modes, masques] = JSON.parse(etatEnregistre);
   rendre();
 }
 
@@ -641,6 +676,7 @@ async function demarrer() {
   initialiserFiltres();
   initialiserApercu();
   initialiserAjout();
+  initialiserBoss();
   suivreHauteurBarre();
   rendre();
 }

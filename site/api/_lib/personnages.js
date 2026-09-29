@@ -20,12 +20,24 @@ const bossList = require("../../DB/boss.json"); // même tableau que _lib/boss.j
 const ELEMENTS = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
 const ELEMENTS_LIBRES = { manekin: ELEMENTS };
 
+// ---- Personnages et armes masqués par les administrateurs (config.masques,
+// cf. api/points.js) : pas encore sortis dans le jeu, absents de tout le site
+// (points des box, draft...) sauf de la page admin ----
+let masques = { characters: new Set(), weapons: new Set() };
+
 function getPersonnages() {
-  return personnages;
+  return personnages.filter(p => !masques.characters.has(p.id));
 }
 
 function getArmes() {
-  return armes;
+  return armes.filter(a => !masques.weapons.has(a.id));
+}
+
+// Listes complètes, masqués compris (validation des ids de la page admin).
+function getCatalogueComplet(genre) {
+  if (genre === "characters") return personnages;
+  if (genre === "weapons") return armes;
+  return bossList;
 }
 
 // ---- Points modifiés par les administrateurs (table Supabase "points",
@@ -73,7 +85,17 @@ async function actualiserPoints() {
     fusionnerAjouts(personnages, config.ajouts?.characters, "characters");
     fusionnerAjouts(armes, config.ajouts?.weapons, "weapons");
     fusionnerAjouts(bossList, config.ajouts?.boss, "boss");
+    masques = {
+      characters: new Set(Array.isArray(config.masques?.characters) ? config.masques.characters : []),
+      weapons: new Set(Array.isArray(config.masques?.weapons) ? config.masques.weapons : [])
+    };
     personnagesDraft = null;
+    // Nom et résistances des boss modifiés par les admins (config.boss).
+    bossList.forEach(b => {
+      const modif = config.boss?.[b.id];
+      if (typeof modif?.nom === "string") b.nom = modif.nom;
+      if (Array.isArray(modif?.res)) b.res = modif.res;
+    });
     personnages.forEach(p => {
       if (Array.isArray(config.characters?.[p.id])) p.PPC = config.characters[p.id];
     });
@@ -102,7 +124,7 @@ function getPersonnagesDraft() {
   if (!personnagesDraft) {
     const vus = new Set();
     personnagesDraft = [];
-    personnages.forEach(p => {
+    getPersonnages().forEach(p => {
       if (!p.groupe) {
         personnagesDraft.push(p);
       } else if (!vus.has(p.groupe)) {
@@ -185,6 +207,7 @@ module.exports = {
   actualiserPoints,
   estAjout,
   getArmes,
+  getCatalogueComplet,
   infosPersoJoueur,
   ELEMENTS,
   ELEMENTS_LIBRES,

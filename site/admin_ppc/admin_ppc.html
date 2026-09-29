@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Administration des points</title>
+<title>Administration</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
-<link rel="stylesheet" href="admin_ppc.css?v=10">
+<link rel="stylesheet" href="admin_ppc.css?v=11">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -14,7 +14,7 @@
 </head>
 <body>
 <a href="../index.html" class="lien-accueil">Accueil</a>
-<h1 class="titre-page">Administration des points</h1>
+<h1 class="titre-page">Administration</h1>
 
   <p id="etat-admin" class="etat-admin">Chargement…</p>
 
@@ -30,6 +30,7 @@
         <input type="text" id="recherche-admin" class="recherche-admin" placeholder="Rechercher…">
         <span id="compte-admin" class="compte-admin"></span>
         <button type="button" id="ouvrir-ajout" class="btn-ouvrir-ajout" title="Ajouter un personnage, une arme ou un boss">+ Ajouter</button>
+        <button type="button" id="ouvrir-boss" class="btn-ouvrir-ajout" title="Consulter et modifier les boss">Boss</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
       <div id="filtres-admin" class="filtres-admin"></div>
@@ -39,6 +40,8 @@
       Écris les points dans une case, ou un coefficient comme <strong>*1,2</strong> pour calculer la case
       à partir de la précédente (+20 %) : la valeur s'affiche en gris, <strong>Entrée</strong> la valide
       (arrondie au point près) et passe à la case suivante. Clic sur un titre de colonne pour trier.
+      <strong>Masquer</strong> cache un personnage ou une arme sur tout le site sauf ici (pas encore
+      sorti dans le jeu) ; les ajouts sont masqués d'office.
     </p>
 
     <div class="tableau-admin-conteneur">
@@ -94,15 +97,34 @@
     </div>
   </div>
 
+  <!-- Boss : nom et résistances de chaque boss, modifiables. -->
+  <div id="modal-boss" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Boss</h2>
+        <button type="button" id="fermer-boss" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Nom et résistances de chaque boss. Les nouveaux boss s'ajoutent avec <strong>+ Ajouter</strong>.
+      </p>
+      <div id="liste-boss" class="liste-boss"></div>
+      <div class="actions-ajout">
+        <span id="message-boss" class="message-ajout"></span>
+        <button type="button" id="enregistrer-boss" class="bouton-creer" disabled>Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Annuler en bas à gauche, Enregistrer en bas à droite (figés). -->
   <div id="pied-admin" class="pied-admin cache">
     <button type="button" id="annuler-admin" class="bouton-annuler">Annuler</button>
     <button type="button" id="enregistrer-admin" class="bouton-enregistrer" disabled>Enregistrer</button>
   </div>
 
-  <script src="/commun/cartes.js?v=3"></script>
+  <script src="/commun/cartes.js?v=4"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="admin_ajout.js?v=1"></script>
-  <script src="admin_ppc.js?v=8"></script>
+  <script src="admin_ajout.js?v=2"></script>
+  <script src="admin_boss.js?v=1"></script>
+  <script src="admin_ppc.js?v=9"></script>
 </body>
 </html>

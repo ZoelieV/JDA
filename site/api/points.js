@@ -6,17 +6,24 @@
 // Contient aussi les personnages, armes et boss ajoutés depuis la page admin
 // (config.ajouts), ajoutés aux JSON de la même façon.
 //
-// GET  : lecture publique -> { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
-//                             ajouts: { characters: [...], weapons: [...], boss: [...] } }
+// Personnages et armes masqués (config.masques : pas encore sortis dans le
+// jeu) : retirés de partout sauf de la page admin. Boss : nom et résistances
+// modifiables (config.boss).
+//
+// GET  : { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
+//          ajouts: { characters: [...], weapons: [...], boss: [...] },
+//          masques: { characters: [id...], weapons: [id...] },
+//          boss: { id: { nom, res } } }
+//        Hors administrateurs : ajouts masqués et leurs points retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
-//   { characters, weapons, modes }   remplace les points (ajouts conservés)
-//   { ajout: { genre, entree } }     ajoute un personnage / une arme / un boss
+//   { characters, weapons, modes, masques }  remplace les points et les masqués
+//   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
+//   { boss: { id: { nom, res } } }   modifie des boss
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin } = require("./_lib/admin");
-const { getPersonnages, getArmes, MODES_POINTS, ELEMENTS, estAjout } = require("./_lib/personnages");
-const bossJSON = require("../DB/boss.json");
+const { getCatalogueComplet, MODES_POINTS, ELEMENTS, estAjout } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -90,8 +97,47 @@ function validerEntree(genre, brut = {}) {
 // Entrées des JSON de DB/ seulement (les listes du serveur contiennent aussi
 // les ajouts déjà fusionnés, cf. _lib/personnages.js).
 function listeJSON(genre) {
-  const liste = genre === "characters" ? getPersonnages() : genre === "weapons" ? getArmes() : bossJSON;
-  return liste.filter(e => !estAjout(genre, e.id));
+  return getCatalogueComplet(genre).filter(e => !estAjout(genre, e.id));
+}
+
+const GENRES_MASQUABLES = ["characters", "weapons"];
+
+function lireMasques(config) {
+  return Object.fromEntries(GENRES_MASQUABLES.map(genre => [
+    genre,
+    Array.isArray(config.masques?.[genre]) ? config.masques[genre] : []
+  ]));
+}
+
+// Ids connus seulement, sans doublon.
+function nettoyerMasques(masques, ids) {
+  return Array.from(new Set((Array.isArray(masques) ? masques : []).filter(id => ids.has(id)))).sort();
+}
+
+// Nom et 7 résistances d'un boss, ou null.
+function validerModifBoss(brut = {}) {
+  const nom = texte(brut.nom);
+  const res = Array.from({ length: NB_RESISTANCES }, (_, i) => Number(brut.res?.[i] ?? 0));
+  return nom && res.every(Number.isFinite) ? { nom, res } : null;
+}
+
+// Réponse du GET hors administrateurs : les ajouts masqués (absents des JSON
+// publics de DB/) et leurs points ne sont pas envoyés du tout.
+function versionPublique(config) {
+  const masques = lireMasques(config);
+  const ajouts = lireAjouts(config);
+  const publique = { ...config, ajouts: { ...ajouts }, masques: {} };
+  GENRES_MASQUABLES.forEach(genre => {
+    const caches = new Set(masques[genre]);
+    const idsAjouts = new Set(ajouts[genre].map(e => e.id));
+    publique.ajouts[genre] = ajouts[genre].filter(e => !caches.has(e.id));
+    publique.masques[genre] = masques[genre].filter(id => !idsAjouts.has(id));
+    if (config[genre]) {
+      publique[genre] = { ...config[genre] };
+      caches.forEach(id => { delete publique[genre][id]; });
+    }
+  });
+  return publique;
 }
 
 function ajoutsVides() {
@@ -127,13 +173,15 @@ function nettoyer(valeurs, ids, taille) {
 
 module.exports = async (req, res) => {
   try {
+    const user = verifySessionToken(parseCookies(req).session);
+
     if (req.method === "GET") {
       res.setHeader("Cache-Control", "no-store");
-      return res.status(200).json(await lireConfig());
+      const config = await lireConfig();
+      return res.status(200).json(user && estAdmin(user.id) ? config : versionPublique(config));
     }
 
     if (req.method === "POST") {
-      const user = verifySessionToken(parseCookies(req).session);
       if (!user) return res.status(401).json({ error: "Non connecté" });
       if (!estAdmin(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
 
@@ -155,6 +203,12 @@ module.exports = async (req, res) => {
         }
         ajouts[genre] = [...ajouts[genre], entree];
         config = { ...ancienne, ajouts };
+        // Personnage / arme pas encore sorti : masqué jusqu'à ce qu'un admin
+        // l'affiche.
+        if (GENRES_MASQUABLES.includes(genre)) {
+          const masques = lireMasques(ancienne);
+          config.masques = { ...masques, [genre]: [...masques[genre], entree.id].sort() };
+        }
       } else if (corps.suppression) {
         const { genre, id } = corps.suppression;
         if (!GENRES.includes(genre)) return res.status(400).json({ error: "Genre inconnu" });
@@ -165,17 +219,40 @@ module.exports = async (req, res) => {
           config[genre] = { ...config[genre] };
           delete config[genre][id];
         }
+        if (GENRES_MASQUABLES.includes(genre)) {
+          const masques = lireMasques(ancienne);
+          config.masques = { ...masques, [genre]: masques[genre].filter(m => m !== id) };
+        } else if (config.boss?.[id]) {
+          config.boss = { ...config.boss };
+          delete config.boss[id];
+        }
+      } else if (corps.boss) {
+        const ids = new Set([...listeJSON("boss"), ...ajouts.boss].map(e => e.id));
+        const modifs = { ...(ancienne.boss || {}) };
+        for (const [id, brut] of Object.entries(corps.boss)) {
+          if (!ids.has(id)) return res.status(404).json({ error: `Boss "${id}" introuvable` });
+          const modif = validerModifBoss(brut);
+          if (!modif) return res.status(400).json({ error: `Nom ou résistances invalides (${id})` });
+          modifs[id] = modif;
+        }
+        config = { ...ancienne, boss: modifs };
       } else {
         const modes = {};
         Object.keys(MODES_POINTS).forEach(cle => {
           modes[cle] = corps.modes?.[cle] === "multiplication" ? "multiplication" : "addition";
         });
         const ids = genre => new Set([...listeJSON(genre), ...ajouts[genre]].map(e => e.id));
+        const anciensMasques = lireMasques(ancienne);
         config = {
+          ...ancienne,
           characters: nettoyer(corps.characters, ids("characters"), TAILLE_PPC),
           weapons: nettoyer(corps.weapons, ids("weapons"), TAILLE_PPW),
           modes,
-          ajouts
+          ajouts,
+          masques: Object.fromEntries(GENRES_MASQUABLES.map(genre => [
+            genre,
+            nettoyerMasques(corps.masques ? corps.masques[genre] : anciensMasques[genre], ids(genre))
+          ]))
         };
       }
 

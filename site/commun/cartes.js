@@ -56,12 +56,35 @@ function fusionnerAjouts(liste, ajouts) {
   return liste;
 }
 
-const chargerPersonnages = () => Promise.all([chargerJSON("characters.json"), chargerPointsAdmin()])
-  .then(([liste, points]) => appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC"));
-const chargerArmes = () => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
-  .then(([liste, points]) => appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.weapons), points.weapons, "PPW"));
+// Personnages et armes masqués par les administrateurs (pas encore sortis
+// dans le jeu) : retirés partout, sauf pour la page admin (avecMasques).
+function retirerMasques(liste, masques) {
+  const caches = new Set(Array.isArray(masques) ? masques : []);
+  return caches.size ? liste.filter(item => !caches.has(item.id)) : liste;
+}
+
+// Nom et résistances des boss modifiés par les administrateurs.
+function appliquerModifsBoss(liste, modifs) {
+  liste.forEach(boss => {
+    const modif = modifs?.[boss.id];
+    if (typeof modif?.nom === "string") boss.nom = modif.nom;
+    if (Array.isArray(modif?.res)) boss.res = modif.res;
+  });
+  return liste;
+}
+
+const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("characters.json"), chargerPointsAdmin()])
+  .then(([liste, points]) => {
+    appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC");
+    return avecMasques ? liste : retirerMasques(liste, points.masques?.characters);
+  });
+const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
+  .then(([liste, points]) => {
+    appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.weapons), points.weapons, "PPW");
+    return avecMasques ? liste : retirerMasques(liste, points.masques?.weapons);
+  });
 const chargerBoss = () => Promise.all([chargerJSON("boss.json"), chargerPointsAdmin()])
-  .then(([liste, points]) => fusionnerAjouts(liste, points.ajouts?.boss));
+  .then(([liste, points]) => appliquerModifsBoss(fusionnerAjouts(liste, points.ajouts?.boss), points.boss));
 
 // ---- Fond de carte selon la rareté (classes de commun/cartes.css) ----
 function classeFondRarete(rarete) {

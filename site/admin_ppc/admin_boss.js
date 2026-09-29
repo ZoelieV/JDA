@@ -1,0 +1,139 @@
+// Boss : consultation et modification du nom et des résistances de chaque
+// boss (JSON de DB/ et ajouts), enregistrés dans Supabase (api/points.js,
+// config.boss) et appliqués sur tout le site. Utilise listeBoss,
+// ELEMENTS_AJOUT, LIBELLES_ELEMENTS, TYPES_BOSS, echapper et envoyerAjout
+// (admin_ajout.js).
+
+let brouillonBoss = {};  // id -> { nom, res }
+let bossEnregistres = "";
+
+function etatBoss() {
+  return JSON.stringify(brouillonBoss);
+}
+
+function bossValide({ nom, res }) {
+  return nom.trim() !== "" && nom.trim().length <= 80 && res.every(Number.isFinite);
+}
+
+function rendreBoss() {
+  document.getElementById("liste-boss").innerHTML = `
+    <table class="tableau-boss">
+      <thead>
+        <tr>
+          <th class="col-nom">Boss</th>
+          ${ELEMENTS_AJOUT.map(element => `<th title="Résistance ${LIBELLES_ELEMENTS[element]}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${LIBELLES_ELEMENTS[element]}"></th>`).join("")}
+        </tr>
+      </thead>
+      <tbody>
+        ${listeBoss.map(boss => {
+          const b = brouillonBoss[boss.id];
+          return `
+          <tr>
+            <td class="col-nom">
+              <div class="entete-boss">
+                <span class="miniature-boss"><img src="../DB/${echapper(boss.image)}" alt="" loading="lazy"></span>
+                <div class="infos-boss">
+                  <input type="text" class="texte-ajout nom-boss${b.nom.trim() ? "" : " invalide"}" data-id="${echapper(boss.id)}" value="${echapper(b.nom)}" autocomplete="off">
+                  <span class="details-boss">
+                    <code>${echapper(boss.id)}</code> · ${TYPES_BOSS[boss.type] || echapper(boss.type || "")}
+                    ${boss.ajout ? `<span class="tag-ajout" title="Ajouté depuis cette page (pas dans le JSON)">Ajouté</span>` : ""}
+                  </span>
+                </div>
+              </div>
+            </td>
+            ${b.res.map((valeur, i) => `
+              <td><input type="text" class="res-ajout res-boss${Number.isFinite(valeur) ? "" : " invalide"}" data-id="${echapper(boss.id)}" data-index="${i}" value="${Number.isFinite(valeur) ? valeur : ""}" inputmode="decimal" title="${LIBELLES_ELEMENTS[ELEMENTS_AJOUT[i]]}"></td>`).join("")}
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>`;
+  majPiedBoss();
+}
+
+function majPiedBoss() {
+  const modifie = etatBoss() !== bossEnregistres;
+  const valide = Object.values(brouillonBoss).every(bossValide);
+  document.getElementById("enregistrer-boss").disabled = !modifie || !valide;
+  if (modifie && !valide) afficherMessageBoss("Un nom est vide ou une résistance n'est pas un nombre.", "erreur");
+  else if (modifie) afficherMessageBoss("Modifications non enregistrées.");
+  else if (!document.getElementById("message-boss").classList.contains("succes")) afficherMessageBoss("");
+}
+
+function afficherMessageBoss(texte, type = "") {
+  const message = document.getElementById("message-boss");
+  message.textContent = texte;
+  message.className = `message-ajout ${type}`;
+}
+
+function ouvrirBoss() {
+  brouillonBoss = Object.fromEntries(listeBoss.map(boss => [boss.id, {
+    nom: boss.nom,
+    res: Array.from({ length: ELEMENTS_AJOUT.length }, (_, i) => Number(boss.res?.[i] ?? 0))
+  }]));
+  bossEnregistres = etatBoss();
+  afficherMessageBoss("");
+  rendreBoss();
+  document.getElementById("modal-boss").classList.add("active");
+}
+
+function fermerBoss() {
+  if (etatBoss() !== bossEnregistres && !confirm("Abandonner les modifications des boss ?")) return;
+  document.getElementById("modal-boss").classList.remove("active");
+}
+
+// Seuls les boss modifiés sont envoyés.
+async function enregistrerBoss() {
+  const bouton = document.getElementById("enregistrer-boss");
+  const avant = JSON.parse(bossEnregistres);
+  const modifs = Object.fromEntries(Object.entries(brouillonBoss)
+    .filter(([id, b]) => JSON.stringify(b) !== JSON.stringify(avant[id]))
+    .map(([id, b]) => [id, { nom: b.nom.trim(), res: b.res }]));
+  bouton.disabled = true;
+  try {
+    await envoyerAjout({ boss: modifs });
+    Object.entries(modifs).forEach(([id, modif]) => {
+      const boss = listeBoss.find(b => b.id === id);
+      if (boss) Object.assign(boss, { nom: modif.nom, res: [...modif.res] });
+      brouillonBoss[id] = { nom: modif.nom, res: [...modif.res] };
+    });
+    bossEnregistres = etatBoss();
+    afficherMessageBoss("Boss enregistrés : les changements s'appliquent sur tout le site.", "succes");
+    rendreBoss();
+  } catch (erreur) {
+    console.error(erreur);
+    afficherMessageBoss(erreur.message, "erreur");
+    majPiedBoss();
+  }
+}
+
+function initialiserBoss() {
+  const modal = document.getElementById("modal-boss");
+  document.getElementById("ouvrir-boss").addEventListener("click", ouvrirBoss);
+  document.getElementById("fermer-boss").addEventListener("click", fermerBoss);
+  modal.addEventListener("click", event => {
+    if (event.target === modal) fermerBoss();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("active")) fermerBoss();
+  });
+  document.getElementById("enregistrer-boss").addEventListener("click", enregistrerBoss);
+
+  document.getElementById("liste-boss").addEventListener("input", event => {
+    const nom = event.target.closest(".nom-boss");
+    const res = event.target.closest(".res-boss");
+    if (nom) {
+      brouillonBoss[nom.dataset.id].nom = nom.value;
+      nom.classList.toggle("invalide", !nom.value.trim());
+    }
+    if (res) {
+      const brut = res.value.trim().replace(",", ".");
+      const valeur = brut === "" ? 0 : Number(brut);
+      brouillonBoss[res.dataset.id].res[Number(res.dataset.index)] = valeur;
+      res.classList.toggle("invalide", !Number.isFinite(valeur));
+    }
+    if (nom || res) {
+      document.getElementById("message-boss").classList.remove("succes");
+      majPiedBoss();
+    }
+  });
+}
