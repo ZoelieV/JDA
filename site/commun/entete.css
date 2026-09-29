@@ -154,23 +154,29 @@ body::before {
 
 /* Bouton du compte = la deuxième bannière (format 1000x137), inversée
    gauche / droite : photo et pseudo calés à droite, sur la partie sombre de
-   l'image. Sans cadre ni dégradé ajouté. */
+   l'image. La bannière s'arrête au centre de la photo (rien de visible ni de
+   cliquable à sa droite). Sans cadre ni dégradé ajouté. */
 .avec-banniere2,
 .avec-banniere2:hover,
 .avec-banniere2[aria-expanded="true"] {
+  /* Largeur de la bannière entière ; hauteur au format 1000x137 (recadrée
+     sur téléphone plutôt que d'écraser la photo) ; photo 2 px plus basse. */
+  --largeur-banniere: min(26.25rem, 100vw - 6.875rem);
+  --hauteur-banniere: max(3.125rem, calc(var(--largeur-banniere) * 0.137));
+  --taille-avatar: calc(var(--hauteur-banniere) - 0.125rem);
   position: relative;
   isolation: isolate;
   box-sizing: border-box;
-  width: 26.25rem;
-  max-width: calc(100vw - 6.875rem);
-  aspect-ratio: 1000 / 137;
-  /* Sur téléphone, la bannière est recadrée plutôt que d'écraser la photo. */
-  min-height: 3.125rem;
+  /* Sans la partie à droite de la photo (2.8125rem) : la photo arrive au
+     bord droit du bouton. Décalage : photo 20 px plus à droite qu'avec
+     l'ancienne bannière (déjà décalée de 20 px), soit
+     1.25rem - 2.8125rem + 1.25rem. */
+  width: calc(var(--largeur-banniere) - 2.8125rem);
+  height: var(--hauteur-banniere);
+  left: -0.3125rem;
   flex-direction: row-reverse;
   justify-content: flex-start;
-  /* Décalée de 20 px vers la droite. */
-  left: 1.25rem;
-  padding: 0 2.8125rem 0 0.875rem;
+  padding: 0 0 0 0.875rem;
   border: none;
   border-radius: 0.5rem;
   background-color: transparent;
@@ -180,20 +186,23 @@ body::before {
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-/* Photo de profil de la hauteur de la bannière. */
+/* Photo de profil : hauteur de la bannière moins 2 px, centrée. */
 .avec-banniere2 > img,
 .avec-banniere2 #discord-avatar {
-  align-self: stretch;
-  width: auto;
-  height: auto;
-  aspect-ratio: 1;
+  align-self: center;
+  width: var(--taille-avatar);
+  height: var(--taille-avatar);
   object-fit: cover;
 }
 
+/* Image de la bannière, coupée au centre de la photo. */
 .avec-banniere2::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: calc(var(--taille-avatar) / 2);
   z-index: -1;
   border-radius: inherit;
   background-image: var(--banniere2);
