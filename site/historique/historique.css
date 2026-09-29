@@ -382,6 +382,33 @@
   right: 0.125rem;
 }
 
+/* Bans : infos des 2 joueurs, j1 à gauche et j2 à droite (haut :
+   constellation, milieu : arme, bas : niveau), dans leur couleur. */
+.coin-md {
+  top: 50%;
+  right: 0.125rem;
+  transform: translateY(-50%);
+}
+
+.coin-mg {
+  top: 50%;
+  left: 0.125rem;
+  transform: translateY(-50%);
+}
+
+.coin-hd {
+  top: 0.125rem;
+  right: 0.125rem;
+}
+
+.coin-j1 {
+  color: var(--couleur-j1);
+}
+
+.coin-j2 {
+  color: var(--couleur-j2);
+}
+
 img.element-mini {
   width: 1.25rem;
   padding: 0.125rem;

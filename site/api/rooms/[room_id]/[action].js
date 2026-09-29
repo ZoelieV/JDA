@@ -324,7 +324,8 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 
 async function archiverMatch(draft) {
   // Picks figés avec les infos du joueur à la fin du match (constellation,
-  // niveau, raffinement de l'arme signature) pour l'historique.
+  // niveau, raffinement de l'arme signature) pour l'historique ; bans avec
+  // les infos des 2 joueurs (comme les cartes de la draft).
   const [profilJ1, profilJ2] = await Promise.all([
     supabase.from("profiles").select("data").eq("discord_id", draft.discord_j1).single(),
     supabase.from("profiles").select("data").eq("discord_id", draft.discord_j2).single()
@@ -332,7 +333,13 @@ async function archiverMatch(draft) {
   const profils = { j1: profilJ1.data?.data, j2: profilJ2.data?.data };
   const actions = draft.actions.map(action => action.type === "pick"
     ? { ...action, ...infosPersoJoueur(profils[action.joueur], action.perso_id, action.element) }
-    : action);
+    : {
+      ...action,
+      infos: {
+        j1: infosPersoJoueur(profils.j1, action.perso_id),
+        j2: infosPersoJoueur(profils.j2, action.perso_id)
+      }
+    });
 
   const match = {
     boss_id: draft.boss_id,

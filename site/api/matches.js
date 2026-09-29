@@ -62,7 +62,9 @@ async function chargerJoueurs(ids) {
 
 // Côté d'un joueur dans un match. Sans la colonne "actions" (anciens
 // matchs) : équipe seulement, bans inconnus.
-function resumerJoueur(match, role, profil) {
+// profils : { j1, j2 } (profils des 2 joueurs du match).
+function resumerJoueur(match, role, profils) {
+  const profil = profils[role];
   const actions = Array.isArray(match.actions) ? match.actions : null;
   const discordId = match[`player${role === "j1" ? 1 : 2}_discord_id`];
   const siennes = actions ? actions.filter(a => a.joueur === role) : [];
@@ -90,8 +92,20 @@ function resumerJoueur(match, role, profil) {
         ? { constellation: pick.constellation, niveau: pick.niveau, raffinement: pick.raffinement }
         : infosPersoJoueur(profil?.data, pick.id, pick.element))
     })),
-    bans: siennes.filter(a => a.type === "ban" && !a.bonus).map(a => a.perso_id),
-    bans_equilibrage: siennes.filter(a => a.type === "ban" && a.bonus).map(a => a.perso_id)
+    bans: siennes.filter(a => a.type === "ban" && !a.bonus).map(a => resumerBan(a, profils)),
+    bans_equilibrage: siennes.filter(a => a.type === "ban" && a.bonus).map(a => resumerBan(a, profils))
+  };
+}
+
+// Ban : infos des 2 joueurs pour ce personnage (figées à l'archivage si
+// présentes, sinon celles des profils actuels).
+function resumerBan(action, profils) {
+  return {
+    id: action.perso_id,
+    infos: action.infos || {
+      j1: infosPersoJoueur(profils.j1?.data, action.perso_id),
+      j2: infosPersoJoueur(profils.j2?.data, action.perso_id)
+    }
   };
 }
 
@@ -123,10 +137,10 @@ module.exports = async (req, res) => {
     const ids = [...new Set([...matchs, ...enCours]
       .flatMap(m => [m.player1_discord_id, m.player2_discord_id]).filter(Boolean))];
     const joueurs = await chargerJoueurs(ids);
-    const deuxJoueurs = match => ({
-      j1: resumerJoueur(match, "j1", joueurs.get(match.player1_discord_id)),
-      j2: resumerJoueur(match, "j2", joueurs.get(match.player2_discord_id))
-    });
+    const deuxJoueurs = match => {
+      const profils = { j1: joueurs.get(match.player1_discord_id), j2: joueurs.get(match.player2_discord_id) };
+      return { j1: resumerJoueur(match, "j1", profils), j2: resumerJoueur(match, "j2", profils) };
+    };
 
     return res.status(200).json({
       en_cours: enCours.map(room => ({

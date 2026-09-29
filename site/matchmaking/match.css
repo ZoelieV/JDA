@@ -1987,3 +1987,18 @@ h1 {
     gap: 0.125rem;
   }
 }
+
+/* Bans : infos des 2 joueurs à côté du personnage, chaque groupe sur une
+   pastille teintée de la couleur du joueur. */
+.slot-ban .infos-case {
+  padding: 0.125rem;
+  border-radius: 62.4375rem;
+}
+
+.slot-ban .infos-case.infos-j1 {
+  background-color: rgba(91, 155, 213, 0.3);
+}
+
+.slot-ban .infos-case.infos-j2 {
+  background-color: rgba(224, 100, 90, 0.3);
+}

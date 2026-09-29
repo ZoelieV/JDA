@@ -884,6 +884,13 @@ function rendreTableauJoueur(role) {
       const slot = document.createElement("div");
       slot.className = "slot-pick slot-ban";
       remplirCaseTableau(slot, personnage);
+      // Comme les cartes de la draft : infos des 2 joueurs (chacun dans sa
+      // couleur), à côté du personnage, j1 à gauche et j2 à droite (ordre
+      // inversé dans le tableau de droite, qui est en miroir).
+      (role === "j1" ? ["j1", "j2"] : ["j2", "j1"]).forEach(r => {
+        const zone = creerInfosCase(personnage, r, getInfosCarte(personnage.id, [r]));
+        if (zone) slot.appendChild(zone);
+      });
       return slot;
     }));
   }
@@ -1332,24 +1339,34 @@ function creerCaseRecap(personnage, role, element = null) {
   slot.className = "slot-pick";
   remplirCaseTableau(slot, appliquerVariante(personnage, getJoueurDataParRole(role)?.parametres), element);
 
+  // À côté du personnage, côté centre de l'écran : à sa droite pour j1, à
+  // sa gauche pour j2 (la case de j2 est en miroir).
+  const zoneInfos = creerInfosCase(personnage, role, getInfosCarte(personnage.id, [role], element), element);
+  if (zoneInfos) slot.appendChild(zoneInfos);
+  return slot;
+}
+
+// Infos d'un personnage chez un joueur dans une case de tableau :
+// constellation, niveau, arme signature, élément (Voyageur / Manekin).
+// null si le joueur ne le possède pas.
+function creerInfosCase(personnage, role, infos, element = null) {
   const suffixe = role === "j1" ? "J1" : "J2";
-  const infos = getInfosCarte(personnage.id, [role], element);
-  const refinement = infos[`refinement${suffixe}`];
+  if (!infos[`constellation${suffixe}`]) return null;
 
   const zoneInfos = document.createElement("div");
   zoneInfos.className = `infos-case infos-${role}`;
   zoneInfos.innerHTML = [
-    infos[`constellation${suffixe}`] ? `<span class="pastille-case">${infos[`constellation${suffixe}`]}</span>` : "",
+    `<span class="pastille-case">${infos[`constellation${suffixe}`]}</span>`,
     infos[`niveau${suffixe}`] ? `<span class="pastille-case">${infos[`niveau${suffixe}`]}</span>` : "",
-    htmlArmeSignature(personnage.arme, refinement, { classe: "arme-case" }),
+    htmlArmeSignature(personnage.arme, infos[`refinement${suffixe}`], {
+      classe: "arme-case",
+      titre: `${role.toUpperCase()} : arme signature R${(infos[`refinement${suffixe}`] ?? 0) + 1}`
+    }),
     element && ICONES_ELEMENTS_TRI[element]
       ? `<img class="element-case" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}" title="${NOMS_ELEMENTS[element] || element}">`
       : ""
   ].join("");
-  // À côté du personnage, côté centre de l'écran : à sa droite pour j1, à
-  // sa gauche pour j2 (la case de j2 est en miroir).
-  slot.appendChild(zoneInfos);
-  return slot;
+  return zoneInfos;
 }
 
 // Temps d'un joueur, au-dessus de son tableau : champ de saisie pour le joueur

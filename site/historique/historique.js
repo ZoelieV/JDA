@@ -72,7 +72,7 @@ function texteRecherche(match) {
     const noms = ids => ids.map(id => personnagesParId.get(id)?.nom || id);
     match.texte = [
       match.j1.nom, match.j2.nom, bossParId.get(match.boss_id)?.nom || match.boss_id,
-      ...[match.j1, match.j2].flatMap(j => noms([...j.equipe.map(p => p.id), ...j.bans, ...j.bans_equilibrage]))
+      ...[match.j1, match.j2].flatMap(j => noms([...j.equipe, ...j.bans, ...j.bans_equilibrage].map(p => p.id)))
     ].join(" ").toLowerCase();
   }
   return match.texte;
@@ -133,7 +133,23 @@ function formaterDate(date) {
 // arme signature (détourée de la couleur du raffinement) en bas à droite ;
 // Voyageur / Manekin : élément en bas à gauche et niveau centré en bas.
 // Banni : grisé avec contour rouge.
-function htmlPerso(id, parametres, { element = null, banni = false, infos = null } = {}) {
+// Coins d'un ban, comme les cartes de la draft : infos de j1 à gauche
+// (constellation en haut, arme au milieu, niveau en bas), de j2 à droite,
+// chacun dans sa couleur.
+function coinsDeuxJoueurs(personnage, infosJoueurs) {
+  return ["j1", "j2"].map(role => {
+    const infos = infosJoueurs?.[role];
+    if (!infos || infos.constellation == null) return "";
+    const cote = role === "j1" ? "g" : "d";
+    return [
+      `<span class="coin coin-h${cote} coin-${role}">C${infos.constellation}</span>`,
+      htmlArmeSignature(personnage.arme, infos.raffinement, { classe: `coin coin-m${cote} arme-mini`, titre: `${role.toUpperCase()} : arme signature R${(infos.raffinement ?? 0) + 1}` }),
+      infos.niveau ? `<span class="coin coin-b${cote} coin-${role}">${infos.niveau}</span>` : ""
+    ].join("");
+  }).join("");
+}
+
+function htmlPerso(id, parametres, { element = null, banni = false, infos = null, infosJoueurs = null } = {}) {
   const base = personnagesParId.get(id);
   if (!base) return "";
   const personnage = appliquerVariante(base, parametres);
@@ -144,10 +160,11 @@ function htmlPerso(id, parametres, { element = null, banni = false, infos = null
     infos?.constellation != null ? `<span class="coin coin-hg">C${infos.constellation}</span>` : "",
     infos?.niveau ? `<span class="coin ${avecElement ? "coin-bas" : "coin-bg"}">${infos.niveau}</span>` : "",
     avecElement ? `<img class="coin coin-bg element-mini" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}" title="${NOMS_ELEMENTS[element] || element}">` : "",
-    infos ? htmlArmeSignature(personnage.arme, infos.raffinement, { classe: "coin coin-bd arme-mini" }) : ""
+    infos ? htmlArmeSignature(personnage.arme, infos.raffinement, { classe: "coin coin-bd arme-mini" }) : "",
+    coinsDeuxJoueurs(personnage, infosJoueurs)
   ].join("");
 
-  return `<div class="perso-mini${infos ? " perso-equipe" : ""} ${classeFondRarete(personnage.rarete)}${banni ? " banni" : ""}" title="${nom}">` +
+  return `<div class="perso-mini${infos || infosJoueurs ? " perso-equipe" : ""} ${classeFondRarete(personnage.rarete)}${banni ? " banni" : ""}" title="${nom}">` +
     `<img src="../DB/${personnage.image}" alt="${nom}" loading="lazy" decoding="async">${coins}</div>`;
 }
 
@@ -166,8 +183,9 @@ function htmlJoueur(match, role, bansConnus) {
     : egalite ? `<span class="etiquette-resultat egalite">Égalité</span>` : "";
 
   const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p })).join("");
-  const bans = joueur.bans.map(id => htmlPerso(id, joueur.parametres, { banni: true })).join("");
-  const equilibrage = joueur.bans_equilibrage.map(id => htmlPerso(id, joueur.parametres, { banni: true })).join("");
+  const htmlBan = ban => htmlPerso(ban.id, joueur.parametres, { banni: true, infosJoueurs: ban.infos });
+  const bans = joueur.bans.map(htmlBan).join("");
+  const equilibrage = joueur.bans_equilibrage.map(htmlBan).join("");
 
   return `
     <div class="match-joueur match-${role}${gagnant ? " gagnant" : ""}">
