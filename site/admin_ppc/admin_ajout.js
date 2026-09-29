@@ -25,6 +25,8 @@ const LIBELLES_ELEMENTS = {
 };
 const LIBELLES_ARMES = { sword: "Épée", claymore: "Épée à deux mains", polearm: "Arme d'hast", bow: "Arc", catalyst: "Catalyseur" };
 const TYPES_BOSS = { weekly_boss: "Boss hebdomadaire" };
+// Catégories d'une arme : aucune, une ou les deux.
+const CATEGORIES_ARMES = { support: "Support", standard: "Standard" };
 const NOMS_GENRES = { characters: "Personnage", weapons: "Arme", boss: "Boss" };
 
 let genreAjout = "characters";
@@ -38,7 +40,7 @@ const cacheImages = new Map(); // chemin -> promesse (présente ou non)
 function brouillonsVides() {
   return {
     characters: { nom: "", id: "", element: "", arme: "", rarete: "", categorie: "", standard: false },
-    weapons: { nom: "", id: "", element: "", type: "", rarete: "5" },
+    weapons: { nom: "", id: "", element: "", type: "", rarete: "5", categories: [] },
     boss: { nom: "", id: "", type: "weekly_boss", res: Array(7).fill(0) }
   };
 }
@@ -67,6 +69,12 @@ function nomDeFichier(nom) {
 // Comme la recherche des bannières de la draft (matchmaking/match.js).
 function cleDeFichier(texte) {
   return sansAccents(texte).replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+
+// Ajoute ou retire une catégorie d'arme (ordre de CATEGORIES_ARMES).
+function basculerCategorie(categories, valeur) {
+  const choisies = categories.includes(valeur) ? categories.filter(c => c !== valeur) : [...categories, valeur];
+  return Object.keys(CATEGORIES_ARMES).filter(c => choisies.includes(c));
 }
 
 function echapper(texte) {
@@ -153,7 +161,10 @@ function rendreFormulaire() {
       champ("Id", texteSaisi("id", "ex. hu_tao_w"), "Arme signature : id du personnage + <strong>_w</strong> (ex. hu_tao_w)."),
       champ("Élément", boutonsChoix("element", { ...elements, all: LIBELLES_ELEMENTS.all }, b.element, ICONES_ELEMENTS_TRI)),
       champ("Type", boutonsChoix("type", LIBELLES_ARMES, b.type, ICONES_TYPES_ARMES_TRI)),
-      champ("Rareté", boutonsChoix("rarete", { 5: "5★", 4: "4★", 3: "3★" }, b.rarete))
+      champ("Rareté", boutonsChoix("rarete", { 5: "5★", 4: "4★", 3: "3★" }, b.rarete)),
+      champ("Catégories", Object.entries(CATEGORIES_ARMES).map(([valeur, libelle]) =>
+        `<button type="button" class="filtre-admin filtre-texte choix-ajout${b.categories.includes(valeur) ? " active" : ""}" data-champ="categories" data-valeur="${valeur}">${libelle}</button>`
+      ).join(""), "Aucune, une ou les deux.")
     ].join("");
   } else {
     html = [
@@ -221,6 +232,7 @@ function initialiserFormulaire() {
     if (!bouton) return;
     const b = brouillons[genreAjout];
     if (bouton.dataset.champ === "standard") b.standard = !b.standard;
+    else if (bouton.dataset.champ === "categories") b.categories = basculerCategorie(b.categories, bouton.dataset.valeur);
     else b[bouton.dataset.champ] = b[bouton.dataset.champ] === bouton.dataset.valeur ? "" : bouton.dataset.valeur;
     if (genreAjout === "boss" && !b.type) b.type = "weekly_boss";
     rendreFormulaire();
@@ -377,7 +389,7 @@ function entreeDepuisBrouillon(genre, b) {
   if (genre === "characters") {
     return { id: b.id, nom: b.nom.trim(), element: b.element, arme: b.arme, rarete: b.rarete, categorie: b.categorie, standard: b.standard };
   }
-  if (genre === "weapons") return { id: b.id, nom: b.nom.trim(), element: b.element, type: b.type, rarete: b.rarete };
+  if (genre === "weapons") return { id: b.id, nom: b.nom.trim(), element: b.element, type: b.type, rarete: b.rarete, categories: b.categories };
   return { id: b.id, nom: b.nom.trim(), type: b.type, res: b.res };
 }
 

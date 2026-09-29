@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
-<link rel="stylesheet" href="admin_ppc.css?v=11">
+<link rel="stylesheet" href="admin_ppc.css?v=12">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -31,6 +31,7 @@
         <span id="compte-admin" class="compte-admin"></span>
         <button type="button" id="ouvrir-ajout" class="btn-ouvrir-ajout" title="Ajouter un personnage, une arme ou un boss">+ Ajouter</button>
         <button type="button" id="ouvrir-boss" class="btn-ouvrir-ajout" title="Consulter et modifier les boss">Boss</button>
+        <button type="button" id="ouvrir-categories" class="btn-ouvrir-ajout" title="Catégories des armes : support, standard">Catégories d'armes</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
       <div id="filtres-admin" class="filtres-admin"></div>
@@ -115,6 +116,26 @@
     </div>
   </div>
 
+  <!-- Catégories des armes : support, standard (aucune, une ou les deux). -->
+  <div id="modal-categories" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Catégories d'armes</h2>
+        <button type="button" id="fermer-categories" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <div class="barre-categories">
+        <input type="text" id="recherche-categories" class="texte-ajout" placeholder="Rechercher…" autocomplete="off">
+        <button type="button" id="sans-categorie" class="filtre-admin filtre-texte">Sans catégorie</button>
+        <span id="compte-categories" class="compte-admin"></span>
+      </div>
+      <div id="liste-categories" class="liste-boss"></div>
+      <div class="actions-ajout">
+        <span id="message-categories" class="message-ajout"></span>
+        <button type="button" id="enregistrer-categories" class="bouton-creer" disabled>Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Annuler en bas à gauche, Enregistrer en bas à droite (figés). -->
   <div id="pied-admin" class="pied-admin cache">
     <button type="button" id="annuler-admin" class="bouton-annuler">Annuler</button>
@@ -123,8 +144,9 @@
 
   <script src="/commun/cartes.js?v=4"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="admin_ajout.js?v=2"></script>
+  <script src="admin_ajout.js?v=3"></script>
   <script src="admin_boss.js?v=1"></script>
-  <script src="admin_ppc.js?v=9"></script>
+  <script src="admin_categories.js?v=1"></script>
+  <script src="admin_ppc.js?v=10"></script>
 </body>
 </html>

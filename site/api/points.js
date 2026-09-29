@@ -8,18 +8,20 @@
 //
 // Personnages et armes masqués (config.masques : pas encore sortis dans le
 // jeu) : retirés de partout sauf de la page admin. Boss : nom et résistances
-// modifiables (config.boss).
+// modifiables (config.boss). Armes : catégories (support, standard)
+// modifiables (config.categoriesArmes).
 //
 // GET  : { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
-//          boss: { id: { nom, res } } }
-//        Hors administrateurs : ajouts masqués et leurs points retirés.
+//          boss: { id: { nom, res } }, categoriesArmes: { id: [...] } }
+//        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
 //   { characters, weapons, modes, masques }  remplace les points et les masqués
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
 //   { boss: { id: { nom, res } } }   modifie des boss
+//   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin } = require("./_lib/admin");
@@ -34,6 +36,13 @@ const CATEGORIES = ["dps", "subdps", "support"];
 const RARETES = ["3", "4", "5"];
 const TYPES_BOSS = ["weekly_boss"];
 const NB_RESISTANCES = 7;
+const CATEGORIES_ARMES = ["support", "standard"];
+
+// Catégories connues, sans doublon, dans l'ordre de CATEGORIES_ARMES ; null
+// si ce n'est pas une liste.
+function validerCategoriesArme(brut) {
+  return Array.isArray(brut) ? CATEGORIES_ARMES.filter(c => brut.includes(c)) : null;
+}
 
 function texte(valeur, max = 80) {
   const propre = typeof valeur === "string" ? valeur.trim() : "";
@@ -75,6 +84,7 @@ function validerEntree(genre, brut = {}) {
       type: choix(brut.type, TYPES_ARMES),
       image: `images/weapons/${id}.webp`,
       rarete: choix(brut.rarete, RARETES),
+      categories: validerCategoriesArme(brut.categories) || [],
       PPW: Array(TAILLE_PPW).fill(0)
     };
     if (!entree.element || !entree.type || !entree.rarete) return { erreur: "Élément, type ou rareté invalide" };
@@ -135,6 +145,10 @@ function versionPublique(config) {
     if (config[genre]) {
       publique[genre] = { ...config[genre] };
       caches.forEach(id => { delete publique[genre][id]; });
+    }
+    if (genre === "weapons" && config.categoriesArmes) {
+      publique.categoriesArmes = { ...config.categoriesArmes };
+      caches.forEach(id => { delete publique.categoriesArmes[id]; });
     }
   });
   return publique;
@@ -222,6 +236,10 @@ module.exports = async (req, res) => {
         if (GENRES_MASQUABLES.includes(genre)) {
           const masques = lireMasques(ancienne);
           config.masques = { ...masques, [genre]: masques[genre].filter(m => m !== id) };
+          if (genre === "weapons" && config.categoriesArmes?.[id]) {
+            config.categoriesArmes = { ...config.categoriesArmes };
+            delete config.categoriesArmes[id];
+          }
         } else if (config.boss?.[id]) {
           config.boss = { ...config.boss };
           delete config.boss[id];
@@ -236,6 +254,16 @@ module.exports = async (req, res) => {
           modifs[id] = modif;
         }
         config = { ...ancienne, boss: modifs };
+      } else if (corps.categoriesArmes) {
+        const ids = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));
+        const modifs = { ...(ancienne.categoriesArmes || {}) };
+        for (const [id, brut] of Object.entries(corps.categoriesArmes)) {
+          if (!ids.has(id)) return res.status(404).json({ error: `Arme "${id}" introuvable` });
+          const categories = validerCategoriesArme(brut);
+          if (!categories) return res.status(400).json({ error: `Catégories invalides (${id})` });
+          modifs[id] = categories;
+        }
+        config = { ...ancienne, categoriesArmes: modifs };
       } else {
         const modes = {};
         Object.keys(MODES_POINTS).forEach(cle => {

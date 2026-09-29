@@ -81,6 +81,8 @@ const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("ch
 const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.weapons), points.weapons, "PPW");
+    // Catégories (support, standard) modifiées par les administrateurs.
+    appliquerPointsAdmin(liste, points.categoriesArmes, "categories");
     return avecMasques ? liste : retirerMasques(liste, points.masques?.weapons);
   });
 const chargerBoss = () => Promise.all([chargerJSON("boss.json"), chargerPointsAdmin()])

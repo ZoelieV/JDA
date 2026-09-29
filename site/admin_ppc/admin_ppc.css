@@ -1012,3 +1012,20 @@ body {
 .nom-boss.invalide {
   border-color: #ff5a5a;
 }
+
+/* ---- Fenêtre des catégories d'armes ---- */
+.barre-categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.choix-categories {
+  white-space: nowrap;
+}
+
+.choix-categories .filtre-admin + .filtre-admin {
+  margin-left: 0.375rem;
+}

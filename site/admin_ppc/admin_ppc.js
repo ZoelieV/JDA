@@ -677,6 +677,7 @@ async function demarrer() {
   initialiserApercu();
   initialiserAjout();
   initialiserBoss();
+  initialiserCategories();
   suivreHauteurBarre();
   rendre();
 }

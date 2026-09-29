@@ -101,6 +101,7 @@ async function actualiserPoints() {
     });
     armes.forEach(a => {
       if (Array.isArray(config.weapons?.[a.id])) a.PPW = config.weapons[a.id];
+      if (Array.isArray(config.categoriesArmes?.[a.id])) a.categories = config.categoriesArmes[a.id];
     });
     pointsLusA = Date.now();
   } catch (erreur) {
