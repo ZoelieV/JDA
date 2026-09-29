@@ -43,11 +43,25 @@ function appliquerPointsAdmin(liste, points, champ) {
   return liste;
 }
 
+// Personnages, armes et boss ajoutés par les administrateurs : ajoutés à la
+// fin des listes des JSON (une seule fois, la liste est gardée en mémoire).
+function fusionnerAjouts(liste, ajouts) {
+  const ids = new Set(liste.map(item => item.id));
+  (Array.isArray(ajouts) ? ajouts : []).forEach(entree => {
+    if (entree?.id && !ids.has(entree.id)) {
+      liste.push({ ...entree, ajout: true });
+      ids.add(entree.id);
+    }
+  });
+  return liste;
+}
+
 const chargerPersonnages = () => Promise.all([chargerJSON("characters.json"), chargerPointsAdmin()])
-  .then(([liste, points]) => appliquerPointsAdmin(liste, points.characters, "PPC"));
+  .then(([liste, points]) => appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC"));
 const chargerArmes = () => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
-  .then(([liste, points]) => appliquerPointsAdmin(liste, points.weapons, "PPW"));
-const chargerBoss = () => chargerJSON("boss.json");
+  .then(([liste, points]) => appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.weapons), points.weapons, "PPW"));
+const chargerBoss = () => Promise.all([chargerJSON("boss.json"), chargerPointsAdmin()])
+  .then(([liste, points]) => fusionnerAjouts(liste, points.ajouts?.boss));
 
 // ---- Fond de carte selon la rareté (classes de commun/cartes.css) ----
 function classeFondRarete(rarete) {

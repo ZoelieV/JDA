@@ -179,9 +179,11 @@ function copierValeurs(liste, champ, taille) {
 
 async function chargerDonnees() {
   // Points déjà appliqués par cartes.js (JSON + modifications des admins).
-  const [listePersos, listeArmes, config] = await Promise.all([chargerPersonnages(), chargerArmes(), chargerPointsAdmin()]);
+  const [listePersos, listeArmes, config, boss] = await Promise.all([chargerPersonnages(), chargerArmes(), chargerPointsAdmin(), chargerBoss()]);
   personnages = listePersos;
   armes = listeArmes;
+  listeBoss = boss;                  // cf. admin_ajout.js
+  ajouts = lireAjoutsConfig(config);
   valeurs = {
     characters: copierValeurs(personnages, "PPC", COLONNES.characters.libelles.length),
     weapons: copierValeurs(armes, "PPW", COLONNES.weapons.libelles.length)
@@ -232,6 +234,7 @@ function rendreCorps() {
         <td class="col-nom">
           <span class="miniature ${classeFondRarete(item.rarete)}"><img src="../DB/${item.image}" alt="" loading="lazy"></span>
           <span class="nom-admin"></span>
+          ${item.ajout ? `<span class="tag-ajout" title="Ajouté depuis cette page (pas dans le JSON)">Ajouté</span>` : ""}
           ${vue === "characters" ? `<button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points">Aperçu</button>` : ""}
         </td>
         ${valeurs[vue][item.id].map((valeur, index) => `
@@ -637,6 +640,7 @@ async function demarrer() {
   initialiserSaisie();
   initialiserFiltres();
   initialiserApercu();
+  initialiserAjout();
   suivreHauteurBarre();
   rendre();
 }

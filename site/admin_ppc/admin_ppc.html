@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration des points</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
-<link rel="stylesheet" href="admin_ppc.css?v=9">
+<link rel="stylesheet" href="admin_ppc.css?v=10">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -29,6 +29,7 @@
         </div>
         <input type="text" id="recherche-admin" class="recherche-admin" placeholder="Rechercher…">
         <span id="compte-admin" class="compte-admin"></span>
+        <button type="button" id="ouvrir-ajout" class="btn-ouvrir-ajout" title="Ajouter un personnage, une arme ou un boss">+ Ajouter</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
       <div id="filtres-admin" class="filtres-admin"></div>
@@ -67,14 +68,41 @@
     </div>
   </div>
 
+  <!-- Ajout d'un personnage, d'une arme ou d'un boss : infos du JSON
+       (obligatoires), récapitulatif des images à fournir (facultatives), puis
+       liste des ajouts déjà enregistrés. -->
+  <div id="modal-ajout" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Ajouter</h2>
+        <button type="button" id="fermer-ajout" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <div id="genres-ajout" class="genres-ajout">
+        <button type="button" class="mode-modificateur" data-genre="characters">Personnage</button>
+        <button type="button" class="mode-modificateur" data-genre="weapons">Arme</button>
+        <button type="button" class="mode-modificateur" data-genre="boss">Boss</button>
+      </div>
+      <div id="formulaire-ajout" class="formulaire-ajout"></div>
+      <h3 class="titre-section-ajout">Images à fournir <span class="facultatif">(facultatif)</span></h3>
+      <div id="images-ajout"></div>
+      <div class="actions-ajout">
+        <span id="message-ajout" class="message-ajout"></span>
+        <button type="button" id="creer-ajout" class="bouton-creer" disabled>Créer</button>
+      </div>
+      <h3 class="titre-section-ajout">Ajouts enregistrés</h3>
+      <div id="liste-ajouts" class="liste-ajouts"></div>
+    </div>
+  </div>
+
   <!-- Annuler en bas à gauche, Enregistrer en bas à droite (figés). -->
   <div id="pied-admin" class="pied-admin cache">
     <button type="button" id="annuler-admin" class="bouton-annuler">Annuler</button>
     <button type="button" id="enregistrer-admin" class="bouton-enregistrer" disabled>Enregistrer</button>
   </div>
 
-  <script src="/commun/cartes.js?v=2"></script>
+  <script src="/commun/cartes.js?v=3"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="admin_ppc.js?v=7"></script>
+  <script src="admin_ajout.js?v=1"></script>
+  <script src="admin_ppc.js?v=8"></script>
 </body>
 </html>

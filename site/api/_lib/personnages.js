@@ -7,6 +7,7 @@
 // automatiquement par Vercel au build (pas besoin de config supplémentaire).
 const personnages = require("../../DB/characters.json");
 const armes = require("../../DB/weapons.json");
+const bossList = require("../../DB/boss.json"); // même tableau que _lib/boss.js
 
 // ---- Groupes (Voyageur) ----
 // Un personnage par élément dans les comptes ("traveler_pyro"...,
@@ -33,6 +34,31 @@ function getArmes() {
 // multiplié aux points de constellation selon le mode choisi par les admins.
 const MODES_POINTS = { niveau95: 7, niveau100: 8, theatre: 9 };
 
+// Personnages, armes et boss ajoutés par les administrateurs (config.ajouts,
+// cf. api/points.js) : ajoutés aux listes des JSON, retirés s'ils ont été
+// supprimés depuis. Les listes sont modifiées sur place (partagées avec les
+// autres modules).
+const idsAjoutes = { characters: new Set(), weapons: new Set(), boss: new Set() };
+
+function fusionnerAjouts(liste, ajouts, genre) {
+  const nouveaux = (Array.isArray(ajouts) ? ajouts : []).filter(e => e && typeof e.id === "string");
+  const idsNouveaux = new Set(nouveaux.map(e => e.id));
+  for (let i = liste.length - 1; i >= 0; i--) {
+    if (idsAjoutes[genre].has(liste[i].id) && !idsNouveaux.has(liste[i].id)) liste.splice(i, 1);
+  }
+  nouveaux.forEach(entree => {
+    const index = liste.findIndex(e => e.id === entree.id);
+    if (index === -1) liste.push({ ...entree });
+    else if (idsAjoutes[genre].has(entree.id)) liste[index] = { ...entree };
+  });
+  idsAjoutes[genre] = idsNouveaux;
+}
+
+// Entrée ajoutée par les admins (pas dans le JSON d'origine).
+function estAjout(genre, id) {
+  return idsAjoutes[genre].has(id);
+}
+
 // Relue au plus toutes les 30 s (les points changent rarement).
 const DUREE_CACHE_POINTS_MS = 30 * 1000;
 let pointsLusA = 0;
@@ -44,6 +70,10 @@ async function actualiserPoints() {
     const { data, error } = await supabase.from("points").select("data").eq("id", "config").maybeSingle();
     if (error) throw error;
     const config = data?.data || {};
+    fusionnerAjouts(personnages, config.ajouts?.characters, "characters");
+    fusionnerAjouts(armes, config.ajouts?.weapons, "weapons");
+    fusionnerAjouts(bossList, config.ajouts?.boss, "boss");
+    personnagesDraft = null;
     personnages.forEach(p => {
       if (Array.isArray(config.characters?.[p.id])) p.PPC = config.characters[p.id];
     });
@@ -153,6 +183,7 @@ function infosPersoJoueur(profilData, persoId, element = null) {
 module.exports = {
   MODES_POINTS,
   actualiserPoints,
+  estAjout,
   getArmes,
   infosPersoJoueur,
   ELEMENTS,

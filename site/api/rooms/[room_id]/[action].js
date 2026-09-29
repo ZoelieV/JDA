@@ -473,6 +473,9 @@ module.exports = async (req, res) => {
 
     const { roomId, action } = getSegments(req);
 
+    // Personnages / boss ajoutés par les admins et points à jour (cache 30 s).
+    if (action !== "draft") await actualiserPoints();
+
     switch (action) {
       case "box":
         return await handleBox(req, res, roomId, user);
