@@ -135,19 +135,24 @@ h2 {
 }
 
 /* Menu déroulant sous le bouton du compte. */
+/* Largeur de la bannière du compte (décalée comme elle, cf.
+   .avec-banniere2 dans commun/entete.css), fond flouté comme la barre des
+   filtres. */
 .menu-compte {
   position: absolute;
   top: calc(100% + 0.5rem);
-  right: 0;
+  left: -0.3125rem;
   z-index: 500;
   box-sizing: border-box;
-  width: 16.25rem;
-  max-width: calc(100vw - 1.5rem);
+  width: 100%;
+  min-width: 13rem;
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  background-color: #2a2a2a;
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.75rem;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5);
@@ -215,14 +220,28 @@ h2 {
   flex: 0 0 auto;
 }
 
+/* Boutons Enregistrer (menu, page, personnalisation) : grisés avec un
+   contour vert tant que rien n'a changé, verts pleins dès qu'il y a une
+   modification. */
 .menu-btn-principal {
   text-align: center;
-  background-color: rgba(245, 197, 66, 0.15);
-  border: 2px solid rgba(245, 197, 66, 0.8);
+  font-weight: bold;
+  background-color: #3ecf6a;
+  border: 2px solid #3ecf6a;
 }
 
-.menu-btn-principal:hover {
-  background-color: rgba(245, 197, 66, 0.25);
+.menu-btn-principal.menu-btn-principal:hover {
+  background-color: #3ecf6a;
+  border-color: #3ecf6a;
+  filter: brightness(1.1);
+}
+
+.menu-btn-principal:disabled,
+.menu-btn-principal.menu-btn-principal:disabled:hover {
+  background-color: rgba(80, 80, 80, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+  filter: none;
+  cursor: default;
 }
 
 /* ---- Barre recherche / tri / filtres : tout à la suite sur une ligne
@@ -829,7 +848,7 @@ h2 {
   padding: 0.5rem 1.25rem;
   border: 2px solid var(--couleur-bouton);
   border-radius: 0.5rem;
-  background-color: rgba(80, 80, 80, 0.6);
+  background-color: rgba(80, 80, 80, 0.95);
   color: rgba(255, 255, 255, 0.7);
   font-family: inherit;
   font-weight: bold;
@@ -992,23 +1011,25 @@ textarea {
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
   font-weight: bold;
-  color: #1e1e1e;
-  background-color: rgba(245, 197, 66, 0.95);
-  border: 2px solid #f5c542;
+  color: white;
+  background-color: #3ecf6a;
+  border: 2px solid #3ecf6a;
   box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
 }
 
 .btn-enregistrer-fixe:hover {
-  background-color: #ffd95e;
-  border-color: #ffd95e;
+  background-color: #3ecf6a;
+  border-color: #3ecf6a;
+  filter: brightness(1.1);
 }
 
-/* Rien à enregistrer : grisé. */
+/* Rien à enregistrer : grisé, contour vert. */
 .btn-enregistrer-fixe:disabled,
 .btn-enregistrer-fixe:disabled:hover {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.7);
   background-color: rgba(80, 80, 80, 0.95);
-  border-color: rgba(120, 120, 120, 0.95);
+  border-color: #3ecf6a;
+  filter: none;
   cursor: default;
 }
 

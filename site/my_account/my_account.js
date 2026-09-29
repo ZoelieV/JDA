@@ -646,9 +646,12 @@ function etatFormulaire(profil) {
   return etatAEnregistrer(profil, document.getElementById("uid").value, document.getElementById("theatre").value);
 }
 
+// Bouton de la page et bouton du menu du compte.
 function mettreAJourBoutonEnregistrer(profil) {
-  const bouton = document.querySelector(".btn-enregistrer-fixe");
-  if (bouton) bouton.disabled = etatEnregistre !== null && etatFormulaire(profil) === etatEnregistre;
+  const rienAEnregistrer = etatEnregistre !== null && etatFormulaire(profil) === etatEnregistre;
+  document.querySelectorAll(".btn-enregistrer-fixe, #btn-enregistrer-compte").forEach(bouton => {
+    bouton.disabled = rienAEnregistrer;
+  });
 }
 
 function marquerEnregistre(profil, etat = etatFormulaire(profil)) {
