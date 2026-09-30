@@ -82,6 +82,18 @@ h1, h2 {
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
+/* Photo : largeur explicite (au lieu d'être étirée à la hauteur de la
+   carte, que certains navigateurs mobiles déforment en ovale). Même taille
+   que .banniere-joueur > .photo-joueur : 2 x (8.1 % de la largeur de la
+   carte - 1 px), le pourcentage étant pris sur la largeur sans le padding
+   droit de 0.875rem. */
+.account-card > .photo-joueur {
+  align-self: center;
+  width: calc((100% + 0.875rem) * 0.162 - 2px);
+  height: auto;
+  aspect-ratio: 1;
+}
+
 .account-card:hover {
   transform: translateY(-2px);
   filter: brightness(1.12);
