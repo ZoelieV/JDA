@@ -695,6 +695,7 @@ async function demarrer() {
   }
 
   afficherEtat("");
+  afficherLogoPersonnages();
   document.getElementById("zone-admin").classList.remove("cache");
   document.getElementById("pied-admin").classList.remove("cache");
 
@@ -721,6 +722,18 @@ async function demarrer() {
   initialiserCategories();
   suivreHauteurBarre();
   rendre();
+}
+
+// Logo de la vue Personnages : tête du Voyageur choisi par l'admin connecté
+// (cf. getIconeVuePersonnages, commun/variantes.js). Pas bloquant.
+async function afficherLogoPersonnages() {
+  try {
+    const reponse = await fetch("/api/auth/profile", { credentials: "include" });
+    const parametres = reponse.ok ? (await reponse.json()).profil?.parametres : null;
+    document.getElementById("logo-vue-personnages").src = `../DB/${getIconeVuePersonnages(parametres)}`;
+  } catch (erreur) {
+    console.error(erreur);
+  }
 }
 
 // En-tête du tableau figé juste sous la barre des filtres (figée elle

@@ -1868,10 +1868,16 @@ body {
   }
 
   /* Logos réduits à la taille des cases (~ 2,25rem sur un écran étroit). */
-  .ligne-vues .view-btn img,
   .ligne-vues .tri-logo,
   .ligne-vues .btn-clear-filtres img {
     height: 1.25rem;
+  }
+
+  /* Vues : Armes x 1,3 ; Personnages (une seule tête, étroite) à la même
+     hauteur. */
+  .ligne-vues .view-btn .logo-vue-armes,
+  .ligne-vues .view-btn .logo-vue-personnages {
+    height: 1.625rem;
   }
 
   .ligne-vues .tri-logo-constellation {
@@ -1886,14 +1892,17 @@ body {
     font-size: 1.25em;
   }
 
-  /* "Possédés" / "Sélectionnés" : 2 cases de large. */
+  /* "Possédés" / "Sélectionnés" : 2 cases de large, même hauteur que les
+     autres (étirée sur la hauteur de la ligne), police inchangée. */
   .ligne-vues .filtre-texte:has(#filtre-possedes) {
     grid-column: span 2;
+    display: flex;
   }
 
   .ligne-vues .filtre-texte:has(#filtre-possedes) span {
+    flex: 1 1 auto;
     aspect-ratio: auto;
-    height: 100%;
+    height: auto;
   }
 }
 

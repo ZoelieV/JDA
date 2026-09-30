@@ -269,6 +269,9 @@ async function definirDraft(nouveauDraft) {
   const cleVariantes = JSON.stringify([parametresVue?.voyageur, parametresVue?.manekin]);
   if (cleVariantes !== derniereCleVariantes) {
     derniereCleVariantes = cleVariantes;
+    // Logo du filtre Personnages : tête du même Voyageur que la grille.
+    const logoPersonnages = document.querySelector('#filtres-vue [data-vue="characters"] img');
+    if (logoPersonnages) logoPersonnages.src = `../DB/${getIconeVuePersonnages(parametresVue)}`;
     personnagesData = appliquerVariantes(regrouperPourDraft(personnagesBase), parametresVue);
     document.querySelectorAll(".grille-pool").forEach(grille => delete grille.dataset.cle);
   }
@@ -1317,7 +1320,8 @@ function initialiserFiltresTri() {
   const zoneVue = document.createElement("div");
   zoneVue.className = "filtres-icones filtres-vue";
   zoneVue.id = "filtres-vue";
-  [["characters", "Icon_Character.webp", "Personnages"], ["weapons", "Icon_Inventory_Weapons.webp", "Armes"]].forEach(([valeur, logo, nom]) => {
+  // Personnages : tête du Voyageur, mise à jour avec les variantes (cf. definirDraft).
+  [["characters", "Aether_Icon_Character.webp", "Personnages"], ["weapons", "Icon_Inventory_Weapons.webp", "Armes"]].forEach(([valeur, logo, nom]) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-icone-btn";

@@ -808,12 +808,17 @@ async function initialiserPage() {
     // pour que tous les écouteurs voient le changement.
     profil.parametres ??= {};
     const personnages = appliquerVariantes(personnagesBase, profil.parametres);
+    // Logo de la vue Personnages : tête du Voyageur choisi.
+    const logoVuePersonnages = document.querySelector('.view-btn[data-view="characters"] img');
+    const majLogoVuePersonnages = () => { logoVuePersonnages.src = `../DB/${getIconeVuePersonnages(profil.parametres)}`; };
+    majLogoVuePersonnages();
     [["choix-voyageur", "voyageur"], ["choix-manekin", "manekin"]].forEach(([idSelect, cle]) => {
       const select = document.getElementById(idSelect);
       select.value = profil.parametres[cle] || select.options[0].value;
       select.addEventListener("change", () => {
         profil.parametres[cle] = select.value;
         personnages.splice(0, personnages.length, ...appliquerVariantes(personnagesBase, profil.parametres));
+        majLogoVuePersonnages();
         afficherCollection(personnages, armes, profil);
       });
     });

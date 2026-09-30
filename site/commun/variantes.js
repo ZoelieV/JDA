@@ -54,6 +54,18 @@ function appliquerVariantes(personnages, parametres) {
   return personnages.map(personnage => appliquerVariante(personnage, parametres));
 }
 
+// Logo "Personnages" des vues et tris (Mon compte, draft, admin) : tête
+// du Voyageur choisi par le joueur (profil.parametres.voyageur). Chemin
+// depuis DB/.
+const ICONES_VUE_PERSONNAGES = {
+  aether: "images/others/Aether_Icon_Character.webp",
+  lumine: "images/others/Lumine_Icon_Character.webp"
+};
+
+function getIconeVuePersonnages(parametres) {
+  return ICONES_VUE_PERSONNAGES[parametres?.voyageur] || ICONES_VUE_PERSONNAGES.aether;
+}
+
 // Chemin (depuis DB/) de l'icône de profil d'un personnage.
 function getIconeLaterale(personnage) {
   return personnage.side || `images/characters/side_char/${personnage.id}_side.webp`;
