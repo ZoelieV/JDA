@@ -227,18 +227,21 @@ body::before {
    .banniere-joueur : image inversée, photo à droite ;
    .banniere-joueur.cote-gauche : image dans son sens, photo à gauche.
    L'image s'arrête au centre de la photo (rien au-delà) et garde son
-   extrémité arrondie entière (la partie en fondu est coupée). Mêmes
-   proportions que le bouton du compte : 22.1875rem x 3.596rem, soit
-   6.17 / 1 ; la photo fait la hauteur de la bannière moins 2 px, soit une
-   demi-photo = 8.1 % de la largeur - 1 px. */
+   extrémité arrondie entière (la partie en fondu est coupée).
+   Comme le bouton du compte (.avec-banniere2) : photo de taille fixe
+   (--taille-avatar, à régler par page), bannière haute de la photo + 2 px
+   (plus si le contenu passe à la ligne), image recadrée. Pas d'aspect-ratio
+   ni de photo étirée à la hauteur de la bannière : WebKit (tous les
+   navigateurs iPhone) la déformait en ovale. */
 .banniere-joueur {
+  --taille-avatar: 3.5rem;
   position: relative;
   isolation: isolate;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   flex-direction: row-reverse;
-  aspect-ratio: 6.17 / 1;
+  min-height: calc(var(--taille-avatar) + 2px);
   padding: 0 0 0 0.875rem;
   border-radius: 0.5rem;
   text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
@@ -255,7 +258,7 @@ body::before {
   top: 0;
   bottom: 0;
   left: 0;
-  right: calc(8.1% - 1px);
+  right: calc(var(--taille-avatar) / 2);
   z-index: -1;
   border-radius: inherit;
   background-image: var(--banniere2);
@@ -265,20 +268,18 @@ body::before {
 }
 
 .banniere-joueur.cote-gauche::before {
-  left: calc(8.1% - 1px);
+  left: calc(var(--taille-avatar) / 2);
   right: 0;
   transform: none;
 }
 
-/* Photo de profil : hauteur de la bannière moins 2 px, au bord. */
+/* Photo de profil : taille fixe, centrée en hauteur, au bord. */
 .banniere-joueur > .photo-joueur {
   box-sizing: border-box;
-  align-self: stretch;
+  align-self: center;
   flex-shrink: 0;
-  width: auto;
-  height: auto;
-  margin: 1px 0;
-  aspect-ratio: 1;
+  width: var(--taille-avatar);
+  height: var(--taille-avatar);
   border-radius: 50%;
   object-fit: cover;
   background: #333;
