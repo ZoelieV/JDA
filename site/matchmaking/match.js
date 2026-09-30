@@ -1112,8 +1112,8 @@ function htmlBossTire(boss) {
 
 function initialiserResBoss() {
   document.getElementById("boss-affiche").addEventListener("click", event => {
-    const bouton = event.target.closest(".image-boss-res");
-    if (bouton) bouton.classList.toggle("res-visibles");
+    if (!event.target.closest(".image-boss-res, .indice-res-boss")) return;
+    document.querySelector("#boss-affiche .image-boss-res")?.classList.toggle("res-visibles");
   });
 }
 
