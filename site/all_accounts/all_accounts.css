@@ -111,17 +111,32 @@ h1, h2 {
   white-space: nowrap;
 }
 
-/* Pseudo (coupé si trop long) puis médaille du théâtre. */
 .account-name {
   display: flex;
-  align-items: center;
-  gap: 0.3125rem;
   min-width: 0;
   font-weight: bold;
 }
 
 .account-pseudo {
   min-width: 0;
+}
+
+/* Pseudo et @ (coupés si trop longs), puis médaille du théâtre juste après,
+   centrée en hauteur sur la carte et 2 x plus grande qu'ailleurs. */
+.account-infos {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.account-textes {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.account-infos .medaille-theatre {
+  width: 2.6em;
+  height: 2.6em;
 }
 
 .account-sub {

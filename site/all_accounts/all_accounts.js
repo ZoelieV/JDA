@@ -200,8 +200,11 @@ function creerCarteCompte(compte, estTriStat) {
   card.innerHTML = `
     <img class="photo-joueur" src="${compte.discord_avatar_url || ""}" alt="">
     <div class="account-infos">
-      <div class="account-name"><span class="account-pseudo"></span>${htmlMedailleTheatre(compte.theatre)}</div>
-      <div class="account-sub"></div>
+      <div class="account-textes">
+        <div class="account-name"><span class="account-pseudo"></span></div>
+        <div class="account-sub"></div>
+      </div>
+      ${htmlMedailleTheatre(compte.theatre)}
     </div>
     ${estTriStat ? `<span class="account-stat"></span>` : ""}
   `;
