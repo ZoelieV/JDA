@@ -1153,7 +1153,26 @@ async function initialiserParametres(profil) {
     });
     inputRecherche.value = "";
     rendreChoix();
+    conteneurChoix.scrollTop = 0;
+    contenuModal.classList.remove("defilement");
   }
+
+  // Téléphone : en faisant défiler les choix, seuls l'aperçu actif et la
+  // recherche restent en haut (classe "defilement", cf. my_account.css) ;
+  // tout en haut, les autres aperçus reviennent. Seulement si la liste
+  // défile encore une fois les aperçus masqués (sinon ils clignoteraient).
+  const contenuModal = modal.querySelector(".modal-parametres-contenu");
+  const apercus = modal.querySelector(".apercu-parametres");
+  conteneurChoix.addEventListener("scroll", () => {
+    const haut = conteneurChoix.scrollTop;
+    if (contenuModal.classList.contains("defilement")) {
+      if (haut <= 4) contenuModal.classList.remove("defilement");
+      return;
+    }
+    const hauteurMasquee = apercus.offsetHeight - (apercus.querySelector(".apercu-bloc.active")?.offsetHeight || 0);
+    const marge = conteneurChoix.scrollHeight - conteneurChoix.clientHeight;
+    if (haut > 24 && marge > hauteurMasquee + 24) contenuModal.classList.add("defilement");
+  }, { passive: true });
 
   try {
     await chargerCosmetiques();
