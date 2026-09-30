@@ -82,16 +82,28 @@ h1, h2 {
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-/* Photo : largeur explicite (au lieu d'être étirée à la hauteur de la
-   carte, que certains navigateurs mobiles déforment en ovale). Même taille
-   que .banniere-joueur > .photo-joueur : 2 x (8.1 % de la largeur de la
-   carte - 1 px), le pourcentage étant pris sur la largeur sans le padding
-   droit de 0.875rem. */
+/* Photo : largeur ET hauteur explicites (au lieu d'être étirée à la hauteur
+   de la carte avec aspect-ratio, que WebKit, donc tous les navigateurs
+   iPhone, déforme en ovale). Même taille que .banniere-joueur >
+   .photo-joueur : 2 x (8.1 % de la largeur de la carte - 1 px), calculée
+   sur la largeur de la carte sans son padding droit de 0.875rem (100cqw ;
+   repli en % et aspect-ratio si les unités cqw ne sont pas gérées). */
+.account-card {
+  container-type: inline-size;
+}
+
 .account-card > .photo-joueur {
   align-self: center;
   width: calc((100% + 0.875rem) * 0.162 - 2px);
   height: auto;
   aspect-ratio: 1;
+}
+
+@supports (width: 1cqw) {
+  .account-card > .photo-joueur {
+    width: calc((100cqw + 0.875rem) * 0.162 - 2px);
+    height: calc((100cqw + 0.875rem) * 0.162 - 2px);
+  }
 }
 
 .account-card:hover {
