@@ -1089,6 +1089,34 @@ function rendreBansEquilibrage() {
   });
 }
 
+// Boss tiré : image cliquable qui affiche / masque ses résistances
+// élémentaires par-dessus (en %, même ordre que boss.res, cf.
+// admin_ppc/admin_ajout.js), avec une petite indication sous l'image.
+const ELEMENTS_RES_BOSS = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
+
+function htmlBossTire(boss) {
+  if (!boss) return "";
+  const res = ELEMENTS_RES_BOSS.map((element, i) => {
+    const valeur = Number(boss.res?.[i] ?? 0);
+    const nom = element.charAt(0).toUpperCase() + element.slice(1);
+    return `<span class="res-boss" title="Résistance ${nom}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${nom}">${valeur}%</span>`;
+  }).join("");
+  return `
+    <button type="button" class="image-boss-res" title="Voir les résistances">
+      <img src="../DB/${boss.image}" alt="${boss.nom}">
+      <span class="resistances-boss">${res}</span>
+    </button>
+    <span class="indice-res-boss">Voir les Res</span>
+    <span class="nom-boss">${boss.nom}</span>`;
+}
+
+function initialiserResBoss() {
+  document.getElementById("boss-affiche").addEventListener("click", event => {
+    const bouton = event.target.closest(".image-boss-res");
+    if (bouton) bouton.classList.toggle("res-visibles");
+  });
+}
+
 // Affiche directement le boss final, sans animation (arrivée directe en
 // phase "draft" : rechargement de page, ou 2e joueur qui a raté la
 // transition entre 2 polls).
@@ -1096,9 +1124,7 @@ function afficherBossFinal(bossId) {
   const boss = bossData.find(b => b.id === bossId);
   const container = document.getElementById("boss-affiche");
   container.classList.remove("boss-tirage", "boss-revele");
-  container.innerHTML = boss
-    ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span class="nom-boss">${boss.nom}</span>`
-    : "";
+  container.innerHTML = htmlBossTire(boss);
 }
 
 // Petite animation "roue" : fait défiler des boss aléatoires de plus en
@@ -1133,9 +1159,7 @@ function jouerAnimationBoss(bossIdFinal) {
     } else {
       container.classList.remove("boss-tirage");
       container.classList.add("boss-revele");
-      container.innerHTML = bossFinal
-        ? `<img src="../DB/${bossFinal.image}" alt="${bossFinal.nom}"><span class="nom-boss">${bossFinal.nom}</span>`
-        : "";
+      container.innerHTML = htmlBossTire(bossFinal);
 
       setTimeout(() => container.classList.remove("boss-revele"), 700);
 
@@ -1981,6 +2005,7 @@ async function demarrer() {
 
     initialiserFiltresTri();
     initialiserGrillesPersos();
+    initialiserResBoss();
 
     await tick();
 
