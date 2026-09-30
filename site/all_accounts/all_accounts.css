@@ -122,7 +122,7 @@ h1, h2 {
 }
 
 /* Pseudo et @ (coupés si trop longs), puis médaille du théâtre juste après,
-   centrée en hauteur sur la carte et 2 x plus grande qu'ailleurs. */
+   centrée en hauteur sur la carte, même taille que dans le bouton du compte. */
 .account-infos {
   display: flex;
   align-items: center;
@@ -135,8 +135,8 @@ h1, h2 {
 }
 
 .account-infos .medaille-theatre {
-  width: 2.6em;
-  height: 2.6em;
+  width: 2em;
+  height: 2em;
 }
 
 .account-sub {

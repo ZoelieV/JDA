@@ -308,8 +308,9 @@ body::before {
   vertical-align: middle;
 }
 
-/* Pas la photo ronde du bouton du compte (règle .compte-lien img). */
+/* Pas la photo ronde du bouton du compte (règle .compte-lien img) ; même
+   taille que sur les bannières de Tous les comptes. */
 .compte-lien .medaille-theatre {
-  width: 1.3em;
-  height: 1.3em;
+  width: 2em;
+  height: 2em;
 }
