@@ -2064,3 +2064,18 @@ h1 {
   font-size: 1rem;
   box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
 }
+
+/* ---- Médaille du théâtre à côté du pseudo (cf. htmlMedailleTheatre) ---- */
+/* Pas la photo ronde des entêtes (règle .entete-joueur img). */
+.entete-joueur .medaille-theatre {
+  width: auto;
+  height: 1.3em;
+  border-radius: 0;
+  background: none;
+  object-fit: contain;
+}
+
+/* Tableaux : centrée sur la ligne du pseudo (hauteur de la photo). */
+.namecard-tableau .medaille-theatre {
+  margin-bottom: calc((var(--taille-avatar) - 1.3em) / 2);
+}

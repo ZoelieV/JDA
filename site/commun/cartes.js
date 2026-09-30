@@ -122,6 +122,20 @@ const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.
 const chargerBoss = () => Promise.all([chargerJSON("boss.json"), chargerPointsAdmin()])
   .then(([liste, points]) => appliquerModifsBoss(fusionnerAjouts(liste, points.ajouts?.boss), points.boss));
 
+// ---- Médaille du théâtre à côté du pseudo (namecards, bannières) ----
+// Palier atteint (6, 8, 10 ou 12) ; profil.theatre stocke "1".."4" (menu
+// "Théâtre clear" de Mon compte). Hauteur : 1,3 x le texte (cf. cartes.css).
+const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
+
+function palierTheatreProfil(profilData) {
+  return PALIERS_THEATRE[profilData?.theatre] ?? null;
+}
+
+function htmlMedailleTheatre(palier) {
+  if (![6, 8, 10, 12].includes(Number(palier))) return "";
+  return `<img class="medaille-theatre" src="/DB/images/others/Imaginarium_Theater_Medal_${Number(palier)}.webp" alt="Théâtre ${palier}" title="Théâtre ${palier}">`;
+}
+
 // ---- Fond de carte selon la rareté (classes de commun/cartes.css) ----
 function classeFondRarete(rarete) {
   const valeur = String(rarete);

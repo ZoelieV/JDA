@@ -11,6 +11,8 @@ const NB_ROOMS_MAX = 30;
 // (le nettoyage automatique la supprime après 1 h).
 const INACTIVITE_MAX_MS = 60 * 60 * 1000;
 const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+// Théâtre clear du profil : valeur stockée ("1"..."4") -> palier.
+const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
 async function chargerMatchs() {
   // Colonnes optionnelles (id, created_at, actions) : "*" les renvoie si
@@ -80,6 +82,8 @@ function resumerJoueur(match, role, profils) {
     nom: profil?.discord_global_name || profil?.discord_username || "Joueur inconnu",
     avatar: profil?.discord_avatar_url || null,
     banniere2: parametres.banniere2 || BANNIERE2_DEFAUT,
+    // Palier de théâtre actuel (médaille à côté du pseudo), ou null.
+    theatre: PALIERS_THEATRE[profil?.data?.theatre] ?? null,
     // Variantes affichées (Voyageur, Manekin), cf. commun/variantes.js.
     parametres: { voyageur: parametres.voyageur || null, manekin: parametres.manekin || null },
     box: match[`box_${role}`] || null,

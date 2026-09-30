@@ -707,6 +707,7 @@ function rendreEntetesJoueurs() {
     container.innerHTML = `
       <img src="${joueur.avatar || ""}" alt="${joueur.nom}">
       <span class="nom-joueur">${joueur.nom}</span>
+      ${htmlMedailleTheatre(palierTheatreProfil(joueur.data))}
       ${afficherRole ? `<span class="tag-role">${role.toUpperCase()}</span>` : ""}
       ${afficherPastille ? `<span class="pastille ${pret ? "pret" : ""}"></span>` : ""}
     `;
@@ -986,6 +987,7 @@ function titreTableauJoueur(role, nomJoueur) {
       ${joueur?.avatar ? `<img class="avatar-tableau" src="${joueur.avatar}" alt="">` : ""}
       <span class="nom-complet">${nomJoueur}</span>
       <span class="nom-court">${role.toUpperCase()}</span>
+      ${htmlMedailleTheatre(palierTheatreProfil(joueur?.data))}
       ${tagRole}
     </div>
     <div class="trait-joueur trait-${role}"></div>

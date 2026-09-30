@@ -104,15 +104,24 @@ h1, h2 {
   flex: 1;
 }
 
-.account-name,
+.account-pseudo,
 .account-sub {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Pseudo (coupé si trop long) puis médaille du théâtre. */
 .account-name {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  min-width: 0;
   font-weight: bold;
+}
+
+.account-pseudo {
+  min-width: 0;
 }
 
 .account-sub {
@@ -520,4 +529,10 @@ h1, h2 {
   margin-left: 0.25rem;
   font-weight: bold;
   color: #f5c542;
+}
+
+/* Tri "C6 5★" : emoji baleine, à la taille des logos des autres tris. */
+.tri-emoji {
+  font-size: 1.25rem;
+  line-height: 1;
 }
