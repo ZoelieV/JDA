@@ -30,7 +30,8 @@ async function chargerMatchs() {
   return data || [];
 }
 
-// Rooms à 2 joueurs dont la manche n'est pas terminée.
+// Rooms à 2 joueurs dont la manche n'est pas terminée (ni invalidée par un
+// litige).
 async function chargerRoomsEnCours() {
   const { data, error } = await supabase
     .from("rooms")
@@ -47,7 +48,7 @@ async function chargerRoomsEnCours() {
 
   const limite = Date.now() - INACTIVITE_MAX_MS;
   return (data || []).filter(room =>
-    room.draft?.phase && room.draft.phase !== "termine" &&
+    room.draft?.phase && !["termine", "litige"].includes(room.draft.phase) &&
     (!room.last_active_at || Date.parse(room.last_active_at) >= limite)
   );
 }

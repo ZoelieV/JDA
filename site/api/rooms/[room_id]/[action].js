@@ -1,5 +1,5 @@
-// Fusion de 8 routes (box, ready, action, bonus_toggle, bonus_confirmer,
-// temps, rejouer, draft) en un seul fichier, pour rester sous la limite de
+// Fusion de 10 routes (box, ready, action, bonus_toggle, bonus_confirmer,
+// temps, confirmer_temps, litige, rejouer, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
 // ce soit} qui ne correspondent à aucun autre fichier plus spécifique dans
@@ -394,17 +394,75 @@ async function handleTemps(req, res, roomId, user) {
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
   const draft = room.draft;
 
-  if (draft.phase !== "temps") {
-    return res.status(409).json({ error: "La saisie du temps n'est pas encore ouverte" });
+  // Correction possible pendant la vérification : les 2 confirmations sont
+  // alors à refaire.
+  if (draft.phase !== "temps" && draft.phase !== "verification") {
+    return res.status(409).json({ error: "La saisie du temps n'est pas ouverte" });
   }
 
+  const ancien = draft[`temps_${joueur}`];
   draft[`temps_${joueur}`] = tempsParsed;
 
-  if (draft.temps_j1 && draft.temps_j2) {
+  if (draft.phase === "verification") {
+    if (ancien?.secondes !== tempsParsed.secondes) {
+      draft.temps_confirme_j1 = false;
+      draft.temps_confirme_j2 = false;
+    }
+  } else if (draft.temps_j1 && draft.temps_j2) {
+    draft.phase = "verification";
+    draft.temps_confirme_j1 = false;
+    draft.temps_confirme_j2 = false;
+  }
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
+}
+
+// ---- confirmer_temps : les 2 temps affichés sont les bons ; une fois
+// confirmés par les 2 joueurs, résultat et archivage ----
+async function handleConfirmerTemps(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const draft = room.draft;
+
+  if (draft.phase !== "verification") {
+    return res.status(409).json({ error: "Les temps ne sont pas en cours de vérification" });
+  }
+
+  draft[`temps_confirme_${joueur}`] = true;
+
+  if (draft.temps_confirme_j1 && draft.temps_confirme_j2) {
     draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
     draft.phase = "termine";
     await archiverMatch(draft);
   }
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
+}
+
+// ---- litige : un joueur conteste les temps ; la manche est invalidée (pas
+// de vainqueur, rien dans l'historique) ----
+async function handleLitige(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const draft = room.draft;
+
+  if (draft.phase !== "verification") {
+    return res.status(409).json({ error: "Les temps ne sont pas en cours de vérification" });
+  }
+
+  draft.phase = "litige";
+  draft.litige_par = joueur;
+  draft.vainqueur = null;
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -422,7 +480,7 @@ async function handleRejouer(req, res, roomId, user) {
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
   const draft = room.draft;
 
-  if (draft.phase !== "termine") {
+  if (draft.phase !== "termine" && draft.phase !== "litige") {
     return res.status(409).json({ error: "La manche en cours n'est pas terminée" });
   }
 
@@ -518,6 +576,10 @@ module.exports = async (req, res) => {
         return await handleBonusConfirmer(req, res, roomId, user);
       case "temps":
         return await handleTemps(req, res, roomId, user);
+      case "confirmer_temps":
+        return await handleConfirmerTemps(req, res, roomId, user);
+      case "litige":
+        return await handleLitige(req, res, roomId, user);
       case "rejouer":
         return await handleRejouer(req, res, roomId, user);
       case "draft":

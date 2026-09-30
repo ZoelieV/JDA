@@ -45,7 +45,10 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 //
 // Déroulé : choix_box (box adverse cachée) -> analyse (les 2 box visibles,
 // ready-check) -> bans_bonus (si écart) -> tirage j1/j2 + boss -> draft ->
-// temps -> termine. Une revanche (etatRevanche) repart directement en
+// temps -> verification -> termine (ou litige).
+// verification : les 2 temps saisis sont visibles des 2 joueurs, qui les
+// confirment chacun (chaque temps est chronométré par l'adversaire) ; un
+// litige invalide la manche (pas archivée). Une revanche (etatRevanche) repart directement en
 // "analyse" avec les mêmes box et bans d'équilibrage, rôles inversés.
 //
 // discord_j1 / discord_j2 : qui est "j1" et "j2". Avant le tirage
@@ -54,7 +57,7 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 // (lancerTirage). En revanche, ils sont échangés sans tirage.
 function etatInitialDraft() {
   return {
-    phase: "choix_box", // choix_box -> analyse -> bans_bonus (si écart) -> draft -> temps -> termine
+    phase: "choix_box", // choix_box -> analyse -> bans_bonus (si écart) -> draft -> temps -> verification -> termine | litige
     discord_j1: null,
     discord_j2: null,
     roles_tires: false, // true une fois j1/j2 définitifs pour la manche
@@ -79,7 +82,10 @@ function etatInitialDraft() {
     sequence_index: 0,
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
-    vainqueur: null, // "j1" | "j2" | "egalite" une fois les 2 temps rentrés
+    temps_confirme_j1: false, // verification : j1 a confirmé les 2 temps
+    temps_confirme_j2: false,
+    litige_par: null, // "j1" | "j2" : qui a signalé le litige (phase litige)
+    vainqueur: null, // "j1" | "j2" | "egalite" une fois les 2 temps confirmés
     rejouer_j1: false, // ready-check pour la revanche, même principe que pret_j1/pret_j2
     rejouer_j2: false
   };
@@ -249,10 +255,21 @@ function etatRevanche(precedent) {
 // Pendant le choix des box, la box de l'adversaire n'est pas envoyée
 // (seul son statut "prêt" l'est) : elle ne se découvre qu'en analyse.
 // Spectateur (joueur = null) : aucune des 2 box.
+// Pendant la saisie, le temps de l'adversaire (et les 2 pour un spectateur)
+// est masqué : on sait seulement qu'il est saisi.
+const TEMPS_MASQUE = { affiche: null, secondes: null, masque: true };
+
 function vuePourJoueur(draft, joueur) {
+  const autre = joueur === "j1" ? "j2" : "j1";
+  if (draft.phase === "temps") {
+    const vue = { ...draft };
+    ["j1", "j2"].forEach(role => {
+      if (role !== joueur && vue[`temps_${role}`]) vue[`temps_${role}`] = TEMPS_MASQUE;
+    });
+    return vue;
+  }
   if (draft.phase !== "choix_box") return draft;
   if (!joueur) return { ...draft, box_j1: null, box_j2: null };
-  const autre = joueur === "j1" ? "j2" : "j1";
   return { ...draft, [`box_${autre}`]: null };
 }
 

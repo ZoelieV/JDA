@@ -227,6 +227,16 @@ async function postTemps(temps) {
   await definirDraft(data.draft);
 }
 
+async function postConfirmerTemps() {
+  const data = await envoyerAction(`/api/rooms/${roomId}/confirmer_temps`, {});
+  await definirDraft(data.draft);
+}
+
+async function postLitige() {
+  const data = await envoyerAction(`/api/rooms/${roomId}/litige`, {});
+  await definirDraft(data.draft);
+}
+
 async function postRejouer(rejouer) {
   const data = await envoyerAction(`/api/rooms/${roomId}/rejouer`, { rejouer });
   await definirDraft(data.draft);
@@ -1000,7 +1010,7 @@ function titreTableauJoueur(role, nomJoueur) {
 // n'est redessinée que si elle change (pas à chaque rafraîchissement).
 function rendreTableauJoueur(role) {
   const joueur = role === "j1" ? joueur1 : joueur2;
-  const enRecap = draft.phase === "temps" || draft.phase === "termine";
+  const enRecap = PHASES_RECAP.includes(draft.phase);
 
   // Namecard redessinée seulement si elle change.
   const entete = document.getElementById(`entete-tableau-${role}`);
@@ -1535,9 +1545,12 @@ function annoncerRole() {
   setTimeout(() => annonce.remove(), 5000);
 }
 
-// ---- Phases 4 et 5 : saisie du temps, résultat ----
+// ---- Phases 4 et 5 : saisie du temps, vérification, résultat ----
 // Mêmes tableaux qu'en draft (cf. rendreTableauJoueur) ; résultat, boss et
-// Rejouer au centre.
+// Rejouer au centre. Les 2 temps saisis sont d'abord vérifiés par les 2
+// joueurs (verification) : confirmés -> termine, contestés -> litige (manche
+// invalidée, pas dans l'historique).
+const PHASES_RECAP = ["temps", "verification", "termine", "litige"];
 
 // Case d'un pick : personnage sur sa bannière + ses infos chez ce joueur
 // (constellation, niveau, arme signature) ; élément pour le Voyageur /
@@ -1578,16 +1591,19 @@ function creerInfosCase(personnage, role, infos, element = null) {
 }
 
 // Temps d'un joueur, au-dessus de son tableau : champ de saisie pour le joueur
-// connecté pendant la saisie ; sinon un texte (temps de l'adversaire masqué
-// jusqu'au résultat).
+// connecté pendant la saisie (et pour corriger pendant la vérification) ;
+// sinon un texte (temps de l'adversaire masqué jusqu'à la vérification).
 function rendreTempsJoueur(role, zone) {
   const temps = draft[`temps_${role}`];
   const saisie = document.getElementById("saisie-temps");
-  const saisieIci = draft.phase === "temps" && role === monRole && !temps;
+  const saisieIci = role === monRole &&
+    ((draft.phase === "temps" && !temps) || (draft.phase === "verification" && !draft[`temps_confirme_${role}`]));
 
   let texte = "";
-  if (draft.phase === "termine") {
-    texte = temps ? `Temps : ${temps.affiche}` : "";
+  if (draft.phase === "verification") {
+    texte = temps ? `Temps : ${temps.affiche}${draft[`temps_confirme_${role}`] ? " · confirmé ✓" : ""}` : "";
+  } else if (draft.phase === "termine" || draft.phase === "litige") {
+    texte = temps?.affiche ? `Temps : ${temps.affiche}` : "";
   } else if (role === monRole) {
     texte = temps ? `Ton temps : ${temps.affiche}` : "";
   } else {
@@ -1622,9 +1638,10 @@ function rendreRecap() {
       : "";
   }
 
-  const termine = draft.phase === "termine";
-  document.getElementById("resultat-final").classList.toggle("cache", !termine);
-  document.getElementById("btn-rejouer").classList.toggle("cache", !termine);
+  const fini = draft.phase === "termine" || draft.phase === "litige";
+  document.getElementById("resultat-final").classList.toggle("cache", !fini);
+  document.getElementById("btn-rejouer").classList.toggle("cache", !fini);
+  document.getElementById("verification-temps").classList.toggle("cache", draft.phase !== "verification");
 }
 
 function rendreTemps() {
@@ -1646,6 +1663,7 @@ function rendreTemps() {
 
   input.disabled = !!monTemps;
   btn.disabled = !!monTemps;
+  btn.textContent = "Valider";
 
   if (monTemps && !tempsAdversaire) {
     etat.textContent = "Temps enregistré. En attente du temps de l'adversaire…";
@@ -1655,18 +1673,86 @@ function rendreTemps() {
     etat.textContent = "";
   }
 
-  btn.onclick = () => {
-    // "7,32" et "7.32" (clavier numérique du téléphone) valent "7:32".
-    const valeur = input.value.trim().replace(/[.,]/, ":");
-    if (!/^[0-9]{1,3}:[0-5][0-9]$/.test(valeur)) {
-      alert("Format invalide. Entre les minutes puis les secondes sur 2 chiffres, par exemple 7:32, 7,32 ou 7.32.");
-      return;
-    }
-    postTemps(valeur).catch(err => alert(err.message));
+  btn.onclick = envoyerTempsSaisi;
+}
+
+function envoyerTempsSaisi() {
+  // "7,32" et "7.32" (clavier numérique du téléphone) valent "7:32".
+  const valeur = document.getElementById("input-temps").value.trim().replace(/[.,]/, ":");
+  if (!/^[0-9]{1,3}:[0-5][0-9]$/.test(valeur)) {
+    alert("Format invalide. Entre les minutes puis les secondes sur 2 chiffres, par exemple 7:32, 7,32 ou 7.32.");
+    return;
+  }
+  postTemps(valeur).catch(err => alert(err.message));
+}
+
+// ---- Phase 4 bis : vérification des temps ----
+// Les 2 temps sont visibles : chaque joueur confirme qu'ils sont bons (son
+// temps lui a été donné par l'adversaire, qui le chronométrait), peut encore
+// corriger le sien (les confirmations sont alors à refaire) ou signale un
+// litige.
+function rendreVerification() {
+  rendreRecap();
+  const etat = document.getElementById("etat-temps");
+  const confirmes = ["j1", "j2"].filter(role => draft[`temps_confirme_${role}`]).length;
+
+  if (!monRole) {
+    etat.textContent = `Vérification des temps par les joueurs (${confirmes}/2)…`;
+    document.querySelector("#verification-temps .boutons-verification").classList.add("cache");
+    return;
+  }
+
+  const autreRole = getAutreRole(monRole);
+  const nomAutre = autreRole === "j1" ? joueur1.nom : joueur2.nom;
+  const jaiConfirme = draft[`temps_confirme_${monRole}`];
+  const autreAConfirme = draft[`temps_confirme_${autreRole}`];
+
+  // Correction de son temps (champ prérempli, envoyé seulement s'il change).
+  const input = document.getElementById("input-temps");
+  const btn = document.getElementById("btn-valider-temps");
+  const monTemps = draft[`temps_${monRole}`];
+  input.disabled = false;
+  btn.disabled = false;
+  btn.textContent = "Corriger";
+  if (input.dataset.pour !== monTemps?.affiche) {
+    input.dataset.pour = monTemps?.affiche || "";
+    input.value = monTemps?.affiche || "";
+  }
+  btn.onclick = envoyerTempsSaisi;
+
+  const btnConfirmer = document.getElementById("btn-confirmer-temps");
+  btnConfirmer.disabled = jaiConfirme;
+  btnConfirmer.classList.toggle("active", jaiConfirme);
+  btnConfirmer.textContent = jaiConfirme ? "Temps confirmés ✓" : "Les temps sont corrects";
+  btnConfirmer.onclick = () => postConfirmerTemps().catch(err => alert(err.message));
+
+  document.getElementById("btn-litige").onclick = () => {
+    if (!confirm("Signaler un litige sur les temps ? Le match sera invalidé et n'apparaîtra pas dans l'historique.")) return;
+    postLitige().catch(err => alert(err.message));
   };
+
+  if (jaiConfirme && !autreAConfirme) {
+    etat.textContent = `Temps confirmés. En attente de la confirmation de ${nomAutre}…`;
+  } else if (!jaiConfirme && autreAConfirme) {
+    etat.textContent = `${nomAutre} a confirmé les temps. Vérifie-les puis confirme, ou signale un litige.`;
+  } else {
+    etat.textContent = "Vérifie que les deux temps sont les bons, puis confirme. En cas de désaccord, signale un litige.";
+  }
 }
 
 // ---- Phase 5 : résultat ----
+
+// Litige : manche invalidée, pas de vainqueur ; revanche possible.
+function rendreLitige() {
+  rendreRecap();
+  const nomLitige = draft.litige_par === "j1" ? joueur1.nom : draft.litige_par === "j2" ? joueur2.nom : null;
+  const parQui = draft.litige_par === monRole ? "par toi" : nomLitige ? `par ${nomLitige}` : "";
+  document.getElementById("resultat-final").innerHTML = `
+    <p class="ligne-vainqueur"><span class="litige">Match invalidé</span></p>
+    <p class="ligne-temps">Litige signalé ${parQui} sur les temps : ce match ne compte pas et n'apparaît pas dans l'historique.</p>
+  `;
+  rendreRejouer();
+}
 
 function rendreTermine() {
   rendreRecap();
@@ -1688,7 +1774,11 @@ function rendreTermine() {
     <p class="ligne-vainqueur">${ligneVainqueur}</p>
     <p class="ligne-temps">${joueur1.nom} : ${draft.temps_j1.affiche} — ${joueur2.nom} : ${draft.temps_j2.affiche}</p>
   `;
+  rendreRejouer();
+}
 
+// Revanche (fin de match ou litige).
+function rendreRejouer() {
   // Spectateur : pas de revanche à demander.
   if (!monRole) {
     document.getElementById("btn-rejouer").classList.add("cache");
@@ -1734,8 +1824,8 @@ const BULLES_PAR_PHASE = {
   "message-equilibrage": ["bans_bonus"],
   "btn-confirmer-action": ["draft"],
   "tour-actuel": ["draft"],
-  "etat-temps": ["temps"],
-  "etat-rejouer": ["termine"]
+  "etat-temps": ["temps", "verification"],
+  "etat-rejouer": ["termine", "litige"]
 };
 
 // ---- Fond d'écran de la room ----
@@ -1802,7 +1892,9 @@ function rendrePhase() {
     bans_bonus: "phase-bans-bonus",
     draft: "phase-draft",
     temps: "phase-draft",
-    termine: "phase-draft"
+    verification: "phase-draft",
+    termine: "phase-draft",
+    litige: "phase-draft"
   };
 
   const idAffiche = idsParPhase[draft.phase];
@@ -1814,7 +1906,7 @@ function rendrePhase() {
   // boss occupe le centre libéré (et déborde vers le bas pendant la draft).
   // Temps / résultat : le boss est au centre du récap, plus d'entêtes.
   const avecBoss = draft.phase === "draft";
-  const enRecap = draft.phase === "temps" || draft.phase === "termine";
+  const enRecap = PHASES_RECAP.includes(draft.phase);
   const entetes = document.querySelector(".entetes-joueurs");
   entetes.classList.toggle("cache", enRecap);
   entetes.classList.toggle("compact", avecBoss);
@@ -1850,7 +1942,9 @@ function rendrePhase() {
   else if (draft.phase === "bans_bonus") rendreBansBonus();
   else if (draft.phase === "draft") rendreDraft(phasePrecedente);
   else if (draft.phase === "temps") rendreTemps();
+  else if (draft.phase === "verification") rendreVerification();
   else if (draft.phase === "termine") rendreTermine();
+  else if (draft.phase === "litige") rendreLitige();
 }
 
 // ---- Polling ----

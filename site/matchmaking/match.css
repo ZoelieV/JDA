@@ -1219,6 +1219,71 @@ h1 {
   color: #f5c542;
 }
 
+#resultat-final .litige {
+  font-weight: bold;
+  color: #ff9f43;
+}
+
+/* ---- Vérification des temps : confirmer (vert) ou litige (rouge) ---- */
+.verification-temps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.95);
+}
+
+.verification-temps p {
+  margin: 0;
+}
+
+.titre-verification {
+  font-size: 1.125rem;
+  font-weight: bold;
+}
+
+.boutons-verification {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+#btn-confirmer-temps,
+#btn-litige {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: rgba(80, 80, 80, 0.95);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+#btn-confirmer-temps {
+  border: 2px solid #3ecf6a;
+}
+
+#btn-confirmer-temps:hover:not(:disabled) {
+  background-color: #1f5a33;
+}
+
+#btn-confirmer-temps.active {
+  background-color: #3ecf6a;
+  cursor: default;
+}
+
+#btn-litige {
+  border: 2px solid #ff5a5a;
+}
+
+#btn-litige:hover {
+  background-color: #6b2323;
+}
+
 #btn-rejouer {
   background-color: rgba(20, 20, 20, 0.45);
   border: 2px solid rgba(255, 255, 255, 0.3);

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem28">
+<link rel="stylesheet" href="match.css?v=rem29">
 <link rel="stylesheet" href="../commun/entete.css?v=rem15">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -108,7 +108,7 @@
       <div id="grille-bans-bonus" class="grille-pool"></div>
     </section>
 
-    <!-- Phases 3 à 5 : draft, saisie du temps, résultat. Mêmes tableaux
+    <!-- Phases 3 à 5 : draft, saisie du temps (puis vérification), résultat. Mêmes tableaux
          des joueurs à gauche / droite (namecard, picks, bans, puis bans
          d'équilibrage) ; au centre, la grille des persos pendant la draft,
          puis le résultat, le boss et Rejouer. -->
@@ -137,6 +137,15 @@
 
         <div class="recap-centre cache" id="recap-centre">
           <div id="resultat-final" class="resultat-final cache"></div>
+          <!-- Vérification des temps : chaque joueur confirme les 2 temps
+               saisis, ou signale un litige (manche invalidée). -->
+          <div id="verification-temps" class="verification-temps cache">
+            <p class="titre-verification">Vérifie les deux temps</p>
+            <div class="boutons-verification">
+              <button id="btn-confirmer-temps" type="button">Les temps sont corrects</button>
+              <button id="btn-litige" type="button">Litige</button>
+            </div>
+          </div>
           <div id="recap-boss" class="bandeau-boss"></div>
           <button id="btn-rejouer" type="button" class="cache">Rejouer</button>
         </div>
@@ -177,6 +186,6 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=7"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="match.js?v=37"></script>
+  <script src="match.js?v=38"></script>
 </body>
 </html>

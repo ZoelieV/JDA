@@ -25,7 +25,8 @@ const LIBELLES_PHASES = {
   analyse: "Analyse des box",
   bans_bonus: "Bans d'équilibrage",
   draft: "Draft",
-  temps: "Saisie des temps"
+  temps: "Saisie des temps",
+  verification: "Vérification des temps"
 };
 
 // ---- Chargement ----
