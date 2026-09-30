@@ -21,7 +21,7 @@ const configCollections = {
 
 // État courant de la popup
 let vueActive = "characters";   // "characters" | "weapons"
-let boxActive = "full";         // "full" | "stuff"
+let boxActive = "full";         // "full" | "stuff" | "vitrine"
 
 // Filtres / recherche / tris, comme en draft (sans filtre J1/J2). Le filtre
 // élément/type est propre à chaque vue (ordre des clics = ordre des
@@ -251,13 +251,17 @@ function construireListeAffichee() {
   const collectionProfil = profilCourant.data?.[vueActive] || { full: {}, selections: {} };
   const filtresType = filtreType[vueActive];
   const recherche = rechercheTexte.trim().toLowerCase();
+  // Box autre que la Full Box : items sélectionnés (arme : une de ses
+  // copies "idArme#2"... suffit).
+  const selection = Object.keys(collectionProfil.selections?.[boxActive] || {});
+  const selectionne = item => selection.some(id => id === item.id || id.startsWith(`${item.id}#`));
 
   return items
     .filter(item => {
       const valeur = collectionProfil.full?.[item.id] ?? -1;
 
       if (valeur < 0) return false;
-      if (boxActive === "stuff" && !collectionProfil.selections?.stuff?.[item.id]) return false;
+      if (boxActive !== "full" && !selectionne(item)) return false;
       if (filtresType.size > 0 && !filtresType.has(item[config.champType])) return false;
       if (filtreEtoile.size > 0 && !filtreEtoile.has(String(item.rarete))) return false;
       if (vueActive === "characters" && filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(item))) return false;

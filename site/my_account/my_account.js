@@ -5,8 +5,23 @@ const nomsBoxes = {
   opti2: "Box optimisée 2",
   opti3: "Box optimisée 3",
   opti4: "Box optimisée 4",
-  opti5: "Box optimisée 5"
+  opti5: "Box optimisée 5",
+  vitrine: "Vitrine"
 };
+
+// Vitrine : sélection à montrer (Mon compte, Tous les comptes ; plus tard
+// les modes 2v2, 4v4...), limitée en nombre (même limite côté serveur,
+// cf. api/auth/profile.js).
+const MAX_VITRINE = { characters: 12, weapons: 12 };
+
+// Box optimisées renommables par le joueur (profil.nomsBoxes[box], 20
+// caractères max), noms repris en draft.
+const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+const LONGUEUR_NOM_BOX = 20;
+
+function nomBox(profil, box) {
+  return profil.nomsBoxes?.[box] || nomsBoxes[box];
+}
 
 const configCollections = {
   characters: {
@@ -112,7 +127,8 @@ function creerSelectionsParDefaut() {
     opti2: {},
     opti3: {},
     opti4: {},
-    opti5: {}
+    opti5: {},
+    vitrine: {}
   };
 }
 
@@ -158,6 +174,12 @@ function normaliserProfil(profil) {
   if (!profil.characters.niveaux) {
     profil.characters.niveaux = {};
   }
+
+  // Box ajoutées depuis (ex. vitrine) : absentes des anciens profils.
+  Object.keys(creerSelectionsParDefaut()).forEach(box => {
+    profil.characters.selections[box] ??= {};
+    profil.weapons.selections[box] ??= {};
+  });
 
   delete profil.fullBox;
   delete profil.personnages;
@@ -213,6 +235,58 @@ async function sauvegarderProfil(profil) {
     console.error(error);
     return false;
   }
+}
+
+// ---- Noms des box optimisées (renommables) ----
+
+function afficherNomsBoxes(profil) {
+  BOX_RENOMMABLES.forEach(box => {
+    const span = document.querySelector(`.box-btn[data-box="${box}"] .nom-box`);
+    if (span) span.textContent = nomBox(profil, box);
+  });
+}
+
+// Champ à la place du bouton : Entrée ou sortie du champ = valider (vide =
+// nom par défaut), Échap = annuler. À enregistrer ensuite comme le reste.
+function commencerRenommage(bouton, profil, apresRenommage) {
+  const box = bouton.dataset.box;
+  const champ = document.createElement("input");
+  champ.type = "text";
+  champ.className = "renommer-input";
+  champ.maxLength = LONGUEUR_NOM_BOX;
+  champ.value = nomBox(profil, box);
+  champ.placeholder = nomsBoxes[box];
+  bouton.hidden = true;
+  bouton.after(champ);
+  champ.focus();
+  champ.select();
+
+  let termine = false;
+  const terminer = valider => {
+    if (termine) return;
+    termine = true;
+    if (valider) {
+      const nom = champ.value.trim().slice(0, LONGUEUR_NOM_BOX);
+      profil.nomsBoxes ??= {};
+      if (nom && nom !== nomsBoxes[box]) profil.nomsBoxes[box] = nom;
+      else delete profil.nomsBoxes[box];
+    }
+    champ.remove();
+    bouton.hidden = false;
+    afficherNomsBoxes(profil);
+    apresRenommage();
+  };
+
+  champ.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault(); // pas d'envoi du formulaire
+      terminer(true);
+    } else if (event.key === "Escape") {
+      event.stopPropagation();
+      terminer(false);
+    }
+  });
+  champ.addEventListener("blur", () => terminer(true));
 }
 
 function getBoxActive() {
@@ -642,7 +716,7 @@ function etatAEnregistrer(profil, uid, theatre) {
   return JSON.stringify([
     profil.characters, profil.weapons,
     profil.parametres?.voyageur ?? null, profil.parametres?.manekin ?? null,
-    uid, theatre
+    uid, theatre, profil.nomsBoxes ?? {}
   ]);
 }
 
@@ -669,7 +743,10 @@ function mettreAJourTotalBox(personnages, armes, profil) {
   const total = calculerTotalCollection(personnages, "characters", boxActive, profil) +
     calculerTotalCollection(armes, "weapons", boxActive, profil);
 
-  document.getElementById("box-total-label").textContent = nomsBoxes[boxActive];
+  const vueActive = getVueActive();
+  document.getElementById("box-total-label").textContent = boxActive === "vitrine"
+    ? `${nomBox(profil, boxActive)} (${Object.keys(profil[vueActive].selections.vitrine).length} / ${MAX_VITRINE[vueActive]} ${vueActive === "weapons" ? "armes" : "persos"})`
+    : nomBox(profil, boxActive);
   document.getElementById("total-ppc").textContent = total;
 }
 
@@ -785,12 +862,21 @@ async function initialiserPage() {
     });
 
     document.querySelectorAll(".box-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", event => {
+        // Crayon de la box active : renommage.
+        if (event.target.closest(".renommer-box") && btn.classList.contains("active")) {
+          commencerRenommage(btn, profil, () => {
+            mettreAJourTotalBox(personnages, armes, profil);
+            mettreAJourBoutonEnregistrer(profil);
+          });
+          return;
+        }
         setBoxActive(btn.dataset.box);
         afficherCollection(personnages, armes, profil);
         mettreAJourTotalBox(personnages, armes, profil);
       });
     });
+    afficherNomsBoxes(profil);
 
     document.querySelectorAll(".view-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -894,10 +980,14 @@ async function initialiserPage() {
 
       const id = visuel.dataset.id;
 
-      if (collectionProfil.selections[boxActive][id]) {
-        delete collectionProfil.selections[boxActive][id];
+      const selection = collectionProfil.selections[boxActive];
+      if (selection[id]) {
+        delete selection[id];
+      } else if (boxActive === "vitrine" && Object.keys(selection).length >= MAX_VITRINE[vueActive]) {
+        afficherToast(`Vitrine pleine : ${MAX_VITRINE[vueActive]} ${vueActive === "weapons" ? "armes" : "personnages"} maximum. Retires-en un d'abord.`, "erreur");
+        return;
       } else {
-        collectionProfil.selections[boxActive][id] = true;
+        selection[id] = true;
       }
 
       afficherCollection(personnages, armes, profil);
@@ -1250,12 +1340,12 @@ function initialiserReinitialisation(personnages, armes, profil) {
     const quoi = armes ? "armes" : "personnages";
     const tous = armes ? "Toutes les armes" : "Tous les personnages";
     const retires = armes ? "retirées (non possédées)" : "retirés (non possédés)";
-    const nomBox = boxActive === "full" ? "Full Box" : document.querySelector(`.box-btn[data-box="${boxActive}"]`).textContent;
+    const libelleBox = nomBox(profil, boxActive);
 
     texte.textContent = boxActive === "full"
       ? `${tous} de ta Full Box seront ${retires}, et donc aussi de toutes tes autres box.`
-      : `${tous} de la box « ${nomBox} » seront ${retires.split(" ")[0]} de cette box.`;
-    document.getElementById("reinitialiser-titre").textContent = `Réinitialiser « ${nomBox} » (${quoi}) ?`;
+      : `${tous} de la box « ${libelleBox} » seront ${retires.split(" ")[0]} de cette box.`;
+    document.getElementById("reinitialiser-titre").textContent = `Réinitialiser « ${libelleBox} » (${quoi}) ?`;
     modal.classList.add("active");
   });
 

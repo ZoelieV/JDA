@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem20">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem21">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=1">
@@ -91,11 +91,13 @@
       <div class="box-selector">
         <button type="button" class="box-btn active" data-box="full">Full box</button>
         <button type="button" class="box-btn" data-box="stuff">Personnages stuff</button>
-        <button type="button" class="box-btn" data-box="opti1">Box optimisée 1</button>
-        <button type="button" class="box-btn" data-box="opti2">Box optimisée 2</button>
-        <button type="button" class="box-btn" data-box="opti3">Box optimisée 3</button>
-        <button type="button" class="box-btn" data-box="opti4">Box optimisée 4</button>
-        <button type="button" class="box-btn" data-box="opti5">Box optimisée 5</button>
+        <!-- Box optimisées : renommables (crayon sur la box active). -->
+        <button type="button" class="box-btn" data-box="opti1"><span class="nom-box">Box optimisée 1</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
+        <button type="button" class="box-btn" data-box="opti2"><span class="nom-box">Box optimisée 2</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
+        <button type="button" class="box-btn" data-box="opti3"><span class="nom-box">Box optimisée 3</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
+        <button type="button" class="box-btn" data-box="opti4"><span class="nom-box">Box optimisée 4</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
+        <button type="button" class="box-btn" data-box="opti5"><span class="nom-box">Box optimisée 5</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
+        <button type="button" class="box-btn" data-box="vitrine" title="12 personnages et 12 armes maximum, visibles sur Tous les comptes">Vitrine</button>
       </div>
         <button type="button" id="btn-auto-box" class="btn-auto-box">Détection auto <span class="badge-beta">Bêta</span></button>
       </div>
@@ -257,6 +259,6 @@
   <script src="/my_account/auto_box/interface.js?v=2"></script>
   <script src="/commun/cartes.js?v=6"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="/my_account/my_account.js?v=29"></script>
+  <script src="/my_account/my_account.js?v=30"></script>
 </body>
 </html>

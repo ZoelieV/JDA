@@ -3,6 +3,34 @@ const { parseCookies, verifySessionToken } = require("../_lib/session");
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Vitrine : 12 personnages et 12 armes maximum (même limite que
+// my_account/my_account.js, MAX_VITRINE) ; au-delà, les suivants sont
+// ignorés.
+const MAX_VITRINE = { characters: 12, weapons: 12 };
+// Noms des box optimisées choisis par le joueur (affichés en draft).
+const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+const LONGUEUR_NOM_BOX = 20;
+
+function nettoyerProfil(profil) {
+  Object.entries(MAX_VITRINE).forEach(([vue, max]) => {
+    const vitrine = profil?.[vue]?.selections?.vitrine;
+    if (vitrine && typeof vitrine === "object") {
+      profil[vue].selections.vitrine = Object.fromEntries(Object.entries(vitrine).slice(0, max));
+    }
+  });
+
+  if (profil && typeof profil === "object") {
+    const noms = {};
+    BOX_RENOMMABLES.forEach(box => {
+      const nom = profil.nomsBoxes?.[box];
+      if (typeof nom === "string" && nom.trim()) noms[box] = nom.trim().slice(0, LONGUEUR_NOM_BOX);
+    });
+    if (Object.keys(noms).length) profil.nomsBoxes = noms;
+    else delete profil.nomsBoxes;
+  }
+  return profil;
+}
+
 function getUser(req) {
   const cookies = parseCookies(req);
   const token = cookies["session"];
@@ -53,7 +81,7 @@ module.exports = async (req, res) => {
 
       let profil;
       try {
-        profil = JSON.parse(body);
+        profil = nettoyerProfil(JSON.parse(body));
       } catch {
         return res.status(400).json({ error: "JSON invalide." });
       }

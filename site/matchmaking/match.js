@@ -734,11 +734,13 @@ function rendreChoixBox() {
     conteneur.innerHTML = "";
     conteneur.classList.toggle("desactive", !peutChoisir);
 
+    // Box optimisées renommées par le joueur dans Mon compte (profil.nomsBoxes).
+    const nomsPerso = getJoueurDataParRole(role)?.nomsBoxes || {};
     Object.entries(BOX_LABELS).forEach(([valeur, label]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
-      btn.textContent = label;
+      btn.textContent = typeof nomsPerso[valeur] === "string" && nomsPerso[valeur] ? nomsPerso[valeur] : label;
       btn.disabled = !peutChoisir;
       if (peutChoisir) {
         btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));
