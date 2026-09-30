@@ -25,6 +25,13 @@ const LIBELLES_ELEMENTS = {
 };
 const LIBELLES_ARMES = { sword: "Épée", claymore: "Épée à deux mains", polearm: "Arme d'hast", bow: "Arc", catalyst: "Catalyseur" };
 const TYPES_BOSS = { weekly_boss: "Boss hebdomadaire" };
+
+// Résistance d'un boss saisie en pourcentage (10 = 10 %) : virgule acceptée,
+// « % » final ignoré, vide = 0. NaN si ce n'est pas un nombre.
+function lireResistance(texte) {
+  const brut = texte.trim().replace(",", ".").replace(/\s*%$/, "");
+  return brut === "" ? 0 : Number(brut);
+}
 // Catégories d'une arme : aucune, une ou les deux.
 const CATEGORIES_ARMES = { support: "Support", standard: "Standard" };
 const NOMS_GENRES = { characters: "Personnage", weapons: "Arme", boss: "Boss" };
@@ -174,8 +181,8 @@ function rendreFormulaire() {
       champ("Résistances", `<div class="resistances-ajout">${ELEMENTS_AJOUT.map((element, i) => `
         <label class="resistance-ajout" title="${LIBELLES_ELEMENTS[element]}">
           <img src="${ICONES_ELEMENTS_TRI[element]}" alt="${LIBELLES_ELEMENTS[element]}">
-          <input type="text" class="res-ajout" data-index="${i}" value="${b.res[i]}" inputmode="decimal">
-        </label>`).join("")}</div>`)
+          <span class="champ-pourcent"><input type="text" class="res-ajout" data-index="${i}" value="${b.res[i]}" inputmode="decimal"></span>
+        </label>`).join("")}</div>`, "En pourcentage : <strong>10</strong> pour 10 %, <strong>-20</strong> pour -20 %.")
     ].join("");
   }
 
@@ -220,8 +227,8 @@ function initialiserFormulaire() {
       }
     }
     if (res) {
-      const valeur = res.value.trim().replace(",", ".");
-      b.res[Number(res.dataset.index)] = valeur === "" ? 0 : Number(valeur);
+      const valeur = lireResistance(res.value);
+      b.res[Number(res.dataset.index)] = valeur;
       res.classList.toggle("invalide", !Number.isFinite(b.res[Number(res.dataset.index)]));
     }
     majAjout();

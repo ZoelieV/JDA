@@ -1,8 +1,8 @@
 // Boss : consultation et modification du nom et des résistances de chaque
 // boss (JSON de DB/ et ajouts), enregistrés dans Supabase (api/points.js,
 // config.boss) et appliqués sur tout le site. Utilise listeBoss,
-// ELEMENTS_AJOUT, LIBELLES_ELEMENTS, TYPES_BOSS, echapper et envoyerAjout
-// (admin_ajout.js).
+// ELEMENTS_AJOUT, LIBELLES_ELEMENTS, TYPES_BOSS, echapper, lireResistance et
+// envoyerAjout (admin_ajout.js). Résistances en pourcentage (10 = 10 %).
 
 let brouillonBoss = {};  // id -> { nom, res }
 let bossEnregistres = "";
@@ -42,7 +42,7 @@ function rendreBoss() {
               </div>
             </td>
             ${b.res.map((valeur, i) => `
-              <td><input type="text" class="res-ajout res-boss${Number.isFinite(valeur) ? "" : " invalide"}" data-id="${echapper(boss.id)}" data-index="${i}" value="${Number.isFinite(valeur) ? valeur : ""}" inputmode="decimal" title="${LIBELLES_ELEMENTS[ELEMENTS_AJOUT[i]]}"></td>`).join("")}
+              <td><span class="champ-pourcent"><input type="text" class="res-ajout res-boss${Number.isFinite(valeur) ? "" : " invalide"}" data-id="${echapper(boss.id)}" data-index="${i}" value="${Number.isFinite(valeur) ? valeur : ""}" inputmode="decimal" title="${LIBELLES_ELEMENTS[ELEMENTS_AJOUT[i]]} (%)"></span></td>`).join("")}
           </tr>`;
         }).join("")}
       </tbody>
@@ -126,8 +126,7 @@ function initialiserBoss() {
       nom.classList.toggle("invalide", !nom.value.trim());
     }
     if (res) {
-      const brut = res.value.trim().replace(",", ".");
-      const valeur = brut === "" ? 0 : Number(brut);
+      const valeur = lireResistance(res.value);
       brouillonBoss[res.dataset.id].res[Number(res.dataset.index)] = valeur;
       res.classList.toggle("invalide", !Number.isFinite(valeur));
     }
