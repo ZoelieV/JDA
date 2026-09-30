@@ -6,6 +6,7 @@
 <title>Créer un match</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
 <link rel="stylesheet" href="../commun/entete.css?v=rem13">
+<link rel="stylesheet" href="matchmaking.css?v=1">
 <script src="/commun/fond.js?v=5"></script>
 <script src="/commun/compte.js?v=2" defer></script>
 </head>
@@ -13,8 +14,18 @@
 <a href="../index.html" class="lien-accueil">Accueil</a>
 <h1 class="titre-page">Créer un match</h1>
 
-  <button id="creer-room" type="button" class="btn-principal">Créer une room</button>
+  <div class="choix-match">
+    <div class="option-match panneau">
+      <button id="creer-prive" type="button" class="btn-principal">Match privé</button>
+      <p>Tu reçois un lien à envoyer à ton adversaire : la première personne qui l'ouvre joue contre toi.
+        Les autres peuvent regarder depuis l'historique.</p>
+    </div>
+    <div class="option-match panneau">
+      <button id="lancer-matchmaking" type="button" class="btn-principal">Matchmaking</button>
+      <p>Tu es mis automatiquement face au prochain joueur qui clique aussi sur Matchmaking.</p>
+    </div>
+  </div>
 
-  <script src="matchmaking.js"></script>
+  <script src="matchmaking.js?v=2"></script>
 </body>
 </html>

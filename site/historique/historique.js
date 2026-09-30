@@ -209,9 +209,18 @@ function creerLigneMatch(match) {
   const enCours = !!match.room_id;
   ligne.className = enCours ? "match en-cours" : "match";
   const boss = bossParId.get(match.boss_id);
+  // Match en cours : toute la ligne mène au match, en spectateur (un joueur
+  // du match y retrouve sa place, cf. api/rooms/[room_id].js).
+  const lienSpectateur = enCours ? `/matchmaking/match.html?room=${encodeURIComponent(match.room_id)}&spectateur=1` : "";
+  if (enCours) {
+    ligne.title = "Regarder ce match en spectateur";
+    ligne.addEventListener("click", event => {
+      if (!event.target.closest("a")) window.location.href = lienSpectateur;
+    });
+  }
   const infos = enCours
     ? `<span class="match-phase">${LIBELLES_PHASES[match.phase] || match.phase}</span>
-       <a class="match-regarder" href="/matchmaking/match.html?room=${encodeURIComponent(match.room_id)}">Regarder</a>`
+       <a class="match-regarder" href="${lienSpectateur}">Regarder</a>`
     : `<span class="match-date">${formaterDate(match.date)}</span>
        ${match.bans_connus ? "" : `<span class="match-note">Bans non enregistrés</span>`}`;
 

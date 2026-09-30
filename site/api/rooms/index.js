@@ -27,9 +27,12 @@ module.exports = async (req, res) => {
 
     const roomId = genererRoomId();
 
+    // Match privé : l'adversaire est le premier à ouvrir le lien partagé
+    // (matchmaking : cf. api/matchmaking.js).
     const { error } = await supabase.from("rooms").insert({
       room_id: roomId,
-      player1_discord_id: user.id
+      player1_discord_id: user.id,
+      type: "prive"
     });
 
     if (error) {

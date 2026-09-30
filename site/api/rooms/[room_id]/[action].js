@@ -442,6 +442,31 @@ async function handleRejouer(req, res, roomId, user) {
   return repondreDraft(res, draft, joueur);
 }
 
+// ---- Spectateurs présents (colonne rooms.spectateurs : { discord_id:
+// dernière lecture de la draft en ms }) ----
+// Un spectateur compte tant qu'il a lu la draft il y a moins de
+// PRESENCE_SPECTATEUR_MS (sa page la relit toutes les 2,5 s). Sa présence
+// n'est réécrite qu'au plus toutes les ECRITURE_SPECTATEUR_MS, et seulement
+// cette colonne (jamais la draft).
+const PRESENCE_SPECTATEUR_MS = 30 * 1000;
+const ECRITURE_SPECTATEUR_MS = 10 * 1000;
+
+function spectateursPresents(room, maintenant = Date.now()) {
+  const joueurs = [room.draft?.discord_j1, room.draft?.discord_j2, room.player1_discord_id, room.player2_discord_id];
+  return Object.entries(room.spectateurs || {})
+    .filter(([id, vu]) => !joueurs.includes(id) && maintenant - Number(vu) < PRESENCE_SPECTATEUR_MS);
+}
+
+async function noterSpectateur(room, discordId) {
+  const maintenant = Date.now();
+  if (maintenant - Number(room.spectateurs?.[discordId] || 0) < ECRITURE_SPECTATEUR_MS) return;
+  const spectateurs = Object.fromEntries(spectateursPresents(room, maintenant));
+  spectateurs[discordId] = maintenant;
+  const { error } = await supabase.from("rooms").update({ spectateurs }).eq("room_id", room.room_id);
+  // Pas bloquant : le compteur des joueurs sera juste un peu en retard.
+  if (error) console.error("Erreur présence spectateur :", error);
+}
+
 // ---- draft (lecture seule) ----
 async function handleDraftGet(req, res, roomId, user) {
   if (req.method !== "GET") {
@@ -452,12 +477,16 @@ async function handleDraftGet(req, res, roomId, user) {
   // Lecture ouverte aux spectateurs (joueur = null).
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
 
+  if (!joueur) await noterSpectateur(room, user.id);
+
   return res.status(200).json({
     spectateur: !joueur,
     room_id: room.room_id,
     player1_discord_id: room.player1_discord_id,
     player2_discord_id: room.player2_discord_id,
-    draft: vuePourJoueur(room.draft, joueur)
+    draft: vuePourJoueur(room.draft, joueur),
+    // Nombre de spectateurs : pour les joueurs seulement (indicateur 👁).
+    ...(joueur ? { nb_spectateurs: spectateursPresents(room).length } : {})
   });
 }
 

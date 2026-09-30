@@ -1,8 +1,14 @@
-document.getElementById("creer-room").addEventListener("click", async () => {
+// Créer un match : match privé (room à lien partagé, api/rooms) ou
+// matchmaking (adversaire trouvé automatiquement, api/matchmaking.js). Dans
+// les deux cas, on arrive sur la page du match (attente de l'adversaire).
+
+async function creerMatch(url) {
   try {
-    const reponse = await fetch("/api/rooms", {
+    const reponse = await fetch(url, {
       method: "POST",
-      credentials: "include"
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: "{}"
     });
 
     if (reponse.status === 401) {
@@ -11,7 +17,7 @@ document.getElementById("creer-room").addEventListener("click", async () => {
     }
 
     if (!reponse.ok) {
-      throw new Error("Échec de la création de la room.");
+      throw new Error("Échec de la création du match.");
     }
 
     const data = await reponse.json();
@@ -21,4 +27,7 @@ document.getElementById("creer-room").addEventListener("click", async () => {
     console.error(error);
     alert("Erreur lors de la création du match.");
   }
-});
+}
+
+document.getElementById("creer-prive").addEventListener("click", () => creerMatch("/api/rooms"));
+document.getElementById("lancer-matchmaking").addEventListener("click", () => creerMatch("/api/matchmaking"));

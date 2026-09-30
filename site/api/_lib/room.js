@@ -59,7 +59,7 @@ async function assurerRolesDraft(supabase, room) {
 async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpectateur = false } = {}) {
   const { data: room, error } = await supabase
     .from("rooms")
-    .select("room_id, player1_discord_id, player2_discord_id, draft")
+    .select("room_id, player1_discord_id, player2_discord_id, draft, spectateurs")
     .eq("room_id", roomId)
     .single();
 

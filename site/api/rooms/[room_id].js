@@ -6,6 +6,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const COLONNES = "room_id, player1_discord_id, player2_discord_id, type";
+
 function getRoomIdFromUrl(req) {
   const url = new URL(req.url, `https://${req.headers.host}`);
   const parts = url.pathname.split("/");
@@ -43,7 +45,7 @@ module.exports = async (req, res) => {
     if (req.method === "GET") {
       const { data, error } = await supabase
         .from("rooms")
-        .select("room_id, player1_discord_id, player2_discord_id")
+        .select(COLONNES)
         .eq("room_id", roomId)
         .single();
 
@@ -54,12 +56,15 @@ module.exports = async (req, res) => {
       return res.status(200).json(data);
     }
 
-    // ---- Rejoindre la room : le créateur est player1, le premier à
-    // rejoindre player2, tous les suivants sont spectateurs ----
+    // ---- Rejoindre la room ----
+    // Match privé : le créateur est player1, le premier à ouvrir le lien
+    // player2, tous les suivants sont spectateurs. Matchmaking : player2
+    // n'est attribué que par api/matchmaking.js. Venu de l'historique
+    // (?spectateur=1) : toujours spectateur.
     if (req.method === "POST") {
       const { data: room, error: fetchError } = await supabase
         .from("rooms")
-        .select("room_id, player1_discord_id, player2_discord_id")
+        .select(COLONNES)
         .eq("room_id", roomId)
         .single();
 
@@ -72,24 +77,29 @@ module.exports = async (req, res) => {
         return res.status(200).json(room);
       }
 
-      // Room complète : spectateur (lecture seule de la draft).
-      if (room.player2_discord_id) {
+      const enSpectateur = new URL(req.url, `https://${req.headers.host}`).searchParams.get("spectateur") === "1";
+
+      // Room complète, matchmaking ou spectateur voulu : lecture seule.
+      if (room.player2_discord_id || room.type === "matchmaking" || enSpectateur) {
         return res.status(200).json({ ...room, spectateur: true });
       }
 
+      // Mise à jour conditionnelle : si deux personnes ouvrent le lien en
+      // même temps, une seule devient player2.
       const { data: updated, error: updateError } = await supabase
         .from("rooms")
         .update({ player2_discord_id: user.id })
         .eq("room_id", roomId)
-        .select("room_id, player1_discord_id, player2_discord_id")
-        .single();
+        .is("player2_discord_id", null)
+        .select(COLONNES)
+        .maybeSingle();
 
       if (updateError) {
         console.error(updateError);
         return res.status(500).json({ error: "Erreur en rejoignant la room" });
       }
 
-      return res.status(200).json(updated);
+      return res.status(200).json(updated || { ...room, spectateur: true });
     }
 
     res.setHeader("Allow", "GET, POST");

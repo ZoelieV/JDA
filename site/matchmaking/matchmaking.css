@@ -1,0 +1,21 @@
+/* ---- Créer un match : Match privé / Matchmaking ---- */
+.choix-match {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.option-match {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.625rem;
+  width: min(22rem, 100%);
+  box-sizing: border-box;
+}
+
+.option-match p {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}

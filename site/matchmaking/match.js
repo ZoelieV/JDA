@@ -98,8 +98,14 @@ async function chargerSessionUtilisateur() {
   return data.authenticated ? data.user : null;
 }
 
+// Venu de l'historique (?spectateur=1) : on regarde, sans jamais prendre la
+// place du second joueur d'un match privé.
+function enSpectateurVoulu() {
+  return new URLSearchParams(window.location.search).get("spectateur") === "1";
+}
+
 async function rejoindreOuConsulterRoom(id) {
-  const reponse = await fetch(`/api/rooms/${id}`, {
+  const reponse = await fetch(`/api/rooms/${id}${enSpectateurVoulu() ? "?spectateur=1" : ""}`, {
     method: "POST",
     credentials: "include"
   });
@@ -1823,12 +1829,15 @@ async function rafraichirEtatRoomEtJoueurs() {
   const room = await rejoindreOuConsulterRoom(roomId);
 
   if (room.player1_discord_id && room.player2_discord_id) {
+    arreterMatchmaking();
     document.getElementById("etat-attente").classList.add("cache");
     document.getElementById("zone-match").classList.remove("cache");
 
-    const { draft: draftActuel } = await chargerDraft();
-    await definirDraft(draftActuel);
+    const donnees = await chargerDraft();
+    afficherSpectateurs(donnees.nb_spectateurs);
+    await definirDraft(donnees.draft);
   } else {
+    afficherAttente(room);
     rendreEntetesJoueurs();
   }
 }
@@ -1838,12 +1847,83 @@ async function tick() {
     if (!(joueur1 && joueur2)) {
       await rafraichirEtatRoomEtJoueurs();
     } else {
-      const { draft: draftActuel } = await chargerDraft();
-      await definirDraft(draftActuel);
+      const donnees = await chargerDraft();
+      afficherSpectateurs(donnees.nb_spectateurs);
+      await definirDraft(donnees.draft);
     }
   } catch (error) {
     console.error(error);
   }
+}
+
+// ---- Nombre de spectateurs (joueurs seulement, cf. handleDraftGet) ----
+
+function afficherSpectateurs(nombre) {
+  const indicateur = document.getElementById("indicateur-spectateurs");
+  const visible = Number.isInteger(nombre) && nombre > 0;
+  indicateur.classList.toggle("cache", !visible);
+  if (visible) {
+    indicateur.textContent = `👁 ${nombre}`;
+    indicateur.title = `${nombre} spectateur${nombre > 1 ? "s" : ""}`;
+  }
+}
+
+// ---- Attente de l'adversaire ----
+// Match privé : lien à partager. Matchmaking : recherche relancée toutes
+// les MATCHMAKING_INTERVALLE_MS (api/matchmaking.js) ; si un autre joueur
+// attendait déjà, on rejoint sa room.
+
+const MATCHMAKING_INTERVALLE_MS = 5000;
+let intervalleMatchmaking = null;
+
+function afficherAttente(room) {
+  const matchmaking = room.type === "matchmaking";
+  const createur = room.player1_discord_id === moiDiscordId;
+  document.getElementById("texte-attente").textContent = matchmaking
+    ? (createur ? "Recherche d'un adversaire…" : "Ce joueur cherche encore un adversaire…")
+    : "En attente du second joueur…";
+  document.getElementById("btn-partager").classList.toggle("cache", matchmaking);
+  document.getElementById("btn-annuler-matchmaking").classList.toggle("cache", !(matchmaking && createur));
+  if (matchmaking && createur && !intervalleMatchmaking) {
+    intervalleMatchmaking = setInterval(relancerMatchmaking, MATCHMAKING_INTERVALLE_MS);
+  }
+}
+
+function arreterMatchmaking() {
+  clearInterval(intervalleMatchmaking);
+  intervalleMatchmaking = null;
+  document.getElementById("btn-annuler-matchmaking").classList.add("cache");
+}
+
+async function relancerMatchmaking() {
+  try {
+    const reponse = await fetch("/api/matchmaking", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room_id: roomId })
+    });
+    if (!reponse.ok) return;
+    const { room_id: nouvelleRoom } = await reponse.json();
+    if (nouvelleRoom && nouvelleRoom !== roomId) {
+      arreterMatchmaking();
+      window.location.replace(`match.html?room=${encodeURIComponent(nouvelleRoom)}`);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function initialiserAnnulationMatchmaking() {
+  document.getElementById("btn-annuler-matchmaking").addEventListener("click", async () => {
+    arreterMatchmaking();
+    try {
+      await fetch("/api/matchmaking", { method: "DELETE", credentials: "include" });
+    } catch (error) {
+      console.error(error);
+    }
+    window.location.href = "matchmaking.html";
+  });
 }
 
 // ---- Partage du lien de la room (copié dans le presse-papiers) ----
@@ -1881,6 +1961,7 @@ async function demarrer() {
     }
     moiDiscordId = user.id;
     initialiserPartage();
+    initialiserAnnulationMatchmaking();
 
     appliquerFondRoom();
 

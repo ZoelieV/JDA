@@ -117,6 +117,11 @@
 /* Match en cours : contour doré, phase et lien "Regarder" au centre. */
 .match.en-cours {
   border-color: var(--accent-bordure);
+  cursor: pointer; /* toute la ligne mène au match (spectateur) */
+}
+
+.match.en-cours:hover {
+  background-color: rgba(245, 197, 66, 0.08);
 }
 
 .match-phase {
