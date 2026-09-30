@@ -88,10 +88,10 @@ const TRI_COMPTES_DEFAUT = { cle: "activite", sens: -1 };
 let triComptes = { ...TRI_COMPTES_DEFAUT };
 
 // Sens par défaut au 1er clic sur un tri : plus récents d'abord pour
-// l'activité, plus anciens d'abord pour l'arrivée, A -> Z pour l'alphabet,
-// plus grande valeur d'abord pour les stats.
+// l'activité, A -> Z pour l'alphabet, plus grande valeur d'abord pour les
+// stats.
 const SENS_INITIAL_TRI = {
-  activite: -1, arrivee: 1, alpha: 1,
+  activite: -1, alpha: 1,
   points: -1, nb_persos: -1, nb_c6: -1, constellations_5: -1, theatre: -1, matchs: -1, ratio: -1
 };
 
@@ -128,7 +128,7 @@ function getNomCompte(compte) {
 }
 
 function comparerComptes(a, b) {
-  if (SENS_INITIAL_TRI[triComptes.cle] && !["activite", "arrivee", "alpha"].includes(triComptes.cle)) {
+  if (SENS_INITIAL_TRI[triComptes.cle] && !["activite", "alpha"].includes(triComptes.cle)) {
     const va = getStatTri(a, triComptes.cle);
     const vb = getStatTri(b, triComptes.cle);
     if (va === null || vb === null) return 0; // géré dans afficherComptes
@@ -138,8 +138,6 @@ function comparerComptes(a, b) {
   switch (triComptes.cle) {
     case "alpha":
       return getNomCompte(a).localeCompare(getNomCompte(b), "fr", { sensitivity: "base" });
-    case "arrivee":
-      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
     default:
       return String(a.updated_at || "").localeCompare(String(b.updated_at || ""));
   }
@@ -157,7 +155,7 @@ function afficherComptes() {
   const liste = document.getElementById("accounts-list");
 
   const recherche = document.getElementById("recherche-comptes").value.trim().toLowerCase();
-  const estTriStat = !["activite", "arrivee", "alpha"].includes(triComptes.cle);
+  const estTriStat = !["activite", "alpha"].includes(triComptes.cle);
   const comptes = tousLesComptes
     .filter(compte => !recherche ||
       getNomCompte(compte).toLowerCase().includes(recherche) ||
@@ -216,9 +214,6 @@ function creerCarteCompte(compte, estTriStat) {
 }
 
 function initialiserBarreComptes() {
-  // Tri "Arrivée" masqué si la date d'arrivée n'est pas disponible.
-  const avecArrivee = tousLesComptes.some(compte => compte.created_at);
-  document.querySelector('.tri-compte-btn[data-tri="arrivee"]').hidden = !avecArrivee;
 
   document.querySelectorAll(".tri-compte-btn").forEach(btn => {
     btn.addEventListener("click", () => {

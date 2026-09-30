@@ -53,6 +53,7 @@ async function chargerSessionDiscord() {
   logoutBtn.addEventListener("click", () => {
     // Plus de fond personnalisé une fois déconnecté.
     window.FondEcran?.memoriser(null, null);
+    window.FondEcran?.memoriserTheatre(null);
     window.location.href = "/api/auth/logout";
   });
 
@@ -103,8 +104,14 @@ function initialiserMenuCompte() {
   const menu = document.getElementById("menu-compte");
 
   // Deuxième bannière en fond du bouton, depuis le cache (mise à jour au
-  // chargement du profil, cf. memoriserFondPourLeSite).
+  // chargement du profil, cf. memoriserFondPourLeSite). Médaille du théâtre
+  // après le pseudo, mise à jour au chargement et à l'enregistrement du
+  // profil (FondEcran.memoriserTheatre).
   window.FondEcran?.appliquerBanniere2(bouton, window.FondEcran.banniere2());
+  window.FondEcran?.appliquerMedaille(bouton, window.FondEcran.theatre());
+  document.addEventListener("theatre-change", event => {
+    window.FondEcran.appliquerMedaille(bouton, event.detail);
+  });
 
   bouton.addEventListener("click", () => {
     const ouvert = menu.classList.toggle("cache") === false;
@@ -1030,7 +1037,10 @@ async function initialiserPage() {
         succes ? "Profil enregistré avec succès" : "Erreur lors de l'enregistrement du profil",
         succes ? "succes" : "erreur"
       );
-      if (succes) marquerEnregistre(profil);
+      if (succes) {
+        marquerEnregistre(profil);
+        window.FondEcran?.memoriserTheatre(profil.theatre);
+      }
     });
 
     ["uid", "theatre"].forEach(id => {
@@ -1053,6 +1063,8 @@ async function initialiserPage() {
 
     // Rien à enregistrer tant que rien n'a changé.
     marquerEnregistre(profil);
+    // Médaille du bouton du compte (ici et sur les autres pages).
+    window.FondEcran?.memoriserTheatre(profil.theatre);
   } catch (erreur) {
     console.error(erreur);
     alert("Erreur lors du chargement de la page.");

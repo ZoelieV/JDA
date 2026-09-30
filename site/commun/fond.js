@@ -14,6 +14,10 @@
   const CLE_URL = "fond-ecran-url";
   const CLE_DATE = "fond-ecran-date";
   const CLE_BANNIERE2 = "banniere2-url";
+  // Palier de théâtre du joueur connecté ("6".."12", "" si non renseigné) :
+  // médaille dans le bouton du compte (cf. appliquerMedaille).
+  const CLE_THEATRE = "theatre-palier";
+  const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
   // Choix par défaut (profil sans choix, ou visiteur non connecté pour le fond).
   const FOND_DEFAUT_ID = "bg/autres/default_bg.webp";
@@ -50,6 +54,34 @@
     }
   }
 
+  // Théâtre du profil ("1".."4", cf. menu "Théâtre clear" de Mon compte).
+  function memoriserTheatre(theatreProfil) {
+    const palier = PALIERS_THEATRE[theatreProfil] ? String(PALIERS_THEATRE[theatreProfil]) : "";
+    ecrire(CLE_THEATRE, palier);
+    document.dispatchEvent(new CustomEvent("theatre-change", { detail: palier }));
+  }
+
+  // Pose (ou retire) la médaille du théâtre dans un bouton de compte, après
+  // le pseudo (même rendu que htmlMedailleTheatre, commun/cartes.js ; style
+  // .medaille-theatre dans commun/entete.css).
+  function appliquerMedaille(element, palier) {
+    let medaille = element.querySelector(".medaille-theatre");
+    if (!palier) {
+      medaille?.remove();
+      return;
+    }
+    if (!medaille) {
+      medaille = document.createElement("img");
+      medaille.className = "medaille-theatre";
+      const pseudo = element.querySelector("span");
+      if (pseudo) pseudo.after(medaille);
+      else element.appendChild(medaille);
+    }
+    medaille.src = `/DB/images/others/Imaginarium_Theater_Medal_${palier}.webp`;
+    medaille.alt = `Théâtre ${palier}`;
+    medaille.title = `Théâtre ${palier}`;
+  }
+
   // Pose (ou retire) la deuxième bannière dans un bouton de compte.
   function appliquerBanniere2(element, url) {
     element.classList.toggle("avec-banniere2", !!url);
@@ -65,6 +97,7 @@
         if (reponse.status === 401) {
           appliquer(FOND_DEFAUT_URL);
           memoriser(FOND_DEFAUT_URL, null);
+          memoriserTheatre(null);
         }
         return;
       }
@@ -84,6 +117,7 @@
 
       appliquer(url);
       memoriser(url, banniere2);
+      memoriserTheatre(profil?.theatre);
     } catch (erreur) {
       console.error(erreur);
     }
@@ -91,17 +125,25 @@
 
   appliquer(lire(CLE_URL) || FOND_DEFAUT_URL);
 
+  // Revérifié si trop ancien, ou si le théâtre n'a jamais été gardé (cache
+  // d'avant la médaille).
   const age = Date.now() - Number(lire(CLE_DATE) || 0);
-  if (!sansRequete && age > DUREE_CACHE_MS) {
+  if (!sansRequete && (age > DUREE_CACHE_MS || lire(CLE_THEATRE) === null)) {
     rafraichir();
   }
 
   // memoriser : utilisé par Mon compte après l'enregistrement des paramètres.
   // Bouton du compte : FondEcran.appliquerBanniere2(bouton, FondEcran.banniere2())
   // puis écoute de l'événement "banniere2-change" (rafraîchissement).
+  // Médaille : FondEcran.appliquerMedaille(bouton, FondEcran.theatre()) puis
+  // écoute de "theatre-change" ; memoriserTheatre : Mon compte, après
+  // l'enregistrement du théâtre.
   window.FondEcran = {
     memoriser,
     appliquerBanniere2,
-    banniere2: () => lire(CLE_BANNIERE2) || encodeURI(`/DB/images/${BANNIERE2_DEFAUT}`)
+    banniere2: () => lire(CLE_BANNIERE2) || encodeURI(`/DB/images/${BANNIERE2_DEFAUT}`),
+    memoriserTheatre,
+    appliquerMedaille,
+    theatre: () => lire(CLE_THEATRE) || ""
   };
 })();

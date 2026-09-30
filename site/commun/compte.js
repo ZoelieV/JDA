@@ -42,10 +42,15 @@
       lien.appendChild(texte);
       zone.appendChild(lien);
 
-      // Deuxième bannière en fond du bouton (cf. commun/fond.js).
+      // Deuxième bannière en fond du bouton et médaille du théâtre après le
+      // pseudo (cf. commun/fond.js).
       window.FondEcran?.appliquerBanniere2(lien, window.FondEcran.banniere2());
       document.addEventListener("banniere2-change", event => {
         window.FondEcran.appliquerBanniere2(lien, event.detail);
+      });
+      window.FondEcran?.appliquerMedaille(lien, window.FondEcran.theatre());
+      document.addEventListener("theatre-change", event => {
+        window.FondEcran.appliquerMedaille(lien, event.detail);
       });
       return;
     }

@@ -531,7 +531,7 @@ h1, h2 {
   color: #f5c542;
 }
 
-/* Tri "C6 5★" : emoji baleine, à la taille des logos des autres tris. */
+/* Tris en emoji (C6 5★ 🐋, Matchs ⚔️, Winrate 🏆), à la taille des logos. */
 .tri-emoji {
   font-size: 1.25rem;
   line-height: 1;
