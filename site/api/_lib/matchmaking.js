@@ -8,15 +8,16 @@
 // peuvent pas prendre la même). Une room en attente reste vivante tant que
 // sa page tourne (last_active_at, mis à jour par le polling de match.js).
 //
-// POST   { room_id? } : cherche un adversaire. room_id = room en attente du
-//        joueur (page d'attente, rappel toutes les quelques secondes). Si
-//        deux joueurs ont créé leur room en même temps, celui dont la room
-//        est la plus récente prend l'autre : la sienne est supprimée.
-//        -> { room_id, trouve }
-// DELETE : annule la recherche (supprime les rooms en attente du joueur).
+// Appelé par api/rooms/index.js (pas de fonction serveur à part : le plan
+// Hobby de Vercel en limite le nombre à 12) :
+// POST   { type: "matchmaking", room_id? } -> chercher() : cherche un
+//        adversaire. room_id = room en attente du joueur (page d'attente,
+//        rappel toutes les quelques secondes). Si deux joueurs ont créé leur
+//        room en même temps, celui dont la room est la plus récente prend
+//        l'autre : la sienne est supprimée. -> { room_id, trouve }
+// DELETE -> annuler() : supprime les rooms en attente du joueur.
 const crypto = require("crypto");
-const { supabase } = require("./_lib/supabase");
-const { parseCookies, verifySessionToken } = require("./_lib/session");
+const { supabase } = require("./supabase");
 
 // Room en attente sans nouvelles de sa page depuis plus longtemps : joueur
 // parti, ignorée.
@@ -116,26 +117,9 @@ async function chercher(discordId, roomIdAttente) {
   return { room_id: roomId, trouve: false };
 }
 
-module.exports = async (req, res) => {
-  try {
-    const user = verifySessionToken(parseCookies(req).session);
-    if (!user) return res.status(401).json({ error: "Non connecté" });
+async function annuler(discordId) {
+  const miennes = await mesRoomsEnAttente(discordId);
+  await supprimerRooms(miennes.map(r => r.room_id));
+}
 
-    if (req.method === "POST") {
-      const roomIdAttente = typeof req.body?.room_id === "string" ? req.body.room_id : null;
-      return res.status(200).json(await chercher(user.id, roomIdAttente));
-    }
-
-    if (req.method === "DELETE") {
-      const miennes = await mesRoomsEnAttente(user.id);
-      await supprimerRooms(miennes.map(r => r.room_id));
-      return res.status(200).json({ ok: true });
-    }
-
-    res.setHeader("Allow", "POST, DELETE");
-    return res.status(405).json({ error: "Méthode non autorisée" });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Erreur du matchmaking" });
-  }
-};
+module.exports = { chercher, annuler };

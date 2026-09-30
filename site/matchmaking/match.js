@@ -1870,7 +1870,7 @@ function afficherSpectateurs(nombre) {
 
 // ---- Attente de l'adversaire ----
 // Match privé : lien à partager. Matchmaking : recherche relancée toutes
-// les MATCHMAKING_INTERVALLE_MS (api/matchmaking.js) ; si un autre joueur
+// les MATCHMAKING_INTERVALLE_MS (api/_lib/matchmaking.js, via api/rooms) ; si un autre joueur
 // attendait déjà, on rejoint sa room.
 
 const MATCHMAKING_INTERVALLE_MS = 5000;
@@ -1897,11 +1897,11 @@ function arreterMatchmaking() {
 
 async function relancerMatchmaking() {
   try {
-    const reponse = await fetch("/api/matchmaking", {
+    const reponse = await fetch("/api/rooms", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room_id: roomId })
+      body: JSON.stringify({ type: "matchmaking", room_id: roomId })
     });
     if (!reponse.ok) return;
     const { room_id: nouvelleRoom } = await reponse.json();
@@ -1918,7 +1918,7 @@ function initialiserAnnulationMatchmaking() {
   document.getElementById("btn-annuler-matchmaking").addEventListener("click", async () => {
     arreterMatchmaking();
     try {
-      await fetch("/api/matchmaking", { method: "DELETE", credentials: "include" });
+      await fetch("/api/rooms", { method: "DELETE", credentials: "include" });
     } catch (error) {
       console.error(error);
     }

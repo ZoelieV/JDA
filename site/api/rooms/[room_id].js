@@ -59,7 +59,7 @@ module.exports = async (req, res) => {
     // ---- Rejoindre la room ----
     // Match privé : le créateur est player1, le premier à ouvrir le lien
     // player2, tous les suivants sont spectateurs. Matchmaking : player2
-    // n'est attribué que par api/matchmaking.js. Venu de l'historique
+    // n'est attribué que par api/_lib/matchmaking.js. Venu de l'historique
     // (?spectateur=1) : toujours spectateur.
     if (req.method === "POST") {
       const { data: room, error: fetchError } = await supabase

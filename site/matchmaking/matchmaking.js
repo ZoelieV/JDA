@@ -1,14 +1,15 @@
-// Créer un match : match privé (room à lien partagé, api/rooms) ou
-// matchmaking (adversaire trouvé automatiquement, api/matchmaking.js). Dans
-// les deux cas, on arrive sur la page du match (attente de l'adversaire).
+// Créer un match : match privé (room à lien partagé) ou matchmaking
+// (adversaire trouvé automatiquement, api/_lib/matchmaking.js), tous deux
+// via api/rooms. Dans les deux cas, on arrive sur la page du match
+// (attente de l'adversaire).
 
-async function creerMatch(url) {
+async function creerMatch(corps) {
   try {
-    const reponse = await fetch(url, {
+    const reponse = await fetch("/api/rooms", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: "{}"
+      body: JSON.stringify(corps)
     });
 
     if (reponse.status === 401) {
@@ -29,5 +30,5 @@ async function creerMatch(url) {
   }
 }
 
-document.getElementById("creer-prive").addEventListener("click", () => creerMatch("/api/rooms"));
-document.getElementById("lancer-matchmaking").addEventListener("click", () => creerMatch("/api/matchmaking"));
+document.getElementById("creer-prive").addEventListener("click", () => creerMatch({}));
+document.getElementById("lancer-matchmaking").addEventListener("click", () => creerMatch({ type: "matchmaking" }));
