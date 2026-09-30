@@ -25,6 +25,7 @@ const BONUS = [
   { cle: "niveau100", index: 8 },
   { cle: "theatre", index: 9 }
 ];
+const INDEX_THEATRE = 9;
 
 let vue = "characters";
 let personnages = [];
@@ -32,7 +33,19 @@ let armes = [];
 let valeurs = { characters: {}, weapons: {} }; // id -> liste de points
 let modes = {};                                  // cle bonus -> "addition" | "multiplication"
 let masques = { characters: [], weapons: [] };  // ids masqués (triés)
+let buffs = [];                                  // personnages buffés par le théâtre du mois (triés)
 let etatEnregistre = "";
+
+// Buff théâtre : le bonus théâtre du personnage s'applique à ses points de
+// constellation partout sur le site (cf. appliquerBuffTheatre, commun/cartes.js).
+function estBuffe(id) {
+  return buffs.includes(id);
+}
+
+function basculerBuff(id, actif) {
+  buffs = buffs.filter(b => b !== id);
+  if (actif) buffs = [...buffs, id].sort();
+}
 
 function estMasque(id) {
   return masques[vue].includes(id);
@@ -70,7 +83,8 @@ function creerFiltres() {
     categories: new Set(),
     aRenseigner: false,
     modifies: false,
-    masques: false
+    masques: false,
+    buffes: false
   };
 }
 
@@ -100,6 +114,7 @@ function itemsAffiches() {
     if (filtres.aRenseigner && points.slice(0, nbConstellations).some(p => p !== 0)) return false;
     if (filtres.modifies && JSON.stringify(points) === JSON.stringify(valeursEnregistrees(item.id))) return false;
     if (filtres.masques && !estMasque(item.id)) return false;
+    if (persos && filtres.buffes && !estBuffe(item.id)) return false;
     return true;
   });
 
@@ -144,6 +159,7 @@ function rendreFiltres() {
       <button type="button" class="filtre-admin filtre-texte${filtres.aRenseigner ? " active" : ""}" data-bascule="aRenseigner" title="Tous les points de ${persos ? "constellation" : "raffinement"} à 0">À renseigner</button>
       <button type="button" class="filtre-admin filtre-texte${filtres.modifies ? " active" : ""}" data-bascule="modifies" title="Modifiés depuis le dernier enregistrement">Modifiés</button>
       <button type="button" class="filtre-admin filtre-texte${filtres.masques ? " active" : ""}" data-bascule="masques" title="Masqués sur le reste du site">Masqués</button>
+      ${persos ? `<button type="button" class="filtre-admin filtre-texte${filtres.buffes ? " active" : ""}" data-bascule="buffes" title="Buffés par le théâtre du mois">Buffés théâtre</button>` : ""}
     </div>
   `;
 }
@@ -178,7 +194,7 @@ function initialiserFiltres() {
 }
 
 function etatActuel() {
-  return JSON.stringify([valeurs, modes, masques]);
+  return JSON.stringify([valeurs, modes, masques, buffs]);
 }
 
 // ---- Chargement ----
@@ -213,6 +229,7 @@ async function chargerDonnees() {
   };
   modes = Object.fromEntries(BONUS.map(({ cle }) => [cle, config?.modes?.[cle] === "multiplication" ? "multiplication" : "addition"]));
   masques = lireMasquesConfig(config);
+  buffs = Array.isArray(config?.theatre) ? [...config.theatre].sort() : [];
   etatEnregistre = etatActuel();
 }
 
@@ -239,6 +256,7 @@ function rendreEntete() {
               <option value="addition" ${modes[bonus.cle] === "addition" ? "selected" : ""}>+ Addition</option>
               <option value="multiplication" ${modes[bonus.cle] === "multiplication" ? "selected" : ""}>× Multiplication</option>
             </select>
+            ${bonus.cle === "theatre" ? `<button type="button" class="retirer-buffs" ${buffs.length ? "" : "disabled"} title="Décocher tous les personnages (nouveau théâtre du mois)">Tout retirer (${buffs.length})</button>` : ""}
           </th>` : "<th></th>";
         }).join("")}
       </tr>` : ""}
@@ -266,7 +284,7 @@ function rendreCorps() {
             : "Cacher partout sauf ici (pas encore sorti dans le jeu)"}">${estMasque(item.id) ? "Afficher" : "Masquer"}</button>
         </td>
         ${valeurs[vue][item.id].map((valeur, index) => `
-          <td class="${index >= 1 && index <= COLONNES[vue].derniereChaine ? "avec-ecart" : ""}">
+          <td class="${index >= 1 && index <= COLONNES[vue].derniereChaine ? "avec-ecart" : ""}${index === INDEX_THEATRE && vue === "characters" && estBuffe(item.id) ? " avec-buff" : ""}">
             ${index >= 1 && index <= COLONNES[vue].derniereChaine
               ? `<span class="ecart-points" data-id="${item.id}" data-index="${index}" data-signe="${signeEcart(valeurs[vue][item.id], index)}">${texteEcart(valeurs[vue][item.id], index)}</span>`
               : ""}
@@ -276,6 +294,11 @@ function rendreCorps() {
             </span>
             ${index < COLONNES[vue].derniereChaine
               ? `<button type="button" class="copie-suite" data-id="${item.id}" data-index="${index}" title="Copier cette valeur jusqu'à ${COLONNES[vue].libelles[COLONNES[vue].derniereChaine]}">→</button>`
+              : ""}
+            ${index === INDEX_THEATRE && vue === "characters"
+              ? `<label class="buff-theatre" title="Buffé par le théâtre du mois : bonus appliqué à ses points sur tout le site">
+                  <input type="checkbox" class="case-buff" data-id="${item.id}" ${estBuffe(item.id) ? "checked" : ""}> Buff
+                </label>`
               : ""}
           </td>`).join("")}
       </tr>`)
@@ -382,6 +405,24 @@ function initialiserSaisie() {
     input.value = valeur;
     input.classList.remove("avec-apercu", "invalide");
     input.nextElementSibling.textContent = "";
+  });
+
+  // Case Buff (colonne Théâtre) : buff du théâtre du mois ajouté / retiré.
+  corps.addEventListener("change", event => {
+    const caseBuff = event.target.closest(".case-buff");
+    if (!caseBuff) return;
+    basculerBuff(caseBuff.dataset.id, caseBuff.checked);
+    caseBuff.closest("td").classList.toggle("avec-buff", caseBuff.checked);
+    rendreEntete(); // compteur de "Tout retirer"
+    mettreAJourPied();
+  });
+
+  document.getElementById("entete-admin").addEventListener("click", event => {
+    if (!event.target.closest(".retirer-buffs")) return;
+    buffs = [];
+    rendreEntete();
+    rendreCorps();
+    mettreAJourPied();
   });
 
   document.getElementById("entete-admin").addEventListener("change", event => {
@@ -612,7 +653,7 @@ async function enregistrer() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques })
+      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs })
     });
     if (!reponse.ok) throw new Error((await reponse.json().catch(() => ({}))).error || "Erreur d'enregistrement.");
     etatEnregistre = etatActuel();
@@ -625,7 +666,7 @@ async function enregistrer() {
 }
 
 function annuler() {
-  [valeurs, modes, masques] = JSON.parse(etatEnregistre);
+  [valeurs, modes, masques, buffs] = JSON.parse(etatEnregistre);
   rendre();
 }
 

@@ -312,7 +312,8 @@ function getPoolMatch(role) {
   return cachePools[role].set;
 }
 
-// Constellation et points d'un perso chez un joueur, ou null s'il ne l'a
+// Constellation et points d'un perso chez un joueur (bonus du niveau 95 /
+// 100 et du théâtre compris, cf. pointsPersonnage), ou null s'il ne l'a
 // pas. Voyageur : un par élément dans les comptes, un seul en draft ; on
 // garde l'élément qui vaut le plus de points parmi ceux de sa box (ou
 // l'élément donné, une fois pické).
@@ -322,11 +323,14 @@ function getPossession(role, persoId, element = null) {
 
   const collection = getJoueurDataParRole(role)?.characters;
   const membres = membresGroupe(personnagesBase, persoId);
+  // Niveau commun au groupe (Voyageur) : clé = id de la draft.
+  const niveau = collection?.niveaux?.[persoId] ?? null;
 
   if (membres.length === 0) {
     const c = collection?.full?.[persoId];
     if (typeof c !== "number" || c < 0) return null;
-    return { valeur: c, points: Number(getPersonnageParId(persoId)?.PPC?.[c] ?? 0) };
+    const personnage = getPersonnageParId(persoId);
+    return { valeur: c, points: personnage ? pointsPersonnage(personnage, c, niveau) : 0 };
   }
 
   // Éléments permis : celui pické, sinon ceux de la box du match (calculés
@@ -341,7 +345,7 @@ function getPossession(role, persoId, element = null) {
     if (permis && !permis.includes(membre.element)) return;
     if (!permis && box && box !== "full" && !collection.selections?.[box]?.[membre.id]) return;
 
-    const points = Number(membre.PPC?.[c] ?? 0);
+    const points = pointsPersonnage(membre, c, niveau);
     if (!meilleur || points > meilleur.points || (points === meilleur.points && c > meilleur.valeur)) {
       meilleur = { valeur: c, points, element: membre.element };
     }

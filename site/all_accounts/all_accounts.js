@@ -74,6 +74,13 @@ function getNiveauPersonnage(personnageId) {
   return niveau === 95 || niveau === 100 ? String(niveau) : null;
 }
 
+// Points d'un item possédé du profil ouvert ; personnages : bonus du niveau
+// (95 / 100) et du théâtre compris (cf. pointsPersonnage, commun/cartes.js).
+function getPointsItem(item, valeur, vue) {
+  if (vue === "characters") return pointsPersonnage(item, valeur, getNiveauPersonnage(cleNiveau(item)));
+  return Number(item[configCollections[vue].pointsField]?.[valeur] ?? 0);
+}
+
 // ---- Liste des comptes : recherche + tri (sens inversé par un 2e clic) ----
 
 let tousLesComptes = [];
@@ -271,7 +278,7 @@ function construireListeAffichee() {
 // points ; bas gauche : niveau ; bas droite : arme signature (détourée de la
 // couleur du raffinement) ou, pour une arme, le perso dont c'est l'arme.
 
-function creerCarteProfil({ item, valeur, config }) {
+function creerCarteProfil({ item, valeur }) {
   const card = document.createElement("div");
   card.className = "character-card";
   card.title = item.nom;
@@ -303,7 +310,7 @@ function creerCarteProfil({ item, valeur, config }) {
     <div class="character-visuel ${classeFondRarete(item.rarete)}">
       <img src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       <span class="character-constellation">${getLabelConstellation(valeur, vueActive)}</span>
-      <span class="character-points">${item[config.pointsField]?.[valeur] ?? ""}</span>
+      <span class="character-points">${valeur >= 0 ? getPointsItem(item, valeur, vueActive) : ""}</span>
       ${basGaucheHtml}
       ${basDroiteHtml}
     </div>
@@ -315,14 +322,13 @@ function creerCarteProfil({ item, valeur, config }) {
 function rendreProfilBox() {
   const container = document.getElementById("profile-box");
 
-  const config = configCollections[vueActive];
   const entrees = construireListeAffichee();
   const parItem = new Map(entrees.map(entree => [entree.item, entree]));
 
   const groupes = trierEtGrouper(entrees.map(entree => entree.item), etatTri, {
     vue: vueActive,
     valeurs: {
-      points: item => Number(item[config.pointsField]?.[parItem.get(item).valeur] ?? 0),
+      points: item => parItem.get(item).valeur >= 0 ? getPointsItem(item, parItem.get(item).valeur, vueActive) : 0,
       constellation: item => parItem.get(item).valeur,
       // 100 > 95 > non renseigné (persos uniquement).
       niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(cleNiveau(item))) || 0 : 0,
@@ -360,7 +366,6 @@ function calculerPointsBox(box) {
 
   [["characters", personnagesData], ["weapons", armesData]].forEach(([vue, items]) => {
     const collection = profilCourant.data?.[vue] || {};
-    const champPoints = configCollections[vue].pointsField;
     const parId = new Map(items.map(item => [item.id, item]));
 
     Object.entries(collection.full || {}).forEach(([instanceId, valeur]) => {
@@ -368,7 +373,7 @@ function calculerPointsBox(box) {
       if (box !== "full" && !collection.selections?.[box]?.[instanceId]) return;
       const item = parId.get(instanceId.split("#")[0]);
       if (!item) return;
-      const points = Number(item[champPoints]?.[valeur] ?? 0);
+      const points = getPointsItem(item, valeur, vue);
       if (item.groupe) meilleurParGroupe[item.groupe] = Math.max(meilleurParGroupe[item.groupe] ?? 0, points);
       else total += points;
     });

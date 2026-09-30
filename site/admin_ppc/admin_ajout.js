@@ -371,7 +371,9 @@ async function envoyerAjout(corps) {
 // n'est pas une modification en attente. Un ajout est créé masqué (cf.
 // api/points.js), sa suppression le retire des masqués.
 function majEtatEnregistre(genre, id, points) {
-  const [valeursEnreg, modesEnreg, masquesEnreg] = JSON.parse(etatEnregistre);
+  const enregistre = JSON.parse(etatEnregistre);
+  const [valeursEnreg, modesEnreg, masquesEnreg] = enregistre;
+  let buffsEnreg = enregistre[3];
   const sansId = liste => liste.filter(m => m !== id);
   if (points) {
     valeursEnreg[genre][id] = [...points];
@@ -381,8 +383,13 @@ function majEtatEnregistre(genre, id, points) {
     delete valeursEnreg[genre][id];
     masquesEnreg[genre] = sansId(masquesEnreg[genre]);
     masques[genre] = sansId(masques[genre]);
+    // Buff théâtre retiré avec le personnage (cf. api/points.js).
+    if (genre === "characters") {
+      buffs = sansId(buffs);
+      buffsEnreg = sansId(buffsEnreg);
+    }
   }
-  etatEnregistre = JSON.stringify([valeursEnreg, modesEnreg, masquesEnreg]);
+  etatEnregistre = JSON.stringify([valeursEnreg, modesEnreg, masquesEnreg, buffsEnreg]);
 }
 
 function entreeDepuisBrouillon(genre, b) {

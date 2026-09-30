@@ -1,4 +1,4 @@
-const { migrerCollectionPersos } = require("./personnages");
+const { migrerCollectionPersos, pointsPersonnage } = require("./personnages");
 
 // ---- Équilibrage ----
 //
@@ -87,6 +87,7 @@ function etatInitialDraft() {
 
 // Personnages (catalogue complet, un Voyageur par élément) de la box
 // choisie : Full Box = tout ce qui est possédé ; autre box = la sélection.
+// niveau : 95 / 100 renseigné par le joueur (Voyageur : niveau du groupe).
 function getPersonnagesBox(profilData, personnages, boxChoisie = "full") {
   const collection = migrerCollectionPersos(profilData?.characters) || { full: {}, selections: {} };
   return personnages
@@ -95,17 +96,18 @@ function getPersonnagesBox(profilData, personnages, boxChoisie = "full") {
       if (boxChoisie === "full") return true;
       return !!collection.selections?.[boxChoisie]?.[p.id];
     })
-    .map(p => ({ personnage: p, valeur: collection.full[p.id] }));
+    .map(p => ({ personnage: p, valeur: collection.full[p.id], niveau: collection.niveaux?.[p.groupe || p.id] ?? null }));
 }
 
-// ---- Points d'une box (uniquement personnages / PPC) ----
+// ---- Points d'une box (uniquement personnages / PPC, bonus niveau 95 /
+// 100 et théâtre compris, cf. pointsPersonnage) ----
 // Groupe (Voyageur) : seul l'élément qui vaut le plus de points compte.
 function calculerPointsBox(profilData, boxChoisie, personnages) {
   let total = 0;
   const meilleurParGroupe = {};
 
-  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur }) => {
-    const points = Number(personnage.PPC?.[valeur] ?? 0);
+  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
+    const points = pointsPersonnage(personnage, valeur, niveau);
     if (personnage.groupe) {
       meilleurParGroupe[personnage.groupe] = Math.max(meilleurParGroupe[personnage.groupe] ?? 0, points);
     } else {

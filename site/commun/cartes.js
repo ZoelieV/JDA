@@ -73,10 +73,44 @@ function appliquerModifsBoss(liste, modifs) {
   return liste;
 }
 
+// ---- Points d'un personnage chez un joueur ----
+// PPC : C0..C6, puis bonus niveau 95, niveau 100 et théâtre. Aux points de
+// constellation s'appliquent le bonus du niveau renseigné par le joueur (95
+// ou 100, profil.characters.niveaux[cleNiveau]), puis le bonus théâtre si le
+// personnage est buffé ce mois-ci (config.theatre) ; chacun ajouté ou
+// multiplié selon le mode choisi par les administrateurs (config.modes), en
+// multiplication 0 = pas de bonus. Résultat arrondi. Même calcul côté
+// serveur (pointsPersonnage, api/_lib/personnages.js).
+let modesBonus = {};
+
+function appliquerBonus(points, cle, valeur) {
+  const bonus = Number(valeur ?? 0);
+  if (modesBonus[cle] === "multiplication") return bonus ? points * bonus : points;
+  return points + bonus;
+}
+
+function pointsPersonnage(perso, constellation, niveau = null) {
+  let points = Number(perso.PPC?.[constellation] ?? 0);
+  if (Number(niveau) === 95) points = appliquerBonus(points, "niveau95", perso.PPC?.[7]);
+  if (Number(niveau) === 100) points = appliquerBonus(points, "niveau100", perso.PPC?.[8]);
+  if (perso.buffTheatre) points = appliquerBonus(points, "theatre", perso.PPC?.[9]);
+  return Math.round(points);
+}
+
+// Personnages buffés par le théâtre du mois : copie marquée buffTheatre (la
+// liste en mémoire reste celle des JSON).
+function marquerBuffTheatre(liste, buffes) {
+  const ids = new Set(Array.isArray(buffes) ? buffes : []);
+  return ids.size ? liste.map(perso => ids.has(perso.id) ? { ...perso, buffTheatre: true } : perso) : liste;
+}
+
+// avecMasques (page admin) : masqués compris, sans buff théâtre.
 const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("characters.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC");
-    return avecMasques ? liste : retirerMasques(liste, points.masques?.characters);
+    modesBonus = points.modes || {};
+    if (avecMasques) return liste;
+    return marquerBuffTheatre(retirerMasques(liste, points.masques?.characters), points.theatre);
   });
 const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {

@@ -25,6 +25,32 @@ const ELEMENTS_LIBRES = { manekin: ELEMENTS };
 // (points des box, draft...) sauf de la page admin ----
 let masques = { characters: new Set(), weapons: new Set() };
 
+// ---- Points d'un personnage chez un joueur ----
+// PPC : C0..C6, puis bonus niveau 95, niveau 100 et théâtre. Aux points de
+// constellation s'appliquent le bonus du niveau renseigné par le joueur (95
+// ou 100, profil.characters.niveaux[groupe || id]), puis le bonus théâtre si
+// le personnage est buffé ce mois-ci (config.theatre) ; chacun ajouté ou
+// multiplié selon config.modes, en multiplication 0 = pas de bonus. Résultat
+// arrondi. Même calcul que pointsPersonnage (commun/cartes.js).
+let modesBonus = {};
+let buffsTheatre = new Set();
+
+function appliquerBonus(points, cle, valeur) {
+  const bonus = Number(valeur ?? 0);
+  if (modesBonus[cle] === "multiplication") return bonus ? points * bonus : points;
+  return points + bonus;
+}
+
+function pointsPersonnage(perso, constellation, niveau = null) {
+  let points = Number(perso.PPC?.[constellation] ?? 0);
+  if (Number(niveau) === 95) points = appliquerBonus(points, "niveau95", perso.PPC?.[7]);
+  if (Number(niveau) === 100) points = appliquerBonus(points, "niveau100", perso.PPC?.[8]);
+  if (buffsTheatre.has(perso.id)) points = appliquerBonus(points, "theatre", perso.PPC?.[9]);
+  return Math.round(points);
+}
+
+// Personnages visibles (sans les masqués) : ce que voient les calculs de
+// points et la draft.
 function getPersonnages() {
   return personnages.filter(p => !masques.characters.has(p.id));
 }
@@ -89,6 +115,8 @@ async function actualiserPoints() {
       characters: new Set(Array.isArray(config.masques?.characters) ? config.masques.characters : []),
       weapons: new Set(Array.isArray(config.masques?.weapons) ? config.masques.weapons : [])
     };
+    buffsTheatre = new Set(Array.isArray(config.theatre) ? config.theatre : []);
+    modesBonus = config.modes || {};
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
     bossList.forEach(b => {
@@ -210,6 +238,7 @@ module.exports = {
   getArmes,
   getCatalogueComplet,
   infosPersoJoueur,
+  pointsPersonnage,
   ELEMENTS,
   ELEMENTS_LIBRES,
   getPersonnages,

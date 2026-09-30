@@ -14,10 +14,12 @@
 // GET  : { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
-//          boss: { id: { nom, res } }, categoriesArmes: { id: [...] } }
+//          boss: { id: { nom, res } }, categoriesArmes: { id: [...] },
+//          theatre: [id...] }   (personnages buffés par le théâtre du mois)
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
-//   { characters, weapons, modes, masques }  remplace les points et les masqués
+//   { characters, weapons, modes, masques, theatre }  remplace les points, les
+//                                    masqués et les buffs théâtre
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
 //   { boss: { id: { nom, res } } }   modifie des boss
@@ -119,7 +121,7 @@ function lireMasques(config) {
   ]));
 }
 
-// Ids connus seulement, sans doublon.
+// Ids connus seulement, sans doublon, triés (masqués, buffs théâtre).
 function nettoyerMasques(masques, ids) {
   return Array.from(new Set((Array.isArray(masques) ? masques : []).filter(id => ids.has(id)))).sort();
 }
@@ -145,6 +147,9 @@ function versionPublique(config) {
     if (config[genre]) {
       publique[genre] = { ...config[genre] };
       caches.forEach(id => { delete publique[genre][id]; });
+    }
+    if (genre === "characters" && Array.isArray(config.theatre)) {
+      publique.theatre = config.theatre.filter(id => !caches.has(id));
     }
     if (genre === "weapons" && config.categoriesArmes) {
       publique.categoriesArmes = { ...config.categoriesArmes };
@@ -236,6 +241,9 @@ module.exports = async (req, res) => {
         if (GENRES_MASQUABLES.includes(genre)) {
           const masques = lireMasques(ancienne);
           config.masques = { ...masques, [genre]: masques[genre].filter(m => m !== id) };
+          if (genre === "characters" && Array.isArray(config.theatre)) {
+            config.theatre = config.theatre.filter(t => t !== id);
+          }
           if (genre === "weapons" && config.categoriesArmes?.[id]) {
             config.categoriesArmes = { ...config.categoriesArmes };
             delete config.categoriesArmes[id];
@@ -280,7 +288,8 @@ module.exports = async (req, res) => {
           masques: Object.fromEntries(GENRES_MASQUABLES.map(genre => [
             genre,
             nettoyerMasques(corps.masques ? corps.masques[genre] : anciensMasques[genre], ids(genre))
-          ]))
+          ])),
+          theatre: nettoyerMasques(corps.theatre ?? ancienne.theatre, ids("characters"))
         };
       }
 

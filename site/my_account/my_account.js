@@ -306,11 +306,14 @@ function itemSelectionne(item, vueActive, boxActive, collectionProfil) {
   return instances.some(instanceId => instanceSelectionnee(instanceId, boxActive, collectionProfil));
 }
 
-function getPPC(item, valeur, vueActive) {
+// Points d'un item possédé ; personnages : bonus du niveau (95 / 100) et du
+// théâtre compris (cf. pointsPersonnage, commun/cartes.js).
+function getPPC(item, valeur, vueActive, niveau = null) {
   if (valeur < 0) {
     return "";
   }
 
+  if (vueActive === "characters") return pointsPersonnage(item, valeur, niveau);
   const config = getConfigCollection(vueActive);
   return item[config.pointsField]?.[valeur] ?? "";
 }
@@ -449,7 +452,7 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
 
   if (valeur >= 0) {
     conteneur.querySelector(".visuel-personnage").appendChild(
-      creerBadgePPC(getPPC(item, valeur, vueActive))
+      creerBadgePPC(getPPC(item, valeur, vueActive, niveau))
     );
   }
 
@@ -478,7 +481,8 @@ function getValeursTri(vueActive, collectionProfil) {
   return {
     points: item => {
       const valeur = getValeurItem(item, vueActive, collectionProfil);
-      return valeur < 0 ? -1 : Number(getPPC(item, valeur, vueActive) || 0);
+      const niveau = vueActive === "characters" ? collectionProfil.niveaux?.[cleNiveau(item)] : null;
+      return valeur < 0 ? -1 : Number(getPPC(item, valeur, vueActive, niveau) || 0);
     },
     constellation: item => getValeurItem(item, vueActive, collectionProfil),
     // 100 > 95 > non renseigné (persos uniquement).
@@ -696,7 +700,9 @@ function calculerTotalCollection(items, vueActive, boxActive, profil) {
 
       if (!inclus) return;
 
-      const points = Number(item[config.pointsField]?.[valeur] ?? 0);
+      const points = vueActive === "characters"
+        ? pointsPersonnage(item, valeur, collectionProfil.niveaux?.[cleNiveau(item)])
+        : Number(item[config.pointsField]?.[valeur] ?? 0);
       if (item.groupe) {
         meilleurParGroupe[item.groupe] = Math.max(meilleurParGroupe[item.groupe] ?? 0, points);
       } else {
@@ -913,7 +919,9 @@ async function initialiserPage() {
         delete niveaux[select.dataset.id];
       }
 
+      // Le niveau change les points (bonus 95 / 100).
       afficherCollection(personnages, armes, profil);
+      mettreAJourTotalBox(personnages, armes, profil);
     });
 
     document.getElementById("profil-form").addEventListener("submit", async event => {
