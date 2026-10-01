@@ -48,6 +48,10 @@ async function chargerResultats() {
     .select(`${champs}, id, created_at, litige, classe, trophees`)
     .or(litigeOuvert);
 
+  // Sans colonne litige (sql/litiges.sql pas lancé) : classé quand même.
+  if (error) {
+    ({ data, error } = await supabase.from("match_history").select(`${champs}, id, created_at, classe, trophees`));
+  }
   if (error) {
     ({ data, error } = await supabase.from("match_history").select(champs).or(litigeOuvert));
   }
