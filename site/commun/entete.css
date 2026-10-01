@@ -1,3 +1,52 @@
+/* ---- Polices (DB/fonts) ----
+   Classic (HYWenHei 55W / 75W, police de Genshin) partout, en gras pour
+   tout ce qui est en gras (font-weight 600 et plus) ; Titre (HYWenHei 85W)
+   pour les titres. Versions allégées en WOFF2 (sans les caractères
+   chinois : ~30 Ko au lieu de 2 Mo). Classic n'a pas certains accents
+   (â ç ô î û ï œ É È À Ç) : ces lettres s'affichent en Arial. */
+@font-face {
+  font-family: "Classic";
+  src: url("/DB/fonts/classic-latin.woff2") format("woff2");
+  font-weight: 100 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Classic";
+  src: url("/DB/fonts/classic_bold-latin.woff2") format("woff2");
+  font-weight: 600 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Titre";
+  src: url("/DB/fonts/title.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --police-texte: "Classic", Arial, sans-serif;
+  --police-titre: "Titre", "Classic", Arial, sans-serif;
+}
+
+/* Champs et boutons n'héritent pas de la police par défaut. */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--police-texte);
+}
+
+h1,
+h2,
+h3,
+.titre-page,
+.titre-section {
+  font-family: var(--police-titre);
+}
+
 /* ---- Échelle du site ----
    Toutes les tailles sont en rem. Base fixe : 125 % de la taille de police
    du navigateur (20px par défaut) sur ordi, 100 % (16px) sur téléphone.
@@ -35,7 +84,7 @@ html {
   border: 2px solid rgba(255, 255, 255, 0.18);
   border-radius: 62.4375rem;
   color: white;
-  font-family: Arial, sans-serif;
+  font-family: var(--police-texte);
   font-size: 0.9375rem;
   font-weight: bold;
   text-decoration: none;
@@ -64,7 +113,7 @@ html {
 .titre-page {
   margin: 1.5rem 0 1.5rem;
   text-align: center;
-  font-family: Arial, sans-serif;
+  font-family: var(--police-titre);
   font-size: 2.5rem;
   font-weight: bold;
   line-height: 1.2;
@@ -120,7 +169,7 @@ body::before {
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: 62.4375rem;
   color: white;
-  font-family: Arial, sans-serif;
+  font-family: var(--police-texte);
   font-weight: bold;
   text-decoration: none;
 }
@@ -142,7 +191,7 @@ body::before {
   background-color: #5865F2;
   border-radius: 62.4375rem;
   color: white;
-  font-family: Arial, sans-serif;
+  font-family: var(--police-texte);
   font-size: 0.9375rem;
   font-weight: bold;
   text-decoration: none;

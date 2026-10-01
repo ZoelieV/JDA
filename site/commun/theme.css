@@ -16,7 +16,7 @@ body {
   margin: 1.25rem;
   background-color: var(--fond-page);
   color: var(--texte);
-  font-family: Arial, sans-serif;
+  font-family: var(--police-texte);
   line-height: 1.45;
 }
 
