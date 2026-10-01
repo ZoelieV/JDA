@@ -527,6 +527,37 @@ async function noterSpectateur(room, discordId) {
   if (error) console.error("Erreur présence spectateur :", error);
 }
 
+// ---- Présence des joueurs (colonne rooms.presences : { discord_id:
+// dernière lecture de la draft en ms }) ----
+// La page du match relit la draft toutes les 2,5 s, et plus du tout quand
+// son onglet est masqué : un joueur est "en ligne" tant qu'il l'a lue il y a
+// moins de PRESENCE_JOUEUR_MS, "afk" sinon (page fermée ou en arrière-plan).
+// Réécrite au plus toutes les ECRITURE_PRESENCE_MS, seulement cette colonne.
+const PRESENCE_JOUEUR_MS = 15 * 1000;
+const ECRITURE_PRESENCE_MS = 5 * 1000;
+
+async function noterPresence(room, discordId) {
+  // Colonne absente (sql/rooms_matchmaking.sql pas relancé) : pas de présence.
+  if (!room.presences) return;
+  const maintenant = Date.now();
+  if (maintenant - Number(room.presences[discordId] || 0) < ECRITURE_PRESENCE_MS) return;
+  const presences = { ...room.presences, [discordId]: maintenant };
+  room.presences = presences;
+  const { error } = await supabase.from("rooms").update({ presences }).eq("room_id", room.room_id);
+  // Pas bloquant : la pastille sera juste un peu en retard.
+  if (error) console.error("Erreur présence joueur :", error);
+}
+
+// { j1: bool, j2: bool } ou null sans la colonne presences.
+function presencesJoueurs(room, maintenant = Date.now()) {
+  if (!room.presences) return null;
+  const enLigne = discordId => !!discordId && maintenant - Number(room.presences[discordId] || 0) < PRESENCE_JOUEUR_MS;
+  return {
+    j1: enLigne(room.draft?.discord_j1 || room.player1_discord_id),
+    j2: enLigne(room.draft?.discord_j2 || room.player2_discord_id)
+  };
+}
+
 // ---- draft (lecture seule) ----
 async function handleDraftGet(req, res, roomId, user) {
   if (req.method !== "GET") {
@@ -537,7 +568,8 @@ async function handleDraftGet(req, res, roomId, user) {
   // Lecture ouverte aux spectateurs (joueur = null).
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
 
-  if (!joueur) await noterSpectateur(room, user.id);
+  if (joueur) await noterPresence(room, user.id);
+  else await noterSpectateur(room, user.id);
 
   return res.status(200).json({
     spectateur: !joueur,
@@ -545,6 +577,8 @@ async function handleDraftGet(req, res, roomId, user) {
     player1_discord_id: room.player1_discord_id,
     player2_discord_id: room.player2_discord_id,
     draft: vuePourJoueur(room.draft, joueur),
+    // Pastilles en ligne / afk des namecards (joueurs et spectateurs).
+    presences: presencesJoueurs(room),
     // Nombre de spectateurs : pour les joueurs seulement (indicateur 👁).
     ...(joueur ? { nb_spectateurs: spectateursPresents(room).length } : {})
   });

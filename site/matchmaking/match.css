@@ -1360,6 +1360,31 @@ h1 {
   text-shadow: 0 1px 0.1875rem rgba(0, 0, 0, 0.9);
 }
 
+/* Présence pendant les picks et bans : en haut à gauche (j1) ou à droite
+   (j2) de la namecard, verte en ligne, grise afk. */
+.pastille-presence {
+  position: absolute;
+  top: 0.5rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  background-color: #8a8a8a;
+  box-shadow: 0 0 0.25rem rgba(0, 0, 0, 0.8);
+}
+
+.pastille-presence.pastille-j1 {
+  left: 0.5rem;
+}
+
+.pastille-presence.pastille-j2 {
+  right: 0.5rem;
+}
+
+.pastille-presence.en-ligne {
+  background-color: #3ecf6a;
+}
+
 /* j2 en miroir : photo et pseudo à droite. */
 #equipe-j2 .namecard-tableau {
   flex-direction: row-reverse;

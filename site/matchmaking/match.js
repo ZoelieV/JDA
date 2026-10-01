@@ -987,6 +987,30 @@ function remplirCaseTableau(slot, personnage, element = null) {
   slot.innerHTML = `<img class="perso-case" src="../DB/${personnage.image}" alt="${nom}" title="${nom}">`;
 }
 
+// Présence des joueurs ({ j1, j2 } : en ligne ou afk, cf. noterPresence
+// dans api/rooms/[room_id]/[action].js), ou null si inconnue.
+let presences = null;
+
+// Pastille en haut de la namecard (j1 à gauche, j2 à droite), pendant les
+// picks et bans seulement : verte en ligne, grise afk. Soi-même : toujours
+// en ligne (la page est ouverte).
+function mettreAJourPastillesPresence() {
+  ["j1", "j2"].forEach(role => {
+    const pastille = document.querySelector(`#entete-tableau-${role} .pastille-presence`);
+    if (!pastille) return;
+    const visible = draft?.phase === "draft" && !!presences;
+    const enLigne = role === monRole || !!presences?.[role];
+    pastille.classList.toggle("cache", !visible);
+    pastille.classList.toggle("en-ligne", enLigne);
+    pastille.title = enLigne ? "En ligne" : "AFK";
+  });
+}
+
+function afficherPresences(nouvelles) {
+  presences = nouvelles || null;
+  mettreAJourPastillesPresence();
+}
+
 // Namecard du tableau, puis trait de la couleur du joueur.
 function titreTableauJoueur(role, nomJoueur) {
   const joueur = role === "j1" ? joueur1 : joueur2;
@@ -994,6 +1018,7 @@ function titreTableauJoueur(role, nomJoueur) {
   const tagRole = draft?.roles_tires ? `<span class="tag-role">${role.toUpperCase()}</span>` : "";
   return `
     <div class="namecard-tableau" style="--namecard: url(&quot;${namecard}&quot;)">
+      <span class="pastille-presence pastille-${role} cache"></span>
       ${joueur?.avatar ? `<img class="avatar-tableau" src="${joueur.avatar}" alt="">` : ""}
       <span class="nom-complet">${nomJoueur}</span>
       <span class="nom-court">${role.toUpperCase()}</span>
@@ -1019,6 +1044,7 @@ function rendreTableauJoueur(role) {
     entete.dataset.cle = cleEntete;
     entete.innerHTML = titreTableauJoueur(role, joueur.nom);
   }
+  mettreAJourPastillesPresence();
 
   // Temps (fin de match) au-dessus du tableau ; le champ de saisie y est
   // déplacé sans être recréé (le texte tapé n'est pas perdu).
@@ -1960,6 +1986,7 @@ async function rafraichirEtatRoomEtJoueurs() {
     const donnees = await chargerDraft();
     afficherSpectateurs(donnees.nb_spectateurs);
     await definirDraft(donnees.draft);
+    afficherPresences(donnees.presences);
   } else {
     afficherAttente(room);
     rendreEntetesJoueurs();
@@ -1974,6 +2001,7 @@ async function tick() {
       const donnees = await chargerDraft();
       afficherSpectateurs(donnees.nb_spectateurs);
       await definirDraft(donnees.draft);
+      afficherPresences(donnees.presences);
     }
   } catch (error) {
     console.error(error);
