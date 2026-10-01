@@ -10,7 +10,7 @@ const TRI_DEFAUT = { cle: "trophees", sens: -1 };
 // Sens du 1er clic : plus grande valeur d'abord, A -> Z, plus récents d'abord.
 const SENS_INITIAL = {
   trophees: -1, matchs_classes: -1, ratio: -1, points: -1, nb_persos: -1,
-  nb_c6: -1, theatre: -1, constellations_5: -1, alpha: 1, activite: -1
+  nb_c6: -1, constellations_5: -1, theatre: -1, alpha: 1, activite: -1
 };
 
 let joueurs = [];
@@ -69,7 +69,7 @@ function texteStat(joueur, cle, long = false) {
   }
 }
 
-const COLONNES = ["trophees", "matchs_classes", "ratio", "points", "nb_persos", "nb_c6", "theatre", "constellations_5"];
+const COLONNES = ["trophees", "matchs_classes", "ratio", "points", "nb_persos", "nb_c6", "constellations_5", "theatre"];
 
 // Rang sur les trophées (ex aequo : même rang).
 function calculerRangs() {
