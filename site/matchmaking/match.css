@@ -1091,6 +1091,25 @@ h1 {
   font-weight: bold;
 }
 
+/* Lien de stream du joueur (nouvel onglet), sous son temps. */
+.lien-stream {
+  max-width: 100%;
+  padding: 0.25rem 0.75rem;
+  border-radius: 62.4375rem;
+  background-color: rgba(145, 70, 255, 0.35);
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lien-stream:hover {
+  background-color: rgba(145, 70, 255, 0.6);
+}
+
 .recap-centre {
   display: flex;
   flex-direction: column;

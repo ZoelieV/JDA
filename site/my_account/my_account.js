@@ -730,16 +730,17 @@ function afficherCollection(personnages, armes, profil) {
 
 let etatEnregistre = null;
 
-function etatAEnregistrer(profil, uid, theatre) {
+function etatAEnregistrer(profil, uid, theatre, stream) {
   return JSON.stringify([
     profil.characters, profil.weapons,
     profil.parametres?.voyageur ?? null, profil.parametres?.manekin ?? null,
-    uid, theatre, profil.nomsBoxes ?? {}
+    uid, theatre, stream, profil.nomsBoxes ?? {}
   ]);
 }
 
 function etatFormulaire(profil) {
-  return etatAEnregistrer(profil, document.getElementById("uid").value, document.getElementById("theatre").value);
+  return etatAEnregistrer(profil, document.getElementById("uid").value, document.getElementById("theatre").value,
+    document.getElementById("stream").value.trim());
 }
 
 // Bouton de la page et bouton du menu du compte.
@@ -819,6 +820,7 @@ async function initialiserPage() {
     const profil = await chargerProfil();
 
     document.getElementById("uid").value = profil.uid || "";
+    document.getElementById("stream").value = profil.stream || "";
     document.getElementById("theatre").value = profil.theatre || "";
 
     // Voyageur (Aether / Lumine) et Manekin (Manekin / Manekina) : seule la
@@ -1050,6 +1052,8 @@ async function initialiserPage() {
       event.preventDefault();
 
       profil.uid = document.getElementById("uid").value;
+      // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
+      profil.stream = document.getElementById("stream").value.trim();
       profil.theatre = document.getElementById("theatre").value;
 
       const succes = await sauvegarderProfil(profil);
@@ -1063,7 +1067,7 @@ async function initialiserPage() {
       }
     });
 
-    ["uid", "theatre"].forEach(id => {
+    ["uid", "stream", "theatre"].forEach(id => {
       const champ = document.getElementById(id);
       champ.addEventListener("input", () => mettreAJourBoutonEnregistrer(profil));
       champ.addEventListener("change", () => mettreAJourBoutonEnregistrer(profil));
@@ -1364,7 +1368,7 @@ async function initialiserParametres(profil) {
       succes ? "succes" : "erreur"
     );
     if (succes) {
-      marquerEnregistre(profil, etatAEnregistrer(profil, profil.uid || "", profil.theatre || ""));
+      marquerEnregistre(profil, etatAEnregistrer(profil, profil.uid || "", profil.theatre || "", profil.stream || ""));
       memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
       fermer();
     }

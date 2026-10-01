@@ -1666,8 +1666,42 @@ function rendreTempsJoueur(role, zone) {
   ligne.textContent = texte;
   ligne.classList.toggle("cache", !texte);
 
+  rendreLienStream(role, zone);
+
   if (saisieIci && saisie.parentElement !== zone) zone.appendChild(saisie);
   if (role === monRole) saisie.classList.toggle("cache", !saisieIci);
+}
+
+// Lien de stream du joueur (Mon compte, menu du compte), sous son temps :
+// pour revoir sa partie et vérifier le temps. Nouvel onglet ; http(s)
+// seulement (déjà filtré à l'enregistrement, cf. api/auth/profile.js).
+function lienStreamValide(texte) {
+  try {
+    const url = new URL(texte);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function rendreLienStream(role, zone) {
+  const joueur = role === "j1" ? joueur1 : joueur2;
+  const href = lienStreamValide(joueur?.data?.stream);
+  let lien = zone.querySelector(".lien-stream");
+  if (!href) {
+    lien?.remove();
+    return;
+  }
+  if (!lien) {
+    lien = document.createElement("a");
+    lien.className = "lien-stream";
+    lien.target = "_blank";
+    lien.rel = "noopener noreferrer";
+    zone.querySelector(".texte-temps").after(lien);
+  }
+  lien.href = href;
+  lien.textContent = `📺 Stream de ${joueur.nom}`;
+  lien.title = href;
 }
 
 function rendreRecap() {

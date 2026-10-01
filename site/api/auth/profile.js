@@ -11,6 +11,25 @@ const MAX_VITRINE = { characters: 12, weapons: 12 };
 const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5"];
 const LONGUEUR_NOM_BOX = 20;
 
+// Lien de stream (Twitch, YouTube...) affiché aux adversaires pendant la
+// saisie des temps : http(s) seulement ("twitch.tv/x" -> "https://..."),
+// sinon retiré (pas de lien javascript: ou autre).
+const LONGUEUR_LIEN_STREAM = 300;
+
+function nettoyerLienStream(texte) {
+  if (typeof texte !== "string") return null;
+  let lien = texte.trim();
+  if (!lien) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(lien)) lien = `https://${lien}`;
+  try {
+    const url = new URL(lien);
+    if (!["http:", "https:"].includes(url.protocol) || !url.hostname.includes(".")) return null;
+    return url.href.slice(0, LONGUEUR_LIEN_STREAM);
+  } catch {
+    return null;
+  }
+}
+
 function nettoyerProfil(profil) {
   Object.entries(MAX_VITRINE).forEach(([vue, max]) => {
     const vitrine = profil?.[vue]?.selections?.vitrine;
@@ -27,6 +46,10 @@ function nettoyerProfil(profil) {
     });
     if (Object.keys(noms).length) profil.nomsBoxes = noms;
     else delete profil.nomsBoxes;
+
+    const stream = nettoyerLienStream(profil.stream);
+    if (stream) profil.stream = stream;
+    else delete profil.stream;
   }
   return profil;
 }

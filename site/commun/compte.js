@@ -13,6 +13,9 @@
   // Champs du menu enregistrés dans le profil (mêmes que sur Mon compte).
   const CHAMPS = [
     { id: "menu-uid", label: "UID", lire: p => p.uid || "", ecrire: (p, v) => { p.uid = v; } },
+    // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
+    { id: "menu-stream", label: "Lien de stream (Twitch, YouTube…)", type: "url", placeholder: "https://twitch.tv/…",
+      lire: p => p.stream || "", ecrire: (p, v) => { p.stream = v.trim(); } },
     { id: "menu-theatre", label: "Théâtre clear", lire: p => p.theatre || "", ecrire: (p, v) => { p.theatre = v; },
       options: [["", "Choisir"], ["1", "6"], ["2", "8"], ["3", "10"], ["4", "12"]] },
     { id: "menu-voyageur", label: "Voyageur", variante: true,
@@ -39,7 +42,7 @@
           <label for="${champ.id}">${champ.label}</label>
           ${champ.options
             ? `<select id="${champ.id}">${champ.options.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select>`
-            : `<input type="text" id="${champ.id}">`}
+            : `<input type="${champ.type || "text"}" id="${champ.id}"${champ.placeholder ? ` placeholder="${champ.placeholder}"` : ""}>`}
         </div>`).join("")}
       <button type="button" class="menu-btn menu-btn-principal" data-action="enregistrer" disabled>Enregistrer</button>
       <p class="menu-etat cache"></p>
