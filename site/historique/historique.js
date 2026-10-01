@@ -192,10 +192,14 @@ function htmlJoueur(match, role, bansConnus) {
   const banniere = encodeURI(`../DB/images/${joueur.banniere2}`);
   const etiquette = gagnant ? `<span class="etiquette-resultat victoire">Victoire</span>`
     : egalite ? `<span class="etiquette-resultat egalite">Égalité</span>` : "";
-  // Classé : trophées gagnés par le vainqueur, perdus par l'autre.
+  // Classé : trophées gagnés par le vainqueur (bonus de série compris),
+  // perdus par l'autre (plancher à 0 compris) ; à défaut, trophées en jeu.
   const perdant = match.vainqueur && !gagnant && !egalite;
+  const reel = match.trophees_joueurs;
+  const nbTrophees = reel ? Math.abs(reel[role]) : match.trophees;
+  const bonus = gagnant && reel?.bonus ? ` dont +${reel.bonus} de série` : "";
   const trophees = match.classe && match.trophees && (gagnant || perdant)
-    ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées">${gagnant ? "+" : "−"}${match.trophees} 🏆</span>`
+    ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} 🏆${bonus ? " 🔥" : ""}</span>`
     : "";
 
   const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p })).join("");

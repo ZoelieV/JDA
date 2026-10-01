@@ -10,7 +10,7 @@ const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
-const { calculerTrophees } = require("../../_lib/trophees");
+const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("../../_lib/trophees");
 const {
   NB_PERSOS_MIN_BOX,
   SEQUENCE_FIXE,
@@ -350,6 +350,7 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 // la republier, cf. api/matches.js).
 // classe : room du matchmaking classé, trophées en jeu enregistrés (calculés
 // à la republication pour un litige).
+// Renvoie l'id du match archivé (null si l'archivage a échoué).
 async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   // Picks figés avec les infos du joueur à la fin du match (constellation,
   // niveau, raffinement de l'arme signature) pour l'historique ; bans avec
@@ -396,7 +397,8 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
     actions
   };
 
-  let { error } = await supabase.from("match_history").insert(match);
+  const inserer = ligne => supabase.from("match_history").insert(ligne).select("id").single();
+  let { data, error } = await inserer(match);
 
   // Colonne "actions" pas encore créée dans la table : archivage sans elle
   // (les bans restent enregistrés dans bans_j1 / bans_j2). Colonnes litige
@@ -405,12 +407,21 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   // classé sans les colonnes classe / trophees (sql/classe.sql).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
     const { actions, ...sansActions } = match;
-    ({ error } = await supabase.from("match_history").insert(sansActions));
+    ({ data, error } = await inserer(sansActions));
   }
 
   if (error) {
     console.error("Erreur archivage match_history :", error);
+    return null;
   }
+  return data?.id ?? null;
+}
+
+// Match classé archivé : trophées réellement gagnés / perdus par chaque
+// joueur (bonus de série et plancher à 0 compris), affichés en fin de match.
+async function resultatTrophees(idMatch) {
+  if (idMatch == null) return null;
+  return rejouerClasse(await chargerMatchsClasses(supabase)).deltas.get(String(idMatch)) || null;
 }
 
 async function handleTemps(req, res, roomId, user) {
@@ -472,7 +483,10 @@ async function handleConfirmerTemps(req, res, roomId, user) {
   if (draft.temps_confirme_j1 && draft.temps_confirme_j2) {
     draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
     draft.phase = "termine";
-    await archiverMatch(draft, { classe: room.type === "classe" });
+    const classe = room.type === "classe";
+    const idMatch = await archiverMatch(draft, { classe });
+    // { j1, j2, bonus } (null hors classé) : écran de fin de match.
+    draft.resultat_trophees = classe ? await resultatTrophees(idMatch) : null;
   }
 
   await sauvegarderDraft(roomId, draft);

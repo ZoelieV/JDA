@@ -1817,17 +1817,24 @@ function rendreTermine() {
     ligneVainqueur = `<span class="vainqueur">${nomGagnant} gagne !</span>`;
   }
 
-  // Classé : trophées gagnés / perdus (le total ne descend pas sous 0).
+  // Classé : trophées gagnés / perdus, calculés par le serveur (bonus de
+  // série et plancher à 0 compris) ; à défaut, trophées en jeu sans bonus.
   let ligneTrophees = "";
   if (typeRoom === "classe") {
-    const trophees = calculerTrophees();
-    const gagnant = draft.vainqueur === "j1" ? joueur1 : joueur2;
-    const perdant = draft.vainqueur === "j1" ? joueur2 : joueur1;
-    ligneTrophees = trophees === 0
-      ? `<p class="ligne-trophees">🏆 Aucun trophée en jeu</p>`
-      : monRole
-        ? `<p class="ligne-trophees ${draft.vainqueur === monRole ? "gain" : "perte"}">🏆 ${draft.vainqueur === monRole ? "+" : "−"}${trophees} trophée${trophees > 1 ? "s" : ""}</p>`
-        : `<p class="ligne-trophees">🏆 ${gagnant.nom} +${trophees}, ${perdant.nom} −${trophees}</p>`;
+    const resultat = draft.resultat_trophees;
+    const enJeu = calculerTrophees();
+    const delta = role => resultat ? resultat[role] : (draft.vainqueur === role ? enJeu : -enJeu);
+    const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
+    const bonus = resultat?.bonus ? ` (dont +${resultat.bonus} de série 🔥)` : "";
+    if (enJeu === 0) {
+      ligneTrophees = `<p class="ligne-trophees">🏆 Aucun trophée en jeu</p>`;
+    } else if (monRole) {
+      const n = delta(monRole);
+      const gagne = draft.vainqueur === monRole;
+      ligneTrophees = `<p class="ligne-trophees ${gagne ? "gain" : "perte"}">🏆 ${signe(n)} trophée${Math.abs(n) > 1 ? "s" : ""}${gagne ? bonus : ""}</p>`;
+    } else {
+      ligneTrophees = `<p class="ligne-trophees">🏆 ${joueur1.nom} ${signe(delta("j1"))}, ${joueur2.nom} ${signe(delta("j2"))}${bonus}</p>`;
+    }
   }
 
   container.innerHTML = `

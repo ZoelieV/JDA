@@ -11,7 +11,7 @@ const { infosPersoJoueur } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin } = require("./_lib/admin");
 const { parserTempsMMSS, determinerVainqueur } = require("./_lib/temps");
-const { calculerTrophees } = require("./_lib/trophees");
+const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -264,6 +264,12 @@ module.exports = async (req, res) => {
       date: room.last_active_at || null
     }));
 
+    // Trophées réellement gagnés / perdus par match classé (bonus de série
+    // et plancher à 0 compris) : tous les matchs classés rejoués.
+    const deltasClasse = [...matchs, ...litiges].some(m => m.classe)
+      ? rejouerClasse(await chargerMatchsClasses(supabase)).deltas
+      : new Map();
+
     const ids = [...new Set([
       ...[...matchs, ...enCours, ...litiges].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
       ...statsLitiges.map(s => s.discord_id)
@@ -282,6 +288,8 @@ module.exports = async (req, res) => {
       // Match classé : trophées gagnés par le vainqueur (perdus par l'autre).
       classe: !!match.classe,
       trophees: match.classe ? match.trophees ?? null : null,
+      // { j1, j2, bonus } : trophées gagnés (+) / perdus (−) par chaque joueur.
+      trophees_joueurs: match.classe ? deltasClasse.get(String(match.id)) || null : null,
       // Bans enregistrés (colonne actions, ou bans_j1 / bans_j2 remplies).
       bans_connus: Array.isArray(match.actions) ||
         (Array.isArray(match.bans_j1) && match.bans_j1.length > 0) ||

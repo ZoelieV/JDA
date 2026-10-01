@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox } = require("../_lib/draft");
 const { getPersonnages, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
-const { totauxTrophees } = require("../_lib/trophees");
+const { rejouerClasse } = require("../_lib/trophees");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -74,7 +74,7 @@ async function chargerResultats() {
     compter(match.player2_discord_id, match.vainqueur === "j2");
   });
 
-  totauxTrophees(data).forEach((classe, discordId) => {
+  rejouerClasse(data).joueurs.forEach((classe, discordId) => {
     resultats[discordId] ??= { matchs: 0, victoires: 0 };
     resultats[discordId].classe = classe;
   });
@@ -117,7 +117,9 @@ function resumerProfil(profil, resultats) {
     // Classé : null si aucun match classé (absent du classement).
     trophees: classe ? classe.trophees : null,
     matchs_classes: classe ? classe.matchs : 0,
-    victoires_classees: classe ? classe.victoires : 0
+    victoires_classees: classe ? classe.victoires : 0,
+    // Victoires d'affilée en cours en classé (bonus de série).
+    serie: classe ? classe.serie : 0
   };
 }
 
