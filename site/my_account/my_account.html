@@ -154,10 +154,11 @@
             <label class="filtre-icone" title="Personnages Standards"><input type="checkbox" class="filtre-voeu-input" value="acquaint"><img src="../DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></label>
           </div>
           <!-- Armes : catégories réglées par les administrateurs (support,
-               standard = arme perma). -->
+               standard = arme perma ; temporaire = pas perma). -->
           <div class="groupe-filtres filtres-categories-armes" id="filtres-categories-armes" hidden>
             <label class="filtre-texte" title="Armes support"><input type="checkbox" class="filtre-categorie-arme" value="support"><span>Support</span></label>
             <label class="filtre-texte" title="Armes perma (bannière standard)"><input type="checkbox" class="filtre-categorie-arme" value="standard"><span>Perma</span></label>
+            <label class="filtre-texte" title="Armes temporaires (jamais perma)"><input type="checkbox" class="filtre-categorie-arme" value="temporaire"><span>Temporaire</span></label>
           </div>
           <label class="filtre-texte" title="N'afficher que ce que je possède"><input type="checkbox" id="filtre-possedes"><span>Possédés</span></label>
           <button type="button" id="btn-clear-filtres" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
@@ -270,7 +271,7 @@
   <script src="/my_account/auto_box/detection.js?v=2"></script>
   <script src="/my_account/auto_box/interface.js?v=3"></script>
   <script src="/commun/cartes.js?v=8"></script>
-  <script src="/commun/tri.js?v=13"></script>
-  <script src="/my_account/my_account.js?v=37"></script>
+  <script src="/commun/tri.js?v=14"></script>
+  <script src="/my_account/my_account.js?v=38"></script>
 </body>
 </html>

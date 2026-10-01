@@ -82,6 +82,19 @@ function viderTris(etat) {
   etat.tris = [];
 }
 
+// ---- Filtre des armes par catégorie ----
+// Deux critères : rôle (support) et disponibilité (perma = catégorie
+// "standard" des administrateurs ; temporaire = jamais perma). Perma et
+// temporaire cochés : les deux (toutes les armes) ; support et une
+// disponibilité : les deux à la fois (ex. armes support temporaires).
+function armeCorrespondCategories(arme, selection) {
+  const categories = Array.isArray(arme.categories) ? arme.categories : [];
+  if (selection.includes("support") && !categories.includes("support")) return false;
+  const perma = categories.includes("standard");
+  const disponibilites = selection.filter(c => c === "standard" || c === "temporaire");
+  return disponibilites.length === 0 || disponibilites.includes(perma ? "standard" : "temporaire");
+}
+
 // Ajoute/retire une valeur d'une sélection en gardant l'ordre des clics
 // (Set : l'ordre d'insertion est conservé).
 function basculerSelection(set, valeur) {

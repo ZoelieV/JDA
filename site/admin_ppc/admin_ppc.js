@@ -71,8 +71,9 @@ function lireMasquesConfig(config) {
 // (1er clic décroissant, 2e croissant, 3e ordre de sortie ; nom : A -> Z).
 const CATEGORIES = { dps: "DPS", subdps: "Sub-DPS", support: "Support" };
 // Armes : catégories (réglées dans "Catégories des armes") ; standard =
-// arme perma.
-const CATEGORIES_ARMES_FILTRE = { support: "Support", standard: "Perma" };
+// arme perma, temporaire = pas perma (cf. armeCorrespondCategories,
+// commun/tri.js).
+const CATEGORIES_ARMES_FILTRE = { support: "Support", standard: "Perma", temporaire: "Temporaire" };
 
 let filtres = creerFiltres();
 let tri = null; // { cle: "nom" | index de colonne, sens: 1 | -1 }
@@ -122,8 +123,7 @@ function itemsAffiches() {
     if (persos && filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
     if (persos && filtres.voeux.size && !filtres.voeux.has(getVoeu(item))) return false;
     if (persos && filtres.categories.size && !filtres.categories.has(item.categorie)) return false;
-    if (!persos && filtres.categoriesArmes.size &&
-      !(Array.isArray(item.categories) && item.categories.some(c => filtres.categoriesArmes.has(c)))) return false;
+    if (!persos && !armeCorrespondCategories(item, [...filtres.categoriesArmes])) return false;
     if (filtres.aRenseigner && points.slice(0, nbConstellations).some(p => p !== 0)) return false;
     if (filtres.modifies && JSON.stringify(points) === JSON.stringify(valeursEnregistrees(item.id))) return false;
     if (filtres.masques && !estMasque(item.id)) return false;

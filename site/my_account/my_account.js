@@ -632,8 +632,8 @@ function afficherCollection(personnages, armes, profil) {
     ? Array.from(document.querySelectorAll(".filtre-voeu-input:checked")).map(input => input.value)
     : [];
 
-  // Armes support / perma (catégories des administrateurs) : une des
-  // catégories cochées suffit.
+  // Armes support / perma / temporaires (catégories des administrateurs,
+  // cf. armeCorrespondCategories dans commun/tri.js).
   const categoriesArmesSelectionnees = vueActive === "weapons"
     ? Array.from(document.querySelectorAll(".filtre-categorie-arme:checked")).map(input => input.value)
     : [];
@@ -682,8 +682,7 @@ function afficherCollection(personnages, armes, profil) {
     const filtreVoeuOK =
       voeuxSelectionnes.length === 0 || voeuxSelectionnes.includes(getVoeu(item));
 
-    const filtreCategorieArmeOK = categoriesArmesSelectionnees.length === 0 ||
-      (Array.isArray(item.categories) && item.categories.some(c => categoriesArmesSelectionnees.includes(c)));
+    const filtreCategorieArmeOK = armeCorrespondCategories(item, categoriesArmesSelectionnees);
 
     return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK && filtreCategorieArmeOK;
   });
