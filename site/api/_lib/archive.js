@@ -75,7 +75,7 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   }
 
   if (error) {
-    console.error("Erreur archivage match_history :", error);
+    console.error(`Erreur archivage match_history${litige ? " (litige)" : ""} :`, error);
     return null;
   }
   return data?.id ?? null;

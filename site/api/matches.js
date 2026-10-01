@@ -42,7 +42,9 @@ async function chargerMatchs() {
   return data || [];
 }
 
-// Administrateurs : litiges ouverts (plus récents d'abord).
+// Administrateurs : litiges ouverts (plus récents d'abord) -> { lignes,
+// erreur }. Erreur de lecture (ex. colonnes de sql/litiges.sql absentes) :
+// renvoyée à la page pour que les administrateurs la voient.
 async function chargerLitigesOuverts() {
   const { data, error } = await supabase
     .from("match_history")
@@ -50,11 +52,15 @@ async function chargerLitigesOuverts() {
     .eq("litige", "ouvert")
     .order("created_at", { ascending: false });
   if (error) {
-    // Colonnes litige pas encore créées (sql/litiges.sql) : aucun litige.
     console.error("Erreur lecture litiges :", error);
-    return [];
+    return {
+      lignes: [],
+      erreur: ["42703", "PGRST204"].includes(error.code)
+        ? "Colonnes des litiges absentes de la base : lancer sql/litiges.sql dans Supabase."
+        : `Erreur de lecture des litiges (${error.code || "inconnue"}) : ${error.message || ""}`
+    };
   }
-  return data || [];
+  return { lignes: data || [], erreur: null };
 }
 
 // Administrateurs : litiges par joueur (ouverts et republiés), en
@@ -240,10 +246,10 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const [matchs, rooms, litiges, statsLitiges] = await Promise.all([
+    const [matchs, rooms, { lignes: litiges, erreur: erreurLitiges }, statsLitiges] = await Promise.all([
       chargerMatchs(),
       chargerRoomsEnCours(),
-      admin ? chargerLitigesOuverts() : [],
+      admin ? chargerLitigesOuverts() : { lignes: [], erreur: null },
       admin ? chargerStatsLitiges() : []
     ]);
 
@@ -312,6 +318,7 @@ module.exports = async (req, res) => {
       // Administrateurs seulement.
       ...(admin ? {
         litiges: litiges.map(resumerMatch),
+        erreur_litiges: erreurLitiges,
         stats_litiges: statsLitiges.map(s => {
           const profil = joueurs.get(s.discord_id);
           return {

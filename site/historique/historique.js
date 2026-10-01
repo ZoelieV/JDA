@@ -6,6 +6,7 @@ let matchs = [];     // terminés
 let matchsEnCours = [];
 let litiges = [];      // administrateurs : matchs invalidés par un litige
 let statsLitiges = []; // administrateurs : litiges par joueur
+let erreurLitiges = null; // administrateurs : problème de lecture côté base
 let estAdmin = false;
 // Modération : colonne triée (décroissant) et joueur filtré dans les litiges.
 let triLitiges = "total";
@@ -396,7 +397,8 @@ function afficherLitiges() {
 
   const affiches = litiges.filter(match => !joueurLitiges ||
     match.j1.discord_id === joueurLitiges || match.j2.discord_id === joueurLitiges);
-  document.getElementById("etat-litiges").textContent = affiches.length === 0 ? "Aucun litige ouvert." : "";
+  document.getElementById("etat-litiges").textContent = erreurLitiges
+    || (affiches.length === 0 ? "Aucun litige ouvert." : "");
   document.getElementById("liste-litiges").replaceChildren(...affiches.map(creerLigneMatch));
 }
 
@@ -415,6 +417,7 @@ function appliquerHistorique(historique) {
   matchsEnCours = historique.en_cours || [];
   litiges = historique.litiges || [];
   statsLitiges = historique.stats_litiges || [];
+  erreurLitiges = historique.erreur_litiges || null;
 }
 
 // ---- Démarrage ----

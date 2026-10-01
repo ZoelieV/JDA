@@ -18,6 +18,10 @@ alter table match_history add column if not exists litige_par text;
 alter table match_history add column if not exists republie_par text;
 alter table match_history add column if not exists republie_le timestamptz;
 
+-- Litige ouvert : enregistré sans vainqueur (vainqueur null jusqu'à la
+-- republication). Sans effet si la colonne accepte déjà null.
+alter table match_history alter column vainqueur drop not null;
+
 create index if not exists match_history_litiges
   on match_history (litige)
   where litige is not null;
