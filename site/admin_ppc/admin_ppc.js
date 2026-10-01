@@ -125,7 +125,7 @@ function itemsAffiches() {
     return true;
   });
 
-  if (!tri) return filtres.elements.size > 1 ? trierParElements(items) : items;
+  if (!tri) return filtres.elements.size || filtres.armes.size ? trierParFiltres(items, champType) : items;
   return items
     .map((item, index) => ({ item, index }))
     .sort((a, b) => {
@@ -137,15 +137,21 @@ function itemsAffiches() {
     .map(e => e.item);
 }
 
-// Plusieurs éléments filtrés, sans tri de colonne : un élément après l'autre
-// (dans l'ordre où ils ont été sélectionnés), chacun trié par rareté (5★
-// d'abord) puis dans l'ordre de sortie.
-function trierParElements(items) {
+// Éléments et / ou armes filtrés, sans tri de colonne : un élément après
+// l'autre, puis un type d'arme après l'autre (dans l'ordre où ils ont été
+// sélectionnés), chaque groupe trié par rareté (5★ d'abord) puis dans
+// l'ordre de sortie. Filtre omni : le Voyageur (une version par élément)
+// reste dans le groupe omni.
+function trierParFiltres(items, champType) {
   const ordreElements = [...filtres.elements];
+  const ordreArmes = [...filtres.armes];
+  const rangElement = item => ordreElements.indexOf(filtres.elements.has(item.element) ? item.element : "all");
+  const rangArme = item => ordreArmes.indexOf(item[champType]);
   return items
     .map((item, index) => ({ item, index }))
     .sort((a, b) =>
-      (ordreElements.indexOf(a.item.element) - ordreElements.indexOf(b.item.element)) ||
+      (rangElement(a.item) - rangElement(b.item)) ||
+      (rangArme(a.item) - rangArme(b.item)) ||
       (Number(b.item.rarete) - Number(a.item.rarete)) ||
       (a.index - b.index))
     .map(e => e.item);
