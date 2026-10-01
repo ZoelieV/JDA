@@ -39,11 +39,18 @@ textarea {
   font-family: var(--police-texte);
 }
 
+/* Titres : balises de titre et titres en texte simple (annonce J1 / J2,
+   vérification des temps, onglets de personnalisation, détection auto). */
 h1,
 h2,
 h3,
+h4,
 .titre-page,
-.titre-section {
+.titre-section,
+.titre-verification,
+.annonce-titre,
+.apercu-titre,
+.zone-depot-titre {
   font-family: var(--police-titre);
 }
 
