@@ -73,13 +73,14 @@ function valeurTri(match, cle) {
   }
 }
 
-// Texte cherché : joueurs, boss et personnages (équipes et bans).
+// Texte cherché : joueurs, boss et personnages joués (équipes seulement : un
+// personnage banni ne fait pas remonter le match).
 function texteRecherche(match) {
   if (!match.texte) {
     const noms = ids => ids.map(id => personnagesParId.get(id)?.nom || id);
     match.texte = [
       match.j1.nom, match.j2.nom, bossParId.get(match.boss_id)?.nom || match.boss_id,
-      ...[match.j1, match.j2].flatMap(j => noms([...j.equipe, ...j.bans, ...j.bans_equilibrage].map(p => p.id)))
+      ...[match.j1, match.j2].flatMap(j => noms(j.equipe.map(p => p.id)))
     ].join(" ").toLowerCase();
   }
   return match.texte;
