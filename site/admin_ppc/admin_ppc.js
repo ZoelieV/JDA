@@ -354,13 +354,26 @@ function rendre() {
 
 // ---- Saisie ----
 
-// "12" -> 12 ; "*1,2" -> { multiplicateur: 1.2 } ; sinon null.
-function lireSaisie(texte) {
+// "12" -> 12 ; "*1,2" ou "x1,2" -> { multiplicateur: 1.2 } ; sinon null.
+// pourcentage (cases de points) : "+13" ou "+13 %" -> { multiplicateur:
+// 1.13 } (+13 % par rapport à la case précédente). Pas pour les
+// modificateurs, où "+5" est une addition.
+function lireSaisie(texte, { pourcentage = false } = {}) {
   const brut = texte.trim().replace(",", ".");
   const multiplicateur = brut.match(/^[*x×]\s*(\d+(?:\.\d+)?)$/i);
   if (multiplicateur) return { multiplicateur: Number(multiplicateur[1]) };
+  const hausse = pourcentage && brut.match(/^\+\s*(\d+(?:\.\d+)?)\s*%?$/);
+  if (hausse) return { multiplicateur: 1 + Number(hausse[1]) / 100 };
   if (brut !== "" && Number.isFinite(Number(brut))) return { valeur: Number(brut) };
   return null;
+}
+
+// Saisie d'une case du tableau : "+13" = +13 % seulement dans les cases
+// calculables à partir de la précédente (C1..C6, R2..R5) ; ailleurs (C0,
+// niveaux, théâtre), "+13" reste le nombre 13.
+function lireSaisieCase(input) {
+  const index = Number(input.dataset.index);
+  return lireSaisie(input.value, { pourcentage: index >= 1 && index <= COLONNES[vue].derniereChaine });
 }
 
 // Points de constellation : entiers ; bonus en multiplication : décimales
@@ -372,7 +385,7 @@ function normaliser(index, valeur) {
 
 // Valeur calculée à partir de la case précédente, ou null.
 function valeurCalculee(input) {
-  const saisie = lireSaisie(input.value);
+  const saisie = lireSaisieCase(input);
   const index = Number(input.dataset.index);
   if (!saisie?.multiplicateur || index < 1 || index > COLONNES[vue].derniereChaine) return null;
   return Math.round(valeurs[vue][input.dataset.id][index - 1] * saisie.multiplicateur);
@@ -383,7 +396,7 @@ function afficherApercu(input) {
   const calcul = valeurCalculee(input);
   apercu.textContent = calcul === null ? "" : `= ${calcul}`;
   input.classList.toggle("avec-apercu", calcul !== null);
-  const saisie = lireSaisie(input.value);
+  const saisie = lireSaisieCase(input);
   input.classList.toggle("invalide", input.value.trim() !== "" && !saisie ||
     (!!saisie?.multiplicateur && calcul === null));
 }
@@ -407,7 +420,7 @@ function initialiserSaisie() {
     if (!input) return;
     afficherApercu(input);
     // Nombre écrit directement : pris en compte tout de suite.
-    const saisie = lireSaisie(input.value);
+    const saisie = lireSaisieCase(input);
     if (saisie && "valeur" in saisie) {
       valeurs[vue][input.dataset.id][Number(input.dataset.index)] = normaliser(Number(input.dataset.index), saisie.valeur);
       mettreAJourEcarts(input.dataset.id);
@@ -420,7 +433,7 @@ function initialiserSaisie() {
     if (!input || event.key !== "Enter") return;
     event.preventDefault();
     const calcul = valeurCalculee(input);
-    const saisie = lireSaisie(input.value);
+    const saisie = lireSaisieCase(input);
     if (calcul !== null) enregistrerCase(input, calcul);
     else if (saisie && "valeur" in saisie) enregistrerCase(input, saisie.valeur);
     else return;
