@@ -421,6 +421,10 @@ function getValeursTri(roles) {
     // 100 > 95 > non renseigné ; meilleur niveau parmi les propriétaires.
     niveau: personnage => Math.max(0, ...getRolesProprietaires(personnage.id, roles, roles.length > 1)
       .map(r => Number(getNiveauPersonnage(getJoueurDataParRole(r), personnage.id)) || 0)),
+    // Arme signature : meilleur raffinement parmi les propriétaires du
+    // personnage (-1 : arme non possédée ou pas d'arme signature).
+    raffinement: personnage => Math.max(-1, ...getRolesProprietaires(personnage.id, roles, roles.length > 1)
+      .map(r => getRefinementArmeSignature(getJoueurDataParRole(r), personnage.id) ?? -1)),
     favoris: personnage => estFavori(personnage.id) ? 1 : 0
   };
 }
@@ -557,7 +561,8 @@ function rendreApercuBox(containerId, role, boxChoisie) {
       vue: "weapons",
       valeurs: {
         points: a => Number(a.PPW?.[a.raffinement] ?? 0),
-        constellation: a => a.raffinement
+        constellation: a => a.raffinement,
+        raffinement: a => a.raffinement
       },
       elements: filtreElement,
       armes: filtreArme,
@@ -664,7 +669,8 @@ function groupesArmesDraft() {
     vue: "weapons",
     valeurs: {
       points: arme => Math.max(...raffinements(arme).map(r => Number(arme.PPW?.[r] ?? 0))),
-      constellation: arme => Math.max(...raffinements(arme))
+      constellation: arme => Math.max(...raffinements(arme)),
+      raffinement: arme => Math.max(...raffinements(arme))
     },
     elements: filtreElement,
     armes: filtreArme,
@@ -1521,7 +1527,7 @@ function initialiserFiltresTri() {
   const zoneTris = document.createElement("div");
   zoneTris.className = "tris";
   zoneTris.innerHTML = `<span class="tris-label">Trier :</span>`;
-  ["points", "constellation", "niveau", "rarete", "element", "favoris"].forEach(valeur => {
+  ["points", "constellation", "niveau", "raffinement", "rarete", "element", "favoris"].forEach(valeur => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-etoile-btn tri-btn";

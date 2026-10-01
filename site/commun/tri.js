@@ -94,11 +94,12 @@ function majBoutonTri(btn, etat, vue = "characters") {
   const sens = getSensTri(etat, cle);
   const libelles = {
     points: `<img class="tri-logo" src="${LOGO_TRI_POINTS}" alt="Points">`,
-    constellation: vue === "weapons" ? "Raffin." : `<img class="tri-logo tri-logo-constellation" src="${LOGO_TRI_CONSTELLATION}" alt="Constellation">`,
+    constellation: vue === "weapons" ? `<b>R</b>` : `<img class="tri-logo tri-logo-constellation" src="${LOGO_TRI_CONSTELLATION}" alt="Constellation">`,
     niveau: `<img class="tri-logo tri-logo-niveau" src="${LOGO_TRI_NIVEAU}" alt="Niveau">`,
     rarete: `<span class="tri-etoile">★</span>`,
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`,
     arme: `<img class="tri-logo" src="${LOGO_TRI_ARME}" alt="Type d'arme">`,
+    raffinement: `<b>R</b>`,
     favoris: `<img class="tri-logo" src="${LOGO_TRI_FAVORIS}" alt="Favoris">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;
@@ -109,6 +110,7 @@ function majBoutonTri(btn, etat, vue = "characters") {
     rarete: "Trier par rareté",
     element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément",
     arme: "Trier par type d'arme",
+    raffinement: vue === "weapons" ? "Trier par raffinement" : "Trier par raffinement de l'arme signature",
     favoris: "Favoris d'abord"
   };
   btn.title = titres[cle] || "";
