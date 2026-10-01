@@ -1,4 +1,6 @@
 const { etatInitialDraft } = require("./draft");
+const { archiverMatch, resultatTrophees } = require("./archive");
+const { TEMPS_ABANDON, determinerVainqueur } = require("./temps");
 
 // Détermine si l'utilisateur connecté est j1, j2, ou ni l'un ni l'autre
 // pour une room donnée. j1/j2 sont les rôles DE LA MANCHE EN COURS
@@ -86,16 +88,41 @@ async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpect
 // recherche de matchmaking) quitte ses autres rooms :
 // - room encore en attente d'un adversaire : supprimée ;
 // - manche en cours : annulée (phase "annule", annule_par = son rôle),
-//   rien dans l'historique ;
+//   rien dans l'historique ; en classé, comptée comme un abandon : défaite
+//   archivée avec perte des trophées, victoire de l'adversaire
+//   (abandon_classe, cf. abandonnerMatchClasse) ;
 // - manche terminée (termine / litige) : résultat gardé, revanche
 //   impossible (quitte_par = son rôle).
 // sauf : room à garder (celle qu'il rejoint ou sa room d'attente).
 const PHASES_FINIES = ["termine", "litige", "annule"];
 
+// Match classé quitté en cours : abandon de ce joueur (temps "Abandon"),
+// l'adversaire garde son temps s'il l'avait saisi. Archivé comme un match
+// classé (trophées au maximum, cf. calculerTrophees) ; la room passe en
+// "annule" avec le résultat pour l'écran de l'adversaire.
+async function abandonnerMatchClasse(draft, role) {
+  const autre = role === "j1" ? "j2" : "j1";
+  const tempsAutre = draft[`temps_${autre}`] || { affiche: "—", secondes: null };
+  const final = {
+    ...draft,
+    [`temps_${role}`]: { ...TEMPS_ABANDON },
+    [`temps_${autre}`]: tempsAutre
+  };
+  final.vainqueur = determinerVainqueur(final.temps_j1, final.temps_j2);
+  const idMatch = await archiverMatch(final, { classe: true });
+  return {
+    ...final,
+    phase: "annule",
+    annule_par: role,
+    abandon_classe: true,
+    resultat_trophees: await resultatTrophees(idMatch)
+  };
+}
+
 async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
   let requete = supabase
     .from("rooms")
-    .select("room_id, player1_discord_id, player2_discord_id, draft")
+    .select("room_id, player1_discord_id, player2_discord_id, type, draft")
     .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`);
   if (sauf) requete = requete.neq("room_id", sauf);
   const { data, error } = await requete;
@@ -115,9 +142,14 @@ async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
     if (!role) continue;
     if (draft.phase === "annule" || draft.quitte_par) continue;
 
-    const nouveau = PHASES_FINIES.includes(draft.phase)
-      ? { ...draft, quitte_par: role, rejouer_j1: false, rejouer_j2: false }
-      : { ...draft, phase: "annule", annule_par: role };
+    let nouveau;
+    if (PHASES_FINIES.includes(draft.phase)) {
+      nouveau = { ...draft, quitte_par: role, rejouer_j1: false, rejouer_j2: false };
+    } else if (room.type === "classe") {
+      nouveau = await abandonnerMatchClasse(draft, role);
+    } else {
+      nouveau = { ...draft, phase: "annule", annule_par: role };
+    }
     const { error: erreurMaj } = await supabase.from("rooms").update({ draft: nouveau }).eq("room_id", room.room_id);
     if (erreurMaj) console.error("Erreur annulation du match :", erreurMaj);
   }

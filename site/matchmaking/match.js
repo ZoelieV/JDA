@@ -1969,9 +1969,29 @@ function rendreRejouer() {
 
 // Match annulé : un des joueurs a démarré un autre match (un seul match à la
 // fois, cf. annulerAutresMatchs dans api/_lib/room.js).
+// Classé (abandon_classe) : compté comme un abandon de celui qui est parti,
+// trophées perdus par lui et gagnés par l'adversaire.
 function rendreAnnule() {
   const parti = draft.annule_par === "j1" ? joueur1 : draft.annule_par === "j2" ? joueur2 : null;
-  document.getElementById("texte-annule").innerHTML = draft.annule_par === monRole
+  const titre = document.querySelector("#phase-annule .litige");
+  const texte = document.getElementById("texte-annule");
+
+  if (draft.abandon_classe) {
+    titre.textContent = "Abandon";
+    const autre = draft.annule_par === "j1" ? "j2" : "j1";
+    const resultat = draft.resultat_trophees;
+    const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
+    const trophees = role => resultat ? ` (${signe(resultat[role])} 🏆)` : "";
+    texte.innerHTML = draft.annule_par === monRole
+      ? `Tu as quitté ce match classé : défaite par abandon${trophees(monRole)}.`
+      : monRole
+        ? `${parti?.pseudo || "Ton adversaire"} a quitté le match classé : victoire par abandon${trophees(monRole)}.`
+        : `${parti?.pseudo || "Un joueur"} a quitté le match classé : défaite par abandon${trophees(draft.annule_par)}, victoire de l'adversaire${trophees(autre)}.`;
+    return;
+  }
+
+  titre.textContent = "Match annulé";
+  texte.innerHTML = draft.annule_par === monRole
     ? "Tu as démarré un autre match : celui-ci est annulé et ne compte pas."
     : parti
       ? `${parti.pseudo} a démarré un autre match : celui-ci est annulé et ne compte pas.`
