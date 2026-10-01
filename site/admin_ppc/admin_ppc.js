@@ -139,7 +139,8 @@ function itemsAffiches() {
 
 // Éléments et / ou armes filtrés, sans tri de colonne : un élément après
 // l'autre, puis un type d'arme après l'autre (dans l'ordre où ils ont été
-// sélectionnés), chaque groupe trié par rareté (5★ d'abord) puis dans
+// sélectionnés), chaque groupe trié par rareté (5★ limités, puis 5★
+// standards et Voyageur comptés 4.5★, puis 4★ ; cf. rangRarete) puis dans
 // l'ordre de sortie. Filtre omni : le Voyageur (une version par élément)
 // reste dans le groupe omni.
 function trierParFiltres(items, champType) {
@@ -152,7 +153,7 @@ function trierParFiltres(items, champType) {
     .sort((a, b) =>
       (rangElement(a.item) - rangElement(b.item)) ||
       (rangArme(a.item) - rangArme(b.item)) ||
-      (Number(b.item.rarete) - Number(a.item.rarete)) ||
+      (rangRarete(b.item) - rangRarete(a.item)) ||
       (a.index - b.index))
     .map(e => e.item);
 }
