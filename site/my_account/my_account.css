@@ -993,13 +993,16 @@ textarea {
   color: #f5c542;
 }
 
-/* ---- Boutons - / + des constellations : ronds noirs, signes blancs ---- */
+/* ---- Boutons - / + des constellations : ronds noirs, signes blancs ----
+   Signes de Classic dessinés 0,053 em trop haut : compensés par un padding
+   en haut (le contenu centré descend de la moitié). */
 
 .moins-btn,
 .plus-btn {
+  box-sizing: border-box;
   width: 1.75rem;
   height: 1.75rem;
-  padding: 0;
+  padding: 0.106em 0 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1352,6 +1355,11 @@ body {
     height: 1.25rem;
     padding: 0;
     font-size: 0.8125rem;
+  }
+
+  .moins-btn,
+  .plus-btn {
+    padding: 0.106em 0 0;
   }
 
   .info-constellation {
