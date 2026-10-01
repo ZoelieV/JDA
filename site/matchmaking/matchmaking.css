@@ -28,3 +28,9 @@
 .option-classe a {
   color: var(--accent);
 }
+
+.note-match {
+  margin: 0 0 1rem;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}

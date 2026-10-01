@@ -18,6 +18,13 @@ async function creerMatch(corps) {
       return;
     }
 
+    // Match privé : une room par minute au maximum (message du serveur).
+    if (reponse.status === 429) {
+      const { error } = await reponse.json().catch(() => ({}));
+      alert(error || "Trop de rooms créées : réessaie dans une minute.");
+      return;
+    }
+
     if (!reponse.ok) {
       throw new Error("Échec de la création du match.");
     }

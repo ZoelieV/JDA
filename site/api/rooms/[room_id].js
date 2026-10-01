@@ -1,6 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE } = require("../_lib/matchmaking");
+const { annulerAutresMatchs } = require("../_lib/room");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -100,6 +101,10 @@ module.exports = async (req, res) => {
         console.error(updateError);
         return res.status(500).json({ error: "Erreur en rejoignant la room" });
       }
+
+      // Devenu adversaire : un seul match à la fois, ses autres matchs sont
+      // annulés.
+      if (updated) await annulerAutresMatchs(supabase, user.id, { sauf: roomId });
 
       return res.status(200).json(updated || { ...room, spectateur: true });
     }

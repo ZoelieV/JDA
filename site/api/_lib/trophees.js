@@ -13,8 +13,10 @@ const BONUS_SERIE_MAX = 3;
 
 // Trophées en jeu dans un match terminé (vainqueur "j1" | "j2" | "egalite"),
 // sans le bonus de série (colonne match_history.trophees).
+// Abandon d'un joueur : écart "infini", trophées au maximum.
 function calculerTrophees(tempsJ1, tempsJ2, vainqueur) {
   if (vainqueur !== "j1" && vainqueur !== "j2") return 0;
+  if (tempsJ1.abandon || tempsJ2.abandon) return TROPHEES_MAX;
   const ecart = Math.abs(tempsJ1.secondes - tempsJ2.secondes);
   return Math.min(TROPHEES_MAX, Math.ceil(ecart / 2));
 }

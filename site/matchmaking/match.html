@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem35">
+<link rel="stylesheet" href="match.css?v=rem36">
 <link rel="stylesheet" href="../commun/entete.css?v=rem20">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -70,6 +70,15 @@
          2 box visibles, box verrouillées). Colonnes fixes j1 (gauche) / j2
          (droite), alignées sur les entêtes joueurs ci-dessus : chacun ne
          peut modifier que sa propre colonne. -->
+    <!-- Match annulé : un des joueurs a démarré un autre match. -->
+    <section id="phase-annule" class="phase cache">
+      <div class="match-annule">
+        <p class="ligne-vainqueur"><span class="litige">Match annulé</span></p>
+        <p id="texte-annule"></p>
+        <a href="matchmaking.html" class="lien-creer-match">Créer un match</a>
+      </div>
+    </section>
+
     <section id="phase-choix-box" class="phase cache">
       <div class="colonnes-box">
         <div class="colonne-box" id="colonne-box-j1">
@@ -178,6 +187,9 @@
           <input id="input-temps" type="text" placeholder="Ton temps" inputmode="decimal">
           <button id="btn-valider-temps" type="button" class="btn-valider-temps">Valider</button>
         </div>
+        <!-- Abandon à la place d'un temps (2 abandons : égalité ; un abandon
+             et un temps : le temps gagne). -->
+        <button id="btn-abandon" type="button" class="btn-abandon">Abandonner</button>
       </div>
     </section>
 
@@ -186,6 +198,6 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=8"></script>
   <script src="/commun/tri.js?v=13"></script>
-  <script src="match.js?v=47"></script>
+  <script src="match.js?v=48"></script>
 </body>
 </html>

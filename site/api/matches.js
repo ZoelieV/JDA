@@ -10,7 +10,7 @@ const { supabase } = require("./_lib/supabase");
 const { infosPersoJoueur } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin } = require("./_lib/admin");
-const { parserTempsMMSS, determinerVainqueur } = require("./_lib/temps");
+const { parserTempsOuAbandon, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
 
 const NB_MATCHS_MAX = 200;
@@ -90,11 +90,11 @@ async function chargerStatsLitiges() {
 // vainqueur recalculé, match republié dans l'historique public ----
 async function republierLitige(req, res, user) {
   const id = req.query?.id;
-  const tempsJ1 = parserTempsMMSS(req.body?.temps_j1);
-  const tempsJ2 = parserTempsMMSS(req.body?.temps_j2);
+  const tempsJ1 = parserTempsOuAbandon(req.body?.temps_j1);
+  const tempsJ2 = parserTempsOuAbandon(req.body?.temps_j2);
   if (!id) return res.status(400).json({ error: "Match manquant" });
   if (!tempsJ1 || !tempsJ2) {
-    return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
+    return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss ou abandon)" });
   }
 
   // Match classé : trophées calculés avec les temps corrigés.
@@ -149,7 +149,7 @@ async function chargerRoomsEnCours() {
 
   const limite = Date.now() - INACTIVITE_MAX_MS;
   return (data || []).filter(room =>
-    room.draft?.phase && !["termine", "litige"].includes(room.draft.phase) &&
+    room.draft?.phase && !["termine", "litige", "annule"].includes(room.draft.phase) &&
     (!room.last_active_at || Date.parse(room.last_active_at) >= limite)
   );
 }

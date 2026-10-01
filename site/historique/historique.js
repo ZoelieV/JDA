@@ -302,7 +302,7 @@ function htmlCorrectionLitige(match) {
   const champ = role => `
     <label class="champ-temps-litige champ-${role}">
       <span class="nom-temps-litige"></span>
-      <input type="text" inputmode="decimal" name="temps_${role}" value="${match[role].temps?.affiche || ""}" placeholder="mm:ss">
+      <input type="text" inputmode="decimal" name="temps_${role}" value="${match[role].temps?.affiche || ""}" placeholder="mm:ss" title="Temps (mm:ss) ou abandon">
     </label>`;
   return `
     <span class="match-litige">Litige <span class="litige-par"></span></span>

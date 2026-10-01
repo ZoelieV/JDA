@@ -9,7 +9,7 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
-const { parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
+const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("../../_lib/trophees");
 const {
   NB_PERSOS_MIN_BOX,
@@ -430,7 +430,8 @@ async function handleTemps(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const tempsParsed = parserTempsMMSS(req.body?.temps);
+  // { temps: "mm:ss" } ou { abandon: true } (abandon à la place d'un temps).
+  const tempsParsed = req.body?.abandon === true ? { ...TEMPS_ABANDON } : parserTempsMMSS(req.body?.temps);
 
   if (!tempsParsed) {
     return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
@@ -449,7 +450,7 @@ async function handleTemps(req, res, roomId, user) {
   draft[`temps_${joueur}`] = tempsParsed;
 
   if (draft.phase === "verification") {
-    if (ancien?.secondes !== tempsParsed.secondes) {
+    if (ancien?.affiche !== tempsParsed.affiche) {
       draft.temps_confirme_j1 = false;
       draft.temps_confirme_j2 = false;
     }
@@ -531,6 +532,11 @@ async function handleRejouer(req, res, roomId, user) {
 
   if (draft.phase !== "termine" && draft.phase !== "litige") {
     return res.status(409).json({ error: "La manche en cours n'est pas terminée" });
+  }
+
+  // Un joueur a démarré un autre match (cf. annulerAutresMatchs).
+  if (draft.quitte_par) {
+    return res.status(409).json({ error: "Ton adversaire a quitté la room : revanche impossible" });
   }
 
   draft[`rejouer_${joueur}`] = veutRejouer;

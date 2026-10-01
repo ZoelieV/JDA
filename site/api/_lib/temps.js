@@ -21,14 +21,28 @@ function parserTempsMMSS(texte) {
   };
 }
 
+// Abandon déclaré à la saisie des temps (à la place d'un temps).
+const TEMPS_ABANDON = { affiche: "Abandon", secondes: null, abandon: true };
+
+// Saisie d'un administrateur (correction d'un litige) : "mm:ss" ou
+// "abandon".
+function parserTempsOuAbandon(texte) {
+  return /^\s*abandon\s*$/i.test(String(texte)) ? { ...TEMPS_ABANDON } : parserTempsMMSS(texte);
+}
+
 // Temps chronométrés à la main par les joueurs : un écart d'une seconde ou
 // moins relève du temps de réaction, le match est alors une égalité.
 const ECART_EGALITE_SECONDES = 1;
 
-// tempsJ1 / tempsJ2 : { secondes } -> "j1" | "j2" | "egalite".
+// tempsJ1 / tempsJ2 : { secondes } ou abandon -> "j1" | "j2" | "egalite".
+// 2 abandons : égalité ; un abandon : l'autre joueur gagne.
 function determinerVainqueur(tempsJ1, tempsJ2) {
+  if (tempsJ1.abandon || tempsJ2.abandon) {
+    if (tempsJ1.abandon && tempsJ2.abandon) return "egalite";
+    return tempsJ1.abandon ? "j2" : "j1";
+  }
   if (Math.abs(tempsJ1.secondes - tempsJ2.secondes) <= ECART_EGALITE_SECONDES) return "egalite";
   return tempsJ1.secondes < tempsJ2.secondes ? "j1" : "j2";
 }
 
-module.exports = { parserTempsMMSS, determinerVainqueur };
+module.exports = { TEMPS_ABANDON, parserTempsMMSS, parserTempsOuAbandon, determinerVainqueur };

@@ -81,7 +81,50 @@ async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpect
   return { room: roomAvecRoles, joueur };
 }
 
+// ---- Un seul match à la fois ----
+// Un joueur qui démarre un autre match (match privé créé ou rejoint,
+// recherche de matchmaking) quitte ses autres rooms :
+// - room encore en attente d'un adversaire : supprimée ;
+// - manche en cours : annulée (phase "annule", annule_par = son rôle),
+//   rien dans l'historique ;
+// - manche terminée (termine / litige) : résultat gardé, revanche
+//   impossible (quitte_par = son rôle).
+// sauf : room à garder (celle qu'il rejoint ou sa room d'attente).
+const PHASES_FINIES = ["termine", "litige", "annule"];
+
+async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
+  let requete = supabase
+    .from("rooms")
+    .select("room_id, player1_discord_id, player2_discord_id, draft")
+    .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`);
+  if (sauf) requete = requete.neq("room_id", sauf);
+  const { data, error } = await requete;
+  if (error) {
+    console.error("Erreur lecture des matchs du joueur :", error);
+    return;
+  }
+
+  for (const room of data || []) {
+    if (!room.player2_discord_id) {
+      await supabase.from("rooms").delete().eq("room_id", room.room_id).is("player2_discord_id", null);
+      continue;
+    }
+    // Room complète pas encore ouverte (draft pas encore créée).
+    const draft = room.draft || { ...etatInitialDraft(), discord_j1: room.player1_discord_id, discord_j2: room.player2_discord_id };
+    const role = determinerRole({ ...room, draft }, discordId);
+    if (!role) continue;
+    if (draft.phase === "annule" || draft.quitte_par) continue;
+
+    const nouveau = PHASES_FINIES.includes(draft.phase)
+      ? { ...draft, quitte_par: role, rejouer_j1: false, rejouer_j2: false }
+      : { ...draft, phase: "annule", annule_par: role };
+    const { error: erreurMaj } = await supabase.from("rooms").update({ draft: nouveau }).eq("room_id", room.room_id);
+    if (erreurMaj) console.error("Erreur annulation du match :", erreurMaj);
+  }
+}
+
 module.exports = {
+  annulerAutresMatchs,
   determinerRole,
   getAutreJoueur,
   getDiscordIdJoueur,

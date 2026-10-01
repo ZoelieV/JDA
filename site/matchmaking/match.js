@@ -229,6 +229,17 @@ async function postTemps(temps) {
   await definirDraft(data.draft);
 }
 
+async function postAbandon() {
+  const data = await envoyerAction(`/api/rooms/${roomId}/temps`, { abandon: true });
+  await definirDraft(data.draft);
+}
+
+// Abandon à la place d'un temps, après confirmation.
+function declarerAbandon() {
+  if (!confirm("Déclarer un abandon ? Si ton adversaire a un temps, il gagne ; s'il abandonne aussi, c'est une égalité.")) return;
+  postAbandon().catch(err => alert(err.message));
+}
+
 async function postConfirmerTemps() {
   const data = await envoyerAction(`/api/rooms/${roomId}/confirmer_temps`, {});
   await definirDraft(data.draft);
@@ -1748,6 +1759,10 @@ function rendreTemps() {
   input.disabled = !!monTemps;
   btn.disabled = !!monTemps;
   btn.textContent = "Valider";
+  const btnAbandon = document.getElementById("btn-abandon");
+  btnAbandon.disabled = !!monTemps;
+  btnAbandon.textContent = "Abandonner";
+  btnAbandon.onclick = declarerAbandon;
 
   if (monTemps && !tempsAdversaire) {
     etat.textContent = "Temps enregistré. En attente du temps de l'adversaire…";
@@ -1800,9 +1815,14 @@ function rendreVerification() {
   btn.textContent = "Corriger";
   if (input.dataset.pour !== monTemps?.affiche) {
     input.dataset.pour = monTemps?.affiche || "";
-    input.value = monTemps?.affiche || "";
+    // Abandon : champ vide pour pouvoir saisir un temps à la place.
+    input.value = monTemps?.abandon ? "" : monTemps?.affiche || "";
   }
   btn.onclick = envoyerTempsSaisi;
+  const btnAbandon = document.getElementById("btn-abandon");
+  btnAbandon.disabled = !!monTemps?.abandon;
+  btnAbandon.textContent = monTemps?.abandon ? "Abandon déclaré" : "Abandonner";
+  btnAbandon.onclick = declarerAbandon;
 
   const btnConfirmer = document.getElementById("btn-confirmer-temps");
   btnConfirmer.disabled = jaiConfirme;
@@ -1888,6 +1908,8 @@ function rendreTermine() {
 // arrondi au supérieur, 30 au plus ; égalité : 0.
 function calculerTrophees() {
   if (draft.vainqueur !== "j1" && draft.vainqueur !== "j2") return 0;
+  // Abandon : écart "infini", trophées au maximum.
+  if (draft.temps_j1.abandon || draft.temps_j2.abandon) return 30;
   return Math.min(30, Math.ceil(Math.abs(draft.temps_j1.secondes - draft.temps_j2.secondes) / 2));
 }
 
@@ -1906,6 +1928,18 @@ function rendreRejouer() {
     const demandes = ["j1", "j2"].filter(role => draft[`rejouer_${role}`]).length;
     etat.textContent = demandes ? `Revanche demandée (${demandes}/2)…` : "";
     etat.classList.toggle("cache", !demandes);
+    return;
+  }
+
+  // Un des joueurs a démarré un autre match : plus de revanche possible.
+  if (draft.quitte_par) {
+    const quitte = draft.quitte_par === "j1" ? joueur1 : joueur2;
+    document.getElementById("btn-rejouer").classList.add("cache");
+    const etat = document.getElementById("etat-rejouer");
+    etat.innerHTML = draft.quitte_par === monRole
+      ? "Tu as démarré un autre match : revanche impossible."
+      : `${quitte.pseudo} a démarré un autre match : revanche impossible.`;
+    etat.classList.remove("cache");
     return;
   }
 
@@ -1931,6 +1965,17 @@ function rendreRejouer() {
   } else {
     etat.classList.add("cache");
   }
+}
+
+// Match annulé : un des joueurs a démarré un autre match (un seul match à la
+// fois, cf. annulerAutresMatchs dans api/_lib/room.js).
+function rendreAnnule() {
+  const parti = draft.annule_par === "j1" ? joueur1 : draft.annule_par === "j2" ? joueur2 : null;
+  document.getElementById("texte-annule").innerHTML = draft.annule_par === monRole
+    ? "Tu as démarré un autre match : celui-ci est annulé et ne compte pas."
+    : parti
+      ? `${parti.pseudo} a démarré un autre match : celui-ci est annulé et ne compte pas.`
+      : "Ce match a été annulé et ne compte pas.";
 }
 
 // ---- Dispatch de phase ----
@@ -2014,7 +2059,8 @@ function rendrePhase() {
     temps: "phase-draft",
     verification: "phase-draft",
     termine: "phase-draft",
-    litige: "phase-draft"
+    litige: "phase-draft",
+    annule: "phase-annule"
   };
 
   const idAffiche = idsParPhase[draft.phase];
@@ -2028,7 +2074,7 @@ function rendrePhase() {
   const avecBoss = draft.phase === "draft";
   const enRecap = PHASES_RECAP.includes(draft.phase);
   const entetes = document.querySelector(".entetes-joueurs");
-  entetes.classList.toggle("cache", enRecap);
+  entetes.classList.toggle("cache", enRecap || draft.phase === "annule");
   entetes.classList.toggle("compact", avecBoss);
   entetes.classList.toggle("boss-deborde", draft.phase === "draft");
   // Boss tiré : plus de rectangles joueurs (namecard, photo et pseudo sont
@@ -2065,6 +2111,7 @@ function rendrePhase() {
   else if (draft.phase === "verification") rendreVerification();
   else if (draft.phase === "termine") rendreTermine();
   else if (draft.phase === "litige") rendreLitige();
+  else if (draft.phase === "annule") rendreAnnule();
 }
 
 // ---- Polling ----

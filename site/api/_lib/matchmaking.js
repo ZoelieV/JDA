@@ -21,6 +21,7 @@
 // DELETE -> annuler() : supprime les rooms en attente du joueur (2 files).
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
+const { annulerAutresMatchs } = require("./room");
 
 // Room en attente sans nouvelles de sa page depuis plus longtemps : joueur
 // parti, ignorée.
@@ -65,6 +66,10 @@ async function prendreRoom(roomId, discordId) {
 }
 
 async function chercher(discordId, roomIdAttente, type = "matchmaking") {
+  // Début d'une recherche (pas un rappel de la page d'attente) : un seul
+  // match à la fois, le match en cours du joueur est annulé.
+  if (!roomIdAttente) await annulerAutresMatchs(supabase, discordId);
+
   // Room d'attente déjà prise par un adversaire : match trouvé.
   if (roomIdAttente) {
     const { data: room } = await supabase
