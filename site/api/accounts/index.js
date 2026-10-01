@@ -1,6 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox } = require("../_lib/draft");
 const { getPersonnages, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
+const { totauxTrophees } = require("../_lib/trophees");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -34,16 +35,22 @@ async function chargerProfils() {
   return data;
 }
 
-// Matchs joués et victoires par joueur, d'après l'historique des matchs.
-// Litiges ouverts (matchs invalidés) non comptés ; sans colonne litige
-// (sql/litiges.sql pas lancé), tous les matchs.
+// Matchs joués et victoires par joueur, d'après l'historique des matchs,
+// plus trophées, matchs et victoires en classé (page Classement).
+// Litiges ouverts (matchs invalidés) non comptés ; sans colonnes litige /
+// classe (sql/litiges.sql, sql/classe.sql pas lancés), tous les matchs et
+// pas de classé.
 async function chargerResultats() {
   const champs = "player1_discord_id, player2_discord_id, vainqueur";
+  const litigeOuvert = "litige.is.null,litige.neq.ouvert";
   let { data, error } = await supabase
     .from("match_history")
-    .select(champs)
-    .or("litige.is.null,litige.neq.ouvert");
+    .select(`${champs}, id, created_at, litige, classe, trophees`)
+    .or(litigeOuvert);
 
+  if (error) {
+    ({ data, error } = await supabase.from("match_history").select(champs).or(litigeOuvert));
+  }
   if (error) {
     ({ data, error } = await supabase.from("match_history").select(champs));
   }
@@ -67,6 +74,11 @@ async function chargerResultats() {
     compter(match.player2_discord_id, match.vainqueur === "j2");
   });
 
+  totauxTrophees(data).forEach((classe, discordId) => {
+    resultats[discordId] ??= { matchs: 0, victoires: 0 };
+    resultats[discordId].classe = classe;
+  });
+
   return resultats;
 }
 
@@ -81,7 +93,7 @@ function resumerProfil(profil, resultats) {
   const nbC6 = new Set(possedes
     .filter(p => String(p.rarete) === "5" && !p.standard && full[p.id] === 6)
     .map(p => p.groupe || p.id)).size;
-  const { matchs = 0, victoires = 0 } = resultats[profil.discord_id] || {};
+  const { matchs = 0, victoires = 0, classe = null } = resultats[profil.discord_id] || {};
 
   return {
     discord_id: profil.discord_id,
@@ -101,7 +113,11 @@ function resumerProfil(profil, resultats) {
       .reduce((somme, p) => somme + full[p.id], 0),
     theatre: PALIERS_THEATRE[data.theatre] ?? null,
     matchs,
-    victoires
+    victoires,
+    // Classé : null si aucun match classé (absent du classement).
+    trophees: classe ? classe.trophees : null,
+    matchs_classes: classe ? classe.matchs : 0,
+    victoires_classees: classe ? classe.victoires : 0
   };
 }
 

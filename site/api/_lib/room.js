@@ -62,7 +62,7 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpectateur = false } = {}) {
   // presences : colonne optionnelle (sql/rooms_matchmaking.sql), lecture
   // sans elle si elle n'existe pas encore.
-  const champs = "room_id, player1_discord_id, player2_discord_id, draft, spectateurs";
+  const champs = "room_id, player1_discord_id, player2_discord_id, type, draft, spectateurs";
   const lire = select => supabase.from("rooms").select(select).eq("room_id", roomId).single();
   let { data: room, error } = await lire(`${champs}, presences`);
   if (error && COLONNES_INEXISTANTES.has(error.code)) {

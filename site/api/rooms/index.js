@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
-const { chercher, annuler } = require("../_lib/matchmaking");
+const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -13,7 +13,8 @@ function genererRoomId() {
 }
 
 // POST {}                                   : match privé (nouvelle room)
-// POST { type: "matchmaking", room_id? }    : matchmaking (cf. _lib/matchmaking.js)
+// POST { type: "matchmaking" | "classe", room_id? } : matchmaking normal ou
+//                                             classé (cf. _lib/matchmaking.js)
 // DELETE                                    : annule la recherche du matchmaking
 module.exports = async (req, res) => {
   try {
@@ -34,9 +35,9 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
-    if (req.body?.type === "matchmaking") {
+    if (TYPES_FILE.includes(req.body?.type)) {
       const roomIdAttente = typeof req.body.room_id === "string" ? req.body.room_id : null;
-      return res.status(200).json(await chercher(user.id, roomIdAttente));
+      return res.status(200).json(await chercher(user.id, roomIdAttente, req.body.type));
     }
 
     const roomId = genererRoomId();

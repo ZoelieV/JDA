@@ -1,4 +1,4 @@
-/* ---- Créer un match : Match privé / Matchmaking ---- */
+/* ---- Créer un match : Match privé / Matchmaking / Classé ---- */
 .choix-match {
   display: flex;
   flex-wrap: wrap;
@@ -18,4 +18,13 @@
   margin: 0;
   color: var(--texte-doux);
   font-size: 0.9375rem;
+}
+
+/* Classé : contour doré, comme ses matchs dans l'historique. */
+.option-classe {
+  border-color: var(--accent-bordure);
+}
+
+.option-classe a {
+  color: var(--accent);
 }

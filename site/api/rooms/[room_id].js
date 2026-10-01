@@ -1,5 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
+const { TYPES_FILE } = require("../_lib/matchmaking");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -79,8 +80,9 @@ module.exports = async (req, res) => {
 
       const enSpectateur = new URL(req.url, `https://${req.headers.host}`).searchParams.get("spectateur") === "1";
 
-      // Room complète, matchmaking ou spectateur voulu : lecture seule.
-      if (room.player2_discord_id || room.type === "matchmaking" || enSpectateur) {
+      // Room complète, matchmaking (normal ou classé) ou spectateur voulu :
+      // lecture seule.
+      if (room.player2_discord_id || TYPES_FILE.includes(room.type) || enSpectateur) {
         return res.status(200).json({ ...room, spectateur: true });
       }
 

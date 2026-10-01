@@ -10,6 +10,7 @@ const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
+const { calculerTrophees } = require("../../_lib/trophees");
 const {
   SEQUENCE_FIXE,
   calculerPointsBox,
@@ -322,7 +323,9 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 // litige : manche contestée, archivée sans vainqueur avec litige = "ouvert"
 // (visible des administrateurs seulement, qui peuvent corriger les temps et
 // la republier, cf. api/matches.js).
-async function archiverMatch(draft, { litige = false } = {}) {
+// classe : room du matchmaking classé, trophées en jeu enregistrés (calculés
+// à la republication pour un litige).
+async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   // Picks figés avec les infos du joueur à la fin du match (constellation,
   // niveau, raffinement de l'arme signature) pour l'historique ; bans avec
   // les infos des 2 joueurs (comme les cartes de la draft).
@@ -359,6 +362,10 @@ async function archiverMatch(draft, { litige = false } = {}) {
     temps_j2_secondes: draft.temps_j2.secondes,
     vainqueur: draft.vainqueur,
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),
+    ...(classe ? {
+      classe: true,
+      trophees: litige ? null : calculerTrophees(draft.temps_j1, draft.temps_j2, draft.vainqueur)
+    } : {}),
     // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
     // Voyageur / Manekin) : affichées dans l'historique des matchs.
     actions
@@ -369,7 +376,8 @@ async function archiverMatch(draft, { litige = false } = {}) {
   // Colonne "actions" pas encore créée dans la table : archivage sans elle
   // (les bans restent enregistrés dans bans_j1 / bans_j2). Colonnes litige
   // absentes (sql/litiges.sql pas lancé) : nouvelle erreur, le litige n'est
-  // pas archivé (jamais publié comme un match normal).
+  // pas archivé (jamais publié comme un match normal) ; idem pour un match
+  // classé sans les colonnes classe / trophees (sql/classe.sql).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
     const { actions, ...sansActions } = match;
     ({ error } = await supabase.from("match_history").insert(sansActions));
@@ -439,7 +447,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
   if (draft.temps_confirme_j1 && draft.temps_confirme_j2) {
     draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
     draft.phase = "termine";
-    await archiverMatch(draft);
+    await archiverMatch(draft, { classe: room.type === "classe" });
   }
 
   await sauvegarderDraft(roomId, draft);
@@ -464,7 +472,7 @@ async function handleLitige(req, res, roomId, user) {
   draft.phase = "litige";
   draft.litige_par = joueur;
   draft.vainqueur = null;
-  await archiverMatch(draft, { litige: true });
+  await archiverMatch(draft, { litige: true, classe: room.type === "classe" });
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -576,6 +584,8 @@ async function handleDraftGet(req, res, roomId, user) {
     room_id: room.room_id,
     player1_discord_id: room.player1_discord_id,
     player2_discord_id: room.player2_discord_id,
+    // "prive" | "matchmaking" | "classe" (trophées en fin de match).
+    type: room.type || "prive",
     draft: vuePourJoueur(room.draft, joueur),
     // Pastilles en ligne / afk des namecards (joueurs et spectateurs).
     presences: presencesJoueurs(room),

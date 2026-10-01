@@ -463,6 +463,31 @@ img.arme-mini {
   font-style: italic;
 }
 
+/* ---- Matchs classés : contour doré épais et lueur (les matchs en cours
+   ont un contour doré fin), mention "Classé" au centre ---- */
+
+.match.classe {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0.75rem rgba(245, 197, 66, 0.35);
+}
+
+.match-classe {
+  padding: 0.125rem 0.625rem;
+  border-radius: 62.4375rem;
+  background-color: var(--accent-fond);
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-weight: bold;
+}
+
+.etiquette-resultat.trophees.gain {
+  color: var(--couleur-victoire);
+}
+
+.etiquette-resultat.trophees.perte {
+  color: var(--couleur-ban);
+}
+
 /* ---- Litiges (administrateurs) ---- */
 
 .badge-admin {

@@ -1,5 +1,6 @@
-// Créer un match : match privé (room à lien partagé) ou matchmaking
-// (adversaire trouvé automatiquement, api/_lib/matchmaking.js), tous deux
+// Créer un match : match privé (room à lien partagé), matchmaking ou
+// classé (adversaire trouvé automatiquement, file séparée pour le classé,
+// api/_lib/matchmaking.js), tous
 // via api/rooms. Dans les deux cas, on arrive sur la page du match
 // (attente de l'adversaire).
 
@@ -32,3 +33,4 @@ async function creerMatch(corps) {
 
 document.getElementById("creer-prive").addEventListener("click", () => creerMatch({}));
 document.getElementById("lancer-matchmaking").addEventListener("click", () => creerMatch({ type: "matchmaking" }));
+document.getElementById("lancer-classe").addEventListener("click", () => creerMatch({ type: "classe" }));

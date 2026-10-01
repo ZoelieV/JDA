@@ -41,6 +41,7 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 const POLL_INTERVAL_MS = 2500;
 
 let roomId = null;
+let typeRoom = "prive"; // "prive" | "matchmaking" | "classe" (trophées en fin de match)
 let moiDiscordId = null;
 let monRole = null; // "j1" | "j2" | null (spectateur)
 let personnagesBase = [];   // characters.json (un Voyageur par élément)
@@ -1781,7 +1782,7 @@ function rendreLitige() {
   const parQui = draft.litige_par === monRole ? "par toi" : nomLitige ? `par ${nomLitige}` : "";
   document.getElementById("resultat-final").innerHTML = `
     <p class="ligne-vainqueur"><span class="litige">Match invalidé</span></p>
-    <p class="ligne-temps">Litige signalé ${parQui} sur les temps : ce match ne compte pas. Les administrateurs vérifieront les temps et pourront le republier.</p>
+    <p class="ligne-temps">Litige signalé ${parQui} sur les temps : ce match ne compte pas. Les administrateurs vérifieront les temps et pourront le republier${typeRoom === "classe" ? " (les trophées seront alors attribués)" : ""}.</p>
   `;
   rendreRejouer();
 }
@@ -1802,11 +1803,40 @@ function rendreTermine() {
     ligneVainqueur = `<span class="vainqueur">${nomGagnant} gagne !</span>`;
   }
 
+  // Classé : trophées gagnés / perdus (le total ne descend pas sous 0).
+  let ligneTrophees = "";
+  if (typeRoom === "classe") {
+    const trophees = calculerTrophees();
+    const gagnant = draft.vainqueur === "j1" ? joueur1 : joueur2;
+    const perdant = draft.vainqueur === "j1" ? joueur2 : joueur1;
+    ligneTrophees = trophees === 0
+      ? `<p class="ligne-trophees">🏆 Aucun trophée en jeu</p>`
+      : monRole
+        ? `<p class="ligne-trophees ${draft.vainqueur === monRole ? "gain" : "perte"}">🏆 ${draft.vainqueur === monRole ? "+" : "−"}${trophees} trophée${trophees > 1 ? "s" : ""}</p>`
+        : `<p class="ligne-trophees">🏆 ${gagnant.nom} +${trophees}, ${perdant.nom} −${trophees}</p>`;
+  }
+
   container.innerHTML = `
     <p class="ligne-vainqueur">${ligneVainqueur}</p>
     <p class="ligne-temps">${joueur1.nom} : ${draft.temps_j1.affiche} — ${joueur2.nom} : ${draft.temps_j2.affiche}</p>
+    ${ligneTrophees}
   `;
   rendreRejouer();
+}
+
+// ---- Classé ----
+
+// Trophées en jeu (cf. api/_lib/trophees.js) : un demi par seconde d'écart,
+// arrondi au supérieur, 30 au plus ; égalité : 0.
+function calculerTrophees() {
+  if (draft.vainqueur !== "j1" && draft.vainqueur !== "j2") return 0;
+  return Math.min(30, Math.ceil(Math.abs(draft.temps_j1.secondes - draft.temps_j2.secondes) / 2));
+}
+
+function definirTypeRoom(type) {
+  if (!type || type === typeRoom) return;
+  typeRoom = type;
+  document.querySelector(".titre-page").textContent = typeRoom === "classe" ? "Match classé 🏆" : "Match";
 }
 
 // Revanche (fin de match ou litige).
@@ -1990,10 +2020,12 @@ async function rafraichirEtatRoomEtJoueurs() {
     document.getElementById("zone-match").classList.remove("cache");
 
     const donnees = await chargerDraft();
+    definirTypeRoom(donnees.type);
     afficherSpectateurs(donnees.nb_spectateurs);
     await definirDraft(donnees.draft);
     afficherPresences(donnees.presences);
   } else {
+    definirTypeRoom(room.type);
     afficherAttente(room);
     rendreEntetesJoueurs();
   }
@@ -2005,6 +2037,7 @@ async function tick() {
       await rafraichirEtatRoomEtJoueurs();
     } else {
       const donnees = await chargerDraft();
+      definirTypeRoom(donnees.type);
       afficherSpectateurs(donnees.nb_spectateurs);
       await definirDraft(donnees.draft);
       afficherPresences(donnees.presences);
@@ -2035,10 +2068,12 @@ const MATCHMAKING_INTERVALLE_MS = 5000;
 let intervalleMatchmaking = null;
 
 function afficherAttente(room) {
-  const matchmaking = room.type === "matchmaking";
+  // Matchmaking normal ou classé (file séparée, cf. api/_lib/matchmaking.js).
+  const matchmaking = room.type === "matchmaking" || room.type === "classe";
   const createur = room.player1_discord_id === moiDiscordId;
+  const adversaire = room.type === "classe" ? "un adversaire classé" : "un adversaire";
   document.getElementById("texte-attente").textContent = matchmaking
-    ? (createur ? "Recherche d'un adversaire…" : "Ce joueur cherche encore un adversaire…")
+    ? (createur ? `Recherche d'${adversaire}…` : `Ce joueur cherche encore ${adversaire}…`)
     : "En attente du second joueur…";
   document.getElementById("btn-partager").classList.toggle("cache", matchmaking);
   document.getElementById("btn-annuler-matchmaking").classList.toggle("cache", !(matchmaking && createur));
@@ -2059,7 +2094,7 @@ async function relancerMatchmaking() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "matchmaking", room_id: roomId })
+      body: JSON.stringify({ type: typeRoom === "classe" ? "classe" : "matchmaking", room_id: roomId })
     });
     if (!reponse.ok) return;
     const { room_id: nouvelleRoom } = await reponse.json();

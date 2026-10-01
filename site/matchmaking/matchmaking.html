@@ -6,7 +6,7 @@
 <title>Créer un match</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
 <link rel="stylesheet" href="../commun/entete.css?v=rem16">
-<link rel="stylesheet" href="matchmaking.css?v=1">
+<link rel="stylesheet" href="matchmaking.css?v=2">
 <script src="/commun/fond.js?v=6"></script>
 <script src="/commun/compte.js?v=3" defer></script>
 </head>
@@ -24,8 +24,14 @@
       <button id="lancer-matchmaking" type="button" class="btn-principal">Matchmaking</button>
       <p>Tu es mis automatiquement face au prochain joueur qui clique aussi sur Matchmaking.</p>
     </div>
+    <div class="option-match panneau option-classe">
+      <button id="lancer-classe" type="button" class="btn-principal">Classé 🏆</button>
+      <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Le gagnant remporte
+        un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.
+        Voir le <a href="../leaderboard.html">classement</a>.</p>
+    </div>
   </div>
 
-  <script src="matchmaking.js?v=3"></script>
+  <script src="matchmaking.js?v=4"></script>
 </body>
 </html>

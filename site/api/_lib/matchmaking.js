@@ -1,8 +1,11 @@
 // Matchmaking : met automatiquement face à face deux joueurs qui cliquent
-// sur "Matchmaking" (page Créer un match).
+// sur "Matchmaking" ou sur "Classé" (page Créer un match).
 //
-// File d'attente = rooms de type "matchmaking" sans player2 (colonnes type
-// et created_at, cf. sql/rooms_matchmaking.sql). Le premier joueur crée sa
+// Deux files séparées (un joueur en matchmaking normal ne tombe jamais sur
+// un joueur en classé) : rooms de type "matchmaking" ou "classe" sans
+// player2 (colonnes type et created_at, cf. sql/rooms_matchmaking.sql). Une
+// room "classe" le reste pour les revanches ; ses matchs rapportent des
+// trophées (cf. _lib/trophees.js). Le premier joueur crée sa
 // room et attend dessus ; le suivant prend la plus ancienne room en attente
 // (mise à jour conditionnelle "player2 encore vide" : deux joueurs ne
 // peuvent pas prendre la même). Une room en attente reste vivante tant que
@@ -10,12 +13,12 @@
 //
 // Appelé par api/rooms/index.js (pas de fonction serveur à part : le plan
 // Hobby de Vercel en limite le nombre à 12) :
-// POST   { type: "matchmaking", room_id? } -> chercher() : cherche un
+// POST   { type: "matchmaking" | "classe", room_id? } -> chercher() : cherche un
 //        adversaire. room_id = room en attente du joueur (page d'attente,
 //        rappel toutes les quelques secondes). Si deux joueurs ont créé leur
 //        room en même temps, celui dont la room est la plus récente prend
 //        l'autre : la sienne est supprimée. -> { room_id, trouve }
-// DELETE -> annuler() : supprime les rooms en attente du joueur.
+// DELETE -> annuler() : supprime les rooms en attente du joueur (2 files).
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 
@@ -23,16 +26,18 @@ const { supabase } = require("./supabase");
 // parti, ignorée.
 const ATTENTE_VIVANTE_MS = 20 * 1000;
 const COLONNES = "room_id, player1_discord_id, player2_discord_id, created_at";
+// Types de room du matchmaking (une file chacun).
+const TYPES_FILE = ["matchmaking", "classe"];
 
 function genererRoomId() {
   return crypto.randomBytes(4).toString("hex");
 }
 
-async function mesRoomsEnAttente(discordId) {
+async function mesRoomsEnAttente(discordId, types) {
   const { data, error } = await supabase
     .from("rooms")
     .select(COLONNES)
-    .eq("type", "matchmaking")
+    .in("type", types)
     .eq("player1_discord_id", discordId)
     .is("player2_discord_id", null)
     .order("created_at", { ascending: true });
@@ -59,7 +64,7 @@ async function prendreRoom(roomId, discordId) {
   return data;
 }
 
-async function chercher(discordId, roomIdAttente) {
+async function chercher(discordId, roomIdAttente, type = "matchmaking") {
   // Room d'attente déjà prise par un adversaire : match trouvé.
   if (roomIdAttente) {
     const { data: room } = await supabase
@@ -72,7 +77,10 @@ async function chercher(discordId, roomIdAttente) {
     }
   }
 
-  const miennes = await mesRoomsEnAttente(discordId);
+  // Attente dans l'autre file abandonnée : une seule recherche à la fois.
+  await supprimerRooms((await mesRoomsEnAttente(discordId, TYPES_FILE.filter(t => t !== type))).map(r => r.room_id));
+
+  const miennes = await mesRoomsEnAttente(discordId, [type]);
   const maRoom = miennes[0] || null;
 
   // Rooms des autres, les plus anciennes d'abord (plus anciennes que la
@@ -81,7 +89,7 @@ async function chercher(discordId, roomIdAttente) {
   let requete = supabase
     .from("rooms")
     .select(COLONNES)
-    .eq("type", "matchmaking")
+    .eq("type", type)
     .is("player2_discord_id", null)
     .neq("player1_discord_id", discordId)
     .gte("last_active_at", new Date(Date.now() - ATTENTE_VIVANTE_MS).toISOString())
@@ -110,7 +118,7 @@ async function chercher(discordId, roomIdAttente) {
   const { error: erreurCreation } = await supabase.from("rooms").insert({
     room_id: roomId,
     player1_discord_id: discordId,
-    type: "matchmaking",
+    type,
     last_active_at: new Date().toISOString()
   });
   if (erreurCreation) throw erreurCreation;
@@ -118,8 +126,8 @@ async function chercher(discordId, roomIdAttente) {
 }
 
 async function annuler(discordId) {
-  const miennes = await mesRoomsEnAttente(discordId);
+  const miennes = await mesRoomsEnAttente(discordId, TYPES_FILE);
   await supprimerRooms(miennes.map(r => r.room_id));
 }
 
-module.exports = { chercher, annuler };
+module.exports = { TYPES_FILE, chercher, annuler };

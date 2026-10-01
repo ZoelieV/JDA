@@ -20,6 +20,7 @@ let moiDiscordId = null;
 // récents d'abord.
 const etatTri = creerEtatTri();
 let mesMatchsSeulement = false;
+let classesSeulement = false;
 
 // Sens du 1er clic : plus récents, meilleurs temps, matchs les plus serrés
 // et boss de A à Z d'abord.
@@ -99,6 +100,7 @@ function matchsAffiches() {
   const tris = trisActifs();
   return matchs
     .filter(match => !mesMatchsSeulement || match.j1.discord_id === moiDiscordId || match.j2.discord_id === moiDiscordId)
+    .filter(match => !classesSeulement || match.classe)
     .filter(match => !recherche || texteRecherche(match).includes(recherche))
     .map((match, index) => ({ match, index, v: tris.map(t => valeurTri(match, t.cle)) }))
     .sort((a, b) => {
@@ -125,6 +127,7 @@ function mettreAJourBoutons() {
     btn.querySelector(".fleche").textContent = sens === 1 ? "▼" : sens === -1 ? "▲" : "";
   });
   document.getElementById("mes-matchs").classList.toggle("active", mesMatchsSeulement);
+  document.getElementById("matchs-classes").classList.toggle("active", classesSeulement);
 }
 
 // ---- Rendu ----
@@ -189,6 +192,11 @@ function htmlJoueur(match, role, bansConnus) {
   const banniere = encodeURI(`../DB/images/${joueur.banniere2}`);
   const etiquette = gagnant ? `<span class="etiquette-resultat victoire">Victoire</span>`
     : egalite ? `<span class="etiquette-resultat egalite">Égalité</span>` : "";
+  // Classé : trophées gagnés par le vainqueur, perdus par l'autre.
+  const perdant = match.vainqueur && !gagnant && !egalite;
+  const trophees = match.classe && match.trophees && (gagnant || perdant)
+    ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées">${gagnant ? "+" : "−"}${match.trophees} 🏆</span>`
+    : "";
 
   const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p })).join("");
   const htmlBan = ban => htmlPerso(ban.id, joueur.parametres, { banni: true, infosJoueurs: ban.infos });
@@ -202,6 +210,7 @@ function htmlJoueur(match, role, bansConnus) {
         <span class="match-nom"></span>
         ${htmlMedailleTheatre(joueur.theatre)}
         ${etiquette}
+        ${trophees}
         <span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span>
       </div>
       ${htmlLigne("Équipe", equipe)}
@@ -217,6 +226,8 @@ function creerLigneMatch(match) {
   const ligne = document.createElement("article");
   const enCours = !!match.room_id;
   ligne.className = enCours ? "match en-cours" : "match";
+  // Classé : contour doré (et mention au centre).
+  if (match.classe) ligne.classList.add("classe");
   const boss = bossParId.get(match.boss_id);
   // Match en cours : toute la ligne mène au match, en spectateur (un joueur
   // du match y retrouve sa place, cf. api/rooms/[room_id].js).
@@ -240,6 +251,7 @@ function creerLigneMatch(match) {
     ${htmlJoueur(match, "j1", enCours || match.bans_connus)}
     <div class="match-centre">
       ${boss ? `<img class="match-boss" src="../DB/${boss.image}" alt="${boss.nom}" loading="lazy">` : ""}
+      ${match.classe ? `<span class="match-classe">Classé 🏆</span>` : ""}
       <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
       ${infos}
     </div>
@@ -412,6 +424,11 @@ function initialiserBarre() {
 
   document.getElementById("recherche").addEventListener("input", afficherMatchs);
 
+  document.getElementById("matchs-classes").addEventListener("click", () => {
+    classesSeulement = !classesSeulement;
+    afficherMatchs();
+  });
+
   const mesMatchs = document.getElementById("mes-matchs");
   mesMatchs.classList.toggle("cache", !moiDiscordId);
   mesMatchs.addEventListener("click", () => {
@@ -430,6 +447,7 @@ function initialiserBarre() {
     document.getElementById("recherche").value = "";
     viderTris(etatTri);
     mesMatchsSeulement = false;
+    classesSeulement = false;
     afficherMatchs();
   });
 }

@@ -1219,6 +1219,20 @@ h1 {
   color: #f5c542;
 }
 
+/* Classé : trophées gagnés (vert) ou perdus (rouge). */
+#resultat-final .ligne-trophees {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+#resultat-final .ligne-trophees.gain {
+  color: #3ecf6a;
+}
+
+#resultat-final .ligne-trophees.perte {
+  color: #ff7a85;
+}
+
 #resultat-final .litige {
   font-weight: bold;
   color: #ff9f43;

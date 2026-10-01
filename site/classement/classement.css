@@ -1,0 +1,268 @@
+/* ---- Classement ---- */
+
+.cache {
+  display: none !important;
+}
+
+/* ---- Barre : recherche, tris (figée en haut au défilement, même flou que
+   Tous les comptes) ---- */
+
+.barre-classement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem 1rem;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+}
+
+.recherche-classement {
+  box-sizing: border-box;
+  width: 15rem;
+  max-width: 100%;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 1.0625rem;
+}
+
+.recherche-classement:hover {
+  border-color: var(--accent-bordure);
+}
+
+.tris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.tris-label {
+  opacity: 0.8;
+}
+
+.bouton-tri {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2.4375rem;
+  padding: 0.375rem 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 1.125rem;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bouton-tri:hover {
+  border-color: var(--accent-bordure);
+}
+
+.bouton-tri.active {
+  border-color: var(--accent-bordure);
+  background-color: var(--accent-fond);
+}
+
+.bouton-tri .fleche {
+  font-size: 0.8125rem;
+}
+
+.tri-emoji {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.etat-classement {
+  text-align: center;
+  color: var(--texte-doux);
+}
+
+/* ---- Tableau : rang, bannière (largeur fixe), stats en colonnes ---- */
+
+.tableau-classement {
+  max-width: 82rem;
+  margin: 0 auto;
+}
+
+#liste-classement {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ligne-classement {
+  display: grid;
+  grid-template-columns: 3rem minmax(16rem, 26rem) repeat(8, minmax(3.5rem, 1fr));
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+}
+
+.ligne-classement:not(.entete-classement) {
+  background-color: rgba(20, 20, 20, 0.45);
+}
+
+/* Compte connecté : contour doré. */
+.ligne-classement.moi {
+  border-color: var(--accent-bordure);
+}
+
+.entete-classement {
+  margin-bottom: 0.25rem;
+  font-weight: bold;
+  color: var(--texte-doux);
+}
+
+.col-rang {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* Podium : or, argent, bronze. */
+.podium-1 .col-rang { color: #f5c542; }
+.podium-2 .col-rang { color: #c9d1d9; }
+.podium-3 .col-rang { color: #d08a4f; }
+
+.col-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ligne-classement:not(.entete-classement) .col-stat[data-col="trophees"] {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+/* Colonne du tri en cours mise en avant. */
+.col-stat.active {
+  border-radius: 0.375rem;
+  background-color: var(--accent-fond);
+}
+
+.entete-classement .col-stat {
+  min-height: 2rem;
+  font-size: 1.125rem;
+}
+
+.entete-classement .col-joueur {
+  padding-left: 0.5rem;
+}
+
+.entete-classement .tri-logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
+/* Bannière du joueur (format commun .banniere-joueur, commun/entete.css). */
+.col-joueur.banniere-joueur {
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.joueur-infos {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.joueur-textes {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.joueur-nom,
+.joueur-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.joueur-nom {
+  font-weight: bold;
+}
+
+.joueur-sub {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.joueur-infos .medaille-theatre {
+  width: 2em;
+  height: 2em;
+}
+
+/* Valeur du tri en cours sur la bannière : téléphone seulement. */
+.stat-telephone {
+  display: none;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 62.4375rem;
+  background-color: rgba(0, 0, 0, 0.55);
+  font-size: 0.875rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* ---- Écran moyen : moins de place, stats en plus petit ---- */
+
+@media (max-width: 1200px) {
+  .ligne-classement {
+    grid-template-columns: 2.5rem minmax(14rem, 20rem) repeat(8, minmax(2.75rem, 1fr));
+    gap: 0.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* ---- Téléphone (et petit écran) : rang + bannière seulement, valeur du
+   tri en cours sur la bannière ---- */
+
+@media (max-width: 900px) {
+  .ligne-classement {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+  }
+
+  .col-stat,
+  .entete-classement {
+    display: none;
+  }
+
+  .stat-telephone {
+    display: inline-block;
+  }
+
+  .recherche-classement {
+    width: 100%;
+  }
+}

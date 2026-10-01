@@ -11,6 +11,7 @@ const { infosPersoJoueur } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin } = require("./_lib/admin");
 const { parserTempsMMSS, determinerVainqueur } = require("./_lib/temps");
+const { calculerTrophees } = require("./_lib/trophees");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -96,15 +97,25 @@ async function republierLitige(req, res, user) {
     return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
   }
 
+  // Match classé : trophées calculés avec les temps corrigés.
+  const { data: litige, error: erreurLecture } = await supabase
+    .from("match_history")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (erreurLecture) throw erreurLecture;
+  const vainqueur = determinerVainqueur(tempsJ1, tempsJ2);
+
   // Seulement un litige encore ouvert (pas de double republication).
   const { data, error } = await supabase
     .from("match_history")
     .update({
+      ...(litige?.classe ? { trophees: calculerTrophees(tempsJ1, tempsJ2, vainqueur) } : {}),
       temps_j1_affiche: tempsJ1.affiche,
       temps_j1_secondes: tempsJ1.secondes,
       temps_j2_affiche: tempsJ2.affiche,
       temps_j2_secondes: tempsJ2.secondes,
-      vainqueur: determinerVainqueur(tempsJ1, tempsJ2),
+      vainqueur,
       litige: "republie",
       republie_par: user.id,
       republie_le: new Date().toISOString()
@@ -241,6 +252,7 @@ module.exports = async (req, res) => {
     const enCours = rooms.map(room => ({
       room_id: room.room_id,
       phase: room.draft.phase,
+      classe: room.type === "classe",
       boss_id: room.draft.boss_id || null,
       player1_discord_id: room.draft.discord_j1 || room.player1_discord_id,
       player2_discord_id: room.draft.discord_j2 || room.player2_discord_id,
@@ -267,6 +279,9 @@ module.exports = async (req, res) => {
       date: match.created_at || null,
       boss_id: match.boss_id,
       vainqueur: match.vainqueur,
+      // Match classé : trophées gagnés par le vainqueur (perdus par l'autre).
+      classe: !!match.classe,
+      trophees: match.classe ? match.trophees ?? null : null,
       // Bans enregistrés (colonne actions, ou bans_j1 / bans_j2 remplies).
       bans_connus: Array.isArray(match.actions) ||
         (Array.isArray(match.bans_j1) && match.bans_j1.length > 0) ||
@@ -280,6 +295,7 @@ module.exports = async (req, res) => {
       en_cours: enCours.map(room => ({
         room_id: room.room_id,
         phase: room.phase,
+        classe: room.classe,
         boss_id: room.boss_id,
         date: room.date,
         ...deuxJoueurs(room)
