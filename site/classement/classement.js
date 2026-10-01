@@ -108,7 +108,7 @@ function creerLigne(joueur) {
   const cleTelephone = COLONNES.includes(tri.cle) ? tri.cle : "trophees";
   ligne.innerHTML = `
     <span class="col-rang">${joueur.rang}</span>
-    <div class="col-joueur banniere-joueur cote-gauche" style="--banniere2: url(&quot;${banniere}&quot;)">
+    <div class="col-joueur banniere-joueur cote-gauche" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
       <img class="photo-joueur" src="${joueur.discord_avatar_url || ""}" alt="">
       <div class="joueur-infos">
         <div class="joueur-textes">

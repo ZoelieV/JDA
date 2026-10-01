@@ -139,6 +139,7 @@ async function chargerJoueurDepuisId(discordId) {
   return {
     discordId: compte.discord_id,
     nom,
+    pseudo: htmlPseudo(nom), // nom en HTML (échappé, police des pseudos)
     avatar: compte.discord_avatar_url,
     data: compte.data
   };
@@ -722,8 +723,8 @@ function rendreEntetesJoueurs() {
     container.style.setProperty("--namecard", `url("${encodeURI(`/DB/images/${namecard}`)}")`);
 
     container.innerHTML = `
-      <img src="${joueur.avatar || ""}" alt="${joueur.nom}">
-      <span class="nom-joueur">${joueur.nom}</span>
+      <img src="${joueur.avatar || ""}" alt="${echapperHtml(joueur.nom)}">
+      <span class="nom-joueur">${echapperHtml(joueur.nom)}</span>
       ${htmlMedailleTheatre(palierTheatreProfil(joueur.data))}
       ${afficherRole ? `<span class="tag-role">${role.toUpperCase()}</span>` : ""}
       ${afficherPastille ? `<span class="pastille ${pret ? "pret" : ""}"></span>` : ""}
@@ -759,7 +760,7 @@ function rendreChoixBox() {
   ["j1", "j2"].forEach(role => {
     const estMoi = role === monRole;
     const joueurObjet = role === "j1" ? joueur1 : joueur2;
-    const nom = joueurObjet ? joueurObjet.nom : (role === "j1" ? "Joueur 1" : "Joueur 2");
+    const nom = joueurObjet ? joueurObjet.pseudo : (role === "j1" ? "Joueur 1" : "Joueur 2");
     const points = enAnalyse && draft[`points_${role}`] != null ? ` · ${draft[`points_${role}`]} pts` : "";
     const peutChoisir = estMoi && !enAnalyse;
 
@@ -800,7 +801,7 @@ function rendreChoixBox() {
         ? (estMoi ? "Box validée." : `${nom} a validé sa box.`)
         : (estMoi ? "Choisis ta box puis clique sur \"Valider ma box\"." : `${nom} choisit sa box…`);
     }
-    document.getElementById(`statut-pret-${role}`).textContent = statut;
+    document.getElementById(`statut-pret-${role}`).innerHTML = statut;
 
     const btnPret = document.getElementById(`btn-pret-${role}`);
     placerBoutonPret(btnPret);
@@ -841,7 +842,7 @@ function placerBoutonPret(bouton) {
 function rendreBansBonus() {
   const choix = draft.bans_bonus_choix || [];
   const restant = draft.bans_bonus_total - choix.length;
-  const nomJoueurConcerne = draft.bans_bonus_joueur === "j1" ? joueur1.nom : joueur2.nom;
+  const nomJoueurConcerne = draft.bans_bonus_joueur === "j1" ? joueur1.pseudo : joueur2.pseudo;
   const ecart = Math.abs((draft.points_j1 ?? 0) - (draft.points_j2 ?? 0));
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
 
@@ -851,7 +852,7 @@ function rendreBansBonus() {
       ? `Écart de ${ecart} pts entre les 2 box : choisis encore ${restant} personnage(s) à bannir avant le tirage J1/J2 et du boss (tu peux revenir sur ton choix avant de confirmer).`
       : `Écart de ${ecart} pts entre les 2 box : tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
   } else {
-    message.textContent = `Écart de ${ecart} pts entre les 2 box : ${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus. En attente…`;
+    message.innerHTML = `Écart de ${ecart} pts entre les 2 box : ${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus. En attente…`;
   }
 
   const slots = document.getElementById("bans-bonus-slots");
@@ -1038,10 +1039,10 @@ function titreTableauJoueur(role, nomJoueur) {
   const namecard = encodeURI(`/DB/images/${joueur?.data?.parametres?.banniere || NAMECARD_DEFAUT}`);
   const tagRole = draft?.roles_tires ? `<span class="tag-role">${role.toUpperCase()}</span>` : "";
   return `
-    <div class="namecard-tableau" style="--namecard: url(&quot;${namecard}&quot;)">
+    <div class="namecard-tableau" style="--namecard: url(&quot;${echapperHtml(namecard)}&quot;)">
       <span class="pastille-presence pastille-${role} cache"></span>
       ${joueur?.avatar ? `<img class="avatar-tableau" src="${joueur.avatar}" alt="">` : ""}
-      <span class="nom-complet">${nomJoueur}</span>
+      <span class="nom-complet">${echapperHtml(nomJoueur)}</span>
       <span class="nom-court">${role.toUpperCase()}</span>
       ${htmlMedailleTheatre(palierTheatreProfil(joueur?.data))}
       ${tagRole}
@@ -1283,7 +1284,7 @@ function rendreDraft(phasePrecedente) {
         : " un personnage, puis confirme.";
       tourContainer.innerHTML = `À toi de <strong class="verbe-action">${verbe}</strong>${choix}`;
     } else {
-      const nomAdversaire = prochaine.joueur === "j1" ? joueur1.nom : joueur2.nom;
+      const nomAdversaire = prochaine.joueur === "j1" ? joueur1.pseudo : joueur2.pseudo;
       tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong class="verbe-action">${verbe}</strong> un personnage.`;
     }
   }
@@ -1573,7 +1574,9 @@ function mettreAJourFiltreProprietaire() {
   zone.classList.toggle("cache", enBox);
   zone.querySelectorAll(".filtre-proprietaire-btn").forEach(btn => {
     const joueur = btn.dataset.role === "j1" ? joueur1 : joueur2;
-    btn.textContent = draft.roles_tires || !joueur ? btn.dataset.role.toUpperCase() : joueur.nom;
+    const avecNom = !draft.roles_tires && !!joueur;
+    btn.textContent = avecNom ? joueur.nom : btn.dataset.role.toUpperCase();
+    btn.classList.toggle("pseudo", avecNom);
   });
 }
 
@@ -1700,7 +1703,7 @@ function rendreLienStream(role, zone) {
     zone.querySelector(".texte-temps").after(lien);
   }
   lien.href = href;
-  lien.textContent = `📺 Stream de ${joueur.nom}`;
+  lien.innerHTML = `📺 Stream de ${joueur.pseudo}`;
   lien.title = href;
 }
 
@@ -1784,7 +1787,7 @@ function rendreVerification() {
   }
 
   const autreRole = getAutreRole(monRole);
-  const nomAutre = autreRole === "j1" ? joueur1.nom : joueur2.nom;
+  const nomAutre = autreRole === "j1" ? joueur1.pseudo : joueur2.pseudo;
   const jaiConfirme = draft[`temps_confirme_${monRole}`];
   const autreAConfirme = draft[`temps_confirme_${autreRole}`];
 
@@ -1813,9 +1816,9 @@ function rendreVerification() {
   };
 
   if (jaiConfirme && !autreAConfirme) {
-    etat.textContent = `Temps confirmés. En attente de la confirmation de ${nomAutre}…`;
+    etat.innerHTML = `Temps confirmés. En attente de la confirmation de ${nomAutre}…`;
   } else if (!jaiConfirme && autreAConfirme) {
-    etat.textContent = `${nomAutre} a confirmé les temps. Vérifie-les puis confirme, ou signale un litige.`;
+    etat.innerHTML = `${nomAutre} a confirmé les temps. Vérifie-les puis confirme, ou signale un litige.`;
   } else {
     etat.textContent = "Vérifie que les deux temps sont les bons, puis confirme. En cas de désaccord, signale un litige.";
   }
@@ -1826,7 +1829,7 @@ function rendreVerification() {
 // Litige : manche invalidée, pas de vainqueur ; revanche possible.
 function rendreLitige() {
   rendreRecap();
-  const nomLitige = draft.litige_par === "j1" ? joueur1.nom : draft.litige_par === "j2" ? joueur2.nom : null;
+  const nomLitige = draft.litige_par === "j1" ? joueur1.pseudo : draft.litige_par === "j2" ? joueur2.pseudo : null;
   const parQui = draft.litige_par === monRole ? "par toi" : nomLitige ? `par ${nomLitige}` : "";
   document.getElementById("resultat-final").innerHTML = `
     <p class="ligne-vainqueur"><span class="litige">Match invalidé</span></p>
@@ -1847,7 +1850,7 @@ function rendreTermine() {
     const gagne = draft.vainqueur === monRole;
     ligneVainqueur = `<span class="${gagne ? "vainqueur" : "perdant"}">${gagne ? "Tu as gagné !" : "Tu as perdu."}</span>`;
   } else {
-    const nomGagnant = draft.vainqueur === "j1" ? joueur1.nom : joueur2.nom;
+    const nomGagnant = draft.vainqueur === "j1" ? joueur1.pseudo : joueur2.pseudo;
     ligneVainqueur = `<span class="vainqueur">${nomGagnant} gagne !</span>`;
   }
 
@@ -1867,13 +1870,13 @@ function rendreTermine() {
       const gagne = draft.vainqueur === monRole;
       ligneTrophees = `<p class="ligne-trophees ${gagne ? "gain" : "perte"}">🏆 ${signe(n)} trophée${Math.abs(n) > 1 ? "s" : ""}${gagne ? bonus : ""}</p>`;
     } else {
-      ligneTrophees = `<p class="ligne-trophees">🏆 ${joueur1.nom} ${signe(delta("j1"))}, ${joueur2.nom} ${signe(delta("j2"))}${bonus}</p>`;
+      ligneTrophees = `<p class="ligne-trophees">🏆 ${joueur1.pseudo} ${signe(delta("j1"))}, ${joueur2.pseudo} ${signe(delta("j2"))}${bonus}</p>`;
     }
   }
 
   container.innerHTML = `
     <p class="ligne-vainqueur">${ligneVainqueur}</p>
-    <p class="ligne-temps">${joueur1.nom} : ${draft.temps_j1.affiche} — ${joueur2.nom} : ${draft.temps_j2.affiche}</p>
+    <p class="ligne-temps">${joueur1.pseudo} : ${draft.temps_j1.affiche} — ${joueur2.pseudo} : ${draft.temps_j2.affiche}</p>
     ${ligneTrophees}
   `;
   rendreRejouer();
@@ -1911,7 +1914,7 @@ function rendreRejouer() {
   const dejaOk = draft[`rejouer_${monRole}`];
   const autreRole = getAutreRole(monRole);
   const autreOk = draft[`rejouer_${autreRole}`];
-  const nomAutre = autreRole === "j1" ? joueur1.nom : joueur2.nom;
+  const nomAutre = autreRole === "j1" ? joueur1.pseudo : joueur2.pseudo;
 
   const btn = document.getElementById("btn-rejouer");
   btn.textContent = dejaOk ? "Annuler la demande de revanche" : "Rejouer (mêmes box, rôles inversés)";
@@ -1920,10 +1923,10 @@ function rendreRejouer() {
 
   const etat = document.getElementById("etat-rejouer");
   if (dejaOk && !autreOk) {
-    etat.textContent = `En attente que ${nomAutre} accepte la revanche…`;
+    etat.innerHTML = `En attente que ${nomAutre} accepte la revanche…`;
     etat.classList.remove("cache");
   } else if (!dejaOk && autreOk) {
-    etat.textContent = `${nomAutre} veut rejouer. Clique sur "Rejouer" pour confirmer.`;
+    etat.innerHTML = `${nomAutre} veut rejouer. Clique sur "Rejouer" pour confirmer.`;
     etat.classList.remove("cache");
   } else {
     etat.classList.add("cache");

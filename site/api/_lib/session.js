@@ -14,7 +14,12 @@ function parseCookies(req) {
     const key = trimmed.slice(0, index);
     const value = trimmed.slice(index + 1);
 
-    cookies[key] = decodeURIComponent(value);
+    // Valeur mal encodée : cookie ignoré (pas d'erreur 500).
+    try {
+      cookies[key] = decodeURIComponent(value);
+    } catch {
+      // ignoré
+    }
   });
 
   return cookies;

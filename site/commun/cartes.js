@@ -131,6 +131,17 @@ function palierTheatreProfil(profilData) {
   return PALIERS_THEATRE[profilData?.theatre] ?? null;
 }
 
+// Pseudo Discord inséré dans du HTML : échappé (un pseudo peut contenir
+// "<", "&"...) et dans la police des pseudos (classe .pseudo, cf.
+// commun/entete.css).
+function echapperHtml(texte) {
+  return String(texte).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+function htmlPseudo(nom) {
+  return `<span class="pseudo">${echapperHtml(nom)}</span>`;
+}
+
 function htmlMedailleTheatre(palier) {
   if (![6, 8, 10, 12].includes(Number(palier))) return "";
   return `<img class="medaille-theatre" src="/DB/images/others/Imaginarium_Theater_Medal_${Number(palier)}.webp" alt="Théâtre ${palier}" title="Théâtre ${palier}">`;

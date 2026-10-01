@@ -39,6 +39,21 @@ textarea {
   font-family: var(--police-texte);
 }
 
+/* Pseudos des joueurs (nom Discord affiché) : police des titres, partout.
+   .pseudo : pseudo dans une phrase (cf. htmlPseudo, commun/cartes.js). */
+.pseudo,
+.compte-lien > span,
+#discord-name,
+.account-pseudo,
+.match-nom,
+.joueur-nom,
+.nom-temps-litige,
+.joueur-litiges,
+.nom-joueur,
+.namecard-tableau .nom-complet {
+  font-family: var(--police-titre);
+}
+
 /* Titres : balises de titre et titres en texte simple (annonce J1 / J2,
    vérification des temps, onglets de personnalisation, détection auto). */
 h1,

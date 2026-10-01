@@ -1,4 +1,5 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
+const cosmetiques = require("../../DB/images/cosmetiques.json");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -30,6 +31,32 @@ function nettoyerLienStream(texte) {
   }
 }
 
+// Profil envoyé : taille maximale (une box complète pèse quelques dizaines
+// de Ko).
+const TAILLE_MAX_PROFIL = 512 * 1024;
+
+// Cosmétiques et variantes : valeurs connues seulement. Ces chemins sont
+// insérés dans le CSS des pages des autres joueurs (bannière, namecard) :
+// une valeur libre permettait d'y injecter du CSS (image externe, etc.).
+const PARAMETRES_AUTORISES = {
+  banniere: new Set([...cosmetiques.bannieres, "namecards/Namecard_Background_Default.webp"]),
+  banniere2: new Set([...cosmetiques.bannieres2, "namecards/banners/Namecard_Banner_Default.webp"]),
+  fond: new Set([...cosmetiques.fonds.map(f => f.id), "bg/autres/default_bg.webp"]),
+  voyageur: new Set(["aether", "lumine"]),
+  manekin: new Set(["manekin", "manekina"])
+};
+const THEATRES = new Set(["", "1", "2", "3", "4"]);
+const LONGUEUR_UID = 20;
+
+function nettoyerParametres(parametres) {
+  if (!parametres || typeof parametres !== "object") return {};
+  const propres = {};
+  Object.entries(PARAMETRES_AUTORISES).forEach(([cle, valeurs]) => {
+    if (valeurs.has(parametres[cle])) propres[cle] = parametres[cle];
+  });
+  return propres;
+}
+
 function nettoyerProfil(profil) {
   Object.entries(MAX_VITRINE).forEach(([vue, max]) => {
     const vitrine = profil?.[vue]?.selections?.vitrine;
@@ -39,6 +66,10 @@ function nettoyerProfil(profil) {
   });
 
   if (profil && typeof profil === "object") {
+    profil.parametres = nettoyerParametres(profil.parametres);
+    profil.uid = typeof profil.uid === "string" ? profil.uid.trim().slice(0, LONGUEUR_UID) : "";
+    if (!THEATRES.has(String(profil.theatre ?? ""))) profil.theatre = "";
+
     const noms = {};
     BOX_RENOMMABLES.forEach(box => {
       const nom = profil.nomsBoxes?.[box];
@@ -100,14 +131,21 @@ module.exports = async (req, res) => {
       let body = "";
       for await (const chunk of req) {
         body += chunk;
+        if (body.length > TAILLE_MAX_PROFIL) {
+          return res.status(413).json({ error: "Profil trop volumineux." });
+        }
       }
 
       let profil;
       try {
-        profil = nettoyerProfil(JSON.parse(body));
+        profil = JSON.parse(body);
       } catch {
         return res.status(400).json({ error: "JSON invalide." });
       }
+      if (!profil || typeof profil !== "object" || Array.isArray(profil)) {
+        return res.status(400).json({ error: "Profil invalide." });
+      }
+      profil = nettoyerProfil(profil);
 
       const r = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
         method: "POST",

@@ -9,6 +9,10 @@
 // afficherCollection, mettreAJourTotalBox, afficherToast).
 
 const AUTO_BOX_TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+// Empreinte du fichier ci-dessus (SRI) : un fichier modifié sur le CDN est
+// refusé par le navigateur. À recalculer si la version change :
+// curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A
+const AUTO_BOX_TESSERACT_SRI = "sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F";
 const AUTO_BOX_MODELE_URL = "/my_account/auto_box/modele_constellations.json";
 const AUTO_BOX_NB_WORKERS = 3;
 const AUTO_BOX_TOUJOURS_VERIFIER = ["kokomi"];
@@ -20,6 +24,8 @@ function chargerScriptTesseract() {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = AUTO_BOX_TESSERACT_URL;
+    script.integrity = AUTO_BOX_TESSERACT_SRI;
+    script.crossOrigin = "anonymous";
     script.onload = resolve;
     script.onerror = () => reject(new Error("Impossible de charger le moteur de lecture de texte (connexion ?)."));
     document.head.appendChild(script);

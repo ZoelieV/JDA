@@ -209,7 +209,7 @@ function htmlJoueur(match, role, bansConnus) {
 
   return `
     <div class="match-joueur match-${role}${gagnant ? " gagnant" : ""}">
-      <div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${banniere}&quot;)">
+      <div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
         ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
         <span class="match-nom"></span>
         ${htmlMedailleTheatre(joueur.theatre)}
@@ -290,9 +290,10 @@ function afficherMatchsEnCours() {
 
 // ---- Litiges (administrateurs) ----
 
+// "signalé par <pseudo>" en HTML (pseudo échappé).
 function nomLitigePar(match) {
   const joueur = match[match.litige_par];
-  return joueur ? `signalé par ${joueur.nom}` : "signalé";
+  return joueur ? `signalé par ${htmlPseudo(joueur.nom)}` : "signalé";
 }
 
 // Centre d'un litige ouvert : qui l'a signalé, les 2 temps modifiables et
@@ -314,7 +315,7 @@ function htmlCorrectionLitige(match) {
 
 function brancherCorrectionLitige(ligne, match) {
   // Pseudos en texte (pas d'HTML venant des comptes).
-  ligne.querySelector(".litige-par").textContent = nomLitigePar(match);
+  ligne.querySelector(".litige-par").innerHTML = nomLitigePar(match);
   ligne.querySelector(".champ-j1 .nom-temps-litige").textContent = match.j1.nom;
   ligne.querySelector(".champ-j2 .nom-temps-litige").textContent = match.j2.nom;
 
@@ -391,7 +392,7 @@ function afficherLitiges() {
   const filtre = document.getElementById("filtre-litiges");
   const joueur = statsLitiges.find(s => s.discord_id === joueurLitiges);
   filtre.classList.toggle("cache", !joueur);
-  filtre.textContent = joueur ? `— ${joueur.nom} (cliquer à nouveau sur le joueur pour tout afficher)` : "";
+  filtre.innerHTML = joueur ? `— ${htmlPseudo(joueur.nom)} (cliquer à nouveau sur le joueur pour tout afficher)` : "";
 
   const affiches = litiges.filter(match => !joueurLitiges ||
     match.j1.discord_id === joueurLitiges || match.j2.discord_id === joueurLitiges);
