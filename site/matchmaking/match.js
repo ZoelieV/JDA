@@ -114,6 +114,16 @@ async function rejoindreOuConsulterRoom(id) {
   if (reponse.status === 401) throw new Error("Tu dois être connecté avec Discord.");
   if (reponse.status === 404) throw new Error("Cette room n'existe pas.");
 
+  // Room en mode classique / auto sans théâtre renseigné : direction Mon
+  // compte pour le renseigner.
+  if (reponse.status === 409) {
+    const { error } = await reponse.json().catch(() => ({}));
+    clearInterval(intervalPolling);
+    alert(error || "Impossible de rejoindre cette room.");
+    window.location.href = "/my_account/my_account.html";
+    throw new Error(error || "Impossible de rejoindre cette room.");
+  }
+
   if (reponse.status === 403) {
     const consult = await fetch(`/api/rooms/${id}`, { credentials: "include" });
     if (!consult.ok) throw new Error("Impossible de consulter la room.");
@@ -978,8 +988,15 @@ function ouvrirChoixElement(personnage, elements, valider) {
   document.body.appendChild(fond);
 }
 
+// Séquence de picks / bans de la manche : fixée par le serveur au tirage du
+// boss selon le mode de théâtre (cf. sequenceTheatre, api/_lib/draft.js) ;
+// draft classique (théâtre 12) avant le tirage.
+function getSequence() {
+  return Array.isArray(draft?.sequence) ? draft.sequence : SEQUENCE_FIXE;
+}
+
 function getProchaineActionLocale() {
-  const action = SEQUENCE_FIXE[draft.sequence_index];
+  const action = getSequence()[draft.sequence_index];
   return action || null;
 }
 
@@ -1099,9 +1116,9 @@ function rendreTableauJoueur(role) {
   // Bans (hors bans d'équilibrage, dans leur propre bloc) : une case par
   // ban prévu pour ce joueur dans la séquence.
   const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
-  const nbBans = SEQUENCE_FIXE.filter(a => a.type === "ban" && a.joueur === role).length;
+  const nbBans = getSequence().filter(a => a.type === "ban" && a.joueur === role).length;
   const slotsBans = document.getElementById(`rangee-bans-${role}`);
-  if (grilleAChange(slotsBans, JSON.stringify([joueur.discordId, bans]))) {
+  if (grilleAChange(slotsBans, JSON.stringify([joueur.discordId, bans, nbBans]))) {
     slotsBans.replaceChildren(...Array.from({ length: nbBans }, (_, i) => {
       const personnage = bans[i] && getPersonnageParId(bans[i]);
       if (!personnage) return creerCaseVide("slot-pick slot-ban");
@@ -1177,6 +1194,42 @@ function htmlBossTire(boss) {
     </button>
     <span class="indice-res-boss">Voir les Res</span>
     <span class="nom-boss">${boss.nom}</span>`;
+}
+
+// Théâtre de la draft : fixé par le serveur au tirage du boss ; avant,
+// celui qui sera joué (mode imposé, ou plus petit clear des 2 joueurs en
+// mode auto, cf. resoudreTheatre dans api/_lib/draft.js).
+function theatreDeLaDraft() {
+  if ([6, 8, 10, 12].includes(draft?.theatre)) return draft.theatre;
+  const mode = Number(draft?.mode_theatre);
+  if ([6, 8, 10, 12].includes(mode)) return mode;
+  const paliers = [joueur1, joueur2].map(j => palierTheatreProfil(j?.data));
+  return Math.min(...paliers.map(p => p ?? 6));
+}
+
+// Badge du théâtre de la draft, sous le titre, dès que les 2 joueurs sont
+// dans la room.
+function afficherModeTheatre() {
+  const zone = document.getElementById("mode-theatre-room");
+  const visible = !!(draft && joueur1 && joueur2) && draft.phase !== "annule";
+  zone.classList.toggle("cache", !visible);
+  if (!visible) return;
+  const html = htmlModeTheatre(theatreDeLaDraft());
+  if (zone.dataset.html !== html) {
+    zone.dataset.html = html;
+    zone.innerHTML = html;
+  }
+}
+
+// Théâtre de la draft (nombre de bans) avec sa médaille.
+function htmlModeTheatre(theatre) {
+  if (![6, 8, 10, 12].includes(theatre)) return "";
+  const nbBans = { 6: 1, 8: 2, 10: 3, 12: 4 }[theatre];
+  // "auto" : théâtre du joueur au plus petit clear ; sinon choisi à la
+  // création de la room, ou mêlée générale (matchmaking / classé).
+  const mode = draft.mode_theatre === "auto" ? "plus petit clear" : typeRoom === "prive" ? "choisi pour la room" : "mêlée générale";
+  return `<span class="mode-theatre" title="Draft du théâtre ${theatre} : 4 picks et ${nbBans} ban${nbBans > 1 ? "s" : ""} par joueur (${mode})">` +
+    `<img src="/DB/images/others/Imaginarium_Theater_Medal_${theatre}.webp" alt="">Théâtre ${theatre} · ${mode}</span>`;
 }
 
 function initialiserResBoss() {
@@ -2063,6 +2116,7 @@ function appliquerFondRoom() {
 
 function rendrePhase() {
   appliquerFondRoom();
+  afficherModeTheatre();
 
   const phasePrecedente = dernierePhaseVue;
   dernierePhaseVue = draft.phase;

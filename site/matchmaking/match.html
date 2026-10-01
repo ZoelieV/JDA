@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem36">
+<link rel="stylesheet" href="match.css?v=rem38">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -16,6 +16,8 @@
   <button id="btn-partager" type="button" class="btn-partager" title="Copier le lien de la room pour l'envoyer à ton adversaire">Partager le lien</button>
 </div>
 <h1 class="titre-page">Match</h1>
+<!-- Théâtre de la draft (nombre de bans), dès que les 2 joueurs sont là. -->
+<p id="mode-theatre-room" class="mode-theatre-room cache"></p>
 
   <!-- Attente de l'adversaire. Match privé : lien à partager ; matchmaking :
        recherche automatique, annulable (cf. suivreMatchmaking dans match.js). -->
@@ -198,6 +200,6 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=8"></script>
   <script src="/commun/tri.js?v=14"></script>
-  <script src="match.js?v=49"></script>
+  <script src="match.js?v=51"></script>
 </body>
 </html>

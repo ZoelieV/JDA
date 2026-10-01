@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox } = require("../_lib/draft");
 const { getPersonnages, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
-const { rejouerClasse } = require("../_lib/trophees");
+const { CLASSEMENTS, rejouerClasse } = require("../_lib/trophees");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -45,8 +45,14 @@ async function chargerResultats() {
   const litigeOuvert = "litige.is.null,litige.neq.ouvert";
   let { data, error } = await supabase
     .from("match_history")
-    .select(`${champs}, id, created_at, litige, classe, trophees`)
+    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre`)
     .or(litigeOuvert);
+
+  // Sans colonne mode_theatre (sql/theatre.sql pas lancé) : tout en
+  // classement Classique.
+  if (error) {
+    ({ data, error } = await supabase.from("match_history").select(`${champs}, id, created_at, litige, classe, trophees`).or(litigeOuvert));
+  }
 
   // Sans colonne litige (sql/litiges.sql pas lancé) : classé quand même.
   if (error) {
@@ -78,9 +84,12 @@ async function chargerResultats() {
     compter(match.player2_discord_id, match.vainqueur === "j2");
   });
 
-  rejouerClasse(data).joueurs.forEach((classe, discordId) => {
-    resultats[discordId] ??= { matchs: 0, victoires: 0 };
-    resultats[discordId].classe = classe;
+  const { joueurs } = rejouerClasse(data);
+  CLASSEMENTS.forEach(classement => {
+    joueurs[classement].forEach((stats, discordId) => {
+      resultats[discordId] ??= { matchs: 0, victoires: 0 };
+      (resultats[discordId].classements ??= {})[classement] = stats;
+    });
   });
 
   return resultats;
@@ -97,7 +106,7 @@ function resumerProfil(profil, resultats) {
   const nbC6 = new Set(possedes
     .filter(p => String(p.rarete) === "5" && !p.standard && full[p.id] === 6)
     .map(p => p.groupe || p.id)).size;
-  const { matchs = 0, victoires = 0, classe = null } = resultats[profil.discord_id] || {};
+  const { matchs = 0, victoires = 0, classements = {} } = resultats[profil.discord_id] || {};
 
   return {
     discord_id: profil.discord_id,
@@ -118,12 +127,10 @@ function resumerProfil(profil, resultats) {
     theatre: PALIERS_THEATRE[data.theatre] ?? null,
     matchs,
     victoires,
-    // Classé : null si aucun match classé (absent du classement).
-    trophees: classe ? classe.trophees : null,
-    matchs_classes: classe ? classe.matchs : 0,
-    victoires_classees: classe ? classe.victoires : 0,
-    // Victoires d'affilée en cours en classé (bonus de série).
-    serie: classe ? classe.serie : 0
+    // Classé, par classement ("classique", "melee") : { trophees, matchs,
+    // victoires, serie (victoires d'affilée en cours) }, absent si aucun
+    // match classé dans ce classement.
+    classements
   };
 }
 

@@ -51,6 +51,10 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
     temps_j2_affiche: draft.temps_j2.affiche,
     temps_j2_secondes: draft.temps_j2.secondes,
     vainqueur: draft.vainqueur,
+    // Théâtre joué (nombre de bans) et mode de la room ("auto", "12" =
+    // mêlée générale en matchmaking / classé, ou théâtre imposé).
+    theatre: draft.theatre ?? null,
+    mode_theatre: draft.mode_theatre || "auto",
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),
     ...(classe ? {
       classe: true,
@@ -64,14 +68,15 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   const inserer = ligne => supabase.from("match_history").insert(ligne).select("id").single();
   let { data, error } = await inserer(match);
 
-  // Colonne "actions" pas encore créée dans la table : archivage sans elle
-  // (les bans restent enregistrés dans bans_j1 / bans_j2). Colonnes litige
+  // Colonnes facultatives (actions, theatre, mode_theatre) pas encore
+  // créées dans la table : archivage sans elles (les bans restent
+  // enregistrés dans bans_j1 / bans_j2 ; cf. sql/theatre.sql). Colonnes litige
   // absentes (sql/litiges.sql pas lancé) : nouvelle erreur, le litige n'est
   // pas archivé (jamais publié comme un match normal) ; idem pour un match
   // classé sans les colonnes classe / trophees (sql/classe.sql).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { actions, ...sansActions } = match;
-    ({ data, error } = await inserer(sansActions));
+    const { actions, theatre, mode_theatre, ...sansFacultatives } = match;
+    ({ data, error } = await inserer(sansFacultatives));
   }
 
   if (error) {

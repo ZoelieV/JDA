@@ -259,6 +259,8 @@ module.exports = async (req, res) => {
       room_id: room.room_id,
       phase: room.draft.phase,
       classe: room.type === "classe",
+      theatre: room.draft.theatre ?? null,
+      mode_theatre: room.draft.mode_theatre || null,
       boss_id: room.draft.boss_id || null,
       player1_discord_id: room.draft.discord_j1 || room.player1_discord_id,
       player2_discord_id: room.draft.discord_j2 || room.player2_discord_id,
@@ -291,6 +293,9 @@ module.exports = async (req, res) => {
       date: match.created_at || null,
       boss_id: match.boss_id,
       vainqueur: match.vainqueur,
+      // Théâtre joué (6 à 12) et mode de la room (cf. sql/theatre.sql).
+      theatre: match.theatre ?? null,
+      mode_theatre: match.mode_theatre ?? null,
       // Match classé : trophées gagnés par le vainqueur (perdus par l'autre).
       classe: !!match.classe,
       trophees: match.classe ? match.trophees ?? null : null,
@@ -310,6 +315,8 @@ module.exports = async (req, res) => {
         room_id: room.room_id,
         phase: room.phase,
         classe: room.classe,
+        theatre: room.theatre,
+        mode_theatre: room.mode_theatre,
         boss_id: room.boss_id,
         date: room.date,
         ...deuxJoueurs(room)

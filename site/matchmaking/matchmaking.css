@@ -34,3 +34,49 @@
   color: var(--texte-doux);
   font-size: 0.9375rem;
 }
+
+.cache {
+  display: none !important;
+}
+
+/* Modes de théâtre d'une carte (ouverts par son bouton). */
+.modes-match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.mode-match {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.55);
+  color: white;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode-match span {
+  font-size: 0.8125rem;
+  font-weight: normal;
+  color: var(--texte-doux);
+}
+
+.mode-match:hover {
+  border-color: var(--accent-bordure);
+  background-color: var(--accent-fond);
+}
+
+/* Mode entraînement : pas encore disponible. */
+.option-bientot .btn-principal:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

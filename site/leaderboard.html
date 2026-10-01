@@ -7,13 +7,20 @@
   <link rel="stylesheet" href="commun/theme.css?v=rem5">
   <link rel="stylesheet" href="commun/entete.css?v=rem21">
   <link rel="stylesheet" href="commun/tri.css?v=6">
-  <link rel="stylesheet" href="classement/classement.css?v=1">
+  <link rel="stylesheet" href="classement/classement.css?v=2">
 <script src="/commun/fond.js?v=6"></script>
 <script src="/commun/compte.js?v=5" defer></script>
 </head>
 <body>
   <a href="index.html" class="lien-accueil">Accueil</a>
   <h1 class="titre-page">Classement</h1>
+
+  <!-- Deux classements séparés (trophées et séries indépendants) : même
+       largeur, à eux deux celle du tableau. -->
+  <div class="onglets-classement" role="tablist">
+    <button type="button" class="onglet-classement active" role="tab" aria-selected="true" data-classement="classique">Classique<span>théâtre du plus petit clear</span></button>
+    <button type="button" class="onglet-classement" role="tab" aria-selected="false" data-classement="melee">Mêlée générale<span>théâtre 12 pour tous</span></button>
+  </div>
 
   <!-- Recherche et tris (sens inversé par un 2e clic) ; rang toujours
        calculé sur les trophées. -->
@@ -55,6 +62,6 @@
   </div>
 
   <script src="/commun/cartes.js?v=8"></script>
-  <script src="classement/classement.js?v=3"></script>
+  <script src="classement/classement.js?v=4"></script>
 </body>
 </html>

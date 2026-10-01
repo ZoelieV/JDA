@@ -225,6 +225,13 @@ function htmlJoueur(match, role, bansConnus) {
   `;
 }
 
+// Théâtre joué (nombre de bans de la draft) avec sa médaille.
+function htmlTheatreJoue(theatre) {
+  if (![6, 8, 10, 12].includes(theatre)) return "";
+  return `<span class="match-theatre" title="Draft du théâtre ${theatre}">` +
+    `<img src="../DB/images/others/Imaginarium_Theater_Medal_${theatre}.webp" alt="">Théâtre ${theatre}</span>`;
+}
+
 // Ligne d'un match terminé, ou d'un match en cours (phase et lien pour le
 // regarder en spectateur à la place de la date).
 function creerLigneMatch(match) {
@@ -256,7 +263,8 @@ function creerLigneMatch(match) {
     ${htmlJoueur(match, "j1", enCours || match.bans_connus)}
     <div class="match-centre">
       ${boss ? `<img class="match-boss" src="../DB/${boss.image}" alt="${boss.nom}" loading="lazy">` : ""}
-      ${match.classe ? `<span class="match-classe">Classé 🏆</span>` : ""}
+      ${match.classe ? `<span class="match-classe">Classé 🏆${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
+      ${htmlTheatreJoue(match.theatre)}
       <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
       ${infos}
     </div>

@@ -1,9 +1,11 @@
 // Matchmaking : met automatiquement face à face deux joueurs qui cliquent
 // sur "Matchmaking" ou sur "Classé" (page Créer un match).
 //
-// Deux files séparées (un joueur en matchmaking normal ne tombe jamais sur
-// un joueur en classé) : rooms de type "matchmaking" ou "classe" sans
-// player2 (colonnes type et created_at, cf. sql/rooms_matchmaking.sql). Une
+// Files séparées (un joueur en matchmaking normal ne tombe jamais sur un
+// joueur en classé, ni un joueur en mode classique sur un joueur en mêlée
+// générale) : rooms de type "matchmaking" ou "classe" sans player2
+// (colonnes type et created_at, cf. sql/rooms_matchmaking.sql), mode de
+// théâtre dans draft.mode_theatre ("auto" = classique, "12" = mêlée). Une
 // room "classe" le reste pour les revanches ; ses matchs rapportent des
 // trophées (cf. _lib/trophees.js). Le premier joueur crée sa
 // room et attend dessus ; le suivant prend la plus ancienne room en attente
@@ -26,7 +28,7 @@ const { annulerAutresMatchs } = require("./room");
 // Room en attente sans nouvelles de sa page depuis plus longtemps : joueur
 // parti, ignorée.
 const ATTENTE_VIVANTE_MS = 20 * 1000;
-const COLONNES = "room_id, player1_discord_id, player2_discord_id, created_at";
+const COLONNES = "room_id, player1_discord_id, player2_discord_id, created_at, draft";
 // Types de room du matchmaking (une file chacun).
 const TYPES_FILE = ["matchmaking", "classe"];
 
@@ -65,7 +67,7 @@ async function prendreRoom(roomId, discordId) {
   return data;
 }
 
-async function chercher(discordId, roomIdAttente, type = "matchmaking") {
+async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "auto") {
   // Début d'une recherche (pas un rappel de la page d'attente) : un seul
   // match à la fois, le match en cours du joueur est annulé.
   if (!roomIdAttente) await annulerAutresMatchs(supabase, discordId);
@@ -80,6 +82,8 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking") {
     if (room?.player1_discord_id === discordId && room.player2_discord_id) {
       return { room_id: room.room_id, trouve: true };
     }
+    // Rappel de la page d'attente : même mode que la room d'attente.
+    if (room?.draft?.mode_theatre) mode = room.draft.mode_theatre;
   }
 
   // Attente dans l'autre file abandonnée : une seule recherche à la fois.
@@ -95,6 +99,7 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking") {
     .from("rooms")
     .select(COLONNES)
     .eq("type", type)
+    .eq("draft->>mode_theatre", mode)
     .is("player2_discord_id", null)
     .neq("player1_discord_id", discordId)
     .gte("last_active_at", new Date(Date.now() - ATTENTE_VIVANTE_MS).toISOString())
@@ -124,6 +129,7 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking") {
     room_id: roomId,
     player1_discord_id: discordId,
     type,
+    draft: { mode_theatre: mode },
     last_active_at: new Date().toISOString()
   });
   if (erreurCreation) throw erreurCreation;

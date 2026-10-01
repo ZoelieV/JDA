@@ -26,6 +26,15 @@ function bonusSerie(victoiresDAffilee) {
   return Math.min(BONUS_SERIE_MAX, Math.max(0, victoiresDAffilee - 1));
 }
 
+// Deux classements séparés (trophées et séries indépendants) : Classique
+// (mode "auto", théâtre du plus petit clear) et Mêlée générale (mode "12").
+// Ancien match sans mode : Classique.
+const CLASSEMENTS = ["classique", "melee"];
+
+function classementDuMatch(match) {
+  return match.mode_theatre === "12" ? "melee" : "classique";
+}
+
 // Match classé qui compte : classé, terminé (pas un litige ouvert).
 function compteEnClasse(match) {
   return !!match.classe && match.litige !== "ouvert" && !!match.vainqueur;
@@ -34,9 +43,10 @@ function compteEnClasse(match) {
 // matchs : lignes de match_history (player1/2_discord_id, vainqueur,
 // classe, trophees, litige, created_at, id).
 // -> {
-//   joueurs : Map discord_id -> { trophees, matchs, victoires, serie }
-//             (joueurs ayant au moins un match classé ; serie = victoires
-//             d'affilée en cours),
+//   joueurs : { classique: Map, melee: Map }, chaque Map discord_id ->
+//             { trophees, matchs, victoires, serie } (joueurs ayant au moins
+//             un match dans ce classement ; serie = victoires d'affilée en
+//             cours),
 //   deltas  : Map id du match -> { j1, j2, bonus } (trophées réellement
 //             gagnés / perdus, plancher à 0 compris ; bonus de série du
 //             gagnant)
@@ -49,14 +59,15 @@ function rejouerClasse(matchs) {
     return da - db || ia - ib;
   });
 
-  const joueurs = new Map();
+  const joueurs = Object.fromEntries(CLASSEMENTS.map(c => [c, new Map()]));
   const deltas = new Map();
-  const joueur = discordId => {
-    if (!joueurs.has(discordId)) joueurs.set(discordId, { trophees: 0, matchs: 0, victoires: 0, serie: 0 });
-    return joueurs.get(discordId);
-  };
 
   classes.forEach(match => {
+    const table = joueurs[classementDuMatch(match)];
+    const joueur = discordId => {
+      if (!table.has(discordId)) table.set(discordId, { trophees: 0, matchs: 0, victoires: 0, serie: 0 });
+      return table.get(discordId);
+    };
     const enJeu = Number(match.trophees) || 0;
     const delta = { j1: 0, j2: 0, bonus: 0 };
     ["j1", "j2"].forEach(role => {
@@ -89,9 +100,12 @@ function rejouerClasse(matchs) {
 // colonne classe (sql/classe.sql pas lancé). Sans colonne litige
 // (sql/litiges.sql pas lancé), aucun litige possible : lecture sans elle.
 async function chargerMatchsClasses(supabase) {
+  // Colonnes facultatives (litige, mode_theatre) : lecture sans elles si
+  // elles n'existent pas encore.
   const champs = "id, created_at, player1_discord_id, player2_discord_id, vainqueur, classe, trophees";
   const lire = select => supabase.from("match_history").select(select).eq("classe", true);
-  let { data, error } = await lire(`${champs}, litige`);
+  let { data, error } = await lire(`${champs}, litige, mode_theatre`);
+  if (error) ({ data, error } = await lire(`${champs}, litige`));
   if (error) ({ data, error } = await lire(champs));
   if (error) {
     console.error("Erreur lecture matchs classés :", error);
@@ -100,4 +114,4 @@ async function chargerMatchsClasses(supabase) {
   return data || [];
 }
 
-module.exports = { TROPHEES_MAX, calculerTrophees, bonusSerie, rejouerClasse, chargerMatchsClasses };
+module.exports = { TROPHEES_MAX, CLASSEMENTS, calculerTrophees, bonusSerie, rejouerClasse, chargerMatchsClasses };

@@ -6,7 +6,7 @@
 <title>Créer un match</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
-<link rel="stylesheet" href="matchmaking.css?v=3">
+<link rel="stylesheet" href="matchmaking.css?v=4">
 <script src="/commun/fond.js?v=6"></script>
 <script src="/commun/compte.js?v=5" defer></script>
 </head>
@@ -17,25 +17,49 @@
   <p class="note-match">Un seul match à la fois : en lancer un nouveau annule ton match en cours
     (en classé, ça compte comme un abandon : tu perds les trophées).</p>
 
+  <!-- Chaque bouton ouvre les modes de théâtre proposés (nombre de bans de
+       la draft, après le tirage du boss ; les bans d'équilibrage ne changent
+       pas). Classique : théâtre du joueur au plus petit clear ; mêlée
+       générale : théâtre 12 pour tout le monde. -->
   <div class="choix-match">
     <div class="option-match panneau">
-      <button id="creer-prive" type="button" class="btn-principal">Match privé</button>
+      <button type="button" class="btn-principal ouvrir-modes" aria-expanded="false">Créer une room</button>
       <p>Tu reçois un lien à envoyer à ton adversaire : la première personne qui l'ouvre joue contre toi.
-        Les autres peuvent regarder depuis l'historique.</p>
+        Les autres peuvent regarder depuis l'historique. Tu choisis le théâtre de la draft.</p>
+      <div class="modes-match cache" data-type="prive">
+        <button type="button" class="mode-match" data-mode="auto">Auto<span>théâtre du plus petit clear</span></button>
+        <button type="button" class="mode-match" data-mode="6">Théâtre 6<span>4 picks, 1 ban</span></button>
+        <button type="button" class="mode-match" data-mode="8">Théâtre 8<span>4 picks, 2 bans</span></button>
+        <button type="button" class="mode-match" data-mode="10">Théâtre 10<span>4 picks, 3 bans</span></button>
+        <button type="button" class="mode-match" data-mode="12">Théâtre 12<span>4 picks, 4 bans</span></button>
+      </div>
     </div>
     <div class="option-match panneau">
-      <button id="lancer-matchmaking" type="button" class="btn-principal">Matchmaking</button>
-      <p>Tu es mis automatiquement face au prochain joueur qui clique aussi sur Matchmaking.</p>
+      <button type="button" class="btn-principal ouvrir-modes" aria-expanded="false">Matchmaking</button>
+      <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.</p>
+      <div class="modes-match cache" data-type="matchmaking">
+        <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
+        <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
+      </div>
     </div>
     <div class="option-match panneau option-classe">
-      <button id="lancer-classe" type="button" class="btn-principal">Classé 🏆</button>
+      <button type="button" class="btn-principal ouvrir-modes" aria-expanded="false">Classé 🏆</button>
       <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Le gagnant remporte
         un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.
         Victoires d'affilée en classé : +1 trophée bonus à la 2e, +2 à la 3e, puis +3.
         Voir le <a href="../leaderboard.html">classement</a>.</p>
+      <div class="modes-match cache" data-type="classe">
+        <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
+        <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
+      </div>
+    </div>
+    <!-- Mode entraînement : à venir. -->
+    <div class="option-match panneau option-bientot">
+      <button type="button" class="btn-principal" disabled>Mode entraînement</button>
+      <p>Bientôt disponible.</p>
     </div>
   </div>
 
-  <script src="matchmaking.js?v=6"></script>
+  <script src="matchmaking.js?v=7"></script>
 </body>
 </html>

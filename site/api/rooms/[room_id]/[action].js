@@ -13,7 +13,8 @@ const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const {
   NB_PERSOS_MIN_BOX,
-  SEQUENCE_FIXE,
+  getSequence,
+  theatreProfil,
   calculerPointsBox,
   calculerPoolJoueur,
   calculerElementsGroupes,
@@ -114,6 +115,9 @@ async function calculerEquilibrage(draft) {
 
   draft.points_j1 = pointsJ1;
   draft.points_j2 = pointsJ2;
+  // Théâtre clear de chacun : mode de théâtre "auto" (cf. lancerTirage).
+  draft.theatre_j1 = theatreProfil(profilJ1.data?.data);
+  draft.theatre_j2 = theatreProfil(profilJ2.data?.data);
 
   const ecart = pointsJ1 - pointsJ2;
   const bansBonus = calculerBansBonus(ecart);
@@ -249,7 +253,7 @@ async function handleAction(req, res, roomId, user) {
 
   draft.sequence_index += 1;
 
-  if (draft.sequence_index >= SEQUENCE_FIXE.length) {
+  if (draft.sequence_index >= getSequence(draft).length) {
     draft.phase = "temps";
   }
 

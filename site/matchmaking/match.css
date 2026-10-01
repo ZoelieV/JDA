@@ -2341,3 +2341,26 @@ h1 {
 .lien-creer-match:hover {
   background-color: rgba(245, 197, 66, 0.3);
 }
+
+/* Théâtre de la draft (nombre de bans), sous le titre de la page. */
+.mode-theatre-room {
+  margin: -0.75rem 0 1rem;
+  text-align: center;
+}
+
+.mode-theatre {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.625rem 0.125rem 0.25rem;
+  border-radius: 62.4375rem;
+  background-color: rgba(0, 0, 0, 0.55);
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.mode-theatre img {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}

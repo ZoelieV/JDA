@@ -9,6 +9,7 @@ const supabase = createClient(
 );
 
 const COLONNES = "room_id, player1_discord_id, player2_discord_id, type";
+const { erreurModeAuto } = require("../_lib/draft");
 
 function getRoomIdFromUrl(req) {
   const url = new URL(req.url, `https://${req.headers.host}`);
@@ -86,6 +87,13 @@ module.exports = async (req, res) => {
       if (room.player2_discord_id || TYPES_FILE.includes(room.type) || enSpectateur) {
         return res.status(200).json({ ...room, spectateur: true });
       }
+
+      // Room en mode auto (classique) : théâtre renseigné obligatoire pour
+      // devenir l'adversaire.
+      const { data: complements } = await supabase.from("rooms").select("draft").eq("room_id", roomId).maybeSingle();
+      const { data: profil } = await supabase.from("profiles").select("data").eq("discord_id", user.id).maybeSingle();
+      const erreurMode = erreurModeAuto(complements?.draft?.mode_theatre || "auto", profil?.data);
+      if (erreurMode) return res.status(409).json({ error: erreurMode });
 
       // Mise à jour conditionnelle : si deux personnes ouvrent le lien en
       // même temps, une seule devient player2.

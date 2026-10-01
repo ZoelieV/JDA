@@ -41,6 +41,67 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
   Array.from({ length: bloc.nombre }, () => ({ joueur: bloc.joueur, type: bloc.type }))
 );
 
+// ---- Modes de théâtre : nombre de bans de la draft ----
+//
+// Même squelette que la draft classique (théâtre 12) : bans du 1er tour
+// (j1, j2, j1...), picks j1, j2, j2, j1, bans du 2e tour (j2, j1...),
+// picks j2, j1, j1, j2. Seul le nombre de bans par joueur change :
+//   théâtre 6  : 0 + 1 (le ban arrive après les 2 premiers picks)
+//   théâtre 8  : 1 + 1
+//   théâtre 10 : 2 + 1
+//   théâtre 12 : 2 + 2 (draft classique, = SEQUENCE_FIXE)
+// Ne s'applique qu'après le tirage du boss : les bans d'équilibrage ne
+// changent pas.
+const BANS_PAR_THEATRE = { 6: [0, 1], 8: [1, 1], 10: [2, 1], 12: [2, 2] };
+const THEATRES = [6, 8, 10, 12];
+// Mode d'une room : "auto" (théâtre du joueur au plus petit clear) ou un
+// théâtre imposé ("12" = mêlée générale).
+const MODES_THEATRE = ["auto", "6", "8", "10", "12"];
+// Théâtre clear du profil : valeur stockée ("1".."4") -> palier.
+const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
+// Théâtre non renseigné dans le profil : considéré comme le plus petit.
+const THEATRE_PAR_DEFAUT = 6;
+
+function sequenceTheatre(theatre) {
+  const [bans1, bans2] = BANS_PAR_THEATRE[theatre] || BANS_PAR_THEATRE[12];
+  const bans = (nombre, premier) => {
+    const second = premier === "j1" ? "j2" : "j1";
+    return Array.from({ length: nombre * 2 }, (_, i) => ({ joueur: i % 2 === 0 ? premier : second, type: "ban" }));
+  };
+  const picks = ordre => ordre.map(joueur => ({ joueur, type: "pick" }));
+  return [
+    ...bans(bans1, "j1"),
+    ...picks(["j1", "j2", "j2", "j1"]),
+    ...bans(bans2, "j2"),
+    ...picks(["j2", "j1", "j1", "j2"])
+  ];
+}
+
+function theatreProfil(profilData) {
+  return PALIERS_THEATRE[profilData?.theatre] ?? null;
+}
+
+// Théâtre de la draft : imposé par le mode, sinon ("auto") celui du joueur
+// au plus petit clear.
+function resoudreTheatre(mode, theatreJ1, theatreJ2) {
+  if (THEATRES.includes(Number(mode))) return Number(mode);
+  return Math.min(theatreJ1 ?? THEATRE_PAR_DEFAUT, theatreJ2 ?? THEATRE_PAR_DEFAUT);
+}
+
+// Mode "auto" (classique) : interdit sans théâtre clear renseigné dans le
+// profil (sinon un gros compte pourrait ne rien renseigner pour imposer
+// moins de bans). Message d'erreur, ou null si le joueur peut jouer.
+function erreurModeAuto(mode, profilData) {
+  if (mode !== "auto" || theatreProfil(profilData) !== null) return null;
+  return "Renseigne ton théâtre clear (menu du compte ou Mon compte) pour jouer en mode classique / auto.";
+}
+
+// Séquence de la manche (fixée au tirage du boss) ; draft classique avant
+// le tirage ou pour une ancienne manche.
+function getSequence(draft) {
+  return Array.isArray(draft?.sequence) ? draft.sequence : SEQUENCE_FIXE;
+}
+
 // ---- État initial d'une manche ----
 //
 // Déroulé : choix_box (box adverse cachée) -> analyse (les 2 box visibles,
@@ -80,6 +141,11 @@ function etatInitialDraft() {
     elements_j2: null,
     actions: [], // { joueur, type: "ban" | "pick", perso_id, bonus: bool, element? (pick Voyageur / Manekin) }
     sequence_index: 0,
+    mode_theatre: "auto", // "auto" | "6" | "8" | "10" | "12" (choisi à la création de la room)
+    theatre_j1: null, // théâtre clear du profil de j1 (6..12, null si non renseigné)
+    theatre_j2: null,
+    theatre: null, // théâtre de la draft, fixé au tirage du boss
+    sequence: null, // séquence de picks / bans de ce théâtre (cf. sequenceTheatre)
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
     temps_confirme_j1: false, // verification : j1 a confirmé les 2 temps
@@ -173,7 +239,7 @@ function getProchaineAction(draft) {
   }
 
   if (draft.phase === "draft") {
-    const action = SEQUENCE_FIXE[draft.sequence_index];
+    const action = getSequence(draft)[draft.sequence_index];
     if (!action) return null;
     return { ...action, bonus: false };
   }
@@ -218,6 +284,9 @@ function lancerTirage(draft, tirerBossAleatoire) {
   draft.boss_id = boss.id;
   draft.phase = "draft";
   draft.sequence_index = 0;
+  // Mode de théâtre : nombre de bans de la draft (après le boss seulement).
+  draft.theatre = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
+  draft.sequence = sequenceTheatre(draft.theatre);
 }
 
 // ---- Revanche ----
@@ -235,6 +304,9 @@ function etatRevanche(precedent) {
     discord_j2: precedent.discord_j2,
     roles_tires: true,
     boss_precedent_id: precedent.boss_id,
+    mode_theatre: precedent.mode_theatre || "auto",
+    theatre_j1: precedent.theatre_j1 ?? null,
+    theatre_j2: precedent.theatre_j2 ?? null,
     box_j1: precedent.box_j1,
     box_j2: precedent.box_j2,
     points_j1: precedent.points_j1,
@@ -297,6 +369,12 @@ module.exports = {
   SEUIL_EQUILIBRAGE,
   NB_PERSOS_MIN_BOX,
   SEQUENCE_FIXE,
+  MODES_THEATRE,
+  sequenceTheatre,
+  theatreProfil,
+  resoudreTheatre,
+  erreurModeAuto,
+  getSequence,
   calculerBansBonus,
   etatInitialDraft,
   calculerPointsBox,

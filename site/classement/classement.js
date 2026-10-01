@@ -13,7 +13,9 @@ const SENS_INITIAL = {
   nb_c6: -1, constellations_5: -1, theatre: -1, alpha: 1, activite: -1
 };
 
-let joueurs = [];
+let comptes = [];
+let joueurs = []; // joueurs du classement affiché, avec ses stats
+let classement = "classique"; // "classique" | "melee"
 let tri = { ...TRI_DEFAUT };
 let moiDiscordId = null;
 
@@ -147,14 +149,43 @@ function afficher() {
   const affiches = joueursAffiches();
   const etat = document.getElementById("etat-classement");
   etat.textContent = joueurs.length === 0
-    ? "Personne n'a encore joué de match classé."
+    ? `Personne n'a encore joué de match classé en ${classement === "melee" ? "mêlée générale" : "classique"}.`
     : affiches.length === 0 ? "Aucun joueur trouvé." : "";
   etat.classList.toggle("cache", !etat.textContent);
   document.querySelector(".entete-classement").classList.toggle("cache", affiches.length === 0);
   document.getElementById("liste-classement").replaceChildren(...affiches.map(creerLigne));
 }
 
+// Joueurs ayant au moins un match dans ce classement, avec ses stats
+// (trophées, matchs et victoires en classé, série) à plat pour les tris.
+function choisirClassement(nouveau) {
+  classement = nouveau;
+  joueurs = comptes
+    .filter(compte => compte.classements?.[classement])
+    .map(compte => {
+      const stats = compte.classements[classement];
+      return {
+        ...compte,
+        trophees: stats.trophees,
+        matchs_classes: stats.matchs,
+        victoires_classees: stats.victoires,
+        serie: stats.serie
+      };
+    });
+  calculerRangs();
+  document.querySelectorAll(".onglet-classement").forEach(onglet => {
+    const actif = onglet.dataset.classement === classement;
+    onglet.classList.toggle("active", actif);
+    onglet.setAttribute("aria-selected", String(actif));
+  });
+  afficher();
+}
+
 function initialiserBarre() {
+  document.querySelectorAll(".onglet-classement").forEach(onglet => {
+    onglet.addEventListener("click", () => choisirClassement(onglet.dataset.classement));
+  });
+
   document.querySelectorAll(".tri-classement").forEach(btn => {
     btn.addEventListener("click", () => {
       const cle = btn.dataset.tri;
@@ -172,13 +203,11 @@ function initialiserBarre() {
 
 async function demarrer() {
   try {
-    const [comptes, utilisateur] = await Promise.all([chargerComptes(), chargerSession()]);
-    // Au moins un match classé (trophées null sinon).
-    joueurs = comptes.filter(compte => compte.trophees !== null && compte.trophees !== undefined);
+    const [liste, utilisateur] = await Promise.all([chargerComptes(), chargerSession()]);
+    comptes = liste;
     moiDiscordId = utilisateur?.id || null;
-    calculerRangs();
     initialiserBarre();
-    afficher();
+    choisirClassement("classique");
   } catch (erreur) {
     console.error(erreur);
     document.getElementById("etat-classement").textContent = erreur.message || "Erreur de chargement.";
