@@ -88,6 +88,13 @@ function creerFiltres() {
   };
 }
 
+// Filtre élément : un groupe (Voyageur, une version par élément pour régler
+// ses points) maîtrise tous les éléments, chaque version est donc affichée
+// avec son élément et avec omni (filtre omni non combinable avec un élément).
+function correspondElements(item) {
+  return filtres.elements.has(item.element) || (!!item.groupe && filtres.elements.has("all"));
+}
+
 function listeVue() {
   return vue === "characters" ? personnages : armes;
 }
@@ -106,7 +113,7 @@ function itemsAffiches() {
   const items = listeVue().filter(item => {
     const points = valeurs[vue][item.id];
     if (recherche && !item.nom.toLowerCase().includes(recherche)) return false;
-    if (filtres.elements.size && !filtres.elements.has(item.element)) return false;
+    if (filtres.elements.size && !correspondElements(item)) return false;
     if (filtres.armes.size && !filtres.armes.has(item[champType])) return false;
     if (persos && filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
     if (persos && filtres.voeux.size && !filtres.voeux.has(getVoeu(item))) return false;
@@ -118,7 +125,7 @@ function itemsAffiches() {
     return true;
   });
 
-  if (!tri) return items;
+  if (!tri) return filtres.elements.size > 1 ? trierParElements(items) : items;
   return items
     .map((item, index) => ({ item, index }))
     .sort((a, b) => {
@@ -127,6 +134,20 @@ function itemsAffiches() {
         : valeurs[vue][b.item.id][tri.cle] - valeurs[vue][a.item.id][tri.cle];
       return (ecart * tri.sens) || (a.index - b.index);
     })
+    .map(e => e.item);
+}
+
+// Plusieurs éléments filtrés, sans tri de colonne : un élément après l'autre
+// (dans l'ordre où ils ont été sélectionnés), chacun trié par rareté (5★
+// d'abord) puis dans l'ordre de sortie.
+function trierParElements(items) {
+  const ordreElements = [...filtres.elements];
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) =>
+      (ordreElements.indexOf(a.item.element) - ordreElements.indexOf(b.item.element)) ||
+      (Number(b.item.rarete) - Number(a.item.rarete)) ||
+      (a.index - b.index))
     .map(e => e.item);
 }
 
@@ -172,8 +193,16 @@ function initialiserFiltres() {
       filtres[bouton.dataset.bascule] = !filtres[bouton.dataset.bascule];
     } else {
       const set = filtres[bouton.dataset.filtre];
-      if (set.has(bouton.dataset.valeur)) set.delete(bouton.dataset.valeur);
-      else set.add(bouton.dataset.valeur);
+      const valeur = bouton.dataset.valeur;
+      if (set.has(valeur)) set.delete(valeur);
+      else {
+        // Omni et éléments individuels exclusifs (le Voyageur est dans les 2).
+        if (bouton.dataset.filtre === "elements") {
+          if (valeur === "all") set.clear();
+          else set.delete("all");
+        }
+        set.add(valeur);
+      }
     }
     rendreFiltres();
     rendreCorps();
