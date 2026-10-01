@@ -540,9 +540,16 @@ body::before {
   vertical-align: middle;
 }
 
-/* Pas la photo ronde du bouton du compte (règle .compte-lien img) ; même
-   taille que sur les bannières de Tous les comptes. */
+/* Pas la taille de la photo du bouton du compte (règles .compte-lien img et
+   .avec-banniere2 > img) ; même taille que sur les bannières de Tous les
+   comptes. Mon compte (.compte-btn, texte plus petit sur téléphone) : même
+   taille en rem que le bouton des autres pages (texte à 1rem). */
 .compte-lien .medaille-theatre {
   width: 2em;
   height: 2em;
+}
+
+.compte-btn .medaille-theatre {
+  width: 2rem;
+  height: 2rem;
 }
