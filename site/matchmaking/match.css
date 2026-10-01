@@ -1375,24 +1375,23 @@ h1 {
 }
 
 /* Présence pendant les picks et bans : en haut à gauche (j1) ou à droite
-   (j2) de la namecard, verte en ligne, grise afk. */
+   (j2) de la namecard, même pastille que "prêt" avant le tirage (verte en
+   ligne, grise afk). */
 .pastille-presence {
   position: absolute;
-  top: 0.5rem;
-  width: 0.875rem;
-  height: 0.875rem;
+  top: 0.625rem;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.6);
-  background-color: #8a8a8a;
-  box-shadow: 0 0 0.25rem rgba(0, 0, 0, 0.8);
+  background-color: #666;
 }
 
 .pastille-presence.pastille-j1 {
-  left: 0.5rem;
+  left: 0.75rem;
 }
 
 .pastille-presence.pastille-j2 {
-  right: 0.5rem;
+  right: 0.75rem;
 }
 
 .pastille-presence.en-ligne {
@@ -2257,4 +2256,11 @@ h1 {
 /* Tableaux : centrée sur la ligne du pseudo (hauteur de la photo). */
 .namecard-tableau .medaille-theatre {
   margin-bottom: calc((var(--taille-avatar) - 1.3em) / 2);
+}
+
+/* Choix de box : box de moins de 16 personnages, pas choisissable. */
+.box-btn.trop-petite {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
 }

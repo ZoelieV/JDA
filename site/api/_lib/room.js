@@ -51,23 +51,17 @@ async function assurerRolesDraft(supabase, room) {
   return room;
 }
 
-// Codes "colonne inexistante" (Postgres / PostgREST).
-const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
-
 // Charge la room (avec sa draft) et vérifie que l'utilisateur en fait
 // partie. Retourne { room, joueur } ou lève une erreur { status, message }
 // à catcher dans la route pour répondre directement au client.
 // autoriserSpectateur : lecture seule ouverte à tous (joueur = null pour
 // quelqu'un qui n'est ni j1 ni j2).
 async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpectateur = false } = {}) {
-  // presences : colonne optionnelle (sql/rooms_matchmaking.sql), lecture
-  // sans elle si elle n'existe pas encore.
-  const champs = "room_id, player1_discord_id, player2_discord_id, type, draft, spectateurs";
-  const lire = select => supabase.from("rooms").select(select).eq("room_id", roomId).single();
-  let { data: room, error } = await lire(`${champs}, presences`);
-  if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    ({ data: room, error } = await lire(champs));
-  }
+  const { data: room, error } = await supabase
+    .from("rooms")
+    .select("room_id, player1_discord_id, player2_discord_id, type, draft, spectateurs")
+    .eq("room_id", roomId)
+    .single();
 
   if (error || !room) {
     throw { status: 404, message: "Room introuvable" };

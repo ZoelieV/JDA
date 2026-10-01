@@ -6,14 +6,10 @@
 -- api/matchmaking.js).
 alter table rooms add column if not exists type text not null default 'prive';
 
--- Spectateurs présents : { discord_id: dernière visite (ms) }, cf.
--- api/rooms/[room_id]/[action].js (noterSpectateur).
+-- Spectateurs présents (et joueurs, pour leur pastille de présence) :
+-- { discord_id: dernière visite (ms) }, cf. api/rooms/[room_id]/[action].js
+-- (noterSpectateur, noterPresence).
 alter table rooms add column if not exists spectateurs jsonb not null default '{}'::jsonb;
-
--- Présence des joueurs : { discord_id: dernière lecture de la draft (ms) },
--- pastille en ligne / afk sur les namecards pendant la draft, cf.
--- api/rooms/[room_id]/[action].js (noterPresence).
-alter table rooms add column if not exists presences jsonb not null default '{}'::jsonb;
 
 -- Ordre de la file d'attente du matchmaking (la plus ancienne room d'abord).
 alter table rooms add column if not exists created_at timestamptz not null default now();

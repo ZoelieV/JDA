@@ -12,6 +12,7 @@ const { tirerBossAleatoire } = require("../../_lib/boss");
 const { parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { calculerTrophees } = require("../../_lib/trophees");
 const {
+  NB_PERSOS_MIN_BOX,
   SEQUENCE_FIXE,
   calculerPointsBox,
   calculerPoolJoueur,
@@ -53,6 +54,17 @@ async function sauvegarderDraft(roomId, draft) {
   }
 }
 
+// Nombre de personnages (Voyageur compté une fois) de la box d'un joueur.
+async function compterPersosBox(discordId, box) {
+  // Catalogue déjà à jour (actualiserPoints dans le dispatch).
+  const { data: profil } = await supabase.from("profiles").select("data").eq("discord_id", discordId).single();
+  return calculerPoolJoueur(profil?.data, getPersonnages(), box).length;
+}
+
+function erreurBoxTropPetite(nbPersos) {
+  return `Une box doit contenir au moins ${NB_PERSOS_MIN_BOX} personnages pour être choisie (celle-ci en a ${nbPersos}).`;
+}
+
 // ---- box ----
 async function handleBox(req, res, roomId, user) {
   if (req.method !== "POST") {
@@ -70,6 +82,11 @@ async function handleBox(req, res, roomId, user) {
 
   if (draft.phase !== "choix_box") {
     return res.status(409).json({ error: "Le choix de box n'est plus possible à ce stade" });
+  }
+
+  const nbPersos = await compterPersosBox(user.id, box);
+  if (nbPersos < NB_PERSOS_MIN_BOX) {
+    return res.status(400).json({ error: erreurBoxTropPetite(nbPersos) });
   }
 
   draft[`box_${joueur}`] = box;
@@ -138,6 +155,14 @@ async function handleReady(req, res, roomId, user) {
 
   if (draft.phase === "choix_box" && !draft[`box_${joueur}`]) {
     return res.status(400).json({ error: "Choisis d'abord ta box avant de te marquer prêt" });
+  }
+
+  // Box vidée depuis son choix (Mon compte modifié entre-temps).
+  if (draft.phase === "choix_box" && pret) {
+    const nbPersos = await compterPersosBox(user.id, draft[`box_${joueur}`]);
+    if (nbPersos < NB_PERSOS_MIN_BOX) {
+      return res.status(400).json({ error: erreurBoxTropPetite(nbPersos) });
+    }
   }
 
   draft[`pret_${joueur}`] = pret;
@@ -511,7 +536,8 @@ async function handleRejouer(req, res, roomId, user) {
 }
 
 // ---- Spectateurs présents (colonne rooms.spectateurs : { discord_id:
-// dernière lecture de la draft en ms }) ----
+// dernière lecture de la draft en ms }, joueurs compris pour leur pastille
+// de présence, cf. noterPresence) ----
 // Un spectateur compte tant qu'il a lu la draft il y a moins de
 // PRESENCE_SPECTATEUR_MS (sa page la relit toutes les 2,5 s). Sa présence
 // n'est réécrite qu'au plus toutes les ECRITURE_SPECTATEUR_MS, et seulement
@@ -528,15 +554,20 @@ function spectateursPresents(room, maintenant = Date.now()) {
 async function noterSpectateur(room, discordId) {
   const maintenant = Date.now();
   if (maintenant - Number(room.spectateurs?.[discordId] || 0) < ECRITURE_SPECTATEUR_MS) return;
-  const spectateurs = Object.fromEntries(spectateursPresents(room, maintenant));
+  // Spectateurs partis retirés ; présence des joueurs gardée.
+  const joueurs = [room.draft?.discord_j1, room.draft?.discord_j2];
+  const spectateurs = Object.fromEntries([
+    ...spectateursPresents(room, maintenant),
+    ...Object.entries(room.spectateurs || {}).filter(([id]) => joueurs.includes(id))
+  ]);
   spectateurs[discordId] = maintenant;
   const { error } = await supabase.from("rooms").update({ spectateurs }).eq("room_id", room.room_id);
   // Pas bloquant : le compteur des joueurs sera juste un peu en retard.
   if (error) console.error("Erreur présence spectateur :", error);
 }
 
-// ---- Présence des joueurs (colonne rooms.presences : { discord_id:
-// dernière lecture de la draft en ms }) ----
+// ---- Présence des joueurs (dans la colonne rooms.spectateurs, à côté des
+// spectateurs : { discord_id: dernière lecture de la draft en ms }) ----
 // La page du match relit la draft toutes les 2,5 s, et plus du tout quand
 // son onglet est masqué : un joueur est "en ligne" tant qu'il l'a lue il y a
 // moins de PRESENCE_JOUEUR_MS, "afk" sinon (page fermée ou en arrière-plan).
@@ -545,21 +576,18 @@ const PRESENCE_JOUEUR_MS = 15 * 1000;
 const ECRITURE_PRESENCE_MS = 5 * 1000;
 
 async function noterPresence(room, discordId) {
-  // Colonne absente (sql/rooms_matchmaking.sql pas relancé) : pas de présence.
-  if (!room.presences) return;
   const maintenant = Date.now();
-  if (maintenant - Number(room.presences[discordId] || 0) < ECRITURE_PRESENCE_MS) return;
-  const presences = { ...room.presences, [discordId]: maintenant };
-  room.presences = presences;
-  const { error } = await supabase.from("rooms").update({ presences }).eq("room_id", room.room_id);
+  if (maintenant - Number(room.spectateurs?.[discordId] || 0) < ECRITURE_PRESENCE_MS) return;
+  const spectateurs = { ...(room.spectateurs || {}), [discordId]: maintenant };
+  room.spectateurs = spectateurs;
+  const { error } = await supabase.from("rooms").update({ spectateurs }).eq("room_id", room.room_id);
   // Pas bloquant : la pastille sera juste un peu en retard.
   if (error) console.error("Erreur présence joueur :", error);
 }
 
-// { j1: bool, j2: bool } ou null sans la colonne presences.
+// { j1: bool, j2: bool }.
 function presencesJoueurs(room, maintenant = Date.now()) {
-  if (!room.presences) return null;
-  const enLigne = discordId => !!discordId && maintenant - Number(room.presences[discordId] || 0) < PRESENCE_JOUEUR_MS;
+  const enLigne = discordId => !!discordId && maintenant - Number(room.spectateurs?.[discordId] || 0) < PRESENCE_JOUEUR_MS;
   return {
     j1: enLigne(room.draft?.discord_j1 || room.player1_discord_id),
     j2: enLigne(room.draft?.discord_j2 || room.player2_discord_id)

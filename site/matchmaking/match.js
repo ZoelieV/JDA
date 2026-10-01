@@ -738,6 +738,15 @@ function rendreEntetesJoueurs() {
 // valide. analyse : les 2 box sont verrouillées et visibles, chacun
 // confirme quand il a fini de regarder celle de l'adversaire.
 
+// Personnages (Voyageur compté une fois) qu'une box doit contenir pour être
+// choisie (cf. NB_PERSOS_MIN_BOX, api/_lib/draft.js).
+const NB_PERSOS_MIN_BOX = 16;
+
+function nbPersosBox(role, box) {
+  const collection = getJoueurDataParRole(role)?.characters || { full: {}, selections: {} };
+  return personnagesData.filter(p => estDansBox(collection, p.id, box)).length;
+}
+
 function rendreChoixBox() {
   const enAnalyse = draft.phase === "analyse";
 
@@ -745,7 +754,7 @@ function rendreChoixBox() {
     ? (draft.roles_tires
       ? "Revanche : mêmes box et mêmes bans d'équilibrage, rôles J1/J2 inversés. Analyse la box adverse puis clique sur \"Prêt\" pour tirer le boss."
       : "Analyse la box adverse puis clique sur \"Prêt\". Suite : bans d'équilibrage (si écart), puis tirage J1/J2 et du boss.")
-    : "Choisis ta box et valide-la. La box adverse sera visible une fois les 2 box validées.";
+    : `Choisis ta box (au moins ${NB_PERSOS_MIN_BOX} personnages) et valide-la. La box adverse sera visible une fois les 2 box validées.`;
 
   ["j1", "j2"].forEach(role => {
     const estMoi = role === monRole;
@@ -768,8 +777,13 @@ function rendreChoixBox() {
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
       btn.textContent = typeof nomsPerso[valeur] === "string" && nomsPerso[valeur] ? nomsPerso[valeur] : label;
-      btn.disabled = !peutChoisir;
-      if (peutChoisir) {
+      // Box trop petite (ex. que des armes) : pas choisissable.
+      const nbPersos = peutChoisir ? nbPersosBox(role, valeur) : NB_PERSOS_MIN_BOX;
+      const tropPetite = nbPersos < NB_PERSOS_MIN_BOX;
+      btn.classList.toggle("trop-petite", tropPetite);
+      if (tropPetite) btn.title = `${nbPersos} personnage${nbPersos > 1 ? "s" : ""} : il en faut au moins ${NB_PERSOS_MIN_BOX}`;
+      btn.disabled = !peutChoisir || tropPetite;
+      if (peutChoisir && !tropPetite) {
         btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));
       }
       conteneur.appendChild(btn);

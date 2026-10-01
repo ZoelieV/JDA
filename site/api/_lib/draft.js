@@ -126,6 +126,10 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
 
 // ---- Pool d'un joueur : les personnages de la box choisie pour le match,
 // un seul Voyageur (id du groupe) quel que soit le nombre d'éléments ----
+// Personnages (Voyageur compté une fois) qu'une box doit contenir pour
+// être choisie en match (une box d'armes seules ne suffit pas).
+const NB_PERSOS_MIN_BOX = 16;
+
 function calculerPoolJoueur(profilData, personnages, boxChoisie = "full") {
   const ids = getPersonnagesBox(profilData, personnages, boxChoisie)
     .map(({ personnage }) => personnage.groupe || personnage.id);
@@ -290,6 +294,7 @@ function getBansJoueur(actions, joueur) {
 
 module.exports = {
   SEUIL_EQUILIBRAGE,
+  NB_PERSOS_MIN_BOX,
   SEQUENCE_FIXE,
   calculerBansBonus,
   etatInitialDraft,
