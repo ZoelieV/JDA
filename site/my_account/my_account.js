@@ -598,6 +598,17 @@ function obtenirCarteItem(grille, item, ...parametres) {
   return obtenirCarte(grille, cle, () => creerCarteItem(item, ...parametres));
 }
 
+// Redessine sans bouger la page (le navigateur du téléphone peut remonter
+// quand l'élément touché disparaît du DOM).
+function garderDefilement(redessiner) {
+  const y = window.scrollY;
+  redessiner();
+  window.scrollTo(0, y);
+  requestAnimationFrame(() => {
+    if (window.scrollY !== y) window.scrollTo(0, y);
+  });
+}
+
 function afficherCollection(personnages, armes, profil) {
   const liste = document.getElementById("liste-collection");
 
@@ -910,13 +921,22 @@ async function initialiserPage() {
       if (boxActive === "full") {
         // Cœur : ajoute / retire des favoris (profil.characters.favoris ou
         // profil.weapons.favoris selon la vue).
+        // Mis à jour sur place : reconstruire la grille remplaçait la carte
+        // cliquée, ce qui ramenait en haut de la page sur téléphone. Grille
+        // redessinée seulement si le tri "favoris" change l'ordre.
         const boutonFavori = event.target.closest(".favori-btn");
         if (boutonFavori) {
           const favoris = collectionProfil.favoris ??= {};
           const id = boutonFavori.dataset.id;
           if (favoris[id]) delete favoris[id];
           else favoris[id] = true;
-          afficherCollection(personnages, armes, profil);
+          if (getSensTri(etatTri, "favoris")) {
+            garderDefilement(() => afficherCollection(personnages, armes, profil));
+          } else {
+            boutonFavori.classList.toggle("actif", !!favoris[id]);
+            boutonFavori.title = favoris[id] ? "Retirer des favoris" : "Ajouter aux favoris";
+            mettreAJourBoutonEnregistrer(profil);
+          }
           return;
         }
 
