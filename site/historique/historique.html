@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem4">
-<link rel="stylesheet" href="historique.css?v=16">
+<link rel="stylesheet" href="historique.css?v=17">
 <link rel="stylesheet" href="../commun/entete.css?v=rem16">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -36,6 +36,32 @@
     <div id="liste-en-cours" class="liste-matchs"></div>
   </section>
 
+  <!-- Administrateurs : matchs invalidés par un litige (temps à corriger
+       puis republier) et joueurs ayant le plus de litiges. -->
+  <section id="section-litiges" class="section-matchs section-litiges cache">
+    <h2 class="titre-section">Litiges <span class="badge-admin">Admin</span></h2>
+    <h3 class="sous-titre-section">Joueurs en litige</h3>
+    <p id="etat-stats-litiges" class="etat-historique"></p>
+    <div class="table-litiges-cadre">
+      <table id="table-litiges" class="table-litiges">
+        <thead>
+          <tr>
+            <th>Joueur</th>
+            <th><button type="button" class="tri-litiges" data-tri="total" title="Litiges ouverts et corrigés">Total <span class="fleche"></span></button></th>
+            <th><button type="button" class="tri-litiges" data-tri="ouverts" title="Litiges pas encore traités">Ouverts <span class="fleche"></span></button></th>
+            <th><button type="button" class="tri-litiges" data-tri="republies" title="Temps corrigés et match republié">Corrigés <span class="fleche"></span></button></th>
+            <th><button type="button" class="tri-litiges" data-tri="signales" title="Litiges signalés par ce joueur">Signalés <span class="fleche"></span></button></th>
+            <th><button type="button" class="tri-litiges" data-tri="subis" title="Litiges signalés par son adversaire">Subis <span class="fleche"></span></button></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <h3 class="sous-titre-section">Matchs invalidés <span id="filtre-litiges" class="filtre-litiges cache"></span></h3>
+    <p id="etat-litiges" class="etat-historique"></p>
+    <div id="liste-litiges" class="liste-matchs"></div>
+  </section>
+
   <section class="section-matchs">
     <h2 class="titre-section">Matchs terminés</h2>
     <p id="etat-historique" class="etat-historique">Chargement…</p>
@@ -45,6 +71,6 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=7"></script>
   <script src="/commun/tri.js?v=11"></script>
-  <script src="historique.js?v=8"></script>
+  <script src="historique.js?v=9"></script>
 </body>
 </html>

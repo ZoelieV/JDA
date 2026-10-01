@@ -48,7 +48,7 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 // temps -> verification -> termine (ou litige).
 // verification : les 2 temps saisis sont visibles des 2 joueurs, qui les
 // confirment chacun (chaque temps est chronométré par l'adversaire) ; un
-// litige invalide la manche (pas archivée). Une revanche (etatRevanche) repart directement en
+// litige invalide la manche (archivée pour les administrateurs seulement). Une revanche (etatRevanche) repart directement en
 // "analyse" avec les mêmes box et bans d'équilibrage, rôles inversés.
 //
 // discord_j1 / discord_j2 : qui est "j1" et "j2". Avant le tirage

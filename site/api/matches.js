@@ -2,8 +2,15 @@
 // actives, à regarder en spectateur) et les derniers matchs terminés, avec
 // pour chaque joueur son nom, sa photo, sa deuxième bannière, son temps, son
 // équipe, ses bans et ses bans d'équilibrage.
+// Administrateurs : en plus, les matchs invalidés par un litige et le nombre
+// de litiges par joueur (modération) ; PATCH ?id= corrige les temps d'un
+// litige et republie le match (dans ce fichier pour rester sous la limite de
+// fonctions serverless du plan Hobby de Vercel).
 const { supabase } = require("./_lib/supabase");
 const { infosPersoJoueur } = require("./_lib/personnages");
+const { parseCookies, verifySessionToken } = require("./_lib/session");
+const { estAdmin } = require("./_lib/admin");
+const { parserTempsMMSS, determinerVainqueur } = require("./_lib/temps");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -15,19 +22,102 @@ const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
 async function chargerMatchs() {
-  // Colonnes optionnelles (id, created_at, actions) : "*" les renvoie si
-  // elles existent. Tri par date si possible, sinon par id.
-  let { data, error } = await supabase
-    .from("match_history")
-    .select("*")
+  // Colonnes optionnelles (id, created_at, actions, litige) : "*" les
+  // renvoie si elles existent. Litiges ouverts exclus, tri par date si
+  // possible ; sans ces colonnes, pas de litige possible ni de tri.
+  const requete = () => supabase.from("match_history").select("*");
+  let { data, error } = await requete()
+    .or("litige.is.null,litige.neq.ouvert")
     .order("created_at", { ascending: false })
     .limit(NB_MATCHS_MAX);
 
   if (error) {
-    ({ data, error } = await supabase.from("match_history").select("*").limit(NB_MATCHS_MAX));
+    ({ data, error } = await requete().order("created_at", { ascending: false }).limit(NB_MATCHS_MAX));
+  }
+  if (error) {
+    ({ data, error } = await requete().limit(NB_MATCHS_MAX));
   }
   if (error) throw error;
   return data || [];
+}
+
+// Administrateurs : litiges ouverts (plus récents d'abord).
+async function chargerLitigesOuverts() {
+  const { data, error } = await supabase
+    .from("match_history")
+    .select("*")
+    .eq("litige", "ouvert")
+    .order("created_at", { ascending: false });
+  if (error) {
+    // Colonnes litige pas encore créées (sql/litiges.sql) : aucun litige.
+    console.error("Erreur lecture litiges :", error);
+    return [];
+  }
+  return data || [];
+}
+
+// Administrateurs : litiges par joueur (ouverts et republiés), en
+// distinguant ceux qu'il a signalés de ceux signalés par son adversaire.
+async function chargerStatsLitiges() {
+  const { data, error } = await supabase
+    .from("match_history")
+    .select("player1_discord_id, player2_discord_id, litige, litige_par")
+    .not("litige", "is", null);
+  if (error) {
+    console.error("Erreur lecture stats litiges :", error);
+    return [];
+  }
+
+  const stats = new Map();
+  (data || []).forEach(match => {
+    ["j1", "j2"].forEach(role => {
+      const discordId = match[`player${role === "j1" ? 1 : 2}_discord_id`];
+      if (!discordId) return;
+      if (!stats.has(discordId)) {
+        stats.set(discordId, { discord_id: discordId, total: 0, ouverts: 0, republies: 0, signales: 0, subis: 0 });
+      }
+      const s = stats.get(discordId);
+      s.total += 1;
+      s[match.litige === "ouvert" ? "ouverts" : "republies"] += 1;
+      s[match.litige_par === role ? "signales" : "subis"] += 1;
+    });
+  });
+  return [...stats.values()];
+}
+
+// ---- PATCH ?id= (administrateurs) : temps corrigés d'un litige ouvert,
+// vainqueur recalculé, match republié dans l'historique public ----
+async function republierLitige(req, res, user) {
+  const id = req.query?.id;
+  const tempsJ1 = parserTempsMMSS(req.body?.temps_j1);
+  const tempsJ2 = parserTempsMMSS(req.body?.temps_j2);
+  if (!id) return res.status(400).json({ error: "Match manquant" });
+  if (!tempsJ1 || !tempsJ2) {
+    return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
+  }
+
+  // Seulement un litige encore ouvert (pas de double republication).
+  const { data, error } = await supabase
+    .from("match_history")
+    .update({
+      temps_j1_affiche: tempsJ1.affiche,
+      temps_j1_secondes: tempsJ1.secondes,
+      temps_j2_affiche: tempsJ2.affiche,
+      temps_j2_secondes: tempsJ2.secondes,
+      vainqueur: determinerVainqueur(tempsJ1, tempsJ2),
+      litige: "republie",
+      republie_par: user.id,
+      republie_le: new Date().toISOString()
+    })
+    .eq("id", id)
+    .eq("litige", "ouvert")
+    .select("id");
+
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    return res.status(404).json({ error: "Litige introuvable ou déjà republié" });
+  }
+  return res.status(200).json({ ok: true });
 }
 
 // Rooms à 2 joueurs dont la manche n'est pas terminée (ni invalidée par un
@@ -120,13 +210,31 @@ function resumerBan(action, profils) {
 }
 
 module.exports = async (req, res) => {
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
+  if (req.method !== "GET" && req.method !== "PATCH") {
+    res.setHeader("Allow", "GET, PATCH");
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
+  const user = verifySessionToken(parseCookies(req).session);
+  const admin = !!user && estAdmin(user.id);
+
+  if (req.method === "PATCH") {
+    if (!admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
+    try {
+      return await republierLitige(req, res, user);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur republication du match" });
+    }
+  }
+
   try {
-    const [matchs, rooms] = await Promise.all([chargerMatchs(), chargerRoomsEnCours()]);
+    const [matchs, rooms, litiges, statsLitiges] = await Promise.all([
+      chargerMatchs(),
+      chargerRoomsEnCours(),
+      admin ? chargerLitigesOuverts() : [],
+      admin ? chargerStatsLitiges() : []
+    ]);
 
     // Rooms en cours au même format que les matchs : j1/j2 de la manche,
     // actions de la draft jusqu'ici.
@@ -144,13 +252,29 @@ module.exports = async (req, res) => {
       date: room.last_active_at || null
     }));
 
-    const ids = [...new Set([...matchs, ...enCours]
-      .flatMap(m => [m.player1_discord_id, m.player2_discord_id]).filter(Boolean))];
+    const ids = [...new Set([
+      ...[...matchs, ...enCours, ...litiges].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
+      ...statsLitiges.map(s => s.discord_id)
+    ].filter(Boolean))];
     const joueurs = await chargerJoueurs(ids);
     const deuxJoueurs = match => {
       const profils = { j1: joueurs.get(match.player1_discord_id), j2: joueurs.get(match.player2_discord_id) };
       return { j1: resumerJoueur(match, "j1", profils), j2: resumerJoueur(match, "j2", profils) };
     };
+
+    const resumerMatch = (match, index) => ({
+      id: match.id ?? index,
+      date: match.created_at || null,
+      boss_id: match.boss_id,
+      vainqueur: match.vainqueur,
+      // Bans enregistrés (colonne actions, ou bans_j1 / bans_j2 remplies).
+      bans_connus: Array.isArray(match.actions) ||
+        (Array.isArray(match.bans_j1) && match.bans_j1.length > 0) ||
+        (Array.isArray(match.bans_j2) && match.bans_j2.length > 0),
+      // Litige (ouvert ou republié) : administrateurs seulement.
+      ...(admin && match.litige ? { litige: match.litige, litige_par: match.litige_par || null } : {}),
+      ...deuxJoueurs(match)
+    });
 
     return res.status(200).json({
       en_cours: enCours.map(room => ({
@@ -160,17 +284,19 @@ module.exports = async (req, res) => {
         date: room.date,
         ...deuxJoueurs(room)
       })),
-      termines: matchs.map((match, index) => ({
-        id: match.id ?? index,
-        date: match.created_at || null,
-        boss_id: match.boss_id,
-        vainqueur: match.vainqueur,
-        // Bans enregistrés (colonne actions, ou bans_j1 / bans_j2 remplies).
-        bans_connus: Array.isArray(match.actions) ||
-          (Array.isArray(match.bans_j1) && match.bans_j1.length > 0) ||
-          (Array.isArray(match.bans_j2) && match.bans_j2.length > 0),
-        ...deuxJoueurs(match)
-      }))
+      termines: matchs.map(resumerMatch),
+      // Administrateurs seulement.
+      ...(admin ? {
+        litiges: litiges.map(resumerMatch),
+        stats_litiges: statsLitiges.map(s => {
+          const profil = joueurs.get(s.discord_id);
+          return {
+            ...s,
+            nom: profil?.discord_global_name || profil?.discord_username || "Joueur inconnu",
+            avatar: profil?.discord_avatar_url || null
+          };
+        })
+      } : {})
     });
   } catch (error) {
     console.error(error);

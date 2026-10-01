@@ -35,10 +35,18 @@ async function chargerProfils() {
 }
 
 // Matchs joués et victoires par joueur, d'après l'historique des matchs.
+// Litiges ouverts (matchs invalidés) non comptés ; sans colonne litige
+// (sql/litiges.sql pas lancé), tous les matchs.
 async function chargerResultats() {
-  const { data, error } = await supabase
+  const champs = "player1_discord_id, player2_discord_id, vainqueur";
+  let { data, error } = await supabase
     .from("match_history")
-    .select("player1_discord_id, player2_discord_id, vainqueur");
+    .select(champs)
+    .or("litige.is.null,litige.neq.ouvert");
+
+  if (error) {
+    ({ data, error } = await supabase.from("match_history").select(champs));
+  }
 
   if (error) {
     // Pas bloquant : la liste reste utilisable sans ces tris.

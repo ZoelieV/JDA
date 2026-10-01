@@ -9,7 +9,7 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, infosPersoJoueur, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
-const { parserTempsMMSS } = require("../../_lib/temps");
+const { parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const {
   SEQUENCE_FIXE,
   calculerPointsBox,
@@ -316,15 +316,13 @@ async function handleBonusConfirmer(req, res, roomId, user) {
 }
 
 // ---- temps ----
-function determinerVainqueur(tempsJ1, tempsJ2) {
-  if (tempsJ1.secondes === tempsJ2.secondes) return "egalite";
-  return tempsJ1.secondes < tempsJ2.secondes ? "j1" : "j2";
-}
-
 // Codes "colonne inexistante" (Postgres / PostgREST).
 const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 
-async function archiverMatch(draft) {
+// litige : manche contestée, archivée sans vainqueur avec litige = "ouvert"
+// (visible des administrateurs seulement, qui peuvent corriger les temps et
+// la republier, cf. api/matches.js).
+async function archiverMatch(draft, { litige = false } = {}) {
   // Picks figés avec les infos du joueur à la fin du match (constellation,
   // niveau, raffinement de l'arme signature) pour l'historique ; bans avec
   // les infos des 2 joueurs (comme les cartes de la draft).
@@ -360,6 +358,7 @@ async function archiverMatch(draft) {
     temps_j2_affiche: draft.temps_j2.affiche,
     temps_j2_secondes: draft.temps_j2.secondes,
     vainqueur: draft.vainqueur,
+    ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),
     // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
     // Voyageur / Manekin) : affichées dans l'historique des matchs.
     actions
@@ -368,7 +367,9 @@ async function archiverMatch(draft) {
   let { error } = await supabase.from("match_history").insert(match);
 
   // Colonne "actions" pas encore créée dans la table : archivage sans elle
-  // (les bans restent enregistrés dans bans_j1 / bans_j2).
+  // (les bans restent enregistrés dans bans_j1 / bans_j2). Colonnes litige
+  // absentes (sql/litiges.sql pas lancé) : nouvelle erreur, le litige n'est
+  // pas archivé (jamais publié comme un match normal).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
     const { actions, ...sansActions } = match;
     ({ error } = await supabase.from("match_history").insert(sansActions));
@@ -446,7 +447,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
 }
 
 // ---- litige : un joueur conteste les temps ; la manche est invalidée (pas
-// de vainqueur, rien dans l'historique) ----
+// de vainqueur) et archivée pour les administrateurs seulement ----
 async function handleLitige(req, res, roomId, user) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -463,6 +464,7 @@ async function handleLitige(req, res, roomId, user) {
   draft.phase = "litige";
   draft.litige_par = joueur;
   draft.vainqueur = null;
+  await archiverMatch(draft, { litige: true });
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);

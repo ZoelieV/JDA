@@ -21,4 +21,14 @@ function parserTempsMMSS(texte) {
   };
 }
 
-module.exports = { parserTempsMMSS };
+// Temps chronométrés à la main par les joueurs : un écart d'une seconde ou
+// moins relève du temps de réaction, le match est alors une égalité.
+const ECART_EGALITE_SECONDES = 1;
+
+// tempsJ1 / tempsJ2 : { secondes } -> "j1" | "j2" | "egalite".
+function determinerVainqueur(tempsJ1, tempsJ2) {
+  if (Math.abs(tempsJ1.secondes - tempsJ2.secondes) <= ECART_EGALITE_SECONDES) return "egalite";
+  return tempsJ1.secondes < tempsJ2.secondes ? "j1" : "j2";
+}
+
+module.exports = { parserTempsMMSS, determinerVainqueur };

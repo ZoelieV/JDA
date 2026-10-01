@@ -1727,7 +1727,7 @@ function rendreVerification() {
   btnConfirmer.onclick = () => postConfirmerTemps().catch(err => alert(err.message));
 
   document.getElementById("btn-litige").onclick = () => {
-    if (!confirm("Signaler un litige sur les temps ? Le match sera invalidé et n'apparaîtra pas dans l'historique.")) return;
+    if (!confirm("Signaler un litige sur les temps ? Le match sera invalidé et transmis aux administrateurs.")) return;
     postLitige().catch(err => alert(err.message));
   };
 
@@ -1749,7 +1749,7 @@ function rendreLitige() {
   const parQui = draft.litige_par === monRole ? "par toi" : nomLitige ? `par ${nomLitige}` : "";
   document.getElementById("resultat-final").innerHTML = `
     <p class="ligne-vainqueur"><span class="litige">Match invalidé</span></p>
-    <p class="ligne-temps">Litige signalé ${parQui} sur les temps : ce match ne compte pas et n'apparaît pas dans l'historique.</p>
+    <p class="ligne-temps">Litige signalé ${parQui} sur les temps : ce match ne compte pas. Les administrateurs vérifieront les temps et pourront le republier.</p>
   `;
   rendreRejouer();
 }

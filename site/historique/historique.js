@@ -4,6 +4,12 @@
 
 let matchs = [];     // terminés
 let matchsEnCours = [];
+let litiges = [];      // administrateurs : matchs invalidés par un litige
+let statsLitiges = []; // administrateurs : litiges par joueur
+let estAdmin = false;
+// Modération : colonne triée (décroissant) et joueur filtré dans les litiges.
+let triLitiges = "total";
+let joueurLitiges = null;
 let personnagesParId = new Map(); // catalogue de draft (un seul Voyageur)
 let bossParId = new Map();
 let moiDiscordId = null;
@@ -32,7 +38,7 @@ const LIBELLES_PHASES = {
 // ---- Chargement ----
 
 async function chargerHistorique() {
-  const reponse = await fetch("/api/matches");
+  const reponse = await fetch("/api/matches", { credentials: "include" });
   if (!reponse.ok) throw new Error("Impossible de charger l'historique des matchs.");
   return reponse.json();
 }
@@ -224,7 +230,10 @@ function creerLigneMatch(match) {
     ? `<span class="match-phase">${LIBELLES_PHASES[match.phase] || match.phase}</span>
        <a class="match-regarder" href="${lienSpectateur}">Regarder</a>`
     : `<span class="match-date">${formaterDate(match.date)}</span>
-       ${match.bans_connus ? "" : `<span class="match-note">Bans non enregistrés</span>`}`;
+       ${match.bans_connus ? "" : `<span class="match-note">Bans non enregistrés</span>`}
+       ${match.litige === "ouvert" ? htmlCorrectionLitige(match) : ""}
+       ${match.litige === "republie" ? `<span class="match-note match-litige-corrige">Litige corrigé (${nomLitigePar(match)})</span>` : ""}`;
+  if (match.litige === "ouvert") ligne.classList.add("litige");
 
   ligne.innerHTML = `
     ${htmlJoueur(match, "j1", enCours || match.bans_connus)}
@@ -238,6 +247,7 @@ function creerLigneMatch(match) {
   // Pseudos en texte (pas d'HTML venant des comptes).
   ligne.querySelector(".match-j1 .match-nom").textContent = match.j1.nom;
   ligne.querySelector(".match-j2 .match-nom").textContent = match.j2.nom;
+  if (match.litige === "ouvert") brancherCorrectionLitige(ligne, match);
   return ligne;
 }
 
@@ -261,6 +271,134 @@ function afficherMatchsEnCours() {
   document.getElementById("liste-en-cours").replaceChildren(...matchsEnCours.map(creerLigneMatch));
 }
 
+// ---- Litiges (administrateurs) ----
+
+function nomLitigePar(match) {
+  const joueur = match[match.litige_par];
+  return joueur ? `signalé par ${joueur.nom}` : "signalé";
+}
+
+// Centre d'un litige ouvert : qui l'a signalé, les 2 temps modifiables et
+// le bouton pour republier le match (vainqueur recalculé côté serveur).
+function htmlCorrectionLitige(match) {
+  const champ = role => `
+    <label class="champ-temps-litige champ-${role}">
+      <span class="nom-temps-litige"></span>
+      <input type="text" inputmode="decimal" name="temps_${role}" value="${match[role].temps?.affiche || ""}" placeholder="mm:ss">
+    </label>`;
+  return `
+    <span class="match-litige">Litige <span class="litige-par"></span></span>
+    <form class="correction-litige">
+      ${champ("j1")}
+      ${champ("j2")}
+      <button type="submit" class="bouton-historique bouton-republier">Corriger et republier</button>
+    </form>`;
+}
+
+function brancherCorrectionLitige(ligne, match) {
+  // Pseudos en texte (pas d'HTML venant des comptes).
+  ligne.querySelector(".litige-par").textContent = nomLitigePar(match);
+  ligne.querySelector(".champ-j1 .nom-temps-litige").textContent = match.j1.nom;
+  ligne.querySelector(".champ-j2 .nom-temps-litige").textContent = match.j2.nom;
+
+  const formulaire = ligne.querySelector(".correction-litige");
+  formulaire.addEventListener("submit", async event => {
+    event.preventDefault();
+    const temps = role => formulaire.elements[`temps_${role}`].value.trim();
+    if (!confirm(`Republier ce match avec les temps ${temps("j1")} (${match.j1.nom}) et ${temps("j2")} (${match.j2.nom}) ?`)) return;
+
+    const bouton = formulaire.querySelector(".bouton-republier");
+    bouton.disabled = true;
+    try {
+      const reponse = await fetch(`/api/matches?id=${encodeURIComponent(match.id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ temps_j1: temps("j1"), temps_j2: temps("j2") })
+      });
+      const data = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(data.error || "Erreur lors de la republication.");
+      await rafraichir();
+    } catch (erreur) {
+      alert(erreur.message);
+      bouton.disabled = false;
+    }
+  });
+}
+
+function afficherStatsLitiges() {
+  document.querySelectorAll(".tri-litiges").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tri === triLitiges);
+    btn.querySelector(".fleche").textContent = btn.dataset.tri === triLitiges ? "▼" : "";
+  });
+
+  document.getElementById("etat-stats-litiges").textContent = statsLitiges.length === 0 ? "Aucun litige pour l'instant." : "";
+  document.getElementById("table-litiges").classList.toggle("cache", statsLitiges.length === 0);
+
+  const tries = [...statsLitiges].sort((a, b) =>
+    b[triLitiges] - a[triLitiges] || b.total - a.total || a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }));
+  document.querySelector("#table-litiges tbody").replaceChildren(...tries.map(stats => {
+    const ligne = document.createElement("tr");
+    ligne.classList.toggle("active", stats.discord_id === joueurLitiges);
+    ligne.title = stats.discord_id === joueurLitiges
+      ? "Afficher les litiges de tous les joueurs"
+      : "N'afficher que les litiges ouverts de ce joueur";
+    const cellule = document.createElement("td");
+    cellule.className = "joueur-litiges";
+    if (stats.avatar) {
+      const avatar = document.createElement("img");
+      avatar.className = "photo-joueur";
+      avatar.src = stats.avatar;
+      avatar.alt = "";
+      cellule.append(avatar);
+    }
+    cellule.append(stats.nom);
+    ligne.append(cellule, ...["total", "ouverts", "republies", "signales", "subis"].map(cle => {
+      const td = document.createElement("td");
+      td.textContent = stats[cle];
+      return td;
+    }));
+    ligne.addEventListener("click", () => {
+      joueurLitiges = joueurLitiges === stats.discord_id ? null : stats.discord_id;
+      afficherLitiges();
+    });
+    return ligne;
+  }));
+}
+
+function afficherLitiges() {
+  document.getElementById("section-litiges").classList.toggle("cache", !estAdmin);
+  if (!estAdmin) return;
+  afficherStatsLitiges();
+
+  const filtre = document.getElementById("filtre-litiges");
+  const joueur = statsLitiges.find(s => s.discord_id === joueurLitiges);
+  filtre.classList.toggle("cache", !joueur);
+  filtre.textContent = joueur ? `— ${joueur.nom} (cliquer à nouveau sur le joueur pour tout afficher)` : "";
+
+  const affiches = litiges.filter(match => !joueurLitiges ||
+    match.j1.discord_id === joueurLitiges || match.j2.discord_id === joueurLitiges);
+  document.getElementById("etat-litiges").textContent = affiches.length === 0 ? "Aucun litige ouvert." : "";
+  document.getElementById("liste-litiges").replaceChildren(...affiches.map(creerLigneMatch));
+}
+
+// Après une republication : litige retiré, match ajouté aux terminés.
+async function rafraichir() {
+  const historique = await chargerHistorique();
+  appliquerHistorique(historique);
+  viderCacheCartes(document.getElementById("liste-matchs"));
+  afficherMatchsEnCours();
+  afficherLitiges();
+  afficherMatchs();
+}
+
+function appliquerHistorique(historique) {
+  matchs = historique.termines || [];
+  matchsEnCours = historique.en_cours || [];
+  litiges = historique.litiges || [];
+  statsLitiges = historique.stats_litiges || [];
+}
+
 // ---- Démarrage ----
 
 function initialiserBarre() {
@@ -280,6 +418,13 @@ function initialiserBarre() {
     afficherMatchs();
   });
 
+  document.querySelectorAll(".tri-litiges").forEach(btn => {
+    btn.addEventListener("click", () => {
+      triLitiges = btn.dataset.tri;
+      afficherStatsLitiges();
+    });
+  });
+
   document.getElementById("clear-historique").addEventListener("click", () => {
     document.getElementById("recherche").value = "";
     viderTris(etatTri);
@@ -293,14 +438,15 @@ async function demarrer() {
     const [historique, personnages, boss, utilisateur] = await Promise.all([
       chargerHistorique(), chargerPersonnages(), chargerBoss(), chargerSession()
     ]);
-    matchs = historique.termines || [];
-    matchsEnCours = historique.en_cours || [];
+    appliquerHistorique(historique);
     personnagesParId = new Map(regrouperPourDraft(personnages).map(p => [p.id, p]));
     bossParId = new Map(boss.map(b => [b.id, b]));
     moiDiscordId = utilisateur?.id || null;
+    estAdmin = !!utilisateur?.admin;
 
     initialiserBarre();
     afficherMatchsEnCours();
+    afficherLitiges();
     afficherMatchs();
   } catch (erreur) {
     console.error(erreur);
