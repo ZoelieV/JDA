@@ -1081,6 +1081,16 @@ async function initialiserPage() {
     initialiserParametres(profil);
     initialiserAutoBox(profil, personnages, armes);
 
+    // Venu de "Personnalisation" dans le menu du compte d'une autre page
+    // (commun/compte.js) : fenêtre ouverte directement, paramètre retiré de
+    // l'URL.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("personnalisation")) {
+      url.searchParams.delete("personnalisation");
+      history.replaceState(null, "", url);
+      document.getElementById("btn-parametres").click();
+    }
+
     // Rien à enregistrer tant que rien n'a changé.
     marquerEnregistre(profil);
     // Médaille du bouton du compte (ici et sur les autres pages).
