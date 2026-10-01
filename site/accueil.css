@@ -72,8 +72,9 @@
 }
 
 /* Ordi : 3 cartes par ligne (grille de 6 colonnes, chaque carte en couvre
-   2), Tutoriel seul au milieu de la dernière ligne ; pour les administrateurs,
-   Tutoriel et Administration centrés ensemble sur la dernière ligne.
+   2), Tous les comptes avant Mon compte, Tutoriel seul au milieu de la
+   dernière ligne ; pour les administrateurs, Tutoriel et Administration
+   centrés ensemble sur la dernière ligne.
    Entre-deux : 2 par ligne, Tutoriel centré (ou à côté d'Administration). */
 @media (min-width: 1001px) {
   .accueil-sections {
@@ -94,6 +95,17 @@
 
   .carte-admin {
     grid-column: 4 / span 2;
+  }
+
+  /* 1re ligne : Tous les comptes au milieu, Mon compte à droite. */
+  .carte-tous-comptes {
+    grid-row: 1;
+    grid-column: 3 / span 2;
+  }
+
+  .carte-mon-compte {
+    grid-row: 1;
+    grid-column: 5 / span 2;
   }
 }
 
