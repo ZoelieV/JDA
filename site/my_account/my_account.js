@@ -587,8 +587,10 @@ function mettreAJourBoutonsTri() {
     majBoutonTri(btn, etatTri, vueActive);
   });
 
-  // Vœux : personnages uniquement.
+  // Vœux : personnages uniquement ; catégories (support, perma) : armes
+  // uniquement.
   document.getElementById("filtres-voeux").hidden = vueActive === "weapons";
+  document.getElementById("filtres-categories-armes").hidden = vueActive !== "weapons";
 }
 
 // Carte recyclée si rien de ce qu'elle affiche n'a changé depuis le
@@ -628,6 +630,12 @@ function afficherCollection(personnages, armes, profil) {
 
   const voeuxSelectionnes = vueActive === "characters"
     ? Array.from(document.querySelectorAll(".filtre-voeu-input:checked")).map(input => input.value)
+    : [];
+
+  // Armes support / perma (catégories des administrateurs) : une des
+  // catégories cochées suffit.
+  const categoriesArmesSelectionnees = vueActive === "weapons"
+    ? Array.from(document.querySelectorAll(".filtre-categorie-arme:checked")).map(input => input.value)
     : [];
 
   const recherche = document.getElementById("recherche").value.trim().toLowerCase();
@@ -674,7 +682,10 @@ function afficherCollection(personnages, armes, profil) {
     const filtreVoeuOK =
       voeuxSelectionnes.length === 0 || voeuxSelectionnes.includes(getVoeu(item));
 
-    return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK;
+    const filtreCategorieArmeOK = categoriesArmesSelectionnees.length === 0 ||
+      (Array.isArray(item.categories) && item.categories.some(c => categoriesArmesSelectionnees.includes(c)));
+
+    return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK && filtreCategorieArmeOK;
   });
 
   // Possédés / sélectionnés, étoiles, vœux : regroupés par rareté par défaut.
@@ -683,7 +694,8 @@ function afficherCollection(personnages, armes, profil) {
     valeurs: getValeursTri(vueActive, collectionProfil),
     elements: selectionElements,
     armes: selectionArmes,
-    rareteParDefaut: filtreCoche || rareteSelectionnees.length > 0 || voeuxSelectionnes.length > 0
+    rareteParDefaut: filtreCoche || rareteSelectionnees.length > 0 || voeuxSelectionnes.length > 0 ||
+      categoriesArmesSelectionnees.length > 0
   });
 
   remplirGrilleGroupee(liste, groupes, item => {
@@ -849,7 +861,7 @@ async function initialiserPage() {
     afficherCollection(personnages, armes, profil);
     mettreAJourTotalBox(personnages, armes, profil);
 
-    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, #filtre-possedes").forEach(input => {
+    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-categorie-arme, #filtre-possedes").forEach(input => {
       input.addEventListener("change", () => {
         if (input.classList.contains("filtre-element")) basculerSelection(selectionElements, input.value);
         if (input.classList.contains("filtre-arme")) basculerSelection(selectionArmes, input.value);

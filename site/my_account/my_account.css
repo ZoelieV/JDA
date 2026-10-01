@@ -1819,3 +1819,8 @@ body {
     display: none;
   }
 }
+
+/* Catégories d'armes (support, perma) : vue Armes seulement. */
+.filtres-categories-armes[hidden] {
+  display: none;
+}

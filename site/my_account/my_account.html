@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem26">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem27">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -153,6 +153,12 @@
             <label class="filtre-icone" title="Personnages limités"><input type="checkbox" class="filtre-voeu-input" value="intertwined"><img src="../DB/images/others/Item_Intertwined_Fate.webp" alt="Intertwined Fate"></label>
             <label class="filtre-icone" title="Personnages Standards"><input type="checkbox" class="filtre-voeu-input" value="acquaint"><img src="../DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></label>
           </div>
+          <!-- Armes : catégories réglées par les administrateurs (support,
+               standard = arme perma). -->
+          <div class="groupe-filtres filtres-categories-armes" id="filtres-categories-armes" hidden>
+            <label class="filtre-texte" title="Armes support"><input type="checkbox" class="filtre-categorie-arme" value="support"><span>Support</span></label>
+            <label class="filtre-texte" title="Armes perma (bannière standard)"><input type="checkbox" class="filtre-categorie-arme" value="standard"><span>Perma</span></label>
+          </div>
           <label class="filtre-texte" title="N'afficher que ce que je possède"><input type="checkbox" id="filtre-possedes"><span>Possédés</span></label>
           <button type="button" id="btn-clear-filtres" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
         </div>
@@ -265,6 +271,6 @@
   <script src="/my_account/auto_box/interface.js?v=3"></script>
   <script src="/commun/cartes.js?v=8"></script>
   <script src="/commun/tri.js?v=13"></script>
-  <script src="/my_account/my_account.js?v=36"></script>
+  <script src="/my_account/my_account.js?v=37"></script>
 </body>
 </html>

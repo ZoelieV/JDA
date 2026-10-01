@@ -70,6 +70,9 @@ function lireMasquesConfig(config) {
 // le dernier enregistrement, recherche. Tri : clic sur un titre de colonne
 // (1er clic décroissant, 2e croissant, 3e ordre de sortie ; nom : A -> Z).
 const CATEGORIES = { dps: "DPS", subdps: "Sub-DPS", support: "Support" };
+// Armes : catégories (réglées dans "Catégories des armes") ; standard =
+// arme perma.
+const CATEGORIES_ARMES_FILTRE = { support: "Support", standard: "Perma" };
 
 let filtres = creerFiltres();
 let tri = null; // { cle: "nom" | index de colonne, sens: 1 | -1 }
@@ -81,6 +84,7 @@ function creerFiltres() {
     etoiles: new Set(),
     voeux: new Set(),
     categories: new Set(),
+    categoriesArmes: new Set(),
     aRenseigner: false,
     modifies: false,
     masques: false,
@@ -118,6 +122,8 @@ function itemsAffiches() {
     if (persos && filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
     if (persos && filtres.voeux.size && !filtres.voeux.has(getVoeu(item))) return false;
     if (persos && filtres.categories.size && !filtres.categories.has(item.categorie)) return false;
+    if (!persos && filtres.categoriesArmes.size &&
+      !(Array.isArray(item.categories) && item.categories.some(c => filtres.categoriesArmes.has(c)))) return false;
     if (filtres.aRenseigner && points.slice(0, nbConstellations).some(p => p !== 0)) return false;
     if (filtres.modifies && JSON.stringify(points) === JSON.stringify(valeursEnregistrees(item.id))) return false;
     if (filtres.masques && !estMasque(item.id)) return false;
@@ -182,7 +188,8 @@ function rendreFiltres() {
       <div class="groupe-admin">${textes({ 5: "5★", 4: "4★", 3: "3★" }, filtres.etoiles, "etoiles")}</div>
       <div class="groupe-admin">${Object.entries(VOEUX).map(([valeur, voeu]) =>
         `<button type="button" class="filtre-admin filtre-icone${filtres.voeux.has(valeur) ? " active" : ""}" data-filtre="voeux" data-valeur="${valeur}" title="${voeu.nom}"><img src="${voeu.image}" alt="${voeu.nom}"></button>`).join("")}</div>
-      <div class="groupe-admin">${textes(CATEGORIES, filtres.categories, "categories")}</div>` : ""}
+      <div class="groupe-admin">${textes(CATEGORIES, filtres.categories, "categories")}</div>` : `
+      <div class="groupe-admin">${textes(CATEGORIES_ARMES_FILTRE, filtres.categoriesArmes, "categoriesArmes")}</div>`}
     <div class="groupe-admin">
       <button type="button" class="filtre-admin filtre-texte${filtres.aRenseigner ? " active" : ""}" data-bascule="aRenseigner" title="Tous les points de ${persos ? "constellation" : "raffinement"} à 0">À renseigner</button>
       <button type="button" class="filtre-admin filtre-texte${filtres.modifies ? " active" : ""}" data-bascule="modifies" title="Modifiés depuis le dernier enregistrement">Modifiés</button>
