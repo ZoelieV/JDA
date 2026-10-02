@@ -2229,8 +2229,11 @@ function majChronos() {
 }
 
 // ---- Pause "Mon adversaire a crash" (draft classée) ----
+// Bouton visible seulement si l'adversaire n'est plus en ligne (pastille
+// grise : sa page ne relit plus la draft depuis 15 s, cf. noterPresence).
 function majPause() {
-  const visibleBouton = !!(monRole && draft?.chronometre && PHASES_PAUSABLES.includes(draft.phase) && !draft.pause);
+  const adversaireHorsLigne = !!monRole && !!presences && presences[getAutreRole(monRole)] === false;
+  const visibleBouton = !!(monRole && draft?.chronometre && PHASES_PAUSABLES.includes(draft.phase) && !draft.pause && adversaireHorsLigne);
   document.getElementById("zone-crash").classList.toggle("cache", !visibleBouton);
 
   const bandeau = document.getElementById("bandeau-pause");

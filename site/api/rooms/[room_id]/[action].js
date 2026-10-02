@@ -676,6 +676,12 @@ async function handleCrash(req, res, roomId, user) {
   if (!estChronometre(draft) || !PHASES_PAUSABLES.includes(draft.phase)) {
     return res.status(409).json({ error: "La draft ne peut pas être mise en pause à ce stade" });
   }
+  // Seulement si l'adversaire n'est plus en ligne (même règle que sa
+  // pastille de présence).
+  const adversaire = joueur === "j1" ? "j2" : "j1";
+  if (!estEnPause(draft) && presencesJoueurs(room)[adversaire]) {
+    return res.status(409).json({ error: "Ton adversaire est toujours en ligne : pas de pause possible." });
+  }
   if (!estEnPause(draft)) mettreEnPause(draft, joueur);
 
   await sauvegarderDraft(roomId, draft);
