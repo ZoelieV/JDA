@@ -132,6 +132,42 @@ function mettreAJourBoutons() {
   document.getElementById("matchs-classes").classList.toggle("active", classesSeulement);
 }
 
+// ---- Pages : 10 matchs par page, par catégorie (matchs terminés,
+// entraînements, litiges), sans changer de page web ----
+const MATCHS_PAR_PAGE = 10;
+const pages = { matchs: 1, entrainements: 1, litiges: 1 };
+
+// Matchs de la page en cours d'une catégorie (page ramenée dans les bornes)
+// et barre de pages en dessous de sa liste.
+function paginer(categorie, liste, reafficher) {
+  const nbPages = Math.max(1, Math.ceil(liste.length / MATCHS_PAR_PAGE));
+  pages[categorie] = Math.min(Math.max(1, pages[categorie]), nbPages);
+  const page = pages[categorie];
+
+  const barre = document.getElementById(`pages-${categorie}`);
+  barre.classList.toggle("cache", nbPages <= 1);
+  if (nbPages > 1) {
+    const bouton = (texte, cible, desactive, titre) =>
+      `<button type="button" class="bouton-page" data-page="${cible}"${desactive ? " disabled" : ""} title="${titre}">${texte}</button>`;
+    barre.innerHTML = [
+      bouton("«", 1, page === 1, "Première page"),
+      bouton("‹ Préc.", page - 1, page === 1, "Page précédente"),
+      `<span class="numero-page">Page ${page} / ${nbPages}</span>`,
+      bouton("Suiv. ›", page + 1, page === nbPages, "Page suivante"),
+      bouton("»", nbPages, page === nbPages, "Dernière page")
+    ].join("");
+    barre.onclick = event => {
+      const btn = event.target.closest(".bouton-page");
+      if (!btn || btn.disabled) return;
+      pages[categorie] = Number(btn.dataset.page);
+      reafficher();
+      // Haut de la catégorie (la liste change de hauteur).
+      barre.closest(".section-matchs").scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+  return liste.slice((page - 1) * MATCHS_PAR_PAGE, page * MATCHS_PAR_PAGE);
+}
+
 // ---- Rendu ----
 
 function formaterDate(date) {
@@ -295,15 +331,22 @@ function afficherMatchs() {
     : affiches.length === 0 ? "Aucun match trouvé." : "";
   etat.classList.toggle("cache", !etat.textContent);
 
-  liste.replaceChildren(...affiches.map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
+  liste.replaceChildren(...paginer("matchs", affiches, afficherMatchs)
+    .map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
   terminerRendu(liste);
+}
+
+// Filtres, recherche ou tris changés : retour à la 1re page.
+function afficherMatchsDepuisPage1() {
+  pages.matchs = 1;
+  afficherMatchs();
 }
 
 // Entraînements : section visible seulement s'il y en a (donc pour leur
 // lanceur).
 function afficherEntrainements() {
   document.getElementById("section-entrainements").classList.toggle("cache", entrainements.length === 0);
-  document.getElementById("liste-entrainements").replaceChildren(...entrainements.map(creerLigneMatch));
+  document.getElementById("liste-entrainements").replaceChildren(...paginer("entrainements", entrainements, afficherEntrainements).map(creerLigneMatch));
 }
 
 function afficherMatchsEnCours() {
@@ -401,6 +444,7 @@ function afficherStatsLitiges() {
     }));
     ligne.addEventListener("click", () => {
       joueurLitiges = joueurLitiges === stats.discord_id ? null : stats.discord_id;
+      pages.litiges = 1;
       afficherLitiges();
     });
     return ligne;
@@ -421,7 +465,7 @@ function afficherLitiges() {
     match.j1.discord_id === joueurLitiges || match.j2.discord_id === joueurLitiges);
   document.getElementById("etat-litiges").textContent = erreurLitiges
     || (affiches.length === 0 ? "Aucun litige ouvert." : "");
-  document.getElementById("liste-litiges").replaceChildren(...affiches.map(creerLigneMatch));
+  document.getElementById("liste-litiges").replaceChildren(...paginer("litiges", affiches, afficherLitiges).map(creerLigneMatch));
 }
 
 // Après une republication : litige retiré, match ajouté aux terminés.
@@ -450,22 +494,22 @@ function initialiserBarre() {
   document.querySelectorAll(".tri-historique").forEach(btn => {
     btn.addEventListener("click", () => {
       cyclerTri(etatTri, btn.dataset.tri);
-      afficherMatchs();
+      afficherMatchsDepuisPage1();
     });
   });
 
-  document.getElementById("recherche").addEventListener("input", afficherMatchs);
+  document.getElementById("recherche").addEventListener("input", afficherMatchsDepuisPage1);
 
   document.getElementById("matchs-classes").addEventListener("click", () => {
     classesSeulement = !classesSeulement;
-    afficherMatchs();
+    afficherMatchsDepuisPage1();
   });
 
   const mesMatchs = document.getElementById("mes-matchs");
   mesMatchs.classList.toggle("cache", !moiDiscordId);
   mesMatchs.addEventListener("click", () => {
     mesMatchsSeulement = !mesMatchsSeulement;
-    afficherMatchs();
+    afficherMatchsDepuisPage1();
   });
 
   document.querySelectorAll(".tri-litiges").forEach(btn => {
@@ -480,7 +524,7 @@ function initialiserBarre() {
     viderTris(etatTri);
     mesMatchsSeulement = false;
     classesSeulement = false;
-    afficherMatchs();
+    afficherMatchsDepuisPage1();
   });
 }
 

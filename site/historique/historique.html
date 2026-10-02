@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=22">
+<link rel="stylesheet" href="historique.css?v=23">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -61,23 +61,26 @@
     <h3 class="sous-titre-section">Matchs invalidés <span id="filtre-litiges" class="filtre-litiges cache"></span></h3>
     <p id="etat-litiges" class="etat-historique"></p>
     <div id="liste-litiges" class="liste-matchs"></div>
+    <nav id="pages-litiges" class="pagination cache" aria-label="Pages des litiges"></nav>
   </section>
 
   <!-- Entraînements lancés par le joueur connecté : lui seul les voit. -->
   <section id="section-entrainements" class="section-matchs cache">
     <h2 class="titre-section">Mes entraînements 🎯</h2>
     <div id="liste-entrainements" class="liste-matchs"></div>
+    <nav id="pages-entrainements" class="pagination cache" aria-label="Pages des entraînements"></nav>
   </section>
 
   <section class="section-matchs">
     <h2 class="titre-section">Matchs terminés</h2>
     <p id="etat-historique" class="etat-historique">Chargement…</p>
     <div id="liste-matchs" class="liste-matchs"></div>
+    <nav id="pages-matchs" class="pagination cache" aria-label="Pages des matchs"></nav>
   </section>
 
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=9"></script>
   <script src="/commun/tri.js?v=14"></script>
-  <script src="historique.js?v=20"></script>
+  <script src="historique.js?v=21"></script>
 </body>
 </html>
