@@ -115,6 +115,7 @@ function creerLigne(joueur) {
       <div class="joueur-infos">
         <div class="joueur-textes">
           <div class="joueur-nom"></div>
+          ${joueur.prime ? `<span class="badge-prime" title="Plus longue série de victoires en cours (${joueur.serie}) : le battre rapporte +5 trophées">🎯 Prime +5 · ${joueur.serie} victoires d'affilée</span>` : ""}
           <div class="joueur-sub"></div>
         </div>
         ${htmlMedailleTheatre(joueur.theatre)}
@@ -169,7 +170,9 @@ function choisirClassement(nouveau) {
         trophees: stats.trophees,
         matchs_classes: stats.matchs,
         victoires_classees: stats.victoires,
-        serie: stats.serie
+        serie: stats.serie,
+        // Plus longue série en cours : le battre rapporte +5 trophées.
+        prime: !!stats.prime
       };
     });
   calculerRangs();

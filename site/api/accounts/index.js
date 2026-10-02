@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox } = require("../_lib/draft");
 const { getPersonnages, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
-const { CLASSEMENTS, rejouerClasse } = require("../_lib/trophees");
+const { CLASSEMENTS, rejouerClasse, seriePrime } = require("../_lib/trophees");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -105,9 +105,11 @@ async function chargerResultats() {
 
   const { joueurs } = rejouerClasse(data);
   CLASSEMENTS.forEach(classement => {
+    // Porteur(s) de la prime : plus longue série en cours de ce classement.
+    const prime = seriePrime(joueurs[classement]);
     joueurs[classement].forEach((stats, discordId) => {
       resultats[discordId] ??= { matchs: 0, victoires: 0 };
-      (resultats[discordId].classements ??= {})[classement] = stats;
+      (resultats[discordId].classements ??= {})[classement] = { ...stats, prime: !!prime && stats.serie === prime };
     });
   });
 

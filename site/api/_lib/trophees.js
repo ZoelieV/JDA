@@ -13,6 +13,18 @@ const BONUS_SERIE_MAX = 3;
 // Bonus de saison : par perso de l'équipe coché dans l'admin, ajouté au gain
 // du gagnant ou retiré de la perte du perdant (perte jamais négative).
 const TROPHEES_BONUS_SAISON = 3;
+// Prime : battre le joueur à la plus longue série de victoires en cours
+// (dans ce classement, au moins SERIE_MIN_PRIME ; ex aequo : tous) rapporte
+// TROPHEES_PRIME de plus au vainqueur.
+const TROPHEES_PRIME = 5;
+const SERIE_MIN_PRIME = 2;
+
+// Série qui porte la prime dans un classement (0 si personne).
+function seriePrime(table) {
+  let max = 0;
+  table.forEach(j => { if (j.serie > max) max = j.serie; });
+  return max >= SERIE_MIN_PRIME ? max : 0;
+}
 
 // Trophées en jeu dans un match terminé (vainqueur "j1" | "j2" | "egalite"),
 // sans le bonus de série (colonne match_history.trophees).
@@ -50,9 +62,10 @@ function compteEnClasse(match) {
 //             { trophees, matchs, victoires, serie } (joueurs ayant au moins
 //             un match dans ce classement ; serie = victoires d'affilée en
 //             cours),
-//   deltas  : Map id du match -> { j1, j2, bonus, saison: { j1, j2 } }
+//   deltas  : Map id du match -> { j1, j2, bonus, saison: { j1, j2 }, prime }
 //             (trophées réellement gagnés / perdus, plancher à 0 compris ;
-//             bonus de série du gagnant ; bonus de saison de chacun)
+//             bonus de série du gagnant ; bonus de saison de chacun ; prime
+//             gagnée en battant le porteur de la prime)
 // }
 function rejouerClasse(matchs) {
   const ordre = match => [match.created_at ? Date.parse(match.created_at) : 0, Number(match.id) || 0];
@@ -76,7 +89,13 @@ function rejouerClasse(matchs) {
       j1: (Number(match.bonus_saison_j1) || 0) * TROPHEES_BONUS_SAISON,
       j2: (Number(match.bonus_saison_j2) || 0) * TROPHEES_BONUS_SAISON
     };
-    const delta = { j1: 0, j2: 0, bonus: 0, saison };
+    const delta = { j1: 0, j2: 0, bonus: 0, saison, prime: 0 };
+    // Prime : le perdant avait la plus longue série en cours (avant ce match).
+    const prime = seriePrime(table);
+    if (prime && (match.vainqueur === "j1" || match.vainqueur === "j2")) {
+      const perdant = match.vainqueur === "j1" ? match.player2_discord_id : match.player1_discord_id;
+      if (table.get(perdant)?.serie === prime) delta.prime = TROPHEES_PRIME;
+    }
     ["j1", "j2"].forEach(role => {
       const discordId = match[`player${role === "j1" ? 1 : 2}_discord_id`];
       if (!discordId) return;
@@ -86,7 +105,7 @@ function rejouerClasse(matchs) {
         j.victoires += 1;
         j.serie += 1;
         delta.bonus = bonusSerie(j.serie);
-        delta[role] = enJeu + delta.bonus + saison[role];
+        delta[role] = enJeu + delta.bonus + saison[role] + delta.prime;
         j.trophees += delta[role];
       } else {
         // Défaite ou égalité : fin de la série.
@@ -123,4 +142,4 @@ async function chargerMatchsClasses(supabase) {
   return data || [];
 }
 
-module.exports = { TROPHEES_MAX, CLASSEMENTS, calculerTrophees, bonusSerie, rejouerClasse, chargerMatchsClasses };
+module.exports = { TROPHEES_MAX, CLASSEMENTS, calculerTrophees, bonusSerie, seriePrime, rejouerClasse, chargerMatchsClasses };

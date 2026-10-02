@@ -2143,7 +2143,8 @@ function rendreTermine() {
     const enJeu = calculerTrophees();
     const delta = role => resultat ? resultat[role] : (draft.vainqueur === role ? enJeu : -enJeu);
     const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
-    const bonus = resultat?.bonus ? ` (dont +${resultat.bonus} de série 🔥)` : "";
+    const bonus = (resultat?.bonus ? ` (dont +${resultat.bonus} de série 🔥)` : "") +
+      (resultat?.prime ? ` (dont +${resultat.prime} de prime 🎯 : tu as battu la plus longue série en cours)` : "");
     // Bonus de saison (persos cochés dans l'admin) : gain augmenté, perte réduite.
     const saison = role => resultat?.saison?.[role]
       ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}🌟)`
