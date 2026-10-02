@@ -23,15 +23,23 @@ const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
 async function chargerMatchs() {
-  // Colonnes optionnelles (id, created_at, actions, litige) : "*" les
-  // renvoie si elles existent. Litiges ouverts exclus, tri par date si
-  // possible ; sans ces colonnes, pas de litige possible ni de tri.
+  // Colonnes optionnelles (id, created_at, actions, litige, entrainement) :
+  // "*" les renvoie si elles existent. Litiges ouverts et entraînements
+  // exclus, tri par date si possible ; sans ces colonnes, pas de litige ni
+  // d'entraînement possible, ni de tri.
   const requete = () => supabase.from("match_history").select("*");
   let { data, error } = await requete()
     .or("litige.is.null,litige.neq.ouvert")
+    .eq("entrainement", false)
     .order("created_at", { ascending: false })
     .limit(NB_MATCHS_MAX);
 
+  if (error) {
+    ({ data, error } = await requete()
+      .or("litige.is.null,litige.neq.ouvert")
+      .order("created_at", { ascending: false })
+      .limit(NB_MATCHS_MAX));
+  }
   if (error) {
     ({ data, error } = await requete().order("created_at", { ascending: false }).limit(NB_MATCHS_MAX));
   }
@@ -39,6 +47,24 @@ async function chargerMatchs() {
     ({ data, error } = await requete().limit(NB_MATCHS_MAX));
   }
   if (error) throw error;
+  return (data || []).filter(match => !match.entrainement);
+}
+
+// Entraînements du joueur connecté (lui seul les voit, même celui qui l'a
+// aidé non), plus récents d'abord.
+async function chargerEntrainements(discordId) {
+  const { data, error } = await supabase
+    .from("match_history")
+    .select("*")
+    .eq("entrainement", true)
+    .eq("lanceur_discord_id", discordId)
+    .order("created_at", { ascending: false })
+    .limit(NB_MATCHS_MAX);
+  if (error) {
+    // Colonnes de sql/entrainement.sql absentes : aucun entraînement.
+    console.error("Erreur lecture entraînements :", error);
+    return [];
+  }
   return data || [];
 }
 
@@ -154,7 +180,8 @@ async function chargerRoomsEnCours() {
   }
 
   const limite = Date.now() - INACTIVITE_MAX_MS;
-  return (data || []).filter(room =>
+  // Entraînements : jamais montrés aux autres joueurs.
+  return (data || []).filter(room => room.type !== "entrainement" &&
     room.draft?.phase && !["termine", "litige", "annule"].includes(room.draft.phase) &&
     (!room.last_active_at || Date.parse(room.last_active_at) >= limite)
   );
@@ -249,11 +276,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const [matchs, rooms, { lignes: litiges, erreur: erreurLitiges }, statsLitiges] = await Promise.all([
+    const [matchs, rooms, { lignes: litiges, erreur: erreurLitiges }, statsLitiges, entrainements] = await Promise.all([
       chargerMatchs(),
       chargerRoomsEnCours(),
       admin ? chargerLitigesOuverts() : { lignes: [], erreur: null },
-      admin ? chargerStatsLitiges() : []
+      admin ? chargerStatsLitiges() : [],
+      user ? chargerEntrainements(user.id) : []
     ]);
 
     // Rooms en cours au même format que les matchs : j1/j2 de la manche,
@@ -282,7 +310,7 @@ module.exports = async (req, res) => {
       : new Map();
 
     const ids = [...new Set([
-      ...[...matchs, ...enCours, ...litiges].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
+      ...[...matchs, ...enCours, ...litiges, ...entrainements].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
       ...statsLitiges.map(s => s.discord_id)
     ].filter(Boolean))];
     const joueurs = await chargerJoueurs(ids);
@@ -296,6 +324,7 @@ module.exports = async (req, res) => {
       date: match.created_at || null,
       boss_id: match.boss_id,
       vainqueur: match.vainqueur,
+      entrainement: !!match.entrainement,
       // Théâtre joué (6 à 12) et mode de la room (cf. sql/theatre.sql).
       theatre: match.theatre ?? null,
       mode_theatre: match.mode_theatre ?? null,
@@ -325,6 +354,8 @@ module.exports = async (req, res) => {
         ...deuxJoueurs(room)
       })),
       termines: matchs.map(resumerMatch),
+      // Entraînements lancés par le joueur connecté (lui seul).
+      entrainements: entrainements.map(resumerMatch),
       // Administrateurs seulement.
       ...(admin ? {
         litiges: litiges.map(resumerMatch),

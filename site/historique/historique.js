@@ -7,6 +7,7 @@ let matchsEnCours = [];
 let litiges = [];      // administrateurs : matchs invalidés par un litige
 let statsLitiges = []; // administrateurs : litiges par joueur
 let erreurLitiges = null; // administrateurs : problème de lecture côté base
+let entrainements = []; // entraînements lancés par le joueur connecté (lui seul)
 let estAdmin = false;
 // Modération : colonne triée (décroissant) et joueur filtré dans les litiges.
 let triLitiges = "total";
@@ -261,11 +262,13 @@ function creerLigneMatch(match) {
        ${match.litige === "ouvert" ? htmlCorrectionLitige(match) : ""}
        ${match.litige === "republie" ? `<span class="match-note match-litige-corrige">Litige corrigé (${nomLitigePar(match)})</span>` : ""}`;
   if (match.litige === "ouvert") ligne.classList.add("litige");
+  if (match.entrainement) ligne.classList.add("entrainement");
 
   ligne.innerHTML = `
     ${htmlJoueur(match, "j1", enCours || match.bans_connus)}
     <div class="match-centre">
       ${boss ? `<img class="match-boss" src="../DB/${boss.image}" alt="${boss.nom}" loading="lazy">` : ""}
+      ${match.entrainement ? `<span class="match-entrainement">Entraînement 🎯</span>` : ""}
       ${match.classe ? `<span class="match-classe">Classé 🏆${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
       ${htmlTheatreJoue(match.theatre)}
       <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
@@ -293,6 +296,13 @@ function afficherMatchs() {
 
   liste.replaceChildren(...affiches.map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
   terminerRendu(liste);
+}
+
+// Entraînements : section visible seulement s'il y en a (donc pour leur
+// lanceur).
+function afficherEntrainements() {
+  document.getElementById("section-entrainements").classList.toggle("cache", entrainements.length === 0);
+  document.getElementById("liste-entrainements").replaceChildren(...entrainements.map(creerLigneMatch));
 }
 
 function afficherMatchsEnCours() {
@@ -419,6 +429,7 @@ async function rafraichir() {
   appliquerHistorique(historique);
   viderCacheCartes(document.getElementById("liste-matchs"));
   afficherMatchsEnCours();
+  afficherEntrainements();
   afficherLitiges();
   afficherMatchs();
 }
@@ -429,6 +440,7 @@ function appliquerHistorique(historique) {
   litiges = historique.litiges || [];
   statsLitiges = historique.stats_litiges || [];
   erreurLitiges = historique.erreur_litiges || null;
+  entrainements = historique.entrainements || [];
 }
 
 // ---- Démarrage ----
@@ -484,6 +496,7 @@ async function demarrer() {
 
     initialiserBarre();
     afficherMatchsEnCours();
+    afficherEntrainements();
     afficherLitiges();
     afficherMatchs();
   } catch (erreur) {

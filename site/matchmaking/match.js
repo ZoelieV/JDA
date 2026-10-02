@@ -11,7 +11,8 @@ const BOX_LABELS = {
   opti2: "Opti 2",
   opti3: "Opti 3",
   opti4: "Opti 4",
-  opti5: "Opti 5"
+  opti5: "Opti 5",
+  custom: "Personnalisée" // entraînement seulement
 };
 
 // Copie de la séquence fixe du backend (_lib/draft.js) : c'est de la pure
@@ -182,7 +183,8 @@ async function envoyerAction(url, body) {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body || {})
+    // agir_en : rôle joué (entraînement seul, ignoré sinon).
+    body: JSON.stringify({ ...(body || {}), agir_en: monRole })
   });
 
   const data = await reponse.json().catch(() => ({}));
@@ -311,7 +313,10 @@ async function definirDraft(nouveauDraft) {
   if (draft.discord_j1 && draft.discord_j2) {
     // Ni j1 ni j2 : spectateur (lecture seule, filtres et tris utilisables).
     monRole = moiDiscordId === draft.discord_j1 ? "j1" : moiDiscordId === draft.discord_j2 ? "j2" : null;
+    // Entraînement seul : rôle qui doit agir.
+    if (monRole && estEntrainementSolo()) monRole = roleActifSolo();
   }
+  if (draft.entrainement) await chargerBoxesEntrainement();
 
   // Voyageur / Manekin : la grille montre les variantes du joueur connecté
   // (celles de j1 pour un spectateur) ; les picks, celles de leur joueur.
@@ -335,8 +340,68 @@ function getPersonnageParId(id) {
   return personnagesData.find(p => p.id === id) || null;
 }
 
+// Données de la box jouée par un rôle : profil du joueur, ou en
+// entraînement celui du propriétaire de la box choisie (variantes et
+// cosmétiques : ceux du joueur présent).
 function getJoueurDataParRole(role) {
-  return role === "j1" ? joueur1?.data : joueur2?.data;
+  const joueur = role === "j1" ? joueur1 : joueur2;
+  if (draft?.entrainement && donneesBoxes) {
+    const box = donneesBoxes[coteEntrainement(role)];
+    return { ...box, parametres: joueur?.data?.parametres || box?.parametres };
+  }
+  return joueur?.data;
+}
+
+// ---- Mode entraînement (cf. creerEntrainement, api/rooms/index.js) ----
+// Box choisies à la création (celles du lanceur, d'un autre joueur, ou
+// personnalisées). Seul, le lanceur tient les 2 rôles : monRole suit le
+// rôle qui doit agir (envoyé au serveur dans agir_en).
+let donneesBoxes = null; // { cle, moi, adverse } : données des 2 box
+
+function coteEntrainement(role) {
+  return role === draft.entrainement.cote_moi ? "moi" : "adverse";
+}
+
+function estEntrainementSolo() {
+  return !!draft?.entrainement && draft.discord_j1 === draft.discord_j2;
+}
+
+function roleActifSolo() {
+  switch (draft.phase) {
+    case "draft": return getProchaineActionLocale()?.joueur || "j1";
+    case "bans_bonus": return draft.bans_bonus_joueur || "j1";
+    case "temps": return !draft.temps_j1 ? "j1" : !draft.temps_j2 ? "j2" : "j1";
+    case "verification": return !draft.temps_confirme_j1 ? "j1" : !draft.temps_confirme_j2 ? "j2" : "j1";
+    default: return "j1";
+  }
+}
+
+// Box personnalisée : persos cochés ajoutés comme sélection "custom" (même
+// règle que donneesBoxRole, api/_lib/boxes.js).
+function donneesBox(profilData, source) {
+  if (source.box !== "custom") return profilData;
+  const characters = profilData?.characters || {};
+  return {
+    ...profilData,
+    characters: { ...characters, selections: { ...(characters.selections || {}), custom: Object.fromEntries((source.persos || []).map(id => [id, true])) } }
+  };
+}
+
+async function chargerBoxesEntrainement() {
+  const cle = JSON.stringify(draft.entrainement.boxes);
+  if (donneesBoxes?.cle === cle) return;
+  const [moi, adverse] = await Promise.all(["moi", "adverse"].map(async cote => {
+    const source = draft.entrainement.boxes[cote];
+    const compte = await chargerCompte(source.proprietaire);
+    migrerCollectionPersos(compte.data?.characters);
+    return donneesBox(compte.data, source);
+  }));
+  donneesBoxes = { cle, moi, adverse };
+}
+
+function libelleBoxEntrainement(role) {
+  const source = draft.entrainement.boxes[coteEntrainement(role)];
+  return `${BOX_LABELS[source.box] || source.box} de ${htmlPseudo(source.nom)}`;
 }
 
 // Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un personnage chez
@@ -813,7 +878,9 @@ function rendreChoixBox() {
 
     // Box optimisées renommées par le joueur dans Mon compte (profil.nomsBoxes).
     const nomsPerso = getJoueurDataParRole(role)?.nomsBoxes || {};
-    Object.entries(BOX_LABELS).forEach(([valeur, label]) => {
+    // Entraînement : seulement la box choisie à la création ; sinon toutes
+    // sauf "Personnalisée".
+    Object.entries(BOX_LABELS).filter(([valeur]) => draft.entrainement ? draft[`box_${role}`] === valeur : valeur !== "custom").forEach(([valeur, label]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
@@ -1254,7 +1321,11 @@ function afficherModeTheatre() {
   const visible = !!(draft && joueur1 && joueur2) && draft.phase !== "annule";
   zone.classList.toggle("cache", !visible);
   if (!visible) return;
-  const html = htmlModeTheatre(theatreDeLaDraft());
+  // Entraînement : box jouées et rôle(s) tenu(s).
+  const html = htmlModeTheatre(theatreDeLaDraft()) + (draft.entrainement
+    ? `<span class="info-entrainement">🎯 J1 : ${libelleBoxEntrainement("j1")} · J2 : ${libelleBoxEntrainement("j2")}` +
+      `${estEntrainementSolo() ? " · tu joues les 2 rôles (partage le lien pour te faire aider)" : ""}</span>`
+    : "");
   if (zone.dataset.html !== html) {
     zone.dataset.html = html;
     zone.innerHTML = html;
@@ -1691,7 +1762,8 @@ function mettreAJourFiltreProprietaire() {
 // (draft.chrono.tour_debut, heure du serveur), qui démarre donc quand elle
 // disparaît.
 function annoncerRole() {
-  if (!monRole) return;
+  // Entraînement seul : il joue les 2 rôles, pas d'annonce.
+  if (!monRole || estEntrainementSolo()) return;
   const premiere = getSequence()[0];
   const verbe = premiere?.type === "pick" ? "pickes" : "bannis";
   const verbeAdversaire = premiere?.type === "pick" ? "picke" : "bannit";
@@ -2016,7 +2088,8 @@ function calculerTrophees() {
 function definirTypeRoom(type) {
   if (!type || type === typeRoom) return;
   typeRoom = type;
-  document.querySelector(".titre-page").textContent = typeRoom === "classe" ? "Match classé 🏆" : "Match";
+  document.querySelector(".titre-page").textContent =
+    typeRoom === "classe" ? "Match classé 🏆" : typeRoom === "entrainement" ? "Entraînement 🎯" : "Match";
 }
 
 // Revanche (fin de match ou litige).

@@ -82,6 +82,29 @@ module.exports = async (req, res) => {
 
       const enSpectateur = new URL(req.url, `https://${req.headers.host}`).searchParams.get("spectateur") === "1";
 
+      // Entraînement : le premier joueur (autre que le lanceur) qui ouvre le
+      // lien l'aide en prenant le côté "box adverse" ; les suivants
+      // regardent.
+      if (room.type === "entrainement") {
+        if (enSpectateur) return res.status(200).json({ ...room, spectateur: true });
+        const { data: complet } = await supabase.from("rooms").select("draft").eq("room_id", roomId).maybeSingle();
+        const draft = complet?.draft;
+        const e = draft?.entrainement;
+        if (e && !e.aide && user.id !== e.lanceur) {
+          const coteAdverse = e.cote_moi === "j1" ? "j2" : "j1";
+          const nouveau = { ...draft, entrainement: { ...e, aide: user.id }, [`discord_${coteAdverse}`]: user.id };
+          const { data: rejoint } = await supabase
+            .from("rooms")
+            .update({ draft: nouveau, player2_discord_id: user.id })
+            .eq("room_id", roomId)
+            .eq("player2_discord_id", e.lanceur)
+            .select(COLONNES)
+            .maybeSingle();
+          if (rejoint) return res.status(200).json(rejoint);
+        }
+        return res.status(200).json({ ...room, spectateur: true });
+      }
+
       // Room complète, matchmaking (normal ou classé) ou spectateur voulu :
       // lecture seule.
       if (room.player2_discord_id || TYPES_FILE.includes(room.type) || enSpectateur) {

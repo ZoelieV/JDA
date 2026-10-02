@@ -11,6 +11,7 @@ const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, act
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
+const { calculerEquilibrage } = require("../../_lib/boxes");
 const {
   PHASES_PAUSABLES,
   estChronometre,
@@ -27,12 +28,8 @@ const {
 const {
   NB_PERSOS_MIN_BOX,
   getSequence,
-  theatreProfil,
-  calculerPointsBox,
+  estEntrainementSolo,
   calculerPoolJoueur,
-  calculerElementsGroupes,
-  calculerPoolDisponible,
-  calculerBansBonus,
   lancerTirage,
   etatRevanche,
   vuePourJoueur,
@@ -122,7 +119,7 @@ async function handleBox(req, res, roomId, user) {
     return res.status(400).json({ error: "Box invalide" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   if (draft.phase !== "choix_box") {
@@ -145,46 +142,6 @@ async function handleBox(req, res, roomId, user) {
 // ---- ready ----
 // Fin du choix des box : points, pools et nombre de bans d'équilibrage.
 // Les places j1/j2 sont encore provisoires ici (le tirage vient après).
-async function calculerEquilibrage(draft) {
-  // Les rôles j1/j2 (donc les comptes concernés) sont ceux de LA MANCHE en
-  // cours, tirés au sort ou échangés à la revanche — pas forcément
-  // room.player1_discord_id/player2_discord_id.
-  const [profilJ1, profilJ2] = await Promise.all([
-    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j1).single(),
-    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j2).single(),
-    actualiserPoints()
-  ]);
-
-  const personnages = getPersonnages();
-
-  const pointsJ1 = calculerPointsBox(profilJ1.data?.data, draft.box_j1, personnages);
-  const pointsJ2 = calculerPointsBox(profilJ2.data?.data, draft.box_j2, personnages);
-
-  draft.points_j1 = pointsJ1;
-  draft.points_j2 = pointsJ2;
-  // Théâtre clear de chacun : mode de théâtre "auto" (cf. lancerTirage).
-  draft.theatre_j1 = theatreProfil(profilJ1.data?.data);
-  draft.theatre_j2 = theatreProfil(profilJ2.data?.data);
-
-  const ecart = pointsJ1 - pointsJ2;
-  const bansBonus = calculerBansBonus(ecart);
-
-  // Pools = personnages de la box choisie par chaque joueur (et non sa Full Box).
-  const poolJ1 = calculerPoolJoueur(profilJ1.data?.data, personnages, draft.box_j1);
-  const poolJ2 = calculerPoolJoueur(profilJ2.data?.data, personnages, draft.box_j2);
-
-  draft.pool_j1 = poolJ1;
-  draft.pool_j2 = poolJ2;
-  draft.elements_j1 = calculerElementsGroupes(profilJ1.data?.data, personnages, draft.box_j1);
-  draft.elements_j2 = calculerElementsGroupes(profilJ2.data?.data, personnages, draft.box_j2);
-  draft.pool_disponible = calculerPoolDisponible(poolJ1, poolJ2);
-
-  draft.bans_bonus_total = bansBonus;
-  draft.bans_bonus_faits = 0;
-  draft.bans_bonus_choix = [];
-  draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
-}
-
 async function handleReady(req, res, roomId, user) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -193,7 +150,7 @@ async function handleReady(req, res, roomId, user) {
 
   const pret = req.body?.pret !== undefined ? !!req.body.pret : true;
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   // Même ready-check pour 2 phases : validation de la box (choix_box), puis
@@ -216,6 +173,11 @@ async function handleReady(req, res, roomId, user) {
   }
 
   draft[`pret_${joueur}`] = pret;
+  // Entraînement seul : un clic vaut pour les 2 rôles.
+  if (estEntrainementSolo(draft)) {
+    draft.pret_j1 = pret;
+    draft.pret_j2 = pret;
+  }
 
   if (draft.pret_j1 && draft.pret_j2) await passerApresPrets(draft);
 
@@ -240,7 +202,7 @@ async function handleAction(req, res, roomId, user) {
     return res.status(400).json({ error: "Personnage inconnu" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   if (draft.phase !== "draft") {
@@ -368,7 +330,7 @@ async function handleBonusToggle(req, res, roomId, user) {
     return res.status(400).json({ error: "perso_id manquant" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   if (draft.phase !== "bans_bonus") {
@@ -407,7 +369,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   if (draft.phase !== "bans_bonus") {
@@ -453,7 +415,7 @@ async function handleTemps(req, res, roomId, user) {
     return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   // Correction possible pendant la vérification : les 2 confirmations sont
@@ -488,7 +450,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   if (draft.phase !== "verification") {
@@ -518,7 +480,7 @@ async function handleLitige(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   if (draft.phase !== "verification") {
@@ -528,7 +490,8 @@ async function handleLitige(req, res, roomId, user) {
   draft.phase = "litige";
   draft.litige_par = joueur;
   draft.vainqueur = null;
-  await archiverMatch(draft, { litige: true, classe: room.type === "classe" });
+  // Entraînement : rien à transmettre aux administrateurs.
+  if (!draft.entrainement) await archiverMatch(draft, { litige: true, classe: room.type === "classe" });
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -543,7 +506,7 @@ async function handleRejouer(req, res, roomId, user) {
 
   const veutRejouer = req.body?.rejouer !== undefined ? !!req.body.rejouer : true;
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
   if (draft.phase !== "termine" && draft.phase !== "litige") {
@@ -556,6 +519,11 @@ async function handleRejouer(req, res, roomId, user) {
   }
 
   draft[`rejouer_${joueur}`] = veutRejouer;
+  // Entraînement seul : un clic vaut pour les 2 rôles.
+  if (estEntrainementSolo(draft)) {
+    draft.rejouer_j1 = veutRejouer;
+    draft.rejouer_j2 = veutRejouer;
+  }
 
   if (draft.rejouer_j1 && draft.rejouer_j2) {
     // Mêmes box et bans d'équilibrage, rôles inversés (le 1er pick ne reste
@@ -615,7 +583,7 @@ async function handleExpirer(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
   if (!estChronometre(draft)) return res.status(409).json({ error: "Pas de chrono dans ce match" });
   if (refuserSiPause(res, draft)) return;
@@ -671,7 +639,7 @@ async function handleCrash(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
   if (!estChronometre(draft) || !PHASES_PAUSABLES.includes(draft.phase)) {
     return res.status(409).json({ error: "La draft ne peut pas être mise en pause à ce stade" });
@@ -724,7 +692,7 @@ async function handleDraftGet(req, res, roomId, user) {
   }
 
   // Lecture ouverte aux spectateurs (joueur = null).
-  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true, agirEn: user.agirEn });
 
   if (joueur) await noterPresence(room, user.id);
   else await noterSpectateur(room, user.id);
@@ -773,6 +741,9 @@ module.exports = async (req, res) => {
     }
 
     const { roomId, action } = getSegments(req);
+    // Entraînement joué seul : rôle dans lequel la page agit (cf.
+    // chargerRoomAvecRole).
+    user.agirEn = req.body?.agir_en || new URL(req.url, "http://x").searchParams.get("agir_en");
 
     // Personnages / boss ajoutés par les admins et points à jour (cache 30 s).
     if (action !== "draft") await actualiserPoints();

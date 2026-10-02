@@ -43,10 +43,19 @@ async function chargerProfils() {
 async function chargerResultats() {
   const champs = "player1_discord_id, player2_discord_id, vainqueur";
   const litigeOuvert = "litige.is.null,litige.neq.ouvert";
+  // Entraînements jamais comptés (filtrés plus bas) ; sans la colonne
+  // entrainement (sql/entrainement.sql pas lancé), il n'y en a pas.
   let { data, error } = await supabase
     .from("match_history")
-    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre`)
+    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement`)
     .or(litigeOuvert);
+
+  if (error) {
+    ({ data, error } = await supabase
+      .from("match_history")
+      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre`)
+      .or(litigeOuvert));
+  }
 
   // Sans colonne mode_theatre (sql/theatre.sql pas lancé) : tout en
   // classement Classique.
@@ -70,6 +79,8 @@ async function chargerResultats() {
     console.error("Erreur lecture match_history :", error);
     return {};
   }
+
+  data = data.filter(match => !match.entrainement);
 
   const resultats = {};
   const compter = (discordId, gagne) => {

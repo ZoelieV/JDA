@@ -6,7 +6,8 @@
 <title>Créer un match</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
-<link rel="stylesheet" href="matchmaking.css?v=4">
+<link rel="stylesheet" href="../commun/cartes.css?v=3">
+<link rel="stylesheet" href="matchmaking.css?v=5">
 <script src="/commun/fond.js?v=6"></script>
 <script src="/commun/compte.js?v=6" defer></script>
 </head>
@@ -53,13 +54,59 @@
         <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
       </div>
     </div>
-    <!-- Mode entraînement : à venir. -->
-    <div class="option-match panneau option-bientot">
-      <button type="button" class="btn-principal" disabled>Mode entraînement</button>
-      <p>Bientôt disponible.</p>
+    <div class="option-match panneau">
+      <button type="button" id="ouvrir-entrainement" class="btn-principal" aria-expanded="false">Mode entraînement 🎯</button>
+      <p>Choisis la draft, ta box et celle d'en face (les tiennes, celles des autres joueurs ou une box
+        personnalisée), le boss et le J1. Seul, tu joues les deux rôles ; partage le lien pour te faire aider.
+        Visible seulement par toi dans l'historique.</p>
     </div>
   </div>
 
-  <script src="matchmaking.js?v=7"></script>
+  <!-- Configuration de l'entraînement (cf. creerEntrainement, api/rooms/index.js). -->
+  <section id="panneau-entrainement" class="panneau panneau-entrainement cache">
+    <h2>Mode entraînement 🎯</h2>
+
+    <div class="etape-entrainement">
+      <h3>1. Draft</h3>
+      <label class="case-entrainement"><input type="checkbox" id="ent-classe"> Draft classée (chronos : analyse 2 min, bans d'équilibrage 1 min 30, 5 min par joueur)</label>
+      <div class="choix-boutons" id="ent-mode">
+        <button type="button" class="choix-btn active" data-valeur="auto">Classique<span>théâtre du plus petit clear</span></button>
+        <button type="button" class="choix-btn" data-valeur="12">Mêlée générale<span>théâtre 12</span></button>
+        <button type="button" class="choix-btn" data-valeur="6">Théâtre 6<span>1 ban</span></button>
+        <button type="button" class="choix-btn" data-valeur="8">Théâtre 8<span>2 bans</span></button>
+        <button type="button" class="choix-btn" data-valeur="10">Théâtre 10<span>3 bans</span></button>
+      </div>
+    </div>
+
+    <div class="etape-entrainement">
+      <h3>2. Ta box</h3>
+      <div class="selecteur-box" data-cote="moi"></div>
+    </div>
+
+    <div class="etape-entrainement">
+      <h3>3. Box adverse</h3>
+      <div class="selecteur-box" data-cote="adverse"></div>
+    </div>
+
+    <div class="etape-entrainement">
+      <h3>4. Boss et J1</h3>
+      <div class="ligne-entrainement">
+        <label>Boss <select id="ent-boss"><option value="">Aléatoire</option></select></label>
+        <label>J1 (commence la draft)
+          <select id="ent-premier">
+            <option value="aleatoire">Aléatoire</option>
+            <option value="moi">Ta box</option>
+            <option value="adverse">Box adverse</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <button type="button" id="lancer-entrainement" class="btn-principal">Lancer l'entraînement</button>
+  </section>
+
+  <script src="/commun/variantes.js?v=3"></script>
+  <script src="/commun/cartes.js?v=9"></script>
+  <script src="matchmaking.js?v=8"></script>
 </body>
 </html>

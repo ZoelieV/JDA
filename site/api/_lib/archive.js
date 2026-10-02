@@ -5,6 +5,7 @@ const { supabase } = require("./supabase");
 const { infosPersoJoueur } = require("./personnages");
 const { getEquipeJoueur, getBansJoueur } = require("./draft");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./trophees");
+const { chargerDonneesBoxes } = require("./boxes");
 
 // Codes "colonne inexistante" (Postgres / PostgREST).
 const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
@@ -19,11 +20,10 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   // Picks figés avec les infos du joueur à la fin du match (constellation,
   // niveau, raffinement de l'arme signature) pour l'historique ; bans avec
   // les infos des 2 joueurs (comme les cartes de la draft).
-  const [profilJ1, profilJ2] = await Promise.all([
-    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j1).single(),
-    supabase.from("profiles").select("data").eq("discord_id", draft.discord_j2).single()
-  ]);
-  const profils = { j1: profilJ1.data?.data, j2: profilJ2.data?.data };
+  // Profils des box jouées (entraînement : celles des propriétaires des box
+  // choisies, pas forcément les joueurs présents).
+  const boxes = await chargerDonneesBoxes(draft);
+  const profils = { j1: boxes.j1.data, j2: boxes.j2.data };
   const actions = draft.actions.map(action => action.type === "pick"
     ? { ...action, ...infosPersoJoueur(profils[action.joueur], action.perso_id, action.element) }
     : {
@@ -36,8 +36,11 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
 
   const match = {
     boss_id: draft.boss_id,
-    player1_discord_id: draft.discord_j1,
-    player2_discord_id: draft.discord_j2,
+    // Entraînement : propriétaires des box jouées ; visible du lanceur
+    // seulement (entrainement, lanceur_discord_id, cf. sql/entrainement.sql).
+    player1_discord_id: draft.entrainement ? boxes.j1.proprietaire : draft.discord_j1,
+    player2_discord_id: draft.entrainement ? boxes.j2.proprietaire : draft.discord_j2,
+    ...(draft.entrainement ? { entrainement: true, lanceur_discord_id: draft.entrainement.lanceur } : {}),
     box_j1: draft.box_j1,
     box_j2: draft.box_j2,
     team_j1: getEquipeJoueur(draft, "j1"),

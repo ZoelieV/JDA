@@ -58,7 +58,10 @@ async function assurerRolesDraft(supabase, room) {
 // à catcher dans la route pour répondre directement au client.
 // autoriserSpectateur : lecture seule ouverte à tous (joueur = null pour
 // quelqu'un qui n'est ni j1 ni j2).
-async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpectateur = false } = {}) {
+// agirEn : entraînement joué seul (même compte en j1 et j2) -> rôle dans
+// lequel le lanceur agit ("j1" | "j2", celui dont c'est le tour, envoyé par
+// sa page).
+async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpectateur = false, agirEn = null } = {}) {
   const { data: room, error } = await supabase
     .from("rooms")
     .select("room_id, player1_discord_id, player2_discord_id, type, draft, spectateurs")
@@ -74,7 +77,9 @@ async function chargerRoomAvecRole(supabase, roomId, discordId, { autoriserSpect
   }
 
   const roomAvecRoles = await assurerRolesDraft(supabase, room);
-  const joueur = determinerRole(roomAvecRoles, discordId);
+  let joueur = determinerRole(roomAvecRoles, discordId);
+  const d = roomAvecRoles.draft;
+  if (joueur && d?.entrainement && d.discord_j1 === d.discord_j2 && ["j1", "j2"].includes(agirEn)) joueur = agirEn;
 
   if (!joueur && !autoriserSpectateur) {
     throw { status: 403, message: "Tu ne fais pas partie de cette room (spectateur)" };

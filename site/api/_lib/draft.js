@@ -96,6 +96,12 @@ function erreurModeAuto(mode, profilData) {
   return "Renseigne ton théâtre clear (menu du compte ou Mon compte) pour jouer en mode classique / auto.";
 }
 
+// Entraînement joué seul : le lanceur tient les 2 rôles (mêmes comptes en
+// j1 et j2), chacun à son tour (cf. agirEn dans _lib/room.js).
+function estEntrainementSolo(draft) {
+  return !!draft?.entrainement && draft.discord_j1 === draft.discord_j2;
+}
+
 // Séquence de la manche (fixée au tirage du boss) ; draft classique avant
 // le tirage ou pour une ancienne manche.
 function getSequence(draft) {
@@ -151,6 +157,7 @@ function etatInitialDraft() {
     fin_bans_bonus: null, // fin du temps des bans d'équilibrage (ms)
     chrono: null, // pendule de la draft : { j1, j2 (ms restants), tour_debut, epuise_j1, epuise_j2 }
     pause: null, // "Mon adversaire a crash" : { par, absent, debut }
+    entrainement: null, // mode entraînement : { lanceur, aide, cote_moi, boxes: { moi, adverse }, boss_id, premier } (cf. api/rooms/index.js)
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
     temps_confirme_j1: false, // verification : j1 a confirmé les 2 temps
@@ -271,6 +278,8 @@ function echangerRoles(draft) {
   const inverser = role => (role === "j1" ? "j2" : role === "j2" ? "j1" : role);
   draft.bans_bonus_joueur = inverser(draft.bans_bonus_joueur);
   draft.vainqueur = inverser(draft.vainqueur);
+  // Entraînement : la box du lanceur suit son rôle.
+  if (draft.entrainement) draft.entrainement = { ...draft.entrainement, cote_moi: inverser(draft.entrainement.cote_moi) };
   draft.actions = (draft.actions || []).map(a => ({ ...a, joueur: inverser(a.joueur) }));
 }
 
@@ -281,12 +290,18 @@ function echangerRoles(draft) {
 // boss est tiré, différent de celui de la manche précédente.
 function lancerTirage(draft, tirerBossAleatoire) {
   if (!draft.roles_tires) {
-    if (Math.random() < 0.5) echangerRoles(draft);
+    // Entraînement : J1 choisi ("moi" = box du lanceur en J1, "adverse"),
+    // sinon au hasard.
+    const premier = draft.entrainement?.premier;
+    const echanger = premier === "moi" ? draft.entrainement.cote_moi !== "j1"
+      : premier === "adverse" ? draft.entrainement.cote_moi === "j1"
+        : Math.random() < 0.5;
+    if (echanger) echangerRoles(draft);
     draft.roles_tires = true;
   }
 
-  const boss = tirerBossAleatoire(draft.boss_precedent_id || null);
-  draft.boss_id = boss.id;
+  // Entraînement : boss choisi à la création, sinon au hasard.
+  draft.boss_id = draft.entrainement?.boss_id || tirerBossAleatoire(draft.boss_precedent_id || null).id;
   draft.phase = "draft";
   draft.sequence_index = 0;
   // Mode de théâtre : nombre de bans de la draft (après le boss seulement).
@@ -311,6 +326,7 @@ function etatRevanche(precedent) {
     boss_precedent_id: precedent.boss_id,
     mode_theatre: precedent.mode_theatre || "auto",
     chronometre: !!precedent.chronometre,
+    entrainement: precedent.entrainement || null,
     theatre_j1: precedent.theatre_j1 ?? null,
     theatre_j2: precedent.theatre_j2 ?? null,
     box_j1: precedent.box_j1,
@@ -343,6 +359,8 @@ function etatRevanche(precedent) {
 const TEMPS_MASQUE = { affiche: null, secondes: null, masque: true };
 
 function vuePourJoueur(draft, joueur) {
+  // Entraînement seul : il tient les 2 rôles, rien à lui cacher.
+  if (estEntrainementSolo(draft)) return draft;
   const autre = joueur === "j1" ? "j2" : "j1";
   if (draft.phase === "temps") {
     const vue = { ...draft };
@@ -385,6 +403,7 @@ module.exports = {
   theatreProfil,
   resoudreTheatre,
   erreurModeAuto,
+  estEntrainementSolo,
   getSequence,
   calculerBansBonus,
   etatInitialDraft,
