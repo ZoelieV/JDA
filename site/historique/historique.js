@@ -568,6 +568,8 @@ function afficherStatsLitiges() {
 function afficherLitiges() {
   document.getElementById("section-litiges").classList.toggle("cache", !estAdmin);
   if (!estAdmin) return;
+  // Garde l'état replié / déplié, met à jour le compteur.
+  appliquerRepliLitiges(document.getElementById("contenu-litiges").classList.contains("cache"));
   afficherStatsLitiges();
 
   const filtre = document.getElementById("filtre-litiges");
@@ -580,6 +582,41 @@ function afficherLitiges() {
   document.getElementById("etat-litiges").textContent = erreurLitiges
     || (affiches.length === 0 ? "Aucun litige ouvert." : "");
   document.getElementById("liste-litiges").replaceChildren(...paginer("litiges", affiches, afficherLitiges).map(creerLigneMatch));
+}
+
+// Section repliable (flèche du titre) ; état gardé sur cet appareil.
+const CLE_LITIGES_REPLIES = "historique-litiges-replies";
+
+function litigesReplies() {
+  try {
+    return localStorage.getItem(CLE_LITIGES_REPLIES) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function appliquerRepliLitiges(replies) {
+  const bouton = document.getElementById("replier-litiges");
+  document.getElementById("contenu-litiges").classList.toggle("cache", replies);
+  bouton.setAttribute("aria-expanded", String(!replies));
+  bouton.title = replies ? "Afficher les litiges" : "Cacher les litiges";
+  bouton.querySelector(".fleche-repli").textContent = replies ? "▶" : "▼";
+  // Replié : nombre de litiges ouverts à côté du titre.
+  const compte = document.getElementById("compte-litiges-replies");
+  compte.textContent = `${litiges.length} ouvert${litiges.length > 1 ? "s" : ""}`;
+  compte.classList.toggle("cache", !replies);
+}
+
+function initialiserRepliLitiges() {
+  document.getElementById("replier-litiges").addEventListener("click", () => {
+    const replies = !document.getElementById("contenu-litiges").classList.contains("cache");
+    try {
+      localStorage.setItem(CLE_LITIGES_REPLIES, replies ? "1" : "0");
+    } catch {
+      // Stockage indisponible : état gardé jusqu'au rechargement.
+    }
+    appliquerRepliLitiges(replies);
+  });
 }
 
 // Après une republication : litige retiré, match ajouté aux terminés.
@@ -674,6 +711,8 @@ async function demarrer() {
 
     initialiserBarre();
     initialiserParPage();
+    initialiserRepliLitiges();
+    if (litigesReplies()) document.getElementById("contenu-litiges").classList.add("cache");
     afficherMatchsEnCours();
     afficherEntrainements();
     afficherLitiges();

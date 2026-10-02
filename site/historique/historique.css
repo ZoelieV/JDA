@@ -908,3 +908,32 @@ img.arme-mini {
 .filtre-boss-historique option {
   background-color: #2a2a2a;
 }
+
+/* Titre des litiges : flèche pour replier / déplier la section. */
+.replier-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.replier-section:hover .fleche-repli {
+  color: var(--accent);
+}
+
+.fleche-repli {
+  display: inline-block;
+  width: 1.25rem;
+  font-size: 0.875em;
+}
+
+.compte-litiges {
+  font-size: 0.875rem;
+  font-weight: normal;
+  color: var(--texte-doux);
+}

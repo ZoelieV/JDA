@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=27">
+<link rel="stylesheet" href="historique.css?v=28">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -52,7 +52,14 @@
   <!-- Administrateurs : matchs invalidés par un litige (temps à corriger
        puis republier) et joueurs ayant le plus de litiges. -->
   <section id="section-litiges" class="section-matchs section-litiges cache">
-    <h2 class="titre-section">Litiges <span class="badge-admin">Admin</span></h2>
+    <h2 class="titre-section">
+      <button type="button" id="replier-litiges" class="replier-section" aria-expanded="true" aria-controls="contenu-litiges" title="Cacher les litiges">
+        <span class="fleche-repli">▼</span> Litiges
+      </button>
+      <span class="badge-admin">Admin</span>
+      <span id="compte-litiges-replies" class="compte-litiges cache"></span>
+    </h2>
+    <div id="contenu-litiges">
     <h3 class="sous-titre-section">Joueurs en litige</h3>
     <p id="etat-stats-litiges" class="etat-historique"></p>
     <div class="table-litiges-cadre">
@@ -74,6 +81,7 @@
     <p id="etat-litiges" class="etat-historique"></p>
     <div id="liste-litiges" class="liste-matchs"></div>
     <nav id="pages-litiges" class="pagination cache" aria-label="Pages des litiges"></nav>
+    </div>
   </section>
 
   <!-- Entraînements lancés par le joueur connecté : lui seul les voit. -->
@@ -93,6 +101,6 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=10"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=28"></script>
+  <script src="historique.js?v=29"></script>
 </body>
 </html>
