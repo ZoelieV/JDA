@@ -132,15 +132,51 @@ function mettreAJourBoutons() {
   document.getElementById("matchs-classes").classList.toggle("active", classesSeulement);
 }
 
-// ---- Pages : 10 matchs par page, par catégorie (matchs terminés,
-// entraînements, litiges), sans changer de page web ----
-const MATCHS_PAR_PAGE = 10;
+// ---- Pages : matchs par page au choix (10, 20, 50 ou tout), par
+// catégorie (matchs terminés, entraînements, litiges), sans changer de page
+// web. Choix gardé sur cet appareil. ----
+const CHOIX_PAR_PAGE = ["10", "20", "50", "tout"];
+const CLE_PAR_PAGE = "historique-matchs-par-page";
 const pages = { matchs: 1, entrainements: 1, litiges: 1 };
+
+function lireParPage() {
+  try {
+    const valeur = localStorage.getItem(CLE_PAR_PAGE);
+    return CHOIX_PAR_PAGE.includes(valeur) ? valeur : "10";
+  } catch {
+    return "10";
+  }
+}
+
+let parPage = lireParPage();
+
+// Nombre de matchs par page (Infinity pour "tout").
+function matchsParPage() {
+  return parPage === "tout" ? Infinity : Number(parPage);
+}
+
+function initialiserParPage() {
+  const select = document.getElementById("matchs-par-page");
+  select.value = parPage;
+  select.addEventListener("change", () => {
+    parPage = CHOIX_PAR_PAGE.includes(select.value) ? select.value : "10";
+    try {
+      localStorage.setItem(CLE_PAR_PAGE, parPage);
+    } catch {
+      // Stockage indisponible : choix gardé jusqu'au rechargement.
+    }
+    Object.keys(pages).forEach(categorie => { pages[categorie] = 1; });
+    afficherEntrainements();
+    afficherLitiges();
+    afficherMatchs();
+  });
+}
 
 // Matchs de la page en cours d'une catégorie (page ramenée dans les bornes)
 // et barre de pages en dessous de sa liste.
 function paginer(categorie, liste, reafficher) {
-  const nbPages = Math.max(1, Math.ceil(liste.length / MATCHS_PAR_PAGE));
+  const parPageNb = matchsParPage();
+  const nbPages = Number.isFinite(parPageNb) ? Math.max(1, Math.ceil(liste.length / parPageNb)) : 1;
   pages[categorie] = Math.min(Math.max(1, pages[categorie]), nbPages);
   const page = pages[categorie];
 
@@ -165,7 +201,7 @@ function paginer(categorie, liste, reafficher) {
       barre.closest(".section-matchs").scrollIntoView({ behavior: "smooth", block: "start" });
     };
   }
-  return liste.slice((page - 1) * MATCHS_PAR_PAGE, page * MATCHS_PAR_PAGE);
+  return Number.isFinite(parPageNb) ? liste.slice((page - 1) * parPageNb, page * parPageNb) : liste;
 }
 
 // ---- Rendu ----
@@ -540,6 +576,7 @@ async function demarrer() {
     estAdmin = !!utilisateur?.admin;
 
     initialiserBarre();
+    initialiserParPage();
     afficherMatchsEnCours();
     afficherEntrainements();
     afficherLitiges();

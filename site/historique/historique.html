@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=23">
+<link rel="stylesheet" href="historique.css?v=24">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -28,6 +28,15 @@
     </div>
     <button type="button" id="mes-matchs" class="bouton-historique cache" title="N'afficher que mes matchs">Mes matchs</button>
     <button type="button" id="matchs-classes" class="bouton-historique" title="N'afficher que les matchs classés">Classés 🏆</button>
+    <label class="choix-par-page" title="Nombre de matchs par page">
+      Par page
+      <select id="matchs-par-page">
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="tout">Tout</option>
+      </select>
+    </label>
     <button type="button" id="clear-historique" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
   </div>
 
@@ -81,6 +90,6 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=9"></script>
   <script src="/commun/tri.js?v=14"></script>
-  <script src="historique.js?v=21"></script>
+  <script src="historique.js?v=22"></script>
 </body>
 </html>
