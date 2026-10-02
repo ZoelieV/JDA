@@ -1190,7 +1190,7 @@ let presences = null;
 // Pendant toute la draft (choix des box, analyse, bans d'équilibrage,
 // picks / bans) : dans les rectangles des joueurs puis sur les namecards
 // des tableaux. Choix des box / analyse : à côté de la pastille "prêt".
-const PHASES_PRESENCE = ["choix_box", "analyse", "bans_bonus", "draft"];
+const PHASES_PRESENCE = ["choix_box", "analyse", "bans_bonus", "boss", "draft"];
 
 function mettreAJourPastillesPresence() {
   const visible = PHASES_PRESENCE.includes(draft?.phase) && !!presences;
@@ -1463,6 +1463,8 @@ function jouerAnimationBoss(bossIdFinal) {
       animationBossEnCours = false;
       bossAnimeId = bossIdFinal;
       appliquerFondRoom();
+      // Choix du boss : boutons de vote actifs une fois le boss révélé.
+      if (draft?.phase === "boss") rendreChoixBoss();
     }
   }
 
@@ -1476,6 +1478,46 @@ function assurerBossAffiche() {
     afficherBossFinal(draft.boss_id);
     bossAnimeId = draft.boss_id;
   }
+}
+
+// ---- Choix du boss (matchmaking non classé, room privée sans boss imposé) ----
+// Animation du tirage à chaque boss proposé, puis vote : confirmer ou
+// relancer (relancé si les 2 joueurs le veulent). Le tirage J1/J2 vient
+// ensuite, au début de la draft (annonces séparées).
+async function postVoteBoss(vote) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/boss_vote`, { vote });
+  await definirDraft(data.draft);
+}
+
+function rendreChoixBoss() {
+  if (draft.boss_id !== bossAnimeId && !animationBossEnCours) jouerAnimationBoss(draft.boss_id);
+
+  const votes = draft.votes_boss || {};
+  const nom = role => (role === "j1" ? joueur1 : joueur2)?.pseudo || role.toUpperCase();
+  const libelle = vote => vote === "relancer" ? "veut relancer 🎲" : "confirme le boss ✓";
+  const message = document.getElementById("message-boss");
+  const relances = draft.relances_boss ? ` (${draft.relances_boss} relance${draft.relances_boss > 1 ? "s" : ""})` : "";
+
+  document.getElementById("choix-boss").classList.toggle("cache", !monRole);
+  if (!monRole) {
+    message.innerHTML = `Choix du boss${relances} : ${["j1", "j2"].map(role => votes[role] ? `${nom(role)} ${libelle(votes[role])}` : `${nom(role)} réfléchit…`).join(" · ")}`;
+    return;
+  }
+
+  const monVote = votes[monRole];
+  const autre = getAutreRole(monRole);
+  ["confirmer", "relancer"].forEach(vote => {
+    const bouton = document.getElementById(vote === "confirmer" ? "btn-confirmer-boss" : "btn-relancer-boss");
+    bouton.classList.toggle("active", monVote === vote);
+    bouton.disabled = animationBossEnCours;
+    bouton.onclick = () => postVoteBoss(vote).catch(err => alert(err.message));
+  });
+
+  message.innerHTML = !monVote
+    ? `Boss tiré${relances}. Confirme-le, ou propose de le relancer : il ne change que si vous voulez tous les deux le relancer.`
+    : votes[autre]
+      ? "…"
+      : `Tu ${monVote === "relancer" ? "veux relancer" : "confirmes le boss"}. En attente de ${nom(autre)}… (tu peux encore changer d'avis)`;
 }
 
 function rendreDraft(phasePrecedente) {
@@ -2449,6 +2491,8 @@ const BULLES_PAR_PHASE = {
   "btn-confirmer-action": ["draft"],
   "tour-actuel": ["draft"],
   "etat-temps": ["temps", "verification"],
+  "choix-boss": ["boss"],
+  "message-boss": ["boss"],
   "etat-rejouer": ["termine", "litige"]
 };
 
@@ -2520,7 +2564,8 @@ function rendrePhase() {
     verification: "phase-draft",
     termine: "phase-draft",
     litige: "phase-draft",
-    annule: "phase-annule"
+    annule: "phase-annule",
+    boss: "phase-boss"
   };
 
   const idAffiche = idsParPhase[draft.phase];
@@ -2531,7 +2576,8 @@ function rendrePhase() {
   // Boss tiré (draft, temps) : entêtes réduites à 1/3 de leur largeur, le
   // boss occupe le centre libéré (et déborde vers le bas pendant la draft).
   // Temps / résultat : le boss est au centre du récap, plus d'entêtes.
-  const avecBoss = draft.phase === "draft";
+  // Choix du boss (hors classé) : boss au centre, joueurs toujours visibles.
+  const avecBoss = draft.phase === "draft" || draft.phase === "boss";
   const enRecap = PHASES_RECAP.includes(draft.phase);
   const entetes = document.querySelector(".entetes-joueurs");
   entetes.classList.toggle("cache", enRecap || draft.phase === "annule");
@@ -2539,7 +2585,7 @@ function rendrePhase() {
   entetes.classList.toggle("boss-deborde", draft.phase === "draft");
   // Boss tiré : plus de rectangles joueurs (namecard, photo et pseudo sont
   // en haut des tableaux).
-  entetes.classList.toggle("sans-joueurs", avecBoss);
+  entetes.classList.toggle("sans-joueurs", draft.phase === "draft");
   // Draft sur ordi : tableaux à gauche / droite (figés), boss, filtres et
   // grille au centre (cf. CSS #zone-match.mode-draft).
   // Fin de match : mêmes colonnes que la draft, résultat et boss au centre.
@@ -2572,6 +2618,7 @@ function rendrePhase() {
   else if (draft.phase === "termine") rendreTermine();
   else if (draft.phase === "litige") rendreLitige();
   else if (draft.phase === "annule") rendreAnnule();
+  else if (draft.phase === "boss") rendreChoixBoss();
 }
 
 // ---- Polling ----

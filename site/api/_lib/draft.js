@@ -160,6 +160,9 @@ function etatInitialDraft() {
     chrono: null, // pendule de la draft : { j1, j2 (ms restants), tour_debut, epuise_j1, epuise_j2 }
     pause: null, // "Mon adversaire a crash" : { par, absent, debut }
     boss_impose: null, // room privée : boss choisi à la création (sinon au hasard)
+    votes_boss: { j1: null, j2: null }, // phase "boss" : "confirmer" | "relancer" de chacun
+    boss_valide: false, // boss confirmé en phase "boss" (gardé au tirage)
+    relances_boss: 0, // nombre de boss relancés dans la manche
     premier: "aleatoire", // room privée : J1 = "createur" | "adversaire" | "aleatoire"
     createur: null, // room privée : discord_id du créateur (choix du J1)
     entrainement: null, // mode entraînement : { lanceur, aide, cote_moi, boxes: { moi, adverse }, boss_id, premier } (cf. api/rooms/index.js)
@@ -310,13 +313,29 @@ function lancerTirage(draft, tirerBossAleatoire) {
     draft.roles_tires = true;
   }
 
-  // Boss choisi à la création (entraînement, room privée), sinon au hasard.
-  draft.boss_id = draft.entrainement?.boss_id || draft.boss_impose || tirerBossAleatoire(draft.boss_precedent_id || null).id;
+  // Boss choisi à la création (entraînement, room privée) ou confirmé en
+  // phase "boss", sinon au hasard.
+  draft.boss_id = draft.entrainement?.boss_id || draft.boss_impose ||
+    (draft.boss_valide && draft.boss_id) || tirerBossAleatoire(draft.boss_precedent_id || null).id;
   draft.phase = "draft";
   draft.sequence_index = 0;
   // Mode de théâtre : nombre de bans de la draft (après le boss seulement).
   draft.theatre = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
   draft.sequence = sequenceTheatre(draft.theatre);
+}
+
+// ---- Boss proposé (matchmaking non classé, room privée sans boss imposé) ----
+//
+// Phase "boss" avant le tirage J1/J2 : le boss tiré est montré aux 2
+// joueurs, qui votent "confirmer" ou "relancer" ; relancé seulement si les
+// 2 veulent relancer (cf. handleBossVote).
+function proposerBoss(draft, tirerBossAleatoire) {
+  // Différent du boss proposé juste avant (relance) ou de la manche
+  // précédente (revanche).
+  draft.boss_id = tirerBossAleatoire(draft.boss_id || draft.boss_precedent_id || null).id;
+  draft.phase = "boss";
+  draft.votes_boss = { j1: null, j2: null };
+  draft.boss_valide = false;
 }
 
 // ---- Revanche ----
@@ -427,6 +446,7 @@ module.exports = {
   getProchaineAction,
   echangerRoles,
   lancerTirage,
+  proposerBoss,
   etatRevanche,
   vuePourJoueur,
   getEquipeJoueur,

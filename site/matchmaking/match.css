@@ -2493,3 +2493,40 @@ h1 {
   color: var(--couleur-j2);
   font-weight: bold;
 }
+
+/* ---- Choix du boss (hors classé) : confirmer ou relancer ---- */
+.choix-boss {
+  display: flex;
+  gap: 0.625rem;
+  pointer-events: auto;
+}
+
+.btn-vote-boss {
+  padding: 0.625rem 1.25rem;
+  border: 2px solid #3ecf6a;
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.9);
+  color: white;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-vote-boss.relancer {
+  border-color: #f5c542;
+}
+
+.btn-vote-boss.active {
+  background-color: #3ecf6a;
+}
+
+.btn-vote-boss.relancer.active {
+  background-color: #f5c542;
+  color: #1e1e1e;
+}
+
+.btn-vote-boss:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

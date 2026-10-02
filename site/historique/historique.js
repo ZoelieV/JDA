@@ -43,6 +43,7 @@ const LIBELLES_PHASES = {
   choix_box: "Choix des box",
   analyse: "Analyse des box",
   bans_bonus: "Bans d'équilibrage",
+  boss: "Choix du boss",
   draft: "Draft",
   temps: "Saisie des temps",
   verification: "Vérification des temps"

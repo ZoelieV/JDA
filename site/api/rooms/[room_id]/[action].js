@@ -32,6 +32,7 @@ const {
   estEntrainementSolo,
   calculerPoolJoueur,
   lancerTirage,
+  proposerBoss,
   etatRevanche,
   vuePourJoueur,
   getProchaineAction
@@ -64,15 +65,26 @@ function refuserSiPause(res, draft) {
   return true;
 }
 
-// Tirage j1/j2 + boss, puis chronos de la draft (classé).
-function tirageEtDraft(draft) {
+// Boss soumis au vote des joueurs (phase "boss") : hors classé et
+// entraînement, sans boss imposé à la création.
+function bossAVoter(draft, room) {
+  return room?.type !== "classe" && !draft.entrainement && !draft.boss_impose && !draft.chronometre && !draft.boss_valide;
+}
+
+// Boss proposé au vote, ou directement tirage j1/j2 + boss, puis chronos de
+// la draft (classé).
+function tirageEtDraft(draft, room) {
+  if (bossAVoter(draft, room)) {
+    proposerBoss(draft, tirerBossAleatoire);
+    return;
+  }
   lancerTirage(draft, tirerBossAleatoire);
   demarrerChronoDraft(draft);
 }
 
 // Les 2 joueurs sont prêts (ou le temps d'analyse est écoulé) : phase
 // suivante.
-async function passerApresPrets(draft) {
+async function passerApresPrets(draft, room) {
   draft.pret_j1 = false;
   draft.pret_j2 = false;
 
@@ -85,7 +97,7 @@ async function passerApresPrets(draft) {
     demarrerBansBonus(draft);
   } else {
     // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
-    tirageEtDraft(draft);
+    tirageEtDraft(draft, room);
   }
 }
 
@@ -180,7 +192,7 @@ async function handleReady(req, res, roomId, user) {
     draft.pret_j2 = pret;
   }
 
-  if (draft.pret_j1 && draft.pret_j2) await passerApresPrets(draft);
+  if (draft.pret_j1 && draft.pret_j2) await passerApresPrets(draft, room);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -408,7 +420,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   draft.bans_bonus_faits = choix.length;
   draft.bans_bonus_choix = [];
 
-  tirageEtDraft(draft);
+  tirageEtDraft(draft, room);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -598,6 +610,38 @@ async function noterSpectateur(room, discordId) {
   if (error) console.error("Erreur présence spectateur :", error);
 }
 
+// ---- boss_vote : phase "boss" ({ vote: "confirmer" | "relancer" }) ----
+// Une fois les 2 votes donnés : relancé si les 2 veulent relancer, sinon
+// confirmé -> tirage J1/J2 et début de la draft.
+async function handleBossVote(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+  const vote = req.body?.vote;
+  if (!["confirmer", "relancer"].includes(vote)) return res.status(400).json({ error: "Vote inconnu" });
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
+  const draft = room.draft;
+  if (draft.phase !== "boss") return res.status(409).json({ error: "Le boss n'est pas en cours de choix" });
+
+  draft.votes_boss = { ...(draft.votes_boss || {}), [joueur]: vote };
+  const { j1, j2 } = draft.votes_boss;
+  if (j1 && j2) {
+    if (j1 === "relancer" && j2 === "relancer") {
+      draft.relances_boss = (draft.relances_boss || 0) + 1;
+      proposerBoss(draft, tirerBossAleatoire);
+    } else {
+      draft.boss_valide = true;
+      lancerTirage(draft, tirerBossAleatoire);
+      demarrerChronoDraft(draft);
+    }
+  }
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
+}
+
 // ---- expirer : temps écoulé (draft classée) ----
 // Envoyé par la page du joueur dont c'est le tour quand SON chrono atteint
 // 0, ou par celle de l'adversaire DELAI_ADVERSAIRE_MS plus tard (cf.
@@ -618,7 +662,7 @@ async function handleExpirer(req, res, roomId, user) {
 
   if (draft.phase === "analyse") {
     if (!draft.fin_analyse || !peutExpirer(draft.fin_analyse, true)) return pasEncore();
-    await passerApresPrets(draft);
+    await passerApresPrets(draft, room);
   } else if (draft.phase === "bans_bonus") {
     const acteur = draft.bans_bonus_joueur;
     if (!draft.fin_bans_bonus || !peutExpirer(draft.fin_bans_bonus, joueur === acteur)) return pasEncore();
@@ -637,7 +681,7 @@ async function handleExpirer(req, res, roomId, user) {
     });
     draft.bans_bonus_faits = choix.length;
     draft.bans_bonus_choix = [];
-    tirageEtDraft(draft);
+    tirageEtDraft(draft, room);
   } else if (draft.phase === "draft" && draft.chrono) {
     const prochaine = getProchaineAction(draft);
     if (!prochaine) return pasEncore();
@@ -797,6 +841,8 @@ module.exports = async (req, res) => {
         return await handleRejouer(req, res, roomId, user);
       case "expirer":
         return await handleExpirer(req, res, roomId, user);
+      case "boss_vote":
+        return await handleBossVote(req, res, roomId, user);
       case "crash":
         return await handleCrash(req, res, roomId, user);
       case "draft":

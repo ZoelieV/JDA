@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem43">
+<link rel="stylesheet" href="match.css?v=rem44">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -63,6 +63,13 @@
       <!-- Draft : valide le personnage sélectionné dans la grille. -->
       <button id="btn-confirmer-action" type="button" class="btn-confirmer-action cache" disabled>Confirmer</button>
       <div id="tour-actuel" class="bandeau-info tour-actuel"></div>
+      <!-- Choix du boss (hors classé) : confirmer ou relancer, relancé si
+           les 2 joueurs le veulent. -->
+      <div id="choix-boss" class="choix-boss">
+        <button id="btn-confirmer-boss" type="button" class="btn-vote-boss">Confirmer le boss</button>
+        <button id="btn-relancer-boss" type="button" class="btn-vote-boss relancer">Relancer 🎲</button>
+      </div>
+      <div id="message-boss" class="bandeau-info"></div>
       <div id="etat-temps" class="bandeau-info"></div>
       <div id="etat-rejouer" class="bandeau-info cache"></div>
     </div>
@@ -88,6 +95,9 @@
         <a href="matchmaking.html" class="lien-creer-match">Créer un match</a>
       </div>
     </section>
+
+    <!-- Choix du boss : le boss est au centre des entêtes, votes en bas. -->
+    <section id="phase-boss" class="phase cache"></section>
 
     <section id="phase-choix-box" class="phase cache">
       <div class="colonnes-box">
@@ -208,6 +218,6 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=10"></script>
   <script src="/commun/tri.js?v=15"></script>
-  <script src="match.js?v=63"></script>
+  <script src="match.js?v=64"></script>
 </body>
 </html>
