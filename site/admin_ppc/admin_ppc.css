@@ -1162,3 +1162,29 @@ body {
 .choix-categories .filtre-admin + .filtre-admin {
   margin-left: 0.375rem;
 }
+
+/* ---- Bans du classé en cours ---- */
+.tableau-bans th {
+  padding: 0.375rem 0.5rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--texte-doux);
+}
+
+.tableau-bans td {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.photo-ban {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.tableau-bans tr.ban-definitif td:nth-child(2) {
+  color: #ff7a85;
+  font-weight: bold;
+}

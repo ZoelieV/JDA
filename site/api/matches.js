@@ -12,6 +12,7 @@ const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin } = require("./_lib/admin");
 const { parserTempsOuAbandon, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
+const { SANCTIONS, finSanction } = require("./_lib/sanctions");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -116,6 +117,105 @@ async function chargerStatsLitiges() {
     });
   });
   return [...stats.values()];
+}
+
+// ---- PATCH ?id= { action: "sanction", sanctions: { j1, j2 }, fin_saison }
+// (administrateurs) : dossier de triche (ou litige) traité. Pour chaque
+// joueur : "aucune" (explication valable), "semaine", "saison" (jusqu'à
+// fin_saison) ou "definitif" (ban du mode classé, table sanctions). Le
+// match reste invalidé (litige = "traite"). ----
+async function sanctionnerLitige(req, res, user) {
+  const id = req.query?.id;
+  if (!id) return res.status(400).json({ error: "Match manquant" });
+  const choix = req.body?.sanctions || {};
+  if (!["j1", "j2"].every(role => SANCTIONS.includes(choix[role]))) {
+    return res.status(400).json({ error: "Sanction inconnue" });
+  }
+
+  const { data: match, error } = await supabase
+    .from("match_history")
+    .select("id, player1_discord_id, player2_discord_id, litige")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!match || match.litige !== "ouvert") return res.status(404).json({ error: "Dossier introuvable ou déjà traité" });
+
+  let lignes;
+  try {
+    lignes = ["j1", "j2"].map(role => ({
+      discord_id: match[`player${role === "j1" ? 1 : 2}_discord_id`],
+      type: choix[role],
+      fin: choix[role] === "aucune" ? new Date().toISOString() : finSanction(choix[role], req.body?.fin_saison),
+      match_id: match.id,
+      admin: user.id
+    }));
+  } catch (erreur) {
+    if (erreur?.status) return res.status(erreur.status).json({ error: erreur.message });
+    throw erreur;
+  }
+
+  const { error: erreurSanctions } = await supabase.from("sanctions").insert(lignes);
+  if (erreurSanctions) {
+    console.error("Erreur enregistrement sanctions :", erreurSanctions);
+    return res.status(500).json({ error: "Table des sanctions absente : lancer sql/anti_triche.sql dans Supabase." });
+  }
+  const { error: erreurMaj } = await supabase
+    .from("match_history")
+    .update({ litige: "traite", republie_par: user.id, republie_le: new Date().toISOString() })
+    .eq("id", match.id);
+  if (erreurMaj) throw erreurMaj;
+  return res.status(200).json({ ok: true });
+}
+
+// ---- Bans du classé (administrateurs, page admin) ----
+// GET ?bans=1 : bans en cours (semaine, saison, définitif encore actifs),
+// avec pseudo et photo des joueurs et de l'administrateur.
+async function listerBans(res) {
+  const { data, error } = await supabase
+    .from("sanctions")
+    .select("id, discord_id, type, fin, match_id, admin, created_at")
+    .neq("type", "aucune")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Erreur lecture sanctions :", error);
+    return res.status(200).json({ bans: [], erreur: "Table des sanctions absente : lancer sql/anti_triche.sql dans Supabase." });
+  }
+  const maintenant = Date.now();
+  const actifs = (data || []).filter(s => s.fin === null || Date.parse(s.fin) > maintenant);
+  const joueurs = await chargerJoueurs([...new Set(actifs.flatMap(s => [s.discord_id, s.admin]).filter(Boolean))]);
+  const nom = id => {
+    const profil = joueurs.get(id);
+    return profil?.discord_global_name || profil?.discord_username || "Joueur inconnu";
+  };
+  return res.status(200).json({
+    bans: actifs.map(s => ({
+      id: s.id,
+      discord_id: s.discord_id,
+      nom: nom(s.discord_id),
+      avatar: joueurs.get(s.discord_id)?.discord_avatar_url || null,
+      type: s.type,
+      fin: s.fin,
+      depuis: s.created_at,
+      match_id: s.match_id,
+      admin: s.admin ? nom(s.admin) : null
+    }))
+  });
+}
+
+// PATCH { action: "lever_ban", sanction_id } : ban levé tout de suite (fin =
+// maintenant ; la ligne reste pour l'historique de modération).
+async function leverBan(req, res) {
+  const id = req.body?.sanction_id;
+  if (id === undefined || id === null) return res.status(400).json({ error: "Ban manquant" });
+  const { data, error } = await supabase
+    .from("sanctions")
+    .update({ fin: new Date().toISOString() })
+    .eq("id", id)
+    .neq("type", "aucune")
+    .select("id");
+  if (error) throw error;
+  if (!data || data.length === 0) return res.status(404).json({ error: "Ban introuvable" });
+  return res.status(200).json({ ok: true });
 }
 
 // ---- PATCH ?id= (administrateurs) : temps corrigés d'un litige ouvert,
@@ -268,10 +368,23 @@ module.exports = async (req, res) => {
   if (req.method === "PATCH") {
     if (!admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
     try {
+      if (req.body?.action === "sanction") return await sanctionnerLitige(req, res, user);
+      if (req.body?.action === "lever_ban") return await leverBan(req, res);
       return await republierLitige(req, res, user);
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Erreur republication du match" });
+    }
+  }
+
+  // Page admin : bans du classé en cours.
+  if (req.query?.bans) {
+    if (!admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
+    try {
+      return await listerBans(res);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur lecture des bans" });
     }
   }
 
@@ -337,8 +450,10 @@ module.exports = async (req, res) => {
       bans_connus: Array.isArray(match.actions) ||
         (Array.isArray(match.bans_j1) && match.bans_j1.length > 0) ||
         (Array.isArray(match.bans_j2) && match.bans_j2.length > 0),
-      // Litige (ouvert ou republié) : administrateurs seulement.
+      // Litige (ouvert ou republié) : administrateurs seulement ; triche :
+      // temps passé à saisir et somme des temps saisis (secondes).
       ...(admin && match.litige ? { litige: match.litige, litige_par: match.litige_par || null } : {}),
+      ...(admin && match.triche ? { triche: { duree_saisie: match.duree_saisie ?? null, somme_temps: match.somme_temps ?? null } } : {}),
       ...deuxJoueurs(match)
     });
 

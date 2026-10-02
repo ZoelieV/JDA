@@ -171,7 +171,12 @@ module.exports = async (req, res) => {
         const erreur = erreurModeAuto(mode, await lireProfil(user.id));
         if (erreur) return res.status(409).json({ error: erreur });
       }
-      return res.status(200).json(await chercher(user.id, roomIdAttente, req.body.type, mode));
+      try {
+        return res.status(200).json(await chercher(user.id, roomIdAttente, req.body.type, mode));
+      } catch (erreur) {
+        if (erreur?.status) return res.status(erreur.status).json({ error: erreur.message });
+        throw erreur;
+      }
     }
 
     const mode = MODES_THEATRE.includes(req.body?.mode) ? req.body.mode : "auto";

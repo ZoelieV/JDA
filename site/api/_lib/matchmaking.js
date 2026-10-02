@@ -24,6 +24,7 @@
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 const { annulerAutresMatchs } = require("./room");
+const { banClasse, messageBan } = require("./sanctions");
 
 // Room en attente sans nouvelles de sa page depuis plus longtemps : joueur
 // parti, ignorée.
@@ -68,6 +69,12 @@ async function prendreRoom(roomId, discordId) {
 }
 
 async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "auto") {
+  // Joueur banni du classé (sanction d'un administrateur).
+  if (type === "classe") {
+    const ban = await banClasse(discordId);
+    if (ban) throw { status: 403, message: messageBan(ban) };
+  }
+
   // Début d'une recherche (pas un rappel de la page d'attente) : un seul
   // match à la fois, le match en cours du joueur est annulé.
   if (!roomIdAttente) await annulerAutresMatchs(supabase, discordId);

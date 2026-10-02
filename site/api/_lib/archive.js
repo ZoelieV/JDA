@@ -16,7 +16,8 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 // classe : room du matchmaking classé, trophées en jeu enregistrés (calculés
 // à la republication pour un litige).
 // Renvoie l'id du match archivé (null si l'archivage a échoué).
-async function archiverMatch(draft, { litige = false, classe = false } = {}) {
+// triche : { duree_saisie, somme_temps } (anti-triche, cf. _lib/sanctions.js).
+async function archiverMatch(draft, { litige = false, classe = false, triche = null } = {}) {
   // Liste du bonus de saison à jour (cache 30 s).
   await require("./personnages").actualiserPoints();
   // Picks figés avec les infos du joueur à la fin du match (constellation,
@@ -62,6 +63,7 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
     theatre: draft.theatre ?? null,
     mode_theatre: draft.mode_theatre || "auto",
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),
+    ...(triche ? { triche: true, duree_saisie: triche.duree_saisie, somme_temps: triche.somme_temps } : {}),
     ...(classe ? {
       classe: true,
       // Persos de l'équipe avec le bonus de saison au moment du match (la
@@ -85,7 +87,7 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   // pas archivé (jamais publié comme un match normal) ; idem pour un match
   // classé sans les colonnes classe / trophees (sql/classe.sql).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, ...sansFacultatives } = match;
+    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, triche, duree_saisie, somme_temps, ...sansFacultatives } = match;
     ({ data, error } = await inserer(sansFacultatives));
   }
 

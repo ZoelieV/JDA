@@ -408,16 +408,77 @@ function htmlCorrectionLitige(match) {
       <span class="nom-temps-litige"></span>
       <input type="text" inputmode="decimal" name="temps_${role}" value="${match[role].temps?.affiche || ""}" placeholder="mm:ss" title="Temps (mm:ss) ou abandon">
     </label>`;
+  // Anti-triche : temps passé à saisir et somme des temps saisis.
+  const fmt = s => s == null ? "?" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const triche = match.triche
+    ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft">⚠️ Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
+    : "";
+  // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
+  const sanction = role => `
+    <label class="champ-sanction champ-${role}">
+      <span class="nom-temps-litige"></span>
+      <select name="sanction_${role}">
+        <option value="aucune">Aucune conséquence</option>
+        <option value="semaine">Ban classé 1 semaine</option>
+        <option value="saison">Ban classé jusqu'à la fin de la saison</option>
+        <option value="definitif">Ban classé définitif</option>
+      </select>
+    </label>`;
   return `
-    <span class="match-litige">Litige <span class="litige-par"></span></span>
+    <span class="match-litige">${match.triche ? "Triche suspectée" : "Litige"} <span class="litige-par"></span></span>
+    ${triche}
     <form class="correction-litige">
       ${champ("j1")}
       ${champ("j2")}
       <button type="submit" class="bouton-historique bouton-republier">Corriger et republier</button>
+    </form>
+    <form class="sanction-litige">
+      ${sanction("j1")}
+      ${sanction("j2")}
+      <label class="champ-fin-saison cache">Fin de la saison <input type="date" name="fin_saison"></label>
+      <button type="submit" class="bouton-historique bouton-sanction">Appliquer et clore le dossier</button>
     </form>`;
 }
 
+// Sanctions : un choix par joueur ; "fin de la saison" demande une date.
+function brancherSanctionLitige(ligne, match) {
+  const formulaire = ligne.querySelector(".sanction-litige");
+  formulaire.querySelector(".champ-j1 .nom-temps-litige").textContent = match.j1.nom;
+  formulaire.querySelector(".champ-j2 .nom-temps-litige").textContent = match.j2.nom;
+  const champSaison = formulaire.querySelector(".champ-fin-saison");
+  const choix = role => formulaire.elements[`sanction_${role}`].value;
+  formulaire.addEventListener("change", () => {
+    champSaison.classList.toggle("cache", !["j1", "j2"].some(role => choix(role) === "saison"));
+  });
+  formulaire.addEventListener("submit", async event => {
+    event.preventDefault();
+    const libelle = role => formulaire.elements[`sanction_${role}`].selectedOptions[0].textContent;
+    if (!confirm(`Clore ce dossier ?\n${match.j1.nom} : ${libelle("j1")}\n${match.j2.nom} : ${libelle("j2")}\nLe match reste invalidé.`)) return;
+    const bouton = formulaire.querySelector(".bouton-sanction");
+    bouton.disabled = true;
+    try {
+      const reponse = await fetch(`/api/matches?id=${encodeURIComponent(match.id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sanction",
+          sanctions: { j1: choix("j1"), j2: choix("j2") },
+          fin_saison: formulaire.elements.fin_saison.value || null
+        })
+      });
+      const data = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(data.error || "Erreur lors de l'application des sanctions.");
+      await rafraichir();
+    } catch (erreur) {
+      alert(erreur.message);
+      bouton.disabled = false;
+    }
+  });
+}
+
 function brancherCorrectionLitige(ligne, match) {
+  brancherSanctionLitige(ligne, match);
   // Pseudos en texte (pas d'HTML venant des comptes).
   ligne.querySelector(".litige-par").innerHTML = nomLitigePar(match);
   ligne.querySelector(".champ-j1 .nom-temps-litige").textContent = match.j1.nom;

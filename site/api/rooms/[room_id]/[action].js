@@ -12,6 +12,7 @@ const { tirerBossAleatoire } = require("../../_lib/boss");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const { calculerEquilibrage } = require("../../_lib/boxes");
+const { detecterTriche } = require("../../_lib/sanctions");
 const {
   PHASES_PAUSABLES,
   estChronometre,
@@ -277,6 +278,8 @@ function appliquerActionDraft(draft, joueur, type, persoId, element, aleatoire =
 
   if (draft.sequence_index >= getSequence(draft).length) {
     draft.phase = "temps";
+    // Début de la saisie des temps : référence de l'anti-triche (classé).
+    draft.debut_temps = Date.now();
   }
 }
 
@@ -470,9 +473,23 @@ async function handleConfirmerTemps(req, res, roomId, user) {
   draft[`temps_confirme_${joueur}`] = true;
 
   if (draft.temps_confirme_j1 && draft.temps_confirme_j2) {
+    const classe = room.type === "classe";
+    // Anti-triche (classé) : somme des temps supérieure au temps écoulé
+    // depuis l'affichage de la saisie = impossible -> match invalidé et
+    // transmis aux administrateurs (cf. _lib/sanctions.js).
+    const triche = classe ? detecterTriche(draft) : null;
+    if (triche) {
+      draft.phase = "litige";
+      draft.litige_par = null;
+      draft.vainqueur = null;
+      draft.triche = triche;
+      await archiverMatch(draft, { litige: true, classe, triche });
+      await sauvegarderDraft(roomId, draft);
+      return repondreDraft(res, draft, joueur);
+    }
+
     draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
     draft.phase = "termine";
-    const classe = room.type === "classe";
     const idMatch = await archiverMatch(draft, { classe });
     // { j1, j2, bonus } (null hors classé) : écran de fin de match.
     draft.resultat_trophees = classe ? await resultatTrophees(idMatch) : null;
