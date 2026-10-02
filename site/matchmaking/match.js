@@ -416,7 +416,7 @@ function appliquerIdentitesEntrainement() {
 }
 
 // Pseudo du joueur d'un rôle, dans la couleur de son rôle (bleu J1, rouge
-// J2) : consignes de l'entraînement ("À ... de bannir").
+// J2) : bulles de consignes du bas ("À ... de bannir", "En attente : ...").
 function pseudoColore(role) {
   const joueur = role === "j1" ? joueur1 : joueur2;
   return `<span class="nom-${role}">${joueur?.pseudo || role.toUpperCase()}</span>`;
@@ -1002,7 +1002,7 @@ function placerBoutonPret(bouton) {
 function rendreBansBonus() {
   const choix = draft.bans_bonus_choix || [];
   const restant = draft.bans_bonus_total - choix.length;
-  const nomJoueurConcerne = draft.bans_bonus_joueur === "j1" ? joueur1.pseudo : joueur2.pseudo;
+  const nomJoueurConcerne = pseudoColore(draft.bans_bonus_joueur); // couleur de son rôle
   const ecart = Math.abs((draft.points_j1 ?? 0) - (draft.points_j2 ?? 0));
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
 
@@ -1493,7 +1493,7 @@ function rendreChoixBoss() {
   if (draft.boss_id !== bossAnimeId && !animationBossEnCours) jouerAnimationBoss(draft.boss_id);
 
   const votes = draft.votes_boss || {};
-  const nom = role => (role === "j1" ? joueur1 : joueur2)?.pseudo || role.toUpperCase();
+  const nom = role => pseudoColore(role); // couleur de son rôle
   const libelle = vote => vote === "relancer" ? "veut relancer 🎲" : "confirme le boss ✓";
   const message = document.getElementById("message-boss");
   const relances = draft.relances_boss ? ` (${draft.relances_boss} relance${draft.relances_boss > 1 ? "s" : ""})` : "";
@@ -1571,7 +1571,8 @@ function rendreDraft(phasePrecedente) {
         : " un personnage, puis confirme.";
       tourContainer.innerHTML = `À toi de <strong class="verbe-action">${verbe}</strong>${choix}`;
     } else {
-      const nomAdversaire = prochaine.joueur === "j1" ? joueur1.pseudo : joueur2.pseudo;
+      // Pseudo dans la couleur de son rôle ; action sans couleur (pas mon tour).
+      const nomAdversaire = pseudoColore(prochaine.joueur);
       tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong class="verbe-action">${verbe}</strong> un personnage.`;
     }
   }
@@ -2112,7 +2113,7 @@ function rendreVerification() {
   }
 
   const autreRole = getAutreRole(monRole);
-  const nomAutre = autreRole === "j1" ? joueur1.pseudo : joueur2.pseudo;
+  const nomAutre = pseudoColore(autreRole); // couleur de son rôle (bulles du bas)
   const jaiConfirme = draft[`temps_confirme_${monRole}`];
   const autreAConfirme = draft[`temps_confirme_${autreRole}`];
 
@@ -2275,7 +2276,7 @@ function rendreRejouer() {
     const etat = document.getElementById("etat-rejouer");
     etat.innerHTML = draft.quitte_par === monRole
       ? "Tu as démarré un autre match : revanche impossible."
-      : `${quitte.pseudo} a démarré un autre match : revanche impossible.`;
+      : `${pseudoColore(draft.quitte_par)} a démarré un autre match : revanche impossible.`;
     etat.classList.remove("cache");
     return;
   }
@@ -2285,7 +2286,7 @@ function rendreRejouer() {
   const dejaOk = draft[`rejouer_${monRole}`];
   const autreRole = getAutreRole(monRole);
   const autreOk = draft[`rejouer_${autreRole}`];
-  const nomAutre = autreRole === "j1" ? joueur1.pseudo : joueur2.pseudo;
+  const nomAutre = pseudoColore(autreRole); // couleur de son rôle (bulles du bas)
 
   const btn = document.getElementById("btn-rejouer");
   btn.textContent = dejaOk ? "Annuler la demande de revanche"
