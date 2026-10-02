@@ -71,10 +71,13 @@ function getSensTri(etat, cle) {
   return etat.tris.find(t => t.cle === cle)?.sens || 0;
 }
 
+// Favoris : simple filtre, activé puis désactivé (pas de sens inverse).
+const TRIS_SANS_SENS = ["favoris"];
+
 function cyclerTri(etat, cle) {
   const tri = etat.tris.find(t => t.cle === cle);
   if (!tri) etat.tris.push({ cle, sens: 1 });
-  else if (tri.sens === 1) tri.sens = -1;
+  else if (tri.sens === 1 && !TRIS_SANS_SENS.includes(cle)) tri.sens = -1;
   else etat.tris = etat.tris.filter(t => t !== tri);
 }
 
@@ -125,7 +128,7 @@ function majBoutonTri(btn, etat, vue = "characters") {
     element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément",
     arme: "Trier par type d'arme",
     raffinement: vue === "weapons" ? "Trier par raffinement" : "Trier par raffinement de l'arme signature",
-    favoris: "Favoris d'abord",
+    favoris: "N'afficher que les favoris",
     bonus_saison: "Bonus de saison d'abord (trophées en classé)"
   };
   btn.title = titres[cle] || "";
@@ -169,10 +172,14 @@ function trierEtGrouper(items, etat, options = {}) {
     });
   }
 
-  const sensRarete = getSensTri(etat, "rarete") ||
-    (groupes.length || options.rareteParDefaut || getSensTri(etat, "constellation") ? 1 : 0);
+  // Favoris : seuls les favoris, regroupés par rareté par défaut.
+  const favorisSeulement = !!getSensTri(etat, "favoris") && typeof valeurs.favoris === "function";
+  if (favorisSeulement) items = items.filter(item => valeurs.favoris(item));
 
-  const trisValeurs = etat.tris.filter(t => valeurs[t.cle]);
+  const sensRarete = getSensTri(etat, "rarete") ||
+    (groupes.length || options.rareteParDefaut || favorisSeulement || getSensTri(etat, "constellation") ? 1 : 0);
+
+  const trisValeurs = etat.tris.filter(t => valeurs[t.cle] && t.cle !== "favoris");
 
   if (!groupes.length && !sensRarete && !trisValeurs.length) {
     return items.length ? [{ cles: {}, items }] : [];
