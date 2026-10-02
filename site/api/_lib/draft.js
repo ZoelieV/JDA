@@ -54,9 +54,10 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 // changent pas.
 const BANS_PAR_THEATRE = { 6: [0, 1], 8: [1, 1], 10: [2, 1], 12: [2, 2] };
 const THEATRES = [6, 8, 10, 12];
-// Mode d'une room : "auto" (théâtre du joueur au plus petit clear) ou un
-// théâtre imposé ("12" = mêlée générale).
-const MODES_THEATRE = ["auto", "6", "8", "10", "12"];
+// Mode d'une room : "auto" (théâtre du joueur au plus petit clear), un
+// théâtre imposé ("12" = mêlée générale) ou "carnage" (théâtre 12 sans bans
+// d'équilibrage, hors classé).
+const MODES_THEATRE = ["auto", "6", "8", "10", "12", "carnage"];
 // Théâtre clear du profil : valeur stockée ("1".."4") -> palier.
 const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 // Théâtre non renseigné dans le profil : considéré comme le plus petit.
@@ -84,6 +85,7 @@ function theatreProfil(profilData) {
 // Théâtre de la draft : imposé par le mode, sinon ("auto") celui du joueur
 // au plus petit clear.
 function resoudreTheatre(mode, theatreJ1, theatreJ2) {
+  if (mode === "carnage") return 12;
   if (THEATRES.includes(Number(mode))) return Number(mode);
   return Math.min(theatreJ1 ?? THEATRE_PAR_DEFAUT, theatreJ2 ?? THEATRE_PAR_DEFAUT);
 }

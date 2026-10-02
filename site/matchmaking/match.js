@@ -1332,6 +1332,7 @@ function htmlBossTire(boss) {
 // mode auto, cf. resoudreTheatre dans api/_lib/draft.js).
 function theatreDeLaDraft() {
   if ([6, 8, 10, 12].includes(draft?.theatre)) return draft.theatre;
+  if (draft?.mode_theatre === "carnage") return 12;
   const mode = Number(draft?.mode_theatre);
   if ([6, 8, 10, 12].includes(mode)) return mode;
   const paliers = [joueur1, joueur2].map(j => palierTheatreProfil(j?.data));
@@ -1362,7 +1363,9 @@ function htmlModeTheatre(theatre) {
   const nbBans = { 6: 1, 8: 2, 10: 3, 12: 4 }[theatre];
   // "auto" : théâtre du joueur au plus petit clear ; sinon choisi à la
   // création de la room, ou mêlée générale (matchmaking / classé).
-  const mode = draft.mode_theatre === "auto" ? "plus petit clear" : typeRoom === "prive" ? "choisi pour la room" : "mêlée générale";
+  const mode = draft.mode_theatre === "auto" ? "plus petit clear"
+    : draft.mode_theatre === "carnage" ? "carnage, sans bans d'équilibrage"
+      : typeRoom === "prive" ? "choisi pour la room" : "mêlée générale";
   return `<span class="mode-theatre" title="Draft du théâtre ${theatre} : 4 picks et ${nbBans} ban${nbBans > 1 ? "s" : ""} par joueur (${mode})">` +
     `<img src="/DB/images/others/Imaginarium_Theater_Medal_${theatre}.webp" alt="">Théâtre ${theatre} · ${mode}</span>`;
 }

@@ -75,7 +75,8 @@ async function calculerEquilibrage(draft) {
   });
 
   const ecart = draft.points_j1 - draft.points_j2;
-  const bansBonus = calculerBansBonus(ecart);
+  // Mode carnage : jamais de bans d'équilibrage.
+  const bansBonus = draft.mode_theatre === "carnage" ? 0 : calculerBansBonus(ecart);
   draft.pool_disponible = calculerPoolDisponible(draft.pool_j1, draft.pool_j2);
   draft.bans_bonus_total = bansBonus;
   draft.bans_bonus_faits = 0;

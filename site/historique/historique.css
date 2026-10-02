@@ -760,3 +760,13 @@ img.arme-mini {
   font-size: 0.8125rem;
   font-weight: bold;
 }
+
+/* Mode carnage (théâtre 12 sans bans d'équilibrage). */
+.match-carnage {
+  padding: 0.125rem 0.625rem;
+  border-radius: 62.4375rem;
+  background-color: rgba(255, 90, 90, 0.18);
+  color: #ff7a85;
+  font-size: 0.8125rem;
+  font-weight: bold;
+}

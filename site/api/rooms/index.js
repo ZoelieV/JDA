@@ -112,9 +112,10 @@ async function creerEntrainement(req, res, user) {
   return res.status(200).json({ room_id: roomId });
 }
 
-// Modes de théâtre : room privée = au choix ("auto" ou un théâtre) ;
-// matchmaking / classé = classique ("auto") ou mêlée générale ("12").
-const MODES_MATCHMAKING = ["auto", "12"];
+// Modes de théâtre : room privée = au choix ("auto", un théâtre ou
+// "carnage") ; matchmaking = classique ("auto"), mêlée générale ("12") ou
+// carnage ; classé = classique ou mêlée générale seulement.
+const MODES_MATCHMAKING = { matchmaking: ["auto", "12", "carnage"], classe: ["auto", "12"] };
 
 // Match privé : une création par minute et par adresse IP au plus.
 const DELAI_ROOM_PRIVEE_MS = 60 * 1000;
@@ -160,7 +161,7 @@ module.exports = async (req, res) => {
 
     if (TYPES_FILE.includes(req.body?.type)) {
       const roomIdAttente = typeof req.body.room_id === "string" ? req.body.room_id : null;
-      const mode = MODES_MATCHMAKING.includes(req.body.mode) ? req.body.mode : "auto";
+      const mode = MODES_MATCHMAKING[req.body.type].includes(req.body.mode) ? req.body.mode : "auto";
       // Début de recherche en classique : théâtre renseigné obligatoire.
       if (!roomIdAttente) {
         const erreur = erreurModeAuto(mode, await lireProfil(user.id));

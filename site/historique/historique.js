@@ -270,6 +270,7 @@ function creerLigneMatch(match) {
       ${boss ? `<img class="match-boss" src="../DB/${boss.image}" alt="${boss.nom}" loading="lazy">` : ""}
       ${match.entrainement ? `<span class="match-entrainement">Entraînement 🎯</span>` : ""}
       ${match.classe ? `<span class="match-classe">Classé 🏆${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
+      ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="Théâtre 12 sans bans d'équilibrage">Carnage 💀</span>` : ""}
       ${htmlTheatreJoue(match.theatre)}
       <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
       ${infos}
