@@ -26,7 +26,17 @@ let classesSeulement = false;
 
 // Sens du 1er clic : plus récents, meilleurs temps, matchs les plus serrés
 // et boss de A à Z d'abord.
-const SENS_INITIAL = { date: -1, temps: 1, ecart: 1, boss: 1 };
+const SENS_INITIAL = { date: -1, temps: 1, ecart: 1 };
+// Boss choisi dans la liste déroulante ("" : tous).
+let bossFiltre = "";
+
+// Recherche d'un temps précis ("7:32", "7.32", "7,32", "07:32") -> "7:32"
+// (format des temps enregistrés), ou null si ce n'est pas un temps.
+function tempsRecherche(texte) {
+  const correspondance = texte.match(/^(\d{1,3})[:.,](\d{2})$/);
+  if (!correspondance || Number(correspondance[2]) > 59) return null;
+  return `${Number(correspondance[1])}:${correspondance[2]}`;
+}
 
 // Phase d'une room en cours, affichée au centre de sa ligne.
 const LIBELLES_PHASES = {
@@ -99,11 +109,15 @@ function trisActifs() {
 
 function matchsAffiches() {
   const recherche = document.getElementById("recherche").value.trim().toLowerCase();
+  // Temps précis : matchs où l'un des 2 joueurs a fait exactement ce temps.
+  const temps = tempsRecherche(recherche);
   const tris = trisActifs();
   return matchs
+    .filter(match => !bossFiltre || match.boss_id === bossFiltre)
+    .filter(match => !temps || match.j1.temps?.affiche === temps || match.j2.temps?.affiche === temps)
     .filter(match => !mesMatchsSeulement || match.j1.discord_id === moiDiscordId || match.j2.discord_id === moiDiscordId)
     .filter(match => !classesSeulement || match.classe)
-    .filter(match => !recherche || texteRecherche(match).includes(recherche))
+    .filter(match => temps || !recherche || texteRecherche(match).includes(recherche))
     .map((match, index) => ({ match, index, v: tris.map(t => valeurTri(match, t.cle)) }))
     .sort((a, b) => {
       for (let i = 0; i < tris.length; i++) {
@@ -618,8 +632,27 @@ function initialiserBarre() {
     });
   });
 
+  // Boss : liste déroulante de tous les boss (A -> Z).
+  const selectBoss = document.getElementById("filtre-boss");
+  [...bossParId.values()]
+    .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }))
+    .forEach(boss => {
+      const option = document.createElement("option");
+      option.value = boss.id;
+      option.textContent = boss.nom;
+      selectBoss.appendChild(option);
+    });
+  selectBoss.addEventListener("change", () => {
+    bossFiltre = selectBoss.value;
+    selectBoss.classList.toggle("active", !!bossFiltre);
+    afficherMatchsDepuisPage1();
+  });
+
   document.getElementById("clear-historique").addEventListener("click", () => {
     document.getElementById("recherche").value = "";
+    bossFiltre = "";
+    selectBoss.value = "";
+    selectBoss.classList.remove("active");
     viderTris(etatTri);
     mesMatchsSeulement = false;
     classesSeulement = false;
