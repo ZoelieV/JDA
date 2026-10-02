@@ -3,7 +3,4 @@ node_modules/
 # Fonds d'écran originaux (PNG lourds) : gardés en local uniquement.
 # Le site utilise les versions générées (bg_web / bg_miniatures) par
 # scripts/generer_cosmetiques.py.
-site/DB/images/bg/
-
-# Fonds retirés du site (originaux gardés en local).
-site/DB/images/bg_retires/
+site/DB/images/bg_ignore/
