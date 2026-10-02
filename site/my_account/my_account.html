@@ -127,7 +127,6 @@
             <button type="button" class="tri-btn" data-tri="niveau"><img class="tri-logo tri-logo-niveau" src="../DB/images/others/stella.webp" alt="Niveau"></button>
             <button type="button" class="tri-btn" data-tri="rarete" title="Trier par rareté"><span class="tri-etoile">★</span></button>
             <button type="button" class="tri-btn" data-tri="element"><img class="tri-logo" src="../DB/images/others/omni_element.webp" alt="Élément"></button>
-            <button type="button" class="tri-btn" data-tri="favoris"><img class="tri-logo" src="../DB/images/others/favourite.webp" alt="Favoris"></button>
           </div>
           <div class="groupe-filtres">
             <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="pyro"><img src="../DB/images/others/pyro.webp" alt="Pyro"></label>
@@ -153,6 +152,10 @@
           <div class="groupe-filtres filtre-voeu" id="filtres-voeux">
             <label class="filtre-icone" title="Personnages limités"><input type="checkbox" class="filtre-voeu-input" value="intertwined"><img src="../DB/images/others/Item_Intertwined_Fate.webp" alt="Intertwined Fate"></label>
             <label class="filtre-icone" title="Personnages Standards"><input type="checkbox" class="filtre-voeu-input" value="acquaint"><img src="../DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></label>
+          </div>
+          <!-- Favoris : filtre (seuls les favoris), activé / désactivé. -->
+          <div class="groupe-filtres">
+            <button type="button" class="tri-btn filtre-favoris" data-tri="favoris" title="N'afficher que les favoris"><img class="tri-logo" src="../DB/images/others/favourite.webp" alt="Favoris"></button>
           </div>
           <!-- Armes : catégories réglées par les administrateurs (support,
                standard = arme perma ; temporaire = pas perma). -->

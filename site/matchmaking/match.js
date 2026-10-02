@@ -1773,6 +1773,23 @@ function initialiserFiltresTri() {
   });
   figeables.appendChild(zoneVoeux);
 
+  // Favoris du joueur connecté : filtre (seuls les favoris), activé /
+  // désactivé, avec les autres filtres.
+  const zoneFavoris = document.createElement("div");
+  zoneFavoris.className = "filtres-icones";
+  const btnFavoris = document.createElement("button");
+  btnFavoris.type = "button";
+  btnFavoris.className = "filtre-icone-btn tri-btn filtre-favoris";
+  btnFavoris.dataset.tri = "favoris";
+  majBoutonTri(btnFavoris, etatTri);
+  btnFavoris.addEventListener("click", () => {
+    cyclerTri(etatTri, "favoris");
+    majBoutonTri(btnFavoris, etatTri);
+    rendrePhase();
+  });
+  zoneFavoris.appendChild(btnFavoris);
+  figeables.appendChild(zoneFavoris);
+
   const zoneProprio = document.createElement("div");
   zoneProprio.className = "filtres-proprietaire";
   zoneProprio.id = "filtres-proprietaire";
@@ -1835,7 +1852,7 @@ function initialiserFiltresTri() {
   const zoneTris = document.createElement("div");
   zoneTris.className = "tris";
   zoneTris.innerHTML = `<span class="tris-label">Trier :</span>`;
-  ["points", "constellation", "niveau", "raffinement", "rarete", "element", "favoris", "bonus_saison"].forEach(valeur => {
+  ["points", "constellation", "niveau", "raffinement", "rarete", "element", "bonus_saison"].forEach(valeur => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-etoile-btn tri-btn";
