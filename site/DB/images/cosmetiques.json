@@ -331,18 +331,6 @@
    "miniature": "bg_miniatures/autres/Capture_d_cran_2026-09-21_233907.webp"
   },
   {
-   "id": "bg/autres/default_bg.webp",
-   "categorie": "autres",
-   "image": "bg_web/autres/default_bg.webp",
-   "miniature": "bg_miniatures/autres/default_bg.webp"
-  },
-  {
-   "id": "bg/autres/draft-background-D8K2XYgs.webp",
-   "categorie": "autres",
-   "image": "bg_web/autres/draft-background-D8K2XYgs.webp",
-   "miniature": "bg_miniatures/autres/draft-background-D8K2XYgs.webp"
-  },
-  {
    "id": "bg/autres/MedalTVGenshinImpact20260915200417126.png",
    "categorie": "autres",
    "image": "bg_web/autres/MedalTVGenshinImpact20260915200417126.webp",
@@ -823,6 +811,30 @@
    "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260926213644381.webp"
   },
   {
+   "id": "bg/autres/MedalTVGenshinImpact20260927145550820.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20260927145550820.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20260927145550820.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20261002131153367.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20261002131153367.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20261002131153367.webp"
+  },
+  {
+   "id": "bg/autres/default_bg.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/default_bg.webp",
+   "miniature": "bg_miniatures/autres/default_bg.webp"
+  },
+  {
+   "id": "bg/autres/draft-background-D8K2XYgs.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/draft-background-D8K2XYgs.webp",
+   "miniature": "bg_miniatures/autres/draft-background-D8K2XYgs.webp"
+  },
+  {
    "id": "bg/boss_hebdo/apep_1.png",
    "categorie": "boss_hebdo",
    "image": "bg_web/boss_hebdo/apep_1.webp",
@@ -907,30 +919,6 @@
    "miniature": "bg_miniatures/boss_hebdo/chess_3.webp"
   },
   {
-   "id": "bg/boss_hebdo/dottoreI_1.png",
-   "categorie": "boss_hebdo",
-   "image": "bg_web/boss_hebdo/dottoreI_1.webp",
-   "miniature": "bg_miniatures/boss_hebdo/dottoreI_1.webp"
-  },
-  {
-   "id": "bg/boss_hebdo/dottoreI_2.png",
-   "categorie": "boss_hebdo",
-   "image": "bg_web/boss_hebdo/dottoreI_2.webp",
-   "miniature": "bg_miniatures/boss_hebdo/dottoreI_2.webp"
-  },
-  {
-   "id": "bg/boss_hebdo/dottoreI_3.png",
-   "categorie": "boss_hebdo",
-   "image": "bg_web/boss_hebdo/dottoreI_3.webp",
-   "miniature": "bg_miniatures/boss_hebdo/dottoreI_3.webp"
-  },
-  {
-   "id": "bg/boss_hebdo/dottoreI_4.png",
-   "categorie": "boss_hebdo",
-   "image": "bg_web/boss_hebdo/dottoreI_4.webp",
-   "miniature": "bg_miniatures/boss_hebdo/dottoreI_4.webp"
-  },
-  {
    "id": "bg/boss_hebdo/dottoreII_1.png",
    "categorie": "boss_hebdo",
    "image": "bg_web/boss_hebdo/dottoreII_1.webp",
@@ -959,6 +947,30 @@
    "categorie": "boss_hebdo",
    "image": "bg_web/boss_hebdo/dottoreII_5.webp",
    "miniature": "bg_miniatures/boss_hebdo/dottoreII_5.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/dottoreI_1.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/dottoreI_1.webp",
+   "miniature": "bg_miniatures/boss_hebdo/dottoreI_1.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/dottoreI_2.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/dottoreI_2.webp",
+   "miniature": "bg_miniatures/boss_hebdo/dottoreI_2.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/dottoreI_3.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/dottoreI_3.webp",
+   "miniature": "bg_miniatures/boss_hebdo/dottoreI_3.webp"
+  },
+  {
+   "id": "bg/boss_hebdo/dottoreI_4.png",
+   "categorie": "boss_hebdo",
+   "image": "bg_web/boss_hebdo/dottoreI_4.webp",
+   "miniature": "bg_miniatures/boss_hebdo/dottoreI_4.webp"
   },
   {
    "id": "bg/boss_hebdo/erode_1.png",
