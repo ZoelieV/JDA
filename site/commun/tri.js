@@ -113,6 +113,7 @@ function majBoutonTri(btn, etat, vue = "characters") {
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`,
     arme: `<img class="tri-logo" src="${LOGO_TRI_ARME}" alt="Type d'arme">`,
     raffinement: `<b>R</b>`,
+    bonus_saison: `<span class="tri-etoile">🌟</span>`,
     favoris: `<img class="tri-logo" src="${LOGO_TRI_FAVORIS}" alt="Favoris">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;
@@ -124,7 +125,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
     element: vue === "weapons" ? "Trier par type d'arme" : "Trier par élément",
     arme: "Trier par type d'arme",
     raffinement: vue === "weapons" ? "Trier par raffinement" : "Trier par raffinement de l'arme signature",
-    favoris: "Favoris d'abord"
+    favoris: "Favoris d'abord",
+    bonus_saison: "Bonus de saison d'abord (trophées en classé)"
   };
   btn.title = titres[cle] || "";
   btn.classList.toggle("active", sens !== 0);

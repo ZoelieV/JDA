@@ -553,7 +553,8 @@ function getValeursTri(roles) {
     // personnage (-1 : arme non possédée ou pas d'arme signature).
     raffinement: personnage => Math.max(-1, ...getRolesProprietaires(personnage.id, roles, roles.length > 1)
       .map(r => getRefinementArmeSignature(getJoueurDataParRole(r), personnage.id) ?? -1)),
-    favoris: personnage => estFavori(personnage.id) ? 1 : 0
+    favoris: personnage => estFavori(personnage.id) ? 1 : 0,
+    bonus_saison: personnage => aBonusSaisonPerso(personnage) ? 1 : 0
   };
 }
 
@@ -604,6 +605,19 @@ function personnageCorrespondFiltres(personnage, { ignorerProprietaire = false }
   return true;
 }
 
+// ---- Bonus de saison (match classé) : +3 trophées par perso de l'équipe
+// coché dans l'admin ; cartes entourées de doré, tri dédié. Voyageur : si
+// une de ses versions l'a (l'élément est choisi au pick).
+function estMatchClasse() {
+  return typeRoom === "classe";
+}
+
+function aBonusSaisonPerso(personnage) {
+  if (!personnage) return false;
+  if (personnage.bonusSaison) return true;
+  return membresGroupe(personnagesBase, personnage.id).some(membre => membre.bonusSaison);
+}
+
 function creerCarteItem(personnage, {
   selectionnable = false,
   indisponible = false,
@@ -619,6 +633,7 @@ function creerCarteItem(personnage, {
   const card = document.createElement("div");
   card.title = personnage.nom;
   card.className = "character-card" +
+    (estMatchClasse() && aBonusSaisonPerso(personnage) ? " bonus-saison" : "") +
     (selectionnable ? " selectionnable" : "") +
     (indisponible ? " indisponible" : "") +
     (selectionnee ? " selectionnee" : "");
@@ -1245,6 +1260,10 @@ function rendreTableauJoueur(role) {
       if (!personnage) return creerCaseVide("slot-pick");
       const slot = creerCaseRecap(personnage, role, picks[i].element);
       marquerAleatoire(slot, picks[i]);
+      if (estMatchClasse() && aBonusSaisonPerso(personnage)) {
+        slot.classList.add("bonus-saison");
+        slot.title = `${slot.title || personnage.nom} — bonus de saison (+3 🏆)`;
+      }
       return slot;
     }));
   }
@@ -1774,7 +1793,7 @@ function initialiserFiltresTri() {
   const zoneTris = document.createElement("div");
   zoneTris.className = "tris";
   zoneTris.innerHTML = `<span class="tris-label">Trier :</span>`;
-  ["points", "constellation", "niveau", "raffinement", "rarete", "element", "favoris"].forEach(valeur => {
+  ["points", "constellation", "niveau", "raffinement", "rarete", "element", "favoris", "bonus_saison"].forEach(valeur => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-etoile-btn tri-btn";
@@ -1797,6 +1816,9 @@ function mettreAJourFiltreProprietaire() {
   // Favoris : ceux du joueur connecté, pas de sens pour un spectateur.
   const btnFavoris = document.querySelector('#barre-outils .tri-btn[data-tri="favoris"]');
   if (btnFavoris) btnFavoris.hidden = !monRole;
+  // Bonus de saison : matchs classés seulement.
+  const btnBonus = document.querySelector('#barre-outils .tri-btn[data-tri="bonus_saison"]');
+  if (btnBonus) btnBonus.hidden = !estMatchClasse();
 
   const enBox = draft.phase === "choix_box" || draft.phase === "analyse";
 

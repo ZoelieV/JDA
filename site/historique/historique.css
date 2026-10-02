@@ -735,17 +735,17 @@ img.arme-mini {
   }
 }
 
-/* Choisi au hasard (temps écoulé, draft classée) : entouré de doré, comme
+/* Choisi au hasard (temps écoulé, draft classée) : entouré d'orange, comme
    dans la page du match. */
 .perso-mini.choix-aleatoire {
-  outline: 2px solid #f5c542;
+  outline: 2px solid #ff9f1c;
   outline-offset: -2px;
-  box-shadow: 0 0 0.5rem rgba(245, 197, 66, 0.7);
+  box-shadow: 0 0 0.5rem rgba(255, 159, 28, 0.7);
 }
 
-/* Ban choisi au hasard : contour rouge du ban gardé, doré autour. */
+/* Ban choisi au hasard : contour rouge du ban gardé, orange autour. */
 .perso-mini.banni.choix-aleatoire {
-  box-shadow: inset 0 0 0 2px var(--couleur-ban), 0 0 0.5rem rgba(245, 197, 66, 0.7);
+  box-shadow: inset 0 0 0 2px var(--couleur-ban), 0 0 0.5rem rgba(255, 159, 28, 0.7);
 }
 
 /* Entraînement (visible de son lanceur seulement). */

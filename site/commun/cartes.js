@@ -104,13 +104,20 @@ function marquerBuffTheatre(liste, buffes) {
   return ids.size ? liste.map(perso => ids.has(perso.id) ? { ...perso, buffTheatre: true } : perso) : liste;
 }
 
+// Personnages au bonus de saison (config.bonus_saison, trophées en classé) :
+// copie marquée bonusSaison.
+function marquerBonusSaison(liste, ids) {
+  const set = new Set(Array.isArray(ids) ? ids : []);
+  return set.size ? liste.map(perso => set.has(perso.id) ? { ...perso, bonusSaison: true } : perso) : liste;
+}
+
 // avecMasques (page admin) : masqués compris, sans buff théâtre.
 const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("characters.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC");
     modesBonus = points.modes || {};
     if (avecMasques) return liste;
-    return marquerBuffTheatre(retirerMasques(liste, points.masques?.characters), points.theatre);
+    return marquerBonusSaison(marquerBuffTheatre(retirerMasques(liste, points.masques?.characters), points.theatre), points.bonus_saison);
   });
 const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {

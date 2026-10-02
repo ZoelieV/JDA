@@ -234,8 +234,8 @@ function coinsDeuxJoueurs(personnage, infosJoueurs) {
   }).join("");
 }
 
-// aleatoire : choisi au hasard (temps écoulé, draft classée) -> entouré de
-// doré, comme dans la page du match.
+// aleatoire : choisi au hasard (temps écoulé, draft classée) -> entouré
+// d'orange, comme dans la page du match.
 function htmlPerso(id, parametres, { element = null, banni = false, infos = null, infosJoueurs = null, aleatoire = false } = {}) {
   const base = personnagesParId.get(id);
   if (!base) return "";
