@@ -159,6 +159,9 @@ function etatInitialDraft() {
     fin_bans_bonus: null, // fin du temps des bans d'équilibrage (ms)
     chrono: null, // pendule de la draft : { j1, j2 (ms restants), tour_debut, epuise_j1, epuise_j2 }
     pause: null, // "Mon adversaire a crash" : { par, absent, debut }
+    boss_impose: null, // room privée : boss choisi à la création (sinon au hasard)
+    premier: "aleatoire", // room privée : J1 = "createur" | "adversaire" | "aleatoire"
+    createur: null, // room privée : discord_id du créateur (choix du J1)
     entrainement: null, // mode entraînement : { lanceur, aide, cote_moi, boxes: { moi, adverse }, boss_id, premier } (cf. api/rooms/index.js)
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
@@ -292,18 +295,21 @@ function echangerRoles(draft) {
 // boss est tiré, différent de celui de la manche précédente.
 function lancerTirage(draft, tirerBossAleatoire) {
   if (!draft.roles_tires) {
-    // Entraînement : J1 choisi ("moi" = box du lanceur en J1, "adverse"),
-    // sinon au hasard.
+    // J1 choisi à la création : entraînement ("moi" = box du lanceur en J1,
+    // "adverse") ou room privée ("createur", "adversaire") ; sinon au hasard.
     const premier = draft.entrainement?.premier;
+    const createurEstJ1 = draft.discord_j1 === draft.createur;
     const echanger = premier === "moi" ? draft.entrainement.cote_moi !== "j1"
       : premier === "adverse" ? draft.entrainement.cote_moi === "j1"
-        : Math.random() < 0.5;
+        : draft.premier === "createur" && draft.createur ? !createurEstJ1
+          : draft.premier === "adversaire" && draft.createur ? createurEstJ1
+            : Math.random() < 0.5;
     if (echanger) echangerRoles(draft);
     draft.roles_tires = true;
   }
 
-  // Entraînement : boss choisi à la création, sinon au hasard.
-  draft.boss_id = draft.entrainement?.boss_id || tirerBossAleatoire(draft.boss_precedent_id || null).id;
+  // Boss choisi à la création (entraînement, room privée), sinon au hasard.
+  draft.boss_id = draft.entrainement?.boss_id || draft.boss_impose || tirerBossAleatoire(draft.boss_precedent_id || null).id;
   draft.phase = "draft";
   draft.sequence_index = 0;
   // Mode de théâtre : nombre de bans de la draft (après le boss seulement).
@@ -329,6 +335,9 @@ function etatRevanche(precedent) {
     mode_theatre: precedent.mode_theatre || "auto",
     chronometre: !!precedent.chronometre,
     entrainement: precedent.entrainement || null,
+    boss_impose: precedent.boss_impose || null,
+    premier: precedent.premier || "aleatoire",
+    createur: precedent.createur || null,
     theatre_j1: precedent.theatre_j1 ?? null,
     theatre_j2: precedent.theatre_j2 ?? null,
     box_j1: precedent.box_j1,

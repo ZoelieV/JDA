@@ -14,6 +14,8 @@ const { getBossParId } = require("../_lib/boss");
 const DELAI_ENTRAINEMENT_MS = 10 * 1000;
 const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
 const PREMIERS = ["moi", "adverse", "aleatoire"];
+// Room privée : J1 choisi par le créateur.
+const PREMIERS_ROOM = ["createur", "adversaire", "aleatoire"];
 
 async function lireProfil(discordId) {
   const { data } = await supabase.from("profiles").select("data").eq("discord_id", discordId).maybeSingle();
@@ -132,7 +134,9 @@ function genererRoomId() {
 // POST { mode? }                            : match privé (nouvelle room ;
 //                                             1 par minute et par IP, la
 //                                             précédente est supprimée)
-//   mode : "auto" (théâtre du plus petit clear), "6", "8", "10" ou "12"
+//   mode : "auto" (théâtre du plus petit clear), "6", "8", "10", "12" ou
+//   "carnage" ; boss_id : boss imposé (sinon au hasard) ; premier : J1 =
+//   "createur" | "adversaire" | "aleatoire"
 // Démarrer un match (privé ou matchmaking) annule le match en cours du
 // joueur (un seul match à la fois, cf. annulerAutresMatchs).
 // POST { type: "matchmaking" | "classe", room_id? } : matchmaking normal ou
@@ -174,6 +178,12 @@ module.exports = async (req, res) => {
     const erreurMode = erreurModeAuto(mode, await lireProfil(user.id));
     if (erreurMode) return res.status(409).json({ error: erreurMode });
 
+    // Boss et J1 choisis à la création (sinon au hasard au tirage).
+    await actualiserPoints();
+    const bossImpose = req.body?.boss_id ? String(req.body.boss_id) : null;
+    if (bossImpose && !getBossParId(bossImpose)) return res.status(400).json({ error: "Boss inconnu" });
+    const premier = PREMIERS_ROOM.includes(req.body?.premier) ? req.body.premier : "aleatoire";
+
     const attente = await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);
     if (attente > 0) {
       const secondes = Math.ceil(attente / 1000);
@@ -193,7 +203,7 @@ module.exports = async (req, res) => {
       room_id: roomId,
       player1_discord_id: user.id,
       type: "prive",
-      draft: { mode_theatre: mode }
+      draft: { mode_theatre: mode, boss_impose: bossImpose, premier, createur: user.id }
     });
 
     if (error) {

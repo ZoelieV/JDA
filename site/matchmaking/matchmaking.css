@@ -204,3 +204,9 @@
 .ent-compteur.insuffisant {
   color: #ff7a85;
 }
+
+/* Room privée : boss et J1, au-dessus des modes. */
+.options-room {
+  margin-bottom: 0.25rem;
+  font-size: 0.9375rem;
+}

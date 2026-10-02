@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
-<link rel="stylesheet" href="matchmaking.css?v=5">
+<link rel="stylesheet" href="matchmaking.css?v=6">
 <script src="/commun/fond.js?v=6"></script>
 <script src="/commun/compte.js?v=6" defer></script>
 </head>
@@ -28,6 +28,17 @@
       <p>Tu reçois un lien à envoyer à ton adversaire : la première personne qui l'ouvre joue contre toi.
         Les autres peuvent regarder depuis l'historique. Tu choisis le théâtre de la draft.</p>
       <div class="modes-match cache" data-type="prive">
+        <!-- Boss et J1 : au choix ou au hasard (au tirage). -->
+        <div class="ligne-entrainement options-room">
+          <label>Boss <select id="room-boss"><option value="">Aléatoire</option></select></label>
+          <label>J1 (commence la draft)
+            <select id="room-premier">
+              <option value="aleatoire">Aléatoire</option>
+              <option value="createur">Moi</option>
+              <option value="adversaire">Mon adversaire</option>
+            </select>
+          </label>
+        </div>
         <button type="button" class="mode-match" data-mode="auto">Auto<span>théâtre du plus petit clear</span></button>
         <button type="button" class="mode-match" data-mode="6">Théâtre 6<span>4 picks, 1 ban</span></button>
         <button type="button" class="mode-match" data-mode="8">Théâtre 8<span>4 picks, 2 bans</span></button>
@@ -110,6 +121,6 @@
 
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=9"></script>
-  <script src="matchmaking.js?v=9"></script>
+  <script src="matchmaking.js?v=10"></script>
 </body>
 </html>

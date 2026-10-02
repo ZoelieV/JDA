@@ -47,9 +47,29 @@ async function creerMatch(corps) {
   }
 }
 
+// Room privée : liste des boss, remplie à la 1re ouverture.
+let bossRoomCharges = false;
+async function remplirBossRoom() {
+  if (bossRoomCharges) return;
+  bossRoomCharges = true;
+  try {
+    const select = document.getElementById("room-boss");
+    (await chargerBoss()).forEach(b => {
+      const option = document.createElement("option");
+      option.value = b.id;
+      option.textContent = b.nom;
+      select.appendChild(option);
+    });
+  } catch (erreur) {
+    console.error(erreur);
+    bossRoomCharges = false;
+  }
+}
+
 // Bouton d'une carte : affiche (ou masque) ses modes de théâtre.
 document.querySelectorAll(".ouvrir-modes").forEach(bouton => {
   bouton.addEventListener("click", () => {
+    if (bouton.parentElement.querySelector('.modes-match[data-type="prive"]')) remplirBossRoom();
     const modes = bouton.parentElement.querySelector(".modes-match");
     const ouvert = modes.classList.toggle("cache") === false;
     bouton.setAttribute("aria-expanded", String(ouvert));
@@ -62,7 +82,9 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
   bouton.addEventListener("click", () => {
     const type = bouton.closest(".modes-match").dataset.type;
     const mode = bouton.dataset.mode;
-    creerMatch(type === "prive" ? { mode } : { type, mode });
+    creerMatch(type === "prive"
+      ? { mode, boss_id: document.getElementById("room-boss").value || null, premier: document.getElementById("room-premier").value }
+      : { type, mode });
   });
 });
 
