@@ -256,6 +256,7 @@ async function handleAction(req, res, roomId, user) {
     appliquerActionDraft(draft, joueur, prochaine.type, persoId, element);
   }
   jouerActionsAuto(draft);
+  await terminerEntrainement(draft);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur, tropTard ? { trop_tard: true } : {});
@@ -305,6 +306,15 @@ function jouerActionAleatoire(draft) {
   appliquerActionDraft(draft, joueur, type, persoId, element, true);
   if (draft.chrono) draft.chrono.tour_debut = Date.now();
   return true;
+}
+
+// Entraînement : pas de saisie des temps, la manche se termine avec la
+// draft (archivée pour le lanceur, sans vainqueur ; on peut relancer).
+async function terminerEntrainement(draft) {
+  if (!draft.entrainement || draft.phase !== "temps") return;
+  draft.phase = "termine";
+  draft.vainqueur = null;
+  await archiverMatch(draft);
 }
 
 // Tant que c'est le tour d'un joueur dont le chrono est épuisé : actions
@@ -620,6 +630,7 @@ async function handleExpirer(req, res, roomId, user) {
     draft.chrono[acteur] = 0;
     draft.chrono[`epuise_${acteur}`] = true;
     jouerActionsAuto(draft);
+    await terminerEntrainement(draft);
   } else {
     return res.status(409).json({ error: "Aucun chrono en cours" });
   }

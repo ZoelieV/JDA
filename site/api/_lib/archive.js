@@ -49,10 +49,11 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
     // 2 joueurs sur le personnage (colonnes jsonb bans_j1 / bans_j2).
     bans_j1: getBansJoueur(actions, "j1"),
     bans_j2: getBansJoueur(actions, "j2"),
-    temps_j1_affiche: draft.temps_j1.affiche,
-    temps_j1_secondes: draft.temps_j1.secondes,
-    temps_j2_affiche: draft.temps_j2.affiche,
-    temps_j2_secondes: draft.temps_j2.secondes,
+    // Entraînement : pas de temps saisis.
+    temps_j1_affiche: draft.temps_j1?.affiche ?? null,
+    temps_j1_secondes: draft.temps_j1?.secondes ?? null,
+    temps_j2_affiche: draft.temps_j2?.affiche ?? null,
+    temps_j2_secondes: draft.temps_j2?.secondes ?? null,
     vainqueur: draft.vainqueur,
     // Théâtre joué (nombre de bans) et mode de la room ("auto", "12" =
     // mêlée générale en matchmaking / classé, ou théâtre imposé).

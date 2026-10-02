@@ -316,7 +316,10 @@ async function definirDraft(nouveauDraft) {
     // Entraînement seul : rôle qui doit agir.
     if (monRole && estEntrainementSolo()) monRole = roleActifSolo();
   }
-  if (draft.entrainement) await chargerBoxesEntrainement();
+  if (draft.entrainement) {
+    await chargerBoxesEntrainement();
+    appliquerIdentitesEntrainement();
+  }
 
   // Voyageur / Manekin : la grille montre les variantes du joueur connecté
   // (celles de j1 pour un spectateur) ; les picks, celles de leur joueur.
@@ -340,23 +343,17 @@ function getPersonnageParId(id) {
   return personnagesData.find(p => p.id === id) || null;
 }
 
-// Données de la box jouée par un rôle : profil du joueur, ou en
-// entraînement celui du propriétaire de la box choisie (variantes et
-// cosmétiques : ceux du joueur présent).
+// Données de la box jouée par un rôle (profil du joueur ; en entraînement,
+// celui de la personne simulée, cf. appliquerIdentitesEntrainement).
 function getJoueurDataParRole(role) {
-  const joueur = role === "j1" ? joueur1 : joueur2;
-  if (draft?.entrainement && donneesBoxes) {
-    const box = donneesBoxes[coteEntrainement(role)];
-    return { ...box, parametres: joueur?.data?.parametres || box?.parametres };
-  }
-  return joueur?.data;
+  return role === "j1" ? joueur1?.data : joueur2?.data;
 }
 
 // ---- Mode entraînement (cf. creerEntrainement, api/rooms/index.js) ----
 // Box choisies à la création (celles du lanceur, d'un autre joueur, ou
 // personnalisées). Seul, le lanceur tient les 2 rôles : monRole suit le
 // rôle qui doit agir (envoyé au serveur dans agir_en).
-let donneesBoxes = null; // { cle, moi, adverse } : données des 2 box
+let donneesBoxes = null; // { cle, moi, adverse } : { data, nom, avatar } des 2 box
 
 function coteEntrainement(role) {
   return role === draft.entrainement.cote_moi ? "moi" : "adverse";
@@ -394,9 +391,32 @@ async function chargerBoxesEntrainement() {
     const source = draft.entrainement.boxes[cote];
     const compte = await chargerCompte(source.proprietaire);
     migrerCollectionPersos(compte.data?.characters);
-    return donneesBox(compte.data, source);
+    return {
+      data: donneesBox(compte.data, source),
+      nom: compte.discord_global_name || compte.discord_username || source.nom,
+      avatar: compte.discord_avatar_url
+    };
   }));
   donneesBoxes = { cle, moi, adverse };
+}
+
+// On joue à la place des propriétaires des box : pseudo, photo, namecard,
+// bannière, médaille et box de la personne simulée pour chaque rôle
+// (discordId : celui du joueur présent, pour le suivi des rôles).
+function appliquerIdentitesEntrainement() {
+  ["j1", "j2"].forEach(role => {
+    const box = donneesBoxes[coteEntrainement(role)];
+    const simule = { discordId: draft[`discord_${role}`], nom: box.nom, avatar: box.avatar, pseudo: htmlPseudo(box.nom), data: box.data };
+    if (role === "j1") joueur1 = simule;
+    else joueur2 = simule;
+  });
+}
+
+// Pseudo du joueur d'un rôle, dans la couleur de son rôle (bleu J1, rouge
+// J2) : consignes de l'entraînement ("À ... de bannir").
+function pseudoColore(role) {
+  const joueur = role === "j1" ? joueur1 : joueur2;
+  return `<span class="nom-${role}">${joueur?.pseudo || role.toUpperCase()}</span>`;
 }
 
 function libelleBoxEntrainement(role) {
@@ -954,7 +974,11 @@ function rendreBansBonus() {
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
 
   const message = document.getElementById("message-equilibrage");
-  if (cEstMonTour) {
+  if (draft.entrainement && cEstMonTour) {
+    message.innerHTML = restant > 0
+      ? `Écart de ${ecart} pts entre les 2 box : à ${pseudoColore(draft.bans_bonus_joueur)} de choisir encore ${restant} personnage(s) à bannir, puis confirme.`
+      : `Écart de ${ecart} pts entre les 2 box : les ${draft.bans_bonus_total} ban(s) bonus de ${pseudoColore(draft.bans_bonus_joueur)} sont sélectionnés. Clique sur "Confirmer les bans".`;
+  } else if (cEstMonTour) {
     message.textContent = restant > 0
       ? `Écart de ${ecart} pts entre les 2 box : choisis encore ${restant} personnage(s) à bannir avant le tirage J1/J2 et du boss (tu peux revenir sur ton choix avant de confirmer).`
       : `Écart de ${ecart} pts entre les 2 box : tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
@@ -1453,7 +1477,13 @@ function rendreDraft(phasePrecedente) {
     tourContainer.innerHTML = "Draft terminée.";
   } else {
     const verbe = prochaine.type === "ban" ? "bannir" : "pick";
-    if (cEstMonTour) {
+    if (draft.entrainement && cEstMonTour) {
+      // Entraînement : on joue à la place de quelqu'un, consigne à son nom.
+      const choix = persoSelectionne
+        ? ` : <strong>${persoSelectionne.nom}${selectionDraft.element ? ` ${NOMS_ELEMENTS[selectionDraft.element] || ""}` : ""}</strong>`
+        : " un personnage, puis confirme.";
+      tourContainer.innerHTML = `À ${pseudoColore(prochaine.joueur)} de <strong class="verbe-action">${verbe}</strong>${choix}`;
+    } else if (cEstMonTour) {
       const choix = persoSelectionne
         ? ` : <strong>${persoSelectionne.nom}${selectionDraft.element ? ` ${NOMS_ELEMENTS[selectionDraft.element] || ""}` : ""}</strong>`
         : " un personnage, puis confirme.";
@@ -1872,7 +1902,8 @@ function lienStreamValide(texte) {
 
 function rendreLienStream(role, zone) {
   const joueur = role === "j1" ? joueur1 : joueur2;
-  const href = lienStreamValide(joueur?.data?.stream);
+  // Entraînement : personne ne joue la partie, pas de stream.
+  const href = draft.entrainement ? null : lienStreamValide(joueur?.data?.stream);
   let lien = zone.querySelector(".lien-stream");
   if (!href) {
     lien?.remove();
@@ -2034,6 +2065,16 @@ function rendreTermine() {
   rendreRecap();
   const container = document.getElementById("resultat-final");
 
+  // Entraînement : pas de temps ni de vainqueur, on peut relancer.
+  if (draft.entrainement) {
+    container.innerHTML = `
+      <p class="ligne-vainqueur"><span class="egalite">Entraînement terminé 🎯</span></p>
+      <p class="ligne-temps">Draft de ${pseudoColore("j1")} contre ${pseudoColore("j2")}. Relance pour rejouer avec les mêmes box (rôles inversés).</p>
+    `;
+    rendreRejouer();
+    return;
+  }
+
   // Résultat au-dessus du boss (les temps sont dans les tableaux).
   let ligneVainqueur;
   if (draft.vainqueur === "egalite") {
@@ -2124,7 +2165,8 @@ function rendreRejouer() {
   const nomAutre = autreRole === "j1" ? joueur1.pseudo : joueur2.pseudo;
 
   const btn = document.getElementById("btn-rejouer");
-  btn.textContent = dejaOk ? "Annuler la demande de revanche" : "Rejouer (mêmes box, rôles inversés)";
+  btn.textContent = dejaOk ? "Annuler la demande de revanche"
+    : draft.entrainement ? "Relancer l'entraînement (mêmes box, rôles inversés)" : "Rejouer (mêmes box, rôles inversés)";
   btn.classList.toggle("active", dejaOk);
   btn.onclick = () => postRejouer(!dejaOk).catch(err => alert(err.message));
 

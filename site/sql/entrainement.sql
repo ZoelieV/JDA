@@ -10,3 +10,11 @@ alter table match_history add column if not exists lanceur_discord_id text;
 create index if not exists match_history_entrainements
   on match_history (lanceur_discord_id, created_at)
   where entrainement;
+
+-- Entraînement : pas de temps saisis ni de vainqueur (sans effet si les
+-- colonnes acceptent déjà null).
+alter table match_history alter column temps_j1_affiche drop not null;
+alter table match_history alter column temps_j2_affiche drop not null;
+alter table match_history alter column temps_j1_secondes drop not null;
+alter table match_history alter column temps_j2_secondes drop not null;
+alter table match_history alter column vainqueur drop not null;

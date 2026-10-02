@@ -2467,3 +2467,14 @@ h1 {
   font-size: 0.875rem;
   color: var(--texte-doux, rgba(255, 255, 255, 0.72));
 }
+
+/* Pseudo dans la couleur de son rôle (consignes de l'entraînement). */
+.nom-j1 {
+  color: var(--couleur-j1);
+  font-weight: bold;
+}
+
+.nom-j2 {
+  color: var(--couleur-j2);
+  font-weight: bold;
+}
