@@ -34,6 +34,7 @@ let valeurs = { characters: {}, weapons: {} }; // id -> liste de points
 let modes = {};                                  // cle bonus -> "addition" | "multiplication"
 let masques = { characters: [], weapons: [] };  // ids masqués (triés)
 let buffs = [];                                  // personnages buffés par le théâtre du mois (triés)
+let bonusSaison = [];                            // personnages au bonus de saison (triés) : trophées en classé
 let etatEnregistre = "";
 
 // Buff théâtre : le bonus théâtre du personnage s'applique à ses points de
@@ -45,6 +46,17 @@ function estBuffe(id) {
 function basculerBuff(id, actif) {
   buffs = buffs.filter(b => b !== id);
   if (actif) buffs = [...buffs, id].sort();
+}
+
+// Bonus de saison : en match classé, +3 trophées par perso coché dans
+// l'équipe du joueur (gain augmenté, perte réduite ; cf. api/_lib/trophees.js).
+function aBonusSaison(id) {
+  return bonusSaison.includes(id);
+}
+
+function basculerBonusSaison(id, actif) {
+  bonusSaison = bonusSaison.filter(b => b !== id);
+  if (actif) bonusSaison = [...bonusSaison, id].sort();
 }
 
 function estMasque(id) {
@@ -89,7 +101,8 @@ function creerFiltres() {
     aRenseigner: false,
     modifies: false,
     masques: false,
-    buffes: false
+    buffes: false,
+    bonusSaison: false
   };
 }
 
@@ -128,6 +141,7 @@ function itemsAffiches() {
     if (filtres.modifies && JSON.stringify(points) === JSON.stringify(valeursEnregistrees(item.id))) return false;
     if (filtres.masques && !estMasque(item.id)) return false;
     if (persos && filtres.buffes && !estBuffe(item.id)) return false;
+    if (persos && filtres.bonusSaison && !aBonusSaison(item.id)) return false;
     return true;
   });
 
@@ -195,6 +209,7 @@ function rendreFiltres() {
       <button type="button" class="filtre-admin filtre-texte${filtres.modifies ? " active" : ""}" data-bascule="modifies" title="Modifiés depuis le dernier enregistrement">Modifiés</button>
       <button type="button" class="filtre-admin filtre-texte${filtres.masques ? " active" : ""}" data-bascule="masques" title="Masqués sur le reste du site">Masqués</button>
       ${persos ? `<button type="button" class="filtre-admin filtre-texte${filtres.buffes ? " active" : ""}" data-bascule="buffes" title="Buffés par le théâtre du mois">Buffés théâtre</button>` : ""}
+      ${persos ? `<button type="button" class="filtre-admin filtre-texte${filtres.bonusSaison ? " active" : ""}" data-bascule="bonusSaison" title="Bonus de saison (trophées en classé)">Bonus de saison</button>` : ""}
     </div>
   `;
 }
@@ -237,7 +252,7 @@ function initialiserFiltres() {
 }
 
 function etatActuel() {
-  return JSON.stringify([valeurs, modes, masques, buffs]);
+  return JSON.stringify([valeurs, modes, masques, buffs, bonusSaison]);
 }
 
 // ---- Chargement ----
@@ -273,6 +288,7 @@ async function chargerDonnees() {
   modes = Object.fromEntries(BONUS.map(({ cle }) => [cle, config?.modes?.[cle] === "multiplication" ? "multiplication" : "addition"]));
   masques = lireMasquesConfig(config);
   buffs = Array.isArray(config?.theatre) ? [...config.theatre].sort() : [];
+  bonusSaison = Array.isArray(config?.bonus_saison) ? [...config.bonus_saison].sort() : [];
   etatEnregistre = etatActuel();
 }
 
@@ -288,6 +304,7 @@ function rendreEntete() {
     <tr>
       <th class="col-nom triable" data-tri="nom" title="Trier par nom">${vue === "characters" ? "Personnage" : "Arme"}${fleche("nom")}</th>
       ${libelles.map((libelle, index) => `<th class="triable" data-tri="${index}" title="Trier par ${libelle}">${libelle}${fleche(index)}</th>`).join("")}
+      ${vue === "characters" ? `<th class="col-bonus-saison" title="En match classé : +3 trophées par perso coché dans l'équipe (gain augmenté, perte réduite)">Bonus de saison</th>` : ""}
     </tr>
     ${vue === "characters" ? `
       <tr class="ligne-modes">
@@ -302,6 +319,9 @@ function rendreEntete() {
             ${bonus.cle === "theatre" ? `<button type="button" class="retirer-buffs" ${buffs.length ? "" : "disabled"} title="Décocher tous les personnages (nouveau théâtre du mois)">Tout retirer (${buffs.length})</button>` : ""}
           </th>` : "<th></th>";
         }).join("")}
+        <th class="col-bonus-saison">
+          <button type="button" class="retirer-bonus-saison" ${bonusSaison.length ? "" : "disabled"} title="Décocher tous les personnages (nouvelle saison)">Tout décocher (${bonusSaison.length})</button>
+        </th>
       </tr>` : ""}
   `;
 }
@@ -344,6 +364,12 @@ function rendreCorps() {
                 </label>`
               : ""}
           </td>`).join("")}
+        ${vue === "characters" ? `
+          <td class="col-bonus-saison${aBonusSaison(item.id) ? " avec-bonus-saison" : ""}">
+            <label class="bonus-saison" title="Bonus de saison : +3 trophées en classé s'il est dans l'équipe">
+              <input type="checkbox" class="case-bonus-saison" data-id="${item.id}" ${aBonusSaison(item.id) ? "checked" : ""}> +3 🏆
+            </label>
+          </td>` : ""}
       </tr>`)
     .join("");
 
@@ -461,6 +487,24 @@ function initialiserSaisie() {
     input.value = valeur;
     input.classList.remove("avec-apercu", "invalide");
     input.nextElementSibling.textContent = "";
+  });
+
+  // Case Bonus de saison : ajouté / retiré.
+  corps.addEventListener("change", event => {
+    const caseBonus = event.target.closest(".case-bonus-saison");
+    if (!caseBonus) return;
+    basculerBonusSaison(caseBonus.dataset.id, caseBonus.checked);
+    caseBonus.closest("td").classList.toggle("avec-bonus-saison", caseBonus.checked);
+    rendreEntete(); // compteur de "Tout décocher"
+    mettreAJourPied();
+  });
+
+  document.getElementById("entete-admin").addEventListener("click", event => {
+    if (!event.target.closest(".retirer-bonus-saison")) return;
+    bonusSaison = [];
+    rendreEntete();
+    rendreCorps();
+    mettreAJourPied();
   });
 
   // Case Buff (colonne Théâtre) : buff du théâtre du mois ajouté / retiré.
@@ -709,7 +753,7 @@ async function enregistrer() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs })
+      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison })
     });
     if (!reponse.ok) throw new Error((await reponse.json().catch(() => ({}))).error || "Erreur d'enregistrement.");
     etatEnregistre = etatActuel();
@@ -722,7 +766,7 @@ async function enregistrer() {
 }
 
 function annuler() {
-  [valeurs, modes, masques, buffs] = JSON.parse(etatEnregistre);
+  [valeurs, modes, masques, buffs, bonusSaison] = JSON.parse(etatEnregistre);
   rendre();
 }
 

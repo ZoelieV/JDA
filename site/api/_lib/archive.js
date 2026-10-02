@@ -2,7 +2,7 @@
 // fin de match, litige, ou abandon d'un match classé quitté en cours (cf.
 // annulerAutresMatchs dans _lib/room.js).
 const { supabase } = require("./supabase");
-const { infosPersoJoueur } = require("./personnages");
+const { infosPersoJoueur, aBonusSaison } = require("./personnages");
 const { getEquipeJoueur, getBansJoueur } = require("./draft");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./trophees");
 const { chargerDonneesBoxes } = require("./boxes");
@@ -17,6 +17,8 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 // à la republication pour un litige).
 // Renvoie l'id du match archivé (null si l'archivage a échoué).
 async function archiverMatch(draft, { litige = false, classe = false } = {}) {
+  // Liste du bonus de saison à jour (cache 30 s).
+  await require("./personnages").actualiserPoints();
   // Picks figés avec les infos du joueur à la fin du match (constellation,
   // niveau, raffinement de l'arme signature) pour l'historique ; bans avec
   // les infos des 2 joueurs (comme les cartes de la draft).
@@ -62,6 +64,10 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),
     ...(classe ? {
       classe: true,
+      // Persos de l'équipe avec le bonus de saison au moment du match (la
+      // liste change d'une saison à l'autre ; cf. sql/bonus_saison.sql).
+      bonus_saison_j1: draft.actions.filter(a => a.type === "pick" && a.joueur === "j1" && aBonusSaison(a.perso_id, a.element)).length,
+      bonus_saison_j2: draft.actions.filter(a => a.type === "pick" && a.joueur === "j2" && aBonusSaison(a.perso_id, a.element)).length,
       trophees: litige ? null : calculerTrophees(draft.temps_j1, draft.temps_j2, draft.vainqueur)
     } : {}),
     // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
@@ -79,7 +85,7 @@ async function archiverMatch(draft, { litige = false, classe = false } = {}) {
   // pas archivé (jamais publié comme un match normal) ; idem pour un match
   // classé sans les colonnes classe / trophees (sql/classe.sql).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { actions, theatre, mode_theatre, ...sansFacultatives } = match;
+    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, ...sansFacultatives } = match;
     ({ data, error } = await inserer(sansFacultatives));
   }
 

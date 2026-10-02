@@ -34,6 +34,8 @@ let masques = { characters: new Set(), weapons: new Set() };
 // arrondi. Même calcul que pointsPersonnage (commun/cartes.js).
 let modesBonus = {};
 let buffsTheatre = new Set();
+// Bonus de saison (config.bonus_saison, page admin) : trophées en classé.
+let bonusSaison = new Set();
 
 function appliquerBonus(points, cle, valeur) {
   const bonus = Number(valeur ?? 0);
@@ -116,6 +118,7 @@ async function actualiserPoints() {
       weapons: new Set(Array.isArray(config.masques?.weapons) ? config.masques.weapons : [])
     };
     buffsTheatre = new Set(Array.isArray(config.theatre) ? config.theatre : []);
+    bonusSaison = new Set(Array.isArray(config.bonus_saison) ? config.bonus_saison : []);
     modesBonus = config.modes || {};
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
@@ -231,8 +234,15 @@ function infosPersoJoueur(profilData, persoId, element = null) {
   };
 }
 
+// Pick avec bonus de saison : id coché dans l'admin ; Voyageur (groupe) :
+// sa version de l'élément joué ("traveler" + "pyro" -> "traveler_pyro").
+function aBonusSaison(persoId, element = null) {
+  return bonusSaison.has(persoId) || (!!element && bonusSaison.has(`${persoId}_${element}`));
+}
+
 module.exports = {
   MODES_POINTS,
+  aBonusSaison,
   actualiserPoints,
   estAjout,
   getArmes,

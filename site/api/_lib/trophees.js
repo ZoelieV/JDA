@@ -10,6 +10,9 @@
 // republié plus tard reprend sa place à sa date).
 const TROPHEES_MAX = 30;
 const BONUS_SERIE_MAX = 3;
+// Bonus de saison : par perso de l'équipe coché dans l'admin, ajouté au gain
+// du gagnant ou retiré de la perte du perdant (perte jamais négative).
+const TROPHEES_BONUS_SAISON = 3;
 
 // Trophées en jeu dans un match terminé (vainqueur "j1" | "j2" | "egalite"),
 // sans le bonus de série (colonne match_history.trophees).
@@ -47,9 +50,9 @@ function compteEnClasse(match) {
 //             { trophees, matchs, victoires, serie } (joueurs ayant au moins
 //             un match dans ce classement ; serie = victoires d'affilée en
 //             cours),
-//   deltas  : Map id du match -> { j1, j2, bonus } (trophées réellement
-//             gagnés / perdus, plancher à 0 compris ; bonus de série du
-//             gagnant)
+//   deltas  : Map id du match -> { j1, j2, bonus, saison: { j1, j2 } }
+//             (trophées réellement gagnés / perdus, plancher à 0 compris ;
+//             bonus de série du gagnant ; bonus de saison de chacun)
 // }
 function rejouerClasse(matchs) {
   const ordre = match => [match.created_at ? Date.parse(match.created_at) : 0, Number(match.id) || 0];
@@ -69,7 +72,11 @@ function rejouerClasse(matchs) {
       return table.get(discordId);
     };
     const enJeu = Number(match.trophees) || 0;
-    const delta = { j1: 0, j2: 0, bonus: 0 };
+    const saison = {
+      j1: (Number(match.bonus_saison_j1) || 0) * TROPHEES_BONUS_SAISON,
+      j2: (Number(match.bonus_saison_j2) || 0) * TROPHEES_BONUS_SAISON
+    };
+    const delta = { j1: 0, j2: 0, bonus: 0, saison };
     ["j1", "j2"].forEach(role => {
       const discordId = match[`player${role === "j1" ? 1 : 2}_discord_id`];
       if (!discordId) return;
@@ -79,14 +86,15 @@ function rejouerClasse(matchs) {
         j.victoires += 1;
         j.serie += 1;
         delta.bonus = bonusSerie(j.serie);
-        delta[role] = enJeu + delta.bonus;
+        delta[role] = enJeu + delta.bonus + saison[role];
         j.trophees += delta[role];
       } else {
         // Défaite ou égalité : fin de la série.
         j.serie = 0;
         if (match.vainqueur !== "egalite") {
           const avant = j.trophees;
-          j.trophees = Math.max(0, j.trophees - enJeu);
+          // Bonus de saison : perte réduite, jamais transformée en gain.
+          j.trophees = Math.max(0, j.trophees - Math.max(0, enJeu - saison[role]));
           delta[role] = j.trophees - avant;
         }
       }
@@ -104,7 +112,8 @@ async function chargerMatchsClasses(supabase) {
   // elles n'existent pas encore.
   const champs = "id, created_at, player1_discord_id, player2_discord_id, vainqueur, classe, trophees";
   const lire = select => supabase.from("match_history").select(select).eq("classe", true);
-  let { data, error } = await lire(`${champs}, litige, mode_theatre`);
+  let { data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2`);
+  if (error) ({ data, error } = await lire(`${champs}, litige, mode_theatre`));
   if (error) ({ data, error } = await lire(`${champs}, litige`));
   if (error) ({ data, error } = await lire(champs));
   if (error) {

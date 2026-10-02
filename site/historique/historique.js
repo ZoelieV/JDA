@@ -274,7 +274,8 @@ function htmlJoueur(match, role, bansConnus) {
   const perdant = match.vainqueur && !gagnant && !egalite;
   const reel = match.trophees_joueurs;
   const nbTrophees = reel ? Math.abs(reel[role]) : match.trophees;
-  const bonus = gagnant && reel?.bonus ? ` dont +${reel.bonus} de série` : "";
+  const saison = reel?.saison?.[role] ? `, bonus de saison ${gagnant ? "+" : "−"}${reel.saison[role]}${gagnant ? "" : " de perte"}` : "";
+  const bonus = (gagnant && reel?.bonus ? ` dont +${reel.bonus} de série` : "") + saison;
   const trophees = match.classe && match.trophees && (gagnant || perdant)
     ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} 🏆${bonus ? " 🔥" : ""}</span>`
     : "";

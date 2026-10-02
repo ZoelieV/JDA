@@ -2122,12 +2122,16 @@ function rendreTermine() {
     const delta = role => resultat ? resultat[role] : (draft.vainqueur === role ? enJeu : -enJeu);
     const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
     const bonus = resultat?.bonus ? ` (dont +${resultat.bonus} de série 🔥)` : "";
+    // Bonus de saison (persos cochés dans l'admin) : gain augmenté, perte réduite.
+    const saison = role => resultat?.saison?.[role]
+      ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}🌟)`
+      : "";
     if (enJeu === 0) {
       ligneTrophees = `<p class="ligne-trophees">🏆 Aucun trophée en jeu</p>`;
     } else if (monRole) {
       const n = delta(monRole);
       const gagne = draft.vainqueur === monRole;
-      ligneTrophees = `<p class="ligne-trophees ${gagne ? "gain" : "perte"}">🏆 ${signe(n)} trophée${Math.abs(n) > 1 ? "s" : ""}${gagne ? bonus : ""}</p>`;
+      ligneTrophees = `<p class="ligne-trophees ${gagne ? "gain" : "perte"}">🏆 ${signe(n)} trophée${Math.abs(n) > 1 ? "s" : ""}${gagne ? bonus : ""}${saison(monRole)}</p>`;
     } else {
       ligneTrophees = `<p class="ligne-trophees">🏆 ${joueur1.pseudo} ${signe(delta("j1"))}, ${joueur2.pseudo} ${signe(delta("j2"))}${bonus}</p>`;
     }

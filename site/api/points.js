@@ -15,11 +15,13 @@
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
 //          boss: { id: { nom, res } }, categoriesArmes: { id: [...] },
-//          theatre: [id...] }   (personnages buffés par le théâtre du mois)
+//          theatre: [id...],    (personnages buffés par le théâtre du mois)
+//          bonus_saison: [id...] }  (bonus de saison : trophées en classé)
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
-//   { characters, weapons, modes, masques, theatre }  remplace les points, les
-//                                    masqués et les buffs théâtre
+//   { characters, weapons, modes, masques, theatre, bonus_saison }  remplace
+//                                    les points, les masqués, les buffs
+//                                    théâtre et le bonus de saison
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
 //   { boss: { id: { nom, res } } }   modifie des boss
@@ -151,6 +153,9 @@ function versionPublique(config) {
     if (genre === "characters" && Array.isArray(config.theatre)) {
       publique.theatre = config.theatre.filter(id => !caches.has(id));
     }
+    if (genre === "characters" && Array.isArray(config.bonus_saison)) {
+      publique.bonus_saison = config.bonus_saison.filter(id => !caches.has(id));
+    }
     if (genre === "weapons" && config.categoriesArmes) {
       publique.categoriesArmes = { ...config.categoriesArmes };
       caches.forEach(id => { delete publique.categoriesArmes[id]; });
@@ -244,6 +249,9 @@ module.exports = async (req, res) => {
           if (genre === "characters" && Array.isArray(config.theatre)) {
             config.theatre = config.theatre.filter(t => t !== id);
           }
+          if (genre === "characters" && Array.isArray(config.bonus_saison)) {
+            config.bonus_saison = config.bonus_saison.filter(t => t !== id);
+          }
           if (genre === "weapons" && config.categoriesArmes?.[id]) {
             config.categoriesArmes = { ...config.categoriesArmes };
             delete config.categoriesArmes[id];
@@ -289,7 +297,9 @@ module.exports = async (req, res) => {
             genre,
             nettoyerMasques(corps.masques ? corps.masques[genre] : anciensMasques[genre], ids(genre))
           ])),
-          theatre: nettoyerMasques(corps.theatre ?? ancienne.theatre, ids("characters"))
+          theatre: nettoyerMasques(corps.theatre ?? ancienne.theatre, ids("characters")),
+          // Bonus de saison : trophées en classé (cf. _lib/trophees.js).
+          bonus_saison: nettoyerMasques(corps.bonus_saison ?? ancienne.bonus_saison, ids("characters"))
         };
       }
 

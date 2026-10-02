@@ -47,8 +47,16 @@ async function chargerResultats() {
   // entrainement (sql/entrainement.sql pas lancé), il n'y en a pas.
   let { data, error } = await supabase
     .from("match_history")
-    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement`)
+    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2`)
     .or(litigeOuvert);
+
+  // Sans colonnes du bonus de saison (sql/bonus_saison.sql pas lancé).
+  if (error) {
+    ({ data, error } = await supabase
+      .from("match_history")
+      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement`)
+      .or(litigeOuvert));
+  }
 
   if (error) {
     ({ data, error } = await supabase
