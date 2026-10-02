@@ -1,5 +1,5 @@
-// Fusion de 10 routes (box, ready, action, bonus_toggle, bonus_confirmer,
-// temps, confirmer_temps, litige, rejouer, draft) en un seul fichier, pour rester sous la limite de
+// Fusion de 12 routes (box, ready, action, bonus_toggle, bonus_confirmer,
+// temps, confirmer_temps, litige, rejouer, expirer, crash, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
 // ce soit} qui ne correspondent à aucun autre fichier plus spécifique dans
@@ -11,6 +11,19 @@ const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, act
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
+const {
+  PHASES_PAUSABLES,
+  estChronometre,
+  demarrerAnalyse,
+  demarrerBansBonus,
+  demarrerChronoDraft,
+  consommerTemps,
+  peutExpirer,
+  estEnPause,
+  mettreEnPause,
+  reprendre,
+  pauseExpiree
+} = require("../../_lib/chronos");
 const {
   NB_PERSOS_MIN_BOX,
   getSequence,
@@ -41,8 +54,41 @@ function getSegments(req) {
 
 // Réponse standard des routes : la draft vue par ce joueur (box adverse
 // masquée pendant le choix des box).
-function repondreDraft(res, draft, joueur) {
-  return res.status(200).json({ draft: vuePourJoueur(draft, joueur) });
+// maintenant : heure du serveur, pour que la page cale ses chronos dessus.
+function repondreDraft(res, draft, joueur, extra = {}) {
+  return res.status(200).json({ draft: vuePourJoueur(draft, joueur), maintenant: Date.now(), ...extra });
+}
+
+// Draft classée en pause ("Mon adversaire a crash") : rien ne bouge.
+function refuserSiPause(res, draft) {
+  if (!estEnPause(draft)) return false;
+  res.status(409).json({ error: "Draft en pause : en attente du retour du joueur qui a crash." });
+  return true;
+}
+
+// Tirage j1/j2 + boss, puis chronos de la draft (classé).
+function tirageEtDraft(draft) {
+  lancerTirage(draft, tirerBossAleatoire);
+  demarrerChronoDraft(draft);
+}
+
+// Les 2 joueurs sont prêts (ou le temps d'analyse est écoulé) : phase
+// suivante.
+async function passerApresPrets(draft) {
+  draft.pret_j1 = false;
+  draft.pret_j2 = false;
+
+  if (draft.phase === "choix_box") {
+    await calculerEquilibrage(draft);
+    draft.phase = "analyse";
+    demarrerAnalyse(draft);
+  } else if ((draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0)) {
+    draft.phase = "bans_bonus";
+    demarrerBansBonus(draft);
+  } else {
+    // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
+    tirageEtDraft(draft);
+  }
 }
 
 async function sauvegarderDraft(roomId, draft) {
@@ -82,6 +128,7 @@ async function handleBox(req, res, roomId, user) {
   if (draft.phase !== "choix_box") {
     return res.status(409).json({ error: "Le choix de box n'est plus possible à ce stade" });
   }
+  if (refuserSiPause(res, draft)) return;
 
   const nbPersos = await compterPersosBox(user.id, box);
   if (nbPersos < NB_PERSOS_MIN_BOX) {
@@ -154,6 +201,7 @@ async function handleReady(req, res, roomId, user) {
   if (draft.phase !== "choix_box" && draft.phase !== "analyse") {
     return res.status(409).json({ error: "Impossible de changer son statut prêt à ce stade" });
   }
+  if (refuserSiPause(res, draft)) return;
 
   if (draft.phase === "choix_box" && !draft[`box_${joueur}`]) {
     return res.status(400).json({ error: "Choisis d'abord ta box avant de te marquer prêt" });
@@ -169,20 +217,7 @@ async function handleReady(req, res, roomId, user) {
 
   draft[`pret_${joueur}`] = pret;
 
-  if (draft.pret_j1 && draft.pret_j2) {
-    draft.pret_j1 = false;
-    draft.pret_j2 = false;
-
-    if (draft.phase === "choix_box") {
-      await calculerEquilibrage(draft);
-      draft.phase = "analyse";
-    } else if ((draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0)) {
-      draft.phase = "bans_bonus";
-    } else {
-      // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
-      lancerTirage(draft, tirerBossAleatoire);
-    }
-  }
+  if (draft.pret_j1 && draft.pret_j2) await passerApresPrets(draft);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -211,6 +246,7 @@ async function handleAction(req, res, roomId, user) {
   if (draft.phase !== "draft") {
     return res.status(409).json({ error: "Ce n'est pas le moment de bannir/picker" });
   }
+  if (refuserSiPause(res, draft)) return;
 
   const prochaine = getProchaineAction(draft);
 
@@ -220,6 +256,11 @@ async function handleAction(req, res, roomId, user) {
 
   if (prochaine.joueur !== joueur) {
     return res.status(403).json({ error: "Ce n'est pas ton tour" });
+  }
+
+  // Classé : chrono à 0, toutes ses actions restantes sont aléatoires.
+  if (draft.chrono?.[`epuise_${joueur}`]) {
+    return res.status(409).json({ error: "Ton temps est écoulé : tes actions restantes sont aléatoires." });
   }
 
   if (!draft.pool_disponible.includes(persoId)) {
@@ -244,11 +285,29 @@ async function handleAction(req, res, roomId, user) {
     }
   }
 
+  // Classé : temps décompté ; arrivée trop tardive (au-delà de la grâce) :
+  // choix aléatoire à la place, et chrono épuisé.
+  const tropTard = consommerTemps(draft, joueur);
+  if (tropTard) {
+    jouerActionAleatoire(draft);
+  } else {
+    appliquerActionDraft(draft, joueur, prochaine.type, persoId, element);
+  }
+  jouerActionsAuto(draft);
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur, tropTard ? { trop_tard: true } : {});
+}
+
+// Ban / pick de la séquence : personnage retiré du pool, action suivante.
+function appliquerActionDraft(draft, joueur, type, persoId, element, aleatoire = false) {
   draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
-  const action = { joueur, type: prochaine.type, perso_id: persoId, bonus: false };
-  if (prochaine.type === "pick" && (estGroupe(persoId) || ELEMENTS_LIBRES[persoId])) {
+  const action = { joueur, type, perso_id: persoId, bonus: false };
+  if (type === "pick" && (estGroupe(persoId) || ELEMENTS_LIBRES[persoId])) {
     action.element = element;
   }
+  // Choix fait au hasard (temps écoulé) : carte entourée de doré.
+  if (aleatoire) action.aleatoire = true;
   draft.actions.push(action);
 
   draft.sequence_index += 1;
@@ -256,9 +315,44 @@ async function handleAction(req, res, roomId, user) {
   if (draft.sequence_index >= getSequence(draft).length) {
     draft.phase = "temps";
   }
+}
 
-  await sauvegarderDraft(roomId, draft);
-  return repondreDraft(res, draft, joueur);
+function auHasard(liste) {
+  return liste[Math.floor(Math.random() * liste.length)];
+}
+
+// Action en cours jouée au hasard : ban parmi tout le pool disponible (même
+// un perso que seul ce joueur possède) ; pick parmi ses propres persos
+// encore disponibles (élément au hasard parmi ceux permis).
+function jouerActionAleatoire(draft) {
+  const prochaine = getProchaineAction(draft);
+  if (!prochaine) return false;
+  const { joueur, type } = prochaine;
+  const possedes = new Set(draft[`pool_${joueur}`] || []);
+  const candidats = type === "pick"
+    ? draft.pool_disponible.filter(id => possedes.has(id))
+    : draft.pool_disponible;
+  if (candidats.length === 0) return false;
+
+  const persoId = auHasard(candidats);
+  let element = null;
+  if (type === "pick") {
+    const elements = estGroupe(persoId) ? draft[`elements_${joueur}`]?.[persoId] || [] : ELEMENTS_LIBRES[persoId];
+    if (elements?.length) element = auHasard(elements);
+  }
+  appliquerActionDraft(draft, joueur, type, persoId, element, true);
+  if (draft.chrono) draft.chrono.tour_debut = Date.now();
+  return true;
+}
+
+// Tant que c'est le tour d'un joueur dont le chrono est épuisé : actions
+// aléatoires (jusqu'au tour de l'autre ou la fin de la draft).
+function jouerActionsAuto(draft) {
+  while (draft.phase === "draft" && draft.chrono) {
+    const prochaine = getProchaineAction(draft);
+    if (!prochaine || !draft.chrono[`epuise_${prochaine.joueur}`]) return;
+    if (!jouerActionAleatoire(draft)) return;
+  }
 }
 
 // ---- bonus_toggle (bans d'équilibrage : sélection/désélection avant confirmation) ----
@@ -280,6 +374,7 @@ async function handleBonusToggle(req, res, roomId, user) {
   if (draft.phase !== "bans_bonus") {
     return res.status(409).json({ error: "Aucun ban d'équilibrage à faire à ce stade" });
   }
+  if (refuserSiPause(res, draft)) return;
 
   if (draft.bans_bonus_joueur !== joueur) {
     return res.status(403).json({ error: "Ce n'est pas à toi de choisir les bans d'équilibrage" });
@@ -318,6 +413,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   if (draft.phase !== "bans_bonus") {
     return res.status(409).json({ error: "Aucun ban d'équilibrage à confirmer à ce stade" });
   }
+  if (refuserSiPause(res, draft)) return;
 
   if (draft.bans_bonus_joueur !== joueur) {
     return res.status(403).json({ error: "Ce n'est pas à toi de confirmer les bans d'équilibrage" });
@@ -337,7 +433,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   draft.bans_bonus_faits = choix.length;
   draft.bans_bonus_choix = [];
 
-  lancerTirage(draft, tirerBossAleatoire);
+  tirageEtDraft(draft);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -466,6 +562,7 @@ async function handleRejouer(req, res, roomId, user) {
     // pas du même côté), retour direct à l'analyse ; boss différent du
     // précédent au prochain tirage.
     const nouveau = etatRevanche(draft);
+    demarrerAnalyse(nouveau);
 
     await sauvegarderDraft(roomId, nouveau);
     return repondreDraft(res, nouveau, getAutreJoueur(joueur));
@@ -504,6 +601,85 @@ async function noterSpectateur(room, discordId) {
   const { error } = await supabase.from("rooms").update({ spectateurs }).eq("room_id", room.room_id);
   // Pas bloquant : le compteur des joueurs sera juste un peu en retard.
   if (error) console.error("Erreur présence spectateur :", error);
+}
+
+// ---- expirer : temps écoulé (draft classée) ----
+// Envoyé par la page du joueur dont c'est le tour quand SON chrono atteint
+// 0, ou par celle de l'adversaire DELAI_ADVERSAIRE_MS plus tard (cf.
+// peutExpirer). Analyse : passage à la suite comme si les 2 étaient prêts ;
+// bans d'équilibrage : bans manquants au hasard ; draft : chrono épuisé,
+// actions restantes du joueur au hasard.
+async function handleExpirer(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const draft = room.draft;
+  if (!estChronometre(draft)) return res.status(409).json({ error: "Pas de chrono dans ce match" });
+  if (refuserSiPause(res, draft)) return;
+  const pasEncore = () => res.status(409).json({ error: "Le temps n'est pas encore écoulé" });
+
+  if (draft.phase === "analyse") {
+    if (!draft.fin_analyse || !peutExpirer(draft.fin_analyse, true)) return pasEncore();
+    await passerApresPrets(draft);
+  } else if (draft.phase === "bans_bonus") {
+    const acteur = draft.bans_bonus_joueur;
+    if (!draft.fin_bans_bonus || !peutExpirer(draft.fin_bans_bonus, joueur === acteur)) return pasEncore();
+    // Choix déjà sélectionnés gardés, le reste au hasard.
+    const choix = [...(draft.bans_bonus_choix || [])];
+    const libres = draft.pool_disponible.filter(id => !choix.includes(id));
+    const aleatoires = new Set();
+    while (choix.length < draft.bans_bonus_total && libres.length) {
+      const persoId = libres.splice(Math.floor(Math.random() * libres.length), 1)[0];
+      choix.push(persoId);
+      aleatoires.add(persoId);
+    }
+    choix.forEach(persoId => {
+      draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
+      draft.actions.push({ joueur: acteur, type: "ban", perso_id: persoId, bonus: true, ...(aleatoires.has(persoId) ? { aleatoire: true } : {}) });
+    });
+    draft.bans_bonus_faits = choix.length;
+    draft.bans_bonus_choix = [];
+    tirageEtDraft(draft);
+  } else if (draft.phase === "draft" && draft.chrono) {
+    const prochaine = getProchaineAction(draft);
+    if (!prochaine) return pasEncore();
+    const acteur = prochaine.joueur;
+    const fin = draft.chrono.tour_debut + draft.chrono[acteur];
+    if (!peutExpirer(fin, joueur === acteur)) return pasEncore();
+    draft.chrono[acteur] = 0;
+    draft.chrono[`epuise_${acteur}`] = true;
+    jouerActionsAuto(draft);
+  } else {
+    return res.status(409).json({ error: "Aucun chrono en cours" });
+  }
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur, { expire: true });
+}
+
+// ---- crash : "Mon adversaire a crash" (draft classée) ----
+// Pause de la draft jusqu'au retour de l'adversaire (sa page relit la
+// draft, cf. handleDraftGet) ; annulée après PAUSE_MAX_MS sans retour. Le
+// délai ne démarre qu'à ce clic (après la draft, les joueurs quittent le
+// site pour jouer : pas d'annulation automatique).
+async function handleCrash(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const draft = room.draft;
+  if (!estChronometre(draft) || !PHASES_PAUSABLES.includes(draft.phase)) {
+    return res.status(409).json({ error: "La draft ne peut pas être mise en pause à ce stade" });
+  }
+  if (!estEnPause(draft)) mettreEnPause(draft, joueur);
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- Présence des joueurs (dans la colonne rooms.spectateurs, à côté des
@@ -547,6 +723,22 @@ async function handleDraftGet(req, res, roomId, user) {
   if (joueur) await noterPresence(room, user.id);
   else await noterSpectateur(room, user.id);
 
+  // Draft en pause : le joueur absent est revenu (sa page relit la draft)
+  // -> reprise, chronos décalés ; sinon, annulation après le délai.
+  const draftPause = room.draft;
+  if (estEnPause(draftPause)) {
+    if (joueur && joueur === draftPause.pause.absent) {
+      reprendre(draftPause);
+      await sauvegarderDraft(room.room_id, draftPause);
+    } else if (pauseExpiree(draftPause)) {
+      draftPause.annule_par = draftPause.pause.absent;
+      draftPause.annule_raison = "crash";
+      draftPause.phase = "annule";
+      draftPause.pause = null;
+      await sauvegarderDraft(room.room_id, draftPause);
+    }
+  }
+
   return res.status(200).json({
     spectateur: !joueur,
     room_id: room.room_id,
@@ -555,6 +747,8 @@ async function handleDraftGet(req, res, roomId, user) {
     // "prive" | "matchmaking" | "classe" (trophées en fin de match).
     type: room.type || "prive",
     draft: vuePourJoueur(room.draft, joueur),
+    // Heure du serveur : la page cale ses chronos dessus.
+    maintenant: Date.now(),
     // Pastilles en ligne / afk des namecards (joueurs et spectateurs).
     presences: presencesJoueurs(room),
     // Nombre de spectateurs : pour les joueurs seulement (indicateur 👁).
@@ -596,6 +790,10 @@ module.exports = async (req, res) => {
         return await handleLitige(req, res, roomId, user);
       case "rejouer":
         return await handleRejouer(req, res, roomId, user);
+      case "expirer":
+        return await handleExpirer(req, res, roomId, user);
+      case "crash":
+        return await handleCrash(req, res, roomId, user);
       case "draft":
         return await handleDraftGet(req, res, roomId, user);
       default:

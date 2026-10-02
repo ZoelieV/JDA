@@ -158,7 +158,21 @@ async function chargerJoueurDepuisId(discordId) {
 async function chargerDraft() {
   const reponse = await fetch(`/api/rooms/${roomId}/draft`, { credentials: "include" });
   if (!reponse.ok) throw new Error("Impossible de charger l'état de la draft.");
-  return await reponse.json();
+  const data = await reponse.json();
+  calerHeureServeur(data);
+  return data;
+}
+
+// ---- Heure du serveur : les chronos de la draft classée sont calculés
+// dessus (écart avec l'horloge de l'appareil, mis à jour à chaque réponse).
+let decalageServeur = 0;
+
+function calerHeureServeur(data) {
+  if (Number.isFinite(data?.maintenant)) decalageServeur = data.maintenant - Date.now();
+}
+
+function heureServeur() {
+  return Date.now() + decalageServeur;
 }
 
 // ---- Actions (POST) ----
@@ -177,6 +191,7 @@ async function envoyerAction(url, body) {
     throw new Error(data.error || "Erreur lors de l'action.");
   }
 
+  calerHeureServeur(data);
   return data;
 }
 
@@ -276,7 +291,9 @@ async function definirDraft(nouveauDraft) {
   // jour optimiste) : rien à re-rendre.
   if (draft && joueur1 && joueur2 && JSON.stringify(nouveauDraft) === JSON.stringify(draft)) return;
 
+  const nbActionsAvant = draft?.actions?.length ?? null;
   draft = nouveauDraft;
+  if (nbActionsAvant !== null) annoncerChoixAleatoires((draft.actions || []).slice(nbActionsAvant));
 
   // Nouvelle manche (boss pas encore tiré) : on réarme l'animation pour le
   // prochain tirage, y compris si le prochain boss tiré tombe à nouveau sur
@@ -909,7 +926,7 @@ function rendreBansBonus() {
   btnConfirmer.classList.toggle("cache", !monRole);
   btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
   btnConfirmer.classList.toggle("pret", cEstMonTour && tousChoisis);
-  btnConfirmer.disabled = !cEstMonTour || !tousChoisis;
+  btnConfirmer.disabled = !cEstMonTour || !tousChoisis || monTempsEcoule();
   btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
 
   const grille = document.getElementById("grille-bans-bonus");
@@ -1106,25 +1123,30 @@ function rendreTableauJoueur(role) {
   // Picks : personnage sur sa bannière avec ses infos chez ce joueur.
   const picks = draft.actions.filter(a => a.type === "pick" && a.joueur === role);
   const slotsPicks = document.getElementById(`slots-pick-${role}`);
-  if (grilleAChange(slotsPicks, JSON.stringify([joueur.discordId, picks.map(a => [a.perso_id, a.element]), derniereCleVariantes]))) {
+  if (grilleAChange(slotsPicks, JSON.stringify([joueur.discordId, picks.map(a => [a.perso_id, a.element, !!a.aleatoire]), derniereCleVariantes]))) {
     slotsPicks.replaceChildren(...Array.from({ length: 4 }, (_, i) => {
       const personnage = picks[i] && getPersonnageParId(picks[i].perso_id);
-      return personnage ? creerCaseRecap(personnage, role, picks[i].element) : creerCaseVide("slot-pick");
+      if (!personnage) return creerCaseVide("slot-pick");
+      const slot = creerCaseRecap(personnage, role, picks[i].element);
+      marquerAleatoire(slot, picks[i]);
+      return slot;
     }));
   }
 
   // Bans (hors bans d'équilibrage, dans leur propre bloc) : une case par
   // ban prévu pour ce joueur dans la séquence.
-  const bans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus).map(a => a.perso_id);
+  const actionsBans = draft.actions.filter(a => a.type === "ban" && a.joueur === role && !a.bonus);
+  const bans = actionsBans.map(a => a.perso_id);
   const nbBans = getSequence().filter(a => a.type === "ban" && a.joueur === role).length;
   const slotsBans = document.getElementById(`rangee-bans-${role}`);
-  if (grilleAChange(slotsBans, JSON.stringify([joueur.discordId, bans, nbBans]))) {
+  if (grilleAChange(slotsBans, JSON.stringify([joueur.discordId, actionsBans.map(a => [a.perso_id, !!a.aleatoire]), nbBans]))) {
     slotsBans.replaceChildren(...Array.from({ length: nbBans }, (_, i) => {
       const personnage = bans[i] && getPersonnageParId(bans[i]);
       if (!personnage) return creerCaseVide("slot-pick slot-ban");
       const slot = document.createElement("div");
       slot.className = "slot-pick slot-ban";
       remplirCaseTableau(slot, personnage);
+      marquerAleatoire(slot, actionsBans[i]);
       // Comme les cartes de la draft : infos des 2 joueurs (chacun dans sa
       // couleur), à côté du personnage, j1 à gauche et j2 à droite (ordre
       // inversé dans le tableau de droite, qui est en miroir).
@@ -1141,6 +1163,14 @@ function rendreTableauJoueur(role) {
   document.getElementById(`equipe-${role}`).classList.toggle(
     "gagnant", draft.phase === "termine" && draft.vainqueur === role
   );
+}
+
+// Choix fait au hasard (temps écoulé, draft classée) : carte entourée de
+// doré, pour les 2 joueurs.
+function marquerAleatoire(element, action) {
+  if (!action?.aleatoire) return;
+  element.classList.add("choix-aleatoire");
+  element.title = `${element.title ? `${element.title} — ` : ""}choisi au hasard (temps écoulé)`;
 }
 
 function creerCaseVide(classes) {
@@ -1167,11 +1197,14 @@ function rendreBansEquilibrage() {
     bloc.classList.toggle("cache", bans.length === 0);
 
     const grille = document.getElementById(`bans-eq-grille-${role}`);
-    if (!grilleAChange(grille, JSON.stringify(bans.map(a => a.perso_id)))) return;
+    if (!grilleAChange(grille, JSON.stringify(bans.map(a => [a.perso_id, !!a.aleatoire])))) return;
     grille.replaceChildren(...bans
-      .map(a => getPersonnageParId(a.perso_id))
-      .filter(Boolean)
-      .map(creerBanMini));
+      .filter(a => getPersonnageParId(a.perso_id))
+      .map(a => {
+        const carte = creerBanMini(getPersonnageParId(a.perso_id));
+        marquerAleatoire(carte, a);
+        return carte;
+      }));
   });
 }
 
@@ -1363,7 +1396,7 @@ function rendreDraft(phasePrecedente) {
   btnConfirmer.classList.toggle("action-ban", typeAction === "ban");
   btnConfirmer.classList.toggle("action-pick", typeAction === "pick");
   btnConfirmer.classList.toggle("pret", cEstMonTour && !!selectionDraft);
-  btnConfirmer.disabled = !cEstMonTour || !selectionDraft;
+  btnConfirmer.disabled = !cEstMonTour || !selectionDraft || monTempsEcoule();
   btnConfirmer.textContent = typeAction === "ban" ? "Confirmer le ban" : "Confirmer le pick";
   btnConfirmer.onclick = () => {
     const selection = selectionDraft;
@@ -2044,11 +2077,167 @@ function rendreAnnule() {
   }
 
   titre.textContent = "Match annulé";
+  if (draft.annule_raison === "crash") {
+    texte.innerHTML = draft.annule_par === monRole
+      ? "Tu n'es pas revenu dans les 10 minutes après ton crash : la draft est annulée et ne compte pas."
+      : `${parti?.pseudo || "Ton adversaire"} n'est pas revenu dans les 10 minutes après son crash : la draft est annulée et ne compte pas.`;
+    return;
+  }
   texte.innerHTML = draft.annule_par === monRole
     ? "Tu as démarré un autre match : celui-ci est annulé et ne compte pas."
     : parti
       ? `${parti.pseudo} a démarré un autre match : celui-ci est annulé et ne compte pas.`
       : "Ce match a été annulé et ne compte pas.";
+}
+
+// ---- Chronos de la draft classée (cf. api/_lib/chronos.js) ----
+// Analyse 2 min, bans d'équilibrage 1 min 30, picks / bans 5 min par
+// joueur en pendule. C'est la page du joueur dont c'est le tour qui
+// déclare le temps écoulé, à 0 sur SON chrono : bouton grisé, notification,
+// choix aléatoire fait par le serveur. La page de l'adversaire ne le fait
+// que 5 s plus tard (joueur parti), pour ne jamais passer avant lui.
+const DELAI_ADVERSAIRE_MS = 5000;
+const PAUSE_MAX_MS = 10 * 60 * 1000;
+const PHASES_PAUSABLES = ["choix_box", "analyse", "bans_bonus", "draft"];
+const expirationsEnvoyees = new Set();
+
+function formaterChrono(ms) {
+  const secondes = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(secondes / 60)}:${String(secondes % 60).padStart(2, "0")}`;
+}
+
+// Heure de référence des chronos : figée pendant une pause.
+function heureChrono() {
+  return draft?.pause ? draft.pause.debut : heureServeur();
+}
+
+// Temps restant de chaque chrono en cours -> { phase, acteur, restants }.
+function etatChronos() {
+  if (!draft?.chronometre) return null;
+  const maintenant = heureChrono();
+  if (draft.phase === "analyse" && draft.fin_analyse) {
+    return { phase: "analyse", acteur: null, reste: draft.fin_analyse - maintenant };
+  }
+  if (draft.phase === "bans_bonus" && draft.fin_bans_bonus) {
+    return { phase: "bans_bonus", acteur: draft.bans_bonus_joueur, reste: draft.fin_bans_bonus - maintenant };
+  }
+  if (draft.phase === "draft" && draft.chrono) {
+    const acteur = getProchaineActionLocale()?.joueur || null;
+    const restant = role => draft.chrono[role] - (role === acteur ? maintenant - draft.chrono.tour_debut : 0);
+    return { phase: "draft", acteur, reste: acteur ? restant(acteur) : 0, restants: { j1: restant("j1"), j2: restant("j2") } };
+  }
+  return null;
+}
+
+// Mon temps est écoulé (bans d'équilibrage ou draft) : bouton Confirmer
+// grisé, jusqu'à la fin de la draft si mon chrono de draft est à 0.
+function monTempsEcoule() {
+  if (!monRole || !draft?.chronometre) return false;
+  if (draft.chrono?.[`epuise_${monRole}`]) return true;
+  const etat = etatChronos();
+  return !!etat && etat.acteur === monRole && etat.reste <= 0;
+}
+
+function envoyerExpiration(cle) {
+  if (expirationsEnvoyees.has(cle)) return;
+  expirationsEnvoyees.add(cle);
+  envoyerAction(`/api/rooms/${roomId}/expirer`, {})
+    .then(data => definirDraft(data.draft))
+    // Trop tôt côté serveur (décalage d'horloge) : nouvel essai 1 s plus tard.
+    .catch(() => setTimeout(() => expirationsEnvoyees.delete(cle), 1000));
+}
+
+function afficherNotification(texte) {
+  const notif = document.getElementById("notif-match");
+  notif.innerHTML = texte;
+  notif.classList.remove("cache");
+  clearTimeout(afficherNotification.minuteur);
+  afficherNotification.minuteur = setTimeout(() => notif.classList.add("cache"), 5000);
+}
+
+// Nouvelles actions jouées au hasard : notification (la carte est aussi
+// entourée de doré dans les tableaux).
+function annoncerChoixAleatoires(nouvelles) {
+  const aleatoires = nouvelles.filter(a => a.aleatoire);
+  if (!aleatoires.length) return;
+  const noms = aleatoires.map(a => getPersonnageParId(a.perso_id)?.nom || a.perso_id).join(", ");
+  const quoi = aleatoires.every(a => a.type === "ban") ? "ban" : aleatoires.every(a => a.type === "pick") ? "pick" : "choix";
+  const joueur = aleatoires[0].joueur;
+  afficherNotification(joueur === monRole
+    ? `⏱ Temps écoulé : ${quoi} aléatoire pour toi (${echapperHtml(noms)}).`
+    : `⏱ Temps écoulé pour ${(joueur === "j1" ? joueur1 : joueur2)?.pseudo || "ton adversaire"} : ${quoi} aléatoire (${echapperHtml(noms)}).`);
+}
+
+function majChronos() {
+  const zone = document.getElementById("chronos");
+  const etat = etatChronos();
+  majPause();
+  zone.classList.toggle("cache", !etat);
+  if (!etat) return;
+
+  const nom = role => (role === "j1" ? joueur1 : joueur2)?.pseudo || role.toUpperCase();
+  let html;
+  if (etat.phase === "analyse") {
+    html = `<span class="chrono actif">⏱ Analyse des box : ${formaterChrono(etat.reste)}</span>`;
+  } else if (etat.phase === "bans_bonus") {
+    html = `<span class="chrono actif">⏱ Bans d'équilibrage de ${nom(etat.acteur)} : ${formaterChrono(etat.reste)}</span>`;
+  } else {
+    html = ["j1", "j2"].map(role => {
+      const epuise = draft.chrono[`epuise_${role}`];
+      const classes = ["chrono", `chrono-${role}`, role === etat.acteur ? "actif" : "", epuise || etat.restants[role] <= 0 ? "epuise" : ""].join(" ");
+      return `<span class="${classes}">${nom(role)} ${formaterChrono(etat.restants[role])}${epuise ? " · aléatoire" : ""}</span>`;
+    }).join("");
+  }
+  if (zone.dataset.html !== html) {
+    zone.dataset.html = html;
+    zone.innerHTML = html;
+  }
+
+  if (!monRole || draft.pause) return;
+  const cleTour = `${draft.phase}:${draft.sequence_index}:${draft.chrono?.tour_debut || draft.fin_analyse || draft.fin_bans_bonus}`;
+  if (etat.phase === "analyse") {
+    if (etat.reste <= 0) envoyerExpiration(cleTour);
+    return;
+  }
+  if (etat.acteur === monRole && etat.reste <= 0 && !draft.chrono?.[`epuise_${monRole}`]) {
+    // Trop tard de MON point de vue : bouton grisé, notification, choix
+    // aléatoire demandé au serveur.
+    if (!expirationsEnvoyees.has(cleTour)) {
+      afficherNotification("⏱ Temps écoulé : un choix aléatoire est fait pour toi.");
+      document.querySelectorAll("#btn-confirmer-action, #btn-confirmer-bonus").forEach(b => { b.disabled = true; });
+    }
+    envoyerExpiration(cleTour);
+  } else if (etat.acteur && etat.acteur !== monRole && etat.reste <= -DELAI_ADVERSAIRE_MS) {
+    // Adversaire parti ou planté : relance après le délai.
+    envoyerExpiration(cleTour);
+  }
+}
+
+// ---- Pause "Mon adversaire a crash" (draft classée) ----
+function majPause() {
+  const visibleBouton = !!(monRole && draft?.chronometre && PHASES_PAUSABLES.includes(draft.phase) && !draft.pause);
+  document.getElementById("zone-crash").classList.toggle("cache", !visibleBouton);
+
+  const bandeau = document.getElementById("bandeau-pause");
+  bandeau.classList.toggle("cache", !draft?.pause);
+  if (!draft?.pause) return;
+  const absent = draft.pause.absent === "j1" ? joueur1 : joueur2;
+  const reste = PAUSE_MAX_MS - (heureServeur() - draft.pause.debut);
+  const html = `⏸ Draft en pause : ${absent?.pseudo || "un joueur"} a crash. Elle reprend dès son retour ` +
+    `(annulée dans ${formaterChrono(reste)} s'il ne revient pas).`;
+  if (bandeau.dataset.html !== html) {
+    bandeau.dataset.html = html;
+    bandeau.innerHTML = html;
+  }
+}
+
+function initialiserCrash() {
+  document.getElementById("btn-crash").addEventListener("click", () => {
+    if (!confirm("Ton adversaire a crash ? La draft est mise en pause jusqu'à son retour (annulée après 10 minutes sans retour).")) return;
+    envoyerAction(`/api/rooms/${roomId}/crash`, {})
+      .then(data => definirDraft(data.draft))
+      .catch(err => alert(err.message));
+  });
 }
 
 // ---- Dispatch de phase ----
@@ -2334,6 +2523,7 @@ async function demarrer() {
     moiDiscordId = user.id;
     initialiserPartage();
     initialiserAnnulationMatchmaking();
+    initialiserCrash();
 
     appliquerFondRoom();
 
@@ -2352,6 +2542,9 @@ async function demarrer() {
     await tick();
 
     intervalPolling = setInterval(tick, POLL_INTERVAL_MS);
+    // Chronos de la draft classée : affichage et fin de temps, 4 fois par
+    // seconde (sans requête tant que rien n'expire).
+    setInterval(majChronos, 250);
 
     // Onglet masqué : plus de requêtes ; au retour, état rafraîchi tout de
     // suite puis polling normal.

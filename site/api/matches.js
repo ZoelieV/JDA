@@ -205,6 +205,8 @@ function resumerJoueur(match, role, profils) {
     ).map(pick => ({
       id: pick.id,
       element: pick.element || null,
+      // Choisi au hasard (temps écoulé, draft classée).
+      aleatoire: !!pick.aleatoire,
       ...("constellation" in pick
         ? { constellation: pick.constellation, niveau: pick.niveau, raffinement: pick.raffinement }
         : infosPersoJoueur(profil?.data, pick.id, pick.element))
@@ -219,6 +221,7 @@ function resumerJoueur(match, role, profils) {
 function resumerBan(action, profils) {
   return {
     id: action.perso_id,
+    aleatoire: !!action.aleatoire,
     infos: action.infos || {
       j1: infosPersoJoueur(profils.j1?.data, action.perso_id),
       j2: infosPersoJoueur(profils.j2?.data, action.perso_id)

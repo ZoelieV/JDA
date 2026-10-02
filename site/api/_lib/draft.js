@@ -146,6 +146,11 @@ function etatInitialDraft() {
     theatre_j2: null,
     theatre: null, // théâtre de la draft, fixé au tirage du boss
     sequence: null, // séquence de picks / bans de ce théâtre (cf. sequenceTheatre)
+    chronometre: false, // draft classée : chronos (cf. _lib/chronos.js)
+    fin_analyse: null, // fin du temps d'analyse (ms)
+    fin_bans_bonus: null, // fin du temps des bans d'équilibrage (ms)
+    chrono: null, // pendule de la draft : { j1, j2 (ms restants), tour_debut, epuise_j1, epuise_j2 }
+    pause: null, // "Mon adversaire a crash" : { par, absent, debut }
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
     temps_confirme_j1: false, // verification : j1 a confirmé les 2 temps
@@ -305,6 +310,7 @@ function etatRevanche(precedent) {
     roles_tires: true,
     boss_precedent_id: precedent.boss_id,
     mode_theatre: precedent.mode_theatre || "auto",
+    chronometre: !!precedent.chronometre,
     theatre_j1: precedent.theatre_j1 ?? null,
     theatre_j2: precedent.theatre_j2 ?? null,
     box_j1: precedent.box_j1,
@@ -362,7 +368,12 @@ function getEquipeJoueur(draft, joueur) {
 function getBansJoueur(actions, joueur) {
   return actions
     .filter(a => a.type === "ban" && a.joueur === joueur)
-    .map(a => ({ perso_id: a.perso_id, bonus: !!a.bonus, ...(a.infos ? { infos: a.infos } : {}) }));
+    .map(a => ({
+      perso_id: a.perso_id,
+      bonus: !!a.bonus,
+      ...(a.aleatoire ? { aleatoire: true } : {}),
+      ...(a.infos ? { infos: a.infos } : {})
+    }));
 }
 
 module.exports = {

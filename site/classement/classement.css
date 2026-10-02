@@ -31,7 +31,7 @@
 }
 
 .onglet-classement span {
-  font-family: var(--police-texte);
+  font-family: var(--police-titre);
   font-size: 0.875rem;
   color: var(--texte-doux);
 }

@@ -161,7 +161,9 @@ function coinsDeuxJoueurs(personnage, infosJoueurs) {
   }).join("");
 }
 
-function htmlPerso(id, parametres, { element = null, banni = false, infos = null, infosJoueurs = null } = {}) {
+// aleatoire : choisi au hasard (temps écoulé, draft classée) -> entouré de
+// doré, comme dans la page du match.
+function htmlPerso(id, parametres, { element = null, banni = false, infos = null, infosJoueurs = null, aleatoire = false } = {}) {
   const base = personnagesParId.get(id);
   if (!base) return "";
   const personnage = appliquerVariante(base, parametres);
@@ -176,7 +178,8 @@ function htmlPerso(id, parametres, { element = null, banni = false, infos = null
     coinsDeuxJoueurs(personnage, infosJoueurs)
   ].join("");
 
-  return `<div class="perso-mini${infos || infosJoueurs ? " perso-equipe" : ""} ${classeFondRarete(personnage.rarete)}${banni ? " banni" : ""}" title="${nom}">` +
+  const titre = aleatoire ? `${nom} (choisi au hasard : temps écoulé)` : nom;
+  return `<div class="perso-mini${infos || infosJoueurs ? " perso-equipe" : ""} ${classeFondRarete(personnage.rarete)}${banni ? " banni" : ""}${aleatoire ? " choix-aleatoire" : ""}" title="${titre}">` +
     `<img src="../DB/${personnage.image}" alt="${nom}" loading="lazy" decoding="async">${coins}</div>`;
 }
 
@@ -203,8 +206,8 @@ function htmlJoueur(match, role, bansConnus) {
     ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} 🏆${bonus ? " 🔥" : ""}</span>`
     : "";
 
-  const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p })).join("");
-  const htmlBan = ban => htmlPerso(ban.id, joueur.parametres, { banni: true, infosJoueurs: ban.infos });
+  const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p, aleatoire: p.aleatoire })).join("");
+  const htmlBan = ban => htmlPerso(ban.id, joueur.parametres, { banni: true, infosJoueurs: ban.infos, aleatoire: ban.aleatoire });
   const bans = joueur.bans.map(htmlBan).join("");
   const equilibrage = joueur.bans_equilibrage.map(htmlBan).join("");
 

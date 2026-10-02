@@ -2364,3 +2364,97 @@ h1 {
   height: 1.5rem;
   object-fit: contain;
 }
+
+/* ---- Draft classée : chronos, pause, notifications ---- */
+
+.chronos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  margin: -0.5rem 0 0.75rem;
+}
+
+.chrono {
+  padding: 0.25rem 0.875rem;
+  border: 2px solid transparent;
+  border-radius: 62.4375rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  font-size: 1rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+/* Chrono qui tourne (joueur dont c'est le tour). */
+.chrono.actif {
+  opacity: 1;
+  border-color: var(--accent, #f5c542);
+}
+
+.chrono-j1.actif {
+  border-color: #5b9bd5;
+}
+
+.chrono-j2.actif {
+  border-color: #e0645a;
+}
+
+.chrono.epuise {
+  color: #ff7a85;
+}
+
+.zone-crash {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.btn-crash {
+  padding: 0.25rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.btn-crash:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.bandeau-pause {
+  max-width: 40rem;
+  margin: 0 auto 0.75rem;
+  padding: 0.625rem 1rem;
+  border: 2px solid rgba(245, 197, 66, 0.8);
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.85);
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Notification (temps écoulé, choix aléatoire) : en haut au centre. */
+.notif-match {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  max-width: calc(100vw - 2rem);
+  padding: 0.625rem 1.125rem;
+  border: 2px solid rgba(245, 197, 66, 0.9);
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.92);
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5);
+}
+
+/* Personnage choisi au hasard (temps écoulé) : entouré de doré. */
+.choix-aleatoire {
+  outline: 3px solid #f5c542;
+  outline-offset: -3px;
+  box-shadow: 0 0 0.75rem rgba(245, 197, 66, 0.7);
+}

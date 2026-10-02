@@ -129,7 +129,8 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     room_id: roomId,
     player1_discord_id: discordId,
     type,
-    draft: { mode_theatre: mode },
+    // Classé : draft chronométrée (cf. _lib/chronos.js).
+    draft: { mode_theatre: mode, chronometre: type === "classe" },
     last_active_at: new Date().toISOString()
   });
   if (erreurCreation) throw erreurCreation;
