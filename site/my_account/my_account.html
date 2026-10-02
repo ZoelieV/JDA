@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem27">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem28">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -44,8 +44,9 @@
 
           <!-- Lien de stream : visible des joueurs pendant la saisie des temps. -->
           <div class="menu-champ">
-            <label for="stream">Lien de stream (Twitch, YouTube…)</label>
+            <label for="stream">Lien de stream (Twitch ou YouTube)</label>
             <input type="url" id="stream" name="stream" form="profil-form" placeholder="https://twitch.tv/…" inputmode="url">
+            <span id="erreur-stream" class="erreur-champ cache">Twitch (twitch.tv) ou YouTube (youtube.com, youtu.be) uniquement.</span>
           </div>
 
           <div class="menu-champ">
@@ -270,8 +271,8 @@
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/my_account/auto_box/detection.js?v=2"></script>
   <script src="/my_account/auto_box/interface.js?v=3"></script>
-  <script src="/commun/cartes.js?v=8"></script>
+  <script src="/commun/cartes.js?v=9"></script>
   <script src="/commun/tri.js?v=14"></script>
-  <script src="/my_account/my_account.js?v=38"></script>
+  <script src="/my_account/my_account.js?v=39"></script>
 </body>
 </html>

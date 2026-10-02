@@ -12,24 +12,37 @@ const MAX_VITRINE = { characters: 12, weapons: 12 };
 const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5"];
 const LONGUEUR_NOM_BOX = 20;
 
-// Lien de stream (Twitch, YouTube...) affiché aux adversaires pendant la
-// saisie des temps : http(s) seulement ("twitch.tv/x" -> "https://..."),
-// sinon retiré (pas de lien javascript: ou autre).
+// Affiché aux adversaires pendant la saisie des temps (cf. matchmaking/
+// match.js) ; même règle que lienStreamAutorise dans commun/cartes.js.
+// Lien de stream : uniquement une page Twitch ou YouTube (pour ne jamais
+// envoyer un joueur sur un site malveillant). Domaine exact (pas
+// "twitch.tv.exemple.com" ni "exemple.com/twitch.tv"), https, sans
+// identifiants ni port ("https://twitch.tv@exemple.com" refusé), ancre
+// retirée ; "twitch.tv/pseudo" -> "https://twitch.tv/pseudo".
+// -> lien nettoyé, "" si vide, null si refusé.
+const HOTES_STREAM = new Set(["twitch.tv", "www.twitch.tv", "m.twitch.tv", "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"]);
 const LONGUEUR_LIEN_STREAM = 300;
 
-function nettoyerLienStream(texte) {
+function lienStreamAutorise(texte) {
   if (typeof texte !== "string") return null;
   let lien = texte.trim();
-  if (!lien) return null;
+  if (!lien) return "";
+  if (lien.length > LONGUEUR_LIEN_STREAM) return null;
   if (!/^[a-z][a-z0-9+.-]*:/i.test(lien)) lien = `https://${lien}`;
+  let url;
   try {
-    const url = new URL(lien);
-    if (!["http:", "https:"].includes(url.protocol) || !url.hostname.includes(".")) return null;
-    return url.href.slice(0, LONGUEUR_LIEN_STREAM);
+    url = new URL(lien);
   } catch {
     return null;
   }
+  const hote = url.hostname.toLowerCase().replace(/\.$/, "");
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.port || !HOTES_STREAM.has(hote)) {
+    return null;
+  }
+  return `https://${hote}${url.pathname}${url.search}`;
 }
+
+const ERREUR_LIEN_STREAM = "Lien de stream refusé : seuls les liens Twitch (twitch.tv) et YouTube (youtube.com, youtu.be) sont acceptés.";
 
 // Profil envoyé : taille maximale (une box complète pèse quelques dizaines
 // de Ko).
@@ -78,7 +91,7 @@ function nettoyerProfil(profil) {
     if (Object.keys(noms).length) profil.nomsBoxes = noms;
     else delete profil.nomsBoxes;
 
-    const stream = nettoyerLienStream(profil.stream);
+    const stream = lienStreamAutorise(profil.stream);
     if (stream) profil.stream = stream;
     else delete profil.stream;
   }
@@ -144,6 +157,11 @@ module.exports = async (req, res) => {
       }
       if (!profil || typeof profil !== "object" || Array.isArray(profil)) {
         return res.status(400).json({ error: "Profil invalide." });
+      }
+      // Lien de stream refusé : enregistrement refusé avec un message (pas
+      // effacé en silence).
+      if (lienStreamAutorise(profil.stream ?? "") === null) {
+        return res.status(400).json({ error: ERREUR_LIEN_STREAM });
       }
       profil = nettoyerProfil(profil);
 

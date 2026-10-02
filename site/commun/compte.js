@@ -14,7 +14,7 @@
   const CHAMPS = [
     { id: "menu-uid", label: "UID", lire: p => p.uid || "", ecrire: (p, v) => { p.uid = v; } },
     // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
-    { id: "menu-stream", label: "Lien de stream (Twitch, YouTube…)", type: "url", placeholder: "https://twitch.tv/…",
+    { id: "menu-stream", label: "Lien de stream (Twitch ou YouTube)", type: "url", placeholder: "https://twitch.tv/…",
       lire: p => p.stream || "", ecrire: (p, v) => { p.stream = v.trim(); } },
     { id: "menu-theatre", label: "Théâtre clear", lire: p => p.theatre || "", ecrire: (p, v) => { p.theatre = v; },
       options: [["", "Choisir"], ["1", "6"], ["2", "8"], ["3", "10"], ["4", "12"]] },
@@ -111,7 +111,11 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(profil)
         });
-        if (!reponse.ok) throw new Error("Échec de l'enregistrement.");
+        if (!reponse.ok) {
+          // Ex. lien de stream refusé (Twitch / YouTube uniquement).
+          const { error } = await reponse.json().catch(() => ({}));
+          throw new Error(error || "Erreur lors de l'enregistrement.");
+        }
         const variantesChangees = CHAMPS.some(c => c.variante && champ(c.id).value !== valeursChargees[c.id]);
         CHAMPS.forEach(c => { valeursChargees[c.id] = champ(c.id).value; });
         window.FondEcran?.memoriserTheatre(profil.theatre);
@@ -120,7 +124,7 @@
         if (variantesChangees) window.location.reload();
       } catch (erreur) {
         console.error(erreur);
-        afficherEtat("Erreur lors de l'enregistrement.");
+        afficherEtat(erreur.message || "Erreur lors de l'enregistrement.");
         btnEnregistrer.disabled = !modifie();
       }
     });

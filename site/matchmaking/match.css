@@ -58,6 +58,7 @@ h1 {
 }
 
 .entete-joueur {
+  position: relative; /* pastille de présence dans le coin */
   display: flex;
   align-items: center;
   gap: 0.625rem;

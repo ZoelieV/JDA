@@ -761,13 +761,15 @@ function rendreEntetesJoueurs() {
     container.style.setProperty("--namecard", `url("${encodeURI(`/DB/images/${namecard}`)}")`);
 
     container.innerHTML = `
+      <span class="pastille-presence pastille-${role} cache" data-role="${role}" title="Présence"></span>
       <img src="${joueur.avatar || ""}" alt="${echapperHtml(joueur.nom)}">
       <span class="nom-joueur">${echapperHtml(joueur.nom)}</span>
       ${htmlMedailleTheatre(palierTheatreProfil(joueur.data))}
       ${afficherRole ? `<span class="tag-role">${role.toUpperCase()}</span>` : ""}
-      ${afficherPastille ? `<span class="pastille ${pret ? "pret" : ""}"></span>` : ""}
+      ${afficherPastille ? `<span class="pastille ${pret ? "pret" : ""}" title="${pret ? "Prêt" : "Pas encore prêt"}"></span>` : ""}
     `;
   });
+  mettreAJourPastillesPresence();
 }
 
 // ---- Phases 1 et 2 : choix de box, puis analyse ----
@@ -1061,15 +1063,20 @@ let presences = null;
 // Pastille en haut de la namecard (j1 à gauche, j2 à droite), pendant les
 // picks et bans seulement : verte en ligne, grise afk. Soi-même : toujours
 // en ligne (la page est ouverte).
+// Pendant toute la draft (choix des box, analyse, bans d'équilibrage,
+// picks / bans) : dans les rectangles des joueurs puis sur les namecards
+// des tableaux. Choix des box / analyse : à côté de la pastille "prêt".
+const PHASES_PRESENCE = ["choix_box", "analyse", "bans_bonus", "draft"];
+
 function mettreAJourPastillesPresence() {
+  const visible = PHASES_PRESENCE.includes(draft?.phase) && !!presences;
   ["j1", "j2"].forEach(role => {
-    const pastille = document.querySelector(`#entete-tableau-${role} .pastille-presence`);
-    if (!pastille) return;
-    const visible = draft?.phase === "draft" && !!presences;
     const enLigne = role === monRole || !!presences?.[role];
-    pastille.classList.toggle("cache", !visible);
-    pastille.classList.toggle("en-ligne", enLigne);
-    pastille.title = enLigne ? "En ligne" : "AFK";
+    document.querySelectorAll(`.pastille-presence[data-role="${role}"]`).forEach(pastille => {
+      pastille.classList.toggle("cache", !visible);
+      pastille.classList.toggle("en-ligne", enLigne);
+      pastille.title = enLigne ? "En ligne" : "AFK";
+    });
   });
 }
 
@@ -1085,7 +1092,7 @@ function titreTableauJoueur(role, nomJoueur) {
   const tagRole = draft?.roles_tires ? `<span class="tag-role">${role.toUpperCase()}</span>` : "";
   return `
     <div class="namecard-tableau" style="--namecard: url(&quot;${echapperHtml(namecard)}&quot;)">
-      <span class="pastille-presence pastille-${role} cache"></span>
+      <span class="pastille-presence pastille-${role} cache" data-role="${role}"></span>
       ${joueur?.avatar ? `<img class="avatar-tableau" src="${joueur.avatar}" alt="">` : ""}
       <span class="nom-complet">${echapperHtml(nomJoueur)}</span>
       <span class="nom-court">${role.toUpperCase()}</span>
@@ -1680,16 +1687,26 @@ function mettreAJourFiltreProprietaire() {
 // ---- Annonce du rôle au tirage ----
 // Affichée 5 s quand la draft démarre (tirage J1/J2 en 1re manche, rôles
 // inversés en revanche). L'animation CSS gère l'apparition/disparition.
+// Draft classée : affichée jusqu'au départ du chrono du premier joueur
+// (draft.chrono.tour_debut, heure du serveur), qui démarre donc quand elle
+// disparaît.
 function annoncerRole() {
   if (!monRole) return;
+  const premiere = getSequence()[0];
+  const verbe = premiere?.type === "pick" ? "pickes" : "bannis";
+  const verbeAdversaire = premiere?.type === "pick" ? "picke" : "bannit";
+  const duree = draft.chrono && draft.sequence_index === 0
+    ? Math.min(10000, Math.max(3000, draft.chrono.tour_debut - heureServeur()))
+    : 5000;
   const annonce = document.createElement("div");
   annonce.className = `annonce-role annonce-${monRole}`;
+  annonce.style.animationDuration = `${duree}ms`;
   annonce.innerHTML = `
     <div class="annonce-titre">Tu es ${monRole.toUpperCase()}</div>
-    <div class="annonce-sous-titre">${monRole === "j1" ? "Tu bannis en premier." : "Ton adversaire bannit en premier."}</div>
+    <div class="annonce-sous-titre">${premiere?.joueur === monRole ? `Tu ${verbe} en premier.` : `Ton adversaire ${verbeAdversaire} en premier.`}</div>
   `;
   document.body.appendChild(annonce);
-  setTimeout(() => annonce.remove(), 5000);
+  setTimeout(() => annonce.remove(), duree);
 }
 
 // ---- Phases 4 et 5 : saisie du temps, vérification, résultat ----
@@ -1775,13 +1792,10 @@ function rendreTempsJoueur(role, zone) {
 // Lien de stream du joueur (Mon compte, menu du compte), sous son temps :
 // pour revoir sa partie et vérifier le temps. Nouvel onglet ; http(s)
 // seulement (déjà filtré à l'enregistrement, cf. api/auth/profile.js).
+// Revérifié avant affichage (anciens liens enregistrés avant la règle
+// Twitch / YouTube) : cf. lienStreamAutorise, commun/cartes.js.
 function lienStreamValide(texte) {
-  try {
-    const url = new URL(texte);
-    return ["http:", "https:"].includes(url.protocol) ? url.href : null;
-  } catch {
-    return null;
-  }
+  return lienStreamAutorise(texte) || null;
 }
 
 function rendreLienStream(role, zone) {
@@ -2123,7 +2137,8 @@ function etatChronos() {
   }
   if (draft.phase === "draft" && draft.chrono) {
     const acteur = getProchaineActionLocale()?.joueur || null;
-    const restant = role => draft.chrono[role] - (role === acteur ? maintenant - draft.chrono.tour_debut : 0);
+    // Avant tour_debut (annonce du début de draft) : chrono à l'arrêt.
+    const restant = role => draft.chrono[role] - (role === acteur ? Math.max(0, maintenant - draft.chrono.tour_debut) : 0);
     return { phase: "draft", acteur, reste: acteur ? restant(acteur) : 0, restants: { j1: restant("j1"), j2: restant("j2") } };
   }
   return null;

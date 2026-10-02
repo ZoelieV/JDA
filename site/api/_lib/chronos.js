@@ -25,6 +25,10 @@ const GRACE_ACTION_MS = 2000;
 const TOLERANCE_ACTEUR_MS = 1500;
 const DELAI_ADVERSAIRE_MS = 5000;
 const PAUSE_MAX_MS = 10 * 60 * 1000;
+// Début de la draft : le chrono du premier joueur ne part qu'à la fin de
+// l'annonce "Tu es J1 / J2" (affichée jusqu'à tour_debut, cf. annoncerRole
+// dans matchmaking/match.js ; 5 s + délai du polling de l'adversaire).
+const DELAI_DEBUT_DRAFT_MS = 7500;
 
 // Phases où la draft classée peut être mise en pause (avant la partie : les
 // joueurs quittent ensuite le site pour jouer).
@@ -47,15 +51,16 @@ function demarrerChronoDraft(draft, maintenant = Date.now()) {
   draft.chrono = {
     j1: DRAFT_JOUEUR_MS,
     j2: DRAFT_JOUEUR_MS,
-    tour_debut: maintenant,
+    tour_debut: maintenant + DELAI_DEBUT_DRAFT_MS,
     epuise_j1: false,
     epuise_j2: false
   };
 }
 
-// Temps écoulé depuis le début du tour en cours (ms).
+// Temps écoulé depuis le début du tour en cours (ms ; 0 avant le départ
+// du chrono, pendant l'annonce du début de draft).
 function tempsDuTour(draft, maintenant = Date.now()) {
-  return draft.chrono ? maintenant - draft.chrono.tour_debut : 0;
+  return draft.chrono ? Math.max(0, maintenant - draft.chrono.tour_debut) : 0;
 }
 
 // Action du joueur à son tour : temps décompté de son chrono, tour suivant

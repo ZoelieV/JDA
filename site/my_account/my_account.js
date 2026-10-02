@@ -234,14 +234,27 @@ async function sauvegarderProfil(profil) {
     });
 
     if (!reponse.ok) {
-      throw new Error("Échec de la sauvegarde côté serveur.");
+      const { error } = await reponse.json().catch(() => ({}));
+      return { ok: false, erreur: error || null };
     }
 
-    return true;
+    return { ok: true };
   } catch (error) {
     console.error(error);
-    return false;
+    return { ok: false, erreur: null };
   }
+}
+
+// Lien de stream (menu du compte) : Twitch ou YouTube seulement, signalé dès
+// la saisie (cf. lienStreamAutorise, commun/cartes.js ; revérifié par le
+// serveur). -> true si valide (ou vide).
+function verifierChampStream() {
+  const champ = document.getElementById("stream");
+  const valide = lienStreamAutorise(champ.value) !== null;
+  champ.classList.toggle("invalide", !valide);
+  champ.setCustomValidity(valide ? "" : "Seuls les liens Twitch (twitch.tv) et YouTube (youtube.com, youtu.be) sont acceptés.");
+  document.getElementById("erreur-stream").classList.toggle("cache", valide);
+  return valide;
 }
 
 // ---- Noms des box optimisées (renommables) ----
@@ -1067,9 +1080,13 @@ async function initialiserPage() {
       profil.stream = document.getElementById("stream").value.trim();
       profil.theatre = document.getElementById("theatre").value;
 
-      const succes = await sauvegarderProfil(profil);
+      if (!verifierChampStream()) {
+        afficherToast("Lien de stream refusé : seuls Twitch et YouTube sont acceptés", "erreur");
+        return;
+      }
+      const { ok: succes, erreur } = await sauvegarderProfil(profil);
       afficherToast(
-        succes ? "Profil enregistré avec succès" : "Erreur lors de l'enregistrement du profil",
+        succes ? "Profil enregistré avec succès" : erreur || "Erreur lors de l'enregistrement du profil",
         succes ? "succes" : "erreur"
       );
       if (succes) {
@@ -1077,6 +1094,9 @@ async function initialiserPage() {
         window.FondEcran?.memoriserTheatre(profil.theatre);
       }
     });
+
+    document.getElementById("stream").addEventListener("input", verifierChampStream);
+    verifierChampStream();
 
     ["uid", "stream", "theatre"].forEach(id => {
       const champ = document.getElementById(id);
@@ -1373,9 +1393,9 @@ async function initialiserParametres(profil) {
   // Enregistre le profil entier (comme le bouton Enregistrer de la page).
   btnEnregistrer.addEventListener("click", async () => {
     profil.parametres = { ...brouillon };
-    const succes = await sauvegarderProfil(profil);
+    const { ok: succes, erreur } = await sauvegarderProfil(profil);
     afficherToast(
-      succes ? "Paramètres enregistrés" : "Erreur lors de l'enregistrement des paramètres",
+      succes ? "Paramètres enregistrés" : erreur || "Erreur lors de l'enregistrement des paramètres",
       succes ? "succes" : "erreur"
     );
     if (succes) {

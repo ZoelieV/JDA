@@ -1824,3 +1824,13 @@ body {
 .filtres-categories-armes[hidden] {
   display: none;
 }
+
+/* Lien de stream refusé (Twitch / YouTube uniquement). */
+#stream.invalide {
+  border-color: #ff7a85;
+}
+
+.erreur-champ {
+  font-size: 0.75rem;
+  color: #ff7a85;
+}

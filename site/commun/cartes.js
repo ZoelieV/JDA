@@ -131,6 +131,34 @@ function palierTheatreProfil(profilData) {
   return PALIERS_THEATRE[profilData?.theatre] ?? null;
 }
 
+// Lien de stream : uniquement une page Twitch ou YouTube (pour ne jamais
+// envoyer un joueur sur un site malveillant). Domaine exact (pas
+// "twitch.tv.exemple.com" ni "exemple.com/twitch.tv"), https, sans
+// identifiants ni port ("https://twitch.tv@exemple.com" refusé), ancre
+// retirée ; "twitch.tv/pseudo" -> "https://twitch.tv/pseudo".
+// -> lien nettoyé, "" si vide, null si refusé.
+const HOTES_STREAM = new Set(["twitch.tv", "www.twitch.tv", "m.twitch.tv", "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"]);
+const LONGUEUR_LIEN_STREAM = 300;
+
+function lienStreamAutorise(texte) {
+  if (typeof texte !== "string") return null;
+  let lien = texte.trim();
+  if (!lien) return "";
+  if (lien.length > LONGUEUR_LIEN_STREAM) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(lien)) lien = `https://${lien}`;
+  let url;
+  try {
+    url = new URL(lien);
+  } catch {
+    return null;
+  }
+  const hote = url.hostname.toLowerCase().replace(/\.$/, "");
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.port || !HOTES_STREAM.has(hote)) {
+    return null;
+  }
+  return `https://${hote}${url.pathname}${url.search}`;
+}
+
 // Pseudo Discord inséré dans du HTML : échappé (un pseudo peut contenir
 // "<", "&"...) et dans la police des pseudos (classe .pseudo, cf.
 // commun/entete.css).
