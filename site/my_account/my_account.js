@@ -624,7 +624,14 @@ function garderDefilement(redessiner) {
   });
 }
 
+// Tout redessin de la collection (constellations / raffinements + et -,
+// copie d'arme, sélection d'une box, favoris, filtres...) garde la position
+// de la page : sur téléphone, remplacer la carte touchée ramenait en haut.
 function afficherCollection(personnages, armes, profil) {
+  garderDefilement(() => rendreCollection(personnages, armes, profil));
+}
+
+function rendreCollection(personnages, armes, profil) {
   const liste = document.getElementById("liste-collection");
 
   const vueActive = getVueActive();
@@ -957,7 +964,7 @@ async function initialiserPage() {
           if (favoris[id]) delete favoris[id];
           else favoris[id] = true;
           if (getSensTri(etatTri, "favoris")) {
-            garderDefilement(() => afficherCollection(personnages, armes, profil));
+            afficherCollection(personnages, armes, profil);
           } else {
             boutonFavori.classList.toggle("actif", !!favoris[id]);
             boutonFavori.title = favoris[id] ? "Retirer des favoris" : "Ajouter aux favoris";
