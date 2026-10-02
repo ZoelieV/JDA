@@ -70,6 +70,9 @@ const filtreArme = new Set();
 // deux (null).
 let filtreVue = null; // "characters" | "weapons" | null
 let filtreProprietaire = null; // "j1" | "j2" | null
+// Persos en commun ("commun", =) ou différents ("difference", Δ : ceux de
+// j1 seul, puis ceux de j2 seul, à la ligne). Exclusif avec J1 / J2.
+let filtrePossession = null;
 let rechercheTexte = "";
 const etatTri = creerEtatTri();
 
@@ -571,7 +574,7 @@ function trierPersonnages(personnages, roles = ["j1", "j2"]) {
     valeurs: getValeursTri(roles),
     elements: filtreElement,
     armes: filtreArme,
-    rareteParDefaut: filtreEtoile.size > 0 || filtreVoeux.size > 0 || (roles.length > 1 && !!filtreProprietaire)
+    rareteParDefaut: filtreEtoile.size > 0 || filtreVoeux.size > 0 || (roles.length > 1 && (!!filtreProprietaire || !!filtrePossession))
   });
 }
 
@@ -585,6 +588,12 @@ function personnageCorrespondFiltres(personnage, { ignorerProprietaire = false }
 
   if (filtreProprietaire && !ignorerProprietaire) {
     if (getConstellation(filtreProprietaire, personnage.id) === null) return false;
+  }
+
+  // = : possédé par les 2 ; Δ : par un seul des 2.
+  if (filtrePossession && !ignorerProprietaire) {
+    const nb = ["j1", "j2"].filter(role => getConstellation(role, personnage.id) !== null).length;
+    if (filtrePossession === "commun" ? nb !== 2 : nb !== 1) return false;
   }
 
   if (rechercheTexte.trim()) {
@@ -805,9 +814,18 @@ function groupesArmesDraft() {
 
 // Groupes d'une grille de draft : personnages puis armes, selon le filtre
 // Personnages / Armes.
+// Δ : persos de j1 seul, puis ceux de j2 seul (nouvelle ligne), chaque
+// partie triée (par rareté par défaut).
+function groupesPersonnagesDraft(personnages) {
+  if (filtrePossession !== "difference") return trierPersonnages(personnages);
+  return ["j1", "j2"].flatMap(role => trierPersonnages(
+    personnages.filter(p => getConstellation(role, p.id) !== null)
+  ).map(groupe => ({ ...groupe, section: `seul-${role}` })));
+}
+
 function groupesDraft(personnages) {
   return [
-    ...(filtreVue === "weapons" ? [] : trierPersonnages(personnages)),
+    ...(filtreVue === "weapons" ? [] : groupesPersonnagesDraft(personnages)),
     ...(filtreVue === "characters" ? [] : groupesArmesDraft())
   ];
 }
@@ -1574,7 +1592,7 @@ function rendreDraft(phasePrecedente) {
 
 // Part de la clé de grille qui dépend de la barre recherche/tri/filtres.
 function cleFiltres() {
-  return [filtreVue, [...filtreElement], [...filtreArme], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, rechercheTexte, etatTri.tris];
+  return [filtreVue, [...filtreElement], [...filtreArme], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, filtrePossession, rechercheTexte, etatTri.tris];
 }
 
 // Le contenu est ensuite remplacé en une fois (remplirGrilleGroupee), en
@@ -1697,16 +1715,20 @@ function initialiserFiltresTri() {
   const zoneProprio = document.createElement("div");
   zoneProprio.className = "filtres-proprietaire";
   zoneProprio.id = "filtres-proprietaire";
-  [["j1", "J1"], ["j2", "J2"]].forEach(([valeur, label]) => {
+  // J1, J2 (persos de ce joueur), = (en commun) et Δ (différents) : un seul
+  // à la fois, un 2e clic le désactive.
+  [["j1", "J1", "Persos de J1"], ["j2", "J2", "Persos de J2"], ["commun", "=", "Persos que les 2 joueurs ont"], ["difference", "Δ", "Persos qu'un seul des 2 joueurs a : ceux de J1, puis ceux de J2"]].forEach(([valeur, label, titre]) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtre-proprietaire-btn";
     btn.dataset.role = valeur;
     btn.textContent = label;
+    btn.title = titre;
     btn.addEventListener("click", () => {
-      filtreProprietaire = filtreProprietaire === valeur ? null : valeur;
-      zoneProprio.querySelectorAll(".filtre-proprietaire-btn").forEach(b => b.classList.remove("active"));
-      if (filtreProprietaire === valeur) btn.classList.add("active");
+      const actif = filtreProprietaire === valeur || filtrePossession === valeur;
+      filtreProprietaire = !actif && (valeur === "j1" || valeur === "j2") ? valeur : null;
+      filtrePossession = !actif && (valeur === "commun" || valeur === "difference") ? valeur : null;
+      zoneProprio.querySelectorAll(".filtre-proprietaire-btn").forEach(b => b.classList.toggle("active", b === btn && !actif));
       rendrePhase();
     });
     zoneProprio.appendChild(btn);
@@ -1725,6 +1747,7 @@ function initialiserFiltresTri() {
     filtreEtoile.clear();
     filtreVoeux.clear();
     filtreProprietaire = null;
+    filtrePossession = null;
     rechercheTexte = "";
     viderTris(etatTri);
     document.getElementById("barre-outils").querySelectorAll(".active").forEach(b => b.classList.remove("active"));
@@ -1780,7 +1803,7 @@ function mettreAJourFiltreProprietaire() {
   const zone = document.getElementById("filtres-proprietaire");
   if (!zone) return;
   zone.classList.toggle("cache", enBox);
-  zone.querySelectorAll(".filtre-proprietaire-btn").forEach(btn => {
+  zone.querySelectorAll('.filtre-proprietaire-btn[data-role="j1"], .filtre-proprietaire-btn[data-role="j2"]').forEach(btn => {
     const joueur = btn.dataset.role === "j1" ? joueur1 : joueur2;
     const avecNom = !draft.roles_tires && !!joueur;
     btn.textContent = avecNom ? joueur.nom : btn.dataset.role.toUpperCase();
