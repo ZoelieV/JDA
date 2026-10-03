@@ -1,5 +1,5 @@
 const { createClient } = require("@supabase/supabase-js");
-const { calculerPointsBox } = require("../_lib/draft");
+const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
 const { CLASSEMENTS, rejouerClasse, seriePrime } = require("../_lib/trophees");
 
@@ -116,18 +116,6 @@ async function chargerResultats() {
   return resultats;
 }
 
-// Points des armes de la Full Box, copies comprises ("idArme#2"...), comme
-// le total de Mon compte (calculerTotalCollection).
-function pointsArmes(data) {
-  const full = data.weapons?.full || {};
-  const parId = new Map(getArmes().map(arme => [arme.id, arme]));
-  return Object.entries(full).reduce((total, [instance, valeur]) => {
-    const arme = parId.get(instance.split("#")[0]);
-    const raffinement = Number(valeur);
-    return arme && Number.isInteger(raffinement) && raffinement >= 0 ? total + Number(arme.PPW?.[raffinement] ?? 0) : total;
-  }, 0);
-}
-
 // Stats calculées ici : on ne renvoie pas les box complètes à la page.
 function resumerProfil(profil, resultats) {
   const data = profil.data || {};
@@ -150,7 +138,7 @@ function resumerProfil(profil, resultats) {
     created_at: profil.created_at ?? null,
     banniere2: data.parametres?.banniere2 || null,
     // Full Box : persos + armes (même total que Mon compte).
-    points: calculerPointsBox(data, "full", getPersonnages()) + pointsArmes(data),
+    points: calculerPointsBox(data, "full", getPersonnages()) + calculerPointsArmesBox(data, "full", getArmes()),
     nb_persos: nbPersos,
     nb_c6: nbC6,
     // Somme des constellations des 5★ limités (Full Box, sans les persos

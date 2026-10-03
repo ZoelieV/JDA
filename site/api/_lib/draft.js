@@ -194,8 +194,8 @@ function getPersonnagesBox(profilData, personnages, boxChoisie = "full") {
     .map(p => ({ personnage: p, valeur: collection.full[p.id], niveau: collection.niveaux?.[p.groupe || p.id] ?? null }));
 }
 
-// ---- Points d'une box (uniquement personnages / PPC, bonus niveau 95 /
-// 100 et théâtre compris, cf. pointsPersonnage) ----
+// ---- Points des personnages d'une box (PPC, bonus niveau 95 / 100 et
+// théâtre compris, cf. pointsPersonnage) ----
 // Groupe (Voyageur) : seul l'élément qui vaut le plus de points compte.
 function calculerPointsBox(profilData, boxChoisie, personnages) {
   let total = 0;
@@ -211,6 +211,21 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
   });
 
   return total + Object.values(meilleurParGroupe).reduce((somme, points) => somme + points, 0);
+}
+
+// ---- Points des armes d'une box (PPW du raffinement), copies comprises
+// ("idArme#2"...) : même sélection que Mon compte et l'aperçu des box du
+// match. Box personnalisée (entraînement, persos seulement) : aucune arme. ----
+function calculerPointsArmesBox(profilData, boxChoisie, armes) {
+  const collection = profilData?.weapons || {};
+  const parId = new Map(armes.map(arme => [arme.id, arme]));
+  return Object.entries(collection.full || {}).reduce((total, [instance, valeur]) => {
+    const arme = parId.get(instance.split("#")[0]);
+    const raffinement = Number(valeur);
+    if (!arme || !Number.isInteger(raffinement) || raffinement < 0) return total;
+    if (boxChoisie !== "full" && !collection.selections?.[boxChoisie]?.[instance]) return total;
+    return total + Number(arme.PPW?.[raffinement] ?? 0);
+  }, 0);
 }
 
 // ---- Pool d'un joueur : les personnages de la box choisie pour le match,
@@ -440,6 +455,7 @@ module.exports = {
   calculerBansBonus,
   etatInitialDraft,
   calculerPointsBox,
+  calculerPointsArmesBox,
   calculerPoolJoueur,
   calculerElementsGroupes,
   calculerPoolDisponible,

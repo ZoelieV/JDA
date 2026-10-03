@@ -5,9 +5,10 @@
 // une box personnalisée ("custom" : persos cochés dans la full box d'un
 // joueur, sans dévoiler ses box opti).
 const { supabase } = require("./supabase");
-const { getPersonnages, actualiserPoints } = require("./personnages");
+const { getPersonnages, getArmes, actualiserPoints } = require("./personnages");
 const {
   calculerPointsBox,
+  calculerPointsArmesBox,
   calculerPoolJoueur,
   calculerElementsGroupes,
   calculerPoolDisponible,
@@ -63,10 +64,12 @@ async function chargerDonneesBoxes(draft) {
 async function calculerEquilibrage(draft) {
   const [boxes] = await Promise.all([chargerDonneesBoxes(draft), actualiserPoints()]);
   const personnages = getPersonnages();
+  const armes = getArmes();
 
   ["j1", "j2"].forEach(role => {
     const { data, box } = boxes[role];
-    draft[`points_${role}`] = calculerPointsBox(data, box, personnages);
+    // Points totaux de la box choisie : personnages + armes.
+    draft[`points_${role}`] = calculerPointsBox(data, box, personnages) + calculerPointsArmesBox(data, box, armes);
     // Théâtre clear du propriétaire de la box : mode de théâtre "auto".
     draft[`theatre_${role}`] = theatreProfil(data);
     // Pool = personnages de la box choisie (et non toute la Full Box).
