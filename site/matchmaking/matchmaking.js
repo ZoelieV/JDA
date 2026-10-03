@@ -66,16 +66,6 @@ async function remplirBossRoom() {
   }
 }
 
-// Bouton d'une carte : affiche (ou masque) ses modes de théâtre.
-document.querySelectorAll(".ouvrir-modes").forEach(bouton => {
-  bouton.addEventListener("click", () => {
-    if (bouton.parentElement.querySelector('.modes-match[data-type="prive"]')) remplirBossRoom();
-    const modes = bouton.parentElement.querySelector(".modes-match");
-    const ouvert = modes.classList.toggle("cache") === false;
-    bouton.setAttribute("aria-expanded", String(ouvert));
-  });
-});
-
 // Mode choisi : room privée (mode de théâtre au choix) ou recherche
 // (matchmaking / classé : classique ou mêlée générale).
 document.querySelectorAll(".mode-match").forEach(bouton => {
@@ -264,22 +254,52 @@ function lancerEntrainement() {
   });
 }
 
-document.getElementById("ouvrir-entrainement").addEventListener("click", async () => {
-  const bouton = document.getElementById("ouvrir-entrainement");
-  const panneau = document.getElementById("panneau-entrainement");
-  if (!entrainement.pret) {
-    bouton.disabled = true;
+// ---- Cartes des modes : cliquer une carte affiche ses détails dans le
+// rectangle en dessous (un seul ouvert : celui d'une autre carte se ferme),
+// recliquer la même le referme. Préparé à la 1re ouverture : liste des boss
+// (room), comptes et box (entraînement). ----
+const PREPARATIONS = {
+  // Rectangle ouvert tout de suite, liste des boss remplie en arrière-plan.
+  room: async () => { remplirBossRoom(); return true; },
+  entrainement: async () => {
+    if (entrainement.pret) return true;
     try {
-      if (!(await initialiserEntrainement())) return;
+      return await initialiserEntrainement();
     } catch (erreur) {
       console.error(erreur);
       alert("Impossible de charger le mode entraînement.");
-      return;
-    } finally {
-      bouton.disabled = false;
+      return false;
     }
   }
-  const ouvert = panneau.classList.toggle("cache") === false;
-  bouton.setAttribute("aria-expanded", String(ouvert));
-  if (ouvert) panneau.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+// Dernier clic : une préparation encore en cours n'ouvre rien si une autre
+// carte a été cliquée entre-temps.
+let dernierClic = 0;
+
+async function choisirCarte(carte) {
+  const clic = ++dernierClic;
+  const nom = carte.dataset.detail;
+  const dejaOuvert = carte.getAttribute("aria-expanded") === "true";
+  document.querySelectorAll(".carte-match").forEach(c => {
+    c.setAttribute("aria-expanded", "false");
+    c.classList.remove("selectionnee");
+  });
+  document.querySelectorAll(".detail-match").forEach(d => d.classList.add("cache"));
+  if (dejaOuvert) return;
+
+  if (PREPARATIONS[nom]) {
+    carte.disabled = true;
+    const pret = await PREPARATIONS[nom]().finally(() => { carte.disabled = false; });
+    if (!pret || clic !== dernierClic) return;
+  }
+  carte.setAttribute("aria-expanded", "true");
+  carte.classList.add("selectionnee");
+  const detail = document.querySelector(`.detail-match[data-detail="${nom}"]`);
+  detail.classList.remove("cache");
+  detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+document.querySelectorAll(".carte-match").forEach(carte => {
+  carte.addEventListener("click", () => choisirCarte(carte));
 });

@@ -7,7 +7,8 @@
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
-<link rel="stylesheet" href="matchmaking.css?v=6">
+<link rel="stylesheet" href="../commun/namecards.css?v=1">
+<link rel="stylesheet" href="matchmaking.css?v=7">
 <script src="/commun/fond.js?v=6"></script>
 <script src="/commun/compte.js?v=6" defer></script>
 </head>
@@ -18,68 +19,112 @@
   <p class="note-match">Un seul match à la fois : en lancer un nouveau annule ton match en cours
     (en classé, ça compte comme un abandon : tu perds les trophées).</p>
 
-  <!-- Chaque bouton ouvre les modes de théâtre proposés (nombre de bans de
-       la draft, après le tirage du boss ; les bans d'équilibrage ne changent
-       pas). Classique : théâtre du joueur au plus petit clear ; mêlée
-       générale : théâtre 12 pour tout le monde. -->
-  <div class="choix-match">
-    <div class="option-match panneau">
-      <button type="button" class="btn-principal ouvrir-modes" aria-expanded="false">Créer une room</button>
-      <p>Tu reçois un lien à envoyer à ton adversaire : la première personne qui l'ouvre joue contre toi.
-        Les autres peuvent regarder depuis l'historique. Tu choisis le théâtre de la draft.</p>
-      <div class="modes-match cache" data-type="prive">
-        <!-- Boss et J1 : au choix ou au hasard (au tirage). -->
-        <div class="ligne-entrainement options-room">
-          <label>Boss <select id="room-boss"><option value="">Aléatoire</option></select></label>
-          <label>J1 (commence la draft)
-            <select id="room-premier">
-              <option value="aleatoire">Aléatoire</option>
-              <option value="createur">Moi</option>
-              <option value="adversaire">Mon adversaire</option>
-            </select>
-          </label>
-        </div>
-        <button type="button" class="mode-match" data-mode="auto">Auto<span>théâtre du plus petit clear</span></button>
-        <button type="button" class="mode-match" data-mode="6">Théâtre 6<span>4 picks, 1 ban</span></button>
-        <button type="button" class="mode-match" data-mode="8">Théâtre 8<span>4 picks, 2 bans</span></button>
-        <button type="button" class="mode-match" data-mode="10">Théâtre 10<span>4 picks, 3 bans</span></button>
-        <button type="button" class="mode-match" data-mode="12">Théâtre 12<span>4 picks, 4 bans</span></button>
-        <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
+  <!-- Une namecard par mode (même style que l'accueil, 3 par ligne) :
+       cliquer dessus affiche ses détails dans le rectangle en dessous, un
+       seul ouvert à la fois (cf. matchmaking.js). -->
+  <div class="cartes-match">
+    <button type="button" class="carte-section carte-match" data-detail="room" aria-expanded="false" aria-controls="detail-room">
+      <img src="../DB/images/others/Namecard_Background_room.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Créer une room</h2>
+        <p>Envoie un lien à ton adversaire.</p>
       </div>
-    </div>
-    <div class="option-match panneau">
-      <button type="button" class="btn-principal ouvrir-modes" aria-expanded="false">Matchmaking</button>
-      <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.</p>
-      <div class="modes-match cache" data-type="matchmaking">
-        <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
-        <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
-        <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
+    </button>
+    <button type="button" class="carte-section carte-match" data-detail="matchmaking" aria-expanded="false" aria-controls="detail-matchmaking">
+      <img src="../DB/images/others/Namecard_Background_matchmaking.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Matchmaking</h2>
+        <p>Affronte le prochain joueur en recherche.</p>
       </div>
-    </div>
-    <div class="option-match panneau option-classe">
-      <button type="button" class="btn-principal ouvrir-modes" aria-expanded="false">Classé 🏆</button>
-      <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Le gagnant remporte
-        un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.
-        Victoires d'affilée en classé : +1 trophée bonus à la 2e, +2 à la 3e, puis +3.
-        Bonus de saison : +3 trophées par perso de la saison dans ton équipe (gagnés en plus, ou retirés de ta perte).
-        Prime : battre le joueur à la plus longue série de victoires en cours rapporte +5 trophées.
-        Voir le <a href="../leaderboard.html">classement</a>.</p>
-      <div class="modes-match cache" data-type="classe">
-        <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
-        <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
+    </button>
+    <button type="button" class="carte-section carte-match principale" data-detail="classe" aria-expanded="false" aria-controls="detail-classe">
+      <img src="../DB/images/others/Namecard_Background_competitif.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Classé 🏆</h2>
+        <p>Gagne des trophées et grimpe au classement.</p>
       </div>
-    </div>
-    <div class="option-match panneau">
-      <button type="button" id="ouvrir-entrainement" class="btn-principal" aria-expanded="false">Mode entraînement 🎯</button>
-      <p>Choisis la draft, ta box et celle d'en face (les tiennes, celles des autres joueurs ou une box
-        personnalisée), le boss et le J1. Seul, tu joues les deux rôles ; partage le lien pour te faire aider.
-        Visible seulement par toi dans l'historique.</p>
-    </div>
+    </button>
+    <button type="button" class="carte-section carte-match" data-detail="entrainement" aria-expanded="false" aria-controls="detail-entrainement">
+      <img src="../DB/images/others/Namecard_Background_entrainement.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Entraînement 🎯</h2>
+        <p>Prépare tes drafts, seul ou accompagné.</p>
+      </div>
+    </button>
+    <button type="button" class="carte-section carte-match" data-detail="world-boss" aria-expanded="false" aria-controls="detail-world-boss">
+      <img src="../DB/images/others/Namecard_Background_random_world_boss.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Random world boss</h2>
+        <p>Bientôt disponible.</p>
+      </div>
+    </button>
   </div>
 
+  <!-- Détails de chaque mode. Modes de théâtre : nombre de bans de la
+       draft, après le tirage du boss (les bans d'équilibrage ne changent
+       pas). Classique : théâtre du joueur au plus petit clear ; mêlée
+       générale : théâtre 12 pour tout le monde. -->
+  <section id="detail-room" class="panneau detail-match cache" data-detail="room">
+    <h2>Créer une room</h2>
+    <p>Tu reçois un lien à envoyer à ton adversaire : la première personne qui l'ouvre joue contre toi.
+      Les autres peuvent regarder depuis l'historique.</p>
+    <!-- Boss et J1 : au choix ou au hasard (au tirage). -->
+    <div class="ligne-entrainement options-room">
+      <label>Boss <select id="room-boss"><option value="">Aléatoire</option></select></label>
+      <label>J1 (commence la draft)
+        <select id="room-premier">
+          <option value="aleatoire">Aléatoire</option>
+          <option value="createur">Moi</option>
+          <option value="adversaire">Mon adversaire</option>
+        </select>
+      </label>
+    </div>
+    <div class="modes-match" data-type="prive">
+      <button type="button" class="mode-match" data-mode="auto">Auto<span>théâtre du plus petit clear</span></button>
+      <button type="button" class="mode-match" data-mode="6">Théâtre 6<span>4 picks, 1 ban</span></button>
+      <button type="button" class="mode-match" data-mode="8">Théâtre 8<span>4 picks, 2 bans</span></button>
+      <button type="button" class="mode-match" data-mode="10">Théâtre 10<span>4 picks, 3 bans</span></button>
+      <button type="button" class="mode-match" data-mode="12">Théâtre 12<span>4 picks, 4 bans</span></button>
+      <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
+    </div>
+  </section>
+
+  <section id="detail-matchmaking" class="panneau detail-match cache" data-detail="matchmaking">
+    <h2>Matchmaking</h2>
+    <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.</p>
+    <div class="modes-match" data-type="matchmaking">
+      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
+      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
+      <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
+    </div>
+  </section>
+
+  <section id="detail-classe" class="panneau detail-match detail-classe cache" data-detail="classe">
+    <h2>Classé 🏆</h2>
+    <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Voir le <a href="../leaderboard.html">classement</a>.</p>
+    <ul class="regles-classe">
+      <li>Le gagnant remporte un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.</li>
+      <li>Victoires d'affilée : +1 trophée bonus à la 2e, +2 à la 3e, puis +3.</li>
+      <li>Bonus de saison : +3 trophées par perso de la saison dans ton équipe (gagnés en plus, ou retirés de ta perte).</li>
+      <li>Prime : battre le joueur à la plus longue série de victoires en cours rapporte +5 trophées.</li>
+    </ul>
+    <div class="modes-match" data-type="classe">
+      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
+      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
+    </div>
+  </section>
+
+  <section id="detail-world-boss" class="panneau detail-match cache" data-detail="world-boss">
+    <h2>Random world boss</h2>
+    <p>Ce mode arrive bientôt.</p>
+  </section>
+
   <!-- Configuration de l'entraînement (cf. creerEntrainement, api/rooms/index.js). -->
-  <section id="panneau-entrainement" class="panneau panneau-entrainement cache">
-    <h2>Mode entraînement 🎯</h2>
+  <section id="detail-entrainement" class="panneau detail-match panneau-entrainement cache" data-detail="entrainement">
+    <h2>Entraînement 🎯</h2>
+    <p>Choisis la draft, ta box et celle d'en face (les tiennes, celles des autres joueurs ou une box
+      personnalisée), le boss et le J1. Seul, tu joues les deux rôles ; partage le lien pour te faire aider.
+      Visible seulement par toi dans l'historique.</p>
 
     <div class="etape-entrainement">
       <h3>1. Draft</h3>
@@ -123,6 +168,6 @@
 
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=10"></script>
-  <script src="matchmaking.js?v=10"></script>
+  <script src="matchmaking.js?v=11"></script>
 </body>
 </html>

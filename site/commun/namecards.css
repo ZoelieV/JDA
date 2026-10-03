@@ -1,0 +1,84 @@
+/* Cartes à namecard (accueil, Créer un match) : image de namecard en haut,
+   titre et courte description dessous ; sur téléphone, image à gauche et
+   texte à droite. La grille est propre à chaque page. */
+
+.carte-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: 0.875rem;
+  color: var(--texte);
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.carte-section:hover,
+.carte-section:focus-visible {
+  transform: translateY(-0.1875rem);
+  border-color: var(--accent-bordure);
+  box-shadow: 0 0.5rem 1.375rem rgba(0, 0, 0, 0.45);
+}
+
+/* Namecard en image d'illustration (format 840x400). */
+.carte-section img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 42 / 20;
+  object-fit: cover;
+}
+
+.carte-section-texte {
+  padding: 0.875rem 1rem 1rem;
+}
+
+.carte-section h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.carte-section p {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+/* Carte mise en avant (Créer un match sur l'accueil, Classé). */
+.carte-section.principale {
+  border-color: var(--accent-bordure);
+}
+
+.carte-section.principale h2 {
+  color: var(--accent);
+}
+
+@media (max-width: 700px) {
+  /* Cartes compactes : image à gauche (sur toute la hauteur de la carte),
+     texte à droite. */
+  .carte-section {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .carte-section img {
+    width: 42%;
+    height: auto;
+    aspect-ratio: auto;
+    align-self: stretch;
+    flex-shrink: 0;
+  }
+
+  .carte-section-texte {
+    align-self: center;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .carte-section h2 {
+    font-size: 1.0625rem;
+  }
+
+  .carte-section p {
+    font-size: 0.8125rem;
+  }
+}
