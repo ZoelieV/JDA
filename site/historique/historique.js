@@ -13,6 +13,7 @@ let estAdmin = false;
 let triLitiges = "total";
 let joueurLitiges = null;
 let personnagesParId = new Map(); // catalogue de draft (un seul Voyageur)
+let groupeParId = new Map(); // "traveler_pyro" -> "traveler" (anciens matchs)
 let bossParId = new Map();
 let moiDiscordId = null;
 
@@ -395,10 +396,11 @@ function afficherMatchsDepuisPage1() {
   afficherMatchs();
 }
 
-// Entraînements : section visible seulement s'il y en a (donc pour leur
-// lanceur).
+// Entraînements du joueur connecté (onglet visible pour lui seul).
 function afficherEntrainements() {
-  document.getElementById("section-entrainements").classList.toggle("cache", entrainements.length === 0);
+  const etat = document.getElementById("etat-entrainements");
+  etat.textContent = entrainements.length === 0 ? "Aucun entraînement pour l'instant." : "";
+  etat.classList.toggle("cache", !etat.textContent);
   document.getElementById("liste-entrainements").replaceChildren(...paginer("entrainements", entrainements, afficherEntrainements).map(creerLigneMatch));
 }
 
@@ -566,10 +568,10 @@ function afficherStatsLitiges() {
 }
 
 function afficherLitiges() {
-  document.getElementById("section-litiges").classList.toggle("cache", !estAdmin);
   if (!estAdmin) return;
-  // Garde l'état replié / déplié, met à jour le compteur.
-  appliquerRepliLitiges(document.getElementById("contenu-litiges").classList.contains("cache"));
+  // Nombre de litiges ouverts sous le titre de l'onglet.
+  document.getElementById("sous-titre-litiges").textContent =
+    `${litiges.length} ouvert${litiges.length > 1 ? "s" : ""}`;
   afficherStatsLitiges();
 
   const filtre = document.getElementById("filtre-litiges");
@@ -582,41 +584,6 @@ function afficherLitiges() {
   document.getElementById("etat-litiges").textContent = erreurLitiges
     || (affiches.length === 0 ? "Aucun litige ouvert." : "");
   document.getElementById("liste-litiges").replaceChildren(...paginer("litiges", affiches, afficherLitiges).map(creerLigneMatch));
-}
-
-// Section repliable (flèche du titre) ; état gardé sur cet appareil.
-const CLE_LITIGES_REPLIES = "historique-litiges-replies";
-
-function litigesReplies() {
-  try {
-    return localStorage.getItem(CLE_LITIGES_REPLIES) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function appliquerRepliLitiges(replies) {
-  const bouton = document.getElementById("replier-litiges");
-  document.getElementById("contenu-litiges").classList.toggle("cache", replies);
-  bouton.setAttribute("aria-expanded", String(!replies));
-  bouton.title = replies ? "Afficher les litiges" : "Cacher les litiges";
-  bouton.querySelector(".fleche-repli").textContent = replies ? "▶" : "▼";
-  // Replié : nombre de litiges ouverts à côté du titre.
-  const compte = document.getElementById("compte-litiges-replies");
-  compte.textContent = `${litiges.length} ouvert${litiges.length > 1 ? "s" : ""}`;
-  compte.classList.toggle("cache", !replies);
-}
-
-function initialiserRepliLitiges() {
-  document.getElementById("replier-litiges").addEventListener("click", () => {
-    const replies = !document.getElementById("contenu-litiges").classList.contains("cache");
-    try {
-      localStorage.setItem(CLE_LITIGES_REPLIES, replies ? "1" : "0");
-    } catch {
-      // Stockage indisponible : état gardé jusqu'au rechargement.
-    }
-    appliquerRepliLitiges(replies);
-  });
 }
 
 // Après une republication : litige retiré, match ajouté aux terminés.
@@ -637,6 +604,211 @@ function appliquerHistorique(historique) {
   statsLitiges = historique.stats_litiges || [];
   erreurLitiges = historique.erreur_litiges || null;
   entrainements = historique.entrainements || [];
+}
+
+// ---- Onglets : Litiges (administrateurs), Mes entraînements (joueur
+// connecté), Matchs (en cours et terminés), Statistiques. Onglet ouvert
+// gardé sur cet appareil. ----
+const CLE_ONGLET = "historique-onglet";
+let onglet = "matchs";
+
+function ongletDisponible(nom) {
+  return nom === "matchs" || nom === "stats" ||
+    (nom === "litiges" && estAdmin) || (nom === "entrainements" && !!moiDiscordId);
+}
+
+function choisirOnglet(nouveau) {
+  onglet = ongletDisponible(nouveau) ? nouveau : "matchs";
+  try {
+    localStorage.setItem(CLE_ONGLET, onglet);
+  } catch {
+    // Stockage indisponible : onglet gardé jusqu'au rechargement.
+  }
+  document.querySelectorAll(".onglet-historique").forEach(bouton => {
+    const actif = bouton.dataset.onglet === onglet;
+    bouton.classList.toggle("active", actif);
+    bouton.setAttribute("aria-selected", String(actif));
+  });
+  document.querySelectorAll(".panneau-historique").forEach(panneau => {
+    panneau.classList.toggle("cache", panneau.dataset.panneau !== onglet);
+  });
+  // Barre : filtres des matchs sur Matchs seulement ; matchs par page aussi
+  // sur les autres listes ; rien sur Statistiques.
+  document.querySelector(".barre-historique").classList.toggle("cache", onglet === "stats");
+  document.querySelectorAll(".filtre-matchs").forEach(element => {
+    element.classList.toggle("masque-onglet", onglet !== "matchs");
+  });
+  if (onglet === "stats") ouvrirStatistiques();
+}
+
+function initialiserOnglets() {
+  document.querySelectorAll(".onglet-historique").forEach(bouton => {
+    bouton.classList.toggle("cache", !ongletDisponible(bouton.dataset.onglet));
+    bouton.addEventListener("click", () => choisirOnglet(bouton.dataset.onglet));
+  });
+  let enregistre = null;
+  try {
+    enregistre = localStorage.getItem(CLE_ONGLET);
+  } catch {
+    // Stockage indisponible : onglet Matchs.
+  }
+  choisirOnglet(enregistre || "matchs");
+}
+
+// ---- Statistiques : persos les plus pick / bannis et records par boss
+// (cf. GET /api/matches?stats=1) ----
+const NB_PERSOS_RESUME = 10;
+let statistiques = null; // réponse de l'API, chargée à la 1re ouverture
+let chargementStats = null;
+let categorieStats = "tous"; // "tous" | "classe" | "non_classe"
+const listesDepliees = new Set();
+
+async function ouvrirStatistiques() {
+  if (statistiques || chargementStats) return;
+  const etat = document.getElementById("etat-stats");
+  chargementStats = fetch("/api/matches?stats=1", { credentials: "include" })
+    .then(async reponse => {
+      if (!reponse.ok) throw new Error("Impossible de charger les statistiques.");
+      statistiques = await reponse.json();
+      etat.classList.add("cache");
+      document.getElementById("contenu-stats").classList.remove("cache");
+      afficherClassementsPersos();
+      afficherRecords();
+    })
+    .catch(erreur => {
+      console.error(erreur);
+      etat.textContent = erreur.message || "Erreur de chargement.";
+      chargementStats = null; // réessayé à la prochaine ouverture
+    });
+}
+
+// Catégorie choisie ("tous" : classés et non classés additionnés), comptes
+// regroupés par perso de la draft (un seul Voyageur).
+function categorieAffichee() {
+  const sources = categorieStats === "tous"
+    ? Object.values(statistiques.categories)
+    : [statistiques.categories[categorieStats]];
+  const total = { matchs: 0, matchs_bans: 0, picks: new Map(), bans: new Map(), bans_equilibrage: new Map() };
+  sources.forEach(source => {
+    total.matchs += source.matchs;
+    total.matchs_bans += source.matchs_bans;
+    ["picks", "bans", "bans_equilibrage"].forEach(cle => {
+      Object.entries(source[cle]).forEach(([id, nb]) => {
+        const idDraft = personnagesParId.has(id) ? id : groupeParId.get(id);
+        if (!personnagesParId.has(idDraft)) return; // perso retiré du catalogue
+        total[cle].set(idDraft, (total[cle].get(idDraft) || 0) + nb);
+      });
+    });
+  });
+  return total;
+}
+
+function afficherClassementsPersos() {
+  document.querySelectorAll(".filtre-stats-bouton").forEach(bouton => {
+    bouton.classList.toggle("active", bouton.dataset.categorie === categorieStats);
+  });
+  const categorie = categorieAffichee();
+
+  document.querySelectorAll(".classement-persos").forEach(bloc => {
+    const cle = bloc.dataset.liste;
+    // Pourcentage : part des matchs où le perso a été pick (bans : parmi
+    // les matchs dont les bans sont enregistrés).
+    const nbMatchs = cle === "picks" ? categorie.matchs : categorie.matchs_bans;
+    const tries = [...categorie[cle].entries()].sort((a, b) => b[1] - a[1] ||
+      personnagesParId.get(a[0]).nom.localeCompare(personnagesParId.get(b[0]).nom, "fr", { sensitivity: "base" }));
+    const deplie = listesDepliees.has(cle);
+    const affiches = deplie ? tries : tries.slice(0, NB_PERSOS_RESUME);
+    const max = tries[0]?.[1] || 1;
+
+    bloc.querySelector(".note-stats").textContent = nbMatchs === 0 ? "Aucun match compté."
+      : `Sur ${nbMatchs} match${nbMatchs > 1 ? "s" : ""}${cle === "picks" ? "" : " aux bans enregistrés"}.`;
+
+    // Ex aequo : même rang.
+    let rang = 0;
+    bloc.querySelector(".liste-classement-persos").innerHTML = affiches.map(([id, nb], i) => {
+      if (i === 0 || nb !== affiches[i - 1][1]) rang = i + 1;
+      const nom = appliquerVariante(personnagesParId.get(id), {}).nom;
+      const pourcentage = Math.round(nb / Math.max(nbMatchs, 1) * 100);
+      return `<li class="ligne-perso-stats">
+        <span class="rang-stats">${rang}</span>
+        ${htmlPerso(id, {})}
+        <span class="nom-perso-stats">${echapperHtml(nom)}</span>
+        <span class="valeur-stats" title="${nb} match${nb > 1 ? "s" : ""} sur ${nbMatchs}">${nb} · ${pourcentage} %</span>
+        <span class="jauge-stats"><span style="width: ${nb / max * 100}%"></span></span>
+      </li>`;
+    }).join("");
+
+    const voirTout = bloc.querySelector(".voir-tout");
+    voirTout.classList.toggle("cache", tries.length <= NB_PERSOS_RESUME);
+    voirTout.textContent = deplie ? "Réduire" : `Tout afficher (${tries.length})`;
+  });
+}
+
+// Carte d'un record : temps, bannière du joueur, son équipe et la date.
+function creerRecord(record, titre) {
+  const carte = document.createElement("div");
+  carte.className = `record-boss${record ? "" : " vide"}`;
+  if (!record) {
+    carte.innerHTML = `<span class="record-titre">${titre}</span><span class="record-aucun">Aucun record</span>`;
+    return carte;
+  }
+  const joueur = record.joueur;
+  const banniere = encodeURI(`../DB/images/${joueur.banniere2}`);
+  const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p, aleatoire: p.aleatoire })).join("");
+  const melee = record.mode_theatre === "12" ? " · Mêlée générale" : "";
+  carte.innerHTML = `
+    <span class="record-titre">${titre}${melee}</span>
+    <div class="match-banniere banniere-joueur cote-gauche" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
+      ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
+      <span class="match-nom"></span>
+      ${htmlMedailleTheatre(joueur.theatre)}
+      <span class="match-temps record-temps">${joueur.temps.affiche}</span>
+    </div>
+    <div class="match-persos">${equipe}</div>
+    <span class="match-date">${formaterDate(record.date)}${record.adversaire ? ` · contre ${htmlPseudo(record.adversaire)}` : ""}</span>
+  `;
+  // Pseudo en texte (pas d'HTML venant des comptes).
+  carte.querySelector(".match-nom").textContent = joueur.nom;
+  return carte;
+}
+
+// Une ligne par boss : record hors classé puis en classé ; boss ayant un
+// record d'abord, puis A -> Z.
+function afficherRecords() {
+  const parBoss = new Map(statistiques.records.map(r => [r.boss_id, r]));
+  const lignes = [...bossParId.values()]
+    .sort((a, b) => parBoss.has(b.id) - parBoss.has(a.id) ||
+      a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }))
+    .map(boss => {
+      const records = parBoss.get(boss.id) || {};
+      const ligne = document.createElement("article");
+      ligne.className = "ligne-record";
+      ligne.innerHTML = `
+        <div class="record-boss-infos">
+          <img class="match-boss" src="../DB/${boss.image}" alt="" loading="lazy">
+          <span class="match-boss-nom">${echapperHtml(boss.nom)}</span>
+        </div>`;
+      ligne.append(creerRecord(records.non_classe, "Non classé"), creerRecord(records.classe, "Classé 🏆"));
+      ligne.querySelector(".record-boss:last-child").classList.add("classe");
+      return ligne;
+    });
+  document.getElementById("records-boss").replaceChildren(...lignes);
+}
+
+function initialiserStatistiques() {
+  document.querySelectorAll(".filtre-stats-bouton").forEach(bouton => {
+    bouton.addEventListener("click", () => {
+      categorieStats = bouton.dataset.categorie;
+      afficherClassementsPersos();
+    });
+  });
+  document.querySelectorAll(".classement-persos").forEach(bloc => {
+    bloc.querySelector(".voir-tout").addEventListener("click", () => {
+      const cle = bloc.dataset.liste;
+      if (!listesDepliees.delete(cle)) listesDepliees.add(cle);
+      afficherClassementsPersos();
+    });
+  });
 }
 
 // ---- Démarrage ----
@@ -705,14 +877,15 @@ async function demarrer() {
     ]);
     appliquerHistorique(historique);
     personnagesParId = new Map(regrouperPourDraft(personnages).map(p => [p.id, p]));
+    groupeParId = new Map(personnages.filter(p => p.groupe).map(p => [p.id, p.groupe]));
     bossParId = new Map(boss.map(b => [b.id, b]));
     moiDiscordId = utilisateur?.id || null;
     estAdmin = !!utilisateur?.admin;
 
     initialiserBarre();
     initialiserParPage();
-    initialiserRepliLitiges();
-    if (litigesReplies()) document.getElementById("contenu-litiges").classList.add("cache");
+    initialiserStatistiques();
+    initialiserOnglets();
     afficherMatchsEnCours();
     afficherEntrainements();
     afficherLitiges();

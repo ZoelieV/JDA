@@ -3,7 +3,8 @@
 // pour chaque joueur son nom, sa photo, sa deuxième bannière, son temps, son
 // équipe, ses bans et ses bans d'équilibrage.
 // Administrateurs : en plus, les matchs invalidés par un litige et le nombre
-// de litiges par joueur (modération) ; PATCH ?id= corrige les temps d'un
+// de litiges par joueur (modération). GET ?stats=1 : persos les plus pick /
+// bannis et records de temps par boss (onglet Statistiques). PATCH ?id= corrige les temps d'un
 // litige et republie le match (dans ce fichier pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel).
 const { supabase } = require("./_lib/supabase");
@@ -356,6 +357,107 @@ function resumerBan(action, profils) {
   };
 }
 
+// ---- GET ?stats=1 : statistiques (onglet Statistiques) sur tous les matchs
+// comptés (ni entraînement, ni litige ouvert ou traité : match invalidé),
+// pas seulement les NB_MATCHS_MAX derniers. ----
+const TAILLE_PAGE_STATS = 1000;
+
+async function chargerMatchsStats() {
+  const lignes = [];
+  // Supabase renvoie au plus 1000 lignes par requête : lecture par pages.
+  for (let debut = 0; ; debut += TAILLE_PAGE_STATS) {
+    const { data, error } = await supabase
+      .from("match_history")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .range(debut, debut + TAILLE_PAGE_STATS - 1);
+    if (error) throw error;
+    lignes.push(...(data || []));
+    if (!data || data.length < TAILLE_PAGE_STATS) break;
+  }
+  return lignes.filter(match => !match.entrainement && !["ouvert", "traite"].includes(match.litige));
+}
+
+// Personnages pick / bannis / bannis à l'équilibrage dans un match (chacun
+// compté une fois par match), ou bans null si non enregistrés (anciens
+// matchs, cf. bans_connus).
+function persosDuMatch(match) {
+  if (Array.isArray(match.actions)) {
+    const ids = garder => new Set(match.actions.filter(garder).map(a => a.perso_id));
+    return {
+      picks: ids(a => a.type === "pick"),
+      bans: ids(a => a.type === "ban" && !a.bonus),
+      bans_equilibrage: ids(a => a.type === "ban" && a.bonus)
+    };
+  }
+  const colonne = nom => ["j1", "j2"].flatMap(role => Array.isArray(match[`${nom}_${role}`]) ? match[`${nom}_${role}`] : []);
+  const bans = colonne("bans");
+  return {
+    picks: new Set(colonne("team")),
+    bans: bans.length ? new Set(bans.filter(b => !b.bonus).map(b => b.perso_id)) : null,
+    bans_equilibrage: bans.length ? new Set(bans.filter(b => b.bonus).map(b => b.perso_id)) : null
+  };
+}
+
+async function statistiques(res) {
+  const matchs = await chargerMatchsStats();
+  const nouvelleCategorie = () => ({ matchs: 0, matchs_bans: 0, picks: {}, bans: {}, bans_equilibrage: {} });
+  const categories = { classe: nouvelleCategorie(), non_classe: nouvelleCategorie() };
+  // Records : { boss_id: { classe: { match, role }, non_classe: ... } }.
+  const records = {};
+
+  matchs.forEach(match => {
+    const cle = match.classe ? "classe" : "non_classe";
+    const categorie = categories[cle];
+    const persos = persosDuMatch(match);
+    categorie.matchs += 1;
+    persos.picks.forEach(id => { categorie.picks[id] = (categorie.picks[id] || 0) + 1; });
+    if (persos.bans) {
+      categorie.matchs_bans += 1;
+      persos.bans.forEach(id => { categorie.bans[id] = (categorie.bans[id] || 0) + 1; });
+      persos.bans_equilibrage.forEach(id => { categorie.bans_equilibrage[id] = (categorie.bans_equilibrage[id] || 0) + 1; });
+    }
+
+    if (!match.boss_id) return;
+    ["j1", "j2"].forEach(role => {
+      const secondes = match[`temps_${role}_secondes`];
+      if (typeof secondes !== "number") return; // abandon ou pas de temps
+      const actuel = records[match.boss_id]?.[cle];
+      // Égalité : le plus ancien garde le record (matchs lus du plus ancien).
+      if (!actuel || secondes < actuel.match[`temps_${actuel.role}_secondes`]) {
+        (records[match.boss_id] ??= {})[cle] = { match, role };
+      }
+    });
+  });
+
+  const tenants = Object.values(records).flatMap(r => Object.values(r));
+  const joueurs = await chargerJoueurs([...new Set(tenants.flatMap(({ match }) =>
+    [match.player1_discord_id, match.player2_discord_id]).filter(Boolean))]);
+  const resumerRecord = record => {
+    if (!record) return null;
+    const { match, role } = record;
+    const profils = { j1: joueurs.get(match.player1_discord_id), j2: joueurs.get(match.player2_discord_id) };
+    const { discord_id, nom, avatar, banniere2, theatre, parametres, temps, equipe } = resumerJoueur(match, role, profils);
+    const adversaire = profils[role === "j1" ? "j2" : "j1"];
+    return {
+      match_id: match.id ?? null,
+      date: match.created_at || null,
+      mode_theatre: match.mode_theatre ?? null,
+      joueur: { discord_id, nom, avatar, banniere2, theatre, parametres, temps, equipe },
+      adversaire: adversaire?.discord_global_name || adversaire?.discord_username || null
+    };
+  };
+
+  return res.status(200).json({
+    categories,
+    records: Object.entries(records).map(([bossId, r]) => ({
+      boss_id: bossId,
+      classe: resumerRecord(r.classe),
+      non_classe: resumerRecord(r.non_classe)
+    }))
+  });
+}
+
 module.exports = async (req, res) => {
   if (req.method !== "GET" && req.method !== "PATCH") {
     res.setHeader("Allow", "GET, PATCH");
@@ -385,6 +487,16 @@ module.exports = async (req, res) => {
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Erreur lecture des bans" });
+    }
+  }
+
+  // Onglet Statistiques (tout le monde).
+  if (req.query?.stats) {
+    try {
+      return await statistiques(res);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur calcul des statistiques" });
     }
   }
 

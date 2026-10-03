@@ -12,6 +12,75 @@
   display: none !important;
 }
 
+/* ---- Onglets : Litiges, Mes entraînements, Matchs, Statistiques ; même
+   largeur, à eux tous celle de la page (comme le Classement) ---- */
+
+.onglets-historique {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  max-width: 90rem;
+  margin: 0 auto 1.25rem;
+}
+
+.onglet-historique {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.55);
+  color: white;
+  font-family: var(--police-titre);
+  font-size: 1.375rem;
+  cursor: pointer;
+}
+
+.onglet-historique span {
+  font-family: var(--police-titre);
+  font-size: 0.875rem;
+  color: var(--texte-doux);
+}
+
+.onglet-historique:hover {
+  border-color: var(--accent-bordure);
+}
+
+.onglet-historique.active {
+  border-color: var(--accent);
+  background-color: var(--accent-fond);
+  box-shadow: 0 0 0.75rem rgba(245, 197, 66, 0.3);
+}
+
+/* Téléphone : 2 onglets par ligne si plus de 2, textes plus petits. */
+@media (max-width: 700px) {
+  .onglets-historique {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .onglet-historique {
+    padding: 0.5rem 0.5rem;
+    font-size: 1.0625rem;
+    text-align: center;
+  }
+
+  .onglet-historique span {
+    font-size: 0.75rem;
+  }
+}
+
+/* Filtres propres à l'onglet Matchs, cachés sur les autres. */
+.masque-onglet {
+  display: none !important;
+}
+
 /* ---- Barre : recherche, tris, mes matchs ---- */
 
 /* Recherche + tris centrés, dans un rectangle flou figé en haut de l'écran
@@ -909,31 +978,215 @@ img.arme-mini {
   background-color: #2a2a2a;
 }
 
-/* Titre des litiges : flèche pour replier / déplier la section. */
-.replier-section {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0;
-  border: none;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
+/* ---- Statistiques ---- */
+
+.note-stats {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: var(--texte-doux);
 }
 
-.replier-section:hover .fleche-repli {
+.entete-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.entete-stats .titre-section {
+  margin: 0;
+}
+
+.filtre-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* Persos les plus pick / bannis / bannis à l'équilibrage : 3 colonnes. */
+.classements-persos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.classement-persos {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.875rem;
+  background-color: rgba(20, 20, 20, 0.55);
+}
+
+.classement-persos .sous-titre-section {
+  margin-top: 0;
+}
+
+.liste-classement-persos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Rang, icône, nom, valeur ; jauge sous le nom. */
+.ligne-perso-stats {
+  display: grid;
+  grid-template-columns: 1.75rem var(--taille-perso) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "rang perso nom valeur"
+    "rang perso jauge jauge";
+  align-items: center;
+  column-gap: 0.625rem;
+}
+
+.ligne-perso-stats .perso-mini {
+  grid-area: perso;
+}
+
+.rang-stats {
+  grid-area: rang;
+  text-align: right;
+  font-weight: bold;
+  color: var(--texte-doux);
+  font-variant-numeric: tabular-nums;
+}
+
+.nom-perso-stats {
+  grid-area: nom;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.valeur-stats {
+  grid-area: valeur;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.jauge-stats {
+  grid-area: jauge;
+  height: 0.375rem;
+  border-radius: 62.4375rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.jauge-stats span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--accent);
+}
+
+.classement-persos[data-liste="bans"] .jauge-stats span,
+.classement-persos[data-liste="bans_equilibrage"] .jauge-stats span {
+  background-color: var(--couleur-ban);
+}
+
+.voir-tout {
+  align-self: center;
+  margin-top: 0.75rem;
+  height: auto;
+  font-size: 0.9375rem;
+}
+
+/* Records : une ligne par boss (boss | non classé | classé). */
+.records-boss {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ligne-record {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.875rem;
+  background-color: rgba(20, 20, 20, 0.55);
+}
+
+.record-boss-infos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  text-align: center;
+}
+
+.record-boss-infos .match-boss {
+  max-width: 5rem;
+}
+
+.record-boss {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.5rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.75rem;
+}
+
+.record-boss.classe {
+  border-color: var(--accent-bordure);
+}
+
+.record-boss.vide {
+  align-items: center;
+  justify-content: center;
+}
+
+.record-titre {
+  font-size: 0.8125rem;
+  font-weight: bold;
+  color: var(--texte-doux);
+}
+
+.record-boss.classe .record-titre {
   color: var(--accent);
 }
 
-.fleche-repli {
-  display: inline-block;
-  width: 1.25rem;
-  font-size: 0.875em;
+.record-aucun {
+  color: var(--texte-doux);
 }
 
-.compte-litiges {
-  font-size: 0.875rem;
-  font-weight: normal;
-  color: var(--texte-doux);
+.record-temps {
+  color: var(--couleur-victoire);
+}
+
+@media (max-width: 700px) {
+  .ligne-record {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "boss boss"
+      "non-classe classe";
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .record-boss-infos {
+    grid-area: boss;
+    flex-direction: row;
+  }
+
+  .record-boss-infos .match-boss {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .record-boss {
+    padding: 0.25rem;
+  }
 }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=28">
+<link rel="stylesheet" href="historique.css?v=29">
 <link rel="stylesheet" href="../commun/entete.css?v=rem21">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=3">
@@ -16,22 +16,32 @@
 <a href="../index.html" class="lien-accueil">Accueil</a>
 <h1 class="titre-page">Historique des matchs</h1>
 
-  <!-- Recherche, tris (sens inversé par un 2e clic) et filtre "mes matchs". -->
+  <!-- Onglets : même largeur, à eux tous celle de la page (Litiges pour les
+       administrateurs, Mes entraînements pour un joueur connecté). -->
+  <div class="onglets-historique" role="tablist">
+    <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="litiges">Litiges<span id="sous-titre-litiges">administrateurs</span></button>
+    <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="entrainements">Mes entraînements<span>visibles par toi seul</span></button>
+    <button type="button" class="onglet-historique active" role="tab" aria-selected="true" data-onglet="matchs">Matchs<span>en cours et terminés</span></button>
+    <button type="button" class="onglet-historique" role="tab" aria-selected="false" data-onglet="stats">Statistiques<span>picks, bans et records</span></button>
+  </div>
+
+  <!-- Recherche, tris (sens inversé par un 2e clic) et filtre "mes matchs" :
+       onglet Matchs ; matchs par page : aussi Litiges et Mes entraînements. -->
   <div class="barre-historique">
-    <input type="text" id="recherche" class="recherche-historique" placeholder="Rechercher un joueur, un perso, un temps (7:32)…">
-    <div class="tris">
+    <input type="text" id="recherche" class="recherche-historique filtre-matchs" placeholder="Rechercher un joueur, un perso, un temps (7:32)…">
+    <div class="tris filtre-matchs">
       <span class="tris-label">Trier :</span>
       <button type="button" class="bouton-historique tri-historique" data-tri="date">Date <span class="fleche"></span></button>
       <button type="button" class="bouton-historique tri-historique" data-tri="temps" title="Meilleur temps du match">Temps <span class="fleche"></span></button>
       <button type="button" class="bouton-historique tri-historique" data-tri="ecart" title="Écart de temps entre les 2 joueurs">Écart <span class="fleche"></span></button>
     </div>
     <!-- Un seul boss (liste remplie depuis DB/boss.json et les ajouts admin). -->
-    <select id="filtre-boss" class="filtre-boss-historique" title="N'afficher que les matchs contre ce boss">
+    <select id="filtre-boss" class="filtre-boss-historique filtre-matchs" title="N'afficher que les matchs contre ce boss">
       <option value="">Tous les boss</option>
     </select>
-    <button type="button" id="mes-matchs" class="bouton-historique cache" title="N'afficher que mes matchs">Mes matchs</button>
-    <button type="button" id="matchs-classes" class="bouton-historique" title="N'afficher que les matchs classés">Classés 🏆</button>
-    <button type="button" id="clear-historique" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
+    <button type="button" id="mes-matchs" class="bouton-historique filtre-matchs cache" title="N'afficher que mes matchs">Mes matchs</button>
+    <button type="button" id="matchs-classes" class="bouton-historique filtre-matchs" title="N'afficher que les matchs classés">Classés 🏆</button>
+    <button type="button" id="clear-historique" class="btn-clear-filtres filtre-matchs" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
     <label class="choix-par-page" title="Nombre de matchs par page">
       Matchs par page
       <select id="matchs-par-page">
@@ -43,64 +53,105 @@
     </label>
   </div>
 
-  <!-- Rooms en cours : à regarder en spectateur. -->
-  <section id="section-en-cours" class="section-matchs cache">
-    <h2 class="titre-section">Matchs en cours</h2>
-    <div id="liste-en-cours" class="liste-matchs"></div>
-  </section>
-
   <!-- Administrateurs : matchs invalidés par un litige (temps à corriger
        puis republier) et joueurs ayant le plus de litiges. -->
-  <section id="section-litiges" class="section-matchs section-litiges cache">
-    <h2 class="titre-section">
-      <button type="button" id="replier-litiges" class="replier-section" aria-expanded="true" aria-controls="contenu-litiges" title="Cacher les litiges">
-        <span class="fleche-repli">▼</span> Litiges
-      </button>
-      <span class="badge-admin">Admin</span>
-      <span id="compte-litiges-replies" class="compte-litiges cache"></span>
-    </h2>
-    <div id="contenu-litiges">
-    <h3 class="sous-titre-section">Joueurs en litige</h3>
-    <p id="etat-stats-litiges" class="etat-historique"></p>
-    <div class="table-litiges-cadre">
-      <table id="table-litiges" class="table-litiges">
-        <thead>
-          <tr>
-            <th>Joueur</th>
-            <th><button type="button" class="tri-litiges" data-tri="total" title="Litiges ouverts et corrigés">Total <span class="fleche"></span></button></th>
-            <th><button type="button" class="tri-litiges" data-tri="ouverts" title="Litiges pas encore traités">Ouverts <span class="fleche"></span></button></th>
-            <th><button type="button" class="tri-litiges" data-tri="republies" title="Temps corrigés et match republié">Corrigés <span class="fleche"></span></button></th>
-            <th><button type="button" class="tri-litiges" data-tri="signales" title="Litiges signalés par ce joueur">Signalés <span class="fleche"></span></button></th>
-            <th><button type="button" class="tri-litiges" data-tri="subis" title="Litiges signalés par son adversaire">Subis <span class="fleche"></span></button></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <h3 class="sous-titre-section">Matchs invalidés <span id="filtre-litiges" class="filtre-litiges cache"></span></h3>
-    <p id="etat-litiges" class="etat-historique"></p>
-    <div id="liste-litiges" class="liste-matchs"></div>
-    <nav id="pages-litiges" class="pagination cache" aria-label="Pages des litiges"></nav>
-    </div>
-  </section>
+  <div class="panneau-historique cache" data-panneau="litiges">
+    <section class="section-matchs section-litiges">
+      <h2 class="titre-section">Joueurs en litige <span class="badge-admin">Admin</span></h2>
+      <p id="etat-stats-litiges" class="etat-historique"></p>
+      <div class="table-litiges-cadre">
+        <table id="table-litiges" class="table-litiges">
+          <thead>
+            <tr>
+              <th>Joueur</th>
+              <th><button type="button" class="tri-litiges" data-tri="total" title="Litiges ouverts et corrigés">Total <span class="fleche"></span></button></th>
+              <th><button type="button" class="tri-litiges" data-tri="ouverts" title="Litiges pas encore traités">Ouverts <span class="fleche"></span></button></th>
+              <th><button type="button" class="tri-litiges" data-tri="republies" title="Temps corrigés et match republié">Corrigés <span class="fleche"></span></button></th>
+              <th><button type="button" class="tri-litiges" data-tri="signales" title="Litiges signalés par ce joueur">Signalés <span class="fleche"></span></button></th>
+              <th><button type="button" class="tri-litiges" data-tri="subis" title="Litiges signalés par son adversaire">Subis <span class="fleche"></span></button></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <h3 class="sous-titre-section">Matchs invalidés <span id="filtre-litiges" class="filtre-litiges cache"></span></h3>
+      <p id="etat-litiges" class="etat-historique"></p>
+      <div id="liste-litiges" class="liste-matchs"></div>
+      <nav id="pages-litiges" class="pagination cache" aria-label="Pages des litiges"></nav>
+    </section>
+  </div>
 
   <!-- Entraînements lancés par le joueur connecté : lui seul les voit. -->
-  <section id="section-entrainements" class="section-matchs cache">
-    <h2 class="titre-section">Mes entraînements 🎯</h2>
-    <div id="liste-entrainements" class="liste-matchs"></div>
-    <nav id="pages-entrainements" class="pagination cache" aria-label="Pages des entraînements"></nav>
-  </section>
+  <div class="panneau-historique cache" data-panneau="entrainements">
+    <section class="section-matchs">
+      <p id="etat-entrainements" class="etat-historique"></p>
+      <div id="liste-entrainements" class="liste-matchs"></div>
+      <nav id="pages-entrainements" class="pagination cache" aria-label="Pages des entraînements"></nav>
+    </section>
+  </div>
 
-  <section class="section-matchs">
-    <h2 class="titre-section">Matchs terminés</h2>
-    <p id="etat-historique" class="etat-historique">Chargement…</p>
-    <div id="liste-matchs" class="liste-matchs"></div>
-    <nav id="pages-matchs" class="pagination cache" aria-label="Pages des matchs"></nav>
-  </section>
+  <div class="panneau-historique" data-panneau="matchs">
+    <!-- Rooms en cours : à regarder en spectateur. -->
+    <section id="section-en-cours" class="section-matchs cache">
+      <h2 class="titre-section">Matchs en cours</h2>
+      <div id="liste-en-cours" class="liste-matchs"></div>
+    </section>
+
+    <section class="section-matchs">
+      <h2 class="titre-section">Matchs terminés</h2>
+      <p id="etat-historique" class="etat-historique">Chargement…</p>
+      <div id="liste-matchs" class="liste-matchs"></div>
+      <nav id="pages-matchs" class="pagination cache" aria-label="Pages des matchs"></nav>
+    </section>
+  </div>
+
+  <!-- Statistiques (chargées à la 1re ouverture de l'onglet) : tous les
+       matchs comptés, ni entraînements ni matchs invalidés par un litige. -->
+  <div class="panneau-historique cache" data-panneau="stats">
+    <p id="etat-stats" class="etat-historique">Chargement…</p>
+    <div id="contenu-stats" class="cache">
+      <section class="section-matchs">
+        <div class="entete-stats">
+          <h2 class="titre-section">Personnages</h2>
+          <div class="filtre-stats" role="group" aria-label="Matchs comptés">
+            <button type="button" class="bouton-historique filtre-stats-bouton active" data-categorie="tous">Tous</button>
+            <button type="button" class="bouton-historique filtre-stats-bouton" data-categorie="classe">Classés 🏆</button>
+            <button type="button" class="bouton-historique filtre-stats-bouton" data-categorie="non_classe">Non classés</button>
+          </div>
+        </div>
+        <div class="classements-persos">
+          <div class="classement-persos" data-liste="picks">
+            <h3 class="sous-titre-section">Les plus pick</h3>
+            <p class="note-stats"></p>
+            <ol class="liste-classement-persos"></ol>
+            <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
+          </div>
+          <div class="classement-persos" data-liste="bans">
+            <h3 class="sous-titre-section">Les plus bannis</h3>
+            <p class="note-stats"></p>
+            <ol class="liste-classement-persos"></ol>
+            <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
+          </div>
+          <div class="classement-persos" data-liste="bans_equilibrage">
+            <h3 class="sous-titre-section">Bans d'équilibrage</h3>
+            <p class="note-stats"></p>
+            <ol class="liste-classement-persos"></ol>
+            <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-matchs">
+        <h2 class="titre-section">Records par boss</h2>
+        <p class="note-stats">Meilleur temps sur chaque boss, hors classé et en classé (Classique et Mêlée générale).</p>
+        <div id="records-boss" class="records-boss"></div>
+      </section>
+    </div>
+  </div>
 
   <script src="/commun/variantes.js?v=3"></script>
   <script src="/commun/cartes.js?v=10"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=29"></script>
+  <script src="historique.js?v=30"></script>
 </body>
 </html>
