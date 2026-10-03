@@ -494,7 +494,9 @@ async function handleConfirmerTemps(req, res, roomId, user) {
       draft.phase = "litige";
       draft.litige_par = null;
       draft.vainqueur = null;
-      draft.triche = triche;
+      // Simple drapeau pour les joueurs : les détails de la détection
+      // restent dans l'archive (administrateurs seulement).
+      draft.triche = true;
       await archiverMatch(draft, { litige: true, classe, triche });
       await sauvegarderDraft(roomId, draft);
       return repondreDraft(res, draft, joueur);

@@ -172,7 +172,7 @@ function etatInitialDraft() {
     temps_confirme_j2: false,
     litige_par: null, // "j1" | "j2" : qui a signalé le litige (phase litige)
     debut_temps: null, // début de la saisie des temps (ms) : anti-triche
-    triche: null, // anti-triche : { duree_saisie, somme_temps } si temps incohérents
+    triche: null, // anti-triche : true si temps incohérents (détails dans l'archive, cf. _lib/archive.js)
     vainqueur: null, // "j1" | "j2" | "egalite" une fois les 2 temps confirmés
     resultat_trophees: null, // classé : { j1, j2, bonus } trophées gagnés / perdus (cf. _lib/trophees.js)
     rejouer_j1: false, // ready-check pour la revanche, même principe que pret_j1/pret_j2

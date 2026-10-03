@@ -2160,13 +2160,12 @@ function rendreVerification() {
 // Litige : manche invalidée, pas de vainqueur ; revanche possible.
 function rendreLitige() {
   rendreRecap();
-  // Anti-triche : somme des temps supérieure au temps écoulé depuis la fin
-  // de la draft (cf. api/_lib/sanctions.js).
+  // Anti-triche : pas de détail de la détection côté joueurs (visible par
+  // les administrateurs seulement, page Historique).
   if (draft.triche) {
-    const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
     document.getElementById("resultat-final").innerHTML = `
       <p class="ligne-vainqueur"><span class="litige">Match invalidé</span></p>
-      <p class="ligne-temps">Temps incohérents : la somme des deux temps (${fmt(draft.triche.somme_temps)}) dépasse le temps écoulé depuis la fin de la draft (${fmt(draft.triche.duree_saisie)}). Le match ne compte pas et est transmis aux administrateurs.</p>
+      <p class="ligne-temps">Ce match est suspecté de triche : il ne compte pas et est transmis aux administrateurs.</p>
     `;
     rendreRejouer();
     return;
