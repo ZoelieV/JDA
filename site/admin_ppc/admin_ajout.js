@@ -24,7 +24,14 @@ const LIBELLES_ELEMENTS = {
   anemo: "Anémo", geo: "Géo", dendro: "Dendro", all: "Tous les éléments"
 };
 const LIBELLES_ARMES = { sword: "Épée", claymore: "Épée à deux mains", polearm: "Arme d'hast", bow: "Arc", catalyst: "Catalyseur" };
-const TYPES_BOSS = { weekly_boss: "Boss hebdomadaire" };
+// Types de boss (mêmes clés que TYPES_BOSS de api/points.js).
+const TYPES_BOSS = {
+  weekly_boss: "Boss hebdomadaire",
+  legende_locale_jour: "Légende locale (1 fois par jour)",
+  legende_locale_infinie: "Légende locale (à l'infini)",
+  world_boss: "World boss",
+  carnage_boss: "Boss de carnage"
+};
 
 // Résistance d'un boss saisie en pourcentage (10 = 10 %) : virgule acceptée,
 // « % » final ignoré, vide = 0. NaN si ce n'est pas un nombre.

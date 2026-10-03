@@ -38,7 +38,9 @@ const GENRES = ["characters", "weapons", "boss"];
 const TYPES_ARMES = ["sword", "claymore", "polearm", "bow", "catalyst"];
 const CATEGORIES = ["dps", "subdps", "support"];
 const RARETES = ["3", "4", "5"];
-const TYPES_BOSS = ["weekly_boss"];
+// Types de boss (libellés : TYPES_BOSS de admin_ppc/admin_ajout.js).
+// Légendes locales : une fois par jour (reset quotidien) ou à l'infini.
+const TYPES_BOSS = ["weekly_boss", "legende_locale_jour", "legende_locale_infinie", "world_boss", "carnage_boss"];
 const NB_RESISTANCES = 7;
 const CATEGORIES_ARMES = ["support", "standard"];
 
