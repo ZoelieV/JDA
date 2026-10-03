@@ -4,3 +4,5 @@ node_modules/
 /auto_box/
 # Requêtes SQL à lancer à la main dans Supabase.
 /sql/
+# Captures d'écran de vérification (Claude Code).
+/captures_claude/

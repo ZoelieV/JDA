@@ -142,6 +142,7 @@ function creerSelectionsParDefaut() {
 function creerProfilParDefaut() {
   return {
     uid: "",
+    niveau_monde: "",
     theatre: "",
     characters: {
       full: {},
@@ -756,22 +757,23 @@ function rendreCollection(personnages, armes, profil) {
 }
 
 // ---- Bouton Enregistrer : grisé tant qu'il n'y a rien à enregistrer ----
-// Compare ce qu'enregistre le bouton (collection, variantes, UID, théâtre)
+// Compare ce qu'enregistre le bouton (collection, variantes, UID, niveau du
+// monde, théâtre)
 // à l'état du dernier enregistrement.
 
 let etatEnregistre = null;
 
-function etatAEnregistrer(profil, uid, theatre, stream) {
+function etatAEnregistrer(profil, uid, theatre, stream, niveauMonde) {
   return JSON.stringify([
     profil.characters, profil.weapons,
     profil.parametres?.voyageur ?? null, profil.parametres?.manekin ?? null,
-    uid, theatre, stream, profil.nomsBoxes ?? {}
+    uid, theatre, stream, niveauMonde, profil.nomsBoxes ?? {}
   ]);
 }
 
 function etatFormulaire(profil) {
   return etatAEnregistrer(profil, document.getElementById("uid").value, document.getElementById("theatre").value,
-    document.getElementById("stream").value.trim());
+    document.getElementById("stream").value.trim(), document.getElementById("niveau-monde").value);
 }
 
 // Bouton de la page et bouton du menu du compte.
@@ -851,6 +853,7 @@ async function initialiserPage() {
     const profil = await chargerProfil();
 
     document.getElementById("uid").value = profil.uid || "";
+    document.getElementById("niveau-monde").value = profil.niveau_monde || "";
     document.getElementById("stream").value = profil.stream || "";
     document.getElementById("theatre").value = profil.theatre || "";
 
@@ -1083,6 +1086,7 @@ async function initialiserPage() {
       event.preventDefault();
 
       profil.uid = document.getElementById("uid").value;
+      profil.niveau_monde = document.getElementById("niveau-monde").value;
       // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
       profil.stream = document.getElementById("stream").value.trim();
       profil.theatre = document.getElementById("theatre").value;
@@ -1105,7 +1109,7 @@ async function initialiserPage() {
     document.getElementById("stream").addEventListener("input", verifierChampStream);
     verifierChampStream();
 
-    ["uid", "stream", "theatre"].forEach(id => {
+    ["uid", "niveau-monde", "stream", "theatre"].forEach(id => {
       const champ = document.getElementById(id);
       champ.addEventListener("input", () => mettreAJourBoutonEnregistrer(profil));
       champ.addEventListener("change", () => mettreAJourBoutonEnregistrer(profil));
@@ -1406,7 +1410,7 @@ async function initialiserParametres(profil) {
       succes ? "succes" : "erreur"
     );
     if (succes) {
-      marquerEnregistre(profil, etatAEnregistrer(profil, profil.uid || "", profil.theatre || "", profil.stream || ""));
+      marquerEnregistre(profil, etatAEnregistrer(profil, profil.uid || "", profil.theatre || "", profil.stream || "", profil.niveau_monde || ""));
       memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
       fermer();
     }

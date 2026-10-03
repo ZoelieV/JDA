@@ -60,6 +60,8 @@ const PARAMETRES_AUTORISES = {
 };
 const THEATRES = new Set(["", "1", "2", "3", "4"]);
 const LONGUEUR_UID = 20;
+// Niveau du monde (1 à 9), ou "" si pas renseigné.
+const NIVEAUX_MONDE = new Set(["", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 
 function nettoyerParametres(parametres) {
   if (!parametres || typeof parametres !== "object") return {};
@@ -82,6 +84,7 @@ function nettoyerProfil(profil) {
     profil.parametres = nettoyerParametres(profil.parametres);
     profil.uid = typeof profil.uid === "string" ? profil.uid.trim().slice(0, LONGUEUR_UID) : "";
     if (!THEATRES.has(String(profil.theatre ?? ""))) profil.theatre = "";
+    profil.niveau_monde = NIVEAUX_MONDE.has(String(profil.niveau_monde ?? "")) ? String(profil.niveau_monde ?? "") : "";
 
     const noms = {};
     BOX_RENOMMABLES.forEach(box => {

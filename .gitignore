@@ -4,3 +4,6 @@ node_modules/
 # Le site utilise les versions générées (bg_web / bg_miniatures) par
 # scripts/generer_cosmetiques.py.
 site/DB/images/bg_ignore/
+
+# Captures d'écran de vérification (Claude Code), locales uniquement.
+site/captures_claude/

@@ -2,7 +2,7 @@
 // pages ; bouton de connexion Discord si l'utilisateur n'est pas connecté.
 // Pas sur Mon compte (menu du compte propre) ni dans les rooms de match.
 // Clic sur la photo : menu des paramètres, comme sur Mon compte (UID,
-// théâtre, Voyageur, Manekin, Personnalisation, Déconnexion) ; clic ailleurs
+// niveau du monde, théâtre, Voyageur, Manekin, Personnalisation, Déconnexion) ; clic ailleurs
 // sur la bannière : Mon compte.
 //
 // Placé dans #zone-compte si la page en a un (accueil), sinon dans une zone
@@ -13,6 +13,8 @@
   // Champs du menu enregistrés dans le profil (mêmes que sur Mon compte).
   const CHAMPS = [
     { id: "menu-uid", label: "UID", lire: p => p.uid || "", ecrire: (p, v) => { p.uid = v; } },
+    { id: "menu-niveau-monde", label: "Niveau du monde", lire: p => p.niveau_monde || "", ecrire: (p, v) => { p.niveau_monde = v; },
+      options: [["", "Choisir"], ...["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(n => [n, n])] },
     // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
     { id: "menu-stream", label: "Lien de stream (Twitch ou YouTube)", type: "url", placeholder: "https://twitch.tv/…",
       lire: p => p.stream || "", ecrire: (p, v) => { p.stream = v.trim(); } },
