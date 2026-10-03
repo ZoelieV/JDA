@@ -11,8 +11,18 @@
   text-align: center;
 }
 
+/* Nom du site "Jugement des Archons" : police propre (DB/fonts/true_title.ttf),
+   les autres titres de page gardent --police-titre. */
+@font-face {
+  font-family: "Titre site";
+  src: url("/DB/fonts/true_title.ttf") format("truetype");
+  font-display: swap;
+}
+
 .accueil-hero h1 {
   margin: 0 0 0.625rem;
+  font-family: "Titre site", var(--police-titre);
+  font-weight: normal;
 }
 
 .accueil-hero p {
