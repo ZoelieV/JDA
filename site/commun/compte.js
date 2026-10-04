@@ -163,9 +163,9 @@
         const { user } = await reponse.json();
         const nom = user.global_name || user.username || "Mon compte";
 
-        // Accès réservés aux administrateurs (ex. carte Administration de
-        // l'accueil).
-        if (user.admin) {
+        // Accès réservés aux administrateurs et mini admins (ex. carte
+        // Administration de l'accueil ; lecture seule pour les mini admins).
+        if (user.admin || user.mini_admin) {
           document.querySelectorAll(".carte-admin").forEach(carte => { carte.hidden = false; });
         }
 

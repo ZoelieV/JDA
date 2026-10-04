@@ -28,7 +28,7 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
-const { estAdmin } = require("./_lib/admin");
+const { estAdmin, estModerateur } = require("./_lib/admin");
 const { getCatalogueComplet, MODES_POINTS, ELEMENTS, estAjout } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
@@ -204,7 +204,8 @@ module.exports = async (req, res) => {
     if (req.method === "GET") {
       res.setHeader("Cache-Control", "no-store");
       const config = await lireConfig();
-      return res.status(200).json(user && estAdmin(user.id) ? config : versionPublique(config));
+      // Mini admins : tout voir (page Administration en lecture seule), rien modifier.
+      return res.status(200).json(user && await estModerateur(user.id) ? config : versionPublique(config));
     }
 
     if (req.method === "POST") {

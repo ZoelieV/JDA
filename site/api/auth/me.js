@@ -1,5 +1,5 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
-const { estAdmin } = require("../_lib/admin");
+const { estAdmin, estMiniAdmin } = require("../_lib/admin");
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
@@ -13,7 +13,8 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       authenticated: true,
       // admin : accès à la page d'administration des points (carte de l'accueil).
-      user: { ...user, admin: estAdmin(user.id) }
+      // mini_admin : même page en lecture seule, litiges et bans du classé.
+      user: { ...user, admin: estAdmin(user.id), mini_admin: !estAdmin(user.id) && await estMiniAdmin(user.id) }
     });
   } catch (error) {
     console.error(error);

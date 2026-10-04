@@ -1188,3 +1188,11 @@ body {
   color: #ff7a85;
   font-weight: bold;
 }
+
+/* Mini admin : page en lecture seule (cf. passerEnLectureSeule). */
+.lecture-seule #ouvrir-ajout,
+.lecture-seule #pied-admin,
+.lecture-seule #enregistrer-boss,
+.lecture-seule #enregistrer-categories {
+  display: none;
+}

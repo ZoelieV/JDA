@@ -880,7 +880,8 @@ async function demarrer() {
     groupeParId = new Map(personnages.filter(p => p.groupe).map(p => [p.id, p.groupe]));
     bossParId = new Map(boss.map(b => [b.id, b]));
     moiDiscordId = utilisateur?.id || null;
-    estAdmin = !!utilisateur?.admin;
+    // Mini admins : litiges et sanctions comme les administrateurs.
+    estAdmin = !!(utilisateur?.admin || utilisateur?.mini_admin);
 
     initialiserBarre();
     initialiserParPage();

@@ -781,10 +781,11 @@ function afficherEtat(message, type = "") {
 
 async function demarrer() {
   const utilisateur = await chargerSession();
-  if (!utilisateur?.admin) {
+  if (!utilisateur?.admin && !utilisateur?.mini_admin) {
     afficherEtat("Cette page est réservée aux administrateurs.", "erreur");
     return;
   }
+  const lectureSeule = !utilisateur.admin;
 
   try {
     await chargerDonnees();
@@ -797,7 +798,8 @@ async function demarrer() {
   afficherEtat("");
   afficherLogoPersonnages();
   document.getElementById("zone-admin").classList.remove("cache");
-  document.getElementById("pied-admin").classList.remove("cache");
+  if (lectureSeule) passerEnLectureSeule();
+  else document.getElementById("pied-admin").classList.remove("cache");
 
   document.querySelectorAll(".vue-admin").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -822,6 +824,28 @@ async function demarrer() {
   initialiserCategories();
   suivreHauteurBarre();
   rendre();
+}
+
+// ---- Mini admin : page en lecture seule ----
+// Tris, filtres, recherche, aperçus et listes visibles ; champs, cases et
+// boutons qui modifient désactivés (y compris dans ce qui est redessiné plus
+// tard), ajouts et enregistrements cachés. Le serveur refuse de toute façon
+// les enregistrements (api/points.js, administrateurs seulement).
+const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "liste-categories"];
+const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie";
+
+function passerEnLectureSeule() {
+  document.body.classList.add("lecture-seule");
+  document.querySelector(".aide-admin").textContent =
+    "Mode lecture seule (mini admin) : tu peux consulter les points, les aperçus, les boss et les catégories, trier et filtrer, mais pas les modifier. Les litiges se gèrent dans l'Historique.";
+  ZONES_MODIFIABLES.forEach(id => {
+    const zone = document.getElementById(id);
+    const verrouiller = () => zone.querySelectorAll(ELEMENTS_MODIFIANTS).forEach(element => {
+      if (!element.disabled) element.disabled = true;
+    });
+    verrouiller();
+    new MutationObserver(verrouiller).observe(zone, { childList: true, subtree: true });
+  });
 }
 
 // Logo de la vue Personnages : tête du Voyageur choisi par l'admin connecté

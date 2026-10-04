@@ -2,7 +2,7 @@
 // actives, à regarder en spectateur) et les derniers matchs terminés, avec
 // pour chaque joueur son nom, sa photo, sa deuxième bannière, son temps, son
 // équipe, ses bans et ses bans d'équilibrage.
-// Administrateurs : en plus, les matchs invalidés par un litige et le nombre
+// Administrateurs et mini admins : en plus, les matchs invalidés par un litige et le nombre
 // de litiges par joueur (modération). GET ?stats=1 : persos les plus pick /
 // bannis et records de temps par boss (onglet Statistiques). PATCH ?id= corrige les temps d'un
 // litige et republie le match (dans ce fichier pour rester sous la limite de
@@ -10,7 +10,7 @@
 const { supabase } = require("./_lib/supabase");
 const { infosPersoJoueur } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
-const { estAdmin } = require("./_lib/admin");
+const { estModerateur } = require("./_lib/admin");
 const { parserTempsOuAbandon, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
 const { SANCTIONS, finSanction } = require("./_lib/sanctions");
@@ -465,7 +465,9 @@ module.exports = async (req, res) => {
   }
 
   const user = verifySessionToken(parseCookies(req).session);
-  const admin = !!user && estAdmin(user.id);
+  // Administrateurs et mini admins (cf. _lib/admin.js) : litiges, sanctions
+  // et bans du classé.
+  const admin = !!user && await estModerateur(user.id);
 
   if (req.method === "PATCH") {
     if (!admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
