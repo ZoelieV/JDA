@@ -172,6 +172,7 @@ function etatInitialDraft() {
     temps_confirme_j1: false, // verification : j1 a confirmé les 2 temps
     temps_confirme_j2: false,
     litige_par: null, // "j1" | "j2" : qui a signalé le litige (phase litige)
+    litige_commentaire: null, // raison du litige donnée par litige_par (500 caractères au plus)
     debut_temps: null, // début de la saisie des temps (ms) : anti-triche
     triche: null, // anti-triche : true si temps incohérents (détails dans l'archive, cf. _lib/archive.js)
     vainqueur: null, // "j1" | "j2" | "egalite" une fois les 2 temps confirmés

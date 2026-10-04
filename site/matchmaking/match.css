@@ -2647,3 +2647,93 @@ h1 {
 .carte-absente {
   margin: 0;
 }
+
+/* Fenêtre "Signaler un litige" : raison obligatoire (500 caractères). */
+.fenetre-litige {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.fenetre-litige.cache {
+  display: none;
+}
+
+.contenu-fenetre-litige {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(32rem, 100%);
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 90, 90, 0.5);
+  border-radius: 0.75rem;
+  background-color: #2b2b2b;
+}
+
+.contenu-fenetre-litige h2 {
+  margin: 0;
+  color: #ff5a5a;
+}
+
+.contenu-fenetre-litige p {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+#commentaire-litige {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+  font: inherit;
+  resize: vertical;
+}
+
+#commentaire-litige:focus {
+  outline: none;
+  border-color: rgba(255, 90, 90, 0.8);
+}
+
+.pied-fenetre-litige {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compteur-litige {
+  margin-right: auto;
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.btn-annuler-litige,
+.btn-envoyer-litige {
+  padding: 0.5rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: white;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-envoyer-litige {
+  border-color: #ff5a5a;
+  background-color: #ff5a5a;
+}
+
+.btn-envoyer-litige:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

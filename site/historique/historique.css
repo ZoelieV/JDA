@@ -682,6 +682,21 @@ img.arme-mini {
   font-weight: normal;
 }
 
+/* Raison du litige donnée par le joueur qui l'a signalé. */
+.commentaire-litige-historique {
+  max-width: 18rem;
+  margin: 0;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid var(--couleur-ban);
+  border-radius: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  font-size: 0.8125rem;
+  font-style: italic;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .correction-litige {
   display: flex;
   flex-direction: column;

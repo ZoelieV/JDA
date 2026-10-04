@@ -280,9 +280,59 @@ async function postConfirmerTemps() {
   await definirDraft(data.draft);
 }
 
-async function postLitige() {
-  const data = await envoyerAction(`/api/rooms/${roomId}/litige`, {});
+async function postLitige(commentaire) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/litige`, { commentaire });
   await definirDraft(data.draft);
+}
+
+// ---- Signaler un litige : raison obligatoire (500 caractères au plus,
+// même limite que le serveur, cf. handleLitige) ----
+const COMMENTAIRE_LITIGE_MAX = 500;
+
+function ouvrirFenetreLitige() {
+  const fenetre = document.getElementById("fenetre-litige");
+  const champ = document.getElementById("commentaire-litige");
+  champ.value = "";
+  mettreAJourFenetreLitige();
+  fenetre.classList.remove("cache");
+  champ.focus();
+}
+
+function fermerFenetreLitige() {
+  document.getElementById("fenetre-litige").classList.add("cache");
+}
+
+function mettreAJourFenetreLitige() {
+  const longueur = document.getElementById("commentaire-litige").value.trim().length;
+  document.getElementById("compteur-litige").textContent = `${document.getElementById("commentaire-litige").value.length} / ${COMMENTAIRE_LITIGE_MAX}`;
+  document.getElementById("envoyer-litige").disabled = longueur === 0;
+}
+
+function initialiserFenetreLitige() {
+  const fenetre = document.getElementById("fenetre-litige");
+  const champ = document.getElementById("commentaire-litige");
+  champ.maxLength = COMMENTAIRE_LITIGE_MAX;
+  champ.addEventListener("input", mettreAJourFenetreLitige);
+  document.getElementById("annuler-litige").addEventListener("click", fermerFenetreLitige);
+  fenetre.addEventListener("click", event => {
+    if (event.target === fenetre) fermerFenetreLitige();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !fenetre.classList.contains("cache")) fermerFenetreLitige();
+  });
+  document.getElementById("envoyer-litige").addEventListener("click", async () => {
+    const bouton = document.getElementById("envoyer-litige");
+    const commentaire = champ.value.trim();
+    if (!commentaire) return;
+    bouton.disabled = true;
+    try {
+      await postLitige(commentaire);
+      fermerFenetreLitige();
+    } catch (erreur) {
+      alert(erreur.message);
+      bouton.disabled = false;
+    }
+  });
 }
 
 async function postRejouer(rejouer) {
@@ -2193,10 +2243,7 @@ function rendreVerification() {
   btnConfirmer.textContent = jaiConfirme ? "Temps confirmés ✓" : "Les temps sont corrects";
   btnConfirmer.onclick = () => postConfirmerTemps().catch(err => alert(err.message));
 
-  document.getElementById("btn-litige").onclick = () => {
-    if (!confirm("Signaler un litige sur les temps ? Le match sera invalidé et transmis aux administrateurs.")) return;
-    postLitige().catch(err => alert(err.message));
-  };
+  document.getElementById("btn-litige").onclick = ouvrirFenetreLitige;
 
   if (jaiConfirme && !autreAConfirme) {
     etat.innerHTML = `Temps confirmés. En attente de la confirmation de ${nomAutre}…`;
@@ -2906,6 +2953,7 @@ async function demarrer() {
     initialiserGrillesPersos();
     initialiserResBoss();
     initialiserCarteLegende();
+    initialiserFenetreLitige();
 
     await tick();
 

@@ -41,6 +41,9 @@ const {
   getProchaineAction
 } = require("../../_lib/draft");
 
+// Commentaire obligatoire d'un litige signalé (cf. handleLitige).
+const COMMENTAIRE_LITIGE_MAX = 500;
+
 const BOX_AUTORISEES = new Set([
   "full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5"
 ]);
@@ -598,8 +601,16 @@ async function handleLitige(req, res, roomId, user) {
     return res.status(409).json({ error: "Les temps ne sont pas en cours de vérification" });
   }
 
+  // Raison du litige : obligatoire, COMMENTAIRE_LITIGE_MAX caractères au plus.
+  const commentaire = typeof req.body?.commentaire === "string" ? req.body.commentaire.trim() : "";
+  if (!commentaire) return res.status(400).json({ error: "Explique la raison du litige." });
+  if (commentaire.length > COMMENTAIRE_LITIGE_MAX) {
+    return res.status(400).json({ error: `Commentaire trop long (${COMMENTAIRE_LITIGE_MAX} caractères au maximum).` });
+  }
+
   draft.phase = "litige";
   draft.litige_par = joueur;
+  draft.litige_commentaire = commentaire;
   draft.vainqueur = null;
   // Entraînement : rien à transmettre aux administrateurs.
   if (!draft.entrainement) await archiverMatch(draft, { litige: true, classe: room.type === "classe" });

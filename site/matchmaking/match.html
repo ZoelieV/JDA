@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
-<link rel="stylesheet" href="match.css?v=rem47">
+<link rel="stylesheet" href="match.css?v=rem48">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <script src="/commun/zoom.js?v=2"></script>
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -216,6 +216,21 @@
 
   </div>
 
+  <!-- Signaler un litige : raison obligatoire (cf. ouvrirFenetreLitige
+       dans match.js). -->
+  <div id="fenetre-litige" class="fenetre-litige cache" role="dialog" aria-modal="true" aria-labelledby="titre-fenetre-litige">
+    <div class="contenu-fenetre-litige">
+      <h2 id="titre-fenetre-litige">Signaler un litige</h2>
+      <p>Le match sera invalidé et transmis aux administrateurs. Explique ce qui ne va pas (temps faux, problème pendant le combat…).</p>
+      <textarea id="commentaire-litige" rows="5" placeholder="Raison du litige (obligatoire)"></textarea>
+      <div class="pied-fenetre-litige">
+        <span id="compteur-litige" class="compteur-litige">0 / 500</span>
+        <button type="button" id="annuler-litige" class="btn-annuler-litige">Annuler</button>
+        <button type="button" id="envoyer-litige" class="btn-envoyer-litige" disabled>Signaler le litige</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Localisation d'une légende locale (bouton sous le boss en fin de
        draft, cf. ouvrirCarteLegende dans match.js). -->
   <div id="carte-legende" class="carte-legende cache" role="dialog" aria-modal="true">
@@ -232,6 +247,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=13"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="match.js?v=74"></script>
+  <script src="match.js?v=75"></script>
 </body>
 </html>

@@ -455,6 +455,7 @@ function htmlCorrectionLitige(match) {
     </label>`;
   return `
     <span class="match-litige">${match.triche ? "Triche suspectée" : "Litige"} <span class="litige-par"></span></span>
+    ${match.litige_commentaire ? `<p class="commentaire-litige-historique"></p>` : ""}
     ${triche}
     <form class="correction-litige">
       ${champ("j1")}
@@ -510,6 +511,9 @@ function brancherCorrectionLitige(ligne, match) {
   brancherSanctionLitige(ligne, match);
   // Pseudos en texte (pas d'HTML venant des comptes).
   ligne.querySelector(".litige-par").innerHTML = nomLitigePar(match);
+  // Raison donnée par le joueur (texte libre : jamais en HTML).
+  const commentaire = ligne.querySelector(".commentaire-litige-historique");
+  if (commentaire) commentaire.textContent = `« ${match.litige_commentaire} »`;
   ligne.querySelector(".champ-j1 .nom-temps-litige").textContent = match.j1.nom;
   ligne.querySelector(".champ-j2 .nom-temps-litige").textContent = match.j2.nom;
 

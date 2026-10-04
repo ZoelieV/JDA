@@ -567,7 +567,7 @@ module.exports = async (req, res) => {
         (Array.isArray(match.bans_j2) && match.bans_j2.length > 0),
       // Litige (ouvert ou republié) : administrateurs seulement ; triche :
       // temps passé à saisir et somme des temps saisis (secondes).
-      ...(admin && match.litige ? { litige: match.litige, litige_par: match.litige_par || null } : {}),
+      ...(admin && match.litige ? { litige: match.litige, litige_par: match.litige_par || null, litige_commentaire: match.litige_commentaire || null } : {}),
       ...(admin && match.triche ? { triche: { duree_saisie: match.duree_saisie ?? null, somme_temps: match.somme_temps ?? null } } : {}),
       ...deuxJoueurs(match)
     });

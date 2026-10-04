@@ -64,6 +64,8 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     theatre: draft.theatre ?? null,
     mode_theatre: draft.mode_theatre || "auto",
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),
+    // Raison donnée par le joueur qui a signalé le litige (sql/litiges_commentaire.sql).
+    ...(litige && draft.litige_commentaire ? { litige_commentaire: draft.litige_commentaire } : {}),
     ...(triche ? { triche: true, duree_saisie: triche.duree_saisie, somme_temps: triche.somme_temps } : {}),
     ...(classe ? {
       classe: true,
@@ -88,7 +90,7 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
   // pas archivé (jamais publié comme un match normal) ; idem pour un match
   // classé sans les colonnes classe / trophees (sql/classe.sql).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, triche, duree_saisie, somme_temps, ...sansFacultatives } = match;
+    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, triche, duree_saisie, somme_temps, litige_commentaire, ...sansFacultatives } = match;
     ({ data, error } = await inserer(sansFacultatives));
   }
 
