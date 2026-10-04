@@ -303,7 +303,7 @@ function htmlJoueur(match, role, bansConnus) {
   const equilibrage = joueur.bans_equilibrage.map(htmlBan).join("");
 
   return `
-    <div class="match-joueur match-${role}${gagnant ? " gagnant" : ""}">
+    <div class="match-joueur match-${role}${gagnant ? " gagnant" : egalite ? " egalite" : ""}">
       <div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
         ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
         <span class="match-nom"></span>

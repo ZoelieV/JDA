@@ -249,6 +249,11 @@
   box-shadow: 0 0 0 0.125rem var(--couleur-victoire), 0 0 0.875rem rgba(62, 207, 106, 0.35);
 }
 
+/* Égalité : les deux joueurs entourés d'orange (comme le vainqueur en vert). */
+.match-joueur.egalite {
+  box-shadow: 0 0 0 0.125rem #ff9f1c, 0 0 0.875rem rgba(255, 159, 28, 0.35);
+}
+
 /* Bannière du joueur au format commun (.banniere-joueur, commun/entete.css) :
    j1 photo à gauche, j2 photo à droite (image inversée). */
 .match-banniere {
