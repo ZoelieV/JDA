@@ -3,70 +3,70 @@
     "id": "signora_boss",
     "nom": "Signora",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/signora_boss.webp"
   },
   {
     "id": "raiden_boss",
     "nom": "Narukami no Mikoto la destructrice",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/raiden_boss.webp"
   },
   {
     "id": "scara_boss",
     "nom": "Shouki no Kami, le prodige",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/scara_boss.webp"
   },
   {
     "id": "apep_boss",
     "nom": "Garde de l'oasis d'Apep",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/apep_boss.webp"
   },
   {
     "id": "narwhal_boss",
     "nom": "Narval stellavore",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/narwhal_boss.webp"
   },
   {
     "id": "arle_boss",
     "nom": "Arlecchino",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/arle_boss.webp"
   },
   {
     "id": "erode_boss",
     "nom": "Érodé seigneur du feu primordial",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/erode_boss.webp"
   },
   {
     "id": "chess_boss",
     "nom": "Jeu d'échecs devant la porte",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/chess_boss.webp"
   },
   {
     "id": "dottoreI_boss",
     "nom": "Dottore, Hérétique de la fausse lune",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/dottoreI_boss.webp"
   },
   {
     "id": "dottoreII_boss",
     "nom": "Dottore, Maître exalté de la voie hérétique",
     "type": "weekly_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/dottoreII_boss.webp"
   },
   {
@@ -74,56 +74,56 @@
     "nom": "Tartaglia",
     "type": "weekly_boss",
     "classe": false,
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/boss_hebdo/childe_boss.webp"
   },
   {
     "id": "churldric_ll",
     "nom": "Churldric",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/churldric_ll.webp"
   },
   {
     "id": "generateur_supercalcul_ll",
     "nom": "Générateur de champ à supercalcul autonome",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/generateur_supercalcul_ll.webp"
   },
   {
     "id": "deianeira_ll",
     "nom": "Deianeira de Snezhevna",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/deianeira_ll.webp"
   },
   {
     "id": "ninianne_ll",
     "nom": "Ninianne du lac",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/ninianne_ll.webp"
   },
   {
     "id": "liam_ll",
     "nom": "Liam",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/liam_ll.webp"
   },
   {
     "id": "rocky_ll",
     "nom": "Rocky Avildsen",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/rocky_ll.webp"
   },
   {
     "id": "ichcahuipilli_ll",
     "nom": "Égide d'Ichcahuipilli",
     "type": "legende_locale_infinie",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/ichcahuipilli_ll.webp",
     "fonds_supplementaires": ["totem_interieur"]
   },
@@ -131,7 +131,7 @@
     "id": "potapo_ll",
     "nom": "Solidarité de Potapo",
     "type": "legende_locale_infinie",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/potapo_ll.webp",
     "fonds_supplementaires": ["totem_interieur"]
   },
@@ -139,77 +139,77 @@
     "id": "sappho_ll",
     "nom": "Sappho au milieu des vagues",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/sappho_ll.webp"
   },
   {
     "id": "rilai_ll",
     "nom": "Canon cryocristallin Rilai",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/rilai_ll.webp"
   },
   {
     "id": "verrou_bronze_ll",
     "nom": "Verrou-bronze",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/verrou_bronze_ll.webp"
   },
   {
     "id": "griffe_chevre_ll",
     "nom": "Griffe de fer et Chèvre de bataille",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/griffe_chevre_ll.png"
   },
   {
     "id": "infinitesimal_ll",
     "nom": "Infinitésimal",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/infinitesimal_ll.webp"
   },
   {
     "id": "idole_pipilpan_ll",
     "nom": "Idole vétérane de Pipilpan",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/idole_pipilpan_ll.webp"
   },
   {
     "id": "raskolnikov_ll",
     "nom": "Troupier lame-de-feu Raskolnikov",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/raskolnikov_ll.webp"
   },
   {
     "id": "hiljetta_ll",
     "nom": "Hiljetta",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/hiljetta_ll.webp"
   },
   {
     "id": "blob_prismatique_ll",
     "nom": "Blob prismatique",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/blob_prismatique_ll.webp"
   },
   {
     "id": "bandersnatch_ll",
     "nom": "Bandersnatch",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/bandersnatch_ll.webp"
   },
   {
     "id": "furiosa_ll",
     "nom": "Furiosa",
     "type": "legende_locale_jour",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/furiosa_ll.webp"
   }
 ]
