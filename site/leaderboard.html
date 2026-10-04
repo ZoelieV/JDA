@@ -5,7 +5,7 @@
   <title>Classement</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="commun/theme.css?v=rem5">
-  <link rel="stylesheet" href="commun/entete.css?v=rem21">
+  <link rel="stylesheet" href="commun/entete.css?v=rem22">
   <link rel="stylesheet" href="commun/tri.css?v=6">
   <link rel="stylesheet" href="classement/classement.css?v=4">
 <script src="/commun/fond.js?v=6"></script>
@@ -28,7 +28,7 @@
     <input type="text" id="recherche-classement" class="recherche-classement" placeholder="Rechercher un joueur…">
     <div class="tris">
       <span class="tris-label">Trier :</span>
-      <button type="button" class="bouton-tri tri-classement" data-tri="trophees" title="Trophées"><span class="tri-emoji" aria-label="Trophées">🏆</span> <span class="fleche"></span></button>
+      <button type="button" class="bouton-tri tri-classement" data-tri="trophees" title="Trophées"><img class="tri-logo" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="Trophées"> <span class="fleche"></span></button>
       <button type="button" class="bouton-tri tri-classement" data-tri="matchs_classes" title="Matchs classés joués"><span class="tri-emoji" aria-label="Matchs classés">⚔️</span> <span class="fleche"></span></button>
       <button type="button" class="bouton-tri tri-classement" data-tri="ratio" title="Winrate en classé">% <span class="fleche"></span></button>
       <button type="button" class="bouton-tri tri-classement" data-tri="points" title="Points (Full box)"><img class="tri-logo" src="DB/images/others/scale.webp" alt="Points"> <span class="fleche"></span></button>
@@ -48,7 +48,7 @@
     <div class="ligne-classement entete-classement" aria-hidden="true">
       <span class="col-rang">#</span>
       <span class="col-joueur">Joueur</span>
-      <span class="col-stat" data-col="trophees" title="Trophées">🏆</span>
+      <span class="col-stat" data-col="trophees" title="Trophées"><img class="tri-logo" src="DB/images/others/Achievement_Wonders_of_the_World.webp" alt=""></span>
       <span class="col-stat" data-col="matchs_classes" title="Matchs classés joués">⚔️</span>
       <span class="col-stat" data-col="ratio" title="Winrate en classé">%</span>
       <span class="col-stat" data-col="points" title="Points (Full box)"><img class="tri-logo" src="DB/images/others/scale.webp" alt=""></span>
@@ -61,7 +61,7 @@
     <div id="liste-classement"></div>
   </div>
 
-  <script src="/commun/cartes.js?v=11"></script>
-  <script src="classement/classement.js?v=5"></script>
+  <script src="/commun/cartes.js?v=12"></script>
+  <script src="classement/classement.js?v=6"></script>
 </body>
 </html>

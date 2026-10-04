@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Créer un match</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="../commun/entete.css?v=rem21">
+<link rel="stylesheet" href="../commun/entete.css?v=rem22">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/namecards.css?v=1">
 <link rel="stylesheet" href="matchmaking.css?v=10">
@@ -41,14 +41,14 @@
     <button type="button" class="carte-section carte-match principale" data-detail="classe" aria-expanded="false" aria-controls="detail-classe">
       <img src="../DB/images/others/Namecard_Background_competitif.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
-        <h2>Classé 🏆</h2>
+        <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></h2>
         <p>Gagne des trophées et grimpe au classement.</p>
       </div>
     </button>
     <button type="button" class="carte-section carte-match" data-detail="entrainement" aria-expanded="false" aria-controls="detail-entrainement">
       <img src="../DB/images/others/Namecard_Background_entrainement.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
-        <h2>Entraînement 🎯</h2>
+        <h2>Entraînement <img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt=""></h2>
         <p>Prépare tes drafts, seul ou accompagné.</p>
       </div>
     </button>
@@ -101,7 +101,7 @@
   </section>
 
   <section id="detail-classe" class="panneau detail-match detail-classe cache" data-detail="classe">
-    <h2>Classé 🏆</h2>
+    <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></h2>
     <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Voir le <a href="../leaderboard.html">classement</a>.</p>
     <ul class="regles-classe">
       <li>Le gagnant remporte un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.</li>
@@ -122,7 +122,7 @@
 
   <!-- Configuration de l'entraînement (cf. creerEntrainement, api/rooms/index.js). -->
   <section id="detail-entrainement" class="panneau detail-match panneau-entrainement cache" data-detail="entrainement">
-    <h2>Entraînement 🎯</h2>
+    <h2>Entraînement <img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt=""></h2>
     <p>Choisis la draft, ta box et celle d'en face (les tiennes, celles des autres joueurs ou une box
       personnalisée), le boss et le J1. Seul, tu joues les deux rôles ; partage le lien pour te faire aider.
       Visible seulement par toi dans l'historique.</p>
@@ -168,7 +168,7 @@
   </section>
 
   <script src="/commun/variantes.js?v=3"></script>
-  <script src="/commun/cartes.js?v=11"></script>
+  <script src="/commun/cartes.js?v=12"></script>
   <script src="matchmaking.js?v=12"></script>
 </body>
 </html>

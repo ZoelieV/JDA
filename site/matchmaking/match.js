@@ -1267,7 +1267,7 @@ function rendreTableauJoueur(role) {
       marquerAleatoire(slot, picks[i]);
       if (estMatchClasse() && aBonusSaisonPerso(personnage)) {
         slot.classList.add("bonus-saison");
-        slot.title = `${slot.title || personnage.nom} — bonus de saison (+3 🏆)`;
+        slot.title = `${slot.title || personnage.nom} — bonus de saison (+3 trophées)`;
       }
       return slot;
     }));
@@ -1390,7 +1390,7 @@ function afficherModeTheatre() {
   if (!visible) return;
   // Entraînement : box jouées et rôle(s) tenu(s).
   const html = htmlModeTheatre(theatreDeLaDraft()) + (draft.entrainement
-    ? `<span class="info-entrainement">🎯 J1 : ${libelleBoxEntrainement("j1")} · J2 : ${libelleBoxEntrainement("j2")}` +
+    ? `<span class="info-entrainement">${ICONE_ENTRAINEMENT} J1 : ${libelleBoxEntrainement("j1")} · J2 : ${libelleBoxEntrainement("j2")}` +
       `${estEntrainementSolo() ? " · tu joues les 2 rôles (partage le lien pour te faire aider)" : ""}</span>`
     : "");
   if (zone.dataset.html !== html) {
@@ -2257,7 +2257,7 @@ function rendreTermine() {
         : `<p class="ligne-temps">Tu as fait le boss avec ton équipe ? Entre ton temps au-dessus de ton tableau (facultatif).</p>`;
     }
     container.innerHTML = `
-      <p class="ligne-vainqueur"><span class="egalite">Entraînement terminé 🎯</span></p>
+      <p class="ligne-vainqueur"><span class="egalite">Entraînement terminé ${ICONE_ENTRAINEMENT}</span></p>
       <p class="ligne-temps">Draft de ${pseudoColore("j1")} contre ${pseudoColore("j2")}. Relance pour rejouer avec les mêmes box (rôles inversés).</p>
       ${ligneBoss}
     `;
@@ -2286,19 +2286,19 @@ function rendreTermine() {
     const delta = role => resultat ? resultat[role] : (draft.vainqueur === role ? enJeu : -enJeu);
     const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
     const bonus = (resultat?.bonus ? ` (dont +${resultat.bonus} de série 🔥)` : "") +
-      (resultat?.prime ? ` (dont +${resultat.prime} de prime 🎯 : tu as battu la plus longue série en cours)` : "");
+      (resultat?.prime ? ` (dont +${resultat.prime} de prime ${ICONE_ENTRAINEMENT} : tu as battu la plus longue série en cours)` : "");
     // Bonus de saison (persos cochés dans l'admin) : gain augmenté, perte réduite.
     const saison = role => resultat?.saison?.[role]
       ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}🌟)`
       : "";
     if (enJeu === 0) {
-      ligneTrophees = `<p class="ligne-trophees">🏆 Aucun trophée en jeu</p>`;
+      ligneTrophees = `<p class="ligne-trophees">${ICONE_TROPHEE} Aucun trophée en jeu</p>`;
     } else if (monRole) {
       const n = delta(monRole);
       const gagne = draft.vainqueur === monRole;
-      ligneTrophees = `<p class="ligne-trophees ${gagne ? "gain" : "perte"}">🏆 ${signe(n)} trophée${Math.abs(n) > 1 ? "s" : ""}${gagne ? bonus : ""}${saison(monRole)}</p>`;
+      ligneTrophees = `<p class="ligne-trophees ${gagne ? "gain" : "perte"}">${ICONE_TROPHEE} ${signe(n)} trophée${Math.abs(n) > 1 ? "s" : ""}${gagne ? bonus : ""}${saison(monRole)}</p>`;
     } else {
-      ligneTrophees = `<p class="ligne-trophees">🏆 ${joueur1.pseudo} ${signe(delta("j1"))}, ${joueur2.pseudo} ${signe(delta("j2"))}${bonus}</p>`;
+      ligneTrophees = `<p class="ligne-trophees">${ICONE_TROPHEE} ${joueur1.pseudo} ${signe(delta("j1"))}, ${joueur2.pseudo} ${signe(delta("j2"))}${bonus}</p>`;
     }
   }
 
@@ -2335,8 +2335,8 @@ function calculerTrophees() {
 function definirTypeRoom(type) {
   if (!type || type === typeRoom) return;
   typeRoom = type;
-  document.querySelector(".titre-page").textContent =
-    typeRoom === "classe" ? "Match classé 🏆" : typeRoom === "entrainement" ? "Entraînement 🎯" : "Match";
+  document.querySelector(".titre-page").innerHTML =
+    typeRoom === "classe" ? `Match classé ${ICONE_TROPHEE}` : typeRoom === "entrainement" ? `Entraînement ${ICONE_ENTRAINEMENT}` : "Match";
 }
 
 // Revanche (fin de match ou litige).
@@ -2402,7 +2402,7 @@ function rendreAnnule() {
     const autre = draft.annule_par === "j1" ? "j2" : "j1";
     const resultat = draft.resultat_trophees;
     const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
-    const trophees = role => resultat ? ` (${signe(resultat[role])} 🏆)` : "";
+    const trophees = role => resultat ? ` (${signe(resultat[role])} ${ICONE_TROPHEE})` : "";
     texte.innerHTML = draft.annule_par === monRole
       ? `Tu as quitté ce match classé : défaite par abandon${trophees(monRole)}.`
       : monRole

@@ -553,3 +553,13 @@ body::before {
   width: 2rem;
   height: 2rem;
 }
+
+/* Icône dans le texte, à la place d'un emoji (ICONE_TROPHEE,
+   ICONE_ENTRAINEMENT de commun/cartes.js) : à la hauteur du texte. */
+.icone-texte {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.25em;
+  object-fit: contain;
+}

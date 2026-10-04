@@ -59,7 +59,7 @@ function texteStat(joueur, cle, long = false) {
   const unite = (valeur, singulier, pluriel = `${singulier}s`) =>
     long ? `${valeur} ${valeur > 1 ? pluriel : singulier}` : String(valeur);
   switch (cle) {
-    case "trophees": return long ? `${joueur.trophees} 🏆` : String(joueur.trophees);
+    case "trophees": return long ? `${joueur.trophees} ${ICONE_TROPHEE}` : String(joueur.trophees);
     case "matchs_classes": return unite(joueur.matchs_classes, "match", "matchs");
     case "ratio": return `${Math.round(getRatio(joueur) * 100)} %`;
     case "points": return long ? `${joueur.points ?? 0} pts` : String(joueur.points ?? 0);
@@ -115,7 +115,7 @@ function creerLigne(joueur) {
       <div class="joueur-infos">
         <div class="joueur-textes">
           <div class="joueur-nom"></div>
-          ${joueur.prime ? `<span class="badge-prime" title="Plus longue série de victoires en cours (${joueur.serie}) : le battre rapporte +5 trophées">🎯 Prime +5 · ${joueur.serie} victoires d'affilée</span>` : ""}
+          ${joueur.prime ? `<span class="badge-prime" title="Plus longue série de victoires en cours (${joueur.serie}) : le battre rapporte +5 trophées">${ICONE_ENTRAINEMENT} Prime +5 · ${joueur.serie} victoires d'affilée</span>` : ""}
           <div class="joueur-sub"></div>
         </div>
         ${htmlMedailleTheatre(joueur.theatre)}
@@ -127,9 +127,9 @@ function creerLigne(joueur) {
   // Pseudos en texte (pas d'HTML venant des comptes).
   ligne.querySelector(".joueur-nom").textContent = getNom(joueur);
   ligne.querySelector(".joueur-sub").textContent = joueur.discord_username ? `@${joueur.discord_username}` : "";
-  ligne.querySelector(".stat-telephone").textContent = texteStat(joueur, cleTelephone, true);
+  ligne.querySelector(".stat-telephone").innerHTML = texteStat(joueur, cleTelephone, true);
   COLONNES.forEach(cle => {
-    ligne.querySelector(`.col-stat[data-col="${cle}"]`).textContent = texteStat(joueur, cle);
+    ligne.querySelector(`.col-stat[data-col="${cle}"]`).innerHTML = texteStat(joueur, cle);
   });
   return ligne;
 }

@@ -294,7 +294,7 @@ function htmlJoueur(match, role, bansConnus) {
   const bonus = (gagnant && reel?.bonus ? ` dont +${reel.bonus} de série` : "") +
     (gagnant && reel?.prime ? `, prime +${reel.prime} (plus longue série battue)` : "") + saison;
   const trophees = match.classe && match.trophees && (gagnant || perdant)
-    ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} 🏆${bonus ? " 🔥" : ""}</span>`
+    ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} ${ICONE_TROPHEE}${bonus ? " 🔥" : ""}</span>`
     : "";
 
   const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p, aleatoire: p.aleatoire })).join("");
@@ -358,8 +358,8 @@ function creerLigneMatch(match) {
     ${htmlJoueur(match, "j1", enCours || match.bans_connus)}
     <div class="match-centre">
       ${boss ? htmlImagesBoss(boss, `class="match-boss" loading="lazy"`) : ""}
-      ${match.entrainement ? `<span class="match-entrainement">Entraînement 🎯</span>` : ""}
-      ${match.classe ? `<span class="match-classe">Classé 🏆${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
+      ${match.entrainement ? `<span class="match-entrainement">Entraînement ${ICONE_ENTRAINEMENT}</span>` : ""}
+      ${match.classe ? `<span class="match-classe">Classé ${ICONE_TROPHEE}${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
       ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="Théâtre 12 sans bans d'équilibrage">Carnage 💀</span>` : ""}
       ${htmlTheatreJoue(match.theatre)}
       <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
@@ -788,7 +788,7 @@ function afficherRecords() {
           ${htmlImagesBoss(boss, `class="match-boss" loading="lazy"`)}
           <span class="match-boss-nom">${echapperHtml(boss.nom)}</span>
         </div>`;
-      ligne.append(creerRecord(records.non_classe, "Non classé"), creerRecord(records.classe, "Classé 🏆"));
+      ligne.append(creerRecord(records.non_classe, "Non classé"), creerRecord(records.classe, `Classé ${ICONE_TROPHEE}`));
       ligne.querySelector(".record-boss:last-child").classList.add("classe");
       return ligne;
     });

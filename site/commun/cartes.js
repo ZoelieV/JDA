@@ -129,6 +129,11 @@ const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.
 const chargerBoss = () => Promise.all([chargerJSON("boss.json"), chargerPointsAdmin()])
   .then(([liste, points]) => appliquerModifsBoss(fusionnerAjouts(liste, points.ajouts?.boss), points.boss));
 
+// Icônes dans le texte (à la place des emojis 🏆 et 🎯), cf. .icone-texte
+// (commun/entete.css).
+const ICONE_TROPHEE = `<img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées">`;
+const ICONE_ENTRAINEMENT = `<img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt="">`;
+
 // Image(s) d'un boss : une légende locale à 2 boss (Griffe de fer et Chèvre
 // de bataille, boss.images) a ses 2 images côte à côte.
 // attributs : texte ajouté à chaque <img> (classe, loading...).

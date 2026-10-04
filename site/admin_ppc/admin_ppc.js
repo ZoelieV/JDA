@@ -367,7 +367,7 @@ function rendreCorps() {
         ${vue === "characters" ? `
           <td class="col-bonus-saison${aBonusSaison(item.id) ? " avec-bonus-saison" : ""}">
             <label class="bonus-saison" title="Bonus de saison : +3 trophées en classé s'il est dans l'équipe">
-              <input type="checkbox" class="case-bonus-saison" data-id="${item.id}" ${aBonusSaison(item.id) ? "checked" : ""}> +3 🏆
+              <input type="checkbox" class="case-bonus-saison" data-id="${item.id}" ${aBonusSaison(item.id) ? "checked" : ""}> +3 ${ICONE_TROPHEE}
             </label>
           </td>` : ""}
       </tr>`)
