@@ -36,6 +36,9 @@
       <button type="button" class="bouton-historique tri-historique" data-tri="temps" title="Meilleur temps du match">Temps <span class="fleche"></span></button>
       <button type="button" class="bouton-historique tri-historique" data-tri="ecart" title="Écart de temps entre les 2 joueurs">Écart <span class="fleche"></span></button>
     </div>
+    <!-- Catégorie de boss : chaque clic passe à la suivante (tous, hebdo,
+         légendes locales, carnage). -->
+    <button type="button" id="categorie-boss" class="bouton-historique filtre-matchs" title="Filtrer par catégorie de boss (clic pour changer)">Tous les boss</button>
     <!-- Un seul boss (liste remplie depuis DB/boss.json et les ajouts admin). -->
     <select id="filtre-boss" class="filtre-boss-historique filtre-matchs" title="N'afficher que les matchs contre ce boss">
       <option value="">Tous les boss</option>
@@ -153,6 +156,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=13"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=36"></script>
+  <script src="historique.js?v=37"></script>
 </body>
 </html>

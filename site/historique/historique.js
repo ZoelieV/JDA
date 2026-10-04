@@ -30,6 +30,9 @@ let classesSeulement = false;
 const SENS_INITIAL = { date: -1, temps: 1, ecart: 1 };
 // Boss choisi dans la liste déroulante ("" : tous).
 let bossFiltre = "";
+// Catégorie de boss (bouton qui défile : tous -> hebdo -> légendes locales ->
+// carnage -> tous), cf. CATEGORIES_BOSS.
+let categorieBossFiltre = null;
 
 // Recherche d'un temps précis ("7:32", "7.32", "7,32", "07:32") -> "7:32"
 // (format des temps enregistrés), ou null si ce n'est pas un temps.
@@ -116,6 +119,7 @@ function matchsAffiches() {
   const tris = trisActifs();
   return matchs
     .filter(match => !bossFiltre || match.boss_id === bossFiltre)
+    .filter(match => !categorieBossFiltre || bossDansCategorie(match.boss_id, categorieBossFiltre))
     .filter(match => !temps || match.j1.temps?.affiche === temps || match.j2.temps?.affiche === temps)
     .filter(match => !mesMatchsSeulement || match.j1.discord_id === moiDiscordId || match.j2.discord_id === moiDiscordId)
     .filter(match => !classesSeulement || match.classe)
@@ -146,6 +150,14 @@ function mettreAJourBoutons() {
   });
   document.getElementById("mes-matchs").classList.toggle("active", mesMatchsSeulement);
   document.getElementById("matchs-classes").classList.toggle("active", classesSeulement);
+  const categorie = CATEGORIES_BOSS.find(c => c.cle === categorieBossFiltre);
+  const bouton = document.getElementById("categorie-boss");
+  bouton.classList.toggle("active", !!categorie);
+  bouton.textContent = categorie ? categorie.bouton : "Tous les boss";
+  // Liste des boss : seulement ceux de la catégorie choisie.
+  document.querySelectorAll("#filtre-boss optgroup").forEach(groupe => {
+    groupe.hidden = !!categorie && groupe.dataset.categorie !== categorie.cle;
+  });
 }
 
 // ---- Pages : matchs par page au choix (10, 20, 50 ou tout), par
@@ -778,17 +790,25 @@ function creerRecord(record, titre) {
 // hebdomadaires, légendes locales (une fois par jour ou à l'infini), puis
 // les autres types s'il y en a.
 const CATEGORIES_BOSS = [
-  { titre: "Boss hebdomadaires", contient: boss => boss.type === "weekly_boss" },
-  { titre: "Légendes locales", contient: estLegendeLocale },
-  { titre: "Autres boss", contient: boss => boss.type !== "weekly_boss" && !estLegendeLocale(boss) }
+  { cle: "hebdo", titre: "Boss hebdomadaires", bouton: "Boss hebdo", contient: boss => boss.type === "weekly_boss" },
+  { cle: "legendes", titre: "Légendes locales", bouton: "Légendes locales", contient: estLegendeLocale },
+  { cle: "carnage", titre: "Boss carnage", bouton: "Boss carnage", contient: boss => boss.type === "carnage_boss" },
+  { cle: "autres", titre: "Autres boss", contient: boss => !["weekly_boss", "carnage_boss"].includes(boss.type) && !estLegendeLocale(boss) }
 ];
+// Ordre du bouton de catégorie (null = tous les boss).
+const CYCLE_CATEGORIES_BOSS = [null, "hebdo", "legendes", "carnage"];
+
+function bossDansCategorie(bossId, cle) {
+  const boss = bossParId.get(bossId);
+  return !!boss && !!CATEGORIES_BOSS.find(c => c.cle === cle)?.contient(boss);
+}
 
 // -> [{ titre, boss: [...] }] (catégories vides retirées), boss de chaque
 // catégorie dans l'ordre de trier.
 function bossParCategorie(trier) {
   const tous = [...bossParId.values()];
   return CATEGORIES_BOSS
-    .map(({ titre, contient }) => ({ titre, boss: tous.filter(contient).sort(trier) }))
+    .map(({ cle, titre, contient }) => ({ cle, titre, boss: tous.filter(contient).sort(trier) }))
     .filter(categorie => categorie.boss.length);
 }
 
@@ -868,9 +888,10 @@ function initialiserBarre() {
 
   // Boss : liste déroulante de tous les boss (A -> Z).
   const selectBoss = document.getElementById("filtre-boss");
-  bossParCategorie(ordreNomBoss).forEach(({ titre, boss: liste }) => {
+  bossParCategorie(ordreNomBoss).forEach(({ cle, titre, boss: liste }) => {
     const groupe = document.createElement("optgroup");
     groupe.label = titre;
+    groupe.dataset.categorie = cle;
     liste.forEach(boss => {
       const option = document.createElement("option");
       option.value = boss.id;
@@ -885,9 +906,23 @@ function initialiserBarre() {
     afficherMatchsDepuisPage1();
   });
 
+  // Catégorie de boss : tous -> hebdo -> légendes locales -> carnage -> tous.
+  // Un boss choisi dans la liste mais hors de la catégorie est retiré.
+  document.getElementById("categorie-boss").addEventListener("click", () => {
+    const suivant = (CYCLE_CATEGORIES_BOSS.indexOf(categorieBossFiltre) + 1) % CYCLE_CATEGORIES_BOSS.length;
+    categorieBossFiltre = CYCLE_CATEGORIES_BOSS[suivant];
+    if (categorieBossFiltre && bossFiltre && !bossDansCategorie(bossFiltre, categorieBossFiltre)) {
+      bossFiltre = "";
+      selectBoss.value = "";
+      selectBoss.classList.remove("active");
+    }
+    afficherMatchsDepuisPage1();
+  });
+
   document.getElementById("clear-historique").addEventListener("click", () => {
     document.getElementById("recherche").value = "";
     bossFiltre = "";
+    categorieBossFiltre = null;
     selectBoss.value = "";
     selectBoss.classList.remove("active");
     viderTris(etatTri);
