@@ -29,6 +29,7 @@
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
+const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { getCatalogueComplet, MODES_POINTS, ELEMENTS, estAjout } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
@@ -205,7 +206,9 @@ module.exports = async (req, res) => {
       res.setHeader("Cache-Control", "no-store");
       const config = await lireConfig();
       // Mini admins : tout voir (page Administration en lecture seule), rien modifier.
-      return res.status(200).json(user && await estModerateur(user.id) ? config : versionPublique(config));
+      // seuil_equilibrage : points d'écart par ban d'équilibrage (page Theorycraft).
+      const donnees = user && await estModerateur(user.id) ? config : versionPublique(config);
+      return res.status(200).json({ ...donnees, seuil_equilibrage: SEUIL_EQUILIBRAGE });
     }
 
     if (req.method === "POST") {

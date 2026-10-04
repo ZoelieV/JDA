@@ -8,7 +8,8 @@
   <meta name="robots" content="noindex, nofollow">
   <link rel="stylesheet" href="../commun/theme.css?v=rem5">
   <link rel="stylesheet" href="../commun/entete.css?v=rem22">
-  <link rel="stylesheet" href="theorycraft.css?v=1">
+  <link rel="stylesheet" href="../commun/cartes.css?v=4">
+  <link rel="stylesheet" href="theorycraft.css?v=3">
 <script src="/commun/fond.js?v=6"></script>
 <script src="/commun/compte.js?v=9" defer></script>
 </head>
@@ -16,13 +17,59 @@
   <a href="../index.html" class="lien-accueil">Accueil</a>
   <h1 class="titre-page">Theorycraft</h1>
 
-  <!-- Affiché seulement aux connectés qui y ont accès (cf. theorycraft.js) ;
-       le contenu (formules, points) viendra d'une route serveur qui refait
-       la même vérification. -->
+  <!-- Affiché seulement aux connectés qui y ont accès (cf. theorycraft.js). -->
   <main id="zone-theorycraft" class="zone-theorycraft" hidden>
-    <p class="theorycraft-bientot">Bientôt ici : les formules d'équilibrage, les points de tous les personnages et le theorycraft du mode de jeu pour optimiser tes box.</p>
+    <!-- Un onglet par thème (même style que Classement et Historique) :
+         son contenu s'affiche en dessous, un seul à la fois. -->
+    <div class="onglets-theorycraft" role="tablist">
+      <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="characters">Personnages<span>points de constellation, niveaux et théâtre</span></button>
+      <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="weapons">Armes<span>points de raffinement</span></button>
+      <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="boss">Boss<span>résistances et probabilités</span></button>
+      <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="equilibrage">Système d'équilibrage<span>points des box et bans d'équilibrage</span></button>
+    </div>
+
+    <p id="etat-theorycraft" class="etat-theorycraft">Chargement…</p>
+
+    <!-- Personnages / armes : tableau en lecture seule, recherche, filtres et
+         tri par colonne. -->
+    <section id="panneau-points" class="panneau-theorycraft" hidden>
+      <div class="barre-theorycraft">
+        <input type="text" id="recherche-theorycraft" class="recherche-theorycraft" placeholder="Rechercher…" autocomplete="off">
+        <span id="compte-theorycraft" class="compte-theorycraft"></span>
+        <button type="button" id="clear-theorycraft" class="filtre-tc filtre-texte" title="Réinitialiser les filtres et le tri">Réinitialiser</button>
+      </div>
+      <div id="filtres-theorycraft" class="filtres-theorycraft"></div>
+      <p id="aide-points" class="aide-theorycraft"></p>
+      <div class="tableau-conteneur">
+        <table class="tableau-theorycraft">
+          <thead id="entete-theorycraft"></thead>
+          <tbody id="corps-theorycraft"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="panneau-boss" class="panneau-theorycraft" hidden></section>
+    <section id="panneau-equilibrage" class="panneau-theorycraft texte-theorycraft" hidden></section>
   </main>
 
-  <script src="theorycraft.js?v=1"></script>
+  <!-- Aperçu d'un personnage : toutes les combinaisons de points. -->
+  <div id="modal-apercu-tc" class="modal-tc" hidden>
+    <div class="modal-tc-contenu">
+      <div class="modal-tc-entete">
+        <span id="apercu-tc-miniature" class="miniature-tc"><img id="apercu-tc-image" src="" alt=""></span>
+        <h2 id="apercu-tc-titre"></h2>
+        <button type="button" id="fermer-apercu-tc" class="fermer-tc" aria-label="Fermer">×</button>
+      </div>
+      <p id="apercu-tc-modes" class="aide-theorycraft"></p>
+      <div class="tableau-conteneur">
+        <table id="apercu-tc-tableau" class="tableau-theorycraft tableau-apercu-tc"></table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/commun/variantes.js?v=3"></script>
+  <script src="/commun/cartes.js?v=12"></script>
+  <script src="/commun/tri.js?v=16"></script>
+  <script src="theorycraft.js?v=3"></script>
 </body>
 </html>
