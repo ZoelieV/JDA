@@ -42,7 +42,7 @@ function rendreBoss() {
               </div>
             </td>
             ${b.res.map((valeur, i) => `
-              <td><span class="champ-pourcent"><input type="text" class="res-ajout res-boss${Number.isFinite(valeur) ? "" : " invalide"}" data-id="${echapper(boss.id)}" data-index="${i}" value="${Number.isFinite(valeur) ? valeur : ""}" inputmode="decimal" title="${LIBELLES_ELEMENTS[ELEMENTS_AJOUT[i]]} (%)"></span></td>`).join("")}
+              <td><span class="champ-pourcent${estImmunise(valeur) ? " immunise" : ""}"><input type="text" class="res-ajout res-boss${Number.isFinite(valeur) ? "" : " invalide"}" data-id="${echapper(boss.id)}" data-index="${i}" value="${Number.isFinite(valeur) ? valeur : ""}" inputmode="decimal" title="${LIBELLES_ELEMENTS[ELEMENTS_AJOUT[i]]} (%)"></span></td>`).join("")}
           </tr>`;
         }).join("")}
       </tbody>
@@ -129,6 +129,8 @@ function initialiserBoss() {
       const valeur = lireResistance(res.value);
       brouillonBoss[res.dataset.id].res[Number(res.dataset.index)] = valeur;
       res.classList.toggle("invalide", !Number.isFinite(valeur));
+      // 999 ou plus : immunisé (cf. estImmunise, commun/cartes.js).
+      res.parentElement.classList.toggle("immunise", estImmunise(valeur));
     }
     if (nom || res) {
       document.getElementById("message-boss").classList.remove("succes");

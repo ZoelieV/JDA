@@ -143,6 +143,18 @@ function htmlImagesBoss(boss, attributs = "") {
   return images.length > 1 ? `<span class="duo-boss">${html}</span>` : html;
 }
 
+// Résistance d'un boss (en %) : 999 ou plus = immunisé à cet élément,
+// affiché "Immunisé" au lieu d'un pourcentage (draft, Theorycraft, admin).
+const RES_IMMUNITE = 999;
+
+function estImmunise(valeur) {
+  return Number(valeur) >= RES_IMMUNITE;
+}
+
+function texteResistance(valeur, separateur = " ") {
+  return estImmunise(valeur) ? "Immunisé" : `${Number(valeur)}${separateur}%`;
+}
+
 // Légende locale (une fois par jour ou à l'infini, cf. api/_lib/boss.js).
 function estLegendeLocale(boss) {
   return boss?.type === "legende_locale_jour" || boss?.type === "legende_locale_infinie";

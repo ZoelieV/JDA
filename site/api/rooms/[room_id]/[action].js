@@ -10,7 +10,7 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
-const { legendesTueesAujourdhui, enregistrerMorts } = require("../../_lib/legendes");
+const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const { calculerEquilibrage } = require("../../_lib/boxes");
@@ -77,12 +77,18 @@ function bossAVoter(draft, room) {
 // Tirage du boss de la room : classé = boss du mode classé seulement ;
 // sinon, sans les légendes locales "une fois par jour" déjà tuées
 // aujourd'hui par un des joueurs (entraînement : par le lanceur, seul à
-// saisir un temps). Un boss imposé déjà tué est oublié (tiré au hasard,
-// ou au vote en room privée).
+// saisir un temps). Deux joueurs à des niveaux du monde différents : aucune
+// légende locale (PV différents ; pas en entraînement, où seul le lanceur
+// joue le boss). Un boss imposé exclu est oublié (tiré au hasard, ou au
+// vote en room privée).
 async function tireurBoss(draft, room) {
   const classe = room?.type === "classe";
   const joueurs = draft.entrainement ? [draft.entrainement.lanceur] : [draft.discord_j1, draft.discord_j2];
-  const exclus = classe ? [] : await legendesTueesAujourdhui(joueurs);
+  const [tuees, horsNiveau] = await Promise.all([
+    classe ? [] : legendesTueesAujourdhui(joueurs),
+    draft.entrainement ? [] : legendesHorsNiveauMonde(draft.discord_j1, draft.discord_j2)
+  ]);
+  const exclus = [...tuees, ...horsNiveau];
   if (exclus.includes(draft.boss_impose)) draft.boss_impose = null;
   if (exclus.includes(draft.entrainement?.boss_id)) draft.entrainement = { ...draft.entrainement, boss_id: null };
   return exclureId => tirerBossAleatoire(exclureId, { classe, exclus });

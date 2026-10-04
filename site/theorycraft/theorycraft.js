@@ -400,7 +400,7 @@ function rendreBoss() {
 
   document.getElementById("panneau-boss").innerHTML = `
     <p class="aide-theorycraft">
-      Résistances élémentaires en pourcentage. Le boss est tiré au hasard, chaque boss tirable avec la même probabilité :
+      Résistances élémentaires en pourcentage (« Immunisé » : aucun dégât de cet élément). Le boss est tiré au hasard, chaque boss tirable avec la même probabilité :
       <strong>${nbNonClasse}</strong> boss hors classé (room, matchmaking, entraînement), <strong>${nbClasse}</strong> en classé
       (boss hebdomadaires sauf Tartaglia, et légendes locales à l'infini).
     </p>
@@ -424,7 +424,7 @@ function rendreBoss() {
                   <span class="type-boss-tc">${TYPES_BOSS[b.type] || echapper(b.type || "")}</span>
                 </span>
               </td>
-              ${ELEMENTS_RES.map((_, i) => `<td>${Number(b.res?.[i] ?? 0)} %</td>`).join("")}
+              ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}
               <td>${pourcentage(nbNonClasse)}</td>
               <td>${estTirableEnClasse(b) ? pourcentage(nbClasse) : "—"}</td>
             </tr>`).join("")}
@@ -435,6 +435,7 @@ function rendreBoss() {
       <li>Revanche : le boss de la manche précédente n'est jamais retiré, les autres se partagent sa probabilité.</li>
       <li>Hors classé, le boss tiré est soumis au vote : il n'est relancé que si les deux joueurs veulent le relancer.</li>
       <li>Légendes locales « 1 fois par jour » : celles déjà tuées par l'un des deux joueurs depuis 4 h (heure de Paris) ne sont pas tirées, les autres se partagent leur probabilité.</li>
+      <li>Deux joueurs qui n'ont pas le même niveau du monde (ou dont l'un ne l'a pas renseigné) ne tombent jamais sur une légende locale : leurs PV dépendent du niveau du monde. Les autres boss se partagent alors leur probabilité.</li>
       <li>Room privée et entraînement : le créateur peut aussi imposer le boss.</li>
     </ul>
   `;

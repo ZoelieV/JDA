@@ -520,6 +520,10 @@ h1 {
   display: flex;
 }
 
+.resistances-boss .res-boss.immunise {
+  color: #f5c542;
+}
+
 .resistances-boss .res-boss {
   display: flex;
   align-items: center;

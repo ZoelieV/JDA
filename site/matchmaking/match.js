@@ -1358,7 +1358,7 @@ function htmlBossTire(boss) {
   const res = ELEMENTS_RES_BOSS.map((element, i) => {
     const valeur = Number(boss.res?.[i] ?? 0);
     const nom = element.charAt(0).toUpperCase() + element.slice(1);
-    return `<span class="res-boss" title="Résistance ${nom}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${nom}">${valeur}%</span>`;
+    return `<span class="res-boss${estImmunise(valeur) ? " immunise" : ""}" title="${estImmunise(valeur) ? `Immunisé ${nom}` : `Résistance ${nom}`}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${nom}">${texteResistance(valeur, "")}</span>`;
   }).join("");
   return `
     <button type="button" class="image-boss-res" title="Voir les résistances">

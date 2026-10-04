@@ -320,6 +320,11 @@
   white-space: normal;
 }
 
+.immunise-tc {
+  color: #f5c542;
+  font-weight: bold;
+}
+
 .type-boss-tc {
   font-size: 0.75rem;
   color: var(--texte-doux);

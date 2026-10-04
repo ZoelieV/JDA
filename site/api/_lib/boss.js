@@ -35,4 +35,9 @@ function getBossParId(id) {
   return bossList.find(b => b.id === id) || null;
 }
 
-module.exports = { TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, tirerBossAleatoire, getBossParId };
+// Ids de toutes les légendes locales (une fois par jour ou à l'infini).
+function idsLegendesLocales() {
+  return bossList.filter(estLegendeLocale).map(b => b.id);
+}
+
+module.exports = { TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };

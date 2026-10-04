@@ -7,7 +7,7 @@
 // Tuée = temps saisi (pas un abandon) à la fin d'un match, litige compris ;
 // en entraînement, temps saisi par le lanceur (cf. handleTempsEntrainement).
 const { supabase } = require("./supabase");
-const { TYPE_LEGENDE_JOUR, estLegendeLocale, getBossParId } = require("./boss");
+const { TYPE_LEGENDE_JOUR, estLegendeLocale, idsLegendesLocales, getBossParId } = require("./boss");
 const { debutJournee } = require("./journee");
 
 // Ids des légendes "une fois par jour" tuées depuis le reset par au moins un
@@ -27,6 +27,24 @@ async function legendesTueesAujourdhui(discordIds) {
   return [...new Set(data.map(l => l.boss_id))].filter(id => getBossParId(id)?.type === TYPE_LEGENDE_JOUR);
 }
 
+// Niveau du monde : les PV des légendes locales en dépendent. Deux joueurs
+// qui ne sont pas au même niveau du monde (ou dont l'un ne l'a pas
+// renseigné) ne peuvent pas tomber sur une légende locale : match pas
+// équitable. -> ids des légendes locales à exclure du tirage ([] si les 2
+// niveaux sont renseignés et identiques).
+async function legendesHorsNiveauMonde(idA, idB) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("discord_id, niveau:data->>niveau_monde")
+    .in("discord_id", [idA, idB]);
+  if (error) {
+    console.error("Erreur lecture niveaux du monde :", error);
+    return idsLegendesLocales();
+  }
+  const niveau = id => (data || []).find(p => p.discord_id === id)?.niveau || "";
+  return niveau(idA) && niveau(idA) === niveau(idB) ? [] : idsLegendesLocales();
+}
+
 // Morts d'une légende locale : [{ discord_id, temps_secondes }] (temps
 // saisis, pas les abandons). Rien si le boss n'est pas une légende locale.
 async function enregistrerMorts(bossId, matchId, morts, { entrainement = false } = {}) {
@@ -39,4 +57,4 @@ async function enregistrerMorts(bossId, matchId, morts, { entrainement = false }
   if (error) console.error("Erreur enregistrement legendes_tuees :", error);
 }
 
-module.exports = { legendesTueesAujourdhui, enregistrerMorts };
+module.exports = { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts };

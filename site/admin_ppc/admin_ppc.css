@@ -758,6 +758,14 @@ body {
   font-size: 0.8125rem;
 }
 
+/* 999 ou plus : immunisé à cet élément (cf. estImmunise, commun/cartes.js). */
+.champ-pourcent.immunise::after {
+  content: "Immunisé";
+  opacity: 1;
+  color: #f5c542;
+  font-weight: bold;
+}
+
 .titre-section-ajout {
   margin: 1.25rem 0 0.5rem;
   font-size: 1rem;
