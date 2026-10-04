@@ -989,6 +989,21 @@ body {
   text-align: left;
 }
 
+/* Fenêtre des boss : ligne des éléments collée en haut pendant le
+   défilement (comme Enregistrer en bas, cf. .actions-figees). La liste ne
+   défile pas d'elle-même pour que la fenêtre porte le défilement. */
+#liste-boss {
+  overflow-x: visible;
+}
+
+#liste-boss thead th {
+  position: sticky;
+  top: -1.25rem; /* collé au bord, par-dessus le padding de la fenêtre */
+  z-index: 2;
+  background-color: #181818;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+}
+
 .entete-boss {
   display: flex;
   align-items: center;
