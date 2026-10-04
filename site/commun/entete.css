@@ -197,6 +197,15 @@ body::before {
   text-decoration: none;
 }
 
+/* Pseudo trop long : coupé avec "…" (comme #discord-name sur Mon compte),
+   pour ne pas faire déborder la bannière (téléphone). */
+.compte-lien > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .compte-lien:hover {
   background-color: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.35);
