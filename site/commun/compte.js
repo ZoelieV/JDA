@@ -165,6 +165,11 @@
 
         // Accès réservés aux administrateurs et mini admins (ex. carte
         // Administration de l'accueil ; lecture seule pour les mini admins).
+        // Theorycraft : connectés seulement, sauf shadowbans (cf.
+        // api/auth/me.js).
+        if (user.theorycraft) {
+          document.querySelectorAll(".carte-theorycraft").forEach(carte => { carte.hidden = false; });
+        }
         if (user.admin || user.mini_admin) {
           document.querySelectorAll(".carte-admin").forEach(carte => { carte.hidden = false; });
         }

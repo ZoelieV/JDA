@@ -1,5 +1,5 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
-const { estAdmin, estMiniAdmin } = require("../_lib/admin");
+const { estAdmin, estMiniAdmin, estShadowban } = require("../_lib/admin");
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
@@ -14,7 +14,14 @@ module.exports = async (req, res) => {
       authenticated: true,
       // admin : accès à la page d'administration des points (carte de l'accueil).
       // mini_admin : même page en lecture seule, litiges et bans du classé.
-      user: { ...user, admin: estAdmin(user.id), mini_admin: !estAdmin(user.id) && await estMiniAdmin(user.id) }
+      // theorycraft : accès à la page Theorycraft (tout connecté sauf les
+      // shadowbans, cf. sql/shadowbans.sql).
+      user: {
+        ...user,
+        admin: estAdmin(user.id),
+        mini_admin: !estAdmin(user.id) && await estMiniAdmin(user.id),
+        theorycraft: !await estShadowban(user.id)
+      }
     });
   } catch (error) {
     console.error(error);

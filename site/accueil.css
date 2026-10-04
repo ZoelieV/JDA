@@ -41,9 +41,11 @@
 
 /* Ordi : 3 cartes par ligne (grille de 6 colonnes, chaque carte en couvre
    2), Tous les comptes avant Mon compte, Tutoriel seul au milieu de la
-   dernière ligne ; pour les administrateurs, Tutoriel et Administration
-   centrés ensemble sur la dernière ligne.
-   Entre-deux : 2 par ligne, Tutoriel centré (ou à côté d'Administration). */
+   dernière ligne ; avec Theorycraft (connectés) ou Administration,
+   Tutoriel et cette carte centrés ensemble ; avec les deux, une ligne
+   pleine Tutoriel, Theorycraft, Administration.
+   Entre-deux : 2 par ligne, Tutoriel centré (ou à côté de Theorycraft /
+   Administration ; Administration seule centrée si les deux sont là). */
 @media (min-width: 1001px) {
   .accueil-sections {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -57,12 +59,26 @@
     grid-column: 3 / span 2;
   }
 
-  .accueil-sections:has(.carte-admin:not([hidden])) .carte-derniere {
+  .accueil-sections:has(.carte-admin:not([hidden])) .carte-derniere,
+  .accueil-sections:has(.carte-theorycraft:not([hidden])) .carte-derniere {
     grid-column: 2 / span 2;
   }
 
-  .carte-admin {
+  .carte-admin,
+  .carte-theorycraft {
     grid-column: 4 / span 2;
+  }
+
+  .accueil-sections:has(.carte-theorycraft:not([hidden])):has(.carte-admin:not([hidden])) .carte-derniere {
+    grid-column: 1 / span 2;
+  }
+
+  .accueil-sections:has(.carte-admin:not([hidden])) .carte-theorycraft {
+    grid-column: 3 / span 2;
+  }
+
+  .accueil-sections:has(.carte-theorycraft:not([hidden])) .carte-admin {
+    grid-column: 5 / span 2;
   }
 
   /* 1re ligne : Tous les comptes au milieu, Mon compte à droite. */
@@ -88,10 +104,17 @@
     width: calc(50% - 0.5625rem);
   }
 
-  .accueil-sections:has(.carte-admin:not([hidden])) .carte-derniere {
+  .accueil-sections:has(.carte-admin:not([hidden])) .carte-derniere,
+  .accueil-sections:has(.carte-theorycraft:not([hidden])) .carte-derniere {
     grid-column: auto;
     justify-self: stretch;
     width: auto;
+  }
+
+  .accueil-sections:has(.carte-theorycraft:not([hidden])) .carte-admin {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(50% - 0.5625rem);
   }
 }
 

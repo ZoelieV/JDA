@@ -1,0 +1,12 @@
+/* Page Theorycraft (contenu à venir). */
+.zone-theorycraft {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.theorycraft-bientot {
+  margin: 2rem 0;
+  text-align: center;
+  color: var(--texte-doux);
+}
