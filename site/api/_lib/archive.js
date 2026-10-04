@@ -6,6 +6,7 @@ const { infosPersoJoueur, aBonusSaison } = require("./personnages");
 const { getEquipeJoueur, getBansJoueur } = require("./draft");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./trophees");
 const { chargerDonneesBoxes } = require("./boxes");
+const { enregistrerMorts } = require("./legendes");
 
 // Codes "colonne inexistante" (Postgres / PostgREST).
 const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
@@ -94,6 +95,15 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
   if (error) {
     console.error(`Erreur archivage match_history${litige ? " (litige)" : ""} :`, error);
     return null;
+  }
+  // Légende locale : tuée par chaque joueur qui a saisi un temps (pas un
+  // abandon), même en litige. Entraînement : temps saisi plus tard par le
+  // lanceur (cf. handleTempsEntrainement).
+  if (!draft.entrainement) {
+    await enregistrerMorts(draft.boss_id, data?.id ?? null, ["j1", "j2"].map(role => ({
+      discord_id: draft[`discord_${role}`],
+      temps_secondes: draft[`temps_${role}`]?.secondes ?? null
+    })));
   }
   return data?.id ?? null;
 }

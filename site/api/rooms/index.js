@@ -9,6 +9,7 @@ const { calculerEquilibrage, donneesBoxRole } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
 const { getBossParId } = require("../_lib/boss");
+const { legendesTueesAujourdhui } = require("../_lib/legendes");
 
 // Entraînement : une création toutes les 10 s par IP au plus.
 const DELAI_ENTRAINEMENT_MS = 10 * 1000;
@@ -16,6 +17,18 @@ const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
 const PREMIERS = ["moi", "adverse", "aleatoire"];
 // Room privée : J1 choisi par le créateur.
 const PREMIERS_ROOM = ["createur", "adversaire", "aleatoire"];
+
+// Boss imposé à la création : inconnu ou légende locale déjà tuée
+// aujourd'hui par le créateur -> message d'erreur ; null sinon.
+async function erreurBossImpose(bossId, discordId) {
+  if (!bossId) return null;
+  const boss = getBossParId(bossId);
+  if (!boss) return "Boss inconnu";
+  if ((await legendesTueesAujourdhui([discordId])).includes(bossId)) {
+    return `Tu as déjà tué ${boss.nom} aujourd'hui : cette légende locale revient demain à 4 h.`;
+  }
+  return null;
+}
 
 async function lireProfil(discordId) {
   const { data } = await supabase.from("profiles").select("data").eq("discord_id", discordId).maybeSingle();
@@ -70,7 +83,8 @@ async function creerEntrainement(req, res, user) {
   if (moi.erreur || adverse.erreur) return res.status(400).json({ error: moi.erreur || adverse.erreur });
 
   const bossId = config.boss_id ? String(config.boss_id) : null;
-  if (bossId && !getBossParId(bossId)) return res.status(400).json({ error: "Boss inconnu" });
+  const erreurBoss = await erreurBossImpose(bossId, user.id);
+  if (erreurBoss) return res.status(400).json({ error: erreurBoss });
 
   const attente = await verifierFrequence(req, "entrainement", DELAI_ENTRAINEMENT_MS);
   if (attente > 0) {
@@ -186,7 +200,8 @@ module.exports = async (req, res) => {
     // Boss et J1 choisis à la création (sinon au hasard au tirage).
     await actualiserPoints();
     const bossImpose = req.body?.boss_id ? String(req.body.boss_id) : null;
-    if (bossImpose && !getBossParId(bossImpose)) return res.status(400).json({ error: "Boss inconnu" });
+    const erreurBoss = await erreurBossImpose(bossImpose, user.id);
+    if (erreurBoss) return res.status(400).json({ error: erreurBoss });
     const premier = PREMIERS_ROOM.includes(req.body?.premier) ? req.body.premier : "aleatoire";
 
     const attente = await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);

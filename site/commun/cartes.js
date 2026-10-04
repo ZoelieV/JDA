@@ -129,6 +129,20 @@ const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.
 const chargerBoss = () => Promise.all([chargerJSON("boss.json"), chargerPointsAdmin()])
   .then(([liste, points]) => appliquerModifsBoss(fusionnerAjouts(liste, points.ajouts?.boss), points.boss));
 
+// Image(s) d'un boss : une légende locale à 2 boss (Griffe de fer et Chèvre
+// de bataille, boss.images) a ses 2 images côte à côte.
+// attributs : texte ajouté à chaque <img> (classe, loading...).
+function htmlImagesBoss(boss, attributs = "") {
+  const images = Array.isArray(boss?.images) && boss.images.length ? boss.images : [boss?.image];
+  const html = images.map(image => `<img src="../DB/${image}" alt="${boss.nom}"${attributs ? ` ${attributs}` : ""}>`).join("");
+  return images.length > 1 ? `<span class="duo-boss">${html}</span>` : html;
+}
+
+// Légende locale (une fois par jour ou à l'infini, cf. api/_lib/boss.js).
+function estLegendeLocale(boss) {
+  return boss?.type === "legende_locale_jour" || boss?.type === "legende_locale_infinie";
+}
+
 // ---- Médaille du théâtre à côté du pseudo (namecards, bannières) ----
 // Palier atteint (6, 8, 10 ou 12) ; profil.theatre stocke "1".."4" (menu
 // "Théâtre clear" de Mon compte). Hauteur : 1,3 x le texte (cf. cartes.css).

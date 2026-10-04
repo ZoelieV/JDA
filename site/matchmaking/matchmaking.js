@@ -47,19 +47,33 @@ async function creerMatch(corps) {
   }
 }
 
+// Options d'un menu de choix du boss : légendes locales regroupées à part
+// (celles déjà tuées aujourd'hui sont refusées par le serveur).
+function remplirSelectBoss(select, liste) {
+  const groupes = [
+    ["Boss", liste.filter(b => !estLegendeLocale(b))],
+    ["Légendes locales", liste.filter(estLegendeLocale)]
+  ];
+  groupes.filter(([, boss]) => boss.length).forEach(([titre, boss]) => {
+    const groupe = document.createElement("optgroup");
+    groupe.label = titre;
+    boss.forEach(b => {
+      const option = document.createElement("option");
+      option.value = b.id;
+      option.textContent = b.type === "legende_locale_jour" ? `${b.nom} (1 fois par jour)` : b.nom;
+      groupe.appendChild(option);
+    });
+    select.appendChild(groupe);
+  });
+}
+
 // Room privée : liste des boss, remplie à la 1re ouverture.
 let bossRoomCharges = false;
 async function remplirBossRoom() {
   if (bossRoomCharges) return;
   bossRoomCharges = true;
   try {
-    const select = document.getElementById("room-boss");
-    (await chargerBoss()).forEach(b => {
-      const option = document.createElement("option");
-      option.value = b.id;
-      option.textContent = b.nom;
-      select.appendChild(option);
-    });
+    remplirSelectBoss(document.getElementById("room-boss"), await chargerBoss());
   } catch (erreur) {
     console.error(erreur);
     bossRoomCharges = false;
@@ -219,13 +233,7 @@ async function initialiserEntrainement() {
   entrainement.cotes.moi.proprietaire = entrainement.moi.id;
   entrainement.cotes.adverse.proprietaire = entrainement.moi.id;
 
-  const selectBoss = document.getElementById("ent-boss");
-  boss.forEach(b => {
-    const option = document.createElement("option");
-    option.value = b.id;
-    option.textContent = b.nom;
-    selectBoss.appendChild(option);
-  });
+  remplirSelectBoss(document.getElementById("ent-boss"), boss);
 
   document.querySelectorAll("#ent-mode .choix-btn").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll("#ent-mode .choix-btn").forEach(b => b.classList.toggle("active", b === btn));

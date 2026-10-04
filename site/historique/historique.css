@@ -1190,3 +1190,28 @@ img.arme-mini {
     padding: 0.25rem;
   }
 }
+
+/* Légende locale à 2 boss : les 2 images dans la place d'une seule. */
+.match-centre .duo-boss {
+  width: 100%;
+  max-width: 16rem;
+}
+
+.record-boss-infos .duo-boss {
+  max-width: 5rem;
+}
+
+.duo-boss .match-boss {
+  width: 50%;
+}
+
+@media (max-width: 700px) {
+  .match-centre .duo-boss,
+  .record-boss-infos .duo-boss {
+    width: auto;
+  }
+
+  .duo-boss .match-boss {
+    width: 2.5rem;
+  }
+}

@@ -21,3 +21,14 @@
 .ref-3 { --couleur-ref: #5b9bd5; }
 .ref-4 { --couleur-ref: #a366d9; }
 .ref-5 { --couleur-ref: #e0a83e; }
+
+/* Légende locale à 2 boss : images côte à côte (htmlImagesBoss). */
+.duo-boss {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.duo-boss > img {
+  min-width: 0;
+}

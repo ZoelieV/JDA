@@ -259,6 +259,11 @@ async function postTemps(temps) {
   await definirDraft(data.draft);
 }
 
+async function postTempsEntrainement(temps) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/temps_entrainement`, { temps });
+  await definirDraft(data.draft);
+}
+
 async function postAbandon() {
   const data = await envoyerAction(`/api/rooms/${roomId}/temps`, { abandon: true });
   await definirDraft(data.draft);
@@ -1357,7 +1362,7 @@ function htmlBossTire(boss) {
   }).join("");
   return `
     <button type="button" class="image-boss-res" title="Voir les résistances">
-      <img src="../DB/${boss.image}" alt="${boss.nom}">
+      ${htmlImagesBoss(boss)}
       <span class="resistances-boss">${res}</span>
     </button>
     <span class="indice-res-boss">Voir les Res</span>
@@ -1445,7 +1450,7 @@ function jouerAnimationBoss(bossIdFinal) {
       : bossFinal;
 
     container.innerHTML = propose
-      ? `<img src="../DB/${propose.image}" alt=""><span class="nom-boss">?</span>`
+      ? `${htmlImagesBoss(propose)}<span class="nom-boss">?</span>`
       : "";
 
     tour += 1;
@@ -1970,8 +1975,11 @@ function creerInfosCase(personnage, role, infos, element = null) {
 function rendreTempsJoueur(role, zone) {
   const temps = draft[`temps_${role}`];
   const saisie = document.getElementById("saisie-temps");
-  const saisieIci = role === monRole &&
-    ((draft.phase === "temps" && !temps) || (draft.phase === "verification" && !draft[`temps_confirme_${role}`]));
+  const roleSaisie = roleSaisieTemps();
+  const saisieIci = role === roleSaisie && (!!draft.entrainement ||
+    (draft.phase === "temps" && !temps) || (draft.phase === "verification" && !draft[`temps_confirme_${role}`]));
+  // Entraînement : pas d'abandon (le temps est facultatif).
+  document.getElementById("btn-abandon").classList.toggle("cache", !!draft.entrainement);
 
   let texte = "";
   if (draft.phase === "verification") {
@@ -1996,7 +2004,7 @@ function rendreTempsJoueur(role, zone) {
   rendreLienStream(role, zone);
 
   if (saisieIci && saisie.parentElement !== zone) zone.appendChild(saisie);
-  if (role === monRole) saisie.classList.toggle("cache", !saisieIci);
+  if (role === roleSaisie) saisie.classList.toggle("cache", !saisieIci);
 }
 
 // Lien de stream du joueur (Mon compte, menu du compte), sous son temps :
@@ -2029,10 +2037,53 @@ function rendreLienStream(role, zone) {
   lien.title = href;
 }
 
+// ---- Localisation d'une légende locale sur la carte ----
+// Image DB/images/boss/legend_local/carte/<id du boss>.webp (pas encore
+// toutes prises : message à la place si elle manque).
+function htmlBoutonCarteLegende() {
+  return `<button type="button" class="btn-carte-legende" title="Où trouver cette légende locale">
+    <img src="../DB/images/others/Icon_Map.webp" alt="">Localisation
+  </button>`;
+}
+
+function ouvrirCarteLegende(boss) {
+  const fenetre = document.getElementById("carte-legende");
+  fenetre.querySelector(".titre-carte-legende").textContent = boss.nom;
+  const image = fenetre.querySelector("img");
+  const absente = fenetre.querySelector(".carte-absente");
+  image.classList.remove("cache");
+  absente.classList.add("cache");
+  image.onerror = () => {
+    image.classList.add("cache");
+    absente.classList.remove("cache");
+  };
+  image.src = `../DB/images/boss/legend_local/carte/${boss.id}.webp`;
+  image.alt = `Localisation de ${boss.nom}`;
+  fenetre.classList.remove("cache");
+}
+
+function initialiserCarteLegende() {
+  const fenetre = document.getElementById("carte-legende");
+  fenetre.addEventListener("click", event => {
+    if (event.target === fenetre || event.target.closest(".fermer-carte-legende")) fenetre.classList.add("cache");
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") fenetre.classList.add("cache");
+  });
+}
+
+// Rôle dont le connecté saisit le temps : le sien ; en entraînement, celui
+// de sa box pour le lanceur seulement, une fois la draft terminée
+// (facultatif, cf. handleTempsEntrainement). null : pas de saisie.
+function roleSaisieTemps() {
+  if (!draft.entrainement) return monRole;
+  return draft.phase === "termine" && moiDiscordId === draft.entrainement.lanceur ? draft.entrainement.cote_moi : null;
+}
+
 function rendreRecap() {
   assurerBossAffiche();
   rendreTableaux();
-  if (!monRole) document.getElementById("saisie-temps").classList.add("cache");
+  if (!roleSaisieTemps()) document.getElementById("saisie-temps").classList.add("cache");
 
   const boss = bossData.find(b => b.id === draft.boss_id);
   const blocBoss = document.getElementById("recap-boss");
@@ -2040,8 +2091,9 @@ function rendreRecap() {
   if (blocBoss.dataset.cle !== cleBoss) {
     blocBoss.dataset.cle = cleBoss;
     blocBoss.innerHTML = boss
-      ? `<img src="../DB/${boss.image}" alt="${boss.nom}"><span class="nom-boss">${boss.nom}</span>`
+      ? `${htmlImagesBoss(boss)}<span class="nom-boss">${boss.nom}</span>${estLegendeLocale(boss) ? htmlBoutonCarteLegende() : ""}`
       : "";
+    blocBoss.querySelector(".btn-carte-legende")?.addEventListener("click", () => ouvrirCarteLegende(boss));
   }
 
   const fini = draft.phase === "termine" || draft.phase === "litige";
@@ -2093,7 +2145,7 @@ function envoyerTempsSaisi() {
     alert("Format invalide. Entre les minutes puis les secondes sur 2 chiffres, par exemple 7:32, 7,32 ou 7.32.");
     return;
   }
-  postTemps(valeur).catch(err => alert(err.message));
+  (draft.entrainement ? postTempsEntrainement : postTemps)(valeur).catch(err => alert(err.message));
 }
 
 // ---- Phase 4 bis : vérification des temps ----
@@ -2183,11 +2235,31 @@ function rendreTermine() {
   rendreRecap();
   const container = document.getElementById("resultat-final");
 
-  // Entraînement : pas de temps ni de vainqueur, on peut relancer.
+  // Entraînement : pas de vainqueur, on peut relancer. Le lanceur peut
+  // saisir son temps s'il a fait le boss (légende locale alors tuée).
   if (draft.entrainement) {
+    const roleSaisie = roleSaisieTemps();
+    const monTemps = roleSaisie && draft[`temps_${roleSaisie}`];
+    let ligneBoss = "";
+    if (roleSaisie) {
+      const input = document.getElementById("input-temps");
+      const btn = document.getElementById("btn-valider-temps");
+      input.disabled = false;
+      btn.disabled = false;
+      btn.textContent = monTemps ? "Corriger" : "Valider";
+      btn.onclick = envoyerTempsSaisi;
+      if (input.dataset.pour !== (monTemps?.affiche || "")) {
+        input.dataset.pour = monTemps?.affiche || "";
+        input.value = monTemps?.affiche || "";
+      }
+      ligneBoss = monTemps
+        ? `<p class="ligne-temps">${messageLegendeTuee() || "Ton temps est enregistré dans l'historique."}</p>`
+        : `<p class="ligne-temps">Tu as fait le boss avec ton équipe ? Entre ton temps au-dessus de ton tableau (facultatif).</p>`;
+    }
     container.innerHTML = `
       <p class="ligne-vainqueur"><span class="egalite">Entraînement terminé 🎯</span></p>
       <p class="ligne-temps">Draft de ${pseudoColore("j1")} contre ${pseudoColore("j2")}. Relance pour rejouer avec les mêmes box (rôles inversés).</p>
+      ${ligneBoss}
     `;
     rendreRejouer();
     return;
@@ -2230,12 +2302,23 @@ function rendreTermine() {
     }
   }
 
+  const legende = messageLegendeTuee();
   container.innerHTML = `
     <p class="ligne-vainqueur">${ligneVainqueur}</p>
     <p class="ligne-temps">${joueur1.pseudo} : ${draft.temps_j1.affiche} — ${joueur2.pseudo} : ${draft.temps_j2.affiche}</p>
     ${ligneTrophees}
+    ${legende ? `<p class="ligne-temps">${legende}</p>` : ""}
   `;
   rendreRejouer();
+}
+
+// Légende locale "une fois par jour" tuée (temps saisi) : plus tirée avant
+// le reset de 4 h (cf. api/_lib/legendes.js). "" sinon.
+function messageLegendeTuee() {
+  const boss = bossData.find(b => b.id === draft.boss_id);
+  if (boss?.type !== "legende_locale_jour") return "";
+  if (draft.entrainement) return `${boss.nom} est tuée pour aujourd'hui : elle ne sera plus tirée pour toi avant le prochain reset (4 h).`;
+  return `${boss.nom} est tuée pour aujourd'hui par ceux qui ont saisi un temps : elle ne sera plus tirée pour eux avant le prochain reset (4 h).`;
 }
 
 // ---- Classé ----
@@ -2799,6 +2882,7 @@ async function demarrer() {
     initialiserFiltresTri();
     initialiserGrillesPersos();
     initialiserResBoss();
+    initialiserCarteLegende();
 
     await tick();
 

@@ -357,7 +357,7 @@ function creerLigneMatch(match) {
   ligne.innerHTML = `
     ${htmlJoueur(match, "j1", enCours || match.bans_connus)}
     <div class="match-centre">
-      ${boss ? `<img class="match-boss" src="../DB/${boss.image}" alt="${boss.nom}" loading="lazy">` : ""}
+      ${boss ? htmlImagesBoss(boss, `class="match-boss" loading="lazy"`) : ""}
       ${match.entrainement ? `<span class="match-entrainement">Entraînement 🎯</span>` : ""}
       ${match.classe ? `<span class="match-classe">Classé 🏆${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
       ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="Théâtre 12 sans bans d'équilibrage">Carnage 💀</span>` : ""}
@@ -785,7 +785,7 @@ function afficherRecords() {
       ligne.className = "ligne-record";
       ligne.innerHTML = `
         <div class="record-boss-infos">
-          <img class="match-boss" src="../DB/${boss.image}" alt="" loading="lazy">
+          ${htmlImagesBoss(boss, `class="match-boss" loading="lazy"`)}
           <span class="match-boss-nom">${echapperHtml(boss.nom)}</span>
         </div>`;
       ligne.append(creerRecord(records.non_classe, "Non classé"), creerRecord(records.classe, "Classé 🏆"));

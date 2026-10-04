@@ -1,5 +1,6 @@
-// Fusion de 12 routes (box, ready, action, bonus_toggle, bonus_confirmer,
-// temps, confirmer_temps, litige, rejouer, expirer, crash, draft) en un seul fichier, pour rester sous la limite de
+// Fusion de 14 routes (box, ready, action, bonus_toggle, bonus_confirmer,
+// temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
+// boss_vote, crash, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
 // ce soit} qui ne correspondent à aucun autre fichier plus spécifique dans
@@ -9,6 +10,7 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
+const { legendesTueesAujourdhui, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const { calculerEquilibrage } = require("../../_lib/boxes");
@@ -71,14 +73,29 @@ function bossAVoter(draft, room) {
   return room?.type !== "classe" && !draft.entrainement && !draft.boss_impose && !draft.chronometre && !draft.boss_valide;
 }
 
+// Tirage du boss de la room : classé = boss du mode classé seulement ;
+// sinon, sans les légendes locales "une fois par jour" déjà tuées
+// aujourd'hui par un des joueurs (entraînement : par le lanceur, seul à
+// saisir un temps). Un boss imposé déjà tué est oublié (tiré au hasard,
+// ou au vote en room privée).
+async function tireurBoss(draft, room) {
+  const classe = room?.type === "classe";
+  const joueurs = draft.entrainement ? [draft.entrainement.lanceur] : [draft.discord_j1, draft.discord_j2];
+  const exclus = classe ? [] : await legendesTueesAujourdhui(joueurs);
+  if (exclus.includes(draft.boss_impose)) draft.boss_impose = null;
+  if (exclus.includes(draft.entrainement?.boss_id)) draft.entrainement = { ...draft.entrainement, boss_id: null };
+  return exclureId => tirerBossAleatoire(exclureId, { classe, exclus });
+}
+
 // Boss proposé au vote, ou directement tirage j1/j2 + boss, puis chronos de
 // la draft (classé).
-function tirageEtDraft(draft, room) {
+async function tirageEtDraft(draft, room) {
+  const tirer = await tireurBoss(draft, room);
   if (bossAVoter(draft, room)) {
-    proposerBoss(draft, tirerBossAleatoire);
+    proposerBoss(draft, tirer);
     return;
   }
-  lancerTirage(draft, tirerBossAleatoire);
+  lancerTirage(draft, tirer);
   demarrerChronoDraft(draft);
 }
 
@@ -97,7 +114,7 @@ async function passerApresPrets(draft, room) {
     demarrerBansBonus(draft);
   } else {
     // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
-    tirageEtDraft(draft, room);
+    await tirageEtDraft(draft, room);
   }
 }
 
@@ -323,13 +340,14 @@ function jouerActionAleatoire(draft) {
   return true;
 }
 
-// Entraînement : pas de saisie des temps, la manche se termine avec la
-// draft (archivée pour le lanceur, sans vainqueur ; on peut relancer).
+// Entraînement : la manche se termine avec la draft (archivée pour le
+// lanceur, sans vainqueur ; on peut relancer). Le lanceur peut ensuite
+// saisir son temps s'il a fait le boss (cf. handleTempsEntrainement).
 async function terminerEntrainement(draft) {
   if (!draft.entrainement || draft.phase !== "temps") return;
   draft.phase = "termine";
   draft.vainqueur = null;
-  await archiverMatch(draft);
+  draft.id_match = await archiverMatch(draft);
 }
 
 // Tant que c'est le tour d'un joueur dont le chrono est épuisé : actions
@@ -420,7 +438,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   draft.bans_bonus_faits = choix.length;
   draft.bans_bonus_choix = [];
 
-  tirageEtDraft(draft, room);
+  await tirageEtDraft(draft, room);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -462,6 +480,49 @@ async function handleTemps(req, res, roomId, user) {
     draft.temps_confirme_j1 = false;
     draft.temps_confirme_j2 = false;
   }
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
+}
+
+// ---- temps_entrainement : temps du lanceur d'un entraînement terminé ----
+// Facultatif (on peut s'entraîner à la draft sans faire le boss), modifiable,
+// côté de sa box seulement. Ajouté au match archivé ; une légende locale
+// est alors tuée pour lui. Anti-triche sans conséquence : un temps plus long
+// que le temps écoulé depuis la fin de la draft est refusé (boss pas encore
+// tué).
+async function handleTempsEntrainement(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const tempsParsed = parserTempsMMSS(req.body?.temps);
+  if (!tempsParsed) return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
+  const draft = room.draft;
+  if (!draft.entrainement || draft.phase !== "termine") {
+    return res.status(409).json({ error: "La saisie du temps d'entraînement n'est pas ouverte" });
+  }
+  if (user.id !== draft.entrainement.lanceur) {
+    return res.status(403).json({ error: "Seul le lanceur de l'entraînement peut saisir son temps" });
+  }
+  const ecoule = draft.debut_temps ? Math.floor((Date.now() - draft.debut_temps) / 1000) : Infinity;
+  if (tempsParsed.secondes > ecoule) {
+    return res.status(409).json({ error: "Ce temps est plus long que le temps écoulé depuis la fin de la draft : termine d'abord le combat." });
+  }
+
+  const role = draft.entrainement.cote_moi;
+  draft[`temps_${role}`] = tempsParsed;
+  if (draft.id_match != null) {
+    const { error } = await supabase.from("match_history")
+      .update({ [`temps_${role}_affiche`]: tempsParsed.affiche, [`temps_${role}_secondes`]: tempsParsed.secondes })
+      .eq("id", draft.id_match);
+    if (error) console.error("Erreur temps d'entraînement :", error);
+  }
+  await enregistrerMorts(draft.boss_id, draft.id_match ?? null,
+    [{ discord_id: user.id, temps_secondes: tempsParsed.secondes }], { entrainement: true });
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -630,12 +691,13 @@ async function handleBossVote(req, res, roomId, user) {
   draft.votes_boss = { ...(draft.votes_boss || {}), [joueur]: vote };
   const { j1, j2 } = draft.votes_boss;
   if (j1 && j2) {
+    const tirer = await tireurBoss(draft, room);
     if (j1 === "relancer" && j2 === "relancer") {
       draft.relances_boss = (draft.relances_boss || 0) + 1;
-      proposerBoss(draft, tirerBossAleatoire);
+      proposerBoss(draft, tirer);
     } else {
       draft.boss_valide = true;
-      lancerTirage(draft, tirerBossAleatoire);
+      lancerTirage(draft, tirer);
       demarrerChronoDraft(draft);
     }
   }
@@ -683,7 +745,7 @@ async function handleExpirer(req, res, roomId, user) {
     });
     draft.bans_bonus_faits = choix.length;
     draft.bans_bonus_choix = [];
-    tirageEtDraft(draft, room);
+    await tirageEtDraft(draft, room);
   } else if (draft.phase === "draft" && draft.chrono) {
     const prochaine = getProchaineAction(draft);
     if (!prochaine) return pasEncore();
@@ -835,6 +897,8 @@ module.exports = async (req, res) => {
         return await handleBonusConfirmer(req, res, roomId, user);
       case "temps":
         return await handleTemps(req, res, roomId, user);
+      case "temps_entrainement":
+        return await handleTempsEntrainement(req, res, roomId, user);
       case "confirmer_temps":
         return await handleConfirmerTemps(req, res, roomId, user);
       case "litige":

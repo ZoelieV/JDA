@@ -166,6 +166,7 @@ function etatInitialDraft() {
     premier: "aleatoire", // room privée : J1 = "createur" | "adversaire" | "aleatoire"
     createur: null, // room privée : discord_id du créateur (choix du J1)
     entrainement: null, // mode entraînement : { lanceur, aide, cote_moi, boxes: { moi, adverse }, boss_id, premier } (cf. api/rooms/index.js)
+    id_match: null, // entraînement : id du match archivé (temps du lanceur ajouté ensuite)
     temps_j1: null, // { affiche: "mm:ss", secondes: number } une fois saisi
     temps_j2: null,
     temps_confirme_j1: false, // verification : j1 a confirmé les 2 temps
