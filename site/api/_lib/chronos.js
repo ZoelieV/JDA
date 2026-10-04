@@ -1,9 +1,13 @@
 // Chronos de la draft classée (draft.chronometre, rooms de type "classe") :
 //   - analyse des box : ANALYSE_MS, écourtée si les 2 joueurs sont prêts ;
-//   - bans d'équilibrage : BANS_BONUS_MS pour le joueur qui les choisit ;
-//   - picks / bans : DRAFT_JOUEUR_MS au total par joueur, en pendule
-//     d'échecs (son chrono tourne pendant ses tours, s'arrête pendant ceux
-//     de l'adversaire).
+//   - bans d'équilibrage : BANS_BONUS_PAR_BAN_MS par ban à faire,
+//     BANS_BONUS_MIN_MS au minimum (1 à 3 bans : 20 s, 4 : 24 s, 5 : 30 s…),
+//     pour le joueur qui les choisit ;
+//   - picks / bans : DRAFT_PAR_ACTION_MS par action de la séquence de ce
+//     joueur (théâtre 6 : 5 actions = 2 min 30 ; théâtre 12 : 8 actions =
+//     4 min), au total par joueur, en pendule d'échecs (son chrono tourne
+//     pendant ses tours, s'arrête pendant ceux de l'adversaire) : il répartit
+//     son temps comme il veut.
 // Temps écoulé : choix aléatoires (cf. handleExpirer). Chrono de draft à 0 :
 // toutes les actions restantes de ce joueur sont aléatoires
 // (draft.chrono.epuise_j1 / _j2).
@@ -18,9 +22,12 @@
 // Pause "Mon adversaire a crash" (draft.pause) : chronos figés jusqu'au
 // retour du joueur absent (sa page relit la draft) ; draft annulée après
 // PAUSE_MAX_MS sans retour.
+const { getSequence } = require("./draft");
+
 const ANALYSE_MS = 2 * 60 * 1000;
-const BANS_BONUS_MS = 90 * 1000;
-const DRAFT_JOUEUR_MS = 5 * 60 * 1000;
+const BANS_BONUS_MIN_MS = 20 * 1000;
+const BANS_BONUS_PAR_BAN_MS = 6 * 1000;
+const DRAFT_PAR_ACTION_MS = 30 * 1000;
 const GRACE_ACTION_MS = 2000;
 const TOLERANCE_ACTEUR_MS = 1500;
 const DELAI_ADVERSAIRE_MS = 5000;
@@ -42,15 +49,26 @@ function demarrerAnalyse(draft, maintenant = Date.now()) {
   if (estChronometre(draft)) draft.fin_analyse = maintenant + ANALYSE_MS;
 }
 
+// Temps des bans d'équilibrage : 6 s par ban, 20 s au minimum.
+function dureeBansBonus(nbBans) {
+  return Math.max(BANS_BONUS_MIN_MS, nbBans * BANS_BONUS_PAR_BAN_MS);
+}
+
 function demarrerBansBonus(draft, maintenant = Date.now()) {
-  if (estChronometre(draft)) draft.fin_bans_bonus = maintenant + BANS_BONUS_MS;
+  if (estChronometre(draft)) draft.fin_bans_bonus = maintenant + dureeBansBonus(draft.bans_bonus_total || 0);
+}
+
+// Temps de draft d'un joueur : 30 s par pick / ban de sa séquence (fixée au
+// tirage du boss selon le théâtre, cf. lancerTirage dans _lib/draft.js).
+function dureeDraftJoueur(draft, joueur) {
+  return getSequence(draft).filter(action => action.joueur === joueur).length * DRAFT_PAR_ACTION_MS;
 }
 
 function demarrerChronoDraft(draft, maintenant = Date.now()) {
   if (!estChronometre(draft)) return;
   draft.chrono = {
-    j1: DRAFT_JOUEUR_MS,
-    j2: DRAFT_JOUEUR_MS,
+    j1: dureeDraftJoueur(draft, "j1"),
+    j2: dureeDraftJoueur(draft, "j2"),
     tour_debut: maintenant + DELAI_DEBUT_DRAFT_MS,
     epuise_j1: false,
     epuise_j2: false
@@ -109,8 +127,8 @@ function pauseExpiree(draft, maintenant = Date.now()) {
 
 module.exports = {
   ANALYSE_MS,
-  BANS_BONUS_MS,
-  DRAFT_JOUEUR_MS,
+  dureeBansBonus,
+  dureeDraftJoueur,
   PAUSE_MAX_MS,
   PHASES_PAUSABLES,
   estChronometre,

@@ -2426,8 +2426,9 @@ function rendreAnnule() {
 }
 
 // ---- Chronos de la draft classée (cf. api/_lib/chronos.js) ----
-// Analyse 2 min, bans d'équilibrage 1 min 30, picks / bans 5 min par
-// joueur en pendule. C'est la page du joueur dont c'est le tour qui
+// Analyse 2 min, bans d'équilibrage 6 s par ban (20 s au minimum), picks /
+// bans 30 s par action du joueur (théâtre 6 : 2 min 30 ; 12 : 4 min) en
+// pendule. C'est la page du joueur dont c'est le tour qui
 // déclare le temps écoulé, à 0 sur SON chrono : bouton grisé, notification,
 // choix aléatoire fait par le serveur. La page de l'adversaire ne le fait
 // que 5 s plus tard (joueur parti), pour ne jamais passer avant lui.
