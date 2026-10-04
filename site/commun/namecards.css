@@ -22,7 +22,7 @@
 }
 
 /* Namecard en image d'illustration (format 840x400). */
-.carte-section img {
+.carte-section > img {
   display: block;
   width: 100%;
   aspect-ratio: 42 / 20;
@@ -61,7 +61,7 @@
     align-items: stretch;
   }
 
-  .carte-section img {
+  .carte-section > img {
     width: 42%;
     height: auto;
     aspect-ratio: auto;
