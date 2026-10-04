@@ -2,8 +2,9 @@
 // pages ; bouton de connexion Discord si l'utilisateur n'est pas connecté.
 // Pas sur Mon compte (menu du compte propre) ni dans les rooms de match.
 // Clic sur la photo : menu des paramètres, comme sur Mon compte (UID,
-// niveau du monde, théâtre, Voyageur, Manekin, Personnalisation, Déconnexion) ; clic ailleurs
-// sur la bannière : Mon compte.
+// niveau du monde, théâtre, Voyageur, Manekin, zoom du site,
+// Personnalisation ouverte sur place, Déconnexion) ; clic ailleurs sur la
+// bannière : Mon compte.
 //
 // Placé dans #zone-compte si la page en a un (accueil), sinon dans une zone
 // ajoutée en haut à droite de la page. À inclure avec defer, après fond.js.
@@ -28,6 +29,23 @@
       options: [["manekin", "Manekin"], ["manekina", "Manekina"]] }
   ];
 
+  // Personnalisation ouverte sur place (commun/personnalisation.js, chargé au
+  // 1er clic).
+  let promessePersonnalisation = null;
+  function chargerPersonnalisation() {
+    promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
+      const script = document.createElement("script");
+      script.src = "/commun/personnalisation.js?v=2";
+      script.onload = resoudre;
+      script.onerror = () => {
+        promessePersonnalisation = null;
+        rejeter(new Error("Impossible de charger la personnalisation."));
+      };
+      document.head.appendChild(script);
+    });
+    return promessePersonnalisation;
+  }
+
   async function lireProfil() {
     const reponse = await fetch("/api/auth/profile", { credentials: "include" });
     if (!reponse.ok) throw new Error("Impossible de charger le profil.");
@@ -49,7 +67,7 @@
       <button type="button" class="menu-btn menu-btn-principal" data-action="enregistrer" disabled>Enregistrer</button>
       <p class="menu-etat cache"></p>
       <div class="menu-separateur"></div>
-      <a class="menu-btn" href="${PAGE_COMPTE}?personnalisation=1"><img class="menu-icone" src="${ICONES}Icon_Photo_Mode.webp" alt="">Personnalisation</a>
+      <button type="button" class="menu-btn" data-action="personnalisation"><img class="menu-icone" src="${ICONES}Icon_Photo_Mode.webp" alt="">Personnalisation</button>
       <button type="button" class="menu-btn" data-action="deconnexion"><img class="menu-icone" src="${ICONES}Icon_Quit_Game.webp" alt="">Déconnexion</button>
     `;
     return menu;
@@ -131,6 +149,18 @@
       }
     });
 
+    menu.querySelector('[data-action="personnalisation"]').addEventListener("click", async () => {
+      ouvrir(false);
+      try {
+        await chargerPersonnalisation();
+        window.Personnalisation.ouvrir();
+      } catch (erreur) {
+        console.error(erreur);
+        // Repli : la personnalisation de Mon compte.
+        window.location.href = `${PAGE_COMPTE}?personnalisation=1`;
+      }
+    });
+
     menu.querySelector('[data-action="deconnexion"]').addEventListener("click", () => {
       // Plus de fond personnalisé une fois déconnecté (comme sur Mon compte).
       window.FondEcran?.memoriser(null, null);
@@ -207,6 +237,8 @@
         bouton.appendChild(texte);
 
         const menu = creerMenu();
+        // Zoom du site (ordinateur, cf. commun/zoom.js).
+        window.ZoomSite?.inserer(menu);
         conteneur.append(bouton, menu);
         zone.appendChild(conteneur);
         brancherMenu(conteneur, bouton, photo, menu);

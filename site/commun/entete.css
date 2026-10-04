@@ -565,69 +565,48 @@ body::before {
   object-fit: contain;
 }
 
-/* ---- Zoom du site (ordinateur, cf. commun/zoom.js) ----
-   Curseur vertical calé à droite, au milieu de l'écran. En px : il garde la
-   même taille quel que soit le zoom choisi. Discret tant qu'on ne le survole
-   pas. */
-.zoom-site {
-  position: fixed;
-  top: 50%;
-  right: 6px;
-  z-index: 900;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 4px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  background-color: rgba(20, 20, 20, 0.6);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  opacity: 0.45;
-  transform: translateY(-50%);
-  transition: opacity 0.15s ease;
-}
-
+/* ---- Zoom du site (ordinateur, cf. commun/zoom.js) : curseur horizontal
+   dans le menu des paramètres du compte ---- */
 .zoom-site[hidden] {
   display: none;
 }
 
-.zoom-site:hover,
-.zoom-site:focus-within {
-  opacity: 1;
+.zoom-site-note {
+  opacity: 0.7;
 }
 
-.zoom-site-valeur {
-  width: 44px;
-  padding: 2px 0;
+.zoom-site-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu-champ .zoom-site-curseur {
+  flex: 1;
+  min-width: 0;
+  height: 1.5rem;
+  padding: 0;
   border: none;
-  border-radius: 6px;
   background: none;
-  color: #fff;
-  font-family: Arial, sans-serif;
-  font-size: 11px;
+  accent-color: #f5c542;
+  cursor: pointer;
+}
+
+/* Valeur actuelle : clic pour revenir à 100 %. */
+.zoom-site-valeur {
+  flex: 0 0 auto;
+  min-width: 3.5rem;
+  padding: 0.25rem 0.375rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-size: 0.8125rem;
   font-weight: bold;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .zoom-site-valeur:hover {
-  color: #f5c542;
-}
-
-/* Curseur vertical : 200 % en haut, 50 % en bas. */
-.zoom-site-curseur {
-  width: 20px;
-  height: 160px;
-  margin: 0;
-  writing-mode: vertical-lr;
-  direction: rtl;
-  accent-color: #f5c542;
-  cursor: pointer;
-}
-
-.zoom-site-icone {
-  font-size: 13px;
-  line-height: 1;
+  border-color: rgba(245, 197, 66, 0.8);
 }

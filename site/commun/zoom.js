@@ -1,14 +1,17 @@
-// Zoom du site sur ordinateur : curseur vertical à droite de l'écran, de
-// 50 à 200 % (sur Mac, dézoomer une page n'est pas intuitif). La valeur est
-// gardée sur l'appareil (localStorage) et appliquée à toutes les pages.
+// Zoom du site sur ordinateur : curseur horizontal de 50 à 200 % dans le
+// menu des paramètres du compte (sur Mac, dézoomer une page n'est pas
+// intuitif). La valeur est gardée sur l'appareil (localStorage) et
+// appliquée à toutes les pages, sans passer par "Enregistrer".
 //
 // Le zoom change la taille de base du texte (--zoom-site dans la taille de
 // html, cf. commun/entete.css) : tout le site est en rem, il grandit ou
-// rétrécit d'un bloc. Téléphones et tablettes tactiles : pas de curseur, le
-// zoom du navigateur (pincement) suffit.
+// rétrécit d'un bloc. Téléphones et tablettes tactiles : ni zoom ni réglage,
+// le zoom du navigateur (pincement) suffit.
 //
 // À inclure dans le <head> (appliqué avant l'affichage, sans saut) :
 // <script src="/commun/zoom.js"></script>
+// Réglage ajouté au menu des paramètres : par commun/compte.js
+// (ZoomSite.inserer) et, sur Mon compte, au menu #menu-compte de la page.
 (function () {
   const CLE = "zoom-site";
   const MIN = 50;
@@ -17,6 +20,7 @@
   const DEFAUT = 100;
   // Ordinateur : souris (ou pavé tactile) et écran assez large.
   const ordi = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 701px)");
+  const reglages = [];
 
   function lire() {
     let valeur = NaN;
@@ -31,62 +35,76 @@
     } catch { /* stockage indisponible : zoom pour cette page seulement */ }
   }
 
-  function appliquer(valeur) {
-    if (ordi.matches && valeur !== DEFAUT) document.documentElement.style.setProperty("--zoom-site", String(valeur / 100));
-    else document.documentElement.style.removeProperty("--zoom-site");
-  }
-
   let zoom = lire();
-  appliquer(zoom);
 
-  function creerCurseur() {
-    const zone = document.createElement("div");
-    zone.className = "zoom-site";
-    zone.innerHTML = `
-      <button type="button" class="zoom-site-valeur" title="Zoom du site : clic pour revenir à 100 %"></button>
-      <input type="range" class="zoom-site-curseur" min="${MIN}" max="${MAX}" step="${PAS}" aria-label="Zoom du site">
-      <span class="zoom-site-icone" aria-hidden="true">🔍</span>
-    `;
-    const curseur = zone.querySelector(".zoom-site-curseur");
-    const libelle = zone.querySelector(".zoom-site-valeur");
-    const afficher = () => {
+  function appliquer() {
+    if (ordi.matches && zoom !== DEFAUT) document.documentElement.style.setProperty("--zoom-site", String(zoom / 100));
+    else document.documentElement.style.removeProperty("--zoom-site");
+    reglages.forEach(({ bloc, curseur, valeur }) => {
+      bloc.hidden = !ordi.matches;
       curseur.value = String(zoom);
-      libelle.textContent = `${zoom} %`;
-    };
-    const changer = (valeur, enregistrer) => {
-      zoom = valeur;
-      appliquer(zoom);
-      afficher();
-      if (enregistrer) ecrire(zoom);
-    };
-
-    // Pendant le glissement : appliqué en direct ; enregistré au relâché.
-    curseur.addEventListener("input", () => changer(Number(curseur.value), false));
-    curseur.addEventListener("change", () => changer(Number(curseur.value), true));
-    libelle.addEventListener("click", () => changer(DEFAUT, true));
-    afficher();
-
-    const basculer = () => {
-      zone.hidden = !ordi.matches;
-      appliquer(zoom);
-    };
-    ordi.addEventListener?.("change", basculer);
-    basculer();
-    document.body.appendChild(zone);
+      valeur.textContent = `${zoom} %`;
+    });
   }
+
+  appliquer();
+  ordi.addEventListener?.("change", appliquer);
 
   // Autre onglet du site : même zoom partout.
   window.addEventListener("storage", event => {
     if (event.key !== CLE) return;
     zoom = lire();
-    appliquer(zoom);
-    const curseur = document.querySelector(".zoom-site-curseur");
-    if (curseur) {
-      curseur.value = String(zoom);
-      document.querySelector(".zoom-site-valeur").textContent = `${zoom} %`;
-    }
+    appliquer();
   });
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", creerCurseur);
-  else creerCurseur();
+  // Bloc "Zoom du site" (même présentation que les champs du menu).
+  function creerReglage() {
+    const bloc = document.createElement("div");
+    bloc.className = "menu-champ zoom-site";
+    bloc.innerHTML = `
+      <label for="zoom-site-${reglages.length}">Zoom du site <span class="zoom-site-note">(cet appareil)</span></label>
+      <div class="zoom-site-ligne">
+        <input type="range" id="zoom-site-${reglages.length}" class="zoom-site-curseur" min="${MIN}" max="${MAX}" step="${PAS}">
+        <button type="button" class="zoom-site-valeur" title="Revenir à 100 %"></button>
+      </div>
+    `;
+    const curseur = bloc.querySelector(".zoom-site-curseur");
+    const valeur = bloc.querySelector(".zoom-site-valeur");
+    const changer = (nouveau, enregistrer) => {
+      zoom = nouveau;
+      if (enregistrer) ecrire(zoom);
+      appliquer();
+    };
+    // Pendant le glissement : appliqué en direct ; enregistré au relâché.
+    curseur.addEventListener("input", () => changer(Number(curseur.value), false));
+    curseur.addEventListener("change", () => changer(Number(curseur.value), true));
+    valeur.addEventListener("click", () => changer(DEFAUT, true));
+    reglages.push({ bloc, curseur, valeur });
+    appliquer();
+    return bloc;
+  }
+
+  // Ajoute le réglage dans un menu des paramètres, dans sa propre section
+  // (entre deux séparateurs, après Enregistrer).
+  function inserer(menu) {
+    if (!menu || menu.querySelector(".zoom-site")) return;
+    const separateur = menu.querySelector(".menu-separateur");
+    const bloc = creerReglage();
+    if (!separateur) {
+      menu.appendChild(bloc);
+      return;
+    }
+    const autre = document.createElement("div");
+    autre.className = "menu-separateur";
+    separateur.after(bloc, autre);
+  }
+
+  window.ZoomSite = { inserer };
+
+  // Mon compte : menu des paramètres dans la page.
+  function insererMenuPage() {
+    inserer(document.getElementById("menu-compte"));
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", insererMenuPage);
+  else insererMenuPage();
 })();
