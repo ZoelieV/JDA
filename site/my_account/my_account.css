@@ -217,7 +217,6 @@ h2 {
   background-color: rgba(245, 197, 66, 0.15);
 }
 
-
 .box-selector {
   display: flex;
   flex-wrap: wrap;
@@ -618,195 +617,11 @@ h2 {
   cursor: pointer;
 }
 
-/* Aperçus cliquables : fond d'écran, namecard, bannière (centrée en
-   hauteur) ; l'actif (ce qu'on modifie) est entouré de doré. */
-.apercu-parametres {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  justify-content: center;
-  gap: 1rem;
-}
-
-/* Blocs de même hauteur : l'image de la bannière (moins haute) est centrée
-   dans l'espace sous son titre, donc à la hauteur des autres images. */
-.apercu-bloc .apercu-image {
-  margin: auto 0;
-}
-
-.apercu-bloc {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.375rem;
-  padding: 0.375rem;
-  border: 2px solid transparent;
-  border-radius: 0.75rem;
-  background: none;
-  color: white;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.apercu-bloc:hover {
-  border-color: rgba(245, 197, 66, 0.5);
-}
-
-.apercu-bloc.active {
-  border-color: rgba(245, 197, 66, 0.9);
-  background-color: rgba(245, 197, 66, 0.12);
-}
-
-.apercu-titre {
-  font-size: 0.8125rem;
-  opacity: 0.8;
-}
-
-.apercu-image {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 5.625rem;
-  background-color: rgba(255, 255, 255, 0.06);
-  background-size: cover;
-  background-position: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  font-size: 0.8125rem;
-  opacity: 0.9;
-}
-
-.apercu-banniere {
-  width: 11.875rem;
-}
-
-.apercu-banniere2 {
-  width: 25rem;
-  height: 3.4375rem;
-}
-
-.apercu-fond {
-  width: 10rem;
-}
-
-/* Recherche au-dessus de la grille, centrée, 1,5 x plus large. */
-.recherche-personnage.recherche-parametres {
-  align-self: center;
-  width: calc(11.875rem * 1.5);
-  max-width: 100%;
-}
-
-.choix-parametres {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.categorie-choix {
-  margin: 1rem 0 0.5rem 0;
-  font-size: 1rem;
-  text-transform: capitalize;
-  opacity: 0.85;
-}
-
-.grille-choix {
-  display: grid;
-  gap: 0.625rem;
-}
-
-.grille-choix.choix-banniere {
-  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
-}
-
-.grille-choix.choix-banniere2 {
-  grid-template-columns: repeat(auto-fill, minmax(22.5rem, 1fr));
-}
-
-.grille-choix.choix-fond {
-  grid-template-columns: repeat(auto-fill, minmax(11.25rem, 1fr));
-}
-
-.choix-parametre {
-  padding: 0;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 0.1875rem solid transparent;
-  border-radius: 0.5625rem;
-  color: white;
-  font-size: 0.9375rem;
-  cursor: pointer;
-}
-
-/* Formats des images : bannière 840x400, deuxième bannière 1000x137. */
-.choix-banniere .choix-parametre {
-  aspect-ratio: 42 / 20;
-}
-
-.choix-banniere2 .choix-parametre {
-  aspect-ratio: 1000 / 137;
-}
-
-.choix-parametre img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.choix-parametre:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.choix-parametre.active {
-  border-color: rgba(245, 197, 66, 0.9);
-}
-
-/* Annuler en bas à gauche, Enregistrer en bas à droite. */
+/* Annuler en bas à gauche, valider en bas à droite. */
 .pied-parametres {
   display: flex;
   justify-content: space-between;
   gap: 0.625rem;
-}
-
-/* Sans changement : grisés, contour vert (Enregistrer) / rouge (Annuler) ;
-   avec un changement : remplis de leur couleur. */
-.pied-parametres #enregistrer-parametres,
-.pied-parametres #annuler-parametres {
-  padding: 0.5rem 1.25rem;
-  border: 2px solid var(--couleur-bouton);
-  border-radius: 0.5rem;
-  background-color: rgba(80, 80, 80, 0.95);
-  color: rgba(255, 255, 255, 0.7);
-  font-family: inherit;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.pied-parametres #enregistrer-parametres {
-  --couleur-bouton: #3ecf6a;
-}
-
-.pied-parametres #annuler-parametres {
-  --couleur-bouton: #ff5a5a;
-}
-
-.pied-parametres #enregistrer-parametres.modifie,
-.pied-parametres #annuler-parametres.modifie {
-  background-color: var(--couleur-bouton);
-  color: white;
-}
-
-.pied-parametres #enregistrer-parametres:disabled {
-  cursor: default;
-}
-
-.pied-parametres #enregistrer-parametres.modifie:hover,
-.pied-parametres #annuler-parametres.modifie:hover {
-  filter: brightness(1.1);
 }
 
 .btn-secondaire {
@@ -984,10 +799,6 @@ textarea {
 }
 
 .visuel-personnage.selectionnable:hover,
-.choix-parametre:hover {
-  border-color: rgba(245, 197, 66, 0.9);
-  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.8);
-}
 
 .fermer-modal:hover {
   color: #f5c542;
@@ -1379,34 +1190,6 @@ body {
     max-width: none;
     border-radius: 0;
     padding: 0.75rem;
-  }
-
-  .apercu-parametres {
-    gap: 0.5rem;
-  }
-
-  .apercu-image {
-    height: 3.75rem;
-  }
-
-  .apercu-banniere,
-  .apercu-fond {
-    width: calc(50vw - 1.25rem);
-  }
-
-  .apercu-banniere2 {
-    width: calc(100vw - 1.5rem);
-    height: auto;
-    aspect-ratio: 1000 / 137;
-  }
-
-  .grille-choix.choix-banniere,
-  .grille-choix.choix-fond {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .grille-choix.choix-banniere2 {
-    grid-template-columns: 1fr;
   }
 
   .toast {
@@ -1808,15 +1591,6 @@ body {
     flex: 1 1 auto;
     aspect-ratio: auto;
     height: auto;
-  }
-}
-
-/* ---- Téléphone, personnalisation : dès qu'on fait défiler les choix, seul
-   l'aperçu de ce qu'on modifie reste en haut (avec la recherche) ; les
-   autres réapparaissent en remontant tout en haut (cf. initialiserParametres). */
-@media (max-width: 700px) {
-  .modal-parametres-contenu.defilement .apercu-bloc:not(.active) {
-    display: none;
   }
 }
 

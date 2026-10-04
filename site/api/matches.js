@@ -321,7 +321,8 @@ function resumerJoueur(match, role, profils) {
     // Palier de théâtre actuel (médaille à côté du pseudo), ou null.
     theatre: PALIERS_THEATRE[profil?.data?.theatre] ?? null,
     // Variantes affichées (Voyageur, Manekin), cf. commun/variantes.js.
-    parametres: { voyageur: parametres.voyageur || null, manekin: parametres.manekin || null },
+    // Variantes et skins du joueur : ses persos s'affichent avec ses choix.
+    parametres: { voyageur: parametres.voyageur || null, manekin: parametres.manekin || null, skins: Array.isArray(parametres.skins) ? parametres.skins : [] },
     box: match[`box_${role}`] || null,
     temps: match[`temps_${role}_affiche`]
       ? { affiche: match[`temps_${role}_affiche`], secondes: match[`temps_${role}_secondes`] }

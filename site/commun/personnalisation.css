@@ -120,6 +120,15 @@
   width: 10rem;
 }
 
+/* Skins : portrait du Voyageur choisi, nombre de skins activés par-dessus. */
+.perso-apercu-skins {
+  width: 5.625rem;
+  align-items: flex-end;
+  padding-bottom: 0.25rem;
+  font-weight: bold;
+  text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.95);
+}
+
 .perso-recherche {
   box-sizing: border-box;
   align-self: center;
@@ -167,6 +176,27 @@
 
 .perso-grille-fond {
   grid-template-columns: repeat(auto-fill, minmax(11.25rem, 1fr));
+}
+
+/* Voyageur / Manekin et skins : portraits carrés. */
+.perso-grille-variantes,
+.perso-grille-skins {
+  grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
+}
+
+.perso-grille-variantes .perso-choix-image,
+.perso-grille-skins .perso-choix-image {
+  aspect-ratio: 1;
+}
+
+.perso-grille-skins .perso-choix-image img {
+  object-fit: contain;
+}
+
+/* Skin non activé : un peu éteint, pour voir d'un coup d'œil ceux qui le sont. */
+.perso-grille-skins .perso-choix-image:not(.active) img {
+  opacity: 0.55;
+  filter: grayscale(0.5);
 }
 
 .perso-choix-image {
@@ -302,5 +332,14 @@
 
   .perso-grille-banniere2 {
     grid-template-columns: 1fr;
+  }
+
+  .perso-apercu-skins {
+    width: 3.75rem;
+  }
+
+  .perso-grille-variantes,
+  .perso-grille-skins {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

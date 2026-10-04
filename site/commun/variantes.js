@@ -38,13 +38,41 @@ const VARIANTES_PERSONNAGES = {
   }
 };
 
+// Skins : personnages dont le joueur peut choisir le skin (Personnalisation,
+// profil.parametres.skins = liste d'ids). Images par id, dans
+// DB/images/characters/ : "<id>_skin.webp" (portrait), "side_char/<id>_skin_side.webp"
+// (icône de profil), "Item/<id>_skin_item.webp" (choix dans Personnalisation).
+// Liste aussi utilisée par le serveur pour valider le profil
+// (api/auth/profile.js).
+const SKINS_PERSONNAGES = [
+  "ayaya", "barbara", "bennett", "charlotte", "citlali", "diluc", "fischl", "ganyu",
+  "hutao", "jean", "kaeya", "keqing", "kirara", "klee", "lisa", "neuvillette",
+  "nilou", "ningguang", "shenhe", "xiangling", "xingqiu", "yaoyao", "yelan"
+];
+
+function imagesSkin(id) {
+  return {
+    image: `images/characters/${id}_skin.webp`,
+    side: `images/characters/side_char/${id}_skin_side.webp`,
+    item: `images/characters/Item/${id}_skin_item.webp`
+  };
+}
+
+function aSkinActif(id, parametres) {
+  return SKINS_PERSONNAGES.includes(id) && Array.isArray(parametres?.skins) && parametres.skins.includes(id);
+}
+
 // Personnage tel que le joueur l'a choisi (copie ; les autres sont
-// renvoyés tels quels).
+// renvoyés tels quels) : variante (Voyageur, Manekin) ou skin.
 // Voyageur par élément ("traveler_pyro"...) : même variante, élément ajouté
 // au nom ("Aether Pyro").
 function appliquerVariante(personnage, parametres) {
   const variante = VARIANTES_PERSONNAGES[personnage.groupe || personnage.id];
-  if (!variante) return personnage;
+  if (!variante) {
+    if (!aSkinActif(personnage.id, parametres)) return personnage;
+    const { image, side } = imagesSkin(personnage.id);
+    return { ...personnage, image, side };
+  }
   const choix = variante.options[parametres?.[variante.parametre]] || variante.options[variante.defaut];
   const nom = personnage.groupe ? `${choix.nom} ${NOMS_ELEMENTS[personnage.element] || ""}`.trim() : choix.nom;
   return { ...personnage, ...choix, nom };
@@ -123,3 +151,6 @@ function regrouperPourDraft(personnages) {
 function membresGroupe(personnages, groupe) {
   return personnages.filter(personnage => personnage.groupe === groupe);
 }
+
+// Serveur (Node) : listes partagées (cf. api/auth/profile.js).
+if (typeof module !== "undefined") module.exports = { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES };

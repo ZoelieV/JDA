@@ -757,8 +757,8 @@ function rendreCollection(personnages, armes, profil) {
 }
 
 // ---- Bouton Enregistrer : grisé tant qu'il n'y a rien à enregistrer ----
-// Compare ce qu'enregistre le bouton (collection, variantes, UID, niveau du
-// monde, théâtre)
+// Compare ce qu'enregistre le bouton (collection, UID, niveau du monde,
+// théâtre, stream, noms des box ; la personnalisation s'enregistre à part)
 // à l'état du dernier enregistrement.
 
 let etatEnregistre = null;
@@ -766,7 +766,6 @@ let etatEnregistre = null;
 function etatAEnregistrer(profil, uid, theatre, stream, niveauMonde) {
   return JSON.stringify([
     profil.characters, profil.weapons,
-    profil.parametres?.voyageur ?? null, profil.parametres?.manekin ?? null,
     uid, theatre, stream, niveauMonde, profil.nomsBoxes ?? {}
   ]);
 }
@@ -857,8 +856,9 @@ async function initialiserPage() {
     document.getElementById("stream").value = profil.stream || "";
     document.getElementById("theatre").value = profil.theatre || "";
 
-    // Voyageur (Aether / Lumine) et Manekin (Manekin / Manekina) : seule la
-    // variante choisie est affichée. Le tableau est mis à jour sur place
+    // Voyageur (Aether / Lumine), Manekin (Manekin / Manekina) et skins :
+    // seule la variante choisie est affichée. Choisis dans Personnalisation
+    // (commun/personnalisation.js) ; le tableau est mis à jour sur place
     // pour que tous les écouteurs voient le changement.
     profil.parametres ??= {};
     const personnages = appliquerVariantes(personnagesBase, profil.parametres);
@@ -866,15 +866,14 @@ async function initialiserPage() {
     const logoVuePersonnages = document.querySelector('.view-btn[data-view="characters"] img');
     const majLogoVuePersonnages = () => { logoVuePersonnages.src = `../DB/${getIconeVuePersonnages(profil.parametres)}`; };
     majLogoVuePersonnages();
-    [["choix-voyageur", "voyageur"], ["choix-manekin", "manekin"]].forEach(([idSelect, cle]) => {
-      const select = document.getElementById(idSelect);
-      select.value = profil.parametres[cle] || select.options[0].value;
-      select.addEventListener("change", () => {
-        profil.parametres[cle] = select.value;
-        personnages.splice(0, personnages.length, ...appliquerVariantes(personnagesBase, profil.parametres));
-        majLogoVuePersonnages();
-        afficherCollection(personnages, armes, profil);
-      });
+    document.addEventListener("personnalisation-enregistree", event => {
+      profil.parametres = { ...event.detail };
+      personnages.splice(0, personnages.length, ...appliquerVariantes(personnagesBase, profil.parametres));
+      majLogoVuePersonnages();
+      afficherCollection(personnages, armes, profil);
+      appliquerFond(profil.parametres.fond);
+      memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
+      afficherToast("Personnalisation enregistrée", "succes");
     });
 
     setBoxActive("full");
@@ -1180,15 +1179,6 @@ function urlImage(chemin) {
   return encodeURI(RACINE_IMAGES + chemin);
 }
 
-// "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
-function nomNamecard(chemin) {
-  return chemin
-    .split("/").pop()
-    .replace(/^Namecard_(Background|Banner)_/, "")
-    .replace(/\.[a-z]+$/i, "")
-    .replace(/_/g, " ");
-}
-
 // Choix attribués par défaut à tout le monde.
 const PARAMETRES_DEFAUT = {
   banniere: "namecards/Namecard_Background_Default.webp",
@@ -1218,54 +1208,16 @@ function appliquerFond(idFond) {
   document.body.style.setProperty("--fond-ecran", fond ? `url("${urlImage(fond.image)}")` : "none");
 }
 
+// Personnalisation (fond, namecard, bannière, Voyageur, Manekin, skins) :
+// fenêtre commune à tout le site (commun/personnalisation.js). Ici : fond et
+// bannière du profil appliqués au chargement, et bouton "Personnalisation"
+// du menu du compte. Après un enregistrement, la page se met à jour elle-même
+// (événement "personnalisation-enregistree", cf. chargement du profil).
 async function initialiserParametres(profil) {
-  const modal = document.getElementById("modal-parametres");
-  const conteneurChoix = document.getElementById("choix-parametres");
-  const inputRecherche = document.getElementById("recherche-parametres");
-
-  let ongletActif = "fond";
-  let brouillon = null; // choix en cours, appliqués seulement à l'enregistrement
-
-  const btnEnregistrer = document.getElementById("enregistrer-parametres");
-  const btnAnnuler = document.getElementById("annuler-parametres");
-
-  // Enregistrer / Annuler : grisés (contour vert / rouge) tant que rien n'a
-  // changé, remplis dès qu'un choix diffère de ce qui est enregistré.
-  function mettreAJourPied() {
-    const modifie = Object.keys(PARAMETRES_DEFAUT).some(cle => brouillon[cle] !== profil.parametres[cle]);
-    btnEnregistrer.classList.toggle("modifie", modifie);
-    btnAnnuler.classList.toggle("modifie", modifie);
-    btnEnregistrer.disabled = !modifie;
-  }
-
-  // Aperçu actif = ce qu'on modifie.
-  function choisirOnglet(onglet) {
-    ongletActif = onglet;
-    document.querySelectorAll(".apercu-bloc").forEach(bloc => {
-      bloc.classList.toggle("active", bloc.dataset.onglet === onglet);
-    });
-    inputRecherche.value = "";
-    rendreChoix();
-    conteneurChoix.scrollTop = 0;
-    contenuModal.classList.remove("defilement");
-  }
-
-  // Téléphone : en faisant défiler les choix, seuls l'aperçu actif et la
-  // recherche restent en haut (classe "defilement", cf. my_account.css) ;
-  // tout en haut, les autres aperçus reviennent. Seulement si la liste
-  // défile encore une fois les aperçus masqués (sinon ils clignoteraient).
-  const contenuModal = modal.querySelector(".modal-parametres-contenu");
-  const apercus = modal.querySelector(".apercu-parametres");
-  conteneurChoix.addEventListener("scroll", () => {
-    const haut = conteneurChoix.scrollTop;
-    if (contenuModal.classList.contains("defilement")) {
-      if (haut <= 4) contenuModal.classList.remove("defilement");
-      return;
-    }
-    const hauteurMasquee = apercus.offsetHeight - (apercus.querySelector(".apercu-bloc.active")?.offsetHeight || 0);
-    const marge = conteneurChoix.scrollHeight - conteneurChoix.clientHeight;
-    if (haut > 24 && marge > hauteurMasquee + 24) contenuModal.classList.add("defilement");
-  }, { passive: true });
+  document.getElementById("btn-parametres").addEventListener("click", () => {
+    fermerMenuCompte();
+    window.Personnalisation.ouvrir({ recharger: false });
+  });
 
   try {
     await chargerCosmetiques();
@@ -1283,138 +1235,6 @@ async function initialiserParametres(profil) {
   };
   appliquerFond(profil.parametres.fond);
   memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
-
-  function rendreApercus() {
-    const cases = {
-      "apercu-banniere": brouillon.banniere && urlImage(brouillon.banniere),
-      "apercu-banniere2": brouillon.banniere2 && urlImage(brouillon.banniere2),
-      "apercu-fond": getFond(brouillon.fond) && urlImage(getFond(brouillon.fond).miniature)
-    };
-    Object.entries(cases).forEach(([id, url]) => {
-      const bloc = document.getElementById(id);
-      bloc.style.backgroundImage = url ? `url("${url}")` : "";
-      bloc.textContent = url ? "" : "Aucun";
-    });
-  }
-
-  function creerChoix({ valeur, image, titre, classe }) {
-    const bouton = document.createElement("button");
-    bouton.type = "button";
-    bouton.className = `choix-parametre ${classe}`;
-    bouton.title = titre;
-    bouton.classList.toggle("active", brouillon[ongletActif] === valeur);
-    bouton.innerHTML = image
-      ? `<img src="${image}" alt="${titre}" loading="lazy">`
-      : `<span>Aucun</span>`;
-    bouton.addEventListener("click", () => {
-      brouillon[ongletActif] = valeur;
-      if (ongletActif === "fond") appliquerFond(valeur);
-      rendreApercus();
-      rendreChoix();
-      mettreAJourPied();
-    });
-    return bouton;
-  }
-
-  function rendreChoix() {
-    conteneurChoix.innerHTML = "";
-
-    if (!cosmetiques) {
-      conteneurChoix.textContent = "Impossible de charger la liste des images.";
-      return;
-    }
-
-    const recherche = inputRecherche.value.trim().toLowerCase();
-    const classe = `choix-${ongletActif}`;
-    const grille = document.createElement("div");
-    grille.className = `grille-choix ${classe}`;
-    if (ongletActif === "fond") {
-      // Fonds groupés par sous-dossier de DB/images/bg.
-      const categories = [...new Set(cosmetiques.fonds.map(fond => fond.categorie))];
-
-      categories.forEach(categorie => {
-        const fonds = cosmetiques.fonds.filter(fond =>
-          fond.categorie === categorie &&
-          (!recherche || fond.id.toLowerCase().includes(recherche))
-        );
-        if (fonds.length === 0) return;
-
-        const titre = document.createElement("h3");
-        titre.className = "categorie-choix";
-        titre.textContent = (categorie || "Divers").replace(/_/g, " ");
-        conteneurChoix.appendChild(titre);
-
-        const grilleCategorie = document.createElement("div");
-        grilleCategorie.className = `grille-choix ${classe}`;
-        fonds.forEach(fond => {
-          grilleCategorie.appendChild(creerChoix({
-            valeur: fond.id,
-            image: urlImage(fond.miniature),
-            titre: fond.id.split("/").pop(),
-            classe
-          }));
-        });
-        conteneurChoix.appendChild(grilleCategorie);
-      });
-      return;
-    }
-
-    // Bannière par défaut en premier.
-    const liste = ongletActif === "banniere" ? cosmetiques.bannieres : cosmetiques.bannieres2;
-    [...liste]
-      .sort((a, b) => (b === PARAMETRES_DEFAUT[ongletActif]) - (a === PARAMETRES_DEFAUT[ongletActif]))
-      .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche))
-      .forEach(chemin => {
-        grille.appendChild(creerChoix({ valeur: chemin, image: urlImage(chemin), titre: nomNamecard(chemin), classe }));
-      });
-    conteneurChoix.appendChild(grille);
-  }
-
-  function ouvrir() {
-    brouillon = { ...profil.parametres };
-    rendreApercus();
-    choisirOnglet("fond");
-    mettreAJourPied();
-    modal.classList.add("active");
-    fermerMenuCompte();
-  }
-
-  // Fermer sans enregistrer : on revient au fond enregistré.
-  function fermer() {
-    modal.classList.remove("active");
-    appliquerFond(profil.parametres.fond);
-  }
-
-  document.getElementById("btn-parametres").addEventListener("click", ouvrir);
-  document.getElementById("fermer-parametres").addEventListener("click", fermer);
-  document.getElementById("annuler-parametres").addEventListener("click", fermer);
-  modal.addEventListener("click", event => {
-    if (event.target === modal) fermer();
-  });
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && modal.classList.contains("active")) fermer();
-  });
-
-  document.querySelectorAll(".apercu-bloc").forEach(bloc => {
-    bloc.addEventListener("click", () => choisirOnglet(bloc.dataset.onglet));
-  });
-
-  inputRecherche.addEventListener("input", rendreChoix);
-
-  // Enregistre le profil entier (comme le bouton Enregistrer de la page).
-  btnEnregistrer.addEventListener("click", async () => {
-    profil.parametres = { ...brouillon };
-    const { ok: succes, erreur } = await sauvegarderProfil(profil);
-    afficherToast(
-      succes ? "Paramètres enregistrés" : erreur || "Erreur lors de l'enregistrement des paramètres",
-      succes ? "succes" : "erreur"
-    );
-    if (succes) {
-      marquerEnregistre(profil, etatAEnregistrer(profil, profil.uid || "", profil.theatre || "", profil.stream || "", profil.niveau_monde || ""));
-      memoriserFondPourLeSite(profil.parametres.fond, profil.parametres.banniere2);
-      fermer();
-    }
-  });
 }
 
 // ---- Réinitialiser la box (vue et box affichées) ----

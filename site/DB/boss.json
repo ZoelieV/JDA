@@ -4,70 +4,70 @@
     "nom": "Signora",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/signora_boss.webp"
+    "image": "images/boss/boss_hebdo/signora_boss.webp"
   },
   {
     "id": "raiden_boss",
     "nom": "Narukami no Mikoto la destructrice",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/raiden_boss.webp"
+    "image": "images/boss/boss_hebdo/raiden_boss.webp"
   },
   {
     "id": "scara_boss",
     "nom": "Shouki no Kami, le prodige",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/scara_boss.webp"
+    "image": "images/boss/boss_hebdo/scara_boss.webp"
   },
   {
     "id": "apep_boss",
     "nom": "Garde de l'oasis d'Apep",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/apep_boss.webp"
+    "image": "images/boss/boss_hebdo/apep_boss.webp"
   },
   {
     "id": "narwhal_boss",
     "nom": "Narval stellavore",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/narwhal_boss.webp"
+    "image": "images/boss/boss_hebdo/narwhal_boss.webp"
   },
   {
     "id": "arle_boss",
     "nom": "Arlecchino",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/arle_boss.webp"
+    "image": "images/boss/boss_hebdo/arle_boss.webp"
   },
   {
     "id": "erode_boss",
     "nom": "Érodé seigneur du feu primordial",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/erode_boss.webp"
+    "image": "images/boss/boss_hebdo/erode_boss.webp"
   },
   {
     "id": "chess_boss",
     "nom": "Jeu d'échecs devant la porte",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/chess_boss.webp"
+    "image": "images/boss/boss_hebdo/chess_boss.webp"
   },
   {
     "id": "dottoreI_boss",
     "nom": "Dottore, Hérétique de la fausse lune",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/dottoreI_boss.webp"
+    "image": "images/boss/boss_hebdo/dottoreI_boss.webp"
   },
   {
     "id": "dottoreII_boss",
     "nom": "Dottore, Maître exalté de la voie hérétique",
     "type": "weekly_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/dottoreII_boss.webp"
+    "image": "images/boss/boss_hebdo/dottoreII_boss.webp"
   },
   {
     "id": "childe_boss",
@@ -75,7 +75,7 @@
     "type": "weekly_boss",
     "classe": false,
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/childe_boss.webp"
+    "image": "images/boss/boss_hebdo/childe_boss.webp"
   },
   {
     "id": "churldric_ll",

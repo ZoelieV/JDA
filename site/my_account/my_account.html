@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem28">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem29">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
@@ -74,23 +74,6 @@
               <option value="2">8</option>
               <option value="3">10</option>
               <option value="4">12</option>
-            </select>
-          </div>
-
-          <!-- Variantes affichées (cf. commun/variantes.js). -->
-          <div class="menu-champ">
-            <label for="choix-voyageur">Voyageur</label>
-            <select id="choix-voyageur">
-              <option value="aether">Aether / Voyageur</option>
-              <option value="lumine">Lumine / Voyageuse</option>
-            </select>
-          </div>
-
-          <div class="menu-champ">
-            <label for="choix-manekin">Manekin</label>
-            <select id="choix-manekin">
-              <option value="manekin">Manekin</option>
-              <option value="manekina">Manekina</option>
             </select>
           </div>
 
@@ -204,42 +187,6 @@
 
   </div>
 
-  <!-- Paramètres du compte : bannière, deuxième bannière, fond d'écran
-       (choix listés dans DB/images/cosmetiques.json). -->
-  <div id="modal-parametres" class="modal-parametres">
-    <div class="modal-parametres-contenu">
-      <div class="modal-parametres-entete">
-        <h2>Personnalisation</h2>
-        <button type="button" id="fermer-parametres" class="fermer-modal" aria-label="Fermer">×</button>
-      </div>
-
-      <!-- Aperçus cliquables : choisissent aussi ce qu'on modifie. -->
-      <div class="apercu-parametres">
-        <button type="button" class="apercu-bloc active" data-onglet="fond">
-          <span class="apercu-titre">Fond d'écran</span>
-          <span id="apercu-fond" class="apercu-image apercu-fond"></span>
-        </button>
-        <button type="button" class="apercu-bloc" data-onglet="banniere">
-          <span class="apercu-titre">Namecard</span>
-          <span id="apercu-banniere" class="apercu-image apercu-banniere"></span>
-        </button>
-        <button type="button" class="apercu-bloc" data-onglet="banniere2">
-          <span class="apercu-titre">Bannière</span>
-          <span id="apercu-banniere2" class="apercu-image apercu-banniere2"></span>
-        </button>
-      </div>
-
-      <input type="text" id="recherche-parametres" class="recherche-personnage recherche-parametres" placeholder="Rechercher…">
-
-      <div id="choix-parametres" class="choix-parametres"></div>
-
-      <div class="pied-parametres">
-        <button type="button" id="annuler-parametres" class="btn-secondaire">Annuler</button>
-        <button type="button" id="enregistrer-parametres" class="btn-enregistrer">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Confirmation de la réinitialisation de la box affichée. -->
   <div id="modal-reinitialiser" class="modal-parametres">
     <div class="modal-parametres-contenu modal-confirmation">
@@ -288,11 +235,12 @@
     </div>
   </div>
 
-  <script src="/commun/variantes.js?v=3"></script>
+  <script src="/commun/variantes.js?v=4"></script>
   <script src="/my_account/auto_box/detection.js?v=2"></script>
   <script src="/my_account/auto_box/interface.js?v=3"></script>
   <script src="/commun/cartes.js?v=12"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="/my_account/my_account.js?v=42"></script>
+  <script src="/commun/personnalisation.js?v=3"></script>
+  <script src="/my_account/my_account.js?v=43"></script>
 </body>
 </html>

@@ -2,8 +2,8 @@
 // pages ; bouton de connexion Discord si l'utilisateur n'est pas connecté.
 // Pas sur Mon compte (menu du compte propre) ni dans les rooms de match.
 // Clic sur la photo : menu des paramètres, comme sur Mon compte (UID,
-// niveau du monde, théâtre, Voyageur, Manekin, zoom du site,
-// Personnalisation ouverte sur place, Déconnexion) ; clic ailleurs sur la
+// niveau du monde, stream, théâtre, zoom du site, Personnalisation ouverte
+// sur place avec Voyageur / Manekin / skins, Déconnexion) ; clic ailleurs sur la
 // bannière : Mon compte.
 //
 // Placé dans #zone-compte si la page en a un (accueil), sinon dans une zone
@@ -20,14 +20,9 @@
     { id: "menu-stream", label: "Lien de stream (Twitch ou YouTube)", type: "url", placeholder: "https://twitch.tv/…",
       lire: p => p.stream || "", ecrire: (p, v) => { p.stream = v.trim(); } },
     { id: "menu-theatre", label: "Théâtre clear", lire: p => p.theatre || "", ecrire: (p, v) => { p.theatre = v; },
-      options: [["", "Choisir"], ["1", "6"], ["2", "8"], ["3", "10"], ["4", "12"]] },
-    { id: "menu-voyageur", label: "Voyageur", variante: true,
-      lire: p => p.parametres?.voyageur || "aether", ecrire: (p, v) => { (p.parametres ??= {}).voyageur = v; },
-      options: [["aether", "Aether / Voyageur"], ["lumine", "Lumine / Voyageuse"]] },
-    { id: "menu-manekin", label: "Manekin", variante: true,
-      lire: p => p.parametres?.manekin || "manekin", ecrire: (p, v) => { (p.parametres ??= {}).manekin = v; },
-      options: [["manekin", "Manekin"], ["manekina", "Manekina"]] }
+      options: [["", "Choisir"], ["1", "6"], ["2", "8"], ["3", "10"], ["4", "12"]] }
   ];
+  // Voyageur, Manekin et skins : dans Personnalisation (commun/personnalisation.js).
 
   // Personnalisation ouverte sur place (commun/personnalisation.js, chargé au
   // 1er clic).
@@ -35,7 +30,7 @@
   function chargerPersonnalisation() {
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=2";
+      script.src = "/commun/personnalisation.js?v=3";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;
@@ -136,12 +131,9 @@
           const { error } = await reponse.json().catch(() => ({}));
           throw new Error(error || "Erreur lors de l'enregistrement.");
         }
-        const variantesChangees = CHAMPS.some(c => c.variante && champ(c.id).value !== valeursChargees[c.id]);
         CHAMPS.forEach(c => { valeursChargees[c.id] = champ(c.id).value; });
         window.FondEcran?.memoriserTheatre(profil.theatre);
         afficherEtat("Enregistré ✓");
-        // Voyageur / Manekin : page rechargée pour afficher la variante.
-        if (variantesChangees) window.location.reload();
       } catch (erreur) {
         console.error(erreur);
         afficherEtat(erreur.message || "Erreur lors de l'enregistrement.");

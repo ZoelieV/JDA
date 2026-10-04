@@ -1,5 +1,6 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
+const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -69,6 +70,11 @@ function nettoyerParametres(parametres) {
   Object.entries(PARAMETRES_AUTORISES).forEach(([cle, valeurs]) => {
     if (valeurs.has(parametres[cle])) propres[cle] = parametres[cle];
   });
+  // Skins : ids connus seulement, sans doublon (cf. commun/variantes.js).
+  if (Array.isArray(parametres.skins)) {
+    const skins = [...new Set(parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)))];
+    if (skins.length) propres.skins = skins;
+  }
   return propres;
 }
 
