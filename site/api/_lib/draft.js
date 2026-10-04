@@ -176,6 +176,7 @@ function etatInitialDraft() {
     triche: null, // anti-triche : true si temps incohérents (détails dans l'archive, cf. _lib/archive.js)
     vainqueur: null, // "j1" | "j2" | "egalite" une fois les 2 temps confirmés
     resultat_trophees: null, // classé : { j1, j2, bonus } trophées gagnés / perdus (cf. _lib/trophees.js)
+    serie_classe: null, // classé : { j1, j2, terminee } victoires du jour de chacun contre l'autre (cf. _lib/serie_classe.js)
     rejouer_j1: false, // ready-check pour la revanche, même principe que pret_j1/pret_j2
     rejouer_j2: false
   };

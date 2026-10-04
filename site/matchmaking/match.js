@@ -2303,10 +2303,16 @@ function rendreTermine() {
   }
 
   const legende = messageLegendeTuee();
+  // Classé : victoires du jour de chacun contre l'autre (premier à 2).
+  const serie = draft.serie_classe;
+  const ligneSerie = typeRoom === "classe" && serie
+    ? `<p class="ligne-temps">Victoires du jour entre vous : ${joueur1.pseudo} ${serie.j1} – ${serie.j2} ${joueur2.pseudo}${serie.terminee ? " · série terminée, plus de match classé entre vous avant 4 h" : ""}</p>`
+    : "";
   container.innerHTML = `
     <p class="ligne-vainqueur">${ligneVainqueur}</p>
     <p class="ligne-temps">${joueur1.pseudo} : ${draft.temps_j1.affiche} — ${joueur2.pseudo} : ${draft.temps_j2.affiche}</p>
     ${ligneTrophees}
+    ${ligneSerie}
     ${legende ? `<p class="ligne-temps">${legende}</p>` : ""}
   `;
   rendreRejouer();
@@ -2359,6 +2365,15 @@ function rendreRejouer() {
     etat.innerHTML = draft.quitte_par === monRole
       ? "Tu as démarré un autre match : revanche impossible."
       : `${pseudoColore(draft.quitte_par)} a démarré un autre match : revanche impossible.`;
+    etat.classList.remove("cache");
+    return;
+  }
+
+  // Classé : l'un des deux a déjà 2 victoires aujourd'hui contre l'autre.
+  if (typeRoom === "classe" && draft.serie_classe?.terminee) {
+    document.getElementById("btn-rejouer").classList.add("cache");
+    const etat = document.getElementById("etat-rejouer");
+    etat.textContent = "Série du jour terminée (2 victoires) : plus de match classé entre vous avant 4 h.";
     etat.classList.remove("cache");
     return;
   }

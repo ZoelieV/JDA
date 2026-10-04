@@ -15,6 +15,7 @@ const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const { calculerEquilibrage } = require("../../_lib/boxes");
 const { detecterTriche } = require("../../_lib/sanctions");
+const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
 const {
   PHASES_PAUSABLES,
   estChronometre,
@@ -568,6 +569,8 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     const idMatch = await archiverMatch(draft, { classe });
     // { j1, j2, bonus } (null hors classé) : écran de fin de match.
     draft.resultat_trophees = classe ? await resultatTrophees(idMatch) : null;
+    // Classé : victoires du jour de chacun contre l'autre (2 au plus).
+    draft.serie_classe = classe ? await serieDraft(draft) : null;
   }
 
   await sauvegarderDraft(roomId, draft);
@@ -618,6 +621,12 @@ async function handleRejouer(req, res, roomId, user) {
   // Un joueur a démarré un autre match (cf. annulerAutresMatchs).
   if (draft.quitte_par) {
     return res.status(409).json({ error: "Ton adversaire a quitté la room : revanche impossible" });
+  }
+
+  // Classé : plus de revanche une fois que l'un des deux a 2 victoires
+  // aujourd'hui contre l'autre (cf. _lib/serie_classe.js).
+  if (veutRejouer && room.type === "classe" && (await serieDraft(draft)).terminee) {
+    return res.status(409).json({ error: `L'un de vous a déjà ${VICTOIRES_MAX} victoires contre l'autre aujourd'hui : plus de match classé entre vous avant 4 h.` });
   }
 
   draft[`rejouer_${joueur}`] = veutRejouer;

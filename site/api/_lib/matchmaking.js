@@ -25,6 +25,7 @@ const crypto = require("crypto");
 const { supabase } = require("./supabase");
 const { annulerAutresMatchs } = require("./room");
 const { banClasse, messageBan } = require("./sanctions");
+const { serieDuJour } = require("./serie_classe");
 
 // Room en attente sans nouvelles de sa page depuis plus longtemps : joueur
 // parti, ignorée.
@@ -117,6 +118,9 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
   if (error) throw error;
 
   for (const candidate of candidates || []) {
+    // Classé : pas contre un joueur avec qui l'un des deux a déjà 2
+    // victoires aujourd'hui (cf. _lib/serie_classe.js).
+    if (type === "classe" && (await serieDuJour(discordId, candidate.player1_discord_id)).terminee) continue;
     const prise = await prendreRoom(candidate.room_id, discordId);
     if (prise) {
       await supprimerRooms(miennes.map(r => r.room_id));
