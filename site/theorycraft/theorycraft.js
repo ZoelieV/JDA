@@ -40,6 +40,9 @@ const TYPES_BOSS = {
   carnage_boss: "Boss de carnage"
 };
 const TYPES_BOSS_CLASSE = ["weekly_boss", "legende_locale_infinie"];
+// Même règle que estTirableEnClasse (api/_lib/boss.js) : "classe": false
+// dans DB/boss.json = jamais en classé.
+const estTirableEnClasse = b => TYPES_BOSS_CLASSE.includes(b.type) && b.classe !== false;
 const ELEMENTS_RES = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
 
 // Seuil par défaut si l'API ne le donne pas (SEUIL_EQUILIBRAGE).
@@ -391,7 +394,7 @@ function pourcentage(n) {
 
 function rendreBoss() {
   const nbNonClasse = boss.length;
-  const nbClasse = boss.filter(b => TYPES_BOSS_CLASSE.includes(b.type)).length;
+  const nbClasse = boss.filter(estTirableEnClasse).length;
   const enTete = ELEMENTS_RES.map(element =>
     `<th title="Résistance ${element}"><img class="icone-element-tc" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}"></th>`).join("");
 
@@ -399,7 +402,7 @@ function rendreBoss() {
     <p class="aide-theorycraft">
       Résistances élémentaires en pourcentage. Le boss est tiré au hasard, chaque boss tirable avec la même probabilité :
       <strong>${nbNonClasse}</strong> boss hors classé (room, matchmaking, entraînement), <strong>${nbClasse}</strong> en classé
-      (boss hebdomadaires et légendes locales à l'infini).
+      (boss hebdomadaires sauf Tartaglia, et légendes locales à l'infini).
     </p>
     <div class="tableau-conteneur">
       <table class="tableau-theorycraft tableau-boss-tc">
@@ -423,7 +426,7 @@ function rendreBoss() {
               </td>
               ${ELEMENTS_RES.map((_, i) => `<td>${Number(b.res?.[i] ?? 0)} %</td>`).join("")}
               <td>${pourcentage(nbNonClasse)}</td>
-              <td>${TYPES_BOSS_CLASSE.includes(b.type) ? pourcentage(nbClasse) : "—"}</td>
+              <td>${estTirableEnClasse(b) ? pourcentage(nbClasse) : "—"}</td>
             </tr>`).join("")}
         </tbody>
       </table>

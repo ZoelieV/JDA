@@ -70,6 +70,14 @@
     "image": "images/boss/dottoreII_boss.webp"
   },
   {
+    "id": "childe_boss",
+    "nom": "Tartaglia",
+    "type": "weekly_boss",
+    "classe": false,
+    "res": [0, 0, 0, 0, 0, 0, 0],
+    "image": "images/boss/childe_boss.webp"
+  },
+  {
     "id": "churldric_ll",
     "nom": "Churldric",
     "type": "legende_locale_jour",
@@ -116,14 +124,16 @@
     "nom": "Égide d'Ichcahuipilli",
     "type": "legende_locale_infinie",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/legend_local/ichcahuipilli_ll.webp"
+    "image": "images/boss/legend_local/ichcahuipilli_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
   },
   {
     "id": "potapo_ll",
     "nom": "Solidarité de Potapo",
     "type": "legende_locale_infinie",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/legend_local/potapo_ll.webp"
+    "image": "images/boss/legend_local/potapo_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
   },
   {
     "id": "sappho_ll",
@@ -151,8 +161,7 @@
     "nom": "Griffe de fer et Chèvre de bataille",
     "type": "legende_locale_jour",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/legend_local/griffe_chevre_ll_1.webp",
-    "images": ["images/boss/legend_local/griffe_chevre_ll_1.webp", "images/boss/legend_local/griffe_chevre_ll_2.webp"]
+    "image": "images/boss/legend_local/griffe_chevre_ll.png"
   },
   {
     "id": "infinitesimal_ll",

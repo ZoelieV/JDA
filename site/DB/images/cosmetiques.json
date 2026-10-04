@@ -1085,6 +1085,126 @@
    "categorie": "boss_hebdo",
    "image": "bg_web/boss_hebdo/signora_2.webp",
    "miniature": "bg_miniatures/boss_hebdo/signora_2.webp"
+  },
+  {
+   "id": "bg/legendes_locales/bandersnatch_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/bandersnatch_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/bandersnatch_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/blob_prismatique_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/blob_prismatique_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/blob_prismatique_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/churldric_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/churldric_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/churldric_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/deianeira_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/deianeira_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/deianeira_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/furiosa_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/furiosa_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/furiosa_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/generateur_supercalcul_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/generateur_supercalcul_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/generateur_supercalcul_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/griffe_chevre_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/griffe_chevre_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/griffe_chevre_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/hiljetta_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/hiljetta_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/hiljetta_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/ichcahuipilli_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/ichcahuipilli_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/ichcahuipilli_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/idole_pipilpan_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/idole_pipilpan_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/idole_pipilpan_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/infinitesimal_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/infinitesimal_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/infinitesimal_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/liam_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/liam_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/liam_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/ninianne_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/ninianne_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/ninianne_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/potapo_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/potapo_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/potapo_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/raskolnikov_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/raskolnikov_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/raskolnikov_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/rilai_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/rilai_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/rilai_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/rocky_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/rocky_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/rocky_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/sappho_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/sappho_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/sappho_ll.webp"
+  },
+  {
+   "id": "bg/legendes_locales/totem_interieur.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/totem_interieur.webp",
+   "miniature": "bg_miniatures/legendes_locales/totem_interieur.webp"
+  },
+  {
+   "id": "bg/legendes_locales/verrou_bronze_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/verrou_bronze_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/verrou_bronze_ll.webp"
   }
  ]
 }

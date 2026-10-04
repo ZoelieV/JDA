@@ -2615,8 +2615,11 @@ const BULLES_PAR_PHASE = {
 // ---- Fond d'écran de la room ----
 // Fond par défaut, puis, une fois le boss tiré (et son animation finie), une
 // des images de DB/images/bg_web/boss_hebdo/ nommées "<boss>_<n>" (id du
-// boss sans "_boss"). Le choix dépend de la room et du boss : les deux
-// joueurs voient la même image.
+// boss sans "_boss"), ou celle de DB/images/bg_web/legendes_locales/
+// nommée "<id de la légende>", plus ses fonds_supplementaires (DB/boss.json,
+// ex. "totem_interieur" pour les légendes des défis de totem). Le choix
+// dépend de la room et du boss : les deux joueurs voient la même image. Boss
+// sans fond : fond par défaut.
 
 const FOND_ROOM_DEFAUT = "/DB/images/bg_web/autres/default_bg.webp";
 let fondsBoss = null;
@@ -2627,7 +2630,7 @@ async function chargerFondsBoss() {
   try {
     const reponse = await fetch("/DB/images/cosmetiques.json");
     const cosmetiques = await reponse.json();
-    fondsBoss = cosmetiques.fonds.filter(fond => fond.categorie === "boss_hebdo");
+    fondsBoss = cosmetiques.fonds.filter(fond => fond.categorie === "boss_hebdo" || fond.categorie === "legendes_locales");
     bannieresPersos = cosmetiques.bannieres2 || [];
   } catch (erreur) {
     console.error(erreur);
@@ -2647,7 +2650,11 @@ function appliquerFondRoom() {
 
   if (draft?.boss_id && fondsBoss && !animationBossEnCours) {
     const prefixe = draft.boss_id.replace(/_boss$/, "");
-    const images = fondsBoss.filter(fond => fond.image.split("/").pop().replace(/_\d+\.webp$/, "") === prefixe);
+    // "apep_2.webp" -> "apep" ; "churldric_ll.webp" -> "churldric_ll".
+    const nomFond = fond => fond.image.split("/").pop().replace(/\.webp$/, "");
+    const supplementaires = bossData.find(b => b.id === draft.boss_id)?.fonds_supplementaires || [];
+    const images = fondsBoss.filter(fond => nomFond(fond) === prefixe || nomFond(fond).replace(/_\d+$/, "") === prefixe ||
+      supplementaires.includes(nomFond(fond)));
     if (images.length > 0) {
       const choisi = images[hashTexte(`${roomId}:${draft.boss_id}`) % images.length];
       url = encodeURI(`/DB/images/${choisi.image}`);
