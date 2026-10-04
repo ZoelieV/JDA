@@ -774,12 +774,35 @@ function creerRecord(record, titre) {
 
 // Une ligne par boss : record hors classé puis en classé ; boss ayant un
 // record d'abord, puis A -> Z.
+// Boss regroupés par catégorie (records, filtre des matchs) : boss
+// hebdomadaires, légendes locales (une fois par jour ou à l'infini), puis
+// les autres types s'il y en a.
+const CATEGORIES_BOSS = [
+  { titre: "Boss hebdomadaires", contient: boss => boss.type === "weekly_boss" },
+  { titre: "Légendes locales", contient: estLegendeLocale },
+  { titre: "Autres boss", contient: boss => boss.type !== "weekly_boss" && !estLegendeLocale(boss) }
+];
+
+// -> [{ titre, boss: [...] }] (catégories vides retirées), boss de chaque
+// catégorie dans l'ordre de trier.
+function bossParCategorie(trier) {
+  const tous = [...bossParId.values()];
+  return CATEGORIES_BOSS
+    .map(({ titre, contient }) => ({ titre, boss: tous.filter(contient).sort(trier) }))
+    .filter(categorie => categorie.boss.length);
+}
+
+const ordreNomBoss = (a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" });
+
+// Par catégorie : boss ayant un record d'abord, puis A -> Z.
 function afficherRecords() {
   const parBoss = new Map(statistiques.records.map(r => [r.boss_id, r]));
-  const lignes = [...bossParId.values()]
-    .sort((a, b) => parBoss.has(b.id) - parBoss.has(a.id) ||
-      a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }))
-    .map(boss => {
+  const categories = bossParCategorie((a, b) => parBoss.has(b.id) - parBoss.has(a.id) || ordreNomBoss(a, b));
+  const elements = categories.flatMap(({ titre, boss: liste }) => {
+    const sousTitre = document.createElement("h3");
+    sousTitre.className = "sous-titre-section";
+    sousTitre.textContent = titre;
+    return [sousTitre, ...liste.map(boss => {
       const records = parBoss.get(boss.id) || {};
       const ligne = document.createElement("article");
       ligne.className = "ligne-record";
@@ -791,8 +814,9 @@ function afficherRecords() {
       ligne.append(creerRecord(records.non_classe, "Non classé"), creerRecord(records.classe, `Classé ${ICONE_TROPHEE}`));
       ligne.querySelector(".record-boss:last-child").classList.add("classe");
       return ligne;
-    });
-  document.getElementById("records-boss").replaceChildren(...lignes);
+    })];
+  });
+  document.getElementById("records-boss").replaceChildren(...elements);
 }
 
 function initialiserStatistiques() {
@@ -844,14 +868,17 @@ function initialiserBarre() {
 
   // Boss : liste déroulante de tous les boss (A -> Z).
   const selectBoss = document.getElementById("filtre-boss");
-  [...bossParId.values()]
-    .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }))
-    .forEach(boss => {
+  bossParCategorie(ordreNomBoss).forEach(({ titre, boss: liste }) => {
+    const groupe = document.createElement("optgroup");
+    groupe.label = titre;
+    liste.forEach(boss => {
       const option = document.createElement("option");
       option.value = boss.id;
       option.textContent = boss.nom;
-      selectBoss.appendChild(option);
+      groupe.appendChild(option);
     });
+    selectBoss.appendChild(groupe);
+  });
   selectBoss.addEventListener("change", () => {
     bossFiltre = selectBoss.value;
     selectBoss.classList.toggle("active", !!bossFiltre);
