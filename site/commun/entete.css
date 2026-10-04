@@ -78,7 +78,8 @@ h4,
    contenu (grilles fluides) au lieu de tout agrandir. Le zoom du navigateur
    fonctionne normalement. */
 html {
-  font-size: 125%;
+  /* --zoom-site : curseur de zoom du site sur ordinateur (commun/zoom.js). */
+  font-size: calc(125% * var(--zoom-site, 1));
 }
 
 @media (max-width: 700px) {
@@ -562,4 +563,71 @@ body::before {
   height: 1.25em;
   vertical-align: -0.25em;
   object-fit: contain;
+}
+
+/* ---- Zoom du site (ordinateur, cf. commun/zoom.js) ----
+   Curseur vertical calé à droite, au milieu de l'écran. En px : il garde la
+   même taille quel que soit le zoom choisi. Discret tant qu'on ne le survole
+   pas. */
+.zoom-site {
+  position: fixed;
+  top: 50%;
+  right: 6px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background-color: rgba(20, 20, 20, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0.45;
+  transform: translateY(-50%);
+  transition: opacity 0.15s ease;
+}
+
+.zoom-site[hidden] {
+  display: none;
+}
+
+.zoom-site:hover,
+.zoom-site:focus-within {
+  opacity: 1;
+}
+
+.zoom-site-valeur {
+  width: 44px;
+  padding: 2px 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.zoom-site-valeur:hover {
+  color: #f5c542;
+}
+
+/* Curseur vertical : 200 % en haut, 50 % en bas. */
+.zoom-site-curseur {
+  width: 20px;
+  height: 160px;
+  margin: 0;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  accent-color: #f5c542;
+  cursor: pointer;
+}
+
+.zoom-site-icone {
+  font-size: 13px;
+  line-height: 1;
 }
