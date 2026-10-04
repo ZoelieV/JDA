@@ -1,0 +1,16 @@
+/* Page Règles : cartes à namecard (style de l'accueil, commun/namecards.css),
+   de la même taille que sur l'accueil. */
+.cartes-regles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18.75rem, 22rem));
+  justify-content: center;
+  gap: 1.125rem;
+  max-width: 68.75rem;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  box-sizing: border-box;
+}
+
+.cartes-regles .carte-section[hidden] {
+  display: none;
+}
