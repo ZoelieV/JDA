@@ -721,7 +721,7 @@ function afficherClassementsPersos() {
     const max = tries[0]?.[1] || 1;
 
     bloc.querySelector(".note-stats").textContent = nbMatchs === 0 ? "Aucun match compté."
-      : `Sur ${nbMatchs} match${nbMatchs > 1 ? "s" : ""}${cle === "picks" ? "" : " aux bans enregistrés"}.`;
+      : `Sur ${nbMatchs} match${nbMatchs > 1 ? "s" : ""}.`;
 
     // Ex aequo : même rang.
     let rang = 0;
