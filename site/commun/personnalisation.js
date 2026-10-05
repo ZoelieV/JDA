@@ -51,7 +51,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=2";
+    lien.href = "/commun/personnalisation.css?v=3";
     document.head.appendChild(lien);
   }
 
@@ -162,6 +162,25 @@
     });
     modal.querySelector(".perso-recherche").addEventListener("input", rendreChoix);
     modal.querySelector(".perso-enregistrer").addEventListener("click", enregistrer);
+
+    // Téléphone : en faisant défiler les choix, seuls l'aperçu actif et la
+    // recherche restent en haut (classe "defilement", cf.
+    // personnalisation.css) ; tout en haut, les autres aperçus reviennent.
+    // Seulement si la liste défile encore une fois les aperçus masqués
+    // (sinon ils clignoteraient).
+    const contenu = modal.querySelector(".perso-contenu");
+    const apercus = modal.querySelector(".perso-apercus");
+    const choix = modal.querySelector(".perso-choix");
+    choix.addEventListener("scroll", () => {
+      const haut = choix.scrollTop;
+      if (contenu.classList.contains("defilement")) {
+        if (haut <= 4) contenu.classList.remove("defilement");
+        return;
+      }
+      const hauteurMasquee = apercus.offsetHeight - (apercus.querySelector(".perso-apercu-bloc.active")?.offsetHeight || 0);
+      const marge = choix.scrollHeight - choix.clientHeight;
+      if (haut > 24 && marge > hauteurMasquee + 24) contenu.classList.add("defilement");
+    }, { passive: true });
   }
 
   function afficherEtat(texte) {
@@ -184,6 +203,7 @@
     modal.querySelector(".perso-recherche").value = "";
     rendreChoix();
     modal.querySelector(".perso-choix").scrollTop = 0;
+    modal.querySelector(".perso-contenu").classList.remove("defilement");
   }
 
   function rendreApercus() {

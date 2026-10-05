@@ -342,4 +342,11 @@
   .perso-grille-skins {
     grid-template-columns: repeat(4, 1fr);
   }
+
+  /* Dès qu'on fait défiler les choix, seul l'aperçu de ce qu'on modifie
+     reste en haut (avec la recherche) ; les autres réapparaissent en
+     remontant tout en haut (cf. personnalisation.js). */
+  .perso-contenu.defilement .perso-apercu-bloc:not(.active) {
+    display: none;
+  }
 }
