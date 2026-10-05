@@ -7,6 +7,40 @@
 /* ---- Classements : Classique / Mêlée générale, deux rectangles de même
    largeur qui prennent à eux deux celle du tableau ---- */
 
+/* ---- Saison affichée ---- */
+.choix-saison {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.select-saison {
+  height: 2.4375rem;
+  max-width: 100%;
+  padding: 0 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 1.0625rem;
+  cursor: pointer;
+}
+
+.select-saison:hover,
+.select-saison.passee {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+/* Saison passée : on voit tout de suite que ce n'est pas la saison en cours. */
+.select-saison.passee {
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+.select-saison option {
+  background-color: #2a2a2a;
+}
+
 .onglets-classement {
   display: grid;
   grid-template-columns: 1fr 1fr;

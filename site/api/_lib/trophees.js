@@ -8,6 +8,8 @@
 // Le total d'un joueur part de 0 et ne descend jamais sous 0 : il est
 // recalculé en rejouant ses matchs classés dans l'ordre (un litige
 // republié plus tard reprend sa place à sa date).
+const { saisonDuMatch } = require("./saisons");
+
 const TROPHEES_MAX = 30;
 const BONUS_SERIE_MAX = 3;
 // Bonus de saison : par perso de l'équipe coché dans l'admin, ajouté au gain
@@ -58,11 +60,13 @@ function compteEnClasse(match) {
 
 // matchs : lignes de match_history (player1/2_discord_id, vainqueur,
 // classe, trophees, litige, created_at, id).
+// Chaque saison (colonne saison, cf. _lib/saisons.js) repart de 0 :
+// trophées, séries et primes.
 // -> {
-//   joueurs : { classique: Map, melee: Map }, chaque Map discord_id ->
-//             { trophees, matchs, victoires, serie } (joueurs ayant au moins
-//             un match dans ce classement ; serie = victoires d'affilée en
-//             cours),
+//   parSaison : Map numéro de saison -> { classique: Map, melee: Map },
+//             chaque Map discord_id -> { trophees, matchs, victoires, serie }
+//             (joueurs ayant au moins un match dans ce classement cette
+//             saison ; serie = victoires d'affilée en cours),
 //   deltas  : Map id du match -> { j1, j2, bonus, saison: { j1, j2 }, prime }
 //             (trophées réellement gagnés / perdus, plancher à 0 compris ;
 //             bonus de série du gagnant ; bonus de saison de chacun ; prime
@@ -76,11 +80,13 @@ function rejouerClasse(matchs) {
     return da - db || ia - ib;
   });
 
-  const joueurs = Object.fromEntries(CLASSEMENTS.map(c => [c, new Map()]));
+  const parSaison = new Map();
   const deltas = new Map();
 
   classes.forEach(match => {
-    const table = joueurs[classementDuMatch(match)];
+    const numero = saisonDuMatch(match);
+    if (!parSaison.has(numero)) parSaison.set(numero, Object.fromEntries(CLASSEMENTS.map(c => [c, new Map()])));
+    const table = parSaison.get(numero)[classementDuMatch(match)];
     const joueur = discordId => {
       if (!table.has(discordId)) table.set(discordId, { trophees: 0, matchs: 0, victoires: 0, serie: 0 });
       return table.get(discordId);
@@ -121,7 +127,7 @@ function rejouerClasse(matchs) {
     });
     if (match.id != null) deltas.set(String(match.id), delta);
   });
-  return { joueurs, deltas };
+  return { parSaison, deltas };
 }
 
 // Tous les matchs classés (colonnes utiles au calcul), ou [] sans la
@@ -132,7 +138,9 @@ async function chargerMatchsClasses(supabase) {
   // elles n'existent pas encore.
   const champs = "id, created_at, player1_discord_id, player2_discord_id, vainqueur, classe, trophees";
   const lire = select => supabase.from("match_history").select(select).eq("classe", true);
-  let { data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2`);
+  // Sans colonne saison (sql/saisons.sql pas lancé) : tout en saison 0.
+  let { data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2, saison`);
+  if (error) ({ data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2`));
   if (error) ({ data, error } = await lire(`${champs}, litige, mode_theatre`));
   if (error) ({ data, error } = await lire(`${champs}, litige`));
   if (error) ({ data, error } = await lire(champs));

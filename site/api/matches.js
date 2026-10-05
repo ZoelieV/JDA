@@ -15,6 +15,7 @@ const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estModerateur } = require("./_lib/admin");
 const { parserTempsOuAbandon, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
+const { lireSaisons, saisonDuMatch } = require("./_lib/saisons");
 const { SANCTIONS, finSanction } = require("./_lib/sanctions");
 const { estSignalable, etatSignalementsJoueur, signalerMatch, chargerSignalementsOuverts, traiterSignalement } = require("./_lib/signalements");
 
@@ -583,6 +584,8 @@ module.exports = async (req, res) => {
       mode_theatre: match.mode_theatre ?? null,
       // Match classé : trophées gagnés par le vainqueur (perdus par l'autre).
       classe: !!match.classe,
+      // Saison où le match a été joué (cf. _lib/saisons.js).
+      saison: saisonDuMatch(match),
       trophees: match.classe ? match.trophees ?? null : null,
       // { j1, j2, bonus } : trophées gagnés (+) / perdus (−) par chaque joueur.
       trophees_joueurs: match.classe ? deltasClasse.get(String(match.id)) || null : null,
@@ -610,6 +613,8 @@ module.exports = async (req, res) => {
     });
 
     return res.status(200).json({
+      // Saisons du classé (filtre par saison), la dernière en cours.
+      saisons: await lireSaisons(),
       en_cours: enCours.map(room => ({
         room_id: room.room_id,
         phase: room.phase,

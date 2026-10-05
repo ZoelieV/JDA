@@ -16,6 +16,9 @@ const SENS_INITIAL = {
 let comptes = [];
 let joueurs = []; // joueurs du classement affiché, avec ses stats
 let classement = "classique"; // "classique" | "melee"
+// Saisons (cf. api/_lib/saisons.js) : { actuelle, saisons: [{ numero, nom }] }.
+let infosSaisons = { actuelle: 0, saisons: [] };
+let saison = 0; // saison affichée
 let tri = { ...TRI_DEFAUT };
 let moiDiscordId = null;
 
@@ -23,6 +26,20 @@ async function chargerComptes() {
   const reponse = await fetch("/api/accounts");
   if (!reponse.ok) throw new Error("Impossible de charger le classement.");
   return reponse.json();
+}
+
+async function chargerSaisons() {
+  try {
+    const reponse = await fetch("/api/accounts?saisons=1");
+    if (reponse.ok) return await reponse.json();
+  } catch {
+    // Liste indisponible : saison en cours seulement.
+  }
+  return { actuelle: 0, saisons: [{ numero: 0, nom: "Tests" }] };
+}
+
+function nomSaison({ numero, nom }) {
+  return nom ? `Saison ${numero} : ${nom}` : `Saison ${numero}`;
 }
 
 async function chargerSession() {
@@ -150,27 +167,36 @@ function afficher() {
   const affiches = joueursAffiches();
   const etat = document.getElementById("etat-classement");
   etat.textContent = joueurs.length === 0
-    ? `Personne n'a encore joué de match classé en ${classement === "melee" ? "mêlée générale" : "classique"}.`
+    ? `Personne n'${saison === infosSaisons.actuelle ? "a encore" : "a"} joué de match classé en ${classement === "melee" ? "mêlée générale" : "classique"}${saison === infosSaisons.actuelle ? " cette saison" : " pendant cette saison"}.`
     : affiches.length === 0 ? "Aucun joueur trouvé." : "";
   etat.classList.toggle("cache", !etat.textContent);
   document.querySelector(".entete-classement").classList.toggle("cache", affiches.length === 0);
   document.getElementById("liste-classement").replaceChildren(...affiches.map(creerLigne));
 }
 
-// Joueurs ayant au moins un match dans ce classement, avec ses stats
-// (trophées, matchs et victoires en classé, série) à plat pour les tris.
+// Stats d'un compte dans ce classement pour la saison affichée (saison
+// passée : trophées en fin de saison, sans série ni prime), ou undefined.
+function statsSaison(compte) {
+  return saison === infosSaisons.actuelle
+    ? compte.classements?.[classement]
+    : compte.saisons_passees?.[saison]?.[classement];
+}
+
+// Joueurs ayant au moins un match dans ce classement (saison affichée), avec
+// ses stats (trophées, matchs et victoires en classé, série) à plat pour les
+// tris.
 function choisirClassement(nouveau) {
   classement = nouveau;
   joueurs = comptes
-    .filter(compte => compte.classements?.[classement])
+    .filter(compte => statsSaison(compte))
     .map(compte => {
-      const stats = compte.classements[classement];
+      const stats = statsSaison(compte);
       return {
         ...compte,
         trophees: stats.trophees,
         matchs_classes: stats.matchs,
         victoires_classees: stats.victoires,
-        serie: stats.serie,
+        serie: stats.serie ?? 0,
         // Plus longue série en cours : le battre rapporte +5 trophées.
         prime: !!stats.prime
       };
@@ -182,6 +208,24 @@ function choisirClassement(nouveau) {
     onglet.setAttribute("aria-selected", String(actif));
   });
   afficher();
+}
+
+// Menu Saison : saison en cours d'abord, puis les passées (plus récentes
+// d'abord).
+function initialiserSaisons() {
+  const select = document.getElementById("saison-classement");
+  [...infosSaisons.saisons].reverse().forEach(s => {
+    const option = document.createElement("option");
+    option.value = String(s.numero);
+    option.textContent = s.numero === infosSaisons.actuelle ? `${nomSaison(s)} (en cours)` : `${nomSaison(s)} (terminée)`;
+    select.appendChild(option);
+  });
+  select.value = String(saison);
+  select.addEventListener("change", () => {
+    saison = Number(select.value);
+    select.classList.toggle("passee", saison !== infosSaisons.actuelle);
+    choisirClassement(classement);
+  });
 }
 
 function initialiserBarre() {
@@ -206,9 +250,12 @@ function initialiserBarre() {
 
 async function demarrer() {
   try {
-    const [liste, utilisateur] = await Promise.all([chargerComptes(), chargerSession()]);
+    const [liste, utilisateur, saisons] = await Promise.all([chargerComptes(), chargerSession(), chargerSaisons()]);
     comptes = liste;
     moiDiscordId = utilisateur?.id || null;
+    infosSaisons = saisons;
+    saison = saisons.actuelle;
+    initialiserSaisons();
     initialiserBarre();
     choisirClassement("classique");
   } catch (erreur) {

@@ -7,6 +7,7 @@ const { getEquipeJoueur, getBansJoueur } = require("./draft");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./trophees");
 const { chargerDonneesBoxes } = require("./boxes");
 const { enregistrerMorts } = require("./legendes");
+const { saisonActuelle } = require("./saisons");
 
 // Codes "colonne inexistante" (Postgres / PostgREST).
 const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
@@ -77,7 +78,9 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     } : {}),
     // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
     // Voyageur / Manekin) : affichées dans l'historique des matchs.
-    actions
+    actions,
+    // Saison en cours (cf. _lib/saisons.js, sql/saisons.sql).
+    saison: await saisonActuelle()
   };
 
   const inserer = ligne => supabase.from("match_history").insert(ligne).select("id").single();
@@ -89,8 +92,14 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
   // absentes (sql/litiges.sql pas lancé) : nouvelle erreur, le litige n'est
   // pas archivé (jamais publié comme un match normal) ; idem pour un match
   // classé sans les colonnes classe / trophees (sql/classe.sql).
+  // Colonne saison absente (sql/saisons.sql pas lancé) : archivage sans
+  // elle seulement (match compté en saison 0).
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, triche, duree_saisie, somme_temps, litige_commentaire, ...sansFacultatives } = match;
+    const { saison, ...sansSaison } = match;
+    ({ data, error } = await inserer(sansSaison));
+  }
+  if (error && COLONNES_INEXISTANTES.has(error.code)) {
+    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, triche, duree_saisie, somme_temps, litige_commentaire, saison, ...sansFacultatives } = match;
     ({ data, error } = await inserer(sansFacultatives));
   }
 

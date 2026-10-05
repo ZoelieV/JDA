@@ -29,6 +29,10 @@ let moiDiscordId = null;
 const etatTri = creerEtatTri();
 let mesMatchsSeulement = false;
 let classesSeulement = false;
+// Saison choisie dans la liste déroulante ("" : toutes), et saisons du
+// classé (cf. api/_lib/saisons.js).
+let saisonFiltre = "";
+let saisons = [];
 
 // Sens du 1er clic : plus récents, meilleurs temps, matchs les plus serrés
 // et boss de A à Z d'abord.
@@ -128,6 +132,7 @@ function matchsAffiches() {
     .filter(match => !temps || match.j1.temps?.affiche === temps || match.j2.temps?.affiche === temps)
     .filter(match => !mesMatchsSeulement || match.j1.discord_id === moiDiscordId || match.j2.discord_id === moiDiscordId)
     .filter(match => !classesSeulement || match.classe)
+    .filter(match => saisonFiltre === "" || match.saison === Number(saisonFiltre))
     .filter(match => temps || !recherche || texteRecherche(match).includes(recherche))
     .map((match, index) => ({ match, index, v: tris.map(t => valeurTri(match, t.cle)) }))
     .sort((a, b) => {
@@ -836,6 +841,7 @@ function appliquerHistorique(historique) {
   statsLitiges = historique.stats_litiges || [];
   erreurLitiges = historique.erreur_litiges || null;
   entrainements = historique.entrainements || [];
+  saisons = historique.saisons || [];
 }
 
 // ---- Onglets : Litiges (administrateurs), Mes entraînements (joueur
@@ -1126,6 +1132,20 @@ function initialiserBarre() {
     afficherMatchsDepuisPage1();
   });
 
+  // Saison : plus récente d'abord.
+  const selectSaison = document.getElementById("filtre-saison");
+  [...saisons].reverse().forEach((saison, i) => {
+    const option = document.createElement("option");
+    option.value = String(saison.numero);
+    option.textContent = `Saison ${saison.numero}${saison.nom ? ` : ${saison.nom}` : ""}${i === 0 ? " (en cours)" : ""}`;
+    selectSaison.appendChild(option);
+  });
+  selectSaison.addEventListener("change", () => {
+    saisonFiltre = selectSaison.value;
+    selectSaison.classList.toggle("active", saisonFiltre !== "");
+    afficherMatchsDepuisPage1();
+  });
+
   // Catégorie de boss : tous -> hebdo -> légendes locales -> carnage -> tous.
   // Un boss choisi dans la liste mais hors de la catégorie est retiré.
   document.getElementById("categorie-boss").addEventListener("click", () => {
@@ -1148,6 +1168,9 @@ function initialiserBarre() {
     viderTris(etatTri);
     mesMatchsSeulement = false;
     classesSeulement = false;
+    saisonFiltre = "";
+    selectSaison.value = "";
+    selectSaison.classList.remove("active");
     afficherMatchsDepuisPage1();
   });
 }

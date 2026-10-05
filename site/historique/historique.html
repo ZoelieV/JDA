@@ -44,6 +44,10 @@
       <option value="">Tous les boss</option>
     </select>
     <button type="button" id="mes-matchs" class="bouton-historique filtre-matchs cache" title="N'afficher que mes matchs">Mes matchs</button>
+    <!-- Saison où le match a été joué (liste remplie depuis api/matches.js). -->
+    <select id="filtre-saison" class="filtre-boss-historique filtre-matchs" title="N'afficher que les matchs de cette saison">
+      <option value="">Toutes les saisons</option>
+    </select>
     <button type="button" id="matchs-classes" class="bouton-historique filtre-matchs" title="N'afficher que les matchs classés">Classés <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></button>
     <button type="button" id="clear-historique" class="btn-clear-filtres filtre-matchs" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
     <label class="choix-par-page" title="Nombre de matchs par page">
@@ -181,6 +185,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=13"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=39"></script>
+  <script src="historique.js?v=40"></script>
 </body>
 </html>

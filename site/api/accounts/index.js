@@ -2,6 +2,7 @@ const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
 const { CLASSEMENTS, rejouerClasse, seriePrime } = require("../_lib/trophees");
+const { lireSaisons, saisonActuelle } = require("../_lib/saisons");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -48,8 +49,16 @@ async function chargerResultats() {
   // entrainement (sql/entrainement.sql pas lancé), il n'y en a pas.
   let { data, error } = await supabase
     .from("match_history")
-    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2`)
+    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison`)
     .or(litigeOuvert);
+
+  // Sans colonne saison (sql/saisons.sql pas lancé) : tout en saison 0.
+  if (error) {
+    ({ data, error } = await supabase
+      .from("match_history")
+      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2`)
+      .or(litigeOuvert));
+  }
 
   // Sans colonnes du bonus de saison (sql/bonus_saison.sql pas lancé).
   if (error) {
@@ -104,13 +113,22 @@ async function chargerResultats() {
     compter(match.player2_discord_id, match.vainqueur === "j2");
   });
 
-  const { joueurs } = rejouerClasse(data);
-  CLASSEMENTS.forEach(classement => {
-    // Porteur(s) de la prime : plus longue série en cours de ce classement.
-    const prime = seriePrime(joueurs[classement]);
-    joueurs[classement].forEach((stats, discordId) => {
-      resultats[discordId] ??= { matchs: 0, victoires: 0 };
-      (resultats[discordId].classements ??= {})[classement] = { ...stats, prime: !!prime && stats.serie === prime };
+  // Classé : saison en cours dans classements, saisons passées dans
+  // saisons_passees (trophées, matchs et victoires, sans série ni prime).
+  const actuelle = await saisonActuelle();
+  rejouerClasse(data).parSaison.forEach((tables, saison) => {
+    CLASSEMENTS.forEach(classement => {
+      // Porteur(s) de la prime : plus longue série en cours de ce classement.
+      const prime = saison === actuelle ? seriePrime(tables[classement]) : 0;
+      tables[classement].forEach((stats, discordId) => {
+        resultats[discordId] ??= { matchs: 0, victoires: 0 };
+        if (saison === actuelle) {
+          (resultats[discordId].classements ??= {})[classement] = { ...stats, prime: !!prime && stats.serie === prime };
+        } else {
+          const passee = ((resultats[discordId].saisons_passees ??= {})[saison] ??= {});
+          passee[classement] = { trophees: stats.trophees, matchs: stats.matchs, victoires: stats.victoires };
+        }
+      });
     });
   });
 
@@ -128,7 +146,7 @@ function resumerProfil(profil, resultats) {
   const nbC6 = new Set(possedes
     .filter(p => String(p.rarete) === "5" && !p.standard && full[p.id] === 6)
     .map(p => p.groupe || p.id)).size;
-  const { matchs = 0, victoires = 0, classements = {} } = resultats[profil.discord_id] || {};
+  const { matchs = 0, victoires = 0, classements = {}, saisons_passees: saisonsPassees = {} } = resultats[profil.discord_id] || {};
 
   return {
     discord_id: profil.discord_id,
@@ -152,13 +170,23 @@ function resumerProfil(profil, resultats) {
     victoires,
     // Classé, par classement ("classique", "melee") : { trophees, matchs,
     // victoires, serie (victoires d'affilée en cours) }, absent si aucun
-    // match classé dans ce classement.
-    classements
+    // match classé dans ce classement. Saison en cours seulement.
+    classements,
+    // Saisons passées : { numéro: { classique?, melee? } } ({ trophees,
+    // matchs, victoires }).
+    saisons_passees: saisonsPassees
   };
 }
 
 module.exports = async (req, res) => {
   try {
+    // ?saisons=1 : liste des saisons (page Classement, menu Saison).
+    if (req.query?.saisons) {
+      const saisons = await lireSaisons();
+      res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=60");
+      return res.status(200).json({ actuelle: saisons[saisons.length - 1].numero, saisons });
+    }
+
     const [profils, resultats] = await Promise.all([chargerProfils(), chargerResultats(), actualiserPoints()]);
     // Même liste pour tout le monde : gardée 30 s par le CDN de Vercel
     // (tous les profils et tout l'historique relus au plus une fois par
