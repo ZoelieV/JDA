@@ -51,6 +51,7 @@ async function chargerSessionDiscord() {
   });
 
   logoutBtn.addEventListener("click", () => {
+    if (!confirm("Se déconnecter ?")) return;
     // Plus de fond personnalisé une fois déconnecté.
     window.FondEcran?.memoriser(null, null);
     window.FondEcran?.memoriserTheatre(null);
