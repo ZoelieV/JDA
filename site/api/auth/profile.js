@@ -60,7 +60,10 @@ const PARAMETRES_AUTORISES = {
   manekin: new Set(["manekin", "manekina"])
 };
 const THEATRES = new Set(["", "1", "2", "3", "4"]);
-const LONGUEUR_UID = 20;
+// UID Genshin : 9 chiffres (ex. 744102007), ou "" si pas renseigné.
+const FORMAT_UID = /^\d{9}$/;
+const uidValide = uid => uid === "" || FORMAT_UID.test(uid);
+const ERREUR_UID = "UID refusé : 9 chiffres attendus (ex. 744102007).";
 // Niveau du monde (1 à 9), ou "" si pas renseigné.
 const NIVEAUX_MONDE = new Set(["", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 
@@ -88,7 +91,8 @@ function nettoyerProfil(profil) {
 
   if (profil && typeof profil === "object") {
     profil.parametres = nettoyerParametres(profil.parametres);
-    profil.uid = typeof profil.uid === "string" ? profil.uid.trim().slice(0, LONGUEUR_UID) : "";
+    const uid = typeof profil.uid === "string" ? profil.uid.trim() : "";
+    profil.uid = uidValide(uid) ? uid : "";
     if (!THEATRES.has(String(profil.theatre ?? ""))) profil.theatre = "";
     profil.niveau_monde = NIVEAUX_MONDE.has(String(profil.niveau_monde ?? "")) ? String(profil.niveau_monde ?? "") : "";
 
@@ -171,6 +175,9 @@ module.exports = async (req, res) => {
       // effacé en silence).
       if (lienStreamAutorise(profil.stream ?? "") === null) {
         return res.status(400).json({ error: ERREUR_LIEN_STREAM });
+      }
+      if (!uidValide(typeof profil.uid === "string" ? profil.uid.trim() : "")) {
+        return res.status(400).json({ error: ERREUR_UID });
       }
       profil = nettoyerProfil(profil);
 

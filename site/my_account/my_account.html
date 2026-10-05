@@ -40,7 +40,8 @@
         <div id="menu-compte" class="menu-compte cache">
           <div class="menu-champ">
             <label for="uid">UID</label>
-            <input type="text" id="uid" name="uid" form="profil-form">
+            <input type="text" id="uid" name="uid" form="profil-form" inputmode="numeric" maxlength="9" placeholder="744102007" autocomplete="off">
+            <span id="erreur-uid" class="erreur-champ cache">9 chiffres attendus (ex. 744102007).</span>
           </div>
 
           <div class="menu-champ">

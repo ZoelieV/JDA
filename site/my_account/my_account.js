@@ -258,6 +258,16 @@ function verifierChampStream() {
   return valide;
 }
 
+// UID Genshin : 9 chiffres, ou vide (même règle que api/auth/profile.js).
+function verifierChampUid() {
+  const champ = document.getElementById("uid");
+  const valide = /^(\d{9})?$/.test(champ.value.trim());
+  champ.classList.toggle("invalide", !valide);
+  champ.setCustomValidity(valide ? "" : "L'UID doit faire 9 chiffres (ex. 744102007).");
+  document.getElementById("erreur-uid").classList.toggle("cache", valide);
+  return valide;
+}
+
 // ---- Noms des box optimisées (renommables) ----
 
 function afficherNomsBoxes(profil) {
@@ -1084,12 +1094,16 @@ async function initialiserPage() {
     document.getElementById("profil-form").addEventListener("submit", async event => {
       event.preventDefault();
 
-      profil.uid = document.getElementById("uid").value;
+      profil.uid = document.getElementById("uid").value.trim();
       profil.niveau_monde = document.getElementById("niveau-monde").value;
       // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
       profil.stream = document.getElementById("stream").value.trim();
       profil.theatre = document.getElementById("theatre").value;
 
+      if (!verifierChampUid()) {
+        afficherToast("UID refusé : 9 chiffres attendus (ex. 744102007)", "erreur");
+        return;
+      }
       if (!verifierChampStream()) {
         afficherToast("Lien de stream refusé : seuls Twitch et YouTube sont acceptés", "erreur");
         return;
@@ -1107,6 +1121,8 @@ async function initialiserPage() {
 
     document.getElementById("stream").addEventListener("input", verifierChampStream);
     verifierChampStream();
+    document.getElementById("uid").addEventListener("input", verifierChampUid);
+    verifierChampUid();
 
     ["uid", "niveau-monde", "stream", "theatre"].forEach(id => {
       const champ = document.getElementById(id);

@@ -13,7 +13,9 @@
   const ICONES = "/DB/images/others/";
   // Champs du menu enregistrés dans le profil (mêmes que sur Mon compte).
   const CHAMPS = [
-    { id: "menu-uid", label: "UID", lire: p => p.uid || "", ecrire: (p, v) => { p.uid = v; } },
+    // UID Genshin : 9 chiffres ou vide (vérifié aussi par le serveur).
+    { id: "menu-uid", label: "UID", inputmode: "numeric", maxlength: 9, placeholder: "744102007",
+      lire: p => p.uid || "", ecrire: (p, v) => { p.uid = v.trim(); } },
     { id: "menu-niveau-monde", label: "Niveau du monde", lire: p => p.niveau_monde || "", ecrire: (p, v) => { p.niveau_monde = v; },
       options: [["", "Choisir"], ...["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(n => [n, n])] },
     // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
@@ -57,7 +59,7 @@
           <label for="${champ.id}">${champ.label}</label>
           ${champ.options
             ? `<select id="${champ.id}">${champ.options.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select>`
-            : `<input type="${champ.type || "text"}" id="${champ.id}"${champ.placeholder ? ` placeholder="${champ.placeholder}"` : ""}>`}
+            : `<input type="${champ.type || "text"}" id="${champ.id}"${champ.placeholder ? ` placeholder="${champ.placeholder}"` : ""}${champ.inputmode ? ` inputmode="${champ.inputmode}"` : ""}${champ.maxlength ? ` maxlength="${champ.maxlength}"` : ""}>`}
         </div>`).join("")}
       <button type="button" class="menu-btn menu-btn-principal" data-action="enregistrer" disabled>Enregistrer</button>
       <p class="menu-etat cache"></p>
@@ -115,6 +117,10 @@
     menu.addEventListener("change", () => { btnEnregistrer.disabled = !modifie(); });
 
     btnEnregistrer.addEventListener("click", async () => {
+      if (!/^(\d{9})?$/.test(champ("menu-uid").value.trim())) {
+        afficherEtat("UID refusé : 9 chiffres attendus (ex. 744102007).");
+        return;
+      }
       btnEnregistrer.disabled = true;
       afficherEtat("Enregistrement…");
       try {
