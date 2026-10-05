@@ -5,8 +5,10 @@
 // Administrateurs et mini admins : en plus, les matchs invalidés par un litige et le nombre
 // de litiges par joueur (modération). GET ?stats=1 : persos les plus pick /
 // bannis et records de temps par boss (onglet Statistiques). PATCH ?id= corrige les temps d'un
-// litige et republie le match (dans ce fichier pour rester sous la limite de
-// fonctions serverless du plan Hobby de Vercel).
+// litige et republie le match. POST ?id= : signalement d'un match par un
+// joueur ; administrateurs : signalements ouverts et leur traitement (cf.
+// _lib/signalements.js). Tout dans ce fichier pour rester sous la limite de
+// fonctions serverless du plan Hobby de Vercel.
 const { supabase } = require("./_lib/supabase");
 const { infosPersoJoueur } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
@@ -14,6 +16,7 @@ const { estModerateur } = require("./_lib/admin");
 const { parserTempsOuAbandon, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
 const { SANCTIONS, finSanction } = require("./_lib/sanctions");
+const { estSignalable, etatSignalementsJoueur, signalerMatch, chargerSignalementsOuverts, traiterSignalement } = require("./_lib/signalements");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -24,6 +27,10 @@ const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 // Théâtre clear du profil : valeur stockée ("1"..."4") -> palier.
 const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
+// Ni litiges ouverts ni matchs invalidés après un signalement (cf.
+// _lib/signalements.js).
+const LITIGES_PUBLICS = "litige.is.null,litige.not.in.(ouvert,invalide)";
+
 async function chargerMatchs() {
   // Colonnes optionnelles (id, created_at, actions, litige, entrainement) :
   // "*" les renvoie si elles existent. Litiges ouverts et entraînements
@@ -31,14 +38,14 @@ async function chargerMatchs() {
   // d'entraînement possible, ni de tri.
   const requete = () => supabase.from("match_history").select("*");
   let { data, error } = await requete()
-    .or("litige.is.null,litige.neq.ouvert")
+    .or(LITIGES_PUBLICS)
     .eq("entrainement", false)
     .order("created_at", { ascending: false })
     .limit(NB_MATCHS_MAX);
 
   if (error) {
     ({ data, error } = await requete()
-      .or("litige.is.null,litige.neq.ouvert")
+      .or(LITIGES_PUBLICS)
       .order("created_at", { ascending: false })
       .limit(NB_MATCHS_MAX));
   }
@@ -49,7 +56,7 @@ async function chargerMatchs() {
     ({ data, error } = await requete().limit(NB_MATCHS_MAX));
   }
   if (error) throw error;
-  return (data || []).filter(match => !match.entrainement);
+  return (data || []).filter(match => !match.entrainement && match.litige !== "invalide");
 }
 
 // Entraînements du joueur connecté (lui seul les voit, même celui qui l'a
@@ -104,7 +111,8 @@ async function chargerStatsLitiges() {
   }
 
   const stats = new Map();
-  (data || []).forEach(match => {
+  // Matchs invalidés après un signalement : pas des litiges.
+  (data || []).filter(match => match.litige !== "invalide").forEach(match => {
     ["j1", "j2"].forEach(role => {
       const discordId = match[`player${role === "j1" ? 1 : 2}_discord_id`];
       if (!discordId) return;
@@ -359,7 +367,8 @@ function resumerBan(action, profils) {
 }
 
 // ---- GET ?stats=1 : statistiques (onglet Statistiques) sur tous les matchs
-// comptés (ni entraînement, ni litige ouvert ou traité : match invalidé),
+// comptés (ni entraînement, ni litige ouvert ou traité, ni match invalidé
+// après un signalement),
 // pas seulement les NB_MATCHS_MAX derniers. ----
 const TAILLE_PAGE_STATS = 1000;
 
@@ -376,7 +385,7 @@ async function chargerMatchsStats() {
     lignes.push(...(data || []));
     if (!data || data.length < TAILLE_PAGE_STATS) break;
   }
-  return lignes.filter(match => !match.entrainement && !["ouvert", "traite"].includes(match.litige));
+  return lignes.filter(match => !match.entrainement && !["ouvert", "traite", "invalide"].includes(match.litige));
 }
 
 // Personnages pick / bannis / bannis à l'équilibrage dans un match (chacun
@@ -460,12 +469,24 @@ async function statistiques(res) {
 }
 
 module.exports = async (req, res) => {
-  if (req.method !== "GET" && req.method !== "PATCH") {
-    res.setHeader("Allow", "GET, PATCH");
+  if (!["GET", "PATCH", "POST"].includes(req.method)) {
+    res.setHeader("Allow", "GET, PATCH, POST");
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
   const user = verifySessionToken(parseCookies(req).session);
+
+  // Signalement d'un match (tout joueur connecté, cf. _lib/signalements.js).
+  if (req.method === "POST") {
+    if (!user) return res.status(401).json({ error: "Connecte-toi pour signaler un match." });
+    try {
+      return await signalerMatch(req, res, user);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur lors du signalement" });
+    }
+  }
+
   // Administrateurs et mini admins (cf. _lib/admin.js) : litiges, sanctions
   // et bans du classé.
   const admin = !!user && await estModerateur(user.id);
@@ -475,6 +496,7 @@ module.exports = async (req, res) => {
     try {
       if (req.body?.action === "sanction") return await sanctionnerLitige(req, res, user);
       if (req.body?.action === "lever_ban") return await leverBan(req, res);
+      if (req.body?.action === "signalement") return await traiterSignalement(req, res, user);
       return await republierLitige(req, res, user);
     } catch (error) {
       console.error(error);
@@ -504,12 +526,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const [matchs, rooms, { lignes: litiges, erreur: erreurLitiges }, statsLitiges, entrainements] = await Promise.all([
+    const [matchs, rooms, { lignes: litiges, erreur: erreurLitiges }, statsLitiges, entrainements, signalements, etatSignalements] = await Promise.all([
       chargerMatchs(),
       chargerRoomsEnCours(),
       admin ? chargerLitigesOuverts() : { lignes: [], erreur: null },
       admin ? chargerStatsLitiges() : [],
-      user ? chargerEntrainements(user.id) : []
+      user ? chargerEntrainements(user.id) : [],
+      admin ? chargerSignalementsOuverts() : { matchs: [], parMatch: new Map(), erreur: null },
+      user ? etatSignalementsJoueur(user.id) : null
     ]);
 
     // Rooms en cours au même format que les matchs : j1/j2 de la manche,
@@ -533,13 +557,14 @@ module.exports = async (req, res) => {
 
     // Trophées réellement gagnés / perdus par match classé (bonus de série
     // et plancher à 0 compris) : tous les matchs classés rejoués.
-    const deltasClasse = [...matchs, ...litiges].some(m => m.classe)
+    const deltasClasse = [...matchs, ...litiges, ...signalements.matchs].some(m => m.classe)
       ? rejouerClasse(await chargerMatchsClasses(supabase)).deltas
       : new Map();
 
     const ids = [...new Set([
-      ...[...matchs, ...enCours, ...litiges, ...entrainements].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
-      ...statsLitiges.map(s => s.discord_id)
+      ...[...matchs, ...enCours, ...litiges, ...entrainements, ...signalements.matchs].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
+      ...statsLitiges.map(s => s.discord_id),
+      ...[...signalements.parMatch.values()].flat().map(s => s.discord_id)
     ].filter(Boolean))];
     const joueurs = await chargerJoueurs(ids);
     const deuxJoueurs = match => {
@@ -569,7 +594,19 @@ module.exports = async (req, res) => {
       // temps passé à saisir et somme des temps saisis (secondes).
       ...(admin && match.litige ? { litige: match.litige, litige_par: match.litige_par || null, litige_commentaire: match.litige_commentaire || null } : {}),
       ...(admin && match.triche ? { triche: { duree_saisie: match.duree_saisie ?? null, somme_temps: match.somme_temps ?? null } } : {}),
+      // Bouton Signaler (joueurs connectés) : match encore valide.
+      signalable: estSignalable(match),
       ...deuxJoueurs(match)
+    });
+    // Signalements d'un match (administrateurs) : qui, quand, pourquoi.
+    const resumerSignalements = match => (signalements.parMatch.get(String(match.id)) || []).map(s => {
+      const profil = joueurs.get(s.discord_id);
+      return {
+        nom: profil?.discord_global_name || profil?.discord_username || "Joueur inconnu",
+        avatar: profil?.discord_avatar_url || null,
+        commentaire: s.commentaire,
+        date: s.created_at
+      };
     });
 
     return res.status(200).json({
@@ -586,10 +623,21 @@ module.exports = async (req, res) => {
       termines: matchs.map(resumerMatch),
       // Entraînements lancés par le joueur connecté (lui seul).
       entrainements: entrainements.map(resumerMatch),
+      // Joueur connecté : ban du classé (pas de signalement), signalements
+      // restants aujourd'hui, matchs déjà signalés.
+      ...(etatSignalements ? {
+        signalement: {
+          banni: etatSignalements.banni,
+          restants: etatSignalements.restants,
+          signales: etatSignalements.signales.map(String)
+        }
+      } : {}),
       // Administrateurs seulement.
       ...(admin ? {
         litiges: litiges.map(resumerMatch),
         erreur_litiges: erreurLitiges,
+        signalements: signalements.matchs.map((match, index) => ({ ...resumerMatch(match, index), signalements: resumerSignalements(match) })),
+        erreur_signalements: signalements.erreur,
         stats_litiges: statsLitiges.map(s => {
           const profil = joueurs.get(s.discord_id);
           return {

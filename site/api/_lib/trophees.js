@@ -50,9 +50,10 @@ function classementDuMatch(match) {
   return match.mode_theatre === "12" ? "melee" : "classique";
 }
 
-// Match classé qui compte : classé, terminé (pas un litige ouvert).
+// Match classé qui compte : classé, terminé (pas un litige ouvert ni un
+// match invalidé après un signalement, cf. _lib/signalements.js).
 function compteEnClasse(match) {
-  return !!match.classe && match.litige !== "ouvert" && !!match.vainqueur;
+  return !!match.classe && !["ouvert", "invalide"].includes(match.litige) && !!match.vainqueur;
 }
 
 // matchs : lignes de match_history (player1/2_discord_id, vainqueur,

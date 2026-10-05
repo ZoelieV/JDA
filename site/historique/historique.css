@@ -1245,3 +1245,226 @@ img.arme-mini {
     width: 2.5rem;
   }
 }
+
+/* ---- Signalements : bouton sous la date (joueurs connectés), fenêtre
+   avec raison obligatoire, traitement par les administrateurs ---- */
+
+.bouton-signaler {
+  margin-top: 0.25rem;
+  padding: 0.125rem 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 62.4375rem;
+  background: none;
+  color: var(--texte-doux);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.bouton-signaler:hover:not(:disabled) {
+  border-color: rgba(255, 90, 90, 0.8);
+  color: #ffb3b3;
+}
+
+.bouton-signaler:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.bouton-signaler.signale {
+  border-color: rgba(255, 90, 90, 0.4);
+  color: #ffb3b3;
+}
+
+.fenetre-signalement {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.fenetre-signalement.cache {
+  display: none;
+}
+
+.contenu-fenetre-signalement {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(32rem, 100%);
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 90, 90, 0.5);
+  border-radius: 0.75rem;
+  background-color: #2b2b2b;
+}
+
+.contenu-fenetre-signalement h2 {
+  margin: 0;
+  color: #ff5a5a;
+}
+
+.contenu-fenetre-signalement p {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.contenu-fenetre-signalement .match-fenetre-signalement {
+  font-weight: bold;
+  opacity: 1;
+  overflow-wrap: anywhere;
+}
+
+#commentaire-signalement {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+  font: inherit;
+  resize: vertical;
+}
+
+#commentaire-signalement:focus {
+  outline: none;
+  border-color: rgba(255, 90, 90, 0.8);
+}
+
+.pied-fenetre-signalement {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compteur-signalement {
+  margin-right: auto;
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.btn-annuler-signalement,
+.btn-envoyer-signalement {
+  padding: 0.5rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: white;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-envoyer-signalement {
+  border-color: #ff5a5a;
+  background-color: #ff5a5a;
+}
+
+.btn-envoyer-signalement:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Administrateurs : match signalé (contour violet (orange : égalités)), raisons et décision. */
+.match.signale {
+  border-color: rgba(178, 140, 255, 0.85);
+}
+
+.match-signale {
+  color: #b28cff;
+  font-weight: bold;
+}
+
+.signalements-match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+  max-width: 18rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.auteur-signalement {
+  font-size: 0.8125rem;
+}
+
+.nom-signalement {
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.date-signalement {
+  color: var(--texte-doux);
+}
+
+.commentaire-signalement {
+  margin: 0.125rem 0 0;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid #b28cff;
+  border-radius: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  font-size: 0.8125rem;
+  font-style: italic;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.traitement-signalement {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.375rem;
+  width: 100%;
+  max-width: 16rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.champ-decision {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.8125rem;
+}
+
+.champ-decision select {
+  padding: 0.25rem 0.375rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.temps-signalement {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.temps-signalement.cache {
+  display: none;
+}
+
+.bouton-traiter-signalement {
+  justify-content: center;
+  height: auto;
+  white-space: normal;
+  border-color: rgba(178, 140, 255, 0.6);
+}
+
+.bouton-traiter-signalement:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=33">
+<link rel="stylesheet" href="historique.css?v=34">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
@@ -60,6 +60,15 @@
   <!-- Administrateurs : matchs invalidés par un litige (temps à corriger
        puis republier) et joueurs ayant le plus de litiges. -->
   <div class="panneau-historique cache" data-panneau="litiges">
+    <!-- Matchs signalés par des joueurs depuis l'historique : toujours
+         valides tant qu'ils ne sont pas traités. -->
+    <section class="section-matchs section-signalements">
+      <h2 class="titre-section">Matchs signalés <span class="badge-admin">Admin</span></h2>
+      <p id="etat-signalements" class="etat-historique"></p>
+      <div id="liste-signalements" class="liste-matchs"></div>
+      <nav id="pages-signalements" class="pagination cache" aria-label="Pages des signalements"></nav>
+    </section>
+
     <section class="section-matchs section-litiges">
       <h2 class="titre-section">Joueurs en litige <span class="badge-admin">Admin</span></h2>
       <p id="etat-stats-litiges" class="etat-historique"></p>
@@ -153,9 +162,25 @@
     </div>
   </div>
 
+  <!-- Signaler un match : raison obligatoire (cf. ouvrirFenetreSignalement
+       dans historique.js). -->
+  <div id="fenetre-signalement" class="fenetre-signalement cache" role="dialog" aria-modal="true" aria-labelledby="titre-fenetre-signalement">
+    <div class="contenu-fenetre-signalement">
+      <h2 id="titre-fenetre-signalement">Signaler ce match</h2>
+      <p id="match-fenetre-signalement" class="match-fenetre-signalement"></p>
+      <p>Le match reste valide : un administrateur le vérifiera et pourra corriger les temps ou sanctionner. Explique ce qui ne va pas.</p>
+      <textarea id="commentaire-signalement" rows="5" placeholder="Raison du signalement (obligatoire)"></textarea>
+      <div class="pied-fenetre-signalement">
+        <span id="compteur-signalement" class="compteur-signalement">0 / 500</span>
+        <button type="button" id="annuler-signalement" class="btn-annuler-signalement">Annuler</button>
+        <button type="button" id="envoyer-signalement" class="btn-envoyer-signalement" disabled>Signaler</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=13"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=38"></script>
+  <script src="historique.js?v=39"></script>
 </body>
 </html>

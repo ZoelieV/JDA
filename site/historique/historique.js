@@ -8,6 +8,11 @@ let litiges = [];      // administrateurs : matchs invalidés par un litige
 let statsLitiges = []; // administrateurs : litiges par joueur
 let erreurLitiges = null; // administrateurs : problème de lecture côté base
 let entrainements = []; // entraînements lancés par le joueur connecté (lui seul)
+let signalements = []; // administrateurs : matchs signalés, pas encore traités
+let erreurSignalements = null;
+// Joueur connecté : { banni, restants, signales: Set des ids de matchs déjà
+// signalés } (cf. api/_lib/signalements.js), null si déconnecté.
+let etatSignalement = null;
 let estAdmin = false;
 // Modération : colonne triée (décroissant) et joueur filtré dans les litiges.
 let triLitiges = "total";
@@ -165,7 +170,7 @@ function mettreAJourBoutons() {
 // web. Choix gardé sur cet appareil. ----
 const CHOIX_PAR_PAGE = ["10", "20", "50", "tout"];
 const CLE_PAR_PAGE = "historique-matchs-par-page";
-const pages = { matchs: 1, entrainements: 1, litiges: 1 };
+const pages = { matchs: 1, entrainements: 1, litiges: 1, signalements: 1 };
 
 function lireParPage() {
   try {
@@ -195,6 +200,7 @@ function initialiserParPage() {
     }
     Object.keys(pages).forEach(categorie => { pages[categorie] = 1; });
     afficherEntrainements();
+    afficherSignalements();
     afficherLitiges();
     afficherMatchs();
   });
@@ -344,6 +350,7 @@ function creerLigneMatch(match) {
   const ligne = document.createElement("article");
   const enCours = !!match.room_id;
   ligne.className = enCours ? "match en-cours" : "match";
+  if (!enCours) ligne.dataset.matchId = String(match.id);
   // Classé : contour doré (et mention au centre).
   if (match.classe) ligne.classList.add("classe");
   const boss = bossParId.get(match.boss_id);
@@ -362,8 +369,10 @@ function creerLigneMatch(match) {
     : `<span class="match-date">${formaterDate(match.date)}</span>
        ${match.bans_connus ? "" : `<span class="match-note">Bans non enregistrés</span>`}
        ${match.litige === "ouvert" ? htmlCorrectionLitige(match) : ""}
-       ${match.litige === "republie" ? `<span class="match-note match-litige-corrige">Litige corrigé (${nomLitigePar(match)})</span>` : ""}`;
+       ${match.litige === "republie" ? `<span class="match-note match-litige-corrige">Litige corrigé (${nomLitigePar(match)})</span>` : ""}
+       ${match.signalements ? htmlTraitementSignalement(match) : htmlBoutonSignaler(match)}`;
   if (match.litige === "ouvert") ligne.classList.add("litige");
+  if (match.signalements) ligne.classList.add("signale");
   if (match.entrainement) ligne.classList.add("entrainement");
 
   ligne.innerHTML = `
@@ -383,6 +392,8 @@ function creerLigneMatch(match) {
   ligne.querySelector(".match-j1 .match-nom").textContent = match.j1.nom;
   ligne.querySelector(".match-j2 .match-nom").textContent = match.j2.nom;
   if (match.litige === "ouvert") brancherCorrectionLitige(ligne, match);
+  if (match.signalements) brancherTraitementSignalement(ligne, match);
+  ligne.querySelector(".bouton-signaler:not(:disabled)")?.addEventListener("click", () => ouvrirFenetreSignalement(match));
   return ligne;
 }
 
@@ -431,19 +442,18 @@ function nomLitigePar(match) {
 
 // Centre d'un litige ouvert : qui l'a signalé, les 2 temps modifiables et
 // le bouton pour republier le match (vainqueur recalculé côté serveur).
-function htmlCorrectionLitige(match) {
-  const champ = role => `
+// Temps d'un joueur modifiable (litige ou signalement).
+function htmlChampTemps(match, role) {
+  return `
     <label class="champ-temps-litige champ-${role}">
       <span class="nom-temps-litige"></span>
       <input type="text" inputmode="decimal" name="temps_${role}" value="${match[role].temps?.affiche || ""}" placeholder="mm:ss" title="Temps (mm:ss) ou abandon">
     </label>`;
-  // Anti-triche : temps passé à saisir et somme des temps saisis.
-  const fmt = s => s == null ? "?" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const triche = match.triche
-    ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft">⚠️ Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
-    : "";
-  // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
-  const sanction = role => `
+}
+
+// Sanction d'un joueur (ban du mode classé), litige ou signalement.
+function htmlSanction(role) {
+  return `
     <label class="champ-sanction champ-${role}">
       <span class="nom-temps-litige"></span>
       <select name="sanction_${role}">
@@ -453,6 +463,17 @@ function htmlCorrectionLitige(match) {
         <option value="definitif">Ban classé définitif</option>
       </select>
     </label>`;
+}
+
+function htmlCorrectionLitige(match) {
+  const champ = role => htmlChampTemps(match, role);
+  // Anti-triche : temps passé à saisir et somme des temps saisis.
+  const fmt = s => s == null ? "?" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const triche = match.triche
+    ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft">⚠️ Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
+    : "";
+  // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
+  const sanction = htmlSanction;
   return `
     <span class="match-litige">${match.triche ? "Triche suspectée" : "Litige"} <span class="litige-par"></span></span>
     ${match.litige_commentaire ? `<p class="commentaire-litige-historique"></p>` : ""}
@@ -542,6 +563,195 @@ function brancherCorrectionLitige(ligne, match) {
   });
 }
 
+// ---- Signalements : tout joueur connecté peut signaler un match terminé
+// (sauf pendant un ban du classé), une fois par match et 10 par jour ; le
+// match reste valide tant qu'un administrateur ne l'a pas traité (cf.
+// api/_lib/signalements.js). ----
+const COMMENTAIRE_SIGNALEMENT_MAX = 500;
+let matchASignaler = null;
+
+// Bouton sous la date d'un match terminé encore valide (joueur connecté).
+function htmlBoutonSignaler(match) {
+  if (!etatSignalement || etatSignalement.banni || !match.signalable || match.room_id) return "";
+  if (etatSignalement.signales.has(String(match.id))) {
+    return `<button type="button" class="bouton-signaler signale" disabled title="Un administrateur va vérifier ce match">⚑ Signalé</button>`;
+  }
+  const epuise = etatSignalement.restants <= 0;
+  return `<button type="button" class="bouton-signaler"${epuise ? ` disabled title="10 signalements par jour au plus (reset à 4 h)"` : ` title="Signaler ce match aux administrateurs"`}>⚑ Signaler</button>`;
+}
+
+function ouvrirFenetreSignalement(match) {
+  matchASignaler = match;
+  const boss = bossParId.get(match.boss_id);
+  document.getElementById("match-fenetre-signalement").textContent =
+    `${match.j1.nom} contre ${match.j2.nom}${boss ? ` · ${boss.nom}` : ""} · ${formaterDate(match.date)}`;
+  const champ = document.getElementById("commentaire-signalement");
+  champ.value = "";
+  mettreAJourFenetreSignalement();
+  document.getElementById("fenetre-signalement").classList.remove("cache");
+  champ.focus();
+}
+
+function fermerFenetreSignalement() {
+  document.getElementById("fenetre-signalement").classList.add("cache");
+  matchASignaler = null;
+}
+
+function mettreAJourFenetreSignalement() {
+  const champ = document.getElementById("commentaire-signalement");
+  document.getElementById("compteur-signalement").textContent = `${champ.value.length} / ${COMMENTAIRE_SIGNALEMENT_MAX}`;
+  document.getElementById("envoyer-signalement").disabled = champ.value.trim().length === 0;
+}
+
+// Après un signalement : boutons de toutes les lignes mis à jour (match
+// signalé, ou plus aucun signalement possible aujourd'hui).
+function mettreAJourBoutonsSignaler() {
+  document.querySelectorAll(".bouton-signaler").forEach(bouton => {
+    const ligne = bouton.closest(".match");
+    const match = ligne && [...matchs, ...signalements].find(m => String(m.id) === ligne.dataset.matchId);
+    if (!match) return;
+    const modele = document.createElement("template");
+    modele.innerHTML = htmlBoutonSignaler(match).trim();
+    const nouveau = modele.content.firstElementChild;
+    if (!nouveau) return bouton.remove();
+    if (!nouveau.disabled) nouveau.addEventListener("click", () => ouvrirFenetreSignalement(match));
+    bouton.replaceWith(nouveau);
+  });
+}
+
+function initialiserFenetreSignalement() {
+  const fenetre = document.getElementById("fenetre-signalement");
+  const champ = document.getElementById("commentaire-signalement");
+  champ.maxLength = COMMENTAIRE_SIGNALEMENT_MAX;
+  champ.addEventListener("input", mettreAJourFenetreSignalement);
+  document.getElementById("annuler-signalement").addEventListener("click", fermerFenetreSignalement);
+  fenetre.addEventListener("click", event => {
+    if (event.target === fenetre) fermerFenetreSignalement();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !fenetre.classList.contains("cache")) fermerFenetreSignalement();
+  });
+  document.getElementById("envoyer-signalement").addEventListener("click", async () => {
+    const bouton = document.getElementById("envoyer-signalement");
+    const commentaire = champ.value.trim();
+    const match = matchASignaler;
+    if (!commentaire || !match) return;
+    bouton.disabled = true;
+    try {
+      const reponse = await fetch(`/api/matches?id=${encodeURIComponent(match.id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentaire })
+      });
+      const data = await reponse.json().catch(() => ({}));
+      // Déjà signalé (autre onglet) : bouton mis à jour quand même.
+      if (reponse.ok || reponse.status === 409) etatSignalement.signales.add(String(match.id));
+      if (!reponse.ok) throw new Error(data.error || "Erreur lors du signalement.");
+      if (typeof data.restants === "number") etatSignalement.restants = data.restants;
+      fermerFenetreSignalement();
+      mettreAJourBoutonsSignaler();
+      // Administrateur : le match arrive dans ses signalements.
+      if (estAdmin) await rafraichir();
+    } catch (erreur) {
+      alert(erreur.message);
+      mettreAJourBoutonsSignaler();
+      bouton.disabled = false;
+    }
+  });
+}
+
+// Administrateurs : qui a signalé, pourquoi, et la décision (sans suite,
+// temps corrigés ou match invalidé ; ban du classé possible dans tous les
+// cas).
+function htmlTraitementSignalement(match) {
+  const nb = match.signalements.length;
+  return `
+    <span class="match-signale">Signalé ${nb > 1 ? `${nb} fois` : ""}</span>
+    <ul class="signalements-match">
+      ${match.signalements.map(() => `
+        <li>
+          <span class="auteur-signalement"><span class="nom-signalement"></span> <span class="date-signalement"></span></span>
+          <p class="commentaire-signalement"></p>
+        </li>`).join("")}
+    </ul>
+    <form class="traitement-signalement">
+      <label class="champ-decision">Décision
+        <select name="decision">
+          <option value="sans_suite">Classer sans suite (match inchangé)</option>
+          <option value="corrige">Corriger les temps (match toujours valide)</option>
+          <option value="invalide">Invalider le match (ne compte plus)</option>
+        </select>
+      </label>
+      <div class="temps-signalement cache">
+        ${htmlChampTemps(match, "j1")}
+        ${htmlChampTemps(match, "j2")}
+      </div>
+      ${htmlSanction("j1")}
+      ${htmlSanction("j2")}
+      <label class="champ-fin-saison cache">Fin de la saison <input type="date" name="fin_saison"></label>
+      <button type="submit" class="bouton-historique bouton-traiter-signalement">Clore le signalement</button>
+    </form>`;
+}
+
+function brancherTraitementSignalement(ligne, match) {
+  // Pseudos et raisons en texte (pas d'HTML venant des joueurs).
+  ligne.querySelectorAll(".signalements-match li").forEach((element, index) => {
+    const signalement = match.signalements[index];
+    element.querySelector(".nom-signalement").textContent = signalement.nom;
+    element.querySelector(".date-signalement").textContent = formaterDate(signalement.date);
+    element.querySelector(".commentaire-signalement").textContent = `« ${signalement.commentaire} »`;
+  });
+  const formulaire = ligne.querySelector(".traitement-signalement");
+  formulaire.querySelectorAll(".champ-j1 .nom-temps-litige").forEach(e => { e.textContent = match.j1.nom; });
+  formulaire.querySelectorAll(".champ-j2 .nom-temps-litige").forEach(e => { e.textContent = match.j2.nom; });
+
+  const valeur = nom => formulaire.elements[nom].value;
+  const libelle = nom => formulaire.elements[nom].selectedOptions[0].textContent;
+  formulaire.addEventListener("change", () => {
+    formulaire.querySelector(".temps-signalement").classList.toggle("cache", valeur("decision") !== "corrige");
+    formulaire.querySelector(".champ-fin-saison").classList.toggle("cache",
+      !["j1", "j2"].some(role => valeur(`sanction_${role}`) === "saison"));
+  });
+  formulaire.addEventListener("submit", async event => {
+    event.preventDefault();
+    const decision = valeur("decision");
+    const temps = role => formulaire.elements[`temps_${role}`].value.trim();
+    const details = decision === "corrige" ? `\nTemps : ${temps("j1")} (${match.j1.nom}) et ${temps("j2")} (${match.j2.nom})` : "";
+    if (!confirm(`Clore ce signalement ?\n${libelle("decision")}${details}\n${match.j1.nom} : ${libelle("sanction_j1")}\n${match.j2.nom} : ${libelle("sanction_j2")}`)) return;
+    const bouton = formulaire.querySelector(".bouton-traiter-signalement");
+    bouton.disabled = true;
+    try {
+      const reponse = await fetch(`/api/matches?id=${encodeURIComponent(match.id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "signalement",
+          decision,
+          temps_j1: temps("j1"),
+          temps_j2: temps("j2"),
+          sanctions: { j1: valeur("sanction_j1"), j2: valeur("sanction_j2") },
+          fin_saison: valeur("fin_saison") || null
+        })
+      });
+      const data = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(data.error || "Erreur lors du traitement du signalement.");
+      await rafraichir();
+    } catch (erreur) {
+      alert(erreur.message);
+      bouton.disabled = false;
+    }
+  });
+}
+
+function afficherSignalements() {
+  if (!estAdmin) return;
+  const etat = document.getElementById("etat-signalements");
+  etat.textContent = erreurSignalements || (signalements.length === 0 ? "Aucun match signalé." : "");
+  document.getElementById("liste-signalements").replaceChildren(...paginer("signalements", signalements, afficherSignalements).map(creerLigneMatch));
+}
+
 function afficherStatsLitiges() {
   document.querySelectorAll(".tri-litiges").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tri === triLitiges);
@@ -585,9 +795,9 @@ function afficherStatsLitiges() {
 
 function afficherLitiges() {
   if (!estAdmin) return;
-  // Nombre de litiges ouverts sous le titre de l'onglet.
+  // Nombre de litiges ouverts et de matchs signalés sous le titre de l'onglet.
   document.getElementById("sous-titre-litiges").textContent =
-    `${litiges.length} ouvert${litiges.length > 1 ? "s" : ""}`;
+    `${litiges.length} ouvert${litiges.length > 1 ? "s" : ""} · ${signalements.length} signalé${signalements.length > 1 ? "s" : ""}`;
   afficherStatsLitiges();
 
   const filtre = document.getElementById("filtre-litiges");
@@ -609,11 +819,17 @@ async function rafraichir() {
   viderCacheCartes(document.getElementById("liste-matchs"));
   afficherMatchsEnCours();
   afficherEntrainements();
+  afficherSignalements();
   afficherLitiges();
   afficherMatchs();
 }
 
 function appliquerHistorique(historique) {
+  signalements = historique.signalements || [];
+  erreurSignalements = historique.erreur_signalements || null;
+  etatSignalement = historique.signalement
+    ? { ...historique.signalement, signales: new Set(historique.signalement.signales || []) }
+    : null;
   matchs = historique.termines || [];
   matchsEnCours = historique.en_cours || [];
   litiges = historique.litiges || [];
@@ -952,9 +1168,11 @@ async function demarrer() {
     initialiserBarre();
     initialiserParPage();
     initialiserStatistiques();
+    initialiserFenetreSignalement();
     initialiserOnglets();
     afficherMatchsEnCours();
     afficherEntrainements();
+    afficherSignalements();
     afficherLitiges();
     afficherMatchs();
   } catch (erreur) {

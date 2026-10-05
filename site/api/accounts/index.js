@@ -42,7 +42,8 @@ async function chargerProfils() {
 // pas de classé.
 async function chargerResultats() {
   const champs = "player1_discord_id, player2_discord_id, vainqueur";
-  const litigeOuvert = "litige.is.null,litige.neq.ouvert";
+  // Ni les matchs invalidés après un signalement (cf. _lib/signalements.js).
+  const litigeOuvert = "litige.is.null,litige.not.in.(ouvert,invalide)";
   // Entraînements jamais comptés (filtrés plus bas) ; sans la colonne
   // entrainement (sql/entrainement.sql pas lancé), il n'y en a pas.
   let { data, error } = await supabase

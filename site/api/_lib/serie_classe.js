@@ -7,7 +7,8 @@
 //
 // Compté depuis match_history : matchs classés de la journée entre les 2
 // joueurs, avec un vainqueur (litige ouvert : pas encore de vainqueur ;
-// abandon d'un match classé quitté en cours compris).
+// abandon d'un match classé quitté en cours compris), sauf les matchs
+// invalidés après un signalement (cf. _lib/signalements.js).
 const { supabase } = require("./supabase");
 const { debutJournee } = require("./journee");
 
@@ -19,7 +20,7 @@ async function serieDuJour(idA, idB) {
   if (!idA || !idB || idA === idB) return serie;
   const { data, error } = await supabase
     .from("match_history")
-    .select("player1_discord_id, player2_discord_id, vainqueur")
+    .select("player1_discord_id, player2_discord_id, vainqueur, litige")
     .eq("classe", true)
     .gte("created_at", new Date(debutJournee()).toISOString())
     .in("vainqueur", ["j1", "j2"])
@@ -29,7 +30,7 @@ async function serieDuJour(idA, idB) {
     console.error("Erreur lecture série classée :", error);
     return serie;
   }
-  (data || []).forEach(match => {
+  (data || []).filter(match => match.litige !== "invalide").forEach(match => {
     const gagnant = match.vainqueur === "j1" ? match.player1_discord_id : match.player2_discord_id;
     if (gagnant in serie) serie[gagnant] += 1;
   });
