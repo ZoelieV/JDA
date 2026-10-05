@@ -138,10 +138,18 @@ async function rejoindreOuConsulterRoom(id) {
   return await reponse.json();
 }
 
+// Box opti : privées, envoyées par le serveur pour cette room seulement une
+// fois révélées (cf. api/accounts/[discord_id].js).
 async function chargerCompte(discordId) {
-  const reponse = await fetch(`/api/accounts/${discordId}`);
+  const reponse = await fetch(`/api/accounts/${discordId}?room=${encodeURIComponent(roomId)}`);
   if (!reponse.ok) throw new Error("Impossible de charger ce compte.");
   return await reponse.json();
+}
+
+// Joueur d'un rôle et box révélée (pools calculés après le choix des box).
+function cleChargementJoueur(role) {
+  const revelee = draft.phase !== "choix_box" && Array.isArray(draft[`pool_${role}`]);
+  return `${draft[`discord_${role}`]}|${revelee ? draft[`box_${role}`] || "" : ""}`;
 }
 
 async function chargerJoueurDepuisId(discordId) {
@@ -362,11 +370,13 @@ async function definirDraft(nouveauDraft) {
     bossAnimeId = null;
   }
 
-  if (draft.discord_j1 && (!joueur1 || joueur1.discordId !== draft.discord_j1)) {
-    joueur1 = await chargerJoueurDepuisId(draft.discord_j1);
+  // Profil rechargé aussi quand la box jouée est révélée (box opti
+  // envoyées seulement à partir de là, cf. chargerCompte).
+  if (draft.discord_j1 && joueur1?.cle !== cleChargementJoueur("j1")) {
+    joueur1 = { ...await chargerJoueurDepuisId(draft.discord_j1), cle: cleChargementJoueur("j1") };
   }
-  if (draft.discord_j2 && (!joueur2 || joueur2.discordId !== draft.discord_j2)) {
-    joueur2 = await chargerJoueurDepuisId(draft.discord_j2);
+  if (draft.discord_j2 && joueur2?.cle !== cleChargementJoueur("j2")) {
+    joueur2 = { ...await chargerJoueurDepuisId(draft.discord_j2), cle: cleChargementJoueur("j2") };
   }
   if (draft.discord_j1 && draft.discord_j2) {
     // Ni j1 ni j2 : spectateur (lecture seule, filtres et tris utilisables).
@@ -464,7 +474,7 @@ async function chargerBoxesEntrainement() {
 function appliquerIdentitesEntrainement() {
   ["j1", "j2"].forEach(role => {
     const box = donneesBoxes[coteEntrainement(role)];
-    const simule = { discordId: draft[`discord_${role}`], nom: box.nom, avatar: box.avatar, pseudo: htmlPseudo(box.nom), data: box.data };
+    const simule = { discordId: draft[`discord_${role}`], cle: cleChargementJoueur(role), nom: box.nom, avatar: box.avatar, pseudo: htmlPseudo(box.nom), data: box.data };
     if (role === "j1") joueur1 = simule;
     else joueur2 = simule;
   });

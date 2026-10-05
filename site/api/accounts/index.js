@@ -160,6 +160,10 @@ function resumerProfil(profil, resultats) {
 module.exports = async (req, res) => {
   try {
     const [profils, resultats] = await Promise.all([chargerProfils(), chargerResultats(), actualiserPoints()]);
+    // Même liste pour tout le monde : gardée 30 s par le CDN de Vercel
+    // (tous les profils et tout l'historique relus au plus une fois par
+    // tranche de 30 s, quel que soit le nombre de visites).
+    res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=60");
     return res.status(200).json(profils.map(profil => resumerProfil(profil, resultats)));
   } catch (error) {
     console.error(error);

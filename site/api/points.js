@@ -200,7 +200,7 @@ function nettoyer(valeurs, ids, taille) {
 
 module.exports = async (req, res) => {
   try {
-    const user = verifySessionToken(parseCookies(req).session);
+    const user = await verifySessionToken(parseCookies(req).session);
 
     if (req.method === "GET") {
       res.setHeader("Cache-Control", "no-store");

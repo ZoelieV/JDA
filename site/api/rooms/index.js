@@ -164,7 +164,7 @@ module.exports = async (req, res) => {
     }
 
     const cookies = parseCookies(req);
-    const user = verifySessionToken(cookies.session);
+    const user = await verifySessionToken(cookies.session);
 
     if (!user) {
       return res.status(401).json({ error: "Non connecté" });

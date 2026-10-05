@@ -1,6 +1,9 @@
-const { setCookie } = require("../_lib/session");
+const { parseCookies, setCookie, revoquerSession } = require("../_lib/session");
 module.exports = async (req, res) => {
   try {
+    // Jeton invalidé côté serveur (pas seulement le cookie effacé).
+    await revoquerSession(parseCookies(req).session);
+
     setCookie(res, "session", "", {
       httpOnly: true,
       secure: true,

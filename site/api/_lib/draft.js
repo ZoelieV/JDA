@@ -392,7 +392,10 @@ function etatRevanche(precedent) {
     bans_bonus_total: precedent.bans_bonus_total,
     bans_bonus_faits: precedent.bans_bonus_faits,
     bans_bonus_joueur: precedent.bans_bonus_joueur,
-    actions: bansBonus
+    actions: bansBonus,
+    // Même room : la version continue (écriture conditionnelle, cf.
+    // ecrireDraft dans _lib/room.js).
+    version: precedent.version ?? null
   };
 
   echangerRoles(suivant);

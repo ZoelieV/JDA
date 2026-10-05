@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { supabase } = require("./supabase");
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 function parseCookies(req) {
   const header = req.headers.cookie || "";
@@ -76,6 +77,9 @@ function sign(data) {
 function createSessionToken(user) {
   const payload = {
     user,
+    // Identifiant de la session : révoquée à la déconnexion (cf.
+    // revoquerSession).
+    jti: crypto.randomBytes(16).toString("base64url"),
     exp: Date.now() + SESSION_TTL_SECONDS * 1000  };
 
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -83,7 +87,8 @@ function createSessionToken(user) {
 
   return `${encoded}.${signature}`;
 }
-function verifySessionToken(token) {
+// Jeton signé et pas expiré -> son contenu { user, jti, exp }, sinon null.
+function lireSessionToken(token) {
   if (!token) {
     return null;
   }
@@ -112,12 +117,58 @@ function verifySessionToken(token) {
     return null;
   }
 
-  return payload.user;
+  return payload;
+}
+
+// Sessions révoquées (déconnexion) : table sessions_revoquees (cf.
+// sql/sessions_revoquees.sql), relue au plus toutes les 30 s ; une session
+// déconnectée peut donc encore servir jusqu'à 30 s. Table absente (SQL pas
+// lancé) : aucune révocation (erreur journalisée).
+const CACHE_REVOCATIONS_MS = 30 * 1000;
+let cacheRevocations = null;
+
+async function estRevoquee(jti) {
+  if (!cacheRevocations || Date.now() - cacheRevocations.lu > CACHE_REVOCATIONS_MS) {
+    const { data, error } = await supabase
+      .from("sessions_revoquees")
+      .select("jti")
+      .gt("expire_le", new Date().toISOString());
+    if (error) console.error("Erreur lecture sessions_revoquees :", error);
+    cacheRevocations = { jtis: new Set((data || []).map(ligne => ligne.jti)), lu: Date.now() };
+  }
+  return cacheRevocations.jtis.has(jti);
+}
+
+// Utilisateur de la session (cookie "session"), ou null si absente,
+// invalide, expirée ou révoquée.
+async function verifySessionToken(token) {
+  const session = lireSessionToken(token);
+  if (!session) return null;
+  if (session.jti && await estRevoquee(session.jti)) return null;
+  return session.user;
+}
+
+// Déconnexion : session révoquée jusqu'à son expiration (un cookie copié
+// ne sert plus). Jeton invalide ou plus ancien (sans jti) : rien à faire.
+async function revoquerSession(token) {
+  const session = lireSessionToken(token);
+  if (!session?.jti) return;
+  const { error } = await supabase
+    .from("sessions_revoquees")
+    .upsert({ jti: session.jti, expire_le: new Date(session.exp).toISOString() });
+  if (error) {
+    console.error("Erreur révocation de session :", error);
+    return;
+  }
+  cacheRevocations?.jtis.add(session.jti);
+  // Ménage : révocations expirées supprimées.
+  await supabase.from("sessions_revoquees").delete().lt("expire_le", new Date().toISOString());
 }
 module.exports = {
   SESSION_TTL_SECONDS,
   parseCookies,
   setCookie,
   createSessionToken,
-  verifySessionToken
+  verifySessionToken,
+  revoquerSession
 };

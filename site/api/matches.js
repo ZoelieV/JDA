@@ -474,7 +474,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const user = verifySessionToken(parseCookies(req).session);
+  const user = await verifySessionToken(parseCookies(req).session);
 
   // Signalement d'un match (tout joueur connecté, cf. _lib/signalements.js).
   if (req.method === "POST") {

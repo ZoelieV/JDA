@@ -3,7 +3,7 @@ const { estAdmin, estMiniAdmin, estShadowban } = require("../_lib/admin");
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
-    const user = verifySessionToken(cookies.session);
+    const user = await verifySessionToken(cookies.session);
 
     if (!user) {
       return res.status(401).json({

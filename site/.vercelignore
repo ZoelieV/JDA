@@ -6,3 +6,10 @@ node_modules/
 /sql/
 # Captures d'écran de vérification (Claude Code).
 /captures_claude/
+# Serveur express de développement local et ses données (le site déployé
+# passe par api/ sur Vercel).
+/server/
+/DB/rooms.json
+/DB/local_boxes.json
+# Réglages de Claude Code.
+/.claude/

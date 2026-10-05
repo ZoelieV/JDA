@@ -30,6 +30,25 @@ function getDiscordIdJoueur(room, joueur) {
   return draft.discord_j2 || room.player2_discord_id;
 }
 
+// Écriture de la draft d'une room, seulement si personne ne l'a modifiée
+// depuis sa lecture : draft.version augmente à chaque écriture et la mise à
+// jour est conditionnée à la version lue. Deux requêtes simultanées (double
+// clic, envois en parallèle) ne peuvent donc pas appliquer deux fois la
+// même transition (ex. un match archivé deux fois, trophées doublés).
+// -> true si écrite (draft.version mise à jour), false si la room a changé
+// entre-temps ; erreur Supabase levée.
+async function ecrireDraft(supabase, roomId, draft) {
+  const lue = draft.version ?? null;
+  const suivante = { ...draft, version: (Number(lue) || 0) + 1 };
+  let requete = supabase.from("rooms").update({ draft: suivante }).eq("room_id", roomId);
+  requete = lue === null ? requete.is("draft->>version", null) : requete.eq("draft->>version", String(lue));
+  const { data, error } = await requete.select("room_id");
+  if (error) throw error;
+  if (!data?.length) return false;
+  draft.version = suivante.version;
+  return true;
+}
+
 // Place provisoirement les 2 joueurs (créateur de la room en j1) au 1er
 // accès à une room complète. Le vrai tirage j1/j2 n'a lieu qu'après les
 // bans d'équilibrage (lancerTirage dans _lib/draft.js), qui échange ou non
@@ -44,12 +63,14 @@ async function assurerRolesDraft(supabase, room) {
   draft.discord_j2 = room.player2_discord_id;
   draft.roles_tires = false;
 
-  const { error } = await supabase.from("rooms").update({ draft }).eq("room_id", room.room_id);
-
-  if (!error) {
-    room = { ...room, draft };
+  try {
+    if (await ecrireDraft(supabase, room.room_id, draft)) return { ...room, draft };
+    // Rôles assignés entre-temps par une autre requête : draft relue.
+    const { data } = await supabase.from("rooms").select("draft").eq("room_id", room.room_id).maybeSingle();
+    if (data?.draft) return { ...room, draft: data.draft };
+  } catch (error) {
+    console.error("Erreur assignation des rôles :", error);
   }
-
   return room;
 }
 
@@ -104,8 +125,11 @@ const PHASES_FINIES = ["termine", "litige", "annule"];
 // Match classé quitté en cours : abandon de ce joueur (temps "Abandon"),
 // l'adversaire garde son temps s'il l'avait saisi. Archivé comme un match
 // classé (trophées au maximum, cf. calculerTrophees) ; la room passe en
-// "annule" avec le résultat pour l'écran de l'adversaire.
-async function abandonnerMatchClasse(draft, role) {
+// "annule" avec le résultat pour l'écran de l'adversaire. Room d'abord
+// passée en "annule" (écriture conditionnelle), archivée ensuite : jamais
+// deux archivages pour un même abandon.
+// -> false si la room a changé entre-temps (rien archivé).
+async function abandonnerMatchClasse(supabase, roomId, draft, role) {
   const autre = role === "j1" ? "j2" : "j1";
   const tempsAutre = draft[`temps_${autre}`] || { affiche: "—", secondes: null };
   const final = {
@@ -114,14 +138,19 @@ async function abandonnerMatchClasse(draft, role) {
     [`temps_${autre}`]: tempsAutre
   };
   final.vainqueur = determinerVainqueur(final.temps_j1, final.temps_j2);
-  const idMatch = await archiverMatch(final, { classe: true });
-  return {
+  const annule = {
     ...final,
     phase: "annule",
     annule_par: role,
     abandon_classe: true,
-    resultat_trophees: await resultatTrophees(idMatch)
+    resultat_trophees: null
   };
+  if (!await ecrireDraft(supabase, roomId, annule)) return false;
+
+  const idMatch = await archiverMatch(final, { classe: true });
+  annule.resultat_trophees = await resultatTrophees(idMatch);
+  if (!await ecrireDraft(supabase, roomId, annule)) console.error("Résultat de l'abandon pas enregistré (room modifiée) :", roomId);
+  return true;
 }
 
 async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
@@ -141,26 +170,47 @@ async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
       await supabase.from("rooms").delete().eq("room_id", room.room_id).is("player2_discord_id", null);
       continue;
     }
-    // Room complète pas encore ouverte (draft pas encore créée).
-    const draft = room.draft || { ...etatInitialDraft(), discord_j1: room.player1_discord_id, discord_j2: room.player2_discord_id };
-    const role = determinerRole({ ...room, draft }, discordId);
-    if (!role) continue;
-    if (draft.phase === "annule" || draft.quitte_par) continue;
-
-    let nouveau;
-    if (PHASES_FINIES.includes(draft.phase)) {
-      nouveau = { ...draft, quitte_par: role, rejouer_j1: false, rejouer_j2: false };
-    } else if (room.type === "classe") {
-      nouveau = await abandonnerMatchClasse(draft, role);
-    } else {
-      nouveau = { ...draft, phase: "annule", annule_par: role };
+    try {
+      await quitterRoom(supabase, room, discordId);
+    } catch (erreur) {
+      console.error("Erreur annulation du match :", erreur);
     }
-    const { error: erreurMaj } = await supabase.from("rooms").update({ draft: nouveau }).eq("room_id", room.room_id);
-    if (erreurMaj) console.error("Erreur annulation du match :", erreurMaj);
   }
 }
 
+// Une room complète quittée (cf. annulerAutresMatchs) ; room modifiée
+// entre-temps par une autre requête : relue, jusqu'à 3 essais.
+async function quitterRoom(supabase, room, discordId) {
+  for (let essai = 0; essai < 3; essai++) {
+    // Room complète pas encore ouverte (draft pas encore créée).
+    const draft = room.draft || { ...etatInitialDraft(), discord_j1: room.player1_discord_id, discord_j2: room.player2_discord_id };
+    const role = determinerRole({ ...room, draft }, discordId);
+    if (!role) return;
+    if (draft.phase === "annule" || draft.quitte_par) return;
+
+    let ecrite;
+    if (PHASES_FINIES.includes(draft.phase)) {
+      ecrite = await ecrireDraft(supabase, room.room_id, { ...draft, quitte_par: role, rejouer_j1: false, rejouer_j2: false });
+    } else if (room.type === "classe") {
+      ecrite = await abandonnerMatchClasse(supabase, room.room_id, draft, role);
+    } else {
+      ecrite = await ecrireDraft(supabase, room.room_id, { ...draft, phase: "annule", annule_par: role });
+    }
+    if (ecrite) return;
+
+    const { data } = await supabase
+      .from("rooms")
+      .select("room_id, player1_discord_id, player2_discord_id, type, draft")
+      .eq("room_id", room.room_id)
+      .maybeSingle();
+    if (!data) return;
+    room = data;
+  }
+  console.error("Match pas annulé (room modifiée en continu) :", room.room_id);
+}
+
 module.exports = {
+  ecrireDraft,
   annulerAutresMatchs,
   determinerRole,
   getAutreJoueur,

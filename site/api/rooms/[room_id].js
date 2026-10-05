@@ -35,7 +35,7 @@ async function toucherActivite(roomId) {
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
-    const user = verifySessionToken(cookies.session);
+    const user = await verifySessionToken(cookies.session);
 
     if (!user) {
       return res.status(401).json({ error: "Non connecté" });
@@ -92,14 +92,17 @@ module.exports = async (req, res) => {
         const e = draft?.entrainement;
         if (e && !e.aide && user.id !== e.lanceur) {
           const coteAdverse = e.cote_moi === "j1" ? "j2" : "j1";
-          const nouveau = { ...draft, entrainement: { ...e, aide: user.id }, [`discord_${coteAdverse}`]: user.id };
-          const { data: rejoint } = await supabase
+          // Version de la draft : même règle que ecrireDraft (_lib/room.js),
+          // pour ne pas écraser une action du lanceur faite au même moment.
+          const version = draft.version ?? null;
+          const nouveau = { ...draft, entrainement: { ...e, aide: user.id }, [`discord_${coteAdverse}`]: user.id, version: (Number(version) || 0) + 1 };
+          let requete = supabase
             .from("rooms")
             .update({ draft: nouveau, player2_discord_id: user.id })
             .eq("room_id", roomId)
-            .eq("player2_discord_id", e.lanceur)
-            .select(COLONNES)
-            .maybeSingle();
+            .eq("player2_discord_id", e.lanceur);
+          requete = version === null ? requete.is("draft->>version", null) : requete.eq("draft->>version", String(version));
+          const { data: rejoint } = await requete.select(COLONNES).maybeSingle();
           if (rejoint) return res.status(200).json(rejoint);
         }
         return res.status(200).json({ ...room, spectateur: true });

@@ -7,3 +7,14 @@ site/DB/images/bg_ignore/
 
 # Captures d'écran de vérification (Claude Code), locales uniquement.
 site/captures_claude/
+
+# Cache Python.
+__pycache__/
+*.pyc
+
+# Données du serveur express local (server/server.js), régénérées.
+site/DB/rooms.json
+site/DB/local_boxes.json
+
+# Réglages personnels de Claude Code.
+**/.claude/settings.local.json

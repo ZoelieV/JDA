@@ -7,7 +7,7 @@
 // ce dossier — les URLs appelées côté front ne changent donc pas.
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
-const { chargerRoomAvecRole, getAutreJoueur } = require("../../_lib/room");
+const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft } = require("../../_lib/room");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
@@ -128,11 +128,28 @@ async function passerApresPrets(draft, room) {
   }
 }
 
+// Écriture conditionnelle (cf. ecrireDraft) : room modifiée par une autre
+// requête depuis sa lecture -> conflit, la route est rejouée sur la room à
+// jour (cf. dispatch). Rien d'irréversible (archivage) avant cette écriture.
 async function sauvegarderDraft(roomId, draft) {
-  const { error } = await supabase.from("rooms").update({ draft }).eq("room_id", roomId);
-  if (error) {
+  let ecrite;
+  try {
+    ecrite = await ecrireDraft(supabase, roomId, draft);
+  } catch (error) {
     console.error(error);
     throw { status: 500, message: "Erreur lors de la mise à jour de la room" };
+  }
+  if (!ecrite) throw { status: 409, conflit: true, message: "La room a changé entre-temps : réessaie." };
+}
+
+// Après un archivage (déjà fait, à ne pas refaire) : un conflit n'est que
+// journalisé, la route n'est pas rejouée.
+async function sauvegarderApresArchivage(roomId, draft) {
+  try {
+    await sauvegarderDraft(roomId, draft);
+  } catch (erreur) {
+    if (!erreur?.conflit) throw erreur;
+    console.error("Draft modifiée pendant l'archivage, résultat pas enregistré :", roomId);
   }
 }
 
@@ -296,7 +313,7 @@ async function handleAction(req, res, roomId, user) {
     appliquerActionDraft(draft, joueur, prochaine.type, persoId, element);
   }
   jouerActionsAuto(draft);
-  await terminerEntrainement(draft);
+  await terminerEntrainement(roomId, draft);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur, tropTard ? { trop_tard: true } : {});
@@ -353,11 +370,14 @@ function jouerActionAleatoire(draft) {
 // Entraînement : la manche se termine avec la draft (archivée pour le
 // lanceur, sans vainqueur ; on peut relancer). Le lanceur peut ensuite
 // saisir son temps s'il a fait le boss (cf. handleTempsEntrainement).
-async function terminerEntrainement(draft) {
+// Manche réservée (écriture conditionnelle) avant d'être archivée.
+async function terminerEntrainement(roomId, draft) {
   if (!draft.entrainement || draft.phase !== "temps") return;
   draft.phase = "termine";
   draft.vainqueur = null;
+  await sauvegarderDraft(roomId, draft);
   draft.id_match = await archiverMatch(draft);
+  await sauvegarderApresArchivage(roomId, draft);
 }
 
 // Tant que c'est le tour d'un joueur dont le chrono est épuisé : actions
@@ -568,18 +588,25 @@ async function handleConfirmerTemps(req, res, roomId, user) {
       // Simple drapeau pour les joueurs : les détails de la détection
       // restent dans l'archive (administrateurs seulement).
       draft.triche = true;
-      await archiverMatch(draft, { litige: true, classe, triche });
+      // Manche réservée (écriture conditionnelle) avant d'être archivée :
+      // une seule archive même si la confirmation arrive en double.
       await sauvegarderDraft(roomId, draft);
+      await archiverMatch(draft, { litige: true, classe, triche });
       return repondreDraft(res, draft, joueur);
     }
 
     draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
     draft.phase = "termine";
+    draft.resultat_trophees = null;
+    draft.serie_classe = null;
+    await sauvegarderDraft(roomId, draft);
     const idMatch = await archiverMatch(draft, { classe });
     // { j1, j2, bonus } (null hors classé) : écran de fin de match.
     draft.resultat_trophees = classe ? await resultatTrophees(idMatch) : null;
     // Classé : victoires du jour de chacun contre l'autre (2 au plus).
     draft.serie_classe = classe ? await serieDraft(draft) : null;
+    await sauvegarderApresArchivage(roomId, draft);
+    return repondreDraft(res, draft, joueur);
   }
 
   await sauvegarderDraft(roomId, draft);
@@ -612,10 +639,10 @@ async function handleLitige(req, res, roomId, user) {
   draft.litige_par = joueur;
   draft.litige_commentaire = commentaire;
   draft.vainqueur = null;
+  // Manche réservée avant d'être archivée (une seule archive).
+  await sauvegarderDraft(roomId, draft);
   // Entraînement : rien à transmettre aux administrateurs.
   if (!draft.entrainement) await archiverMatch(draft, { litige: true, classe: room.type === "classe" });
-
-  await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
 }
 
@@ -781,7 +808,7 @@ async function handleExpirer(req, res, roomId, user) {
     draft.chrono[acteur] = 0;
     draft.chrono[`epuise_${acteur}`] = true;
     jouerActionsAuto(draft);
-    await terminerEntrainement(draft);
+    await terminerEntrainement(roomId, draft);
   } else {
     return res.status(409).json({ error: "Aucun chrono en cours" });
   }
@@ -896,7 +923,7 @@ async function handleDraftGet(req, res, roomId, user) {
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
-    const user = verifySessionToken(cookies.session);
+    const user = await verifySessionToken(cookies.session);
 
     if (!user) {
       return res.status(401).json({ error: "Non connecté" });
@@ -910,37 +937,14 @@ module.exports = async (req, res) => {
     // Personnages / boss ajoutés par les admins et points à jour (cache 30 s).
     if (action !== "draft") await actualiserPoints();
 
-    switch (action) {
-      case "box":
-        return await handleBox(req, res, roomId, user);
-      case "ready":
-        return await handleReady(req, res, roomId, user);
-      case "action":
-        return await handleAction(req, res, roomId, user);
-      case "bonus_toggle":
-        return await handleBonusToggle(req, res, roomId, user);
-      case "bonus_confirmer":
-        return await handleBonusConfirmer(req, res, roomId, user);
-      case "temps":
-        return await handleTemps(req, res, roomId, user);
-      case "temps_entrainement":
-        return await handleTempsEntrainement(req, res, roomId, user);
-      case "confirmer_temps":
-        return await handleConfirmerTemps(req, res, roomId, user);
-      case "litige":
-        return await handleLitige(req, res, roomId, user);
-      case "rejouer":
-        return await handleRejouer(req, res, roomId, user);
-      case "expirer":
-        return await handleExpirer(req, res, roomId, user);
-      case "boss_vote":
-        return await handleBossVote(req, res, roomId, user);
-      case "crash":
-        return await handleCrash(req, res, roomId, user);
-      case "draft":
-        return await handleDraftGet(req, res, roomId, user);
-      default:
-        return res.status(404).json({ error: "Route inconnue" });
+    // Room modifiée par une autre requête pendant celle-ci (cf.
+    // sauvegarderDraft) : route rejouée sur la room à jour, 3 essais.
+    for (let essai = 1; ; essai++) {
+      try {
+        return await executerAction(action, req, res, roomId, user);
+      } catch (erreur) {
+        if (!erreur?.conflit || essai >= 3) throw erreur;
+      }
     }
   } catch (error) {
     if (error && error.status) {
@@ -950,3 +954,38 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
+function executerAction(action, req, res, roomId, user) {
+  switch (action) {
+    case "box":
+      return handleBox(req, res, roomId, user);
+    case "ready":
+      return handleReady(req, res, roomId, user);
+    case "action":
+      return handleAction(req, res, roomId, user);
+    case "bonus_toggle":
+      return handleBonusToggle(req, res, roomId, user);
+    case "bonus_confirmer":
+      return handleBonusConfirmer(req, res, roomId, user);
+    case "temps":
+      return handleTemps(req, res, roomId, user);
+    case "temps_entrainement":
+      return handleTempsEntrainement(req, res, roomId, user);
+    case "confirmer_temps":
+      return handleConfirmerTemps(req, res, roomId, user);
+    case "litige":
+      return handleLitige(req, res, roomId, user);
+    case "rejouer":
+      return handleRejouer(req, res, roomId, user);
+    case "expirer":
+      return handleExpirer(req, res, roomId, user);
+    case "boss_vote":
+      return handleBossVote(req, res, roomId, user);
+    case "crash":
+      return handleCrash(req, res, roomId, user);
+    case "draft":
+      return handleDraftGet(req, res, roomId, user);
+    default:
+      return res.status(404).json({ error: "Route inconnue" });
+  }
+}

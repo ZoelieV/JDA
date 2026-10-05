@@ -81,40 +81,79 @@ function nettoyerParametres(parametres) {
   return propres;
 }
 
-function nettoyerProfil(profil) {
-  Object.entries(MAX_VITRINE).forEach(([vue, max]) => {
-    const vitrine = profil?.[vue]?.selections?.vitrine;
-    if (vitrine && typeof vitrine === "object") {
-      profil[vue].selections.vitrine = Object.fromEntries(Object.entries(vitrine).slice(0, max));
-    }
+// ---- Collections (personnages, armes) ----
+// Ids des JSON de DB/ (cf. validerEntree dans api/points.js) ; armes : copies
+// "idArme#2"... Valeurs : constellation -1 (pas possédé) à 6, raffinement
+// -1 à 4 (0 = R1) ; sélections et favoris : true ; niveaux : 95 ou 100.
+const FORMAT_ID = /^[a-z0-9_]{1,40}$/;
+const FORMAT_INSTANCE = /^[a-z0-9_]{1,40}(#\d{1,3})?$/;
+const BOX_SELECTIONS = ["stuff", ...BOX_RENOMMABLES, "vitrine"];
+// Bien au-delà du nombre de personnages / armes du jeu.
+const MAX_ENTREES_COLLECTION = 2000;
+const COLLECTIONS = {
+  characters: { formatCle: FORMAT_ID, max: 6, niveaux: true },
+  weapons: { formatCle: FORMAT_INSTANCE, max: 4, niveaux: false }
+};
+
+const estObjet = valeur => !!valeur && typeof valeur === "object" && !Array.isArray(valeur);
+const entierEntre = (min, max) => valeur => Number.isInteger(valeur) && valeur >= min && valeur <= max;
+const estVrai = valeur => valeur === true;
+
+// Dictionnaire { clé: valeur } : seulement les clés au bon format et les
+// valeurs permises, MAX_ENTREES_COLLECTION au plus.
+function nettoyerDictionnaire(brut, formatCle, valeurValide, max = MAX_ENTREES_COLLECTION) {
+  if (!estObjet(brut)) return {};
+  return Object.fromEntries(Object.entries(brut)
+    .filter(([cle, valeur]) => formatCle.test(cle) && valeurValide(valeur))
+    .slice(0, max));
+}
+
+function nettoyerCollection(brut, vue) {
+  const { formatCle, max, niveaux } = COLLECTIONS[vue];
+  const source = estObjet(brut) ? brut : {};
+  const collection = {
+    full: nettoyerDictionnaire(source.full, formatCle, entierEntre(-1, max)),
+    selections: Object.fromEntries(BOX_SELECTIONS.map(box => [
+      box,
+      nettoyerDictionnaire(source.selections?.[box], formatCle, estVrai, box === "vitrine" ? MAX_VITRINE[vue] : undefined)
+    ]))
+  };
+  if (niveaux) collection.niveaux = nettoyerDictionnaire(source.niveaux, FORMAT_ID, valeur => valeur === 95 || valeur === 100);
+  const favoris = nettoyerDictionnaire(source.favoris, FORMAT_ID, estVrai);
+  if (Object.keys(favoris).length) collection.favoris = favoris;
+  return collection;
+}
+
+// Profil enregistré : seulement les champs connus du site, aux valeurs
+// permises (tout le reste du JSON envoyé est ignoré).
+function nettoyerProfil(brut) {
+  const uid = typeof brut.uid === "string" ? brut.uid.trim() : "";
+  const profil = {
+    uid: uidValide(uid) ? uid : "",
+    niveau_monde: NIVEAUX_MONDE.has(String(brut.niveau_monde ?? "")) ? String(brut.niveau_monde ?? "") : "",
+    theatre: THEATRES.has(String(brut.theatre ?? "")) ? String(brut.theatre ?? "") : "",
+    characters: nettoyerCollection(brut.characters, "characters"),
+    weapons: nettoyerCollection(brut.weapons, "weapons"),
+    parametres: nettoyerParametres(brut.parametres)
+  };
+
+  const noms = {};
+  BOX_RENOMMABLES.forEach(box => {
+    const nom = brut.nomsBoxes?.[box];
+    if (typeof nom === "string" && nom.trim()) noms[box] = nom.trim().slice(0, LONGUEUR_NOM_BOX);
   });
+  if (Object.keys(noms).length) profil.nomsBoxes = noms;
 
-  if (profil && typeof profil === "object") {
-    profil.parametres = nettoyerParametres(profil.parametres);
-    const uid = typeof profil.uid === "string" ? profil.uid.trim() : "";
-    profil.uid = uidValide(uid) ? uid : "";
-    if (!THEATRES.has(String(profil.theatre ?? ""))) profil.theatre = "";
-    profil.niveau_monde = NIVEAUX_MONDE.has(String(profil.niveau_monde ?? "")) ? String(profil.niveau_monde ?? "") : "";
+  const stream = lienStreamAutorise(brut.stream);
+  if (stream) profil.stream = stream;
 
-    const noms = {};
-    BOX_RENOMMABLES.forEach(box => {
-      const nom = profil.nomsBoxes?.[box];
-      if (typeof nom === "string" && nom.trim()) noms[box] = nom.trim().slice(0, LONGUEUR_NOM_BOX);
-    });
-    if (Object.keys(noms).length) profil.nomsBoxes = noms;
-    else delete profil.nomsBoxes;
-
-    const stream = lienStreamAutorise(profil.stream);
-    if (stream) profil.stream = stream;
-    else delete profil.stream;
-  }
   return profil;
 }
 
-function getUser(req) {
+async function getUser(req) {
   const cookies = parseCookies(req);
   const token = cookies["session"];
-  return verifySessionToken(token);
+  return await verifySessionToken(token);
 }
 
 module.exports = async (req, res) => {
@@ -123,7 +162,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: "Variables Supabase manquantes." });
     }
 
-    const user = getUser(req);
+    const user = await getUser(req);
     if (!user) {
       return res.status(401).json({ error: "Non connecté" });
     }
