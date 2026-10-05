@@ -211,6 +211,25 @@
   font-weight: bold;
 }
 
+/* Tableaux des thèmes : défilent dans leur cadre (aussi en largeur sur
+   téléphone), en-tête figé en haut du cadre. */
+.panneau-theorycraft .tableau-conteneur {
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+}
+
+.panneau-theorycraft .tableau-theorycraft thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.panneau-theorycraft .tableau-theorycraft thead th {
+  background-color: #1e1e1e;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+}
+
 .tableau-theorycraft th.triable {
   cursor: pointer;
   user-select: none;
