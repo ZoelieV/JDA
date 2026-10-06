@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=35">
+<link rel="stylesheet" href="historique.css?v=36">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
@@ -125,6 +125,12 @@
   <!-- Statistiques (chargées à la 1re ouverture de l'onglet) : tous les
        matchs comptés, ni entraînements ni matchs invalidés par un litige. -->
   <div class="panneau-historique cache" data-panneau="stats">
+    <!-- Saison des statistiques (saison en cours par défaut). -->
+    <div class="barre-saison-stats">
+      <select id="saison-stats" class="filtre-boss-historique" title="Saison des statistiques" aria-label="Saison des statistiques">
+        <option value="">Toutes les saisons</option>
+      </select>
+    </div>
     <p id="etat-stats" class="etat-historique">Chargement…</p>
     <div id="contenu-stats" class="cache">
       <section class="section-matchs">
@@ -185,6 +191,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=13"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=41"></script>
+  <script src="historique.js?v=42"></script>
 </body>
 </html>

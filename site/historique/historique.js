@@ -909,18 +909,39 @@ function initialiserOnglets() {
 // ---- Statistiques : persos les plus pick / bannis et records par boss
 // (cf. GET /api/matches?stats=1) ----
 const NB_PERSOS_RESUME = 10;
-let statistiques = null; // réponse de l'API, chargée à la 1re ouverture
+let statistiques = null; // réponse de l'API pour la saison affichée
 let chargementStats = null;
+// Saison des statistiques ("" : toutes ; par défaut, la saison en cours) et
+// réponses déjà chargées par saison.
+let saisonStats = null;
+const cacheStats = new Map();
 let categorieStats = "tous"; // "tous" | "classe" | "non_classe"
 const listesDepliees = new Set();
 
 async function ouvrirStatistiques() {
   if (statistiques || chargementStats) return;
   const etat = document.getElementById("etat-stats");
-  chargementStats = fetch("/api/matches?stats=1", { credentials: "include" })
+  const saison = saisonStats ?? "";
+  if (cacheStats.has(saison)) {
+    statistiques = cacheStats.get(saison);
+    etat.classList.add("cache");
+    document.getElementById("contenu-stats").classList.remove("cache");
+    afficherClassementsPersos();
+    afficherRecords();
+    return;
+  }
+  etat.textContent = "Chargement…";
+  etat.classList.remove("cache");
+  document.getElementById("contenu-stats").classList.add("cache");
+  chargementStats = fetch(`/api/matches?stats=1${saison === "" ? "" : `&saison=${encodeURIComponent(saison)}`}`, { credentials: "include" })
     .then(async reponse => {
       if (!reponse.ok) throw new Error("Impossible de charger les statistiques.");
-      statistiques = await reponse.json();
+      const donnees = await reponse.json();
+      cacheStats.set(saison, donnees);
+      chargementStats = null;
+      // Autre saison choisie pendant le chargement : celle-là.
+      if (saison !== (saisonStats ?? "")) return ouvrirStatistiques();
+      statistiques = donnees;
       etat.classList.add("cache");
       document.getElementById("contenu-stats").classList.remove("cache");
       afficherClassementsPersos();
@@ -1078,7 +1099,26 @@ function afficherRecords() {
   document.getElementById("records-boss").replaceChildren(...elements);
 }
 
+// Saison des statistiques : saison en cours par défaut, ou toutes.
+function initialiserSaisonStats() {
+  const select = document.getElementById("saison-stats");
+  [...saisons].reverse().forEach((saison, i) => {
+    const option = document.createElement("option");
+    option.value = String(saison.numero);
+    option.textContent = `Saison ${saison.numero}${saison.nom ? ` : ${saison.nom}` : ""}${i === 0 ? " (en cours)" : ""}`;
+    select.appendChild(option);
+  });
+  saisonStats = saisons.length ? String(saisons[saisons.length - 1].numero) : "";
+  select.value = saisonStats;
+  select.addEventListener("change", () => {
+    saisonStats = select.value;
+    statistiques = null;
+    ouvrirStatistiques();
+  });
+}
+
 function initialiserStatistiques() {
+  initialiserSaisonStats();
   document.querySelectorAll(".filtre-stats-bouton").forEach(bouton => {
     bouton.addEventListener("click", () => {
       categorieStats = bouton.dataset.categorie;

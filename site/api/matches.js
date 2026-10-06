@@ -413,8 +413,8 @@ function persosDuMatch(match) {
   };
 }
 
-async function statistiques(res) {
-  const matchs = await chargerMatchsStats();
+async function statistiques(res, saison = null) {
+  const matchs = (await chargerMatchsStats()).filter(match => saison === null || saisonDuMatch(match) === saison);
   const nouvelleCategorie = () => ({ matchs: 0, matchs_bans: 0, picks: {}, bans: {}, bans_equilibrage: {} });
   const categories = { classe: nouvelleCategorie(), non_classe: nouvelleCategorie() };
   // Records : { boss_id: { classe: { match, role }, non_classe: ... } }.
@@ -522,7 +522,9 @@ module.exports = async (req, res) => {
   // Onglet Statistiques (tout le monde).
   if (req.query?.stats) {
     try {
-      return await statistiques(res);
+      // ?saison=N : matchs de cette saison seulement (sinon toutes).
+      const saison = /^\d+$/.test(String(req.query.saison ?? "")) ? Number(req.query.saison) : null;
+      return await statistiques(res, saison);
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Erreur calcul des statistiques" });
