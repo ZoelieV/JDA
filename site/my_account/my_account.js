@@ -509,6 +509,8 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
   const idInstance = instanceId || item.id;
   const conteneur = document.createElement("div");
   conteneur.className = valeur >= 0 ? "carte-personnage possede" : "carte-personnage";
+  // Vitrine "Sélectionnés" : persos et armes dans la même liste.
+  conteneur.dataset.vue = vueActive;
   conteneur.title = estDuplicata ? `${item.nom} (copie)` : item.nom;
 
   const affichageNiveau = valeur < 0 ? "-" : config.labels[valeur];
@@ -755,7 +757,29 @@ function rendreCollection(personnages, armes, profil) {
       categoriesArmesSelectionnees.length > 0
   });
 
-  remplirGrilleGroupee(liste, groupes, item => {
+  // Vitrine avec "Sélectionnés" : la sélection de l'autre vue à la suite
+  // (persos puis armes, ou armes puis persos), sur une nouvelle ligne.
+  const autreVue = vueActive === "characters" ? "weapons" : "characters";
+  const autresItems = boxActive === "vitrine" && selectionnesSeulement
+    ? (autreVue === "characters" ? personnages : armes).filter(item =>
+      itemPossede(item, autreVue, profil[autreVue]) &&
+      itemSelectionne(item, autreVue, boxActive, profil[autreVue]) &&
+      (!recherche || String(item.nom || "").toLowerCase().includes(recherche)))
+    : [];
+  const autres = new Set(autresItems);
+  const groupesAutres = autresItems.length
+    ? trierEtGrouper(autresItems, creerEtatTri(), { vue: autreVue, valeurs: getValeursTri(autreVue, profil[autreVue]), rareteParDefaut: true })
+      .map(groupe => ({ ...groupe, section: "autre-vue" }))
+    : [];
+
+  remplirGrilleGroupee(liste, [...groupes, ...groupesAutres], item => {
+    const vueItem = autres.has(item) ? autreVue : vueActive;
+    return cartesItem(item, vueItem, getCollectionProfil(profil, vueItem));
+  });
+
+  mettreAJourBoutonEnregistrer(profil);
+
+  function cartesItem(item, vueActive, collectionProfil) {
     if (vueActive === "weapons") {
       const instances = getInstancesArme(item.id, collectionProfil);
       const instancesAffichees = selectionnesSeulement
@@ -788,9 +812,7 @@ function rendreCollection(personnages, armes, profil) {
     // Cœur des favoris : persos possédés uniquement.
     const favori = valeur >= 0 ? !!collectionProfil.favoris?.[item.id] : null;
     return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite, favori);
-  });
-
-  mettreAJourBoutonEnregistrer(profil);
+  }
 }
 
 // ---- Bouton Enregistrer : grisé tant qu'il n'y a rien à enregistrer ----
@@ -1178,12 +1200,14 @@ async function initialiserPage() {
       }
 
       const id = visuel.dataset.id;
+      // Carte de l'autre vue (vitrine, "Sélectionnés") : sa propre collection.
+      const vueCarte = visuel.closest(".carte-personnage")?.dataset.vue || vueActive;
 
-      const selection = collectionProfil.selections[boxActive];
+      const selection = getCollectionProfil(profil, vueCarte).selections[boxActive];
       if (selection[id]) {
         delete selection[id];
-      } else if (boxActive === "vitrine" && Object.keys(selection).length >= MAX_VITRINE[vueActive]) {
-        afficherToast(`Vitrine pleine : ${MAX_VITRINE[vueActive]} ${vueActive === "weapons" ? "armes" : "personnages"} maximum. Retires-en un d'abord.`, "erreur");
+      } else if (boxActive === "vitrine" && Object.keys(selection).length >= MAX_VITRINE[vueCarte]) {
+        afficherToast(`Vitrine pleine : ${MAX_VITRINE[vueCarte]} ${vueCarte === "weapons" ? "armes" : "personnages"} maximum. Retires-en un d'abord.`, "erreur");
         return;
       } else {
         selection[id] = true;
