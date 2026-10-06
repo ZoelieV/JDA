@@ -303,24 +303,29 @@ function preparerHotes(draft) {
 
 // Hôtes des mondes et légendes locales. 3v3 : les 2 hôtes (joueurs à 2
 // persos) doivent avoir le même niveau du monde. 2v2 / 4v4 : il faut un
-// joueur de chaque équipe au même niveau du monde ; ils sont les hôtes
-// (sinon les chefs, sans légendes locales).
+// joueur de chaque équipe au même niveau du monde ; ils sont les hôtes, au
+// niveau du monde commun le plus haut (sinon les chefs, sans légendes
+// locales).
 function resoudreHotesEtLegendes(draft) {
   const niveau = id => draft.infos?.[id]?.niveau_monde || "";
   if (draft.taille === 3) {
     draft.legendes = !!niveau(draft.hotes.j1) && niveau(draft.hotes.j1) === niveau(draft.hotes.j2);
     return;
   }
-  // Chefs d'abord : hôtes préférés à niveau égal.
+  // Niveau commun le plus haut ; à niveau égal, chefs d'abord.
   const ordre = role => [draft.chefs[role], ...draft.equipes[role].filter(id => id !== draft.chefs[role])];
+  let meilleur = null;
   for (const a of ordre("j1")) {
     for (const b of ordre("j2")) {
-      if (niveau(a) && niveau(a) === niveau(b)) {
-        draft.hotes = { j1: a, j2: b };
-        draft.legendes = true;
-        return;
+      if (niveau(a) && niveau(a) === niveau(b) && (!meilleur || Number(niveau(a)) > Number(niveau(meilleur.j1)))) {
+        meilleur = { j1: a, j2: b };
       }
     }
+  }
+  if (meilleur) {
+    draft.hotes = meilleur;
+    draft.legendes = true;
+    return;
   }
   draft.hotes = { j1: draft.chefs.j1, j2: draft.chefs.j2 };
   draft.legendes = false;
@@ -332,15 +337,16 @@ function echangerEquipes(draft) {
   });
 }
 
-// Boss, équipe qui commence (au hasard), pools et début de la draft.
-async function lancerDraft(draft) {
-  resoudreHotesEtLegendes(draft);
+// Boss, équipe qui commence (au hasard ; revanche : l'autre équipe), pools
+// et début de la draft.
+async function lancerDraft(draft, { revanche = false } = {}) {
+  if (!revanche) resoudreHotesEtLegendes(draft);
   const tous = [...draft.equipes.j1, ...draft.equipes.j2];
   const exclus = [...await legendesTueesAujourdhui(tous), ...(draft.legendes ? [] : idsLegendesLocales())];
   const impose = draft.boss_impose && getBossParId(draft.boss_impose) && !exclus.includes(draft.boss_impose) ? draft.boss_impose : null;
   draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus })?.id || null;
 
-  if (Math.random() < 0.5) echangerEquipes(draft);
+  if (revanche || Math.random() < 0.5) echangerEquipes(draft);
 
   ROLES.forEach(role => {
     draft[`pool_${role}`] = [...new Set(draft.equipes[role].flatMap(id => (draft.vitrines[id]?.persos || []).map(p => p.draft_id)))];
@@ -821,6 +827,43 @@ async function routeLitige(req, res, roomId, user) {
   return repondre(res, draft, user.id);
 }
 
+// Revanche (chefs) : mêmes équipes, chefs, hôtes et vitrines, nouveau boss
+// (différent du précédent), l'autre équipe commence ; lancée quand les 2
+// chefs l'ont demandée.
+async function routeRevanche(req, res, roomId, user) {
+  const { rejouer = true } = await lireCorps(req);
+  const room = await chargerRoom(roomId);
+  const draft = room.draft;
+  if (!["termine", "litige"].includes(draft.phase)) throw erreur(409, "Le match n'est pas terminé.");
+  const camp = campDe(draft, user.id);
+  if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef demande la revanche pour son équipe.");
+  draft[`revanche_${camp}`] = !!rejouer;
+  if (draft.revanche_j1 && draft.revanche_j2) {
+    Object.assign(draft, {
+      boss_precedent_id: draft.boss_id,
+      boss_id: null,
+      actions: [],
+      declaration_j1: null,
+      declaration_j2: null,
+      temps_j1: null,
+      temps_j2: null,
+      temps_confirme_j1: false,
+      temps_confirme_j2: false,
+      debut_temps: null,
+      vainqueur: null,
+      litige_par_role: null,
+      litige_commentaire: null,
+      id_match: null,
+      revanche_j1: false,
+      revanche_j2: false
+    });
+    await actualiserPoints();
+    await lancerDraft(draft, { revanche: true });
+  }
+  await sauvegarder(roomId, draft);
+  return repondre(res, draft, user.id);
+}
+
 // Créateur : retour au lobby, mêmes joueurs (équipes gardées en formation
 // au choix).
 async function routeRejouer(req, res, roomId, user) {
@@ -858,7 +901,8 @@ const ROUTES = {
   equipe_temps: { methode: "POST", route: routeTemps },
   equipe_confirmer: { methode: "POST", route: routeConfirmer },
   equipe_litige: { methode: "POST", route: routeLitige },
-  equipe_rejouer: { methode: "POST", route: routeRejouer }
+  equipe_rejouer: { methode: "POST", route: routeRejouer },
+  equipe_revanche: { methode: "POST", route: routeRevanche }
 };
 
 function estRouteEquipe(action) {

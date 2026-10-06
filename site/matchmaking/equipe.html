@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="match.css?v=rem49">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
-<link rel="stylesheet" href="equipe.css?v=3">
+<link rel="stylesheet" href="equipe.css?v=4">
 <script src="/commun/zoom.js?v=2"></script>
 </head>
 <body>
@@ -54,6 +54,10 @@
   <div class="layout-equipe">
     <div class="tableau-equipe equipe-joueur" id="tableau-j1"></div>
     <div class="centre-equipe">
+      <!-- Boss tiré : affiché dès le début de la draft (avant le 1er ban). -->
+      <div id="zone-boss" class="zone-boss cache">
+        <div id="boss-equipe" class="bandeau-boss"></div>
+      </div>
       <!-- Fin de draft : déclaration (qui joue quoi), temps, résultat. -->
       <div id="zone-declaration" class="zone-centre cache"></div>
       <div id="zone-temps" class="zone-centre cache"></div>
@@ -81,7 +85,24 @@
   <div id="message-equipe" class="bandeau-info"></div>
   <button id="btn-confirmer" type="button" class="btn-confirmer-action cache" disabled>Confirmer</button>
   <div id="tour-equipe" class="bandeau-info"></div>
-  <button id="btn-rejouer" type="button" class="btn-equipe principal cache">Rejouer (retour au lobby)</button>
+  <!-- Revanche (chefs) : mêmes équipes ; retour au lobby (créateur) pour
+       changer les équipes. -->
+  <div id="actions-fin" class="actions-fin cache">
+    <button id="btn-revanche" type="button" class="btn-equipe principal cache">Rejouer</button>
+    <button id="btn-rejouer" type="button" class="btn-equipe secondaire cache">Retour au lobby</button>
+  </div>
+</div>
+
+<!-- Localisation d'une légende locale (bouton sous le boss). -->
+<div id="carte-legende" class="carte-legende cache" role="dialog" aria-modal="true">
+  <div class="fenetre-carte-legende">
+    <div class="entete-carte-legende">
+      <span class="titre-carte-legende"></span>
+      <button type="button" class="fermer-carte-legende" title="Fermer">✕</button>
+    </div>
+    <img alt="">
+    <p class="carte-absente cache">La localisation de cette légende locale n'est pas encore disponible.</p>
+  </div>
 </div>
 
 <!-- Choix de l'élément (Manekin) au pick. -->
@@ -110,6 +131,7 @@
 
 <script src="/commun/variantes.js?v=4"></script>
 <script src="/commun/cartes.js?v=13"></script>
-<script src="equipe.js?v=2"></script>
+<script src="/commun/tri.js?v=16"></script>
+<script src="equipe.js?v=3"></script>
 </body>
 </html>

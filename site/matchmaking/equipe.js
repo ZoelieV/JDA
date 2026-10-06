@@ -60,6 +60,11 @@ async function agir(action, corps = {}) {
   }
 }
 
+// Pseudo seul (messages : bulles du bas, hôtes des mondes).
+function htmlPseudoJoueur(id) {
+  return `<span class="pseudo">${echapperHtml(nomJoueur(id))}</span>`;
+}
+
 function htmlNom(id) {
   const infos = draft.infos?.[id] || {};
   return `${infos.avatar ? `<img class="avatar-mini" src="${echapperHtml(infos.avatar)}" alt="">` : ""}<span class="pseudo">${echapperHtml(infos.nom || "Joueur")}</span>`;
@@ -102,7 +107,8 @@ function rendre() {
     boss ? `Boss : ${boss.nom}` : null
   ].filter(Boolean).join(" · ");
 
-  $("btn-rejouer").classList.toggle("cache", !(["termine", "litige", "annule"].includes(draft.phase) && draft.createur === moi?.id));
+  appliquerFond();
+  rendreFinDeMatch();
   rendreInfoHotes();
 
   switch (draft.phase) {
@@ -115,13 +121,16 @@ function rendre() {
   rendreBulles();
 }
 
+// Hôtes des mondes : inutile si tout le monde a le même niveau du monde.
 function rendreInfoHotes() {
   const info = $("info-hotes");
-  const visible = !!draft.hotes?.j1 && !["lobby", "chefs", "hotes"].includes(draft.phase);
+  const niveaux = new Set((draft.membres || []).map(id => draft.infos?.[id]?.niveau_monde || ""));
+  const memeNiveau = niveaux.size === 1 && !niveaux.has("");
+  const visible = !!draft.hotes?.j1 && !memeNiveau && !["lobby", "chefs", "hotes"].includes(draft.phase);
   info.classList.toggle("cache", !visible);
   if (!visible) return;
-  info.innerHTML = `Hôtes des mondes : ${htmlNom(draft.hotes.j1)} (${NOMS_EQUIPES.j1}) et ${htmlNom(draft.hotes.j2)} (${NOMS_EQUIPES.j2})` +
-    (draft.legendes ? " · légendes locales possibles" : " · pas de légende locale (niveaux du monde différents)");
+  info.innerHTML = `Hôtes des mondes : ${htmlPseudoJoueur(draft.hotes.j1)} (${NOMS_EQUIPES.j1}) et ${htmlPseudoJoueur(draft.hotes.j2)} (${NOMS_EQUIPES.j2})` +
+    (draft.legendes ? "" : " · pas de légende locale (niveaux du monde différents)");
 }
 
 // ---- Lobby ----
@@ -231,6 +240,7 @@ function picksDe(role) {
 }
 
 function rendreMatch() {
+  rendreBoss();
   ROLES.forEach(rendreTableau);
   rendreVitrines();
   rendreDeclaration();
@@ -454,7 +464,6 @@ function rendreTemps() {
   // Le champ garde ce qui est tapé entre deux rafraîchissements.
   const saisie = $("input-temps-equipe")?.value || "";
   const camp = monCamp();
-  const boss = bossParId.get(draft.boss_id);
 
   let contenu = `<p class="temps-equipes">${ROLES.map(role => `${NOMS_EQUIPES[role]} : <strong>${texteTemps(role)}</strong>`).join(" — ")}</p>`;
   if (draft.phase === "temps" && suisChef() && !draft[`temps_${camp}`]) {
@@ -478,9 +487,7 @@ function rendreTemps() {
   }
   if (draft.phase === "litige") contenu += `<p class="ligne-resultat litige">Litige : match transmis aux administrateurs</p>`;
 
-  zone.innerHTML = `
-    ${boss ? `<div class="boss-equipe">${htmlImagesBoss(boss, `class="image-boss-equipe" loading="lazy"`)}<span>${echapperHtml(boss.nom)}</span></div>` : ""}
-    ${contenu}`;
+  zone.innerHTML = contenu;
 
   $("btn-temps")?.addEventListener("click", () => agir("equipe_temps", { temps: $("input-temps-equipe").value }));
   $("input-temps-equipe")?.addEventListener("keydown", event => {
@@ -497,6 +504,120 @@ function rendreAnnule() {
   $("texte-annule").textContent = draft.annule_par
     ? `${nomJoueur(draft.annule_par)} a quitté le match (autre match démarré) : il est annulé et ne compte pas.`
     : "Le match est annulé.";
+}
+
+// ---- Boss (dès la draft), fond d'écran, localisation des légendes ----
+
+const ELEMENTS_RES_BOSS = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
+const FOND_DEFAUT = "/DB/images/bg_web/autres/default_bg.webp";
+let fondsBoss = [];
+let fondApplique = null;
+let bossAffiche = null;
+
+// Image cliquable (résistances), nom, et localisation d'une légende locale.
+function rendreBoss() {
+  const boss = bossParId.get(draft.boss_id);
+  $("zone-boss").classList.toggle("cache", !boss);
+  if (!boss || bossAffiche === boss.id) return;
+  bossAffiche = boss.id;
+  const res = ELEMENTS_RES_BOSS.map((element, i) => {
+    const valeur = Number(boss.res?.[i] ?? 0);
+    const nom = element.charAt(0).toUpperCase() + element.slice(1);
+    return `<span class="res-boss${estImmunise(valeur) ? " immunise" : ""}" title="${estImmunise(valeur) ? `Immunisé ${nom}` : `Résistance ${nom}`}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${nom}">${texteResistance(valeur, "")}</span>`;
+  }).join("");
+  $("boss-equipe").innerHTML = `
+    <button type="button" class="image-boss-res" title="Voir les résistances">
+      ${htmlImagesBoss(boss)}
+      <span class="resistances-boss">${res}</span>
+    </button>
+    <span class="indice-res-boss">Voir les Res</span>
+    <span class="nom-boss">${echapperHtml(boss.nom)}</span>
+    ${estLegendeLocale(boss) ? `<button type="button" class="btn-carte-legende" title="Où trouver cette légende locale"><img src="../DB/images/others/Icon_Map.webp" alt="">Localisation</button>` : ""}`;
+}
+
+function initialiserBoss() {
+  $("boss-equipe").addEventListener("click", event => {
+    if (event.target.closest(".image-boss-res, .indice-res-boss")) {
+      $("boss-equipe").querySelector(".image-boss-res")?.classList.toggle("res-visibles");
+    }
+    if (event.target.closest(".btn-carte-legende")) ouvrirCarteLegende(bossParId.get(draft.boss_id));
+  });
+  const fenetre = $("carte-legende");
+  fenetre.addEventListener("click", event => {
+    if (event.target === fenetre || event.target.closest(".fermer-carte-legende")) fenetre.classList.add("cache");
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") fenetre.classList.add("cache");
+  });
+}
+
+// Carte : DB/images/boss/legend_local/carte/<id du boss>.webp.
+function ouvrirCarteLegende(boss) {
+  if (!boss) return;
+  const fenetre = $("carte-legende");
+  fenetre.querySelector(".titre-carte-legende").textContent = boss.nom;
+  const image = fenetre.querySelector("img");
+  const absente = fenetre.querySelector(".carte-absente");
+  image.classList.remove("cache");
+  absente.classList.add("cache");
+  image.onerror = () => {
+    image.classList.add("cache");
+    absente.classList.remove("cache");
+  };
+  image.src = `../DB/images/boss/legend_local/carte/${boss.id}.webp`;
+  image.alt = `Localisation de ${boss.nom}`;
+  fenetre.classList.remove("cache");
+}
+
+// Fonds des boss (cosmetiques.json), comme la page du match 1v1.
+async function chargerFondsBoss() {
+  try {
+    const cosmetiques = await (await fetch("/DB/images/cosmetiques.json")).json();
+    fondsBoss = cosmetiques.fonds.filter(fond => fond.categorie === "boss_hebdo" || fond.categorie === "legendes_locales");
+  } catch (erreur) {
+    console.error(erreur);
+    fondsBoss = [];
+  }
+}
+
+function hashTexte(texte) {
+  let h = 0;
+  for (const caractere of texte) h = (h * 31 + caractere.charCodeAt(0)) >>> 0;
+  return h;
+}
+
+// Fond du boss tiré (même choix pour tous les joueurs de la room).
+function appliquerFond() {
+  let url = FOND_DEFAUT;
+  if (draft?.boss_id && !["lobby", "chefs", "hotes"].includes(draft.phase)) {
+    const prefixe = draft.boss_id.replace(/_boss$/, "");
+    const nomFond = fond => fond.image.split("/").pop().replace(/\.webp$/, "");
+    const supplementaires = bossParId.get(draft.boss_id)?.fonds_supplementaires || [];
+    const images = fondsBoss.filter(fond => nomFond(fond) === prefixe || nomFond(fond).replace(/_\d+$/, "") === prefixe ||
+      supplementaires.includes(nomFond(fond)));
+    if (images.length) url = encodeURI(`/DB/images/${images[hashTexte(`${roomId}:${draft.boss_id}`) % images.length].image}`);
+  }
+  if (url !== fondApplique) {
+    fondApplique = url;
+    document.body.style.setProperty("--fond-ecran", `url("${url}")`);
+  }
+}
+
+// ---- Fin du match : revanche (chefs), retour au lobby (créateur) ----
+
+function rendreFinDeMatch() {
+  const fini = ["termine", "litige", "annule"].includes(draft.phase);
+  const revanchePossible = ["termine", "litige"].includes(draft.phase) && suisChef();
+  const createur = draft.createur === moi?.id;
+  $("actions-fin").classList.toggle("cache", !fini || !(revanchePossible || createur));
+  const bouton = $("btn-revanche");
+  bouton.classList.toggle("cache", !revanchePossible);
+  if (revanchePossible) {
+    const demande = !!draft[`revanche_${monCamp()}`];
+    bouton.textContent = demande ? "Annuler la revanche" : "Rejouer";
+    bouton.classList.toggle("actif", demande);
+  }
+  $("btn-rejouer").classList.toggle("cache", !(fini && createur));
 }
 
 // ---- Bulles du bas ----
@@ -524,12 +645,18 @@ function rendreBulles() {
       bouton.disabled = !selection;
     } else {
       const chef = draft.chefs?.[action.joueur];
-      tour.innerHTML = `${NOMS_EQUIPES[action.joueur]} : ${htmlNom(chef)} doit <strong class="verbe-action">${verbe}</strong>`;
+      tour.innerHTML = `${NOMS_EQUIPES[action.joueur]} : ${htmlPseudoJoueur(chef)} doit <strong class="verbe-action">${verbe}</strong>`;
     }
   }
   if (draft.phase === "declaration") tour.textContent = "Déclaration : qui joue quel perso ?";
   if (draft.phase === "temps") tour.textContent = suisChef() ? "Saisis le temps de ton équipe." : "Les chefs saisissent le temps de leur équipe.";
   if (draft.phase === "verification") tour.textContent = "Vérification des temps par les chefs.";
+  if (["termine", "litige"].includes(draft.phase)) {
+    const demandes = ROLES.filter(role => draft[`revanche_${role}`]);
+    tour.textContent = demandes.length === 1
+      ? `${NOMS_EQUIPES[demandes[0]]} veut rejouer (mêmes équipes) : en attente de l'autre chef…`
+      : "Les chefs peuvent relancer une revanche avec les mêmes équipes.";
+  }
 }
 
 // ---- Litige ----
@@ -560,7 +687,10 @@ function initialiserBoutons() {
   });
   $("btn-lancer").addEventListener("click", () => agir("equipe_lancer", {}));
   $("btn-confirmer").addEventListener("click", confirmerAction);
-  $("btn-rejouer").addEventListener("click", () => agir("equipe_rejouer", {}));
+  $("btn-rejouer").addEventListener("click", () => {
+    if (confirm("Retourner au lobby (pour changer les équipes) ?")) agir("equipe_rejouer", {});
+  });
+  $("btn-revanche").addEventListener("click", () => agir("equipe_revanche", { rejouer: !draft[`revanche_${monCamp()}`] }));
 
   const partager = $("btn-partager");
   const texte = partager.textContent;
@@ -603,12 +733,13 @@ async function demarrer() {
     return;
   }
 
-  const [personnages, boss] = await Promise.all([chargerPersonnages(), chargerBoss()]);
+  const [personnages, boss] = await Promise.all([chargerPersonnages(), chargerBoss(), chargerFondsBoss()]);
   personnagesParId = new Map(personnages.map(p => [p.id, p]));
   personnagesDraftParId = new Map(regrouperPourDraft(personnages).map(p => [p.id, p]));
   bossParId = new Map(boss.map(b => [b.id, b]));
 
   initialiserBoutons();
+  initialiserBoss();
   initialiserVitrines();
   initialiserLitige();
 
