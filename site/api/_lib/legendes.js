@@ -27,6 +27,28 @@ async function legendesTueesAujourdhui(discordIds) {
   return [...new Set(data.map(l => l.boss_id))].filter(id => getBossParId(id)?.type === TYPE_LEGENDE_JOUR);
 }
 
+// Par joueur : Map discord_id -> Set des légendes "une fois par jour" qu'il
+// a tuées depuis le reset (matchs en équipe : seul le monde de l'hôte
+// compte, cf. _lib/equipe.js). Table absente : aucune.
+async function legendesTueesParJoueur(discordIds) {
+  const ids = [...new Set(discordIds.filter(Boolean))];
+  const parJoueur = new Map(ids.map(id => [id, new Set()]));
+  if (!ids.length) return parJoueur;
+  const { data, error } = await supabase
+    .from("legendes_tuees")
+    .select("discord_id, boss_id")
+    .in("discord_id", ids)
+    .gte("tuee_le", new Date(debutJournee()).toISOString());
+  if (error) {
+    console.error("Erreur lecture legendes_tuees :", error);
+    return parJoueur;
+  }
+  (data || [])
+    .filter(l => getBossParId(l.boss_id)?.type === TYPE_LEGENDE_JOUR)
+    .forEach(l => parJoueur.get(l.discord_id)?.add(l.boss_id));
+  return parJoueur;
+}
+
 // Niveau du monde : les PV des légendes locales en dépendent. Deux joueurs
 // qui ne sont pas au même niveau du monde (ou dont l'un ne l'a pas
 // renseigné) ne peuvent pas tomber sur une légende locale : match pas
@@ -57,4 +79,4 @@ async function enregistrerMorts(bossId, matchId, morts, { entrainement = false }
   if (error) console.error("Erreur enregistrement legendes_tuees :", error);
 }
 
-module.exports = { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts };
+module.exports = { legendesTueesAujourdhui, legendesTueesParJoueur, legendesHorsNiveauMonde, enregistrerMorts };

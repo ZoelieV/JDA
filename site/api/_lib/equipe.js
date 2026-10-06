@@ -33,7 +33,7 @@ const { ecrireDraft } = require("./room");
 const { actualiserPoints, getPersonnages, getArmes, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("./personnages");
 const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox } = require("./draft");
 const { tirerBossAleatoire, getBossParId, idsLegendesLocales } = require("./boss");
-const { legendesTueesAujourdhui, enregistrerMorts } = require("./legendes");
+const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
 const { analyserVitrine, erreurVitrine } = require("./vitrine");
 const { saisonActuelle } = require("./saisons");
@@ -296,6 +296,7 @@ function resoudreChefs(draft) {
 function preparerHotes(draft) {
   draft.hotes = { j1: null, j2: null };
   draft.eligibles_hote = { j1: [], j2: [] };
+  draft.hotes_au_hasard = {};
   ROLES.forEach(role => {
     const membres = draft.equipes[role];
     const eligibles = membres.filter(id => (draft.full_box[id] ?? Infinity) <= HOTE_3V3_FULL_BOX_MAX);
@@ -308,34 +309,19 @@ function preparerHotes(draft) {
   return ROLES.every(role => draft.hotes[role]);
 }
 
-// Hôtes des mondes et légendes locales. 3v3 : les 2 hôtes (joueurs à 2
-// persos) doivent avoir le même niveau du monde. 2v2 / 4v4 : il faut un
-// joueur de chaque équipe au même niveau du monde ; ils sont les hôtes, au
-// niveau du monde commun le plus haut (sinon les chefs, sans légendes
-// locales).
-function resoudreHotesEtLegendes(draft) {
+// Paires d'hôtes possibles (un joueur de chaque équipe, même niveau du
+// monde), de la meilleure à la moins bonne : niveau du monde le plus haut,
+// puis chefs d'abord. 3v3 : seulement les 2 hôtes déjà choisis (joueurs à 2
+// persos). Aucune : pas de légende locale (niveaux différents).
+function pairesHotes(draft) {
   const niveau = id => draft.infos?.[id]?.niveau_monde || "";
-  if (draft.taille === 3) {
-    draft.legendes = !!niveau(draft.hotes.j1) && niveau(draft.hotes.j1) === niveau(draft.hotes.j2);
-    return;
-  }
-  // Niveau commun le plus haut ; à niveau égal, chefs d'abord.
-  const ordre = role => [draft.chefs[role], ...draft.equipes[role].filter(id => id !== draft.chefs[role])];
-  let meilleur = null;
-  for (const a of ordre("j1")) {
-    for (const b of ordre("j2")) {
-      if (niveau(a) && niveau(a) === niveau(b) && (!meilleur || Number(niveau(a)) > Number(niveau(meilleur.j1)))) {
-        meilleur = { j1: a, j2: b };
-      }
-    }
-  }
-  if (meilleur) {
-    draft.hotes = meilleur;
-    draft.legendes = true;
-    return;
-  }
-  draft.hotes = { j1: draft.chefs.j1, j2: draft.chefs.j2 };
-  draft.legendes = false;
+  const candidats = role => draft.taille === 3 ? [draft.hotes[role]] : draft.equipes[role];
+  const paires = [];
+  candidats("j1").forEach(a => candidats("j2").forEach(b => {
+    if (niveau(a) && niveau(a) === niveau(b)) paires.push({ j1: a, j2: b });
+  }));
+  const chefs = paire => (paire.j1 === draft.chefs.j1) + (paire.j2 === draft.chefs.j2);
+  return paires.sort((x, y) => Number(niveau(y.j1)) - Number(niveau(x.j1)) || chefs(y) - chefs(x));
 }
 
 function echangerEquipes(draft) {
@@ -344,16 +330,30 @@ function echangerEquipes(draft) {
   });
 }
 
-// Boss, équipe qui commence (au hasard ; revanche : l'autre équipe), pools
-// et début de la draft.
+// Équipe qui commence (au hasard ; revanche : l'autre équipe), boss, hôtes
+// des mondes, pools et début de la draft.
+// Légendes locales : en co-op, seul le monde de l'hôte compte. Une légende
+// "une fois par jour" reste tirable s'il existe une paire d'hôtes (même
+// niveau du monde) dont aucun ne l'a tuée aujourd'hui ; 2v2 / 4v4 : les
+// hôtes sont choisis après le tirage, parmi les paires qui peuvent jouer ce
+// boss (rotation d'une revanche à l'autre si les hôtes l'ont déjà tuée).
 async function lancerDraft(draft, { revanche = false } = {}) {
-  if (!revanche) resoudreHotesEtLegendes(draft);
-  const tous = [...draft.equipes.j1, ...draft.equipes.j2];
-  const exclus = [...await legendesTueesAujourdhui(tous), ...(draft.legendes ? [] : idsLegendesLocales()), ...BOSS_HORS_COOP];
+  if (revanche || Math.random() < 0.5) echangerEquipes(draft);
+
+  const paires = pairesHotes(draft);
+  const tuees = await legendesTueesParJoueur([...draft.equipes.j1, ...draft.equipes.j2]);
+  const libre = (paire, bossId) => !tuees.get(paire.j1)?.has(bossId) && !tuees.get(paire.j2)?.has(bossId);
+  const legendes = idsLegendesLocales();
+  const exclus = [...legendes.filter(id => !paires.some(paire => libre(paire, id))), ...BOSS_HORS_COOP];
   const impose = draft.boss_impose && getBossParId(draft.boss_impose) && !exclus.includes(draft.boss_impose) ? draft.boss_impose : null;
   draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus })?.id || null;
+  draft.legendes = paires.length > 0;
 
-  if (revanche || Math.random() < 0.5) echangerEquipes(draft);
+  if (draft.taille !== 3) {
+    const estLegende = legendes.includes(draft.boss_id);
+    const paire = paires.find(p => !estLegende || libre(p, draft.boss_id));
+    draft.hotes = paire ? { ...paire } : { j1: draft.chefs.j1, j2: draft.chefs.j2 };
+  }
 
   ROLES.forEach(role => {
     draft[`pool_${role}`] = [...new Set(draft.equipes[role].flatMap(id => (draft.vitrines[id]?.persos || []).map(p => p.draft_id)))];
@@ -391,7 +391,10 @@ async function avancerSelonTemps(draft, maintenant = Date.now()) {
         (draft.hotes_au_hasard ??= {})[role] = true;
       }
     });
-    await lancerDraft(draft);
+    // Revanche en 3v3 : hôtes rechoisis, puis draft de revanche.
+    const revanche = !!draft.revanche_hotes;
+    draft.revanche_hotes = false;
+    await lancerDraft(draft, { revanche });
     return true;
   }
   return false;
@@ -478,12 +481,13 @@ async function archiverEquipe(draft, { litige = false } = {}) {
     console.error("Erreur archivage match d'équipe :", error);
     return null;
   }
-  // Légendes locales : tuées par chaque joueur d'une équipe qui a saisi un
-  // temps (cf. _lib/legendes.js).
-  await enregistrerMorts(draft.boss_id, data.id, ROLES.flatMap(role => draft.equipes[role].map(id => ({
-    discord_id: id,
+  // Légendes locales : tuées dans le monde de l'hôte de chaque équipe qui a
+  // saisi un temps (les autres joueurs peuvent la refaire chez un autre
+  // hôte, cf. lancerDraft).
+  await enregistrerMorts(draft.boss_id, data.id, ROLES.filter(role => draft.hotes?.[role]).map(role => ({
+    discord_id: draft.hotes[role],
     temps_secondes: draft[`temps_${role}`]?.secondes ?? null
-  }))));
+  })));
   return data.id;
 }
 
@@ -881,7 +885,15 @@ async function routeRevanche(req, res, roomId, user) {
       revanche_j2: false
     });
     await actualiserPoints();
-    await lancerDraft(draft, { revanche: true });
+    // 3v3 : l'hôte (joueur à 2 persos) peut changer d'une revanche à l'autre
+    // (légende déjà tuée chez lui...) : rechoisi par le chef s'il y a le choix.
+    if (draft.taille === 3 && !preparerHotes(draft)) {
+      draft.phase = "hotes";
+      draft.fin_hote = Date.now() + DUREE_CHOIX_HOTE_MS;
+      draft.revanche_hotes = true;
+    } else {
+      await lancerDraft(draft, { revanche: true });
+    }
   }
   await sauvegarder(roomId, draft);
   return repondre(res, draft, user.id);
