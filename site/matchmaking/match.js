@@ -949,7 +949,7 @@ function rendreEntetesJoueurs() {
       <span class="nom-joueur">${echapperHtml(joueur.nom)}</span>
       ${htmlMedailleTheatre(palierTheatreProfil(joueur.data))}
       ${afficherRole ? `<span class="tag-role">${role.toUpperCase()}</span>` : ""}
-      ${afficherPastille ? `<span class="pastille ${pret ? "pret" : ""}" title="${pret ? "Prêt" : "Pas encore prêt"}"></span>` : ""}
+      ${afficherPastille && pret ? `<span class="texte-pret">Prêt !</span>` : ""}
     `;
   });
   mettreAJourPastillesPresence();

@@ -185,22 +185,18 @@ h1 {
   }
 }
 
-.entete-joueur .pastille {
+/* Choix des box / analyse : "Prêt !" en vert une fois prêt (rien sinon). */
+.entete-joueur .texte-pret {
   margin-left: auto;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  background-color: #666;
   flex-shrink: 0;
+  color: #3ecf6a;
+  font-weight: bold;
+  font-style: normal;
 }
 
-#entete-joueur2 .pastille {
+#entete-joueur2 .texte-pret {
   margin-left: 0;
   margin-right: auto;
-}
-
-.entete-joueur .pastille.pret {
-  background-color: #3ecf6a;
 }
 
 /* Annonce "Tu es J1 / J2" au tirage (5 s, cf. annoncerRole). */
