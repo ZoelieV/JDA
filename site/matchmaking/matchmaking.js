@@ -208,8 +208,11 @@ async function rendreSelecteurBox(cote) {
     const carte = document.createElement("button");
     carte.type = "button";
     carte.className = `ent-perso ${classeFondRarete(perso.rarete)}${etat.persos.has(perso.id) ? " coche" : ""}`;
-    carte.title = perso.nom;
-    carte.innerHTML = `<img src="../DB/${perso.image}" alt="" loading="lazy">`;
+    // Voyageur (un par élément) : élément en bas à gauche pour les distinguer.
+    const element = perso.groupe ? perso.element : null;
+    carte.title = element ? `${perso.nom} ${NOMS_ELEMENTS[element] || ""}`.trim() : perso.nom;
+    carte.innerHTML = `<img src="../DB/${perso.image}" alt="" loading="lazy">` +
+      (element ? `<img class="ent-element" src="../DB/images/others/${element}.webp" alt="${element}">` : "");
     carte.addEventListener("click", () => {
       if (etat.persos.has(perso.id)) etat.persos.delete(perso.id);
       else etat.persos.add(perso.id);

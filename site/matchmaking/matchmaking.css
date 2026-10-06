@@ -227,10 +227,26 @@
   filter: grayscale(70%);
 }
 
+.ent-perso {
+  position: relative;
+}
+
 .ent-perso img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Élément du Voyageur, en bas à gauche de la case. */
+.ent-perso img.ent-element {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  width: 40%;
+  height: 40%;
+  object-fit: contain;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 .ent-perso.coche {
