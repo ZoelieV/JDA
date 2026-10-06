@@ -23,6 +23,40 @@ function detecterTriche(draft, maintenant = Date.now()) {
   return somme > ecoule ? { duree_saisie: ecoule, somme_temps: somme } : null;
 }
 
+// Temps suspects (boss hebdomadaires, en secondes) : en dessous de "limite"
+// (meilleurs temps connus d'un joueur expérimenté) -> danger 1 ; en dessous
+// de "minimum" (meilleurs temps connus avec persos premium) -> danger 2. Le
+// match classé est alors transmis aux administrateurs (preuve vidéo), comme
+// une triche détectée. À ajuster si des équipes font régulièrement mieux.
+const TEMPS_SUSPECTS = {
+  signora_boss: { minimum: 37, limite: 37 },
+  raiden_boss: { minimum: 6, limite: 8 },
+  scara_boss: { minimum: 100, limite: 101 },
+  apep_boss: { minimum: 42, limite: 55 },
+  narwhal_boss: { minimum: 16, limite: 40 },
+  arle_boss: { minimum: 25, limite: 27 },
+  erode_boss: { minimum: 14, limite: 22 },
+  dottoreI_boss: { minimum: 21, limite: 38 },
+  dottoreII_boss: { minimum: 47, limite: 53 },
+  chess_boss: { minimum: 39, limite: 41 }
+};
+
+// -> null si aucun temps suspect, sinon { niveau (1 | 2, le plus haut),
+// j1, j2 : { secondes, niveau, limite, minimum } | null }.
+function detecterTempsSuspects(draft) {
+  const seuils = TEMPS_SUSPECTS[draft.boss_id];
+  if (!seuils) return null;
+  const suspicion = { niveau: 0, j1: null, j2: null };
+  ["j1", "j2"].forEach(role => {
+    const secondes = draft[`temps_${role}`]?.secondes;
+    if (typeof secondes !== "number" || secondes >= seuils.limite) return;
+    const niveau = secondes < seuils.minimum ? 2 : 1;
+    suspicion[role] = { secondes, niveau, ...seuils };
+    suspicion.niveau = Math.max(suspicion.niveau, niveau);
+  });
+  return suspicion.niveau ? suspicion : null;
+}
+
 // Fin d'une sanction (null = définitive) ; erreur si date de saison invalide.
 function finSanction(type, finSaison, maintenant = Date.now()) {
   if (type === "semaine") return new Date(maintenant + SEMAINE_MS).toISOString();
@@ -55,4 +89,4 @@ function messageBan(ban) {
   return `Tu es banni du mode classé jusqu'au ${new Date(ban.fin).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}.`;
 }
 
-module.exports = { SANCTIONS, detecterTriche, finSanction, banClasse, messageBan };
+module.exports = { SANCTIONS, TEMPS_SUSPECTS, detecterTriche, detecterTempsSuspects, finSanction, banClasse, messageBan };

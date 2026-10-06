@@ -19,7 +19,9 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 // à la republication pour un litige).
 // Renvoie l'id du match archivé (null si l'archivage a échoué).
 // triche : { duree_saisie, somme_temps } (anti-triche, cf. _lib/sanctions.js).
-async function archiverMatch(draft, { litige = false, classe = false, triche = null } = {}) {
+// suspicion : temps sous les meilleurs temps connus (cf.
+// detecterTempsSuspects, _lib/sanctions.js).
+async function archiverMatch(draft, { litige = false, classe = false, triche = null, suspicion = null } = {}) {
   // Liste du bonus de saison à jour (cache 30 s).
   await require("./personnages").actualiserPoints();
   // Picks figés avec les infos du joueur à la fin du match (constellation,
@@ -68,6 +70,7 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     // Raison donnée par le joueur qui a signalé le litige (sql/litiges_commentaire.sql).
     ...(litige && draft.litige_commentaire ? { litige_commentaire: draft.litige_commentaire } : {}),
     ...(triche ? { triche: true, duree_saisie: triche.duree_saisie, somme_temps: triche.somme_temps } : {}),
+    ...(suspicion ? { triche: true, suspicion } : {}),
     ...(classe ? {
       classe: true,
       // Persos de l'équipe avec le bonus de saison au moment du match (la
@@ -92,14 +95,17 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
   // absentes (sql/litiges.sql pas lancé) : nouvelle erreur, le litige n'est
   // pas archivé (jamais publié comme un match normal) ; idem pour un match
   // classé sans les colonnes classe / trophees (sql/classe.sql).
-  // Colonne saison absente (sql/saisons.sql pas lancé) : archivage sans
-  // elle seulement (match compté en saison 0).
-  if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { saison, ...sansSaison } = match;
-    ({ data, error } = await inserer(sansSaison));
+  // Colonnes récentes absentes (SQL pas lancé) : archivage sans elles
+  // seulement, une à une (suspicion : sql/temps_suspects.sql ; saison :
+  // sql/saisons.sql, match compté en saison 0).
+  let reduit = match;
+  for (const colonne of ["suspicion", "saison"]) {
+    if (!error || !COLONNES_INEXISTANTES.has(error.code)) break;
+    reduit = Object.fromEntries(Object.entries(reduit).filter(([cle]) => cle !== colonne));
+    ({ data, error } = await inserer(reduit));
   }
   if (error && COLONNES_INEXISTANTES.has(error.code)) {
-    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, triche, duree_saisie, somme_temps, litige_commentaire, saison, ...sansFacultatives } = match;
+    const { actions, theatre, mode_theatre, bonus_saison_j1, bonus_saison_j2, triche, duree_saisie, somme_temps, litige_commentaire, saison, suspicion, ...sansFacultatives } = match;
     ({ data, error } = await inserer(sansFacultatives));
   }
 

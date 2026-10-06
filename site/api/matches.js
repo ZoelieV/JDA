@@ -605,6 +605,8 @@ module.exports = async (req, res) => {
       // temps passé à saisir et somme des temps saisis (secondes).
       ...(admin && match.litige ? { litige: match.litige, litige_par: match.litige_par || null, litige_commentaire: match.litige_commentaire || null } : {}),
       ...(admin && match.triche ? { triche: { duree_saisie: match.duree_saisie ?? null, somme_temps: match.somme_temps ?? null } } : {}),
+      // Temps sous les meilleurs temps connus du boss (danger 1 ou 2).
+      ...(admin && match.suspicion ? { suspicion: match.suspicion } : {}),
       // Bouton Signaler (joueurs connectés) : match encore valide.
       signalable: estSignalable(match),
       ...deuxJoueurs(match)

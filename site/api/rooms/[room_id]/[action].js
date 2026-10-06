@@ -15,7 +15,7 @@ const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = r
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const { calculerEquilibrage } = require("../../_lib/boxes");
-const { detecterTriche } = require("../../_lib/sanctions");
+const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
 const {
   PHASES_PAUSABLES,
@@ -582,7 +582,10 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     // depuis l'affichage de la saisie = impossible -> match invalidé et
     // transmis aux administrateurs (cf. _lib/sanctions.js).
     const triche = classe ? detecterTriche(draft) : null;
-    if (triche) {
+    // Temps sous les meilleurs temps connus de ce boss : transmis aussi aux
+    // administrateurs (danger 1 ou 2, cf. TEMPS_SUSPECTS).
+    const suspicion = classe ? detecterTempsSuspects(draft) : null;
+    if (triche || suspicion) {
       draft.phase = "litige";
       draft.litige_par = null;
       draft.vainqueur = null;
@@ -592,7 +595,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
       // Manche réservée (écriture conditionnelle) avant d'être archivée :
       // une seule archive même si la confirmation arrive en double.
       await sauvegarderDraft(roomId, draft);
-      await archiverMatch(draft, { litige: true, classe, triche });
+      await archiverMatch(draft, { litige: true, classe, triche, suspicion });
       return repondreDraft(res, draft, joueur);
     }
 

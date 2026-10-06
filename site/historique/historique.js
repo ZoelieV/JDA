@@ -487,15 +487,23 @@ function htmlCorrectionLitige(match) {
   const champ = role => htmlChampTemps(match, role);
   // Anti-triche : temps passé à saisir et somme des temps saisis.
   const fmt = s => s == null ? "?" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const triche = match.triche
+  const triche = match.triche && match.triche.duree_saisie != null
     ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft">⚠️ Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
     : "";
+  // Temps sous les meilleurs temps connus du boss : danger 1 (sous le temps
+  // limite) ou 2 (sous le temps minimum), preuve vidéo à demander.
+  const suspects = ["j1", "j2"].filter(role => match.suspicion?.[role]).map(role => {
+    const s = match.suspicion[role];
+    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? "⚠️⚠️ Danger 2" : "⚠️ Danger 1"} : ` +
+      `${echapperHtml(match[role].nom)} en ${fmt(s.secondes)}, sous le temps ${s.niveau === 2 ? `minimum (${fmt(s.minimum)})` : `limite (${fmt(s.limite)})`}. Preuve vidéo à demander.</span>`;
+  }).join("");
   // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
   const sanction = htmlSanction;
   return `
     <span class="match-litige">${match.triche ? "Triche suspectée" : "Litige"} <span class="litige-par"></span></span>
     ${match.litige_commentaire ? `<p class="commentaire-litige-historique"></p>` : ""}
     ${triche}
+    ${suspects}
     <form class="correction-litige">
       ${champ("j1")}
       ${champ("j2")}
