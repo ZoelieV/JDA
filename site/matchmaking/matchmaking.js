@@ -70,13 +70,18 @@ function remplirSelectBoss(select, liste) {
   });
 }
 
+const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll"];
+
 // Room privée / en équipe : liste des boss, remplie à la 1re ouverture.
 const selectsBossCharges = new Set();
 async function remplirBossRoom(idSelect = "room-boss") {
   if (selectsBossCharges.has(idSelect)) return;
   selectsBossCharges.add(idSelect);
   try {
-    remplirSelectBoss(document.getElementById(idSelect), await chargerBoss());
+    const liste = await chargerBoss();
+    // En équipe : sans les boss pas faisables en co-op (cf. BOSS_HORS_COOP,
+    // api/_lib/equipe.js).
+    remplirSelectBoss(document.getElementById(idSelect), idSelect === "equipe-boss" ? liste.filter(b => !BOSS_HORS_COOP.includes(b.id)) : liste);
   } catch (erreur) {
     console.error(erreur);
     selectsBossCharges.delete(idSelect);

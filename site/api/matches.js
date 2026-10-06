@@ -388,8 +388,7 @@ async function chargerMatchsStats() {
     lignes.push(...(data || []));
     if (!data || data.length < TAILLE_PAGE_STATS) break;
   }
-  // Matchs d'équipe : à part (temps d'équipe pas comparables aux records 1v1).
-  return lignes.filter(match => !match.entrainement && !match.mode_equipe && !["ouvert", "traite", "invalide"].includes(match.litige));
+  return lignes.filter(match => !match.entrainement && !["ouvert", "traite", "invalide"].includes(match.litige));
 }
 
 // Personnages pick / bannis / bannis à l'équilibrage dans un match (chacun
@@ -413,8 +412,11 @@ function persosDuMatch(match) {
   };
 }
 
-async function statistiques(res, saison = null) {
-  const matchs = (await chargerMatchsStats()).filter(match => saison === null || saisonDuMatch(match) === saison);
+// equipe : matchs en équipe seulement (sinon matchs 1v1 seulement : temps
+// d'équipe pas comparables aux records 1v1).
+async function statistiques(res, saison = null, equipe = false) {
+  const matchs = (await chargerMatchsStats()).filter(match =>
+    (saison === null || saisonDuMatch(match) === saison) && !!match.mode_equipe === equipe);
   const nouvelleCategorie = () => ({ matchs: 0, matchs_bans: 0, picks: {}, bans: {}, bans_equilibrage: {} });
   const categories = { classe: nouvelleCategorie(), non_classe: nouvelleCategorie() };
   // Records : { boss_id: { classe: { match, role }, non_classe: ... } }.
@@ -455,6 +457,8 @@ async function statistiques(res, saison = null) {
     const adversaire = profils[role === "j1" ? "j2" : "j1"];
     return {
       match_id: match.id ?? null,
+      // Match en équipe : joueurs de l'équipe du record.
+      ...(match.mode_equipe ? { membres: (match.equipes?.[role]?.membres || []).map(m => m.nom) } : {}),
       date: match.created_at || null,
       mode_theatre: match.mode_theatre ?? null,
       joueur: { discord_id, nom, avatar, banniere2, theatre, parametres, temps, equipe },
@@ -524,7 +528,8 @@ module.exports = async (req, res) => {
     try {
       // ?saison=N : matchs de cette saison seulement (sinon toutes).
       const saison = /^\d+$/.test(String(req.query.saison ?? "")) ? Number(req.query.saison) : null;
-      return await statistiques(res, saison);
+      // ?equipe=1 : matchs en équipe (2v2, 3v3, 4v4).
+      return await statistiques(res, saison, req.query.equipe === "1");
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Erreur calcul des statistiques" });
@@ -570,12 +575,34 @@ module.exports = async (req, res) => {
     const ids = [...new Set([
       ...[...matchs, ...enCours, ...litiges, ...entrainements, ...signalements.matchs].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
       ...statsLitiges.map(s => s.discord_id),
+      // Joueurs des matchs en équipe (bannières de chacun).
+      ...matchs.flatMap(m => m.mode_equipe ? ["j1", "j2"].flatMap(r => (m.equipes?.[r]?.membres || []).map(x => x.discord_id)) : []),
       ...[...signalements.parMatch.values()].flat().map(s => s.discord_id)
     ].filter(Boolean))];
     const joueurs = await chargerJoueurs(ids);
     const deuxJoueurs = match => {
       const profils = { j1: joueurs.get(match.player1_discord_id), j2: joueurs.get(match.player2_discord_id) };
       return { j1: resumerJoueur(match, "j1", profils), j2: resumerJoueur(match, "j2", profils) };
+    };
+
+    // Équipe d'un match en équipe : chaque joueur avec sa bannière actuelle
+    // (chef, hôte).
+    const resumerEquipe = (match, role) => {
+      const equipe = match.equipes?.[role];
+      if (!equipe) return null;
+      return {
+        chef: equipe.chef || null,
+        hote: equipe.hote || null,
+        membres: (equipe.membres || []).map(m => {
+          const profil = joueurs.get(m.discord_id);
+          return {
+            discord_id: m.discord_id,
+            nom: profil?.discord_global_name || profil?.discord_username || m.nom || "Joueur",
+            avatar: profil?.discord_avatar_url || m.avatar || null,
+            banniere2: profil?.data?.parametres?.banniere2 || BANNIERE2_DEFAUT
+          };
+        })
+      };
     };
 
     const resumerMatch = (match, index) => ({
@@ -593,7 +620,7 @@ module.exports = async (req, res) => {
       saison: saisonDuMatch(match),
       // Match d'équipe (2v2, 3v3, 4v4) : joueurs de chaque équipe (chef,
       // hôte), cf. _lib/equipe.js.
-      equipe: match.mode_equipe ? { mode: match.mode_equipe, j1: match.equipes?.j1 || null, j2: match.equipes?.j2 || null } : null,
+      equipe: match.mode_equipe ? { mode: match.mode_equipe, j1: resumerEquipe(match, "j1"), j2: resumerEquipe(match, "j2") } : null,
       trophees: match.classe ? match.trophees ?? null : null,
       // { j1, j2, bonus } : trophées gagnés (+) / perdus (−) par chaque joueur.
       trophees_joueurs: match.classe ? deltasClasse.get(String(match.id)) || null : null,

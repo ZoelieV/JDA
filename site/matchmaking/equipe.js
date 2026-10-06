@@ -15,6 +15,8 @@ let draft = null;
 let decalageServeur = 0; // heure du serveur - heure de l'appareil (ms)
 let personnagesParId = new Map(); // ids des comptes (Voyageur par élément)
 let personnagesDraftParId = new Map(); // ids de la draft (Voyageur regroupé)
+let armesParId = new Map();
+let vueVitrines = "persos"; // "persos" | "armes"
 let bossParId = new Map();
 let selection = null; // { perso_id, element } choisi dans les vitrines
 let derniereCle = "";
@@ -306,8 +308,37 @@ function estCliquable(role, entree) {
   return action.type === "ban" || role === monCamp();
 }
 
+// Vitrines d'armes (pour info, pas draftées) : raffinement de chaque copie.
+function htmlVitrineArmes(id, role) {
+  const armes = Object.entries(draft.vitrines?.[id]?.armes || {});
+  if (!armes.length) return `<p class="aide-equipe">Aucune arme dans la vitrine.</p>`;
+  return `<div class="grille-vitrine">${armes.map(([instance, raffinement]) => {
+    const arme = armesParId.get(instance.split("#")[0]);
+    return `
+      <div class="character-card carte-vitrine" title="${echapperHtml(arme?.nom || instance)}">
+        <div class="character-visuel ${classeFondRarete(arme?.rarete)}">
+          <img src="../DB/${arme?.image || ""}" alt="${echapperHtml(arme?.nom || instance)}" loading="lazy" decoding="async">
+          <span class="character-constellation constellation-${role}">R${raffinement + 1}</span>
+        </div>
+      </div>`;
+  }).join("")}</div>`;
+}
+
 function rendreVitrines() {
   const enDraft = draft.phase === "draft";
+  document.querySelectorAll("#choix-vue-vitrines [data-vue]").forEach(bouton => {
+    bouton.classList.toggle("actif", bouton.dataset.vue === vueVitrines);
+  });
+  if (vueVitrines === "armes") {
+    ROLES.forEach(role => {
+      $(`vitrines-${role}`).innerHTML = draft.equipes[role].map(id => `
+        <div class="vitrine-joueur">
+          <h4 class="nom-vitrine camp-${role}">${htmlNom(id)}${badgesJoueur(id, role)}</h4>
+          ${htmlVitrineArmes(id, role)}
+        </div>`).join("");
+    });
+    return;
+  }
   ROLES.forEach(role => {
     const zone = $(`vitrines-${role}`);
     zone.innerHTML = draft.equipes[role].map(id => {
@@ -340,6 +371,12 @@ function rendreVitrines() {
 
 // Clic sur une carte de vitrine : sélection (puis Confirmer).
 function initialiserVitrines() {
+  document.querySelectorAll("#choix-vue-vitrines [data-vue]").forEach(bouton => {
+    bouton.addEventListener("click", () => {
+      vueVitrines = bouton.dataset.vue;
+      rendreVitrines();
+    });
+  });
   $("vitrines").addEventListener("click", event => {
     const carte = event.target.closest(".carte-vitrine.selectionnable");
     if (!carte) return;
@@ -706,9 +743,21 @@ function initialiserBoutons() {
   });
 }
 
+// Nombre de spectateurs (joueurs seulement), en bas à gauche.
+function afficherSpectateurs(nombre) {
+  const indicateur = $("indicateur-spectateurs");
+  const visible = Number.isInteger(nombre) && nombre > 0;
+  indicateur.classList.toggle("cache", !visible);
+  if (visible) {
+    indicateur.textContent = `👁 ${nombre}`;
+    indicateur.title = `${nombre} spectateur${nombre > 1 ? "s" : ""}`;
+  }
+}
+
 async function rafraichir() {
   try {
     const data = await appel("equipe_etat");
+    afficherSpectateurs(data.nb_spectateurs);
     definirDraft(data.draft);
   } catch (erreur) {
     console.error(erreur);
@@ -733,7 +782,8 @@ async function demarrer() {
     return;
   }
 
-  const [personnages, boss] = await Promise.all([chargerPersonnages(), chargerBoss(), chargerFondsBoss()]);
+  const [personnages, boss, armes] = await Promise.all([chargerPersonnages(), chargerBoss(), chargerArmes(), chargerFondsBoss()]);
+  armesParId = new Map(armes.map(a => [a.id, a]));
   personnagesParId = new Map(personnages.map(p => [p.id, p]));
   personnagesDraftParId = new Map(regrouperPourDraft(personnages).map(p => [p.id, p]));
   bossParId = new Map(boss.map(b => [b.id, b]));

@@ -3,6 +3,7 @@
 // bans et ses bans d'équilibrage ; boss et date au centre.
 
 let matchs = [];     // terminés
+let matchsEquipe = []; // terminés en équipe (2v2, 3v3, 4v4)
 let matchsEnCours = [];
 let litiges = [];      // administrateurs : matchs invalidés par un litige
 let statsLitiges = []; // administrateurs : litiges par joueur
@@ -107,6 +108,7 @@ function texteRecherche(match) {
     const noms = ids => ids.map(id => personnagesParId.get(id)?.nom || id);
     match.texte = [
       match.j1.nom, match.j2.nom, bossParId.get(match.boss_id)?.nom || match.boss_id,
+      ...["j1", "j2"].flatMap(role => (match.equipe?.[role]?.membres || []).map(m => m.nom)),
       ...[match.j1, match.j2].flatMap(j => noms(j.equipe.map(p => p.id)))
     ].join(" ").toLowerCase();
   }
@@ -121,17 +123,24 @@ function trisActifs() {
   return tris;
 }
 
-function matchsAffiches() {
+// Joueur dans ce match (les 2 joueurs, ou tous ceux des 2 équipes).
+function joueDans(match, discordId) {
+  if (match.equipe) return ["j1", "j2"].some(role => (match.equipe[role]?.membres || []).some(m => m.discord_id === discordId));
+  return match.j1.discord_id === discordId || match.j2.discord_id === discordId;
+}
+
+// source : matchs 1v1 (onglet Matchs) ou en équipe (onglet Matchs en équipe).
+function matchsAffiches(source = matchs) {
   const recherche = document.getElementById("recherche").value.trim().toLowerCase();
   // Temps précis : matchs où l'un des 2 joueurs a fait exactement ce temps.
   const temps = tempsRecherche(recherche);
   const tris = trisActifs();
-  return matchs
+  return source
     .filter(match => !bossFiltre || match.boss_id === bossFiltre)
     .filter(match => !categorieBossFiltre || bossDansCategorie(match.boss_id, categorieBossFiltre))
     .filter(match => !temps || match.j1.temps?.affiche === temps || match.j2.temps?.affiche === temps)
-    .filter(match => !mesMatchsSeulement || match.j1.discord_id === moiDiscordId || match.j2.discord_id === moiDiscordId)
-    .filter(match => !classesSeulement || match.classe)
+    .filter(match => !mesMatchsSeulement || joueDans(match, moiDiscordId))
+    .filter(match => !classesSeulement || match.classe || source === matchsEquipe)
     .filter(match => saisonFiltre === "" || match.saison === Number(saisonFiltre))
     .filter(match => temps || !recherche || texteRecherche(match).includes(recherche))
     .map((match, index) => ({ match, index, v: tris.map(t => valeurTri(match, t.cle)) }))
@@ -175,7 +184,7 @@ function mettreAJourBoutons() {
 // web. Choix gardé sur cet appareil. ----
 const CHOIX_PAR_PAGE = ["10", "20", "50", "tout"];
 const CLE_PAR_PAGE = "historique-matchs-par-page";
-const pages = { matchs: 1, entrainements: 1, litiges: 1, signalements: 1 };
+const pages = { matchs: 1, equipe: 1, entrainements: 1, litiges: 1, signalements: 1 };
 
 function lireParPage() {
   try {
@@ -328,17 +337,29 @@ function htmlJoueur(match, role, bansConnus) {
   const bans = joueur.bans.map(htmlBan).join("");
   const equilibrage = joueur.bans_equilibrage.map(htmlBan).join("");
 
-  return `
-    <div class="match-joueur match-${role}${gagnant ? " gagnant" : egalite ? " egalite" : ""}">
-      <div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
+  // Match en équipe : bannière de chaque joueur (★ chef), puis résultat et
+  // temps de l'équipe ; sinon la bannière du joueur avec son temps.
+  const bannieres = match.equipe
+    ? `<div class="bannieres-equipe">${membres.map(m => `
+        <div class="match-banniere banniere-joueur banniere-membre${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`../DB/images/${m.banniere2}`))}&quot;)">
+          ${m.avatar ? `<img class="match-avatar photo-joueur" src="${echapperHtml(m.avatar)}" alt="">` : ""}
+          <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
+          ${m.discord_id === match.equipe[role]?.chef ? `<span class="etiquette-resultat chef-equipe" title="Chef de l'équipe">★ Chef</span>` : ""}
+        </div>`).join("")}
+      </div>
+      <div class="resultat-equipe">${etiquette}<span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span></div>`
+    : `<div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
         ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
         <span class="match-nom"></span>
         ${htmlMedailleTheatre(joueur.theatre)}
         ${etiquette}
         ${trophees}
         <span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span>
-      </div>
-      ${match.equipe ? `<p class="match-membres"></p>` : ""}
+      </div>`;
+
+  return `
+    <div class="match-joueur match-${role}${gagnant ? " gagnant" : egalite ? " egalite" : ""}">
+      ${bannieres}
       ${htmlLigne("Équipe", equipe)}
       ${bansConnus ? htmlLigne("Bans", bans, "ligne-bans") : ""}
       ${htmlLigne("Équilibrage", equilibrage, "ligne-bans")}
@@ -399,15 +420,16 @@ function creerLigneMatch(match) {
     ${htmlJoueur(match, "j2", enCours || match.bans_connus)}
   `;
   // Pseudos en texte (pas d'HTML venant des comptes).
-  ligne.querySelector(".match-j1 .match-nom").textContent = match.j1.nom;
-  ligne.querySelector(".match-j2 .match-nom").textContent = match.j2.nom;
-  // Match d'équipe : bannière du chef, puis les joueurs de l'équipe (★ chef).
   if (match.equipe) {
     ["j1", "j2"].forEach(role => {
-      const equipe = match.equipe[role];
-      const zone = ligne.querySelector(`.match-${role} .match-membres`);
-      if (zone && equipe) zone.textContent = equipe.membres.map(m => `${m.nom}${m.discord_id === equipe.chef ? " ★" : ""}`).join(" · ");
+      (match.equipe[role]?.membres || []).forEach(m => {
+        const nom = ligne.querySelector(`.match-${role} .match-nom[data-membre="${CSS.escape(m.discord_id)}"]`);
+        if (nom) nom.textContent = m.nom;
+      });
     });
+  } else {
+    ligne.querySelector(".match-j1 .match-nom").textContent = match.j1.nom;
+    ligne.querySelector(".match-j2 .match-nom").textContent = match.j2.nom;
   }
   if (match.litige === "ouvert") brancherCorrectionLitige(ligne, match);
   if (match.signalements) brancherTraitementSignalement(ligne, match);
@@ -429,11 +451,26 @@ function afficherMatchs() {
   liste.replaceChildren(...paginer("matchs", affiches, afficherMatchs)
     .map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
   terminerRendu(liste);
+  afficherMatchsEquipe();
+}
+
+// Onglet Matchs en équipe : mêmes filtres que l'onglet Matchs.
+function afficherMatchsEquipe() {
+  const liste = document.getElementById("liste-equipe");
+  const affiches = matchsAffiches(matchsEquipe);
+  const etat = document.getElementById("etat-equipe");
+  etat.textContent = matchsEquipe.length === 0 ? "Aucun match en équipe joué pour l'instant."
+    : affiches.length === 0 ? "Aucun match trouvé." : "";
+  etat.classList.toggle("cache", !etat.textContent);
+  liste.replaceChildren(...paginer("equipe", affiches, afficherMatchsEquipe)
+    .map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
+  terminerRendu(liste);
 }
 
 // Filtres, recherche ou tris changés : retour à la 1re page.
 function afficherMatchsDepuisPage1() {
   pages.matchs = 1;
+  pages.equipe = 1;
   afficherMatchs();
 }
 
@@ -856,7 +893,9 @@ function appliquerHistorique(historique) {
   etatSignalement = historique.signalement
     ? { ...historique.signalement, signales: new Set(historique.signalement.signales || []) }
     : null;
-  matchs = historique.termines || [];
+  // Matchs 1v1 et matchs en équipe : onglets séparés.
+  matchs = (historique.termines || []).filter(match => !match.equipe);
+  matchsEquipe = (historique.termines || []).filter(match => match.equipe);
   matchsEnCours = historique.en_cours || [];
   litiges = historique.litiges || [];
   statsLitiges = historique.stats_litiges || [];
@@ -872,7 +911,7 @@ const CLE_ONGLET = "historique-onglet";
 let onglet = "matchs";
 
 function ongletDisponible(nom) {
-  return nom === "matchs" || nom === "stats" ||
+  return nom === "matchs" || nom === "equipe" || nom === "stats" ||
     (nom === "litiges" && estAdmin) || (nom === "entrainements" && !!moiDiscordId);
 }
 
@@ -895,8 +934,10 @@ function choisirOnglet(nouveau) {
   // sur les autres listes ; rien sur Statistiques.
   document.querySelector(".barre-historique").classList.toggle("cache", onglet === "stats");
   document.querySelectorAll(".filtre-matchs").forEach(element => {
-    element.classList.toggle("masque-onglet", onglet !== "matchs");
+    element.classList.toggle("masque-onglet", onglet !== "matchs" && onglet !== "equipe");
   });
+  // Pas de classé en équipe : bouton Classés sur l'onglet Matchs seulement.
+  document.getElementById("matchs-classes").classList.toggle("masque-onglet", onglet !== "matchs");
   if (onglet === "stats") ouvrirStatistiques();
 }
 
@@ -911,7 +952,8 @@ function initialiserOnglets() {
   } catch {
     // Stockage indisponible : onglet Matchs.
   }
-  choisirOnglet(enregistre || "matchs");
+  // Lien vers un onglet précis (?onglet=equipe), sinon le dernier ouvert.
+  choisirOnglet(new URLSearchParams(window.location.search).get("onglet") || enregistre || "matchs");
 }
 
 // ---- Statistiques : persos les plus pick / bannis et records par boss
@@ -924,14 +966,19 @@ let chargementStats = null;
 let saisonStats = null;
 const cacheStats = new Map();
 let categorieStats = "tous"; // "tous" | "classe" | "non_classe"
+// Matchs comptés : 1v1 ou en équipe (2v2, 3v3, 4v4), séparés.
+let modeStats = "1v1"; // "1v1" | "equipe"
 const listesDepliees = new Set();
 
 async function ouvrirStatistiques() {
   if (statistiques || chargementStats) return;
   const etat = document.getElementById("etat-stats");
   const saison = saisonStats ?? "";
-  if (cacheStats.has(saison)) {
-    statistiques = cacheStats.get(saison);
+  const cle = `${saison}|${modeStats}`;
+  // Classés / non classés : matchs 1v1 seulement (pas de classé en équipe).
+  document.querySelector(".entete-stats .filtre-stats").classList.toggle("cache", modeStats === "equipe");
+  if (cacheStats.has(cle)) {
+    statistiques = cacheStats.get(cle);
     etat.classList.add("cache");
     document.getElementById("contenu-stats").classList.remove("cache");
     afficherClassementsPersos();
@@ -941,14 +988,14 @@ async function ouvrirStatistiques() {
   etat.textContent = "Chargement…";
   etat.classList.remove("cache");
   document.getElementById("contenu-stats").classList.add("cache");
-  chargementStats = fetch(`/api/matches?stats=1${saison === "" ? "" : `&saison=${encodeURIComponent(saison)}`}`, { credentials: "include" })
+  chargementStats = fetch(`/api/matches?stats=1${saison === "" ? "" : `&saison=${encodeURIComponent(saison)}`}${modeStats === "equipe" ? "&equipe=1" : ""}`, { credentials: "include" })
     .then(async reponse => {
       if (!reponse.ok) throw new Error("Impossible de charger les statistiques.");
       const donnees = await reponse.json();
-      cacheStats.set(saison, donnees);
+      cacheStats.set(cle, donnees);
       chargementStats = null;
-      // Autre saison choisie pendant le chargement : celle-là.
-      if (saison !== (saisonStats ?? "")) return ouvrirStatistiques();
+      // Autre saison / mode choisi pendant le chargement : celui-là.
+      if (cle !== `${saisonStats ?? ""}|${modeStats}`) return ouvrirStatistiques();
       statistiques = donnees;
       etat.classList.add("cache");
       document.getElementById("contenu-stats").classList.remove("cache");
@@ -1044,11 +1091,14 @@ function creerRecord(record, titre) {
       ${htmlMedailleTheatre(joueur.theatre)}
       <span class="match-temps record-temps">${joueur.temps.affiche}</span>
     </div>
+    ${record.membres ? `<p class="record-membres"></p>` : ""}
     <div class="match-persos">${equipe}</div>
-    <span class="match-date">${formaterDate(record.date)}${record.adversaire ? ` · contre ${htmlPseudo(record.adversaire)}` : ""}</span>
+    <span class="match-date">${formaterDate(record.date)}${record.adversaire ? ` · contre ${record.membres ? "l'équipe de " : ""}${htmlPseudo(record.adversaire)}` : ""}</span>
   `;
-  // Pseudo en texte (pas d'HTML venant des comptes).
+  // Pseudo en texte (pas d'HTML venant des comptes) ; match en équipe :
+  // bannière du chef, puis tous les joueurs de l'équipe.
   carte.querySelector(".match-nom").textContent = joueur.nom;
+  if (record.membres) carte.querySelector(".record-membres").textContent = record.membres.join(" · ");
   return carte;
 }
 
@@ -1099,6 +1149,11 @@ function afficherRecords() {
           ${htmlImagesBoss(boss, `class="match-boss" loading="lazy"`)}
           <span class="match-boss-nom">${echapperHtml(boss.nom)}</span>
         </div>`;
+      // En équipe : pas de classé, un seul record par boss.
+      if (modeStats === "equipe") {
+        ligne.append(creerRecord(records.non_classe, "Meilleure équipe"));
+        return ligne;
+      }
       ligne.append(creerRecord(records.non_classe, "Non classé"), creerRecord(records.classe, `Classé ${ICONE_TROPHEE}`));
       ligne.querySelector(".record-boss:last-child").classList.add("classe");
       return ligne;
@@ -1122,6 +1177,17 @@ function initialiserSaisonStats() {
     saisonStats = select.value;
     statistiques = null;
     ouvrirStatistiques();
+  });
+
+  document.querySelectorAll(".mode-stats-bouton").forEach(bouton => {
+    bouton.addEventListener("click", () => {
+      modeStats = bouton.dataset.mode;
+      document.querySelectorAll(".mode-stats-bouton").forEach(b => b.classList.toggle("active", b === bouton));
+      if (modeStats === "equipe") categorieStats = "tous";
+      document.querySelectorAll(".filtre-stats-bouton").forEach(b => b.classList.toggle("active", b.dataset.categorie === categorieStats));
+      statistiques = null;
+      ouvrirStatistiques();
+    });
   });
 }
 

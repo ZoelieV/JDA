@@ -199,6 +199,18 @@
   min-width: 0;
 }
 
+/* Persos / Armes : vitrines affichées. */
+.choix-vue-vitrines {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.choix-vue-vitrines .btn-equipe.petit {
+  margin-left: 0;
+}
+
 /* Centre coupé en deux : équipe 1 à gauche, équipe 2 à droite. */
 .vitrines-equipes {
   display: grid;

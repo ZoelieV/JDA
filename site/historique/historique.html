@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=37">
+<link rel="stylesheet" href="historique.css?v=38">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
@@ -23,6 +23,7 @@
     <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="litiges">Litiges<span id="sous-titre-litiges">administrateurs</span></button>
     <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="entrainements">Mes entraînements<span>visibles par toi seul</span></button>
     <button type="button" class="onglet-historique active" role="tab" aria-selected="true" data-onglet="matchs">Matchs<span>en cours et terminés</span></button>
+    <button type="button" class="onglet-historique" role="tab" aria-selected="false" data-onglet="equipe">Matchs en équipe<span>2v2, 3v3 et 4v4</span></button>
     <button type="button" class="onglet-historique" role="tab" aria-selected="false" data-onglet="stats">Statistiques<span>picks, bans et records</span></button>
   </div>
 
@@ -122,11 +123,26 @@
     </section>
   </div>
 
+  <!-- Matchs en équipe : bannières de tous les joueurs (cf. creerLigneMatch). -->
+  <div class="panneau-historique cache" data-panneau="equipe">
+    <section class="section-matchs">
+      <h2 class="titre-section">Matchs en équipe terminés</h2>
+      <p id="etat-equipe" class="etat-historique"></p>
+      <div id="liste-equipe" class="liste-matchs"></div>
+      <nav id="pages-equipe" class="pagination cache" aria-label="Pages des matchs en équipe"></nav>
+    </section>
+  </div>
+
   <!-- Statistiques (chargées à la 1re ouverture de l'onglet) : tous les
        matchs comptés, ni entraînements ni matchs invalidés par un litige. -->
   <div class="panneau-historique cache" data-panneau="stats">
     <!-- Saison des statistiques (saison en cours par défaut). -->
     <div class="barre-saison-stats">
+      <!-- Matchs 1v1 ou en équipe : statistiques séparées. -->
+      <div class="filtre-stats" role="group" aria-label="Type de matchs">
+        <button type="button" class="bouton-historique mode-stats-bouton active" data-mode="1v1">Matchs 1v1</button>
+        <button type="button" class="bouton-historique mode-stats-bouton" data-mode="equipe">Matchs en équipe</button>
+      </div>
       <select id="saison-stats" class="filtre-boss-historique" title="Saison des statistiques" aria-label="Saison des statistiques">
         <option value="">Toutes les saisons</option>
       </select>
@@ -191,6 +207,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=13"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=43"></script>
+  <script src="historique.js?v=45"></script>
 </body>
 </html>

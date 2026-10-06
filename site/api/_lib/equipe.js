@@ -53,6 +53,13 @@ const PHASES_EN_COURS = ["chefs", "hotes", "draft", "declaration", "temps", "ver
 const PHASES_FINIES = ["termine", "litige", "annule"];
 const TEMPS_MASQUE = { affiche: null, secondes: null, masque: true };
 const MODES = { 2: "2v2", 3: "3v3", 4: "4v4" };
+// Boss pas faisables en co-op : jamais tirés ni imposés en équipe.
+const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll"];
+// Spectateurs (colonne rooms.spectateurs, comme le 1v1) : présents s'ils ont
+// lu l'état il y a moins de PRESENCE_SPECTATEUR_MS ; réécrit au plus toutes
+// les ECRITURE_SPECTATEUR_MS.
+const PRESENCE_SPECTATEUR_MS = 30 * 1000;
+const ECRITURE_SPECTATEUR_MS = 10 * 1000;
 
 const auHasard = liste => liste[Math.floor(Math.random() * liste.length)];
 
@@ -103,7 +110,7 @@ function infosProfil(profil) {
 async function chargerRoom(roomId) {
   const { data: room, error } = await supabase
     .from("rooms")
-    .select("room_id, type, player1_discord_id, draft, last_active_at")
+    .select("room_id, type, player1_discord_id, draft, last_active_at, spectateurs")
     .eq("room_id", roomId)
     .maybeSingle();
   if (error) throw error;
@@ -342,7 +349,7 @@ function echangerEquipes(draft) {
 async function lancerDraft(draft, { revanche = false } = {}) {
   if (!revanche) resoudreHotesEtLegendes(draft);
   const tous = [...draft.equipes.j1, ...draft.equipes.j2];
-  const exclus = [...await legendesTueesAujourdhui(tous), ...(draft.legendes ? [] : idsLegendesLocales())];
+  const exclus = [...await legendesTueesAujourdhui(tous), ...(draft.legendes ? [] : idsLegendesLocales()), ...BOSS_HORS_COOP];
   const impose = draft.boss_impose && getBossParId(draft.boss_impose) && !exclus.includes(draft.boss_impose) ? draft.boss_impose : null;
   draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus })?.id || null;
 
@@ -536,6 +543,7 @@ async function preparerCreation(body, user) {
   const formation = FORMATIONS.includes(body?.formation) ? body.formation : "aleatoire";
   const bossImpose = body?.boss_id ? String(body.boss_id) : null;
   if (bossImpose && !getBossParId(bossImpose)) return { erreur: "Boss inconnu" };
+  if (BOSS_HORS_COOP.includes(bossImpose)) return { erreur: "Ce boss n'est pas faisable en co-op." };
 
   await actualiserPoints();
   const profils = await lireProfils([user.id]);
@@ -562,11 +570,26 @@ async function routeEtat(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
   if (await avancerSelonTemps(draft)) await sauvegarder(roomId, draft);
+  const maintenant = Date.now();
+  const membre = draft.membres.includes(user.id);
+  const colonnes = {};
   // Activité de la room (nettoyage des rooms inactives) : au plus 1 fois par minute.
-  if (!room.last_active_at || Date.now() - Date.parse(room.last_active_at) > 60 * 1000) {
-    await supabase.from("rooms").update({ last_active_at: new Date().toISOString() }).eq("room_id", roomId);
+  if (!room.last_active_at || maintenant - Date.parse(room.last_active_at) > 60 * 1000) {
+    colonnes.last_active_at = new Date(maintenant).toISOString();
   }
-  return repondre(res, draft, user.id, { room_id: roomId });
+  // Spectateur : présence notée (seulement cette colonne, jamais la draft).
+  const presents = Object.entries(room.spectateurs || {})
+    .filter(([id, vu]) => !draft.membres.includes(id) && maintenant - Number(vu) < PRESENCE_SPECTATEUR_MS);
+  if (!membre && maintenant - Number(room.spectateurs?.[user.id] || 0) >= ECRITURE_SPECTATEUR_MS) {
+    colonnes.spectateurs = Object.fromEntries([...presents.filter(([id]) => id !== user.id), [user.id, maintenant]]);
+  }
+  if (Object.keys(colonnes).length) {
+    const { error } = await supabase.from("rooms").update(colonnes).eq("room_id", roomId);
+    if (error) console.error("Erreur activité / spectateurs :", error);
+  }
+  const nbSpectateurs = new Set([...presents.map(([id]) => id), ...(membre ? [] : [user.id])]).size;
+  // Nombre de spectateurs : pour les joueurs (indicateur 👁).
+  return repondre(res, draft, user.id, { room_id: roomId, ...(membre ? { nb_spectateurs: nbSpectateurs } : {}) });
 }
 
 async function routeRejoindre(req, res, roomId, user) {

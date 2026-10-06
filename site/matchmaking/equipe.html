@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="match.css?v=rem49">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
-<link rel="stylesheet" href="equipe.css?v=5">
+<link rel="stylesheet" href="equipe.css?v=6">
 <script src="/commun/zoom.js?v=2"></script>
 </head>
 <body>
@@ -23,6 +23,9 @@
 <p id="info-hotes" class="info-hotes cache"></p>
 
 <div id="chargement" class="bandeau-info">Chargement…</div>
+
+<!-- Joueurs seulement : nombre de spectateurs (bas à gauche). -->
+<div id="indicateur-spectateurs" class="indicateur-spectateurs cache" aria-live="polite"></div>
 
 <!-- ---- Lobby ---- -->
 <section id="phase-lobby" class="phase-equipe cache">
@@ -61,6 +64,11 @@
       <!-- Fin de draft : déclaration (qui joue quoi), temps, résultat. -->
       <div id="zone-declaration" class="zone-centre cache"></div>
       <div id="zone-temps" class="zone-centre cache"></div>
+      <!-- Vitrines affichées : persos (draft) ou armes (pour info). -->
+      <div id="choix-vue-vitrines" class="choix-vue-vitrines">
+        <button type="button" class="btn-equipe petit actif" data-vue="persos">Persos</button>
+        <button type="button" class="btn-equipe petit" data-vue="armes">Armes</button>
+      </div>
       <!-- Vitrines des 2 équipes, sans mélange : équipe 1 à gauche, équipe 2
            à droite, une vitrine par joueur (12 persos, 3 lignes de 4). -->
       <div id="vitrines" class="vitrines-equipes">
@@ -132,6 +140,6 @@
 <script src="/commun/variantes.js?v=4"></script>
 <script src="/commun/cartes.js?v=13"></script>
 <script src="/commun/tri.js?v=16"></script>
-<script src="equipe.js?v=3"></script>
+<script src="equipe.js?v=4"></script>
 </body>
 </html>
