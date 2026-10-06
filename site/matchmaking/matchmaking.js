@@ -35,12 +35,15 @@ async function creerMatch(corps) {
     }
 
     if (!reponse.ok) {
-      throw new Error("Échec de la création du match.");
+      const { error } = await reponse.json().catch(() => ({}));
+      alert(error || "Échec de la création du match.");
+      return;
     }
 
     const data = await reponse.json();
 
-    window.location.href = `match.html?room=${data.room_id}`;
+    // Mode en équipe : page du lobby d'équipe.
+    window.location.href = `${data.equipe ? "equipe" : "match"}.html?room=${data.room_id}`;
   } catch (error) {
     console.error(error);
     alert("Erreur lors de la création du match.");
@@ -67,16 +70,16 @@ function remplirSelectBoss(select, liste) {
   });
 }
 
-// Room privée : liste des boss, remplie à la 1re ouverture.
-let bossRoomCharges = false;
-async function remplirBossRoom() {
-  if (bossRoomCharges) return;
-  bossRoomCharges = true;
+// Room privée / en équipe : liste des boss, remplie à la 1re ouverture.
+const selectsBossCharges = new Set();
+async function remplirBossRoom(idSelect = "room-boss") {
+  if (selectsBossCharges.has(idSelect)) return;
+  selectsBossCharges.add(idSelect);
   try {
-    remplirSelectBoss(document.getElementById("room-boss"), await chargerBoss());
+    remplirSelectBoss(document.getElementById(idSelect), await chargerBoss());
   } catch (erreur) {
     console.error(erreur);
-    bossRoomCharges = false;
+    selectsBossCharges.delete(idSelect);
   }
 }
 
@@ -86,6 +89,15 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
   bouton.addEventListener("click", () => {
     const type = bouton.closest(".modes-match").dataset.type;
     const mode = bouton.dataset.mode;
+    if (type === "equipe") {
+      creerMatch({
+        type,
+        taille: Number(bouton.dataset.taille),
+        formation: document.getElementById("equipe-formation").value,
+        boss_id: document.getElementById("equipe-boss").value || null
+      });
+      return;
+    }
     creerMatch(type === "prive"
       ? { mode, boss_id: document.getElementById("room-boss").value || null, premier: document.getElementById("room-premier").value }
       : { type, mode });
@@ -269,6 +281,7 @@ function lancerEntrainement() {
 const PREPARATIONS = {
   // Rectangle ouvert tout de suite, liste des boss remplie en arrière-plan.
   room: async () => { remplirBossRoom(); return true; },
+  equipe: async () => { remplirBossRoom("equipe-boss"); return true; },
   entrainement: async () => {
     if (entrainement.pret) return true;
     try {

@@ -14,6 +14,32 @@ const nomsBoxes = {
 // cf. api/auth/profile.js).
 const MAX_VITRINE = { characters: 12, weapons: 12 };
 
+// Vitrine des modes 2v2, 3v3 et 4v4 (mêmes règles que api/_lib/vitrine.js) :
+// 12 persos exactement, 1400 points au plus (persos et armes), 6
+// constellations de 5★ limités au plus, 2 persos 5★ limités C2+ au plus.
+const REGLES_VITRINE = { persos: 12, points: 1400, constellations: 6, c2: 2 };
+
+// -> { nbPersos, points, constellations, c2, erreurs: [texte] }.
+function analyserVitrine(personnages, armes, profil) {
+  const collection = profil.characters;
+  const selection = collection.selections?.vitrine || {};
+  const parId = new Map(personnages.map(p => [p.id, p]));
+  const possedes = Object.keys(selection)
+    .filter(id => selection[id] && parId.has(id) && (collection.full[id] ?? -1) >= 0);
+  const limites = possedes.filter(id => String(parId.get(id).rarete) === "5" && !parId.get(id).standard);
+  const constellations = limites.reduce((somme, id) => somme + collection.full[id], 0);
+  const c2 = limites.filter(id => collection.full[id] >= 2).length;
+  const points = calculerTotalCollection(personnages, "characters", "vitrine", profil) +
+    calculerTotalCollection(armes, "weapons", "vitrine", profil);
+
+  const erreurs = [];
+  if (possedes.length !== REGLES_VITRINE.persos) erreurs.push(`${REGLES_VITRINE.persos} persos exactement (${possedes.length})`);
+  if (points > REGLES_VITRINE.points) erreurs.push(`${REGLES_VITRINE.points} points max (${points})`);
+  if (constellations > REGLES_VITRINE.constellations) erreurs.push(`${REGLES_VITRINE.constellations} constellations de 5★ limités max (${constellations})`);
+  if (c2 > REGLES_VITRINE.c2) erreurs.push(`${REGLES_VITRINE.c2} persos 5★ limités C2+ max (${c2})`);
+  return { nbPersos: possedes.length, points, constellations, c2, erreurs };
+}
+
 // Box optimisées renommables par le joueur (profil.nomsBoxes[box], 20
 // caractères max), noms repris en draft.
 const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5"];
@@ -810,6 +836,15 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     ? `${nomBox(profil, boxActive)} (${Object.keys(profil[vueActive].selections.vitrine).length} / ${MAX_VITRINE[vueActive]} ${vueActive === "weapons" ? "armes" : "persos"})`
     : nomBox(profil, boxActive);
   document.getElementById("total-ppc").textContent = total;
+
+  // Vitrine : conforme ou non aux modes en équipe.
+  const statut = document.getElementById("statut-vitrine");
+  statut.classList.toggle("cache", boxActive !== "vitrine");
+  if (boxActive === "vitrine") {
+    const { erreurs } = analyserVitrine(personnages, armes, profil);
+    statut.classList.toggle("conforme", erreurs.length === 0);
+    statut.textContent = erreurs.length ? `Modes en équipe : ${erreurs.join(", ")}` : "Conforme aux modes en équipe ✓";
+  }
 }
 
 function calculerTotalCollection(items, vueActive, boxActive, profil) {
@@ -1066,6 +1101,19 @@ async function initialiserPage() {
         return;
       } else {
         selection[id] = true;
+        // Vitrine : ajout refusé s'il dépasse les règles des modes en équipe
+        // (points, constellations de 5★ limités, C2+).
+        if (boxActive === "vitrine") {
+          const avant = analyserVitrine(personnages, armes, profil);
+          const depasse = avant.points > REGLES_VITRINE.points ? `${REGLES_VITRINE.points} points maximum (${avant.points} avec celui-ci)`
+            : avant.constellations > REGLES_VITRINE.constellations ? `${REGLES_VITRINE.constellations} constellations de 5★ limités maximum (${avant.constellations} avec celui-ci)`
+              : avant.c2 > REGLES_VITRINE.c2 ? `${REGLES_VITRINE.c2} persos 5★ limités C2 ou plus maximum` : null;
+          if (depasse) {
+            delete selection[id];
+            afficherToast(`Vitrine : ${depasse}.`, "erreur");
+            return;
+          }
+        }
       }
 
       afficherCollection(personnages, armes, profil);

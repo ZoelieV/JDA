@@ -1619,3 +1619,15 @@ body {
   font-size: 0.75rem;
   color: #ff7a85;
 }
+
+/* Vitrine : conformité aux modes 2v2, 3v3 et 4v4 (sous le total). */
+.statut-vitrine {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: #ff9b9b;
+}
+
+.statut-vitrine.conforme {
+  color: #9be59b;
+}

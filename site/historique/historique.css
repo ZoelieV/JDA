@@ -850,6 +850,13 @@ img.arme-mini {
   font-weight: bold;
 }
 
+/* Match d'équipe : joueurs de l'équipe sous la bannière du chef (★). */
+.match-membres {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--texte-doux);
+}
+
 /* Mode carnage (théâtre 12 sans bans d'équilibrage). */
 .match-carnage {
   padding: 0.125rem 0.625rem;

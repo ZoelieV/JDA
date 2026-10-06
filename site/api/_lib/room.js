@@ -35,12 +35,14 @@ function getDiscordIdJoueur(room, joueur) {
 // jour est conditionnée à la version lue. Deux requêtes simultanées (double
 // clic, envois en parallèle) ne peuvent donc pas appliquer deux fois la
 // même transition (ex. un match archivé deux fois, trophées doublés).
+// colonnes : autres colonnes de la room écrites en même temps (ex. membres
+// d'une room d'équipe).
 // -> true si écrite (draft.version mise à jour), false si la room a changé
 // entre-temps ; erreur Supabase levée.
-async function ecrireDraft(supabase, roomId, draft) {
+async function ecrireDraft(supabase, roomId, draft, colonnes = {}) {
   const lue = draft.version ?? null;
   const suivante = { ...draft, version: (Number(lue) || 0) + 1 };
-  let requete = supabase.from("rooms").update({ draft: suivante }).eq("room_id", roomId);
+  let requete = supabase.from("rooms").update({ ...colonnes, draft: suivante }).eq("room_id", roomId);
   requete = lue === null ? requete.is("draft->>version", null) : requete.eq("draft->>version", String(lue));
   const { data, error } = await requete.select("room_id");
   if (error) throw error;
@@ -157,8 +159,12 @@ async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
   let requete = supabase
     .from("rooms")
     .select("room_id, player1_discord_id, player2_discord_id, type, draft")
-    .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`);
+    .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`)
+    // Rooms d'équipe : cf. quitterEquipes (_lib/equipe.js).
+    .neq("type", "equipe");
   if (sauf) requete = requete.neq("room_id", sauf);
+  // Chargé ici (equipe.js utilise aussi ce fichier).
+  await require("./equipe").quitterEquipes(discordId, { sauf });
   const { data, error } = await requete;
   if (error) {
     console.error("Erreur lecture des matchs du joueur :", error);

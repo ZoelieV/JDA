@@ -8,6 +8,7 @@
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft } = require("../../_lib/room");
+const { estRouteEquipe, executerRouteEquipe } = require("../../_lib/equipe");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
 const { tirerBossAleatoire } = require("../../_lib/boss");
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
@@ -935,7 +936,7 @@ module.exports = async (req, res) => {
     user.agirEn = req.body?.agir_en || new URL(req.url, "http://x").searchParams.get("agir_en");
 
     // Personnages / boss ajoutés par les admins et points à jour (cache 30 s).
-    if (action !== "draft") await actualiserPoints();
+    if (action !== "draft" && action !== "equipe_etat") await actualiserPoints();
 
     // Room modifiée par une autre requête pendant celle-ci (cf.
     // sauvegarderDraft) : route rejouée sur la room à jour, 3 essais.
@@ -956,6 +957,8 @@ module.exports = async (req, res) => {
 };
 
 function executerAction(action, req, res, roomId, user) {
+  // Modes 2v2, 3v3 et 4v4 (routes equipe_*, cf. _lib/equipe.js).
+  if (estRouteEquipe(action)) return executerRouteEquipe(action, req, res, roomId, user);
   switch (action) {
     case "box":
       return handleBox(req, res, roomId, user);

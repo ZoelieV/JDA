@@ -10,6 +10,7 @@ const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
 const { getBossParId } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
+const { preparerCreation } = require("../_lib/equipe");
 
 // Entraînement : une création toutes les 10 s par IP au plus.
 const DELAI_ENTRAINEMENT_MS = 10 * 1000;
@@ -128,6 +129,37 @@ async function creerEntrainement(req, res, user) {
   return res.status(200).json({ room_id: roomId });
 }
 
+// POST { type: "equipe", taille: 2 | 3 | 4, formation: "aleatoire" |
+// "choix", boss_id? } : lobby d'un match en équipe (cf. _lib/equipe.js),
+// même limite de création que les rooms privées.
+async function creerEquipe(req, res, user) {
+  const { draft, erreur } = await preparerCreation(req.body, user);
+  if (erreur) return res.status(400).json({ error: erreur });
+
+  const attente = await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);
+  if (attente > 0) {
+    const secondes = Math.ceil(attente / 1000);
+    res.setHeader("Retry-After", String(secondes));
+    return res.status(429).json({ error: `Une room par minute au maximum : réessaie dans ${secondes} s.`, attente: secondes });
+  }
+
+  await annulerAutresMatchs(supabase, user.id);
+  const roomId = genererRoomId();
+  const { error } = await supabase.from("rooms").insert({
+    room_id: roomId,
+    player1_discord_id: user.id,
+    type: "equipe",
+    membres: [user.id],
+    draft
+  });
+  if (error) {
+    console.error(error);
+    const sqlManquant = ["42703", "PGRST204"].includes(error.code);
+    return res.status(500).json({ error: sqlManquant ? "Modes en équipe pas encore activés (sql/equipes.sql à lancer dans Supabase)." : "Erreur création de la room" });
+  }
+  return res.status(200).json({ room_id: roomId, equipe: true });
+}
+
 // Modes de théâtre : room privée = au choix ("auto", un théâtre ou
 // "carnage") ; matchmaking = classique ("auto"), mêlée générale ("12") ou
 // carnage ; classé = classique ou mêlée générale seulement.
@@ -176,6 +208,7 @@ module.exports = async (req, res) => {
     }
 
     if (req.body?.type === "entrainement") return await creerEntrainement(req, res, user);
+    if (req.body?.type === "equipe") return await creerEquipe(req, res, user);
 
     if (TYPES_FILE.includes(req.body?.type)) {
       const roomIdAttente = typeof req.body.room_id === "string" ? req.body.room_id : null;

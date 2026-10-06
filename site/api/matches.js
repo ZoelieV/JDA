@@ -345,6 +345,8 @@ function resumerJoueur(match, role, profils) {
       element: pick.element || null,
       // Choisi au hasard (temps écoulé, draft classée).
       aleatoire: !!pick.aleatoire,
+      // Match d'équipe : joueur qui a joué ce perso.
+      ...(pick.joue_par ? { joue_par: pick.joue_par } : {}),
       ...("constellation" in pick
         ? { constellation: pick.constellation, niveau: pick.niveau, raffinement: pick.raffinement }
         : infosPersoJoueur(profil?.data, pick.id, pick.element))
@@ -386,7 +388,8 @@ async function chargerMatchsStats() {
     lignes.push(...(data || []));
     if (!data || data.length < TAILLE_PAGE_STATS) break;
   }
-  return lignes.filter(match => !match.entrainement && !["ouvert", "traite", "invalide"].includes(match.litige));
+  // Matchs d'équipe : à part (temps d'équipe pas comparables aux records 1v1).
+  return lignes.filter(match => !match.entrainement && !match.mode_equipe && !["ouvert", "traite", "invalide"].includes(match.litige));
 }
 
 // Personnages pick / bannis / bannis à l'équilibrage dans un match (chacun
@@ -586,6 +589,9 @@ module.exports = async (req, res) => {
       classe: !!match.classe,
       // Saison où le match a été joué (cf. _lib/saisons.js).
       saison: saisonDuMatch(match),
+      // Match d'équipe (2v2, 3v3, 4v4) : joueurs de chaque équipe (chef,
+      // hôte), cf. _lib/equipe.js.
+      equipe: match.mode_equipe ? { mode: match.mode_equipe, j1: match.equipes?.j1 || null, j2: match.equipes?.j2 || null } : null,
       trophees: match.classe ? match.trophees ?? null : null,
       // { j1, j2, bonus } : trophées gagnés (+) / perdus (−) par chaque joueur.
       trophees_joueurs: match.classe ? deltasClasse.get(String(match.id)) || null : null,

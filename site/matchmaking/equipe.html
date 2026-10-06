@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Match en équipe</title>
+<link rel="stylesheet" href="match.css?v=rem48">
+<link rel="stylesheet" href="../commun/entete.css?v=rem25">
+<link rel="stylesheet" href="../commun/cartes.css?v=4">
+<link rel="stylesheet" href="equipe.css?v=3">
+<script src="/commun/zoom.js?v=2"></script>
+</head>
+<body>
+<!-- Modes 2v2, 3v3 et 4v4 (cf. api/_lib/equipe.js). Accueil à gauche,
+     partage du lien du lobby à droite. -->
+<div class="barre-room">
+  <a href="../index.html" class="lien-accueil">Accueil</a>
+  <button id="btn-partager" type="button" class="btn-partager" title="Copier le lien du lobby pour l'envoyer aux autres joueurs">Partager le lien</button>
+</div>
+<h1 class="titre-page" id="titre-equipe">Match en équipe</h1>
+<p id="sous-titre-equipe" class="sous-titre-equipe"></p>
+<!-- Hôtes des mondes et légendes locales (dès la draft). -->
+<p id="info-hotes" class="info-hotes cache"></p>
+
+<div id="chargement" class="bandeau-info">Chargement…</div>
+
+<!-- ---- Lobby ---- -->
+<section id="phase-lobby" class="phase-equipe cache">
+  <div id="lobby-equipes" class="lobby-equipes"></div>
+  <div class="actions-lobby">
+    <button id="btn-rejoindre" type="button" class="btn-equipe cache">Rejoindre le lobby</button>
+    <button id="btn-quitter" type="button" class="btn-equipe secondaire cache">Quitter le lobby</button>
+    <button id="btn-lancer" type="button" class="btn-equipe principal cache" disabled>Lancer le match</button>
+  </div>
+  <p id="aide-lobby" class="aide-equipe"></p>
+</section>
+
+<!-- ---- Vote des chefs ---- -->
+<section id="phase-chefs" class="phase-equipe cache">
+  <p class="aide-equipe">Chaque équipe élit son chef : il fera les picks, les bans, la déclaration et la saisie du temps.
+    Pas de vote ou égalité : chef tiré au hasard.</p>
+  <div id="votes-equipes" class="lobby-equipes"></div>
+</section>
+
+<!-- ---- 3v3 : choix de l'hôte (joueur à 2 persos) ---- -->
+<section id="phase-hotes" class="phase-equipe cache">
+  <p class="aide-equipe">3v3 : l'hôte du monde joue 2 persos. Il doit avoir une full box de 3000 points au maximum ;
+    le chef le choisit parmi ceux-là (sinon au hasard à la fin du temps).</p>
+  <div id="hotes-equipes" class="lobby-equipes"></div>
+</section>
+
+<!-- ---- Draft, déclaration, temps, résultat ---- -->
+<section id="phase-match" class="phase-equipe cache">
+  <div class="layout-equipe">
+    <div class="tableau-equipe equipe-joueur" id="tableau-j1"></div>
+    <div class="centre-equipe">
+      <!-- Fin de draft : déclaration (qui joue quoi), temps, résultat. -->
+      <div id="zone-declaration" class="zone-centre cache"></div>
+      <div id="zone-temps" class="zone-centre cache"></div>
+      <!-- Vitrines des 2 équipes, sans mélange : équipe 1 à gauche, équipe 2
+           à droite, une vitrine par joueur (12 persos, 3 lignes de 4). -->
+      <div id="vitrines" class="vitrines-equipes">
+        <div class="moitie-vitrines" id="vitrines-j1"></div>
+        <div class="moitie-vitrines" id="vitrines-j2"></div>
+      </div>
+    </div>
+    <div class="tableau-equipe equipe-joueur" id="tableau-j2"></div>
+  </div>
+</section>
+
+<!-- ---- Match annulé ---- -->
+<section id="phase-annule" class="phase-equipe cache">
+  <div class="match-annule">
+    <p class="ligne-vainqueur"><span class="litige">Match annulé</span></p>
+    <p id="texte-annule"></p>
+  </div>
+</section>
+
+<!-- Bulles figées en bas : consigne, action à réaliser, Confirmer, Rejouer. -->
+<div id="bulles-bas" class="bulles-bas">
+  <div id="message-equipe" class="bandeau-info"></div>
+  <button id="btn-confirmer" type="button" class="btn-confirmer-action cache" disabled>Confirmer</button>
+  <div id="tour-equipe" class="bandeau-info"></div>
+  <button id="btn-rejouer" type="button" class="btn-equipe principal cache">Rejouer (retour au lobby)</button>
+</div>
+
+<!-- Choix de l'élément (Manekin) au pick. -->
+<div id="fenetre-element" class="fenetre-litige cache" role="dialog" aria-modal="true">
+  <div class="contenu-fenetre-litige">
+    <h2>Choisis l'élément</h2>
+    <div id="choix-elements" class="choix-elements"></div>
+    <div class="pied-fenetre-litige">
+      <button type="button" id="annuler-element" class="btn-annuler-litige">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Litige : raison obligatoire. -->
+<div id="fenetre-litige" class="fenetre-litige cache" role="dialog" aria-modal="true" aria-labelledby="titre-fenetre-litige">
+  <div class="contenu-fenetre-litige">
+    <h2 id="titre-fenetre-litige">Signaler un litige</h2>
+    <p>Le match sera invalidé et transmis aux administrateurs. Explique ce qui ne va pas.</p>
+    <textarea id="commentaire-litige" rows="5" maxlength="500" placeholder="Raison du litige (obligatoire)"></textarea>
+    <div class="pied-fenetre-litige">
+      <button type="button" id="annuler-litige" class="btn-annuler-litige">Annuler</button>
+      <button type="button" id="envoyer-litige" class="btn-envoyer-litige">Signaler le litige</button>
+    </div>
+  </div>
+</div>
+
+<script src="/commun/variantes.js?v=4"></script>
+<script src="/commun/cartes.js?v=13"></script>
+<script src="equipe.js?v=2"></script>
+</body>
+</html>

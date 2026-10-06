@@ -2806,6 +2806,12 @@ function rendrePhase() {
 async function rafraichirEtatRoomEtJoueurs() {
   const room = await rejoindreOuConsulterRoom(roomId);
 
+  // Room d'un mode en équipe : sa propre page.
+  if (room.type === "equipe") {
+    window.location.replace(`equipe.html?room=${encodeURIComponent(roomId)}`);
+    return;
+  }
+
   if (room.player1_discord_id && room.player2_discord_id) {
     arreterMatchmaking();
     document.getElementById("etat-attente").classList.add("cache");

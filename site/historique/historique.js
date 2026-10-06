@@ -275,7 +275,7 @@ function coinsDeuxJoueurs(personnage, infosJoueurs) {
 
 // aleatoire : choisi au hasard (temps écoulé, draft classée) -> entouré
 // d'orange, comme dans la page du match.
-function htmlPerso(id, parametres, { element = null, banni = false, infos = null, infosJoueurs = null, aleatoire = false } = {}) {
+function htmlPerso(id, parametres, { element = null, banni = false, infos = null, infosJoueurs = null, aleatoire = false, joueur = null } = {}) {
   const base = personnagesParId.get(id);
   if (!base) return "";
   const personnage = appliquerVariante(base, parametres);
@@ -290,7 +290,7 @@ function htmlPerso(id, parametres, { element = null, banni = false, infos = null
     coinsDeuxJoueurs(personnage, infosJoueurs)
   ].join("");
 
-  const titre = aleatoire ? `${nom} (choisi au hasard : temps écoulé)` : nom;
+  const titre = echapperHtml((aleatoire ? `${nom} (choisi au hasard : temps écoulé)` : nom) + (joueur ? ` — joué par ${joueur}` : ""));
   return `<div class="perso-mini${infos || infosJoueurs ? " perso-equipe" : ""} ${classeFondRarete(personnage.rarete)}${banni ? " banni" : ""}${aleatoire ? " choix-aleatoire" : ""}" title="${titre}">` +
     `<img src="../DB/${personnage.image}" alt="${nom}" loading="lazy" decoding="async">${coins}</div>`;
 }
@@ -320,7 +320,10 @@ function htmlJoueur(match, role, bansConnus) {
     ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} ${ICONE_TROPHEE}${bonus ? " 🔥" : ""}</span>`
     : "";
 
-  const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p, aleatoire: p.aleatoire })).join("");
+  // Match d'équipe : joueur qui a joué chaque perso (dans l'info-bulle).
+  const membres = match.equipe?.[role]?.membres || [];
+  const nomMembre = id => membres.find(m => m.discord_id === id)?.nom;
+  const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p, aleatoire: p.aleatoire, joueur: nomMembre(p.joue_par) })).join("");
   const htmlBan = ban => htmlPerso(ban.id, joueur.parametres, { banni: true, infosJoueurs: ban.infos, aleatoire: ban.aleatoire });
   const bans = joueur.bans.map(htmlBan).join("");
   const equilibrage = joueur.bans_equilibrage.map(htmlBan).join("");
@@ -335,6 +338,7 @@ function htmlJoueur(match, role, bansConnus) {
         ${trophees}
         <span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span>
       </div>
+      ${match.equipe ? `<p class="match-membres"></p>` : ""}
       ${htmlLigne("Équipe", equipe)}
       ${bansConnus ? htmlLigne("Bans", bans, "ligne-bans") : ""}
       ${htmlLigne("Équilibrage", equilibrage, "ligne-bans")}
@@ -385,6 +389,7 @@ function creerLigneMatch(match) {
     <div class="match-centre">
       ${boss ? htmlImagesBoss(boss, `class="match-boss" loading="lazy"`) : ""}
       ${match.entrainement ? `<span class="match-entrainement">Entraînement ${ICONE_ENTRAINEMENT}</span>` : ""}
+      ${match.equipe ? `<span class="match-entrainement match-mode-equipe">${echapperHtml(match.equipe.mode)}</span>` : ""}
       ${match.classe ? `<span class="match-classe">Classé ${ICONE_TROPHEE}${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
       ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="Théâtre 12 sans bans d'équilibrage">Carnage 💀</span>` : ""}
       ${htmlTheatreJoue(match.theatre)}
@@ -396,6 +401,14 @@ function creerLigneMatch(match) {
   // Pseudos en texte (pas d'HTML venant des comptes).
   ligne.querySelector(".match-j1 .match-nom").textContent = match.j1.nom;
   ligne.querySelector(".match-j2 .match-nom").textContent = match.j2.nom;
+  // Match d'équipe : bannière du chef, puis les joueurs de l'équipe (★ chef).
+  if (match.equipe) {
+    ["j1", "j2"].forEach(role => {
+      const equipe = match.equipe[role];
+      const zone = ligne.querySelector(`.match-${role} .match-membres`);
+      if (zone && equipe) zone.textContent = equipe.membres.map(m => `${m.nom}${m.discord_id === equipe.chef ? " ★" : ""}`).join(" · ");
+    });
+  }
   if (match.litige === "ouvert") brancherCorrectionLitige(ligne, match);
   if (match.signalements) brancherTraitementSignalement(ligne, match);
   ligne.querySelector(".bouton-signaler:not(:disabled)")?.addEventListener("click", () => ouvrirFenetreSignalement(match));

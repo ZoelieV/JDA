@@ -47,10 +47,19 @@ async function chargerResultats() {
   const litigeOuvert = "litige.is.null,litige.not.in.(ouvert,invalide)";
   // Entraînements jamais comptés (filtrés plus bas) ; sans la colonne
   // entrainement (sql/entrainement.sql pas lancé), il n'y en a pas.
+  // Matchs d'équipe (colonne mode_equipe, sql/equipes.sql) : pas comptés
+  // ici (stats des matchs 1v1).
   let { data, error } = await supabase
     .from("match_history")
-    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison`)
+    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison, mode_equipe`)
     .or(litigeOuvert);
+
+  if (error) {
+    ({ data, error } = await supabase
+      .from("match_history")
+      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison`)
+      .or(litigeOuvert));
+  }
 
   // Sans colonne saison (sql/saisons.sql pas lancé) : tout en saison 0.
   if (error) {
@@ -98,7 +107,7 @@ async function chargerResultats() {
     return {};
   }
 
-  data = data.filter(match => !match.entrainement);
+  data = data.filter(match => !match.entrainement && !match.mode_equipe);
 
   const resultats = {};
   const compter = (discordId, gagne) => {

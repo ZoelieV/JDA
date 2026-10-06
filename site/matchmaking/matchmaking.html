@@ -53,6 +53,13 @@
         <p>Prépare tes drafts, seul ou accompagné.</p>
       </div>
     </button>
+    <button type="button" class="carte-section carte-match" data-detail="equipe" aria-expanded="false" aria-controls="detail-equipe">
+      <img src="../DB/images/others/Namecard_Background_Achievement_Resplendence.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>En équipe</h2>
+        <p>2v2, 3v3 ou 4v4 avec vos vitrines.</p>
+      </div>
+    </button>
     <button type="button" class="carte-section carte-match" data-detail="world-boss" aria-expanded="false" aria-controls="detail-world-boss">
       <img src="../DB/images/others/Namecard_Background_random_world_boss.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
@@ -116,6 +123,35 @@
     </div>
   </section>
 
+  <!-- Modes en équipe (cf. api/_lib/equipe.js) : lobby par lien, lancé par
+       le créateur ; vitrines conformes obligatoires. -->
+  <section id="detail-equipe" class="panneau detail-match cache" data-detail="equipe">
+    <h2>En équipe</h2>
+    <p>Chaque équipe joue le boss dans un seul monde, en co-op, avec 4 persos. Envoie le lien aux autres joueurs :
+      tu lances le match quand le lobby est complet.</p>
+    <ul class="regles-classe">
+      <li>Chacun joue avec sa <a href="../my_account/my_account.html">vitrine</a> : 12 persos, 1400 points au maximum (persos et armes), 6 constellations de 5★ limités au maximum, dont 2 persos C2 ou plus au maximum.</li>
+      <li>Chaque équipe élit son chef (30 s) : il fait les picks, les bans et saisit le temps. Pas élu à temps ou égalité : tiré au hasard.</li>
+      <li>Draft du théâtre 12. Bannir un perso le retire pour tout le monde ; le picker aussi.</li>
+      <li>Après la draft, chaque équipe déclare qui joue quel perso : 1 C6 et 2 C3+ de 5★ limités au maximum par équipe.</li>
+      <li>3v3 : l'hôte du monde joue 2 persos (full box de 3000 points au maximum, sinon la plus petite).</li>
+    </ul>
+    <div class="ligne-entrainement options-room">
+      <label>Boss <select id="equipe-boss"><option value="">Aléatoire</option></select></label>
+      <label>Équipes
+        <select id="equipe-formation">
+          <option value="aleatoire">Aléatoires (équilibrées)</option>
+          <option value="choix">Au choix des joueurs</option>
+        </select>
+      </label>
+    </div>
+    <div class="modes-match" data-type="equipe">
+      <button type="button" class="mode-match" data-taille="2">2v2<span>2 persos chacun</span></button>
+      <button type="button" class="mode-match" data-taille="3">3v3<span>l'hôte joue 2 persos, les autres 1</span></button>
+      <button type="button" class="mode-match" data-taille="4">4v4<span>1 perso chacun</span></button>
+    </div>
+  </section>
+
   <section id="detail-world-boss" class="panneau detail-match cache" data-detail="world-boss">
     <h2>Random world boss</h2>
     <p>Ce mode arrive bientôt.</p>
@@ -170,6 +206,6 @@
 
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=13"></script>
-  <script src="matchmaking.js?v=12"></script>
+  <script src="matchmaking.js?v=13"></script>
 </body>
 </html>
