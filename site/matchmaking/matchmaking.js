@@ -210,7 +210,7 @@ async function rendreSelecteurBox(cote) {
     carte.className = `ent-perso ${classeFondRarete(perso.rarete)}${etat.persos.has(perso.id) ? " coche" : ""}`;
     // Voyageur (un par élément) : élément en bas à gauche pour les distinguer.
     const element = perso.groupe ? perso.element : null;
-    carte.title = element ? `${perso.nom} ${NOMS_ELEMENTS[element] || ""}`.trim() : perso.nom;
+    carte.title = perso.nom; // déjà avec l'élément ("Voyageur Geo")
     carte.innerHTML = `<img src="../DB/${perso.image}" alt="" loading="lazy">` +
       (element ? `<img class="ent-element" src="../DB/images/others/${element}.webp" alt="${element}">` : "");
     carte.addEventListener("click", () => {
