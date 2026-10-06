@@ -823,6 +823,90 @@ function mettreAJourBoutonEnregistrer(profil) {
 function marquerEnregistre(profil, etat = etatFormulaire(profil)) {
   etatEnregistre = etat;
   mettreAJourBoutonEnregistrer(profil);
+  mettreAJourCopieBox();
+}
+
+// ---- Copier une box optimisée dans une autre ----
+// Sur une box optimisée : bouton "Copier" -> liste des autres box
+// optimisées enregistrées (version enregistrée, pas les modifications en
+// cours) d'au moins NB_PERSOS_MIN_BOX persos (Voyageur compté une fois,
+// même règle qu'en match). Persos et armes copiés (seulement ceux encore
+// possédés), à enregistrer ensuite.
+const NB_PERSOS_MIN_BOX = 16;
+let contexteCopie = null; // { personnages, armes, profil }
+
+function collectionsEnregistrees() {
+  if (!etatEnregistre) return null;
+  const [characters, weapons] = JSON.parse(etatEnregistre);
+  return { characters, weapons };
+}
+
+function nbPersosSelection(personnages, characters, box) {
+  const selection = characters?.selections?.[box] || {};
+  return new Set(personnages
+    .filter(p => selection[p.id] && (characters.full?.[p.id] ?? -1) >= 0)
+    .map(p => p.groupe || p.id)).size;
+}
+
+function sourcesCopie(boxActive) {
+  const enregistre = collectionsEnregistrees();
+  if (!contexteCopie || !enregistre || !BOX_RENOMMABLES.includes(boxActive)) return [];
+  return BOX_RENOMMABLES.filter(box => box !== boxActive &&
+    nbPersosSelection(contexteCopie.personnages, enregistre.characters, box) >= NB_PERSOS_MIN_BOX);
+}
+
+function mettreAJourCopieBox() {
+  const zone = document.getElementById("copie-box");
+  if (!zone) return;
+  const sources = sourcesCopie(getBoxActive());
+  zone.classList.toggle("cache", sources.length === 0);
+  document.getElementById("menu-copie-box").classList.add("cache");
+}
+
+function copierBox(source) {
+  const { personnages, armes, profil } = contexteCopie;
+  const cible = getBoxActive();
+  const enregistre = collectionsEnregistrees();
+  const remplie = ["characters", "weapons"].some(vue => Object.keys(profil[vue].selections[cible] || {}).length > 0);
+  if (remplie && !confirm(`Remplacer le contenu de « ${nomBox(profil, cible)} » par celui de « ${nomBox(profil, source)} » ?`)) return;
+  ["characters", "weapons"].forEach(vue => {
+    const selection = enregistre[vue]?.selections?.[source] || {};
+    profil[vue].selections[cible] = Object.fromEntries(Object.keys(selection)
+      .filter(id => selection[id] && (profil[vue].full[id] ?? -1) >= 0)
+      .map(id => [id, true]));
+  });
+  afficherCollection(personnages, armes, profil);
+  mettreAJourTotalBox(personnages, armes, profil);
+  mettreAJourBoutonEnregistrer(profil);
+  afficherToast(`« ${nomBox(profil, source)} » copiée dans « ${nomBox(profil, cible)} » : pense à enregistrer.`);
+}
+
+function initialiserCopieBox(personnages, armes, profil) {
+  contexteCopie = { personnages, armes, profil };
+  const menu = document.getElementById("menu-copie-box");
+  document.getElementById("btn-copier-box").addEventListener("click", event => {
+    event.stopPropagation();
+    if (!menu.classList.contains("cache")) {
+      menu.classList.add("cache");
+      return;
+    }
+    menu.replaceChildren(...sourcesCopie(getBoxActive()).map(box => {
+      const option = document.createElement("button");
+      option.type = "button";
+      option.className = "option-copie-box";
+      option.textContent = `${nomBox(profil, box)} (${nbPersosSelection(personnages, collectionsEnregistrees().characters, box)} persos)`;
+      option.addEventListener("click", () => {
+        menu.classList.add("cache");
+        copierBox(box);
+      });
+      return option;
+    }));
+    menu.classList.remove("cache");
+  });
+  document.addEventListener("click", event => {
+    if (!event.target.closest("#copie-box")) menu.classList.add("cache");
+  });
+  mettreAJourCopieBox();
 }
 
 // Total de la box active : points des personnages + points des armes.
@@ -836,6 +920,7 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     ? `${nomBox(profil, boxActive)} (${Object.keys(profil[vueActive].selections.vitrine).length} / ${MAX_VITRINE[vueActive]} ${vueActive === "weapons" ? "armes" : "persos"})`
     : nomBox(profil, boxActive);
   document.getElementById("total-ppc").textContent = total;
+  mettreAJourCopieBox();
 
   // Vitrine : conforme ou non aux modes en équipe.
   const statut = document.getElementById("statut-vitrine");
@@ -981,6 +1066,7 @@ async function initialiserPage() {
       });
     });
     afficherNomsBoxes(profil);
+    initialiserCopieBox(personnages, armes, profil);
 
     document.querySelectorAll(".view-btn").forEach(btn => {
       btn.addEventListener("click", () => {
