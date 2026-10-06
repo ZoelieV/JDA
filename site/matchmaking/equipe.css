@@ -343,6 +343,45 @@
   margin-bottom: 1rem;
 }
 
+/* Même rendu qu'en 1v1 : rectangle semi-transparent ajusté au boss, image
+   en grand sans fond gris derrière. */
+.zone-boss .bandeau-boss {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.45);
+}
+
+.zone-boss .image-boss-res > img {
+  width: 23.75rem;
+  height: 23.75rem;
+  max-width: 100%;
+  object-fit: contain;
+  background: none;
+}
+
+/* Boss en duo (2 images côte à côte), comme en 1v1. */
+.zone-boss .duo-boss img {
+  width: 11.75rem;
+  height: 11.75rem;
+  object-fit: contain;
+  background: none;
+}
+
+@media (max-width: 800px) {
+  .zone-boss .image-boss-res > img {
+    width: 12.5rem;
+    height: 12.5rem;
+  }
+
+  .zone-boss .duo-boss img {
+    width: 6.125rem;
+    height: 6.125rem;
+  }
+}
+
 /* Fin du match : Rejouer (chefs) et Retour au lobby (créateur). */
 .actions-fin {
   display: flex;

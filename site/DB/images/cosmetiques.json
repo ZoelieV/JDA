@@ -823,6 +823,24 @@
    "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20261002131153367.webp"
   },
   {
+   "id": "bg/autres/MedalTVGenshinImpact20261006170521234.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20261006170521234.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20261006170521234.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20261006170701901.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20261006170701901.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20261006170701901.webp"
+  },
+  {
+   "id": "bg/autres/MedalTVGenshinImpact20261006170813638.png",
+   "categorie": "autres",
+   "image": "bg_web/autres/MedalTVGenshinImpact20261006170813638.webp",
+   "miniature": "bg_miniatures/autres/MedalTVGenshinImpact20261006170813638.webp"
+  },
+  {
    "id": "bg/autres/default_bg.webp",
    "categorie": "autres",
    "image": "bg_web/autres/default_bg.webp",
@@ -1085,6 +1103,18 @@
    "categorie": "boss_hebdo",
    "image": "bg_web/boss_hebdo/signora_2.webp",
    "miniature": "bg_miniatures/boss_hebdo/signora_2.webp"
+  },
+  {
+   "id": "bg/carnage/MedalTVGenshinImpact20261006170049276.png",
+   "categorie": "carnage",
+   "image": "bg_web/carnage/MedalTVGenshinImpact20261006170049276.webp",
+   "miniature": "bg_miniatures/carnage/MedalTVGenshinImpact20261006170049276.webp"
+  },
+  {
+   "id": "bg/carnage/MedalTVGenshinImpact20261006170304251.png",
+   "categorie": "carnage",
+   "image": "bg_web/carnage/MedalTVGenshinImpact20261006170304251.webp",
+   "miniature": "bg_miniatures/carnage/MedalTVGenshinImpact20261006170304251.webp"
   },
   {
    "id": "bg/legendes_locales/bandersnatch_ll.png",
