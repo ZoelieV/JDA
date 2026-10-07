@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=20">
+<link rel="stylesheet" href="admin_ppc.css?v=21">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -33,6 +33,7 @@
         <button type="button" id="ouvrir-ajout" class="btn-ouvrir-ajout" title="Ajouter un personnage, une arme ou un boss">+ Ajouter</button>
         <button type="button" id="ouvrir-boss" class="btn-ouvrir-ajout" title="Consulter et modifier les boss">Boss</button>
         <button type="button" id="ouvrir-categories" class="btn-ouvrir-ajout" title="Catégories des armes : support, standard">Catégories d'armes</button>
+        <button type="button" id="ouvrir-comparateur" class="btn-ouvrir-ajout" title="Comparer des combos personnage + arme">Comparateur</button>
         <button type="button" id="ouvrir-bans" class="btn-ouvrir-ajout" title="Joueurs bannis du mode classé">Bans en cours</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
@@ -139,6 +140,22 @@
     </div>
   </div>
 
+  <!-- Comparateur : combos personnage + arme (constellation, niveau,
+       théâtre, raffinement) et leurs totaux de points. -->
+  <div id="modal-comparateur" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Comparateur</h2>
+        <button type="button" id="fermer-comparateur" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Total des points de chaque combo personnage + arme (points en cours d'édition sur cette page,
+        même s'ils ne sont pas encore enregistrés). <strong>+</strong> ajoute un combo, copie du dernier.
+      </p>
+      <div id="liste-comparateur" class="liste-comparateur"></div>
+    </div>
+  </div>
+
   <!-- Bans du mode classé en cours (décidés dans les litiges de l'historique). -->
   <div id="modal-bans" class="modal-apercu">
     <div class="modal-apercu-contenu">
@@ -170,6 +187,7 @@
   <script src="admin_boss.js?v=3"></script>
   <script src="admin_categories.js?v=1"></script>
   <script src="admin_bans.js?v=1"></script>
+  <script src="admin_comparateur.js?v=1"></script>
   <script src="admin_ppc.js?v=22"></script>
 </body>
 </html>

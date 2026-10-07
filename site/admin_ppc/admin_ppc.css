@@ -1219,3 +1219,141 @@ body {
 .lecture-seule #enregistrer-categories {
   display: none;
 }
+
+/* ---- Comparateur : combos personnage + arme ---- */
+.liste-comparateur {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.combo-comparateur {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 0.625rem;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.combo-comparateur.meilleur {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.08);
+}
+
+.entete-combo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.miniature-combo {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06);
+  background-size: cover;
+}
+
+.miniature-combo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.champ-comparateur {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3125rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.champ-comparateur:focus {
+  outline: none;
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.champ-comparateur option {
+  background-color: #1e1e1e;
+}
+
+.retirer-combo {
+  border: none;
+  background: none;
+  color: white;
+  font-size: 1.375rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.retirer-combo:hover {
+  color: #ff5a5a;
+}
+
+.retirer-combo:disabled {
+  visibility: hidden;
+}
+
+.choix-combo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.choix-combo .mode-modificateur {
+  padding: 0.1875rem 0.4375rem;
+}
+
+.points-combo {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-points {
+  font-size: 0.75rem;
+  color: var(--texte-doux);
+}
+
+.total-combo {
+  font-size: 1.375rem;
+  color: #f5c542;
+}
+
+.ecart-combo {
+  min-height: 1.1em;
+  font-size: 0.8125rem;
+  text-align: center;
+  color: #ff7a85;
+}
+
+.combo-comparateur.meilleur .ecart-combo {
+  color: #f5c542;
+  font-weight: bold;
+}
+
+.ajouter-combo {
+  min-height: 10rem;
+  border: 2px dashed rgba(245, 197, 66, 0.6);
+  border-radius: 0.625rem;
+  background: none;
+  color: #f5c542;
+  font-size: 2.5rem;
+  cursor: pointer;
+}
+
+.ajouter-combo:hover {
+  background-color: rgba(245, 197, 66, 0.12);
+}
