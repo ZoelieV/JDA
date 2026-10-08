@@ -78,7 +78,10 @@ async function remplirBossRoom(idSelect = "room-boss") {
   if (selectsBossCharges.has(idSelect)) return;
   selectsBossCharges.add(idSelect);
   try {
-    const liste = await chargerBoss();
+    const [tous, points] = await Promise.all([chargerBoss(), chargerPointsAdmin()]);
+    // Boss du carnage désactivés par les admins : seulement en entraînement
+    // (cf. bossCarnageExclus, api/_lib/boss.js).
+    const liste = points.carnage_desactive === true ? tous.filter(b => b.type !== "carnage_boss") : tous;
     // En équipe : sans les boss pas faisables en co-op (cf. BOSS_HORS_COOP,
     // api/_lib/equipe.js).
     remplirSelectBoss(document.getElementById(idSelect), idSelect === "equipe-boss" ? liste.filter(b => !BOSS_HORS_COOP.includes(b.id)) : liste);

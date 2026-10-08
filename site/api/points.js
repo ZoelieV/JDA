@@ -16,7 +16,8 @@
 //          masques: { characters: [id...], weapons: [id...] },
 //          boss: { id: { nom, res } }, categoriesArmes: { id: [...] },
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
-//          bonus_saison: [id...] }  (bonus de saison : trophées en classé)
+//          bonus_saison: [id...],  (bonus de saison : trophées en classé)
+//          carnage_desactive: bool }  (boss du carnage plus disponibles)
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
 //   { characters, weapons, modes, masques, theatre, bonus_saison }  remplace
@@ -26,6 +27,8 @@
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
 //   { boss: { id: { nom, res } } }   modifie des boss
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
+//   { carnage_desactive: true|false }   désactive / réactive les boss du
+//                                    carnage (hors entraînement, cf. _lib/boss.js)
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
@@ -276,6 +279,8 @@ module.exports = async (req, res) => {
           modifs[id] = modif;
         }
         config = { ...ancienne, boss: modifs };
+      } else if (typeof corps.carnage_desactive === "boolean") {
+        config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
       } else if (corps.categoriesArmes) {
         const ids = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));
         const modifs = { ...(ancienne.categoriesArmes || {}) };

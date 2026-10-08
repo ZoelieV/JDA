@@ -106,7 +106,35 @@ async function enregistrerBoss() {
   }
 }
 
+// Boss du carnage désactivés (config.carnage_desactive) : enregistré dès le
+// clic, appliqué à tous les tirages et boss imposés sauf l'entraînement (cf.
+// bossCarnageExclus, api/_lib/boss.js).
+function initialiserCarnage() {
+  const caseCarnage = document.getElementById("carnage-desactive");
+  const message = document.getElementById("message-carnage");
+  chargerPointsAdmin().then(config => { caseCarnage.checked = config?.carnage_desactive === true; });
+  caseCarnage.addEventListener("change", async () => {
+    const desactive = caseCarnage.checked;
+    caseCarnage.disabled = true;
+    message.className = "message-ajout";
+    message.textContent = "Enregistrement…";
+    try {
+      await envoyerAjout({ carnage_desactive: desactive });
+      message.textContent = desactive ? "Carnage désactivé." : "Carnage réactivé.";
+      message.classList.add("succes");
+    } catch (erreur) {
+      console.error(erreur);
+      caseCarnage.checked = !desactive;
+      message.textContent = erreur.message;
+      message.classList.add("erreur");
+    } finally {
+      caseCarnage.disabled = false;
+    }
+  });
+}
+
 function initialiserBoss() {
+  initialiserCarnage();
   const modal = document.getElementById("modal-boss");
   document.getElementById("ouvrir-boss").addEventListener("click", ouvrirBoss);
   document.getElementById("fermer-boss").addEventListener("click", fermerBoss);

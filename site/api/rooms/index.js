@@ -8,7 +8,7 @@ const { MODES_THEATRE, NB_PERSOS_MIN_BOX, erreurModeAuto, etatInitialDraft, calc
 const { calculerEquilibrage, donneesBoxRole } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
-const { getBossParId } = require("../_lib/boss");
+const { getBossParId, bossCarnageExclus, ERREUR_CARNAGE_DESACTIVE } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation } = require("../_lib/equipe");
 
@@ -19,12 +19,14 @@ const PREMIERS = ["moi", "adverse", "aleatoire"];
 // Room privée : J1 choisi par le créateur.
 const PREMIERS_ROOM = ["createur", "adversaire", "aleatoire"];
 
-// Boss imposé à la création : inconnu ou légende locale déjà tuée
-// aujourd'hui par le créateur -> message d'erreur ; null sinon.
-async function erreurBossImpose(bossId, discordId) {
+// Boss imposé à la création : inconnu, légende locale déjà tuée
+// aujourd'hui par le créateur ou boss du carnage désactivé (sauf en
+// entraînement) -> message d'erreur ; null sinon.
+async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}) {
   if (!bossId) return null;
   const boss = getBossParId(bossId);
   if (!boss) return "Boss inconnu";
+  if (!entrainement && (await bossCarnageExclus()).includes(bossId)) return ERREUR_CARNAGE_DESACTIVE;
   if ((await legendesTueesAujourdhui([discordId])).includes(bossId)) {
     return `Tu as déjà tué ${boss.nom} aujourd'hui : cette légende locale revient demain à 4 h.`;
   }
@@ -84,7 +86,7 @@ async function creerEntrainement(req, res, user) {
   if (moi.erreur || adverse.erreur) return res.status(400).json({ error: moi.erreur || adverse.erreur });
 
   const bossId = config.boss_id ? String(config.boss_id) : null;
-  const erreurBoss = await erreurBossImpose(bossId, user.id);
+  const erreurBoss = await erreurBossImpose(bossId, user.id, { entrainement: true });
   if (erreurBoss) return res.status(400).json({ error: erreurBoss });
 
   const attente = await verifierFrequence(req, "entrainement", DELAI_ENTRAINEMENT_MS);

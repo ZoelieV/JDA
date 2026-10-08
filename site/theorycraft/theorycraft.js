@@ -51,6 +51,9 @@ const SEUIL_PAR_DEFAUT = 200;
 let personnages = [];
 let armes = [];
 let boss = [];
+// Boss du carnage désactivés par les admins (config.carnage_desactive) :
+// jamais tirés hors entraînement.
+let carnageDesactive = false;
 let modes = {};
 let buffs = new Set();
 let bonusSaison = new Set();
@@ -102,6 +105,7 @@ async function chargerDonnees() {
   modes = Object.fromEntries(BONUS.map(({ cle }) => [cle, config?.modes?.[cle] === "multiplication" ? "multiplication" : "addition"]));
   buffs = new Set(Array.isArray(config?.theatre) ? config.theatre : []);
   bonusSaison = new Set(Array.isArray(config?.bonus_saison) ? config.bonus_saison : []);
+  carnageDesactive = config?.carnage_desactive === true;
   if (Number(config?.seuil_equilibrage) > 0) seuil = Number(config.seuil_equilibrage);
 }
 
@@ -397,16 +401,20 @@ function pourcentage(p) {
   return p > 0 ? `${(100 * p).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %` : "—";
 }
 
+// Boss tirables (hors entraînement) : sans le carnage s'il est désactivé.
+const estTirable = b => !(carnageDesactive && b.type === "carnage_boss");
+
 // Probabilité hors classé d'un boss (catégories vides ignorées).
 function probaHorsClasse(b) {
-  const groupes = POIDS_CATEGORIES_BOSS.map(({ poids, contient }) => ({ poids, nb: boss.filter(contient).length }));
+  if (!estTirable(b)) return 0;
+  const groupes = POIDS_CATEGORIES_BOSS.map(({ poids, contient }) => ({ poids, nb: boss.filter(x => estTirable(x) && contient(x)).length }));
   const total = groupes.filter(g => g.nb > 0).reduce((somme, g) => somme + g.poids, 0);
   const i = POIDS_CATEGORIES_BOSS.findIndex(({ contient }) => contient(b));
   return total > 0 ? groupes[i].poids / total / groupes[i].nb : 0;
 }
 
 function rendreBoss() {
-  const nbClasse = boss.filter(estTirableEnClasse).length;
+  const nbClasse = boss.filter(b => estTirable(b) && estTirableEnClasse(b)).length;
   const enTete = ELEMENTS_RES.map(element =>
     `<th title="Résistance ${element}"><img class="icone-element-tc" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}"></th>`).join("");
 
@@ -417,6 +425,7 @@ function rendreBoss() {
       le reste sur un boss hebdomadaire, puis chaque boss de la catégorie avec la même probabilité.
       En classé : les <strong>${nbClasse}</strong> boss tirables (boss hebdomadaires sauf Tartaglia, légendes locales à l'infini et boss de carnage)
       ont tous la même probabilité.
+      ${carnageDesactive ? "<strong>Boss de carnage désactivés en ce moment</strong> (plus disponibles dans le jeu) : jamais tirés, sauf en entraînement." : ""}
     </p>
     <div class="tableau-conteneur">
       <table class="tableau-theorycraft tableau-boss-tc">
@@ -440,7 +449,7 @@ function rendreBoss() {
               </td>
               ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}
               <td>${pourcentage(probaHorsClasse(b))}</td>
-              <td>${estTirableEnClasse(b) ? pourcentage(1 / nbClasse) : "—"}</td>
+              <td>${estTirable(b) && estTirableEnClasse(b) ? pourcentage(1 / nbClasse) : "—"}</td>
             </tr>`).join("")}
         </tbody>
       </table>

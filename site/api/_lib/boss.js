@@ -27,8 +27,8 @@ function estLegendeLocale(boss) {
 // Mêmes poids dans theorycraft/theorycraft.js (POIDS_CATEGORIES_BOSS).
 const POIDS_CATEGORIES = [
   { poids: 10, contient: estLegendeLocale },
-  { poids: 3, contient: boss => boss.type === "carnage_boss" },
-  { poids: 17, contient: boss => !estLegendeLocale(boss) && boss.type !== "carnage_boss" }
+  { poids: 3, contient: estBossCarnage },
+  { poids: 17, contient: boss => !estLegendeLocale(boss) && !estBossCarnage(boss) }
 ];
 
 function auHasard(liste) {
@@ -55,6 +55,20 @@ function tirerBossAleatoire(exclureId = null, { classe = false, exclus = [] } = 
   return groupe ? auHasard(groupe.boss) : undefined;
 }
 
+function estBossCarnage(boss) {
+  return boss?.type === "carnage_boss";
+}
+
+// Ids des boss du carnage quand un admin les a désactivés (plus disponibles
+// dans le jeu, environ une semaine tous les 40 jours, cf.
+// config.carnage_desactive), à exclure de tous les tirages et boss imposés
+// sauf en entraînement ; [] sinon.
+async function bossCarnageExclus() {
+  const { actualiserPoints, estCarnageDesactive } = require("./personnages");
+  await actualiserPoints();
+  return estCarnageDesactive() ? bossList.filter(estBossCarnage).map(b => b.id) : [];
+}
+
 function getBossParId(id) {
   return bossList.find(b => b.id === id) || null;
 }
@@ -64,4 +78,6 @@ function idsLegendesLocales() {
   return bossList.filter(estLegendeLocale).map(b => b.id);
 }
 
-module.exports = { TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };
+const ERREUR_CARNAGE_DESACTIVE = "Les boss du carnage sont désactivés en ce moment (plus disponibles dans le jeu).";
+
+module.exports = { bossCarnageExclus, ERREUR_CARNAGE_DESACTIVE, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };

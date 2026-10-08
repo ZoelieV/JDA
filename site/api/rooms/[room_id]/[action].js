@@ -10,7 +10,7 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft } = require("../../_lib/room");
 const { estRouteEquipe, executerRouteEquipe } = require("../../_lib/equipe");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
-const { tirerBossAleatoire } = require("../../_lib/boss");
+const { tirerBossAleatoire, bossCarnageExclus } = require("../../_lib/boss");
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
@@ -95,11 +95,12 @@ function bossAVoter(draft, room) {
 async function tireurBoss(draft, room) {
   const classe = room?.type === "classe";
   const joueurs = draft.entrainement ? [draft.entrainement.lanceur] : [draft.discord_j1, draft.discord_j2];
-  const [tuees, horsNiveau] = await Promise.all([
+  const [tuees, horsNiveau, carnage] = await Promise.all([
     classe ? [] : legendesTueesAujourdhui(joueurs),
-    draft.entrainement ? [] : legendesHorsNiveauMonde(draft.discord_j1, draft.discord_j2)
+    draft.entrainement ? [] : legendesHorsNiveauMonde(draft.discord_j1, draft.discord_j2),
+    draft.entrainement ? [] : bossCarnageExclus()
   ]);
-  const exclus = [...tuees, ...horsNiveau];
+  const exclus = [...tuees, ...horsNiveau, ...carnage];
   if (exclus.includes(draft.boss_impose)) draft.boss_impose = null;
   if (exclus.includes(draft.entrainement?.boss_id)) draft.entrainement = { ...draft.entrainement, boss_id: null };
   return exclureId => tirerBossAleatoire(exclureId, { classe, exclus });

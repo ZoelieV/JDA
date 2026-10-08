@@ -36,6 +36,13 @@ let modesBonus = {};
 let buffsTheatre = new Set();
 // Bonus de saison (config.bonus_saison, page admin) : trophées en classé.
 let bonusSaison = new Set();
+// Boss du carnage désactivés (config.carnage_desactive, page admin) : plus
+// disponibles dans le jeu, jamais tirés hors entraînement (cf. _lib/boss.js).
+let carnageDesactive = false;
+
+function estCarnageDesactive() {
+  return carnageDesactive;
+}
 
 function appliquerBonus(points, cle, valeur) {
   const bonus = Number(valeur ?? 0);
@@ -119,6 +126,7 @@ async function actualiserPoints() {
     };
     buffsTheatre = new Set(Array.isArray(config.theatre) ? config.theatre : []);
     bonusSaison = new Set(Array.isArray(config.bonus_saison) ? config.bonus_saison : []);
+    carnageDesactive = config.carnage_desactive === true;
     modesBonus = config.modes || {};
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
@@ -245,6 +253,7 @@ module.exports = {
   aBonusSaison,
   actualiserPoints,
   estAjout,
+  estCarnageDesactive,
   getArmes,
   getCatalogueComplet,
   infosPersoJoueur,

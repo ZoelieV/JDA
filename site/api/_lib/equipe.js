@@ -32,7 +32,7 @@ const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
 const { actualiserPoints, getPersonnages, getArmes, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("./personnages");
 const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox } = require("./draft");
-const { tirerBossAleatoire, getBossParId, idsLegendesLocales } = require("./boss");
+const { tirerBossAleatoire, getBossParId, idsLegendesLocales, bossCarnageExclus, ERREUR_CARNAGE_DESACTIVE } = require("./boss");
 const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
 const { analyserVitrine, erreurVitrine } = require("./vitrine");
@@ -344,7 +344,7 @@ async function lancerDraft(draft, { revanche = false } = {}) {
   const tuees = await legendesTueesParJoueur([...draft.equipes.j1, ...draft.equipes.j2]);
   const libre = (paire, bossId) => !tuees.get(paire.j1)?.has(bossId) && !tuees.get(paire.j2)?.has(bossId);
   const legendes = idsLegendesLocales();
-  const exclus = [...legendes.filter(id => !paires.some(paire => libre(paire, id))), ...BOSS_HORS_COOP];
+  const exclus = [...legendes.filter(id => !paires.some(paire => libre(paire, id))), ...BOSS_HORS_COOP, ...await bossCarnageExclus()];
   const impose = draft.boss_impose && getBossParId(draft.boss_impose) && !exclus.includes(draft.boss_impose) ? draft.boss_impose : null;
   draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus })?.id || null;
   draft.legendes = paires.length > 0;
@@ -548,6 +548,7 @@ async function preparerCreation(body, user) {
   const bossImpose = body?.boss_id ? String(body.boss_id) : null;
   if (bossImpose && !getBossParId(bossImpose)) return { erreur: "Boss inconnu" };
   if (BOSS_HORS_COOP.includes(bossImpose)) return { erreur: "Ce boss n'est pas faisable en co-op." };
+  if ((await bossCarnageExclus()).includes(bossImpose)) return { erreur: ERREUR_CARNAGE_DESACTIVE };
 
   await actualiserPoints();
   const profils = await lireProfils([user.id]);
