@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=22">
+<link rel="stylesheet" href="admin_ppc.css?v=23">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -35,6 +35,7 @@
         <button type="button" id="ouvrir-categories" class="btn-ouvrir-ajout" title="Catégories des armes : support, standard">Catégories d'armes</button>
         <button type="button" id="ouvrir-comparateur" class="btn-ouvrir-ajout" title="Comparer des combos personnage + arme">Comparateur</button>
         <button type="button" id="ouvrir-bans" class="btn-ouvrir-ajout" title="Joueurs bannis du mode classé">Bans en cours</button>
+        <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
       <div id="filtres-admin" class="filtres-admin"></div>
@@ -182,6 +183,37 @@
     </div>
   </div>
 
+  <!-- Box fictives : faux profils remplis sur Mon compte, choisissables en
+       entraînement par les administrateurs et mini admins seulement. -->
+  <div id="modal-fictives" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Box fictives</h2>
+        <button type="button" id="fermer-fictives" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Faux profils pour l'<strong>entraînement</strong> : choisissables dans <strong>Ta box</strong> et
+        <strong>Box adverse</strong>, uniquement par les administrateurs et mini admins (full box ou
+        personnalisée). Une fois créée, la box se remplit comme une full box sur Mon compte.
+      </p>
+      <form id="creer-fictive" class="barre-categories">
+        <input type="text" id="nom-fictive" class="texte-ajout" placeholder="Nom de la box" maxlength="40" autocomplete="off" required>
+        <select id="theatre-fictive" class="texte-ajout select-fictive" title="Théâtre clear (mode classique / auto)">
+          <option value="">Théâtre : aucun</option>
+          <option value="1">Théâtre 6</option>
+          <option value="2">Théâtre 8</option>
+          <option value="3">Théâtre 10</option>
+          <option value="4">Théâtre 12</option>
+        </select>
+        <button type="submit" class="bouton-creer">Créer une box</button>
+      </form>
+      <div id="liste-fictives" class="liste-boss"></div>
+      <div class="actions-ajout">
+        <span id="message-fictives" class="message-ajout"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Annuler en bas à gauche, Enregistrer en bas à droite (figés). -->
   <div id="pied-admin" class="pied-admin cache">
     <button type="button" id="annuler-admin" class="bouton-annuler">Annuler</button>
@@ -196,6 +228,7 @@
   <script src="admin_categories.js?v=1"></script>
   <script src="admin_bans.js?v=1"></script>
   <script src="admin_comparateur.js?v=1"></script>
-  <script src="admin_ppc.js?v=23"></script>
+  <script src="admin_fictives.js?v=1"></script>
+  <script src="admin_ppc.js?v=24"></script>
 </body>
 </html>

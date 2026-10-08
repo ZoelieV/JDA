@@ -226,8 +226,46 @@ function normaliserProfil(profil) {
   return profil;
 }
 
+// ---- Box fictive (my_account?box_fictive=<id>) ----
+// Faux profil pour l'entraînement, créé depuis la page Administration (cf.
+// admin_ppc/admin_fictives.js, api/_lib/boxes_fictives.js) : la page sert à
+// remplir sa full box (persos, armes, niveaux) et son théâtre, chargés et
+// enregistrés via api/accounts/[discord_id].js. Les autres box, l'UID, le
+// stream, le niveau du monde et la personnalisation (ceux du compte
+// connecté) sont cachés.
+const ID_BOX_FICTIVE = (() => {
+  const id = new URLSearchParams(window.location.search).get("box_fictive");
+  return id && /^fictif_[0-9a-f]{1,32}$/.test(id) ? id : null;
+})();
+const URL_BOX_FICTIVE = ID_BOX_FICTIVE && `/api/accounts/${ID_BOX_FICTIVE}`;
+
+// Bandeau (nom de la box, théâtre, retour à l'Administration), autres box
+// cachées. Le champ Théâtre du menu du compte est déplacé dans le bandeau :
+// lu et enregistré comme d'habitude.
+function preparerModeFictif(nom) {
+  document.body.classList.add("mode-fictif");
+  document.title = `Box fictive : ${nom}`;
+  const titre = document.querySelector("#account-content .titre-page");
+  titre.textContent = `Box fictive : ${nom}`;
+  const bandeau = document.createElement("div");
+  bandeau.className = "bandeau-fictif";
+  bandeau.innerHTML = `
+    <p>Tu remplis une <strong>box fictive</strong> (entraînement, administrateurs seulement) : seule la full box compte. Ton propre compte n'est pas modifié.</p>
+    <a class="lien-admin-fictif" href="/admin_ppc/admin_ppc.html">Retour à l'Administration</a>
+  `;
+  bandeau.prepend(document.getElementById("theatre").closest(".menu-champ"));
+  titre.after(bandeau);
+}
+
 // ---- Remplace l'ancien chargerProfil() basé sur localStorage ----
 async function chargerProfil() {
+  if (ID_BOX_FICTIVE) {
+    const reponse = await fetch(URL_BOX_FICTIVE, { credentials: "include" });
+    const data = await reponse.json().catch(() => ({}));
+    if (!reponse.ok) throw new Error(data.error || "Box fictive introuvable.");
+    preparerModeFictif(data.discord_global_name);
+    return normaliserProfil(data.data || creerProfilParDefaut());
+  }
   try {
     const reponse = await fetch("/api/auth/profile", {
       credentials: "include"
@@ -254,11 +292,11 @@ async function chargerProfil() {
 // ---- Remplace l'ancien sauvegarderProfil() basé sur localStorage ----
 async function sauvegarderProfil(profil) {
   try {
-    const reponse = await fetch("/api/auth/profile", {
-      method: "POST",
+    const reponse = await fetch(ID_BOX_FICTIVE ? URL_BOX_FICTIVE : "/api/auth/profile", {
+      method: ID_BOX_FICTIVE ? "PUT" : "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profil)
+      body: JSON.stringify(ID_BOX_FICTIVE ? { data: profil } : profil)
     });
 
     if (!reponse.ok) {
@@ -1269,12 +1307,12 @@ async function initialiserPage() {
       }
       const { ok: succes, erreur } = await sauvegarderProfil(profil);
       afficherToast(
-        succes ? "Profil enregistré avec succès" : erreur || "Erreur lors de l'enregistrement du profil",
+        succes ? (ID_BOX_FICTIVE ? "Box fictive enregistrée" : "Profil enregistré avec succès") : erreur || "Erreur lors de l'enregistrement du profil",
         succes ? "succes" : "erreur"
       );
       if (succes) {
         marquerEnregistre(profil);
-        window.FondEcran?.memoriserTheatre(profil.theatre);
+        if (!ID_BOX_FICTIVE) window.FondEcran?.memoriserTheatre(profil.theatre);
       }
     });
 
@@ -1302,9 +1340,10 @@ async function initialiserPage() {
     // commun/compte.js) : fenêtre ouverte directement, paramètre retiré de
     // l'URL. Une fois la fenêtre prête (bouton branché après le chargement
     // des images) : avant, le clic ne faisait rien.
-    const parametresPrets = initialiserParametres(profil);
+    // Box fictive : pas de personnalisation (celle du compte connecté).
+    const parametresPrets = ID_BOX_FICTIVE ? Promise.resolve() : initialiserParametres(profil);
     const url = new URL(window.location.href);
-    if (url.searchParams.has("personnalisation")) {
+    if (!ID_BOX_FICTIVE && url.searchParams.has("personnalisation")) {
       url.searchParams.delete("personnalisation");
       history.replaceState(null, "", url);
       parametresPrets.then(() => document.getElementById("btn-parametres").click());
@@ -1314,10 +1353,10 @@ async function initialiserPage() {
     // Rien à enregistrer tant que rien n'a changé.
     marquerEnregistre(profil);
     // Médaille du bouton du compte (ici et sur les autres pages).
-    window.FondEcran?.memoriserTheatre(profil.theatre);
+    if (!ID_BOX_FICTIVE) window.FondEcran?.memoriserTheatre(profil.theatre);
   } catch (erreur) {
     console.error(erreur);
-    alert("Erreur lors du chargement de la page.");
+    alert(ID_BOX_FICTIVE ? `Box fictive : ${erreur.message}` : "Erreur lors du chargement de la page.");
   }
 }
 

@@ -3,8 +3,9 @@
 // son propre profil. Entraînement (draft.entrainement) : la box choisie à
 // la création, qui peut appartenir à un autre joueur (full ou stuff) ou être
 // une box personnalisée ("custom" : persos cochés dans la full box d'un
-// joueur, sans dévoiler ses box opti).
-const { supabase } = require("./supabase");
+// joueur, sans dévoiler ses box opti), ou une box fictive (cf.
+// _lib/boxes_fictives.js).
+const { lireDonneesProprietaire } = require("./boxes_fictives");
 const { getPersonnages, getArmes, actualiserPoints } = require("./personnages");
 const {
   calculerPointsBox,
@@ -48,10 +49,10 @@ function donneesBoxRole(profilData, source) {
 async function chargerDonneesBoxes(draft) {
   const sources = { j1: sourceBoxRole(draft, "j1"), j2: sourceBoxRole(draft, "j2") };
   const [profilJ1, profilJ2] = await Promise.all([
-    supabase.from("profiles").select("data").eq("discord_id", sources.j1.proprietaire).maybeSingle(),
-    supabase.from("profiles").select("data").eq("discord_id", sources.j2.proprietaire).maybeSingle()
+    lireDonneesProprietaire(sources.j1.proprietaire),
+    lireDonneesProprietaire(sources.j2.proprietaire)
   ]);
-  const profils = { j1: profilJ1.data?.data, j2: profilJ2.data?.data };
+  const profils = { j1: profilJ1, j2: profilJ2 };
   return Object.fromEntries(["j1", "j2"].map(role => [role, {
     data: donneesBoxRole(profils[role], sources[role]),
     box: sources[role].box,

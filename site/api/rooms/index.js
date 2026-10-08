@@ -11,6 +11,8 @@ const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("..
 const { getBossParId, bossCarnageExclus, ERREUR_CARNAGE_DESACTIVE } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation } = require("../_lib/equipe");
+const { estModerateur } = require("../_lib/admin");
+const { estIdFictif, lireBoxFictive } = require("../_lib/boxes_fictives");
 
 // Entraînement : une création toutes les 10 s par IP au plus.
 const DELAI_ENTRAINEMENT_MS = 10 * 1000;
@@ -42,18 +44,28 @@ async function lireProfil(discordId) {
 // Box du lanceur : n'importe laquelle ; d'un autre joueur : full ou stuff
 // (ses box opti restent privées) ; personnalisée ("custom") : persos cochés
 // parmi ceux de la full box du joueur. NB_PERSOS_MIN_BOX persos minimum.
+// Box fictive (cf. _lib/boxes_fictives.js) : administrateurs et mini admins
+// seulement, full box ou personnalisée.
 async function validerBoxEntrainement(brut, lanceurId, libelle) {
   const proprietaire = typeof brut?.proprietaire === "string" ? brut.proprietaire : null;
   const box = brut?.box;
   if (!proprietaire) return { erreur: `${libelle} : joueur manquant` };
-  const autorisees = ["full", "stuff", "custom", ...(proprietaire === lanceurId ? BOX_OPTI : [])];
+  const fictive = estIdFictif(proprietaire);
+  const autorisees = fictive ? ["full", "custom"] : ["full", "stuff", "custom", ...(proprietaire === lanceurId ? BOX_OPTI : [])];
   if (!autorisees.includes(box)) return { erreur: `${libelle} : box non autorisée` };
 
-  const { data: profil } = await supabase
-    .from("profiles")
-    .select("discord_global_name, discord_username, data")
-    .eq("discord_id", proprietaire)
-    .maybeSingle();
+  let profil;
+  if (fictive) {
+    if (!await estModerateur(lanceurId)) return { erreur: `${libelle} : box fictive réservée aux administrateurs` };
+    const boxFictive = await lireBoxFictive(proprietaire);
+    profil = boxFictive && { discord_global_name: boxFictive.nom, data: boxFictive.data };
+  } else {
+    ({ data: profil } = await supabase
+      .from("profiles")
+      .select("discord_global_name, discord_username, data")
+      .eq("discord_id", proprietaire)
+      .maybeSingle());
+  }
   if (!profil) return { erreur: `${libelle} : joueur introuvable` };
 
   const source = { proprietaire, box, nom: profil.discord_global_name || profil.discord_username || "Joueur" };

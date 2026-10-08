@@ -837,7 +837,7 @@ const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite
 function passerEnLectureSeule() {
   document.body.classList.add("lecture-seule");
   document.querySelector(".aide-admin").textContent =
-    "Mode lecture seule (mini admin) : tu peux consulter les points, les aperçus, les boss et les catégories, trier et filtrer, mais pas les modifier. Les litiges se gèrent dans l'Historique.";
+    "Mode lecture seule (mini admin) : tu peux consulter les points, les aperçus, les boss et les catégories, trier et filtrer, mais pas les modifier. Les box fictives (entraînement) restent gérables. Les litiges se gèrent dans l'Historique.";
   ZONES_MODIFIABLES.forEach(id => {
     const zone = document.getElementById(id);
     const verrouiller = () => zone.querySelectorAll(ELEMENTS_MODIFIANTS).forEach(element => {

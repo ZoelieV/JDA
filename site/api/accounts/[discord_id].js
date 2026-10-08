@@ -1,5 +1,16 @@
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
+const { estModerateur } = require("../_lib/admin");
+const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
+const { nettoyerProfil } = require("../auth/profile");
+const {
+  MAX_BOXES_FICTIVES,
+  estIdFictif,
+  nouvelIdFictif,
+  nomFictifValide,
+  lireBoxesFictives,
+  ecrireBoxesFictives
+} = require("../_lib/boxes_fictives");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -43,11 +54,128 @@ function masquerBoxOpti(data, visibles) {
   return copie;
 }
 
+// ---- Box fictives (cf. _lib/boxes_fictives.js) ----
+// Administrateurs et mini admins seulement :
+//   GET    /api/accounts/boxes_fictives          liste { id, nom, theatre, nb_persos, ... }
+//   POST   /api/accounts/boxes_fictives          { nom, theatre? } -> { id }
+//   GET    /api/accounts/<id fictif>             comme un profil (data = la box)
+//   PUT    /api/accounts/<id fictif>             { nom?, theatre?, data? }
+//   DELETE /api/accounts/<id fictif>
+// GET d'une box fictive aussi permis à tous avec ?room= d'un entraînement
+// qui la joue (joueur qui a rejoint, spectateurs).
+const LISTE_FICTIVES = "boxes_fictives";
+const THEATRES_FICTIFS = new Set(["", "1", "2", "3", "4"]);
+
+// Personnages possédés (Voyageur compté une fois), comme Tous les comptes.
+function nbPersosFictive(data) {
+  const full = migrerCollectionPersos(data?.characters)?.full || {};
+  return new Set(getPersonnages().filter(p => (full[p.id] ?? -1) >= 0).map(p => p.groupe || p.id)).size;
+}
+
+// Données d'une box fictive : full box seulement (persos, armes) et théâtre.
+function nettoyerDonneesFictive(brut, theatre) {
+  const propre = nettoyerProfil(brut && typeof brut === "object" && !Array.isArray(brut) ? brut : {});
+  return { theatre, characters: propre.characters, weapons: propre.weapons };
+}
+
+function theatreFictif(brut, defaut = "") {
+  const theatre = String(brut ?? defaut);
+  return THEATRES_FICTIFS.has(theatre) ? theatre : defaut;
+}
+
+async function boxJoueeDansRoom(roomId, id) {
+  if (!roomId) return false;
+  const { data: room } = await supabase.from("rooms").select("draft").eq("room_id", roomId).maybeSingle();
+  return Object.values(room?.draft?.entrainement?.boxes || {}).some(source => source?.proprietaire === id);
+}
+
+async function gererBoxesFictives(req, res, url, cible, user) {
+  const moderateur = !!user && await estModerateur(user.id);
+
+  if (cible === LISTE_FICTIVES) {
+    if (!moderateur) return res.status(403).json({ error: "Réservé aux administrateurs" });
+    if (req.method === "GET") {
+      const [boxes] = await Promise.all([lireBoxesFictives(), actualiserPoints()]);
+      return res.status(200).json(Object.entries(boxes)
+        .map(([id, box]) => ({ id, nom: box.nom, theatre: box.data?.theatre || "", nb_persos: nbPersosFictive(box.data), createur: box.createur, modifie_le: box.modifie_le }))
+        .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" })));
+    }
+    if (req.method === "POST") {
+      const nom = nomFictifValide(req.body?.nom);
+      if (!nom) return res.status(400).json({ error: "Donne un nom à la box." });
+      const boxes = await lireBoxesFictives();
+      if (Object.keys(boxes).length >= MAX_BOXES_FICTIVES) {
+        return res.status(409).json({ error: `${MAX_BOXES_FICTIVES} box fictives au maximum : supprimes-en une d'abord.` });
+      }
+      if (Object.values(boxes).some(box => box.nom.toLowerCase() === nom.toLowerCase())) {
+        return res.status(409).json({ error: `Une box fictive s'appelle déjà « ${nom} ».` });
+      }
+      const id = nouvelIdFictif();
+      const maintenant = new Date().toISOString();
+      boxes[id] = {
+        nom,
+        data: nettoyerDonneesFictive({}, theatreFictif(req.body?.theatre)),
+        createur: user.global_name || user.username || user.id,
+        cree_le: maintenant,
+        modifie_le: maintenant
+      };
+      await ecrireBoxesFictives(boxes);
+      return res.status(200).json({ id });
+    }
+    res.setHeader("Allow", "GET, POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const boxes = await lireBoxesFictives();
+  const box = boxes[cible];
+  if (!box) return res.status(404).json({ error: "Box fictive introuvable" });
+
+  if (req.method === "GET") {
+    if (!moderateur && !await boxJoueeDansRoom(url.searchParams.get("room"), cible)) {
+      return res.status(403).json({ error: "Réservé aux administrateurs" });
+    }
+    return res.status(200).json({ discord_id: cible, discord_global_name: box.nom, discord_username: box.nom, discord_avatar_url: null, fictive: true, data: box.data });
+  }
+
+  if (!moderateur) return res.status(403).json({ error: "Réservé aux administrateurs" });
+
+  if (req.method === "PUT") {
+    const corps = req.body || {};
+    if (corps.nom !== undefined) {
+      const nom = nomFictifValide(corps.nom);
+      if (!nom) return res.status(400).json({ error: "Donne un nom à la box." });
+      if (Object.entries(boxes).some(([id, autre]) => id !== cible && autre.nom.toLowerCase() === nom.toLowerCase())) {
+        return res.status(409).json({ error: `Une box fictive s'appelle déjà « ${nom} ».` });
+      }
+      box.nom = nom;
+    }
+    const theatre = theatreFictif(corps.theatre ?? corps.data?.theatre, box.data?.theatre || "");
+    box.data = corps.data !== undefined ? nettoyerDonneesFictive(corps.data, theatre) : { ...box.data, theatre };
+    box.modifie_le = new Date().toISOString();
+    await ecrireBoxesFictives(boxes);
+    return res.status(200).json({ ok: true });
+  }
+
+  if (req.method === "DELETE") {
+    delete boxes[cible];
+    await ecrireBoxesFictives(boxes);
+    return res.status(200).json({ ok: true });
+  }
+
+  res.setHeader("Allow", "GET, PUT, DELETE");
+  return res.status(405).json({ error: "Méthode non autorisée" });
+}
+
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, `https://${req.headers.host}`);
     const parts = url.pathname.split("/");
     const discordId = parts[parts.length - 1];
+
+    if (discordId === LISTE_FICTIVES || estIdFictif(discordId)) {
+      res.setHeader("Cache-Control", "no-store");
+      return await gererBoxesFictives(req, res, url, discordId, await verifySessionToken(parseCookies(req).session));
+    }
 
     const { data, error } = await supabase
       .from("profiles")

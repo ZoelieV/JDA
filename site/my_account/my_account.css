@@ -1685,3 +1685,43 @@ body {
 .option-copie-box:hover {
   background-color: rgba(245, 197, 66, 0.18);
 }
+
+/* ---- Box fictive (my_account?box_fictive=<id>, cf. preparerModeFictif) :
+   full box seulement, champs du compte connecté cachés. ---- */
+.mode-fictif .box-btn:not([data-box="full"]),
+.mode-fictif #copie-box,
+.mode-fictif #menu-compte .menu-champ,
+.mode-fictif #btn-enregistrer-compte,
+.mode-fictif #btn-parametres {
+  display: none;
+}
+
+.bandeau-fictif {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin: 0 auto 1rem;
+  padding: 0.75rem 1rem;
+  max-width: 60rem;
+  border: 2px solid rgba(245, 197, 66, 0.6);
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.7);
+}
+
+.bandeau-fictif p {
+  flex: 1 1 20rem;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.mode-fictif .bandeau-fictif .menu-champ {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lien-admin-fictif {
+  color: #f5c542;
+  font-weight: bold;
+}

@@ -18,6 +18,7 @@ const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_li
 const { lireSaisons, saisonDuMatch } = require("./_lib/saisons");
 const { SANCTIONS, finSanction } = require("./_lib/sanctions");
 const { estSignalable, etatSignalementsJoueur, signalerMatch, chargerSignalementsOuverts, traiterSignalement } = require("./_lib/signalements");
+const { estIdFictif, lireBoxesFictives } = require("./_lib/boxes_fictives");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -297,14 +298,23 @@ async function chargerRoomsEnCours() {
   );
 }
 
+// Box fictives (entraînements des administrateurs, cf. _lib/boxes_fictives.js) :
+// leur nom à la place du pseudo.
 async function chargerJoueurs(ids) {
   if (ids.length === 0) return new Map();
   const { data, error } = await supabase
     .from("profiles")
     .select("discord_id, discord_username, discord_global_name, discord_avatar_url, data")
-    .in("discord_id", ids);
+    .in("discord_id", ids.filter(id => !estIdFictif(id)));
   if (error) throw error;
-  return new Map((data || []).map(profil => [profil.discord_id, profil]));
+  const joueurs = new Map((data || []).map(profil => [profil.discord_id, profil]));
+  if (ids.some(estIdFictif)) {
+    const fictives = await lireBoxesFictives().catch(() => ({}));
+    ids.filter(id => estIdFictif(id) && fictives[id]).forEach(id => {
+      joueurs.set(id, { discord_id: id, discord_global_name: fictives[id].nom, data: fictives[id].data });
+    });
+  }
+  return joueurs;
 }
 
 // Côté d'un joueur dans un match. Bans : colonne "actions" si elle existe,

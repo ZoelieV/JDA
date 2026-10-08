@@ -253,3 +253,6 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: "Erreur serveur." });
   }
 };
+
+// Box fictives (api/accounts/[discord_id].js) : même nettoyage des données.
+module.exports.nettoyerProfil = nettoyerProfil;

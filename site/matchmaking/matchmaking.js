@@ -116,6 +116,8 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
 // Configuration : draft (classée ou non, mode de théâtre), ta box et la box
 // adverse (une des tiennes ; full ou stuff d'un autre joueur ; ou une box
 // personnalisée cochée dans la full box d'un joueur), boss et J1.
+// Administrateurs et mini admins : box fictives en plus des joueurs (full
+// ou personnalisée, cf. api/_lib/boxes_fictives.js).
 const MIN_PERSOS_BOX = 16; // cf. NB_PERSOS_MIN_BOX, api/_lib/draft.js
 const LIBELLES_BOX = { full: "Full box", stuff: "Stuff", opti1: "Opti 1", opti2: "Opti 2", opti3: "Opti 3", opti4: "Opti 4", opti5: "Opti 5", custom: "Personnalisée" };
 
@@ -123,6 +125,7 @@ const entrainement = {
   pret: false,
   moi: null, // mon compte { id }
   comptes: [], // tous les joueurs { discord_id, nom }
+  fictives: [], // box fictives (administrateurs) { id, nom }
   profils: new Map(), // discord_id -> données du profil (box)
   personnages: [],
   cotes: {
@@ -158,8 +161,11 @@ async function rendreSelecteurBox(cote) {
   const estMoi = etat.proprietaire === entrainement.moi.id;
   const profil = await profilJoueur(etat.proprietaire);
   const nomsBoxes = estMoi ? profil.nomsBoxes || {} : {};
-  // Box d'un autre joueur : full ou stuff (ses box opti restent privées).
-  const boxes = estMoi ? ["full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5", "custom"] : ["full", "stuff", "custom"];
+  // Box d'un autre joueur : full ou stuff (ses box opti restent privées) ;
+  // box fictive : full seulement.
+  const fictive = etat.proprietaire.startsWith("fictif_");
+  const boxes = estMoi ? ["full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5", "custom"]
+    : fictive ? ["full", "custom"] : ["full", "stuff", "custom"];
   if (!boxes.includes(etat.box)) etat.box = "full";
 
   zone.innerHTML = `
@@ -191,6 +197,18 @@ async function rendreSelecteurBox(cote) {
     option.selected = compte.discord_id === etat.proprietaire;
     select.appendChild(option);
   });
+  if (entrainement.fictives.length) {
+    const groupe = document.createElement("optgroup");
+    groupe.label = "Box fictives";
+    entrainement.fictives.forEach(box => {
+      const option = document.createElement("option");
+      option.value = box.id;
+      option.textContent = box.nom;
+      option.selected = box.id === etat.proprietaire;
+      groupe.appendChild(option);
+    });
+    select.appendChild(groupe);
+  }
   select.addEventListener("change", () => {
     etat.proprietaire = select.value;
     etat.persos = new Set();
@@ -253,6 +271,12 @@ async function initialiserEntrainement() {
     .map(c => ({ discord_id: c.discord_id, nom: nom(c) }))
     .sort((a, b) => (b.discord_id === entrainement.moi.id) - (a.discord_id === entrainement.moi.id) || a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }));
   entrainement.personnages = personnages;
+  if (entrainement.moi.admin || entrainement.moi.mini_admin) {
+    entrainement.fictives = await chargerJSONApi("/api/accounts/boxes_fictives").catch(erreur => {
+      console.error(erreur);
+      return [];
+    });
+  }
   entrainement.cotes.moi.proprietaire = entrainement.moi.id;
   entrainement.cotes.adverse.proprietaire = entrainement.moi.id;
 
