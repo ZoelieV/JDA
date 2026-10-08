@@ -1235,6 +1235,12 @@
    "categorie": "carnage_chtonien",
    "image": "bg_web/carnage_chtonien/boss_2.webp",
    "miniature": "bg_miniatures/carnage_chtonien/boss_2.webp"
+  },
+  {
+   "id": "bg/carnage_chtonien/boss_3.webp",
+   "categorie": "carnage_chtonien",
+   "image": "bg_web/carnage_chtonien/boss_3.webp",
+   "miniature": "bg_miniatures/carnage_chtonien/boss_3.webp"
   }
  ]
 }
