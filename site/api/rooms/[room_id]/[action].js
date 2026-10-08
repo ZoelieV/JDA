@@ -48,9 +48,9 @@ const COMMENTAIRE_LITIGE_MAX = 500;
 const BOX_AUTORISEES = new Set([
   "full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5"
 ]);
-// Classé classique (théâtre "auto") : full box et personnages stuff
-// seulement, pas de box opti (cf. BOX_CLASSE_CLASSIQUE de matchmaking/match.js).
-const BOX_CLASSE_CLASSIQUE = new Set(["full", "stuff"]);
+// Classé classique (théâtre "auto") : full box seulement, ni personnages
+// stuff ni box opti (cf. BOX_CLASSE_CLASSIQUE de matchmaking/match.js).
+const BOX_CLASSE_CLASSIQUE = new Set(["full"]);
 
 function estClasseClassique(draft, room) {
   return room?.type === "classe" && (draft.mode_theatre || "auto") === "auto";
@@ -193,7 +193,7 @@ async function handleBox(req, res, roomId, user) {
   }
   if (refuserSiPause(res, draft)) return;
   if (estClasseClassique(draft, room) && !BOX_CLASSE_CLASSIQUE.has(box)) {
-    return res.status(400).json({ error: "En classé classique, seules la full box et les personnages stuff sont autorisés." });
+    return res.status(400).json({ error: "En classé classique, seule la full box est autorisée." });
   }
 
   const nbPersos = await compterPersosBox(user.id, box);

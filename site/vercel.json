@@ -37,7 +37,7 @@
       ]
     },
     {
-      "source": "/DB/images/(.*)",
+      "source": "/DB/images/((?!.*\\.json$).*)",
       "headers": [
         {
           "key": "Cache-Control",
