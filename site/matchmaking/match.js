@@ -965,6 +965,13 @@ function rendreEntetesJoueurs() {
 // Personnages (Voyageur compté une fois) qu'une box doit contenir pour être
 // choisie (cf. NB_PERSOS_MIN_BOX, api/_lib/draft.js).
 const NB_PERSOS_MIN_BOX = 16;
+// Classé classique (théâtre "auto") : pas de box opti (cf.
+// BOX_CLASSE_CLASSIQUE de api/rooms/[room_id]/[action].js).
+const BOX_CLASSE_CLASSIQUE = ["full", "stuff"];
+
+function estClasseClassique() {
+  return typeRoom === "classe" && (draft?.mode_theatre || "auto") === "auto";
+}
 
 function nbPersosBox(role, box) {
   const collection = getJoueurDataParRole(role)?.characters || { full: {}, selections: {} };
@@ -996,9 +1003,11 @@ function rendreChoixBox() {
 
     // Box optimisées renommées par le joueur dans Mon compte (profil.nomsBoxes).
     const nomsPerso = getJoueurDataParRole(role)?.nomsBoxes || {};
-    // Entraînement : seulement la box choisie à la création ; sinon toutes
-    // sauf "Personnalisée".
-    Object.entries(BOX_LABELS).filter(([valeur]) => draft.entrainement ? draft[`box_${role}`] === valeur : valeur !== "custom").forEach(([valeur, label]) => {
+    // Entraînement : seulement la box choisie à la création ; classé
+    // classique : full et stuff (BOX_CLASSE_CLASSIQUE) ; sinon toutes sauf
+    // "Personnalisée".
+    Object.entries(BOX_LABELS).filter(([valeur]) => draft.entrainement ? draft[`box_${role}`] === valeur
+      : estClasseClassique() ? BOX_CLASSE_CLASSIQUE.includes(valeur) : valeur !== "custom").forEach(([valeur, label]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
