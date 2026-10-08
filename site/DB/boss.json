@@ -224,13 +224,13 @@
     "nom": "Carnage 4 : Salle 2",
     "type": "carnage_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/carnage_chtonien/Guardian_Blade_of_Drifting_Snow_Stygian_Onslaught_Preview_2.webp"
+    "image": "images/boss/carnage_chtonien/Secret_Source_Automaton_Overseer_Device_Stygian_Onslaught_Preview_2.webp"
   },
   {
     "id": "boss_3",
     "nom": "Carnage 4 : Salle 3",
     "type": "carnage_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
-    "image": "images/boss/carnage_chtonien/Secret_Source_Automaton_Overseer_Device_Stygian_Onslaught_Preview_3.webp"
+    "image": "images/boss/carnage_chtonien/Guardian_Blade_of_Drifting_Snow_Stygian_Onslaught_Preview_3.webp"
   }
 ]
