@@ -2673,7 +2673,9 @@ const BULLES_PAR_PHASE = {
 // Fond par défaut, puis, une fois le boss tiré (et son animation finie), une
 // des images de DB/images/bg_web/boss_hebdo/ nommées "<boss>_<n>" (id du
 // boss sans "_boss"), ou celle de DB/images/bg_web/legendes_locales/
-// nommée "<id de la légende>", plus ses fonds_supplementaires (DB/boss.json,
+// nommée "<id de la légende>", ou celle de DB/images/bg_web/carnage_chtonien/
+// nommée "<id du boss de carnage>" (boss_1 à boss_3), plus ses
+// fonds_supplementaires (DB/boss.json,
 // ex. "totem_interieur" pour les légendes des défis de totem). Le choix
 // dépend de la room et du boss : les deux joueurs voient la même image. Boss
 // sans fond : fond par défaut.
@@ -2687,7 +2689,7 @@ async function chargerFondsBoss() {
   try {
     const reponse = await fetch("/DB/images/cosmetiques.json");
     const cosmetiques = await reponse.json();
-    fondsBoss = cosmetiques.fonds.filter(fond => fond.categorie === "boss_hebdo" || fond.categorie === "legendes_locales");
+    fondsBoss = cosmetiques.fonds.filter(fond => ["boss_hebdo", "legendes_locales", "carnage_chtonien"].includes(fond.categorie));
     bannieresPersos = cosmetiques.bannieres2 || [];
   } catch (erreur) {
     console.error(erreur);

@@ -1105,18 +1105,6 @@
    "miniature": "bg_miniatures/boss_hebdo/signora_2.webp"
   },
   {
-   "id": "bg/carnage/MedalTVGenshinImpact20261006170049276.png",
-   "categorie": "carnage",
-   "image": "bg_web/carnage/MedalTVGenshinImpact20261006170049276.webp",
-   "miniature": "bg_miniatures/carnage/MedalTVGenshinImpact20261006170049276.webp"
-  },
-  {
-   "id": "bg/carnage/MedalTVGenshinImpact20261006170304251.png",
-   "categorie": "carnage",
-   "image": "bg_web/carnage/MedalTVGenshinImpact20261006170304251.webp",
-   "miniature": "bg_miniatures/carnage/MedalTVGenshinImpact20261006170304251.webp"
-  },
-  {
    "id": "bg/legendes_locales/bandersnatch_ll.png",
    "categorie": "legendes_locales",
    "image": "bg_web/legendes_locales/bandersnatch_ll.webp",
@@ -1235,6 +1223,18 @@
    "categorie": "legendes_locales",
    "image": "bg_web/legendes_locales/verrou_bronze_ll.webp",
    "miniature": "bg_miniatures/legendes_locales/verrou_bronze_ll.webp"
+  },
+  {
+   "id": "bg/carnage_chtonien/boss_1.webp",
+   "categorie": "carnage_chtonien",
+   "image": "bg_web/carnage_chtonien/boss_1.webp",
+   "miniature": "bg_miniatures/carnage_chtonien/boss_1.webp"
+  },
+  {
+   "id": "bg/carnage_chtonien/boss_2.webp",
+   "categorie": "carnage_chtonien",
+   "image": "bg_web/carnage_chtonien/boss_2.webp",
+   "miniature": "bg_miniatures/carnage_chtonien/boss_2.webp"
   }
  ]
 }

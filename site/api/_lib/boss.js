@@ -5,10 +5,11 @@ const bossList = require("../../DB/boss.json");
 // ou à l'infini.
 const TYPE_LEGENDE_JOUR = "legende_locale_jour";
 const TYPE_LEGENDE_INFINIE = "legende_locale_infinie";
-// Mode classé : boss hebdomadaires et légendes locales sans limite par jour,
+// Mode classé : boss hebdomadaires, légendes locales sans limite par jour et
+// boss de carnage (salles 1 à 3 du carnage chtonien en cours),
 // sauf ceux marqués "classe": false dans DB/boss.json (ex. Tartaglia, trop
 // dépendant des patterns).
-const TYPES_BOSS_CLASSE = ["weekly_boss", TYPE_LEGENDE_INFINIE];
+const TYPES_BOSS_CLASSE = ["weekly_boss", TYPE_LEGENDE_INFINIE, "carnage_boss"];
 
 function estTirableEnClasse(boss) {
   return TYPES_BOSS_CLASSE.includes(boss?.type) && boss.classe !== false;
@@ -16,6 +17,22 @@ function estTirableEnClasse(boss) {
 
 function estLegendeLocale(boss) {
   return boss?.type === TYPE_LEGENDE_JOUR || boss?.type === TYPE_LEGENDE_INFINIE;
+}
+
+// Hors classé : catégorie de boss tirée d'abord (sur 30 : légendes locales
+// 10, boss de carnage 3, boss hebdomadaires et autres 17), puis un boss au
+// hasard dans la catégorie. Une catégorie vide (ex. légendes toutes exclues)
+// est ignorée, les autres se partagent sa probabilité.
+// En classé : tous les boss tirables sont équiprobables.
+// Mêmes poids dans theorycraft/theorycraft.js (POIDS_CATEGORIES_BOSS).
+const POIDS_CATEGORIES = [
+  { poids: 10, contient: estLegendeLocale },
+  { poids: 3, contient: boss => boss.type === "carnage_boss" },
+  { poids: 17, contient: boss => !estLegendeLocale(boss) && boss.type !== "carnage_boss" }
+];
+
+function auHasard(liste) {
+  return liste[Math.floor(Math.random() * liste.length)];
 }
 
 // exclureId : boss de la manche précédente (revanche), jamais retiré deux
@@ -28,7 +45,14 @@ function tirerBossAleatoire(exclureId = null, { classe = false, exclus = [] } = 
   const tirables = bossList.filter(b => (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
   const candidats = tirables.filter(b => b.id !== exclureId);
   const liste = candidats.length > 0 ? candidats : tirables;
-  return liste[Math.floor(Math.random() * liste.length)];
+  if (classe) return auHasard(liste);
+
+  const groupes = POIDS_CATEGORIES
+    .map(({ poids, contient }) => ({ poids, boss: liste.filter(contient) }))
+    .filter(groupe => groupe.boss.length > 0);
+  let tirage = Math.random() * groupes.reduce((total, groupe) => total + groupe.poids, 0);
+  const groupe = groupes.find(g => (tirage -= g.poids) < 0) || groupes[groupes.length - 1];
+  return groupe ? auHasard(groupe.boss) : undefined;
 }
 
 function getBossParId(id) {

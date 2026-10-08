@@ -39,7 +39,7 @@ const TYPES_BOSS = {
   world_boss: "World boss",
   carnage_boss: "Boss de carnage"
 };
-const TYPES_BOSS_CLASSE = ["weekly_boss", "legende_locale_infinie"];
+const TYPES_BOSS_CLASSE = ["weekly_boss", "legende_locale_infinie", "carnage_boss"];
 // Même règle que estTirableEnClasse (api/_lib/boss.js) : "classe": false
 // dans DB/boss.json = jamais en classé.
 const estTirableEnClasse = b => TYPES_BOSS_CLASSE.includes(b.type) && b.classe !== false;
@@ -384,25 +384,39 @@ function initialiserApercu() {
 }
 
 // ---- Boss : résistances et probabilités de tirage ----
-// Tirage uniforme parmi les boss tirables (cf. tirerBossAleatoire,
-// api/_lib/boss.js) : tous hors classé, boss hebdomadaires et légendes
-// locales à l'infini en classé.
+// Cf. tirerBossAleatoire (api/_lib/boss.js). Hors classé : catégorie tirée
+// d'abord (mêmes poids que POIDS_CATEGORIES), puis boss uniforme dans la
+// catégorie. Classé : tirage uniforme parmi les boss tirables.
+const POIDS_CATEGORIES_BOSS = [
+  { poids: 10, contient: estLegendeLocale },
+  { poids: 3, contient: b => b.type === "carnage_boss" },
+  { poids: 17, contient: b => !estLegendeLocale(b) && b.type !== "carnage_boss" }
+];
 
-function pourcentage(n) {
-  return n > 0 ? `${(100 / n).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %` : "—";
+function pourcentage(p) {
+  return p > 0 ? `${(100 * p).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %` : "—";
+}
+
+// Probabilité hors classé d'un boss (catégories vides ignorées).
+function probaHorsClasse(b) {
+  const groupes = POIDS_CATEGORIES_BOSS.map(({ poids, contient }) => ({ poids, nb: boss.filter(contient).length }));
+  const total = groupes.filter(g => g.nb > 0).reduce((somme, g) => somme + g.poids, 0);
+  const i = POIDS_CATEGORIES_BOSS.findIndex(({ contient }) => contient(b));
+  return total > 0 ? groupes[i].poids / total / groupes[i].nb : 0;
 }
 
 function rendreBoss() {
-  const nbNonClasse = boss.length;
   const nbClasse = boss.filter(estTirableEnClasse).length;
   const enTete = ELEMENTS_RES.map(element =>
     `<th title="Résistance ${element}"><img class="icone-element-tc" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}"></th>`).join("");
 
   document.getElementById("panneau-boss").innerHTML = `
     <p class="aide-theorycraft">
-      Résistances élémentaires en pourcentage (« Immunisé » : aucun dégât de cet élément). Le boss est tiré au hasard, chaque boss tirable avec la même probabilité :
-      <strong>${nbNonClasse}</strong> boss hors classé (room, matchmaking, entraînement), <strong>${nbClasse}</strong> en classé
-      (boss hebdomadaires sauf Tartaglia, et légendes locales à l'infini).
+      Résistances élémentaires en pourcentage (« Immunisé » : aucun dégât de cet élément). Le boss est tiré au hasard.
+      Hors classé (room, matchmaking, entraînement, équipe) : 1 chance sur 3 de tomber sur une légende locale, 1 sur 10 sur un boss de carnage,
+      le reste sur un boss hebdomadaire, puis chaque boss de la catégorie avec la même probabilité.
+      En classé : les <strong>${nbClasse}</strong> boss tirables (boss hebdomadaires sauf Tartaglia, légendes locales à l'infini et boss de carnage)
+      ont tous la même probabilité.
     </p>
     <div class="tableau-conteneur">
       <table class="tableau-theorycraft tableau-boss-tc">
@@ -425,17 +439,17 @@ function rendreBoss() {
                 </span>
               </td>
               ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}
-              <td>${pourcentage(nbNonClasse)}</td>
-              <td>${estTirableEnClasse(b) ? pourcentage(nbClasse) : "—"}</td>
+              <td>${pourcentage(probaHorsClasse(b))}</td>
+              <td>${estTirableEnClasse(b) ? pourcentage(1 / nbClasse) : "—"}</td>
             </tr>`).join("")}
         </tbody>
       </table>
     </div>
     <ul class="notes-theorycraft">
-      <li>Revanche : le boss de la manche précédente n'est jamais retiré, les autres se partagent sa probabilité.</li>
+      <li>Revanche : le boss de la manche précédente n'est jamais retiré, les autres boss de sa catégorie se partagent sa probabilité.</li>
       <li>Hors classé, le boss tiré est soumis au vote : il n'est relancé que si les deux joueurs veulent le relancer.</li>
-      <li>Légendes locales « 1 fois par jour » : celles déjà tuées par l'un des deux joueurs depuis 4 h (heure de Paris) ne sont pas tirées, les autres se partagent leur probabilité.</li>
-      <li>Deux joueurs qui n'ont pas le même niveau du monde (ou dont l'un ne l'a pas renseigné) ne tombent jamais sur une légende locale : leurs PV dépendent du niveau du monde. Les autres boss se partagent alors leur probabilité.</li>
+      <li>Légendes locales « 1 fois par jour » : celles déjà tuées par l'un des deux joueurs depuis 4 h (heure de Paris) ne sont pas tirées, les autres légendes se partagent leur probabilité.</li>
+      <li>Deux joueurs qui n'ont pas le même niveau du monde (ou dont l'un ne l'a pas renseigné) ne tombent jamais sur une légende locale : leurs PV dépendent du niveau du monde. Les boss de carnage et hebdomadaires se partagent alors leur probabilité (même rapport 3 / 17).</li>
       <li>Room privée et entraînement : le créateur peut aussi imposer le boss.</li>
     </ul>
   `;

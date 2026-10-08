@@ -610,7 +610,7 @@ function ouvrirCarteLegende(boss) {
 async function chargerFondsBoss() {
   try {
     const cosmetiques = await (await fetch("/DB/images/cosmetiques.json")).json();
-    fondsBoss = cosmetiques.fonds.filter(fond => fond.categorie === "boss_hebdo" || fond.categorie === "legendes_locales");
+    fondsBoss = cosmetiques.fonds.filter(fond => ["boss_hebdo", "legendes_locales", "carnage_chtonien"].includes(fond.categorie));
   } catch (erreur) {
     console.error(erreur);
     fondsBoss = [];
