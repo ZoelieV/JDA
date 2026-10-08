@@ -64,7 +64,7 @@ function nettoyerCombos() {
   while (premier && combos.length < 2) combos.push(nouveauCombo(premier));
 }
 
-function boutonsChoix(index, champ, options) {
+function boutonsChoixComparateur(index, champ, options) {
   return options.map(([valeur, libelle]) => `
     <button type="button" class="mode-modificateur${combos[index][champ] === valeur ? " active" : ""}" data-index="${index}" data-champ="${champ}" data-valeur="${valeur}">${libelle}</button>`).join("");
 }
@@ -92,9 +92,9 @@ function rendreComparateur() {
           </select>
           <button type="button" class="retirer-combo" data-index="${index}" title="Retirer ce combo" ${combos.length > 1 ? "" : "disabled"}>×</button>
         </div>
-        <div class="choix-combo">${boutonsChoix(index, "constellation", [0, 1, 2, 3, 4, 5, 6].map(c => [c, `C${c}`]))}</div>
+        <div class="choix-combo">${boutonsChoixComparateur(index, "constellation", [0, 1, 2, 3, 4, 5, 6].map(c => [c, `C${c}`]))}</div>
         <div class="choix-combo">
-          ${boutonsChoix(index, "niveau", NIVEAUX_COMPARATEUR.map(n => [n, `Niv. ${n}`]))}
+          ${boutonsChoixComparateur(index, "niveau", NIVEAUX_COMPARATEUR.map(n => [n, `Niv. ${n}`]))}
           <button type="button" class="mode-modificateur bascule-theatre${combo.theatre ? " active" : ""}" data-index="${index}" title="Buff du théâtre">Théâtre</button>
         </div>
         <div class="entete-combo">
@@ -103,7 +103,7 @@ function rendreComparateur() {
             ${armesDuType(perso.arme).map(a => `<option value="${echapper(a.id)}"${a.id === combo.arme ? " selected" : ""}>${echapper(a.nom)} (${echapper(a.rarete)}★)</option>`).join("")}
           </select>
         </div>
-        <div class="choix-combo">${boutonsChoix(index, "raffinement", [0, 1, 2, 3, 4].map(r => [r, `R${r + 1}`]))}</div>
+        <div class="choix-combo">${boutonsChoixComparateur(index, "raffinement", [0, 1, 2, 3, 4].map(r => [r, `R${r + 1}`]))}</div>
         <div class="points-combo">
           <span>${pointsPersoCombo(combo)} <span class="detail-points">perso</span></span>
           <span>+</span>
