@@ -10,6 +10,11 @@
 // au plus toutes les DUREE_CACHE_MS (changement fait depuis un autre appareil).
 // Attribut data-sans-requete : affichage depuis le cache uniquement (page
 // Mon compte, qui charge déjà le profil et met le cache à jour elle-même).
+//
+// Fond personnel (profil.parametres.fond = "perso") : image importée par le
+// joueur, gardée seulement dans ce navigateur (IndexedDB), jamais envoyée au
+// serveur. Le cache garde alors le marqueur "perso" au lieu d'une URL. Sur un
+// appareil où l'image n'a pas été importée : fond par défaut.
 (function () {
   const CLE_URL = "fond-ecran-url";
   const CLE_DATE = "fond-ecran-date";
@@ -24,6 +29,10 @@
   const FOND_DEFAUT_URL = "/DB/images/bg_web/autres/default_bg.webp";
   const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
   const DUREE_CACHE_MS = 10 * 60 * 1000;
+  const FOND_PERSO = "perso";
+  const BASE_PERSO = "bpuc-fond-perso";
+  const TABLE_PERSO = "images";
+  const CLE_IMAGE_PERSO = "fond";
   const sansRequete = document.currentScript?.hasAttribute("data-sans-requete");
 
   // Styles du fond (calque fixe body::before) et du bouton du compte
@@ -40,8 +49,67 @@
     } catch { /* stockage indisponible : on se passe du cache */ }
   }
 
+  // ---- Image du fond personnel (IndexedDB) ----
+
+  function ouvrirBasePerso() {
+    return new Promise((resoudre, rejeter) => {
+      const demande = indexedDB.open(BASE_PERSO, 1);
+      demande.onupgradeneeded = () => demande.result.createObjectStore(TABLE_PERSO);
+      demande.onsuccess = () => resoudre(demande.result);
+      demande.onerror = () => rejeter(demande.error);
+    });
+  }
+
+  async function transactionPerso(mode, action) {
+    const base = await ouvrirBasePerso();
+    return new Promise((resoudre, rejeter) => {
+      const transaction = base.transaction(TABLE_PERSO, mode);
+      const demande = action(transaction.objectStore(TABLE_PERSO));
+      transaction.oncomplete = () => { base.close(); resoudre(demande.result); };
+      transaction.onerror = transaction.onabort = () => { base.close(); rejeter(transaction.error); };
+    });
+  }
+
+  // Blob de l'image, ou null (aucune, ou stockage indisponible).
+  async function lireImagePerso() {
+    try {
+      const image = await transactionPerso("readonly", table => table.get(CLE_IMAGE_PERSO));
+      return image instanceof Blob ? image : null;
+    } catch {
+      return null;
+    }
+  }
+
+  let promesseUrlPerso = null;
+
+  // URL (blob:) de l'image, ou null ; créée une fois par page.
+  function urlPerso() {
+    promesseUrlPerso ??= lireImagePerso().then(image => image ? URL.createObjectURL(image) : null);
+    return promesseUrlPerso;
+  }
+
+  // image : Blob à garder, ou null pour la supprimer.
+  async function enregistrerImagePerso(image) {
+    await transactionPerso("readwrite", table => image ? table.put(image, CLE_IMAGE_PERSO) : table.delete(CLE_IMAGE_PERSO));
+    promesseUrlPerso = null;
+  }
+
+  // Dernier appel d'appliquer : un fond perso lu après coup ne remplace pas
+  // un fond appliqué entre-temps.
+  let numeroApplication = 0;
+
+  // url : URL d'image, FOND_PERSO ou null (aucun fond).
   function appliquer(url) {
-    document.documentElement.style.setProperty("--fond-ecran", url ? `url("${url}")` : "none");
+    const numero = ++numeroApplication;
+    const style = document.documentElement.style;
+    if (url !== FOND_PERSO) {
+      style.setProperty("--fond-ecran", url ? `url("${url}")` : "none");
+      return;
+    }
+    style.setProperty("--fond-ecran", "none");
+    urlPerso().then(urlImage => {
+      if (numero === numeroApplication) style.setProperty("--fond-ecran", `url("${urlImage || FOND_DEFAUT_URL}")`);
+    });
   }
 
   // banniere2 : undefined = inchangée.
@@ -106,7 +174,9 @@
       const idFond = profil?.parametres?.fond || FOND_DEFAUT_ID;
       let url = FOND_DEFAUT_URL;
 
-      if (idFond !== FOND_DEFAUT_ID) {
+      if (idFond === FOND_PERSO) {
+        url = FOND_PERSO;
+      } else if (idFond !== FOND_DEFAUT_ID) {
         const cosmetiques = await (await fetch("/DB/images/cosmetiques.json")).json();
         const fond = cosmetiques.fonds.find(f => f.id === idFond);
         if (fond) url = encodeURI(`/DB/images/${fond.image}`);
@@ -132,7 +202,10 @@
     rafraichir();
   }
 
-  // memoriser : utilisé par Mon compte après l'enregistrement des paramètres.
+  // memoriser : utilisé par Mon compte après l'enregistrement des paramètres
+  // (url : URL d'image, FOND_PERSO ou null). appliquer : même chose sur la
+  // page. Fond personnel : FOND_PERSO, urlPerso, lireImagePerso,
+  // enregistrerImagePerso (fenêtre de personnalisation, Mon compte).
   // Bouton du compte : FondEcran.appliquerBanniere2(bouton, FondEcran.banniere2())
   // puis écoute de l'événement "banniere2-change" (rafraîchissement).
   // Médaille : FondEcran.appliquerMedaille(bouton, FondEcran.theatre()) puis
@@ -140,6 +213,11 @@
   // l'enregistrement du théâtre.
   window.FondEcran = {
     memoriser,
+    appliquer,
+    FOND_PERSO,
+    urlPerso,
+    lireImagePerso,
+    enregistrerImagePerso,
     appliquerBanniere2,
     banniere2: () => lire(CLE_BANNIERE2) || encodeURI(`/DB/images/${BANNIERE2_DEFAUT}`),
     memoriserTheatre,

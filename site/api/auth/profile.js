@@ -55,7 +55,9 @@ const TAILLE_MAX_PROFIL = 512 * 1024;
 const PARAMETRES_AUTORISES = {
   banniere: new Set([...cosmetiques.bannieres, "namecards/Namecard_Background_Default.webp"]),
   banniere2: new Set([...cosmetiques.bannieres2, "namecards/banners/Namecard_Banner_Default.webp"]),
-  fond: new Set([...cosmetiques.fonds.map(f => f.id), "bg/autres/default_bg.webp"]),
+  // "perso" : image importée par le joueur, gardée dans son navigateur
+  // seulement (cf. commun/fond.js), jamais envoyée au serveur.
+  fond: new Set([...cosmetiques.fonds.map(f => f.id), "bg/autres/default_bg.webp", "perso"]),
   voyageur: new Set(["aether", "lumine"]),
   manekin: new Set(["manekin", "manekina"])
 };

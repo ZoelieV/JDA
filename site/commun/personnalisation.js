@@ -11,6 +11,11 @@
 // Voyageur, Manekin ou skins changés : page rechargée pour afficher les
 // nouvelles images, sauf ouvrir({ recharger: false }) (Mon compte, qui les
 // met à jour elle-même).
+//
+// Fond "Mon image" (fond = "perso") : image importée par le joueur,
+// redimensionnée et ré-encodée ici (canvas : seuls les pixels sont gardés,
+// sans métadonnées ni contenu caché), puis gardée dans ce navigateur
+// seulement (commun/fond.js), jamais envoyée au serveur.
 (function () {
   const RACINE_IMAGES = "/DB/images/";
   // Choix attribués par défaut à tout le monde (mêmes que Mon compte).
@@ -23,6 +28,14 @@
   };
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins"];
+  // Fond personnel : formats acceptés (pas de SVG ni de GIF), poids du
+  // fichier importé, nombre de pixels décodés, taille gardée (largeur et
+  // hauteur au plus).
+  const FOND_PERSO = "perso";
+  const TYPES_IMAGE_PERSO = ["image/png", "image/jpeg", "image/webp", "image/avif"];
+  const POIDS_MAX_IMAGE_PERSO = 25 * 1024 * 1024;
+  const PIXELS_MAX_IMAGE_PERSO = 60 * 1000 * 1000;
+  const TAILLE_MAX_IMAGE_PERSO = 2560;
 
   let modal = null;
   let cosmetiques = null;
@@ -31,9 +44,22 @@
   let brouillon = null;   // choix en cours, appliqués seulement à l'enregistrement
   let ongletActif = "fond";
   let options = {};
+  let imageEnregistree = null; // fond personnel gardé dans ce navigateur (Blob)
+  let imageBrouillon = null;   // fond personnel en cours (importé ou retiré)
+  const urlsImages = new WeakMap(); // Blob -> URL blob:
 
   const urlImage = chemin => encodeURI(RACINE_IMAGES + chemin);
   const getFond = id => cosmetiques?.fonds.find(fond => fond.id === id) || null;
+  const urlBlob = image => {
+    if (!urlsImages.has(image)) urlsImages.set(image, URL.createObjectURL(image));
+    return urlsImages.get(image);
+  };
+  // URL de l'image d'un fond (complète ou miniature), ou null.
+  const urlFond = (id, miniature = false) => {
+    if (id === FOND_PERSO) return imageBrouillon && urlBlob(imageBrouillon);
+    const fond = getFond(id);
+    return fond && urlImage(miniature ? fond.miniature : fond.image);
+  };
   const valeurComparable = valeur => JSON.stringify(Array.isArray(valeur) ? [...valeur].sort() : valeur ?? null);
   const differe = (a, b, cle) => valeurComparable(a[cle]) !== valeurComparable(b[cle]);
   const cles = () => [...Object.keys(PARAMETRES_DEFAUT), "skins"];
@@ -51,7 +77,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=3";
+    lien.href = "/commun/personnalisation.css?v=4";
     document.head.appendChild(lien);
   }
 
@@ -106,9 +132,57 @@
   // Aperçu du fond pendant le choix (calque body::before, cf. entete.css) ;
   // null : retour au fond enregistré (commun/fond.js).
   function apercuFond(id) {
-    const fond = id && getFond(id);
-    if (fond) document.body.style.setProperty("--fond-ecran", `url("${urlImage(fond.image)}")`);
+    const url = id && urlFond(id);
+    if (url) document.body.style.setProperty("--fond-ecran", `url("${url}")`);
     else document.body.style.removeProperty("--fond-ecran");
+  }
+
+  function toBlob(canvas, type) {
+    return new Promise(resoudre => canvas.toBlob(resoudre, type, 0.9));
+  }
+
+  // Image choisie par le joueur -> Blob WebP (JPEG si le navigateur ne sait
+  // pas encoder le WebP) d'au plus TAILLE_MAX_IMAGE_PERSO px de côté.
+  async function preparerImagePerso(fichier) {
+    if (!TYPES_IMAGE_PERSO.includes(fichier.type)) throw new Error("Formats acceptés : PNG, JPEG, WebP ou AVIF.");
+    if (fichier.size > POIDS_MAX_IMAGE_PERSO) throw new Error("Image trop lourde (25 Mo au plus).");
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(fichier);
+    } catch {
+      throw new Error("Image illisible.");
+    }
+    try {
+      if (bitmap.width * bitmap.height > PIXELS_MAX_IMAGE_PERSO) throw new Error("Image trop grande.");
+      const echelle = Math.min(1, TAILLE_MAX_IMAGE_PERSO / bitmap.width, TAILLE_MAX_IMAGE_PERSO / bitmap.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * echelle));
+      canvas.height = Math.max(1, Math.round(bitmap.height * echelle));
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      let image = await toBlob(canvas, "image/webp");
+      if (!image || image.type !== "image/webp") image = await toBlob(canvas, "image/jpeg");
+      if (!image) throw new Error("Impossible de préparer l'image.");
+      return image;
+    } finally {
+      bitmap.close();
+    }
+  }
+
+  async function importerImagePerso(fichier) {
+    if (!fichier || !brouillon) return;
+    afficherEtat("Préparation de l'image…");
+    try {
+      imageBrouillon = await preparerImagePerso(fichier);
+      brouillon.fond = FOND_PERSO;
+      apercuFond(FOND_PERSO);
+      afficherEtat("");
+    } catch (erreur) {
+      console.error(erreur);
+      afficherEtat(erreur.message || "Impossible d'importer l'image.");
+    }
+    rendreApercus();
+    rendreChoix();
+    mettreAJourPied();
   }
 
   function creerModal() {
@@ -140,6 +214,7 @@
         </div>
         <input type="text" class="perso-recherche" placeholder="Rechercher…" autocomplete="off">
         <div class="perso-choix"></div>
+        <input type="file" class="perso-fichier-image" accept="${TYPES_IMAGE_PERSO.join(",")}" hidden>
         <div class="perso-pied">
           <button type="button" class="perso-annuler">Annuler</button>
           <span class="perso-etat"></span>
@@ -162,6 +237,11 @@
     });
     modal.querySelector(".perso-recherche").addEventListener("input", rendreChoix);
     modal.querySelector(".perso-enregistrer").addEventListener("click", enregistrer);
+    const champImage = modal.querySelector(".perso-fichier-image");
+    champImage.addEventListener("change", () => {
+      importerImagePerso(champImage.files[0]);
+      champImage.value = "";
+    });
 
     // Téléphone : en faisant défiler les choix, seuls l'aperçu actif et la
     // recherche restent en haut (classe "defilement", cf.
@@ -189,7 +269,7 @@
 
   // Enregistrer / Annuler : grisés tant que rien n'a changé.
   function mettreAJourPied() {
-    const modifie = !!brouillon && cles().some(cle => differe(brouillon, enregistres, cle));
+    const modifie = !!brouillon && (cles().some(cle => differe(brouillon, enregistres, cle)) || imageBrouillon !== imageEnregistree);
     modal.querySelector(".perso-enregistrer").classList.toggle("modifie", modifie);
     modal.querySelector(".perso-annuler").classList.toggle("modifie", modifie);
     modal.querySelector(".perso-enregistrer").disabled = !modifie;
@@ -209,7 +289,7 @@
   function rendreApercus() {
     const voyageur = VARIANTES_PERSONNAGES.traveler.options[brouillon.voyageur] || VARIANTES_PERSONNAGES.traveler.options.aether;
     const urls = {
-      fond: getFond(brouillon.fond) && urlImage(getFond(brouillon.fond).miniature),
+      fond: urlFond(brouillon.fond, true),
       banniere: brouillon.banniere && urlImage(brouillon.banniere),
       banniere2: brouillon.banniere2 && urlImage(brouillon.banniere2),
       skins: urlImage(voyageur.image.replace(/^images\//, ""))
@@ -224,17 +304,22 @@
   }
 
   // Une image cliquable ; choisir() applique le choix au brouillon.
+  // image null : bouton texte (titre affiché), ex. "Importer une image".
   function creerChoix(image, titre, actif, choisir, classe = "") {
     const bouton = document.createElement("button");
     bouton.type = "button";
     bouton.className = `perso-choix-image ${classe}`.trim();
     bouton.title = titre;
     bouton.classList.toggle("active", actif);
-    const img = document.createElement("img");
-    img.src = image;
-    img.alt = titre;
-    img.loading = "lazy";
-    bouton.appendChild(img);
+    if (image) {
+      const img = document.createElement("img");
+      img.src = image;
+      img.alt = titre;
+      img.loading = "lazy";
+      bouton.appendChild(img);
+    } else {
+      bouton.textContent = titre;
+    }
     bouton.addEventListener("click", () => {
       if (!brouillon) return;
       choisir();
@@ -307,6 +392,30 @@
     };
 
     if (ongletActif === "fond") {
+      // Mon image : la choisir, en importer une (autre), ou la retirer.
+      if (!recherche || "mon image".includes(recherche)) {
+        const grille = nouvelleGrille();
+        if (imageBrouillon) {
+          grille.appendChild(creerChoix(urlBlob(imageBrouillon), "Mon image", brouillon.fond === FOND_PERSO, choisir(FOND_PERSO)));
+        }
+        const importer = creerChoix(null, imageBrouillon ? "Changer d'image" : "＋ Importer une image", false, () => {}, "perso-choix-action");
+        importer.addEventListener("click", () => modal.querySelector(".perso-fichier-image").click());
+        grille.appendChild(importer);
+        if (imageBrouillon) {
+          grille.appendChild(creerChoix(null, "Retirer mon image", false, () => {
+            imageBrouillon = null;
+            if (brouillon.fond === FOND_PERSO) {
+              brouillon.fond = PARAMETRES_DEFAUT.fond;
+              apercuFond(brouillon.fond);
+            }
+          }, "perso-choix-action"));
+        }
+        const note = document.createElement("p");
+        note.className = "perso-note";
+        note.textContent = "Ton image reste dans ce navigateur, elle n'est jamais envoyée sur le site : importe-la sur chacun de tes appareils.";
+        conteneur.append(titreSection("Mon image"), note, grille);
+      }
+
       // Fonds groupés par sous-dossier de DB/images/bg.
       [...new Set(cosmetiques.fonds.map(fond => fond.categorie))].forEach(categorie => {
         const fonds = cosmetiques.fonds.filter(fond =>
@@ -346,7 +455,10 @@
     afficherEtat("Chargement…");
     mettreAJourPied();
     try {
-      const [profil] = await Promise.all([lireProfil(), chargerCosmetiques(), chargerVariantes(), chargerNomsPersos()]);
+      const [profil, image] = await Promise.all([
+        lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerNomsPersos()
+      ]);
+      imageEnregistree = imageBrouillon = image;
       enregistres = avecDefauts(profil.parametres);
       brouillon = { ...enregistres, skins: [...enregistres.skins] };
       afficherEtat("");
@@ -374,6 +486,15 @@
     bouton.disabled = true;
     afficherEtat("Enregistrement…");
     try {
+      if (imageBrouillon !== imageEnregistree) {
+        try {
+          await window.FondEcran.enregistrerImagePerso(imageBrouillon);
+        } catch (erreur) {
+          console.error(erreur);
+          throw new Error("Ce navigateur ne permet pas de garder l'image (navigation privée ?).");
+        }
+        imageEnregistree = imageBrouillon;
+      }
       const profil = await lireProfil();
       profil.parametres = { ...(profil.parametres || {}), ...brouillon };
       const reponse = await fetch("/api/auth/profile", {
@@ -389,10 +510,11 @@
       const persosChanges = CLES_PERSOS.some(cle => differe(brouillon, enregistres, cle));
       enregistres = { ...brouillon, skins: [...brouillon.skins] };
       // Fond et deuxième bannière gardés pour tout le site (commun/fond.js).
-      const fond = getFond(brouillon.fond);
-      const urlFond = fond ? urlImage(fond.image) : null;
-      document.documentElement.style.setProperty("--fond-ecran", urlFond ? `url("${urlFond}")` : "none");
-      window.FondEcran?.memoriser(urlFond, urlImage(brouillon.banniere2));
+      // Fond personnel : marqueur FOND_PERSO (image relue par commun/fond.js).
+      const valeurFond = brouillon.fond === FOND_PERSO ? FOND_PERSO : urlFond(brouillon.fond);
+      if (window.FondEcran) window.FondEcran.appliquer(valeurFond);
+      else document.documentElement.style.setProperty("--fond-ecran", valeurFond ? `url("${valeurFond}")` : "none");
+      window.FondEcran?.memoriser(valeurFond, urlImage(brouillon.banniere2));
       fermer();
       document.dispatchEvent(new CustomEvent("personnalisation-enregistree", { detail: { ...profil.parametres } }));
       if (persosChanges && options.recharger !== false) window.location.reload();

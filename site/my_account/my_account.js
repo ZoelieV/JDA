@@ -1372,12 +1372,23 @@ function memoriserFondPourLeSite(idFond, banniere2) {
   if (window.FondEcran) {
     window.FondEcran.appliquerBanniere2(document.getElementById("compte-btn"), urlBanniere2);
   }
+  if (idFond === window.FondEcran?.FOND_PERSO) {
+    window.FondEcran.memoriser(idFond, urlBanniere2);
+    return;
+  }
   if (!cosmetiques || !window.FondEcran) return;
   const fond = getFond(idFond);
   window.FondEcran.memoriser(fond ? urlImage(fond.image) : null, urlBanniere2);
 }
 
 function appliquerFond(idFond) {
+  // Fond personnel (image gardée dans ce navigateur) : appliqué par
+  // commun/fond.js.
+  if (idFond === window.FondEcran?.FOND_PERSO) {
+    document.body.style.removeProperty("--fond-ecran");
+    window.FondEcran.appliquer(idFond);
+    return;
+  }
   const fond = getFond(idFond);
   // Utilisé par le calque fixe body::before (cf. CSS).
   document.body.style.setProperty("--fond-ecran", fond ? `url("${urlImage(fond.image)}")` : "none");

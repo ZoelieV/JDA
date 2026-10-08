@@ -237,6 +237,22 @@
   border-color: rgba(245, 197, 66, 0.9);
 }
 
+/* Mon image : boutons texte (importer, retirer) au format des fonds. */
+.perso-choix-action {
+  border: 0.1875rem dashed rgba(255, 255, 255, 0.35);
+  color: white;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.perso-note {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
 /* Annuler en bas à gauche, Enregistrer en bas à droite ; grisés (contour
    rouge / vert) tant que rien n'a changé, remplis dès qu'un choix change. */
 .perso-pied {
