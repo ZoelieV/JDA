@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=23">
+<link rel="stylesheet" href="admin_ppc.css?v=24">
 <link rel="stylesheet" href="../commun/entete.css?v=rem26">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -35,6 +35,7 @@
         <button type="button" id="ouvrir-categories" class="btn-ouvrir-ajout" title="Catégories des armes : support, standard">Catégories d'armes</button>
         <button type="button" id="ouvrir-comparateur" class="btn-ouvrir-ajout" title="Comparer des combos personnage + arme">Comparateur</button>
         <button type="button" id="ouvrir-bans" class="btn-ouvrir-ajout" title="Joueurs bannis du mode classé">Bans en cours</button>
+        <button type="button" id="ouvrir-equilibrage" class="btn-ouvrir-ajout" title="Méthode des bans d'équilibrage des drafts">Équilibrage</button>
         <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
@@ -183,6 +184,27 @@
     </div>
   </div>
 
+  <!-- Méthode des bans d'équilibrage (config.equilibrage, cf.
+       admin_equilibrage.js) : administrateurs seulement. -->
+  <div id="modal-equilibrage" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Équilibrage</h2>
+        <button type="button" id="fermer-equilibrage" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Méthode des bans d'équilibrage, enregistrée dès le clic. Elle s'applique aux drafts dont l'équilibrage
+        n'est pas encore calculé (une draft en cours et ses revanches gardent la leur). Méthodes libres : celui qui a
+        la box la plus faible bannit autant de persos de la box adverse qu'il veut, sans la faire passer sous la
+        sienne (objectif : entre +0 et +100 points) ; en classé, le temps des bans reste celui de l'ancienne méthode.
+      </p>
+      <div id="liste-equilibrage" class="liste-equilibrage"></div>
+      <div class="actions-ajout">
+        <span id="message-equilibrage" class="message-ajout"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Box fictives : faux profils remplis sur Mon compte, choisissables en
        entraînement par les administrateurs et mini admins seulement. -->
   <div id="modal-fictives" class="modal-apercu">
@@ -220,8 +242,9 @@
   <script src="admin_boss.js?v=4"></script>
   <script src="admin_categories.js?v=1"></script>
   <script src="admin_bans.js?v=1"></script>
+  <script src="admin_equilibrage.js?v=1"></script>
   <script src="admin_comparateur.js?v=2"></script>
   <script src="admin_fictives.js?v=2"></script>
-  <script src="admin_ppc.js?v=24"></script>
+  <script src="admin_ppc.js?v=25"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
 // joueur, sans dévoiler ses box opti), ou une box fictive (cf.
 // _lib/boxes_fictives.js).
 const { lireDonneesProprietaire } = require("./boxes_fictives");
-const { getPersonnages, getArmes, actualiserPoints } = require("./personnages");
+const { getPersonnages, getArmes, actualiserPoints, getModeEquilibrage } = require("./personnages");
 const {
   calculerPointsBox,
   calculerPointsArmesBox,
@@ -14,6 +14,8 @@ const {
   calculerElementsGroupes,
   calculerPoolDisponible,
   calculerBansBonus,
+  MARGE_EQUILIBRAGE,
+  valeursBansBox,
   theatreProfil
 } = require("./draft");
 
@@ -80,13 +82,35 @@ async function calculerEquilibrage(draft) {
   });
 
   const ecart = draft.points_j1 - draft.points_j2;
-  // Mode carnage : jamais de bans d'équilibrage.
-  const bansBonus = draft.mode_theatre === "carnage" ? 0 : calculerBansBonus(ecart);
+  // Méthode d'équilibrage choisie par les administrateurs, figée ici pour
+  // toute la draft (et ses revanches).
+  draft.equilibrage = getModeEquilibrage();
+  const carnage = draft.mode_theatre === "carnage";
   draft.pool_disponible = calculerPoolDisponible(draft.pool_j1, draft.pool_j2);
-  draft.bans_bonus_total = bansBonus;
   draft.bans_bonus_faits = 0;
   draft.bans_bonus_choix = [];
-  draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
+  draft.bans_bonus_confirmes = false;
+
+  if (draft.equilibrage === "ancien") {
+    // Mode carnage : jamais de bans d'équilibrage.
+    const bansBonus = carnage ? 0 : calculerBansBonus(ecart);
+    draft.bans_bonus_total = bansBonus;
+    draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
+    draft.valeurs_bans_j1 = null;
+    draft.valeurs_bans_j2 = null;
+    return;
+  }
+
+  // Méthodes libres (cf. pointsApresBansBonus, _lib/draft.js) : bans si
+  // l'écart dépasse la marge ; bans_bonus_total = nombre de l'ancienne
+  // méthode, pour le temps des bans en classé seulement.
+  const avecSignature = draft.equilibrage === "perso_signature";
+  ["j1", "j2"].forEach(role => {
+    const { data, box } = boxes[role];
+    draft[`valeurs_bans_${role}`] = valeursBansBox(data, box, personnages, armes, avecSignature);
+  });
+  draft.bans_bonus_total = calculerBansBonus(ecart);
+  draft.bans_bonus_joueur = !carnage && Math.abs(ecart) > MARGE_EQUILIBRAGE ? (ecart > 0 ? "j2" : "j1") : null;
 }
 
 module.exports = { coteEntrainement, sourceBoxRole, donneesBoxRole, chargerDonneesBoxes, calculerEquilibrage };

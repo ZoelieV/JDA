@@ -16,6 +16,44 @@ function calculerBansBonus(ecart) {
   return Math.floor(Math.abs(ecart) / SEUIL_EQUILIBRAGE);
 }
 
+// Méthodes libres (draft.equilibrage, cf. getModeEquilibrage dans
+// _lib/personnages.js) : celui qui a la box la plus faible bannit autant de
+// persos qu'il veut, sans faire passer la box adverse sous la sienne ;
+// objectif : box adverse entre +0 et +MARGE_EQUILIBRAGE points. Pas de bans
+// si l'écart est déjà dans la marge. Temps des bans en classé : celui de
+// l'ancienne méthode (calculerBansBonus, cf. dureeBansBonus).
+const MARGE_EQUILIBRAGE = 100;
+
+function equilibrageLibre(draft) {
+  return !!draft.equilibrage && draft.equilibrage !== "ancien";
+}
+
+// Bans d'équilibrage encore à faire (ancienne méthode : nombre imposé ;
+// libre : pas encore confirmés).
+function bansBonusDus(draft) {
+  if (equilibrageLibre(draft)) return !!draft.bans_bonus_joueur && !draft.bans_bonus_confirmes;
+  return (draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0);
+}
+
+// Méthodes libres : points des 2 box si ces persos sont bannis ->
+// { banneur, adverse }. valeurs_bans_jX : points que perd la box de jX par
+// perso banni (cf. valeursBansBox) ; "deux_box" : celle de celui qui
+// bannit aussi.
+function pointsApresBansBonus(draft, choix = draft.bans_bonus_choix || []) {
+  const banneur = draft.bans_bonus_joueur;
+  const adverse = banneur === "j1" ? "j2" : "j1";
+  const retire = role => choix.reduce((somme, id) => somme + (Number(draft[`valeurs_bans_${role}`]?.[id]) || 0), 0);
+  return {
+    banneur: (draft[`points_${banneur}`] || 0) - (draft.equilibrage === "deux_box" ? retire(banneur) : 0),
+    adverse: (draft[`points_${adverse}`] || 0) - retire(adverse)
+  };
+}
+
+function bansBonusPermis(draft, choix) {
+  const points = pointsApresBansBonus(draft, choix);
+  return points.adverse >= points.banneur;
+}
+
 // ---- Séquence fixe de la draft (hors bans bonus) ----
 //
 // Décrite en "blocs" pour rester lisible, puis aplatie en actions
@@ -134,6 +172,10 @@ function etatInitialDraft() {
     bans_bonus_faits: 0,
     bans_bonus_joueur: null, // "j1" | "j2" | null si pas d'écart suffisant
     bans_bonus_choix: [], // ids en cours de sélection, pas encore confirmés
+    equilibrage: "ancien", // méthode figée au calcul de l'équilibrage (cf. getModeEquilibrage)
+    bans_bonus_confirmes: false, // méthodes libres : bans confirmés (nombre libre)
+    valeurs_bans_j1: null, // méthodes libres : { perso: points perdus par la box de j1 s'il est banni }
+    valeurs_bans_j2: null,
     boss_id: null,
     pool_disponible: null, // liste d'ids (union), remplie une fois les 2 joueurs prêts
     pool_j1: null, // ids de la box choisie par j1 — restreint ses picks
@@ -209,6 +251,38 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
   return total + Object.values(meilleurParGroupe).reduce((somme, points) => somme + points, 0);
 }
 
+// ---- Points perdus par une box si un perso est banni (méthodes
+// d'équilibrage libres) : { id de la draft: points } ----
+// Points du perso (Voyageur : son meilleur élément) ; avecSignature : plus
+// sa meilleure copie d'arme signature présente dans la box.
+function valeursBansBox(profilData, boxChoisie, personnages, armes, avecSignature = false) {
+  const valeurs = {};
+  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
+    const id = personnage.groupe || personnage.id;
+    valeurs[id] = Math.max(valeurs[id] ?? 0, pointsPersonnage(personnage, valeur, niveau));
+  });
+  if (avecSignature) {
+    Object.keys(valeurs).forEach(id => { valeurs[id] += pointsSignatureBox(profilData, boxChoisie, armes, id); });
+  }
+  return valeurs;
+}
+
+// Arme signature d'un perso : image "<id du perso ou du groupe>_w.webp"
+// (cf. getCleSignature, commun/cartes.js) ; meilleure copie de la box.
+function pointsSignatureBox(profilData, boxChoisie, armes, persoId) {
+  const arme = armes.find(a => typeof a.image === "string" && a.image.endsWith(`/${persoId}_w.webp`));
+  if (!arme) return 0;
+  const collection = profilData?.weapons || {};
+  let meilleur = 0;
+  Object.entries(collection.full || {}).forEach(([instance, valeur]) => {
+    const raffinement = Number(valeur);
+    if (instance.split("#")[0] !== arme.id || !Number.isInteger(raffinement) || raffinement < 0) return;
+    if (boxChoisie !== "full" && !collection.selections?.[boxChoisie]?.[instance]) return;
+    meilleur = Math.max(meilleur, Number(arme.PPW?.[raffinement] ?? 0));
+  });
+  return meilleur;
+}
+
 // ---- Points des armes d'une box (PPW du raffinement), copies comprises
 // ("idArme#2"...) : même sélection que Mon compte et l'aperçu des box du
 // match. Box personnalisée (entraînement, persos seulement) : aucune arme. ----
@@ -265,7 +339,7 @@ function calculerPoolDisponible(poolJ1, poolJ2) {
 // passage à la phase suivante).
 function getProchaineAction(draft) {
   if (draft.phase === "bans_bonus") {
-    if (draft.bans_bonus_faits < draft.bans_bonus_total) {
+    if (bansBonusDus(draft)) {
       return { joueur: draft.bans_bonus_joueur, type: "ban", bonus: true };
     }
     return null;
@@ -385,6 +459,11 @@ function etatRevanche(precedent) {
     bans_bonus_total: precedent.bans_bonus_total,
     bans_bonus_faits: precedent.bans_bonus_faits,
     bans_bonus_joueur: precedent.bans_bonus_joueur,
+    // Méthode d'équilibrage de la 1re manche, bans déjà confirmés.
+    equilibrage: precedent.equilibrage || "ancien",
+    bans_bonus_confirmes: !!precedent.bans_bonus_confirmes,
+    valeurs_bans_j1: precedent.valeurs_bans_j1 || null,
+    valeurs_bans_j2: precedent.valeurs_bans_j2 || null,
     actions: bansBonus,
     // Même room : la version continue (écriture conditionnelle, cf.
     // ecrireDraft dans _lib/room.js).
@@ -451,6 +530,12 @@ module.exports = {
   estEntrainementSolo,
   getSequence,
   calculerBansBonus,
+  MARGE_EQUILIBRAGE,
+  equilibrageLibre,
+  bansBonusDus,
+  bansBonusPermis,
+  pointsApresBansBonus,
+  valeursBansBox,
   etatInitialDraft,
   calculerPointsBox,
   calculerPointsArmesBox,

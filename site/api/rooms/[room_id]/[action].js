@@ -40,7 +40,10 @@ const {
   proposerBoss,
   etatRevanche,
   vuePourJoueur,
-  getProchaineAction
+  getProchaineAction,
+  equilibrageLibre,
+  bansBonusDus,
+  bansBonusPermis
 } = require("../../_lib/draft");
 
 // Commentaire obligatoire d'un litige signalé (cf. handleLitige).
@@ -129,7 +132,7 @@ async function passerApresPrets(draft, room) {
     await calculerEquilibrage(draft);
     draft.phase = "analyse";
     demarrerAnalyse(draft);
-  } else if ((draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0)) {
+  } else if (bansBonusDus(draft)) {
     draft.phase = "bans_bonus";
     demarrerBansBonus(draft);
   } else {
@@ -434,6 +437,17 @@ async function handleBonusToggle(req, res, roomId, user) {
   if (index >= 0) {
     // Déjà sélectionné : on le retire (annulation/remplacement).
     draft.bans_bonus_choix.splice(index, 1);
+  } else if (equilibrageLibre(draft)) {
+    // Méthodes libres : un perso de la box adverse, sans la faire passer
+    // sous la sienne (cf. bansBonusPermis).
+    const adverse = joueur === "j1" ? "j2" : "j1";
+    if (!draft.pool_disponible.includes(persoId) || !draft[`pool_${adverse}`]?.includes(persoId)) {
+      return res.status(409).json({ error: "Bannis un personnage de la box adverse encore disponible" });
+    }
+    if (!bansBonusPermis(draft, [...draft.bans_bonus_choix, persoId])) {
+      return res.status(409).json({ error: "Ce ban ferait passer la box adverse sous la tienne" });
+    }
+    draft.bans_bonus_choix.push(persoId);
   } else {
     if (!draft.pool_disponible.includes(persoId)) {
       return res.status(409).json({ error: "Ce personnage n'est plus disponible" });
@@ -468,8 +482,14 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   }
 
   const choix = draft.bans_bonus_choix || [];
+  const libre = equilibrageLibre(draft);
 
-  if (choix.length !== draft.bans_bonus_total) {
+  // Méthodes libres : autant de bans que voulu (même aucun), sélection
+  // toujours permise (vérifiée à chaque ajout).
+  if (libre && !bansBonusPermis(draft, choix)) {
+    return res.status(409).json({ error: "Ces bans feraient passer la box adverse sous la tienne" });
+  }
+  if (!libre && choix.length !== draft.bans_bonus_total) {
     return res.status(409).json({ error: `Sélectionne exactement ${draft.bans_bonus_total} personnage(s) avant de confirmer` });
   }
 
@@ -480,6 +500,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
 
   draft.bans_bonus_faits = choix.length;
   draft.bans_bonus_choix = [];
+  if (libre) draft.bans_bonus_confirmes = true;
 
   await tirageEtDraft(draft, room);
 
@@ -802,11 +823,15 @@ async function handleExpirer(req, res, roomId, user) {
   } else if (draft.phase === "bans_bonus") {
     const acteur = draft.bans_bonus_joueur;
     if (!draft.fin_bans_bonus || !peutExpirer(draft.fin_bans_bonus, joueur === acteur)) return pasEncore();
-    // Choix déjà sélectionnés gardés, le reste au hasard.
-    const choix = [...(draft.bans_bonus_choix || [])];
+    // Choix déjà sélectionnés gardés, le reste au hasard ; méthodes libres :
+    // sélection en cours confirmée telle quelle (nombre libre).
+    let choix = [...(draft.bans_bonus_choix || [])];
+    // Sélection libre qui ferait passer l'adversaire sous soi (possible avec
+    // "Les 2 box" en retirant un ban) : aucun ban.
+    if (equilibrageLibre(draft) && !bansBonusPermis(draft, choix)) choix = [];
     const libres = draft.pool_disponible.filter(id => !choix.includes(id));
     const aleatoires = new Set();
-    while (choix.length < draft.bans_bonus_total && libres.length) {
+    while (!equilibrageLibre(draft) && choix.length < draft.bans_bonus_total && libres.length) {
       const persoId = libres.splice(Math.floor(Math.random() * libres.length), 1)[0];
       choix.push(persoId);
       aleatoires.add(persoId);
@@ -817,6 +842,7 @@ async function handleExpirer(req, res, roomId, user) {
     });
     draft.bans_bonus_faits = choix.length;
     draft.bans_bonus_choix = [];
+    if (equilibrageLibre(draft)) draft.bans_bonus_confirmes = true;
     await tirageEtDraft(draft, room);
   } else if (draft.phase === "draft" && draft.chrono) {
     const prochaine = getProchaineAction(draft);

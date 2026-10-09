@@ -58,6 +58,9 @@ let modes = {};
 let buffs = new Set();
 let bonusSaison = new Set();
 let seuil = SEUIL_PAR_DEFAUT;
+// Méthode des bans d'équilibrage choisie par les administrateurs (cf.
+// getModeEquilibrage, api/_lib/personnages.js).
+let methodeEquilibrage = "ancien";
 
 let onglet = null;
 let filtres = creerFiltres();
@@ -107,6 +110,37 @@ async function chargerDonnees() {
   bonusSaison = new Set(Array.isArray(config?.bonus_saison) ? config.bonus_saison : []);
   carnageDesactive = config?.carnage_desactive === true;
   if (Number(config?.seuil_equilibrage) > 0) seuil = Number(config.seuil_equilibrage);
+  if (["perso", "perso_signature", "deux_box"].includes(config?.equilibrage)) methodeEquilibrage = config.equilibrage;
+}
+
+// Section "Bans d'équilibrage" selon la méthode en vigueur.
+function htmlBansEquilibrage(paliers) {
+  if (methodeEquilibrage === "ancien") {
+    return `
+    <p class="formule-tc">
+      écart = | points box J1 − points box J2 |<br>
+      bans d'équilibrage = ⌊ écart / ${seuil} ⌋
+    </p>
+    <p>Le joueur avec la box la plus faible bannit ce nombre de personnages avant le tirage J1 / J2 et du boss. Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>
+    <div class="tableau-conteneur tableau-paliers-tc">
+      <table class="tableau-theorycraft">
+        <thead><tr><th>Écart entre les box</th><th>Bans d'équilibrage</th></tr></thead>
+        <tbody>${paliers}<tr><td>…</td><td>+1 tous les ${seuil} pts</td></tr></tbody>
+      </table>
+    </div>`;
+  }
+  const perte = {
+    perso: "les points du personnage dans la box adverse (sans les armes)",
+    perso_signature: "les points du personnage et de son arme signature (meilleure copie) dans la box adverse",
+    deux_box: "les points du personnage dans chaque box qui l'a (celle de celui qui bannit aussi)"
+  }[methodeEquilibrage];
+  return `
+    <p class="formule-tc">
+      écart = points box adverse − points box de celui qui bannit<br>
+      chaque ban retire ${perte}<br>
+      objectif : 0 ≤ écart ≤ 100 (jamais sous 0)
+    </p>
+    <p>Si l'écart entre les box dépasse 100 points, le joueur avec la box la plus faible bannit autant de personnages de la box adverse qu'il veut, tant qu'elle ne passe pas sous la sienne, avant le tirage J1 / J2 et du boss. En classé, il a le même temps que l'ancienne méthode (6 s par tranche de ${seuil} pts d'écart, 20 s au minimum). Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
 }
 
 function points(item, vue) {
@@ -497,17 +531,7 @@ function rendreEquilibrage() {
     <p>Seuls les personnages et armes de la box choisie pour le match comptent (Full box ou box sélectionnée).</p>
 
     <h2>4. Bans d'équilibrage</h2>
-    <p class="formule-tc">
-      écart = | points box J1 − points box J2 |<br>
-      bans d'équilibrage = ⌊ écart / ${seuil} ⌋
-    </p>
-    <p>Le joueur avec la box la plus faible bannit ce nombre de personnages avant le tirage J1 / J2 et du boss. Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>
-    <div class="tableau-conteneur tableau-paliers-tc">
-      <table class="tableau-theorycraft">
-        <thead><tr><th>Écart entre les box</th><th>Bans d'équilibrage</th></tr></thead>
-        <tbody>${paliers}<tr><td>…</td><td>+1 tous les ${seuil} pts</td></tr></tbody>
-      </table>
-    </div>
+    ${htmlBansEquilibrage(paliers)}
   `;
 }
 

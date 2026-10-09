@@ -17,7 +17,9 @@
 //          boss: { id: { nom, res } }, categoriesArmes: { id: [...] },
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
-//          carnage_desactive: bool }  (boss du carnage plus disponibles)
+//          carnage_desactive: bool,  (boss du carnage plus disponibles)
+//          equilibrage: "ancien" | "perso" | "perso_signature" | "deux_box" }
+//                                    (méthode des bans d'équilibrage)
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
 //   { characters, weapons, modes, masques, theatre, bonus_saison }  remplace
@@ -29,11 +31,13 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
+//   { equilibrage: méthode }         méthode des bans d'équilibrage des
+//                                    prochaines drafts (cf. _lib/personnages.js)
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
-const { getCatalogueComplet, MODES_POINTS, ELEMENTS, estAjout } = require("./_lib/personnages");
+const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ELEMENTS, estAjout } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -279,6 +283,9 @@ module.exports = async (req, res) => {
           modifs[id] = modif;
         }
         config = { ...ancienne, boss: modifs };
+      } else if (typeof corps.equilibrage === "string") {
+        if (!MODES_EQUILIBRAGE.includes(corps.equilibrage)) return res.status(400).json({ error: "Méthode d'équilibrage inconnue" });
+        config = { ...ancienne, equilibrage: corps.equilibrage };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
       } else if (corps.categoriesArmes) {

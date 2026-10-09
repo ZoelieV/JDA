@@ -44,6 +44,26 @@ function estCarnageDesactive() {
   return carnageDesactive;
 }
 
+// Méthode des bans d'équilibrage (config.equilibrage, choisie par un
+// administrateur sur la page admin) : figée dans chaque draft au calcul de
+// l'équilibrage (cf. calculerEquilibrage, _lib/boxes.js), une draft en cours
+// ne change donc pas de méthode.
+//   ancien          : ⌊ écart / SEUIL_EQUILIBRAGE ⌋ bans, nombre imposé ;
+//   perso           : bans libres, la box adverse perd les points du perso
+//                     banni (sans les armes) ;
+//   perso_signature : idem + les points de son arme signature dans la box
+//                     adverse ;
+//   deux_box        : idem "perso", et la box de celui qui bannit perd aussi
+//                     ce perso s'il l'a.
+// Méthodes libres : la box adverse ne passe jamais sous celle de celui qui
+// bannit ; objectif entre +0 et +MARGE_EQUILIBRAGE points (cf. _lib/draft.js).
+const MODES_EQUILIBRAGE = ["ancien", "perso", "perso_signature", "deux_box"];
+let modeEquilibrage = "ancien";
+
+function getModeEquilibrage() {
+  return modeEquilibrage;
+}
+
 function appliquerBonus(points, cle, valeur) {
   const bonus = Number(valeur ?? 0);
   if (modesBonus[cle] === "multiplication") return bonus ? points * bonus : points;
@@ -127,6 +147,7 @@ async function actualiserPoints() {
     buffsTheatre = new Set(Array.isArray(config.theatre) ? config.theatre : []);
     bonusSaison = new Set(Array.isArray(config.bonus_saison) ? config.bonus_saison : []);
     carnageDesactive = config.carnage_desactive === true;
+    modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     modesBonus = config.modes || {};
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
@@ -282,7 +303,9 @@ function codeTheatre(profilData) {
 }
 
 module.exports = {
+  MODES_EQUILIBRAGE,
   MODES_POINTS,
+  getModeEquilibrage,
   codeTheatre,
   copiesLimitees,
   estLimite5,

@@ -693,10 +693,11 @@ function creerCarteItem(personnage, {
   niveauJ2 = null,
   refinementJ1 = null,
   refinementJ2 = null,
-  selectionnee = false
+  selectionnee = false,
+  titre = null
 } = {}) {
   const card = document.createElement("div");
-  card.title = personnage.nom;
+  card.title = titre || personnage.nom;
   card.className = "character-card" +
     (estMatchClasse() && aBonusSaisonPerso(personnage) ? " bonus-saison" : "") +
     (selectionnable ? " selectionnable" : "") +
@@ -1074,6 +1075,10 @@ function placerBoutonPret(bouton) {
 // en retirer un et en reprendre un autre) tant qu'on n'a pas confirmé.
 
 function rendreBansBonus() {
+  if (draft.equilibrage && draft.equilibrage !== "ancien") {
+    rendreBansBonusLibre();
+    return;
+  }
   const choix = draft.bans_bonus_choix || [];
   const restant = draft.bans_bonus_total - choix.length;
   const nomJoueurConcerne = pseudoColore(draft.bans_bonus_joueur); // couleur de son rôle
@@ -1149,6 +1154,104 @@ function rendreBansBonus() {
     return obtenirCarteItem(grille, personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi,
+      onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
+      ...getInfosCarte(id)
+    });
+  }));
+}
+
+// ---- Phase 2 bis : bans d'équilibrage libres (cf. pointsApresBansBonus,
+// api/_lib/draft.js) ----
+// Celui qui a la box la plus faible bannit autant de persos de la box
+// adverse qu'il veut, sans la faire passer sous la sienne ; objectif : box
+// adverse entre +0 et +MARGE_EQUILIBRAGE points. Chaque perso affiche les
+// points qu'il retire.
+const MARGE_EQUILIBRAGE = 100;
+const LIBELLES_EQUILIBRAGE = {
+  perso: "points du perso banni retirés de la box adverse",
+  perso_signature: "points du perso banni et de son arme signature retirés de la box adverse",
+  deux_box: "points du perso banni retirés des 2 box"
+};
+
+function pointsApresBansBonus(choix) {
+  const banneur = draft.bans_bonus_joueur;
+  const adverse = getAutreRole(banneur);
+  const retire = role => choix.reduce((somme, id) => somme + (Number(draft[`valeurs_bans_${role}`]?.[id]) || 0), 0);
+  return {
+    banneur: (draft[`points_${banneur}`] || 0) - (draft.equilibrage === "deux_box" ? retire(banneur) : 0),
+    adverse: (draft[`points_${adverse}`] || 0) - retire(adverse)
+  };
+}
+
+function rendreBansBonusLibre() {
+  const choix = draft.bans_bonus_choix || [];
+  const banneur = draft.bans_bonus_joueur;
+  const adverse = getAutreRole(banneur);
+  const cEstMonTour = banneur === monRole;
+  const points = pointsApresBansBonus(choix);
+  const ecart = points.adverse - points.banneur;
+  const dansObjectif = ecart <= MARGE_EQUILIBRAGE;
+  const etat = `Box de ${pseudoColore(banneur)} : ${points.banneur} pts · box de ${pseudoColore(adverse)} : ${points.adverse} pts (écart ${ecart})`;
+  const regle = `Équilibrage : ${LIBELLES_EQUILIBRAGE[draft.equilibrage] || ""}. Objectif : écart entre 0 et ${MARGE_EQUILIBRAGE} pts, jamais sous 0.`;
+
+  const message = document.getElementById("message-equilibrage");
+  if (cEstMonTour) {
+    message.innerHTML = `${etat}<br>${regle}<br>${dansObjectif
+      ? "Objectif atteint : confirme pour lancer le tirage J1/J2 et du boss (tu peux encore changer tes bans)."
+      : "Bannis des persos de la box adverse autant que tu veux, puis confirme (tu peux revenir sur tes choix)."}`;
+  } else {
+    message.innerHTML = `${etat}<br>${regle}<br>${pseudoColore(banneur)} choisit ses bans d'équilibrage. En attente…`;
+  }
+
+  // Emplacements : un par ban choisi, cliquable pour le retirer.
+  const slots = document.getElementById("bans-bonus-slots");
+  slots.innerHTML = "";
+  choix.forEach(persoId => {
+    const personnage = getPersonnageParId(persoId);
+    const slot = document.createElement("div");
+    slot.className = "slot-bonus rempli";
+    slot.innerHTML = `<img src="../DB/${personnage.image}" alt="${personnage.nom}"><span class="retirer">✕</span>`;
+    slot.title = `${personnage.nom} : −${Number(draft[`valeurs_bans_${adverse}`]?.[persoId]) || 0} pts${cEstMonTour ? " (cliquer pour retirer)" : ""}`;
+    if (cEstMonTour) slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alert(err.message)));
+    slots.appendChild(slot);
+  });
+  if (!choix.length) slots.innerHTML = `<div class="slot-bonus" title="Aucun ban pour l'instant"></div>`;
+
+  // Confirmer : possible à tout moment (même sans ban), plein une fois
+  // l'objectif atteint.
+  const btnConfirmer = document.getElementById("btn-confirmer-bonus");
+  btnConfirmer.classList.toggle("cache", !monRole);
+  btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
+  btnConfirmer.classList.toggle("pret", cEstMonTour && dansObjectif);
+  // "Les 2 box" : retirer un ban peut faire repasser l'adversaire sous soi.
+  btnConfirmer.disabled = !cEstMonTour || ecart < 0 || monTempsEcoule();
+  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
+
+  const grille = document.getElementById("grille-bans-bonus");
+  const cleGrille = JSON.stringify([
+    choix, draft.equilibrage, banneur, draft.pool_disponible, draft[`pool_${adverse}`],
+    draft.valeurs_bans_j1, draft.valeurs_bans_j2, draft.points_j1, draft.points_j2, monRole,
+    ...cleFiltres()
+  ]);
+  if (!grilleAChange(grille, cleGrille)) return;
+
+  // Seulement les persos de la box adverse encore disponibles.
+  const poolAdverse = new Set(draft[`pool_${adverse}`] || []);
+  const personnages = draft.pool_disponible
+    .filter(id => poolAdverse.has(id))
+    .map(id => getPersonnageParId(id))
+    .filter(p => p && personnageCorrespondFiltres(p));
+
+  remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
+    const id = personnage.id;
+    const dejaChoisi = choix.includes(id);
+    const apres = pointsApresBansBonus([...choix, id]);
+    const permis = apres.adverse >= apres.banneur;
+    const valeur = Number(draft[`valeurs_bans_${adverse}`]?.[id]) || 0;
+    return obtenirCarteItem(grille, personnage, {
+      selectionnable: cEstMonTour && (dejaChoisi || permis),
+      indisponible: dejaChoisi || !permis,
+      titre: `${personnage.nom} : −${valeur} pts${permis || dejaChoisi ? "" : " (ferait passer la box adverse sous la tienne)"}`,
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
       ...getInfosCarte(id)
     });
