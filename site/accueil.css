@@ -19,6 +19,22 @@
   font-display: swap;
 }
 
+/* Logo détaillé au-dessus du titre : au moins un quart de la largeur de
+   l'écran sur ordi, plus large sur téléphone. */
+.logo-accueil {
+  display: block;
+  width: 25vw;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto 1rem;
+}
+
+@media (max-width: 700px) {
+  .logo-accueil {
+    width: 55vw;
+  }
+}
+
 .accueil-hero h1 {
   margin: 0 0 0.625rem;
   font-family: "Titre site", var(--police-titre);
