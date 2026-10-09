@@ -160,6 +160,13 @@ function estLegendeLocale(boss) {
   return boss?.type === "legende_locale_jour" || boss?.type === "legende_locale_infinie";
 }
 
+// Défi ("score": "ennemis" dans DB/boss.json, cf. api/_lib/boss.js) : salle
+// de 2 minutes, nombre d'ennemis tués saisi à la place d'un temps, le plus
+// grand gagne.
+function estDefiEnnemis(boss) {
+  return boss?.score === "ennemis";
+}
+
 // ---- Médaille du théâtre à côté du pseudo (namecards, bannières) ----
 // Palier atteint (6, 8, 10 ou 12) ; profil.theatre stocke "1".."4" (menu
 // "Théâtre clear" de Mon compte). Hauteur : 1,3 x le texte (cf. cartes.css).

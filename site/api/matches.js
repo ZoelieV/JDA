@@ -13,12 +13,13 @@ const { supabase } = require("./_lib/supabase");
 const { infosPersoJoueur } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estModerateur } = require("./_lib/admin");
-const { parserTempsOuAbandon, determinerVainqueur } = require("./_lib/temps");
+const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
 const { lireSaisons, saisonDuMatch } = require("./_lib/saisons");
 const { SANCTIONS, finSanction } = require("./_lib/sanctions");
 const { estSignalable, etatSignalementsJoueur, signalerMatch, chargerSignalementsOuverts, traiterSignalement } = require("./_lib/signalements");
 const { estIdFictif, lireBoxesFictives } = require("./_lib/boxes_fictives");
+const { estDefiEnnemis } = require("./_lib/boss");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -233,27 +234,29 @@ async function leverBan(req, res) {
 // vainqueur recalculé, match republié dans l'historique public ----
 async function republierLitige(req, res, user) {
   const id = req.query?.id;
-  const tempsJ1 = parserTempsOuAbandon(req.body?.temps_j1);
-  const tempsJ2 = parserTempsOuAbandon(req.body?.temps_j2);
   if (!id) return res.status(400).json({ error: "Match manquant" });
-  if (!tempsJ1 || !tempsJ2) {
-    return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss ou abandon)" });
-  }
 
-  // Match classé : trophées calculés avec les temps corrigés.
+  // Match classé : trophées calculés avec les temps corrigés. Boss du match
+  // lu d'abord : nombre d'ennemis tués à la place des temps pour un défi.
   const { data: litige, error: erreurLecture } = await supabase
     .from("match_history")
     .select("*")
     .eq("id", id)
     .maybeSingle();
   if (erreurLecture) throw erreurLecture;
-  const vainqueur = determinerVainqueur(tempsJ1, tempsJ2);
+  const bossId = litige?.boss_id ?? null;
+  const tempsJ1 = parserTempsOuAbandon(req.body?.temps_j1, bossId);
+  const tempsJ2 = parserTempsOuAbandon(req.body?.temps_j2, bossId);
+  if (!tempsJ1 || !tempsJ2) {
+    return res.status(400).json({ error: messageFormatInvalide(bossId, true) });
+  }
+  const vainqueur = determinerVainqueur(tempsJ1, tempsJ2, bossId);
 
   // Seulement un litige encore ouvert (pas de double republication).
   const { data, error } = await supabase
     .from("match_history")
     .update({
-      ...(litige?.classe ? { trophees: calculerTrophees(tempsJ1, tempsJ2, vainqueur) } : {}),
+      ...(litige?.classe ? { trophees: calculerTrophees(tempsJ1, tempsJ2, vainqueur, bossId) } : {}),
       temps_j1_affiche: tempsJ1.affiche,
       temps_j1_secondes: tempsJ1.secondes,
       temps_j2_affiche: tempsJ2.affiche,
@@ -445,12 +448,15 @@ async function statistiques(res, saison = null, equipe = false) {
     }
 
     if (!match.boss_id) return;
+    // Défi : record = le plus d'ennemis tués (même colonne que les temps).
+    const defi = estDefiEnnemis(match.boss_id);
     ["j1", "j2"].forEach(role => {
       const secondes = match[`temps_${role}_secondes`];
       if (typeof secondes !== "number") return; // abandon ou pas de temps
       const actuel = records[match.boss_id]?.[cle];
+      const record = actuel?.match[`temps_${actuel.role}_secondes`];
       // Égalité : le plus ancien garde le record (matchs lus du plus ancien).
-      if (!actuel || secondes < actuel.match[`temps_${actuel.role}_secondes`]) {
+      if (!actuel || (defi ? secondes > record : secondes < record)) {
         (records[match.boss_id] ??= {})[cle] = { match, role };
       }
     });

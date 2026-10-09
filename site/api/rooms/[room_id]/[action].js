@@ -10,9 +10,9 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft } = require("../../_lib/room");
 const { estRouteEquipe, executerRouteEquipe } = require("../../_lib/equipe");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
-const { tirerBossAleatoire, bossCarnageExclus } = require("../../_lib/boss");
+const { tirerBossAleatoire, bossCarnageExclus, DUREE_DEFI_SECONDES, estDefiEnnemis } = require("../../_lib/boss");
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
-const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("../../_lib/temps");
+const { TEMPS_ABANDON, parserResultat, messageFormatInvalide, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const { calculerEquilibrage } = require("../../_lib/boxes");
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
@@ -493,15 +493,16 @@ async function handleTemps(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  // { temps: "mm:ss" } ou { abandon: true } (abandon à la place d'un temps).
-  const tempsParsed = req.body?.abandon === true ? { ...TEMPS_ABANDON } : parserTempsMMSS(req.body?.temps);
-
-  if (!tempsParsed) {
-    return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
-  }
-
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
+
+  // { temps: "mm:ss" } (nombre d'ennemis tués pour un défi, cf.
+  // estDefiEnnemis) ou { abandon: true } (abandon à la place d'un temps).
+  const tempsParsed = req.body?.abandon === true ? { ...TEMPS_ABANDON } : parserResultat(req.body?.temps, draft.boss_id);
+
+  if (!tempsParsed) {
+    return res.status(400).json({ error: messageFormatInvalide(draft.boss_id) });
+  }
 
   // Correction possible pendant la vérification : les 2 confirmations sont
   // alors à refaire.
@@ -532,18 +533,18 @@ async function handleTemps(req, res, roomId, user) {
 // côté de sa box seulement. Ajouté au match archivé ; une légende locale
 // est alors tuée pour lui. Anti-triche sans conséquence : un temps plus long
 // que le temps écoulé depuis la fin de la draft est refusé (boss pas encore
-// tué).
+// tué) ; défi : nombre d'ennemis refusé avant la fin de ses 2 minutes.
 async function handleTempsEntrainement(req, res, roomId, user) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const tempsParsed = parserTempsMMSS(req.body?.temps);
-  if (!tempsParsed) return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss)" });
-
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
+  const tempsParsed = parserResultat(req.body?.temps, draft.boss_id);
+  if (!tempsParsed) return res.status(400).json({ error: messageFormatInvalide(draft.boss_id) });
+
   if (!draft.entrainement || draft.phase !== "termine") {
     return res.status(409).json({ error: "La saisie du temps d'entraînement n'est pas ouverte" });
   }
@@ -551,8 +552,10 @@ async function handleTempsEntrainement(req, res, roomId, user) {
     return res.status(403).json({ error: "Seul le lanceur de l'entraînement peut saisir son temps" });
   }
   const ecoule = draft.debut_temps ? Math.floor((Date.now() - draft.debut_temps) / 1000) : Infinity;
-  if (tempsParsed.secondes > ecoule) {
-    return res.status(409).json({ error: "Ce temps est plus long que le temps écoulé depuis la fin de la draft : termine d'abord le combat." });
+  if (estDefiEnnemis(draft.boss_id) ? ecoule < DUREE_DEFI_SECONDES : tempsParsed.secondes > ecoule) {
+    return res.status(409).json({ error: estDefiEnnemis(draft.boss_id)
+      ? "Le défi dure 2 minutes après la fin de la draft : termine-le d'abord."
+      : "Ce temps est plus long que le temps écoulé depuis la fin de la draft : termine d'abord le combat." });
   }
 
   const role = draft.entrainement.cote_moi;
@@ -610,7 +613,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
       return repondreDraft(res, draft, joueur);
     }
 
-    draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
+    draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2, draft.boss_id);
     draft.phase = "termine";
     draft.resultat_trophees = null;
     draft.serie_classe = null;

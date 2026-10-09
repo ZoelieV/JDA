@@ -4,13 +4,16 @@
 // l'autre), donc le temps réel écoulé depuis l'affichage de la saisie des
 // temps (draft.debut_temps) est au moins la somme des 2 temps. Somme des
 // temps supérieure au temps écoulé = impossible : match classé invalidé et
-// transmis aux administrateurs (litige avec triche = true).
+// transmis aux administrateurs (litige avec triche = true). Défi (nombre
+// d'ennemis tués, cf. estDefiEnnemis) : chaque joueur qui n'a pas abandonné
+// compte pour la durée du défi (2 min).
 //
 // Sanctions (table sanctions, cf. sql/anti_triche.sql), choisies par un
 // administrateur pour chaque joueur du dossier : ban du classé d'une
 // semaine, jusqu'à la fin de la saison (date donnée par l'administrateur)
 // ou définitif ; ou aucune conséquence (explication valable).
 const { supabase } = require("./supabase");
+const { DUREE_DEFI_SECONDES, estDefiEnnemis } = require("./boss");
 
 const SANCTIONS = ["aucune", "semaine", "saison", "definitif"];
 const SEMAINE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -18,7 +21,12 @@ const SEMAINE_MS = 7 * 24 * 60 * 60 * 1000;
 // -> null si cohérent, sinon { duree_saisie, somme_temps } (secondes).
 function detecterTriche(draft, maintenant = Date.now()) {
   if (!draft.debut_temps) return null;
-  const somme = ["j1", "j2"].reduce((total, role) => total + (Number(draft[`temps_${role}`]?.secondes) || 0), 0);
+  const defi = estDefiEnnemis(draft.boss_id);
+  const somme = ["j1", "j2"].reduce((total, role) => {
+    const temps = draft[`temps_${role}`];
+    if (defi) return total + (temps && !temps.abandon ? DUREE_DEFI_SECONDES : 0);
+    return total + (Number(temps?.secondes) || 0);
+  }, 0);
   const ecoule = Math.floor((maintenant - draft.debut_temps) / 1000);
   return somme > ecoule ? { duree_saisie: ecoule, somme_temps: somme } : null;
 }

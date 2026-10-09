@@ -279,7 +279,7 @@ async function postAbandon() {
 
 // Abandon à la place d'un temps, après confirmation.
 function declarerAbandon() {
-  if (!confirm("Déclarer un abandon ? Si ton adversaire a un temps, il gagne ; s'il abandonne aussi, c'est une égalité.")) return;
+  if (!confirm(`Déclarer un abandon ? Si ton adversaire a ${motsResultat().un}, il gagne ; s'il abandonne aussi, c'est une égalité.`)) return;
   postAbandon().catch(err => alert(err.message));
 }
 
@@ -2050,15 +2050,16 @@ function rendreTempsJoueur(role, zone) {
   // Entraînement : pas d'abandon (le temps est facultatif).
   document.getElementById("btn-abandon").classList.toggle("cache", !!draft.entrainement);
 
+  const mots = motsResultat();
   let texte = "";
   if (draft.phase === "verification") {
-    texte = temps ? `Temps : ${temps.affiche}${draft[`temps_confirme_${role}`] ? " · confirmé ✓" : ""}` : "";
+    texte = temps ? `${mots.Le} : ${temps.affiche}${draft[`temps_confirme_${role}`] ? " · confirmé ✓" : ""}` : "";
   } else if (draft.phase === "termine" || draft.phase === "litige") {
-    texte = temps?.affiche ? `Temps : ${temps.affiche}` : "";
+    texte = temps?.affiche ? `${mots.Le} : ${temps.affiche}` : "";
   } else if (role === monRole) {
-    texte = temps ? `Ton temps : ${temps.affiche}` : "";
+    texte = temps ? `Ton ${mots.le} : ${temps.affiche}` : "";
   } else {
-    texte = temps ? "Temps enregistré ✓" : "En attente de son temps…";
+    texte = temps ? `${mots.Le} enregistré ✓` : `En attente de son ${mots.le}…`;
   }
 
   let ligne = zone.querySelector(".texte-temps");
@@ -2141,6 +2142,38 @@ function initialiserCarteLegende() {
   });
 }
 
+// Défi (cf. estDefiEnnemis, commun/cartes.js) : nombre d'ennemis tués saisi
+// à la place d'un temps.
+function defiEnCours() {
+  return estDefiEnnemis(bossData.find(b => b.id === draft?.boss_id));
+}
+
+// Mots des textes de la saisie : "temps" ou "score" (défi).
+function motsResultat() {
+  return defiEnCours()
+    ? { un: "un score", le: "score", Le: "Score", les: "scores", Les: "Scores" }
+    : { un: "un temps", le: "temps", Le: "Temps", les: "temps", Les: "Temps" };
+}
+
+// Valeur du champ de saisie pour un résultat déjà enregistré : "7:32", ou
+// le nombre d'ennemis seul pour un défi (affiché "42 ennemis").
+function valeurSaisie(temps) {
+  if (!temps || temps.abandon) return "";
+  return defiEnCours() ? String(temps.secondes) : temps.affiche || "";
+}
+
+// Libellés de la saisie et de la vérification selon le boss (temps ou
+// nombre d'ennemis tués).
+function rendreLibellesResultat() {
+  const defi = defiEnCours();
+  const input = document.getElementById("input-temps");
+  const libelle = defi ? "Ennemis tués" : "Ton temps";
+  document.querySelector("#saisie-temps label").textContent = libelle;
+  input.placeholder = libelle;
+  input.inputMode = defi ? "numeric" : "decimal";
+  document.querySelector("#verification-temps .titre-verification").textContent = `Vérifie les deux ${motsResultat().les}`;
+}
+
 // Rôle dont le connecté saisit le temps : le sien ; en entraînement, celui
 // de sa box pour le lanceur seulement, une fois la draft terminée
 // (facultatif, cf. handleTempsEntrainement). null : pas de saisie.
@@ -2153,6 +2186,7 @@ function rendreRecap() {
   assurerBossAffiche();
   rendreTableaux();
   if (!roleSaisieTemps()) document.getElementById("saisie-temps").classList.add("cache");
+  rendreLibellesResultat();
 
   const boss = bossData.find(b => b.id === draft.boss_id);
   const blocBoss = document.getElementById("recap-boss");
@@ -2176,8 +2210,9 @@ function rendreTemps() {
 
   if (!monRole) {
     const enAttente = ["j1", "j2"].filter(role => !draft[`temps_${role}`]).length;
+    const { le, les } = motsResultat();
     document.getElementById("etat-temps").textContent =
-      `En attente ${enAttente === 2 ? "des temps des 2 joueurs" : "du dernier temps"}…`;
+      `En attente ${enAttente === 2 ? `des ${les} des 2 joueurs` : `du dernier ${le}`}…`;
     return;
   }
 
@@ -2196,10 +2231,13 @@ function rendreTemps() {
   btnAbandon.textContent = "Abandonner";
   btnAbandon.onclick = declarerAbandon;
 
+  const mots = motsResultat();
   if (monTemps && !tempsAdversaire) {
-    etat.textContent = "Temps enregistré. En attente du temps de l'adversaire…";
+    etat.textContent = `${mots.Le} enregistré. En attente du ${mots.le} de l'adversaire…`;
   } else if (!monTemps) {
-    etat.textContent = "Entre ton temps en minutes et secondes (ex : 7:32, 7,32 ou 7.32).";
+    etat.textContent = defiEnCours()
+      ? "Entre le nombre d'ennemis que tu as tués pendant les 2 minutes du défi (ex : 42). Celui qui en tue le plus gagne."
+      : "Entre ton temps en minutes et secondes (ex : 7:32, 7,32 ou 7.32).";
   } else {
     etat.textContent = "";
   }
@@ -2208,6 +2246,15 @@ function rendreTemps() {
 }
 
 function envoyerTempsSaisi() {
+  if (defiEnCours()) {
+    const ennemis = document.getElementById("input-temps").value.trim();
+    if (!/^[0-9]{1,4}$/.test(ennemis)) {
+      alert("Nombre invalide. Entre le nombre d'ennemis tués, par exemple 42.");
+      return;
+    }
+    (draft.entrainement ? postTempsEntrainement : postTemps)(ennemis).catch(err => alert(err.message));
+    return;
+  }
   // "7,32" et "7.32" (clavier numérique du téléphone) valent "7:32".
   const valeur = document.getElementById("input-temps").value.trim().replace(/[.,]/, ":");
   if (!/^[0-9]{1,3}:[0-5][0-9]$/.test(valeur)) {
@@ -2227,8 +2274,9 @@ function rendreVerification() {
   const etat = document.getElementById("etat-temps");
   const confirmes = ["j1", "j2"].filter(role => draft[`temps_confirme_${role}`]).length;
 
+  const mots = motsResultat();
   if (!monRole) {
-    etat.textContent = `Vérification des temps par les joueurs (${confirmes}/2)…`;
+    etat.textContent = `Vérification des ${mots.les} par les joueurs (${confirmes}/2)…`;
     document.querySelector("#verification-temps .boutons-verification").classList.add("cache");
     return;
   }
@@ -2248,7 +2296,7 @@ function rendreVerification() {
   if (input.dataset.pour !== monTemps?.affiche) {
     input.dataset.pour = monTemps?.affiche || "";
     // Abandon : champ vide pour pouvoir saisir un temps à la place.
-    input.value = monTemps?.abandon ? "" : monTemps?.affiche || "";
+    input.value = monTemps?.abandon ? "" : valeurSaisie(monTemps);
   }
   btn.onclick = envoyerTempsSaisi;
   const btnAbandon = document.getElementById("btn-abandon");
@@ -2259,17 +2307,17 @@ function rendreVerification() {
   const btnConfirmer = document.getElementById("btn-confirmer-temps");
   btnConfirmer.disabled = jaiConfirme;
   btnConfirmer.classList.toggle("active", jaiConfirme);
-  btnConfirmer.textContent = jaiConfirme ? "Temps confirmés ✓" : "Les temps sont corrects";
+  btnConfirmer.textContent = jaiConfirme ? `${mots.Les} confirmés ✓` : `Les ${mots.les} sont corrects`;
   btnConfirmer.onclick = () => postConfirmerTemps().catch(err => alert(err.message));
 
   document.getElementById("btn-litige").onclick = ouvrirFenetreLitige;
 
   if (jaiConfirme && !autreAConfirme) {
-    etat.innerHTML = `Temps confirmés. En attente de la confirmation de ${nomAutre}…`;
+    etat.innerHTML = `${mots.Les} confirmés. En attente de la confirmation de ${nomAutre}…`;
   } else if (!jaiConfirme && autreAConfirme) {
-    etat.innerHTML = `${nomAutre} a confirmé les temps. Vérifie-les puis confirme, ou signale un litige.`;
+    etat.innerHTML = `${nomAutre} a confirmé les ${mots.les}. Vérifie-les puis confirme, ou signale un litige.`;
   } else {
-    etat.textContent = "Vérifie que les deux temps sont les bons, puis confirme. En cas de désaccord, signale un litige.";
+    etat.textContent = `Vérifie que les deux ${mots.les} sont les bons, puis confirme. En cas de désaccord, signale un litige.`;
   }
 }
 
@@ -2292,7 +2340,7 @@ function rendreLitige() {
   const parQui = draft.litige_par === monRole ? "par toi" : nomLitige ? `par ${nomLitige}` : "";
   document.getElementById("resultat-final").innerHTML = `
     <p class="ligne-vainqueur"><span class="litige">Match invalidé</span></p>
-    <p class="ligne-temps">Litige signalé ${parQui} sur les temps : ce match ne compte pas. Les administrateurs vérifieront les temps et pourront le republier${typeRoom === "classe" ? " (les trophées seront alors attribués)" : ""}.</p>
+    <p class="ligne-temps">Litige signalé ${parQui} sur les ${motsResultat().les} : ce match ne compte pas. Les administrateurs vérifieront les ${motsResultat().les} et pourront le republier${typeRoom === "classe" ? " (les trophées seront alors attribués)" : ""}.</p>
   `;
   rendreRejouer();
 }
@@ -2316,11 +2364,13 @@ function rendreTermine() {
       btn.onclick = envoyerTempsSaisi;
       if (input.dataset.pour !== (monTemps?.affiche || "")) {
         input.dataset.pour = monTemps?.affiche || "";
-        input.value = monTemps?.affiche || "";
+        input.value = valeurSaisie(monTemps);
       }
       ligneBoss = monTemps
-        ? `<p class="ligne-temps">${messageLegendeTuee() || "Ton temps est enregistré dans l'historique."}</p>`
-        : `<p class="ligne-temps">Tu as fait le boss avec ton équipe ? Entre ton temps au-dessus de ton tableau (facultatif).</p>`;
+        ? `<p class="ligne-temps">${messageLegendeTuee() || `Ton ${motsResultat().le} est enregistré dans l'historique.`}</p>`
+        : defiEnCours()
+          ? `<p class="ligne-temps">Tu as fait le défi avec ton équipe ? Entre le nombre d'ennemis tués au-dessus de ton tableau (facultatif).</p>`
+          : `<p class="ligne-temps">Tu as fait le boss avec ton équipe ? Entre ton temps au-dessus de ton tableau (facultatif).</p>`;
     }
     container.innerHTML = `
       <p class="ligne-vainqueur"><span class="egalite">Entraînement terminé ${ICONE_ENTRAINEMENT}</span></p>
@@ -2396,12 +2446,14 @@ function messageLegendeTuee() {
 // ---- Classé ----
 
 // Trophées en jeu (cf. api/_lib/trophees.js) : un demi par seconde d'écart,
-// arrondi au supérieur, 30 au plus ; égalité : 0.
+// arrondi au supérieur (défi : un par ennemi d'écart), 30 au plus ;
+// égalité : 0.
 function calculerTrophees() {
   if (draft.vainqueur !== "j1" && draft.vainqueur !== "j2") return 0;
   // Abandon : écart "infini", trophées au maximum.
   if (draft.temps_j1.abandon || draft.temps_j2.abandon) return 30;
-  return Math.min(30, Math.ceil(Math.abs(draft.temps_j1.secondes - draft.temps_j2.secondes) / 2));
+  const ecart = Math.abs(draft.temps_j1.secondes - draft.temps_j2.secondes);
+  return Math.min(30, defiEnCours() ? ecart : Math.ceil(ecart / 2));
 }
 
 function definirTypeRoom(type) {

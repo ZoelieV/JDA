@@ -91,7 +91,12 @@ function valeurTri(match, cle) {
   const t2 = secondes(match.j2);
   switch (cle) {
     case "temps":
-      return t1 === null && t2 === null ? null : Math.min(...[t1, t2].filter(t => t !== null));
+      if (t1 === null && t2 === null) return null;
+      // Défi : nombre d'ennemis tués (le plus grand est le meilleur), en
+      // négatif pour être trié dans le même sens que les temps (les défis
+      // passent alors avant les matchs chronométrés).
+      if (estDefiEnnemis(bossParId.get(match.boss_id))) return -Math.max(...[t1, t2].filter(t => t !== null));
+      return Math.min(...[t1, t2].filter(t => t !== null));
     case "ecart":
       return t1 === null || t2 === null ? null : Math.abs(t1 - t2);
     case "boss":
@@ -497,12 +502,22 @@ function nomLitigePar(match) {
 
 // Centre d'un litige ouvert : qui l'a signalé, les 2 temps modifiables et
 // le bouton pour republier le match (vainqueur recalculé côté serveur).
-// Temps d'un joueur modifiable (litige ou signalement).
+// Temps d'un joueur modifiable (litige ou signalement). Défi (cf.
+// estDefiEnnemis) : nombre d'ennemis tués seul (affiché "42 ennemis").
 function htmlChampTemps(match, role) {
+  const temps = match[role].temps;
+  if (estDefiEnnemis(bossParId.get(match.boss_id))) {
+    const valeur = temps?.abandon || temps?.secondes == null ? temps?.affiche || "" : temps.secondes;
+    return `
+    <label class="champ-temps-litige champ-${role}">
+      <span class="nom-temps-litige"></span>
+      <input type="text" inputmode="numeric" name="temps_${role}" value="${valeur}" placeholder="ennemis tués" title="Nombre d'ennemis tués ou abandon">
+    </label>`;
+  }
   return `
     <label class="champ-temps-litige champ-${role}">
       <span class="nom-temps-litige"></span>
-      <input type="text" inputmode="decimal" name="temps_${role}" value="${match[role].temps?.affiche || ""}" placeholder="mm:ss" title="Temps (mm:ss) ou abandon">
+      <input type="text" inputmode="decimal" name="temps_${role}" value="${temps?.affiche || ""}" placeholder="mm:ss" title="Temps (mm:ss) ou abandon">
     </label>`;
 }
 

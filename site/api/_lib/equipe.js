@@ -54,7 +54,7 @@ const PHASES_FINIES = ["termine", "litige", "annule"];
 const TEMPS_MASQUE = { affiche: null, secondes: null, masque: true };
 const MODES = { 2: "2v2", 3: "3v3", 4: "4v4" };
 // Boss pas faisables en co-op : jamais tirés ni imposés en équipe.
-const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll"];
+const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll", "defi_mer_dantan"];
 // Spectateurs (colonne rooms.spectateurs, comme le 1v1) : présents s'ils ont
 // lu l'état il y a moins de PRESENCE_SPECTATEUR_MS ; réécrit au plus toutes
 // les ECRITURE_SPECTATEUR_MS.

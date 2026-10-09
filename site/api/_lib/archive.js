@@ -77,7 +77,7 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
       // liste change d'une saison à l'autre ; cf. sql/bonus_saison.sql).
       bonus_saison_j1: draft.actions.filter(a => a.type === "pick" && a.joueur === "j1" && aBonusSaison(a.perso_id, a.element)).length,
       bonus_saison_j2: draft.actions.filter(a => a.type === "pick" && a.joueur === "j2" && aBonusSaison(a.perso_id, a.element)).length,
-      trophees: litige ? null : calculerTrophees(draft.temps_j1, draft.temps_j2, draft.vainqueur)
+      trophees: litige ? null : calculerTrophees(draft.temps_j1, draft.temps_j2, draft.vainqueur, draft.boss_id)
     } : {}),
     // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
     // Voyageur / Manekin) : affichées dans l'historique des matchs.

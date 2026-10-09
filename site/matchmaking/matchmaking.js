@@ -70,7 +70,7 @@ function remplirSelectBoss(select, liste) {
   });
 }
 
-const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll"];
+const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll", "defi_mer_dantan"];
 
 // Room privée / en équipe : liste des boss, remplie à la 1re ouverture.
 const selectsBossCharges = new Set();

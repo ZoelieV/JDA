@@ -73,6 +73,16 @@ function getBossParId(id) {
   return bossList.find(b => b.id === id) || null;
 }
 
+// Défi (ex. Défi mystérieux de la Mer d'Antan, "score": "ennemis" dans
+// DB/boss.json) : salle de 2 minutes où l'on tue le plus d'ennemis possible.
+// Nombre d'ennemis tués saisi à la place d'un temps (cf. _lib/temps.js), le
+// plus grand gagne.
+const DUREE_DEFI_SECONDES = 120;
+
+function estDefiEnnemis(bossId) {
+  return getBossParId(bossId)?.score === "ennemis";
+}
+
 // Ids de toutes les légendes locales (une fois par jour ou à l'infini).
 function idsLegendesLocales() {
   return bossList.filter(estLegendeLocale).map(b => b.id);
@@ -80,4 +90,4 @@ function idsLegendesLocales() {
 
 const ERREUR_CARNAGE_DESACTIVE = "Les boss du carnage sont désactivés en ce moment (plus disponibles dans le jeu).";
 
-module.exports = { bossCarnageExclus, ERREUR_CARNAGE_DESACTIVE, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };
+module.exports = { bossCarnageExclus, DUREE_DEFI_SECONDES, ERREUR_CARNAGE_DESACTIVE, estDefiEnnemis, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };

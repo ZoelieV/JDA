@@ -139,7 +139,7 @@ async function abandonnerMatchClasse(supabase, roomId, draft, role) {
     [`temps_${role}`]: { ...TEMPS_ABANDON },
     [`temps_${autre}`]: tempsAutre
   };
-  final.vainqueur = determinerVainqueur(final.temps_j1, final.temps_j2);
+  final.vainqueur = determinerVainqueur(final.temps_j1, final.temps_j2, final.boss_id);
   const annule = {
     ...final,
     phase: "annule",

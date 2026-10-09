@@ -12,7 +12,7 @@
 const { supabase } = require("./supabase");
 const { debutJournee } = require("./journee");
 const { banClasse, SANCTIONS, finSanction } = require("./sanctions");
-const { parserTempsOuAbandon, determinerVainqueur } = require("./temps");
+const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./temps");
 const { calculerTrophees } = require("./trophees");
 
 const SIGNALEMENTS_JOUR_MAX = 10;
@@ -137,12 +137,12 @@ async function traiterSignalement(req, res, user) {
   // Tout vérifié avant d'écrire quoi que ce soit.
   let correction = null;
   if (decision === "corrige") {
-    const tempsJ1 = parserTempsOuAbandon(req.body?.temps_j1);
-    const tempsJ2 = parserTempsOuAbandon(req.body?.temps_j2);
-    if (!tempsJ1 || !tempsJ2) return res.status(400).json({ error: "Format de temps invalide (attendu mm:ss ou abandon)" });
-    const vainqueur = determinerVainqueur(tempsJ1, tempsJ2);
+    const tempsJ1 = parserTempsOuAbandon(req.body?.temps_j1, match.boss_id);
+    const tempsJ2 = parserTempsOuAbandon(req.body?.temps_j2, match.boss_id);
+    if (!tempsJ1 || !tempsJ2) return res.status(400).json({ error: messageFormatInvalide(match.boss_id, true) });
+    const vainqueur = determinerVainqueur(tempsJ1, tempsJ2, match.boss_id);
     correction = {
-      ...(match.classe ? { trophees: calculerTrophees(tempsJ1, tempsJ2, vainqueur) } : {}),
+      ...(match.classe ? { trophees: calculerTrophees(tempsJ1, tempsJ2, vainqueur, match.boss_id) } : {}),
       temps_j1_affiche: tempsJ1.affiche,
       temps_j1_secondes: tempsJ1.secondes,
       temps_j2_affiche: tempsJ2.affiche,

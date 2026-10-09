@@ -2,6 +2,8 @@
 // "classe") : le gagnant gagne des trophées, le perdant en perd autant.
 // Un demi-trophée par seconde d'écart entre les 2 temps, arrondi au
 // supérieur, au plus TROPHEES_MAX ; égalité (cf. determinerVainqueur) : 0.
+// Défi (nombre d'ennemis tués, cf. estDefiEnnemis) : un trophée par ennemi
+// d'écart, au plus TROPHEES_MAX.
 // Série de victoires en classé (matchs consécutifs du joueur, revanche ou
 // nouveau match) : bonus pour le gagnant, +1 à la 2e victoire, +2 à la 3e,
 // +3 à la 4e et au-delà ; une défaite ou une égalité remet la série à 0.
@@ -9,6 +11,7 @@
 // recalculé en rejouant ses matchs classés dans l'ordre (un litige
 // republié plus tard reprend sa place à sa date).
 const { saisonDuMatch } = require("./saisons");
+const { estDefiEnnemis } = require("./boss");
 
 const TROPHEES_MAX = 30;
 const BONUS_SERIE_MAX = 3;
@@ -31,11 +34,11 @@ function seriePrime(table) {
 // Trophées en jeu dans un match terminé (vainqueur "j1" | "j2" | "egalite"),
 // sans le bonus de série (colonne match_history.trophees).
 // Abandon d'un joueur : écart "infini", trophées au maximum.
-function calculerTrophees(tempsJ1, tempsJ2, vainqueur) {
+function calculerTrophees(tempsJ1, tempsJ2, vainqueur, bossId = null) {
   if (vainqueur !== "j1" && vainqueur !== "j2") return 0;
   if (tempsJ1.abandon || tempsJ2.abandon) return TROPHEES_MAX;
   const ecart = Math.abs(tempsJ1.secondes - tempsJ2.secondes);
-  return Math.min(TROPHEES_MAX, Math.ceil(ecart / 2));
+  return Math.min(TROPHEES_MAX, estDefiEnnemis(bossId) ? ecart : Math.ceil(ecart / 2));
 }
 
 // Bonus de la n-ième victoire d'affilée (1 -> 0, 2 -> 1, 3 -> 2, 4+ -> 3).

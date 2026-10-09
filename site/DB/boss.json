@@ -213,6 +213,14 @@
     "image": "images/boss/legend_local/furiosa_ll.webp"
   },
   {
+    "id": "defi_mer_dantan",
+    "nom": "Défi mystérieux de la Mer d'Antan",
+    "type": "legende_locale_infinie",
+    "score": "ennemis",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/defi_mer_dantan.webp"
+  },
+  {
     "id": "boss_1",
     "nom": "Carnage 4 : Salle 1",
     "type": "carnage_boss",
