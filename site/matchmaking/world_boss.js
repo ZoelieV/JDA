@@ -145,7 +145,27 @@ function rendreJeu() {
   rendreResultat();
   rendrePersos();
   rendreZoneResultat();
+  rendreZoneHote();
   rendreEtatJoueurs();
+}
+
+// Légende locale : un joueur se déclare hôte du monde ; obligatoire pour
+// enregistrer une réussite (la légende est tuée pour lui, cf.
+// api/_lib/world_boss.js).
+function rendreZoneHote() {
+  const boss = bossParId.get(draft.boss_id);
+  const visible = draft.phase === "jeu" && estLegendeLocale(boss);
+  $("zone-hote").classList.toggle("cache", !visible);
+  if (!visible) return;
+  const hote = draft.hote;
+  const jour = boss.type === "legende_locale_jour" ? " Légende « une fois par jour » : elle ne sera plus tirée pour lui avant le reset de 4 h." : "";
+  $("aide-hote").textContent = (hote ? `Hôte : ${nomJoueur(hote)}.` : "Le joueur dans le monde duquel vous combattez se déclare hôte (obligatoire si le défi est réussi).") +
+    ` Si le défi est réussi, la légende compte comme tuée pour l'hôte.${jour}`;
+  const bouton = $("btn-hote");
+  const moiHote = hote === moi?.id;
+  bouton.classList.toggle("cache", !suisJoueur() || (!!hote && !moiHote));
+  bouton.classList.toggle("actif", moiHote);
+  bouton.textContent = moiHote ? "Je suis l'hôte ✓ (annuler)" : "Je suis l'hôte";
 }
 
 function rendreResultat() {
@@ -231,7 +251,7 @@ function rendreEtatJoueurs() {
     <h3>Déclarations</h3>
     <ul class="membres-equipe etat-declarations">${draft.joueurs.map(id => {
       const persos = (draft.joues?.[id] || []).map(persoId => draft.persos.find(p => p.perso_id === persoId)).filter(Boolean);
-      return `<li>${htmlNom(id)}${badgesJoueur(id)}<span class="aide-equipe">${persos.length ? persos.map(nomPerso).map(echapperHtml).join(", ") : "en attente…"}</span></li>`;
+      return `<li>${htmlNom(id)}${badgesJoueur(id)}${draft.hote === id ? `<span class="badge-equipe hote" title="Hôte du monde">🏠 Hôte</span>` : ""}<span class="aide-equipe">${persos.length ? persos.map(nomPerso).map(echapperHtml).join(", ") : "en attente…"}</span></li>`;
     }).join("")}</ul>`;
 }
 
@@ -344,7 +364,9 @@ function rendreBulles() {
   const message = $("message-wb");
   message.textContent = "";
   if (draft.phase !== "lobby" && !suisJoueur()) message.textContent = "👁 Tu regardes cette partie en spectateur.";
-  else if (draft.phase === "jeu") message.textContent = "Après le combat : chacun déclare ses persos, le chef déclare le résultat.";
+  else if (draft.phase === "jeu") message.textContent = estLegendeLocale(bossParId.get(draft.boss_id))
+    ? "Après le combat : chacun déclare ses persos, l'hôte se déclare, le chef déclare le résultat."
+    : "Après le combat : chacun déclare ses persos, le chef déclare le résultat.";
   else if (draft.phase === "termine") message.textContent = suisChef() ? "Lance une nouvelle partie avec les mêmes joueurs." : "Le chef peut lancer une nouvelle partie.";
 
   // Chef : nouvelle partie (retour au lobby), aussi pendant une partie
@@ -375,6 +397,7 @@ function initialiserBoutons() {
   });
   $("btn-reussite").addEventListener("click", () => agir("wb_resultat", { reussite: true }));
   $("btn-echec").addEventListener("click", () => agir("wb_resultat", { reussite: false }));
+  $("btn-hote").addEventListener("click", () => agir("wb_hote", { hote: draft.hote !== moi.id }));
   $("btn-rejouer").addEventListener("click", () => {
     const texte = draft.phase === "jeu"
       ? "Abandonner ce tirage et retourner au lobby ? La partie ne sera pas enregistrée."

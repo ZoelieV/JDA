@@ -519,6 +519,7 @@ async function partiesWorldBoss(res) {
       reussite: !!partie.reussite,
       saison: saisonDuMatch(partie),
       createur: partie.createur || null,
+      hote: partie.hote || null,
       membres: (partie.membres || []).map(m => {
         const profil = joueurs.get(m.discord_id);
         return {

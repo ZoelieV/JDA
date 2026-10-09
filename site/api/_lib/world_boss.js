@@ -15,6 +15,8 @@
 //             persos chacun ; à 3 : 2 + 1 + 1 ; à 4 : 1 chacun) sans imposer
 //             qui joue quoi. Après le combat, chaque joueur déclare les
 //             persos qu'il a joués, le chef déclare la réussite ou l'échec.
+//             Légende locale réussie : l'hôte du monde se déclare, elle est
+//             tuée pour lui (cf. _lib/legendes.js).
 //   termine : tout est déclaré -> partie archivée.
 //   annule  : un joueur est parti (autre match démarré).
 // Retour au lobby (chef) à tout moment : mêmes joueurs, nouveau tirage au
@@ -22,7 +24,8 @@
 const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
 const { actualiserPoints, getPersonnages, migrerCollectionPersos, ELEMENTS_LIBRES } = require("./personnages");
-const { listeBoss, estWorldBoss, estLegendeLocale, bossCarnageExclus } = require("./boss");
+const { listeBoss, getBossParId, estWorldBoss, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
+const { legendesTueesAujourdhui, legendesTueesParJoueur } = require("./legendes");
 const { saisonActuelle } = require("./saisons");
 
 const TAILLE_MIN = 2;
@@ -98,13 +101,16 @@ async function sauvegarder(roomId, draft, colonnes = {}) {
 
 // Boss du mode : world boss, boss hebdomadaires, légendes locales faisables
 // en co-op et salles du carnage (sauf désactivées), tous équiprobables ;
-// jamais deux fois de suite le même.
-async function tirerBoss(precedent) {
+// jamais deux fois de suite le même. Légende "une fois par jour" déjà tuée
+// aujourd'hui par tous les joueurs : exclue (personne ne peut l'héberger).
+async function tirerBoss(precedent, joueurs) {
   const { BOSS_HORS_COOP } = require("./equipe");
   const carnageExclus = await bossCarnageExclus();
+  const tuees = await legendesTueesParJoueur(joueurs);
+  const hebergeable = b => b.type !== TYPE_LEGENDE_JOUR || joueurs.some(id => !tuees.get(id)?.has(b.id));
   const candidats = listeBoss().filter(b =>
     estWorldBoss(b) || b.type === "weekly_boss" || b.type === "carnage_boss" || estLegendeLocale(b))
-    .filter(b => !BOSS_HORS_COOP.includes(b.id) && !carnageExclus.includes(b.id));
+    .filter(b => !BOSS_HORS_COOP.includes(b.id) && !carnageExclus.includes(b.id) && hebergeable(b));
   const sansPrecedent = candidats.filter(b => b.id !== precedent);
   return auHasard(sansPrecedent.length ? sansPrecedent : candidats)?.id || null;
 }
@@ -207,13 +213,21 @@ function maxPersosJoueur(draft, discordId) {
   return autreADeux ? 1 : 2;
 }
 
+// Légende locale réussie : l'hôte du monde doit s'être déclaré (elle est
+// tuée pour lui).
+function hoteRequis(draft) {
+  return draft.reussite === true && estLegendeLocale(getBossParId(draft.boss_id));
+}
+
 // Tout déclaré : les 4 persos ont un joueur, chaque joueur au moins un perso
-// (avec les maximums, la répartition est alors la bonne), et le résultat.
+// (avec les maximums, la répartition est alors la bonne), le résultat, et
+// l'hôte si besoin.
 function toutDeclare(draft) {
   const declares = draft.joueurs.flatMap(id => draft.joues?.[id] || []);
   return declares.length === NB_PERSOS &&
     draft.joueurs.every(id => (draft.joues?.[id] || []).length >= 1) &&
-    typeof draft.reussite === "boolean";
+    typeof draft.reussite === "boolean" &&
+    (!hoteRequis(draft) || !!draft.hote);
 }
 
 // ---- Archivage ----
@@ -225,6 +239,8 @@ async function archiver(draft) {
     boss_id: draft.boss_id,
     reussite: draft.reussite,
     createur: draft.createur,
+    // Légende locale réussie : joueur dans le monde duquel elle a été tuée.
+    hote: hoteRequis(draft) ? draft.hote : null,
     membres: draft.joueurs.map(id => ({ discord_id: id, nom: draft.infos?.[id]?.nom || "Joueur", avatar: draft.infos?.[id]?.avatar || null })),
     persos: draft.persos.map(perso => {
       const joueur = joueParPerso[perso.perso_id] || null;
@@ -243,6 +259,14 @@ async function archiver(draft) {
   if (error) {
     console.error("Erreur archivage Random world boss :", error);
     return null;
+  }
+  // Légende locale tuée pour l'hôte (plus tirée pour lui avant le reset si
+  // elle est "une fois par jour"). Pas de match_id : les ids des parties ne
+  // sont pas ceux de match_history.
+  if (ligne.hote) {
+    const { error: erreurMort } = await supabase.from("legendes_tuees")
+      .insert({ discord_id: ligne.hote, boss_id: draft.boss_id, match_id: null, temps_secondes: null, entrainement: false });
+    if (erreurMort) console.error("Erreur enregistrement legendes_tuees :", erreurMort);
   }
   return data.id;
 }
@@ -372,11 +396,12 @@ async function routeLancer(req, res, roomId, user) {
     phase: "jeu",
     joueurs: [...draft.membres],
     infos: Object.fromEntries(draft.membres.map(id => [id, infosProfil(profils.get(id))])),
-    boss_id: await tirerBoss(draft.boss_precedent_id),
+    boss_id: await tirerBoss(draft.boss_precedent_id, draft.membres),
     persos,
     versions,
     joues: {},
     reussite: null,
+    hote: null,
     id_partie: null
   });
   await sauvegarder(roomId, draft);
@@ -441,6 +466,31 @@ async function routeResultat(req, res, roomId, user) {
   return repondre(res, draft);
 }
 
+// { hote: true | false } : légende locale, le joueur se déclare hôte du
+// monde (ou retire sa déclaration). Un seul hôte ; "une fois par jour" :
+// pas s'il l'a déjà tuée aujourd'hui.
+async function routeHote(req, res, roomId, user) {
+  const { hote } = lireCorps(req);
+  const room = await chargerRoom(roomId);
+  const draft = room.draft;
+  if (draft.phase !== "jeu") throw erreur(409, "Ce n'est pas le moment de déclarer l'hôte.");
+  if (!draft.joueurs.includes(user.id)) throw erreur(403, "Tu ne joues pas cette partie.");
+  const boss = getBossParId(draft.boss_id);
+  if (!estLegendeLocale(boss)) throw erreur(409, "Pas d'hôte à déclarer : ce boss n'est pas une légende locale.");
+  if (hote === false) {
+    if (draft.hote === user.id) draft.hote = null;
+  } else {
+    if (draft.hote && draft.hote !== user.id) throw erreur(409, `${draft.infos?.[draft.hote]?.nom || "Un autre joueur"} est déjà l'hôte.`);
+    if (boss.type === TYPE_LEGENDE_JOUR && (await legendesTueesAujourdhui([user.id])).includes(boss.id)) {
+      throw erreur(409, `Tu as déjà tué ${boss.nom} aujourd'hui : un autre joueur doit l'héberger.`);
+    }
+    draft.hote = user.id;
+  }
+  await terminerSiComplet(roomId, draft);
+  if (draft.phase === "jeu") await sauvegarder(roomId, draft);
+  return repondre(res, draft);
+}
+
 // Chef : retour au lobby avec les mêmes joueurs (partie en cours abandonnée,
 // pas archivée).
 async function routeRejouer(req, res, roomId, user) {
@@ -466,6 +516,7 @@ const ROUTES = {
   wb_lancer: { methode: "POST", route: routeLancer },
   wb_declarer: { methode: "POST", route: routeDeclarer },
   wb_resultat: { methode: "POST", route: routeResultat },
+  wb_hote: { methode: "POST", route: routeHote },
   wb_rejouer: { methode: "POST", route: routeRejouer }
 };
 

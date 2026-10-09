@@ -501,6 +501,7 @@ function creerLigneWorldBoss(partie) {
           <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
           ${htmlMedailleTheatre(m.theatre)}
           ${m.discord_id === partie.createur ? `<span class="etiquette-resultat chef-equipe" title="Chef de la room">★ Chef</span>` : ""}
+          ${m.discord_id === partie.hote ? `<span class="etiquette-resultat chef-equipe" title="Hôte du monde : légende locale tuée pour lui">🏠 Hôte</span>` : ""}
         </div>`).join("")}
       </div>
     </div>

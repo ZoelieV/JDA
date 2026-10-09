@@ -17,6 +17,10 @@ create table if not exists world_boss_history (
   saison integer
 );
 
+-- Légende locale réussie : joueur hôte du monde (elle est tuée pour lui,
+-- cf. table legendes_tuees).
+alter table world_boss_history add column if not exists hote text;
+
 create index if not exists world_boss_history_date on world_boss_history (created_at desc);
 
 -- Fermée à l'accès public (le site passe par la clé de service).
