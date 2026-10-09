@@ -1,6 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
-const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints } = require("../_lib/personnages");
+const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre } = require("../_lib/personnages");
 const { CLASSEMENTS, rejouerClasse, seriePrime } = require("../_lib/trophees");
 const { lireSaisons, saisonActuelle } = require("../_lib/saisons");
 
@@ -13,9 +13,6 @@ const CHAMPS = "discord_id, discord_username, discord_global_name, discord_avata
 
 // Code Postgres "colonne inexistante".
 const COLONNE_INEXISTANTE = "42703";
-
-// Théâtre clear : valeur stockée ("1"..."4") -> palier affiché.
-const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
 async function chargerProfils() {
   // created_at (date d'arrivée, tri "Arrivée") : si la colonne n'existe pas
@@ -174,7 +171,8 @@ function resumerProfil(profil, resultats) {
     constellations_5: possedes
       .filter(p => String(p.rarete) === "5" && !p.standard)
       .reduce((somme, p) => somme + full[p.id], 0),
-    theatre: PALIERS_THEATRE[data.theatre] ?? null,
+    // Palier de théâtre calculé sur la full box (cf. palierTheatre).
+    theatre: palierTheatre(data),
     matchs,
     victoires,
     // Classé, par classement ("classique", "melee") : { trophees, matchs,

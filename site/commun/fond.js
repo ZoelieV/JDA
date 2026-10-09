@@ -122,7 +122,8 @@
     }
   }
 
-  // Théâtre du profil ("1".."4", cf. menu "Théâtre clear" de Mon compte).
+  // Palier de théâtre du profil ("1".."4", calculé par le serveur sur la
+  // full box, cf. palierTheatre dans api/_lib/personnages.js).
   function memoriserTheatre(theatreProfil) {
     const palier = PALIERS_THEATRE[theatreProfil] ? String(PALIERS_THEATRE[theatreProfil]) : "";
     ecrire(CLE_THEATRE, palier);

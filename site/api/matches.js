@@ -10,7 +10,7 @@
 // _lib/signalements.js). Tout dans ce fichier pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel.
 const { supabase } = require("./_lib/supabase");
-const { infosPersoJoueur } = require("./_lib/personnages");
+const { infosPersoJoueur, palierTheatre } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estModerateur } = require("./_lib/admin");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
@@ -27,8 +27,6 @@ const NB_ROOMS_MAX = 30;
 // (le nettoyage automatique la supprime après 1 h).
 const INACTIVITE_MAX_MS = 60 * 60 * 1000;
 const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
-// Théâtre clear du profil : valeur stockée ("1"..."4") -> palier.
-const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
 // Ni litiges ouverts ni matchs invalidés après un signalement (cf.
 // _lib/signalements.js).
@@ -341,7 +339,8 @@ function resumerJoueur(match, role, profils) {
     avatar: profil?.discord_avatar_url || null,
     banniere2: parametres.banniere2 || BANNIERE2_DEFAUT,
     // Palier de théâtre actuel (médaille à côté du pseudo), ou null.
-    theatre: PALIERS_THEATRE[profil?.data?.theatre] ?? null,
+    // Palier de théâtre calculé sur la full box (médaille), cf. palierTheatre.
+    theatre: profil?.data ? palierTheatre(profil.data) : null,
     // Variantes affichées (Voyageur, Manekin), cf. commun/variantes.js.
     // Variantes et skins du joueur : ses persos s'affichent avec ses choix.
     parametres: { voyageur: parametres.voyageur || null, manekin: parametres.manekin || null, skins: Array.isArray(parametres.skins) ? parametres.skins : [] },
@@ -527,7 +526,7 @@ async function partiesWorldBoss(res) {
           nom: profil?.discord_global_name || profil?.discord_username || m.nom || "Joueur",
           avatar: profil?.discord_avatar_url || m.avatar || null,
           banniere2: profil?.data?.parametres?.banniere2 || BANNIERE2_DEFAUT,
-          theatre: PALIERS_THEATRE[profil?.data?.theatre] ?? null
+          theatre: profil?.data ? palierTheatre(profil.data) : null
         };
       }),
       persos: partie.persos || []

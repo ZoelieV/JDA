@@ -248,8 +248,45 @@ function aBonusSaison(persoId, element = null) {
   return bonusSaison.has(persoId) || (!!element && bonusSaison.has(`${persoId}_${element}`));
 }
 
+// ---- Palier de théâtre d'un compte (calculé, plus choisi par le joueur) ----
+// Copies de 5★ limités (ni standards, ni 4★) de la full box : un perso C0
+// compte 1, C2 compte 3 (obtenu 3 fois), C6 compte 7. Palier : 25 copies ou
+// plus -> théâtre 12, 21 à 24 -> 10, 17 à 20 -> 8, sinon 6. Sert au mode
+// Classique des drafts (théâtre du plus petit palier) et à la médaille à
+// côté du pseudo. Même calcul côté client : palierTheatreProfil
+// (commun/cartes.js).
+const SEUILS_THEATRE = [[25, 12], [21, 10], [17, 8]];
+// Palier -> valeur stockée dans le profil ("1".."4", ancien menu "Théâtre
+// clear"), lue par les pages pour la médaille.
+const CODES_THEATRE = { 6: "1", 8: "2", 10: "3", 12: "4" };
+
+function estLimite5(personnage) {
+  return String(personnage?.rarete) === "5" && !personnage.standard;
+}
+
+function copiesLimitees(profilData) {
+  const full = migrerCollectionPersos(profilData?.characters)?.full || {};
+  return getPersonnages().filter(estLimite5).reduce((total, personnage) => {
+    const constellation = full[personnage.id];
+    return Number.isInteger(constellation) && constellation >= 0 ? total + constellation + 1 : total;
+  }, 0);
+}
+
+function palierTheatre(profilData) {
+  const copies = copiesLimitees(profilData);
+  return SEUILS_THEATRE.find(([seuil]) => copies >= seuil)?.[1] ?? 6;
+}
+
+function codeTheatre(profilData) {
+  return CODES_THEATRE[palierTheatre(profilData)];
+}
+
 module.exports = {
   MODES_POINTS,
+  codeTheatre,
+  copiesLimitees,
+  estLimite5,
+  palierTheatre,
   aBonusSaison,
   actualiserPoints,
   estAjout,

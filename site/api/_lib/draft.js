@@ -1,4 +1,4 @@
-const { migrerCollectionPersos, pointsPersonnage } = require("./personnages");
+const { migrerCollectionPersos, pointsPersonnage, palierTheatre } = require("./personnages");
 
 // ---- Équilibrage ----
 //
@@ -54,13 +54,11 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
 // changent pas.
 const BANS_PAR_THEATRE = { 6: [0, 1], 8: [1, 1], 10: [2, 1], 12: [2, 2] };
 const THEATRES = [6, 8, 10, 12];
-// Mode d'une room : "auto" (théâtre du joueur au plus petit clear), un
+// Mode d'une room : "auto" (théâtre du joueur au plus petit palier), un
 // théâtre imposé ("12" = mêlée générale) ou "carnage" (théâtre 12 sans bans
 // d'équilibrage, hors classé).
 const MODES_THEATRE = ["auto", "6", "8", "10", "12", "carnage"];
-// Théâtre clear du profil : valeur stockée ("1".."4") -> palier.
-const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
-// Théâtre non renseigné dans le profil : considéré comme le plus petit.
+// Ancienne draft sans palier enregistré : considéré comme le plus petit.
 const THEATRE_PAR_DEFAUT = 6;
 
 function sequenceTheatre(theatre) {
@@ -78,25 +76,20 @@ function sequenceTheatre(theatre) {
   ];
 }
 
+// Palier de théâtre du compte, calculé sur les 5★ limités de sa full box
+// (cf. palierTheatre, _lib/personnages.js).
 function theatreProfil(profilData) {
-  return PALIERS_THEATRE[profilData?.theatre] ?? null;
+  return palierTheatre(profilData);
 }
 
 // Théâtre de la draft : imposé par le mode, sinon ("auto") celui du joueur
-// au plus petit clear.
+// au plus petit palier.
 function resoudreTheatre(mode, theatreJ1, theatreJ2) {
   if (mode === "carnage") return 12;
   if (THEATRES.includes(Number(mode))) return Number(mode);
   return Math.min(theatreJ1 ?? THEATRE_PAR_DEFAUT, theatreJ2 ?? THEATRE_PAR_DEFAUT);
 }
 
-// Mode "auto" (classique) : interdit sans théâtre clear renseigné dans le
-// profil (sinon un gros compte pourrait ne rien renseigner pour imposer
-// moins de bans). Message d'erreur, ou null si le joueur peut jouer.
-function erreurModeAuto(mode, profilData) {
-  if (mode !== "auto" || theatreProfil(profilData) !== null) return null;
-  return "Renseigne ton théâtre clear (menu du compte ou Mon compte) pour jouer en mode classique / auto.";
-}
 
 // Entraînement joué seul : le lanceur tient les 2 rôles (mêmes comptes en
 // j1 et j2), chacun à son tour (cf. agirEn dans _lib/room.js).
@@ -150,7 +143,7 @@ function etatInitialDraft() {
     actions: [], // { joueur, type: "ban" | "pick", perso_id, bonus: bool, element? (pick Voyageur / Manekin) }
     sequence_index: 0,
     mode_theatre: "auto", // "auto" | "6" | "8" | "10" | "12" (choisi à la création de la room)
-    theatre_j1: null, // théâtre clear du profil de j1 (6..12, null si non renseigné)
+    theatre_j1: null, // palier de théâtre du compte de j1 (6..12, cf. theatreProfil)
     theatre_j2: null,
     theatre: null, // théâtre de la draft, fixé au tirage du boss
     sequence: null, // séquence de picks / bans de ce théâtre (cf. sequenceTheatre)
@@ -455,7 +448,6 @@ module.exports = {
   sequenceTheatre,
   theatreProfil,
   resoudreTheatre,
-  erreurModeAuto,
   estEntrainementSolo,
   getSequence,
   calculerBansBonus,

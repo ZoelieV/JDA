@@ -111,13 +111,18 @@ function marquerBonusSaison(liste, ids) {
   return set.size ? liste.map(perso => set.has(perso.id) ? { ...perso, bonusSaison: true } : perso) : liste;
 }
 
+// Catalogue chargé (sans les masqués) : palier de théâtre des comptes (cf.
+// palierTheatreProfil).
+let catalogueTheatre = null;
+
 // avecMasques (page admin) : masqués compris, sans buff théâtre.
 const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("characters.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC");
     modesBonus = points.modes || {};
     if (avecMasques) return liste;
-    return marquerBonusSaison(marquerBuffTheatre(retirerMasques(liste, points.masques?.characters), points.theatre), points.bonus_saison);
+    catalogueTheatre = retirerMasques(liste, points.masques?.characters);
+    return marquerBonusSaison(marquerBuffTheatre(catalogueTheatre, points.theatre), points.bonus_saison);
   });
 const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {
@@ -167,13 +172,31 @@ function estDefiEnnemis(boss) {
   return boss?.score === "ennemis";
 }
 
-// ---- Médaille du théâtre à côté du pseudo (namecards, bannières) ----
-// Palier atteint (6, 8, 10 ou 12) ; profil.theatre stocke "1".."4" (menu
-// "Théâtre clear" de Mon compte). Hauteur : 1,3 x le texte (cf. cartes.css).
+// ---- Palier de théâtre d'un compte et médaille à côté du pseudo ----
+// Calculé, plus choisi par le joueur (même calcul que palierTheatre,
+// api/_lib/personnages.js) : copies de 5★ limités de la full box (C0 = 1,
+// C2 = 3, C6 = 7) ; 25 ou plus -> 12, 21 à 24 -> 10, 17 à 20 -> 8, sinon 6.
+// Sert au mode Classique des drafts et à la médaille. profil.theatre garde
+// le palier calculé par le serveur ("1".."4"), utilisé sans catalogue
+// chargé. Hauteur de la médaille : 1,3 x le texte (cf. cartes.css).
 const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
+const CODES_THEATRE = { 6: "1", 8: "2", 10: "3", 12: "4" };
+const SEUILS_THEATRE = [[25, 12], [21, 10], [17, 8]];
 
-function palierTheatreProfil(profilData) {
-  return PALIERS_THEATRE[profilData?.theatre] ?? null;
+function copiesLimitees(profilData, personnages = catalogueTheatre) {
+  if (typeof migrerCollectionPersos === "function") migrerCollectionPersos(profilData?.characters);
+  const full = profilData?.characters?.full || {};
+  return (personnages || []).filter(p => String(p.rarete) === "5" && !p.standard).reduce((total, p) => {
+    const constellation = full[p.id];
+    return Number.isInteger(constellation) && constellation >= 0 ? total + constellation + 1 : total;
+  }, 0);
+}
+
+function palierTheatreProfil(profilData, personnages = catalogueTheatre) {
+  if (!profilData) return null;
+  if (!personnages) return PALIERS_THEATRE[profilData.theatre] ?? null;
+  const copies = copiesLimitees(profilData, personnages);
+  return SEUILS_THEATRE.find(([seuil]) => copies >= seuil)?.[1] ?? 6;
 }
 
 // Lien de stream : uniquement une page Twitch ou YouTube (pour ne jamais

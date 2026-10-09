@@ -71,7 +71,8 @@ async function calculerEquilibrage(draft) {
     const { data, box } = boxes[role];
     // Points totaux de la box choisie : personnages + armes.
     draft[`points_${role}`] = calculerPointsBox(data, box, personnages) + calculerPointsArmesBox(data, box, armes);
-    // Théâtre clear du propriétaire de la box : mode de théâtre "auto".
+    // Palier de théâtre du propriétaire de la box (calculé sur sa full box) :
+    // mode de théâtre "auto".
     draft[`theatre_${role}`] = theatreProfil(data);
     // Pool = personnages de la box choisie (et non toute la Full Box).
     draft[`pool_${role}`] = calculerPoolJoueur(data, personnages, box);

@@ -345,9 +345,15 @@ body::before {
   gap: 0.25rem;
 }
 
-.menu-champ label {
+.menu-champ label,
+.menu-champ .label-champ {
   font-size: 0.8125rem;
   opacity: 0.8;
+}
+
+/* Valeur calculée, pas modifiable (ex. palier de théâtre de Mon compte). */
+.menu-champ .valeur-champ {
+  font-size: 0.9375rem;
 }
 
 .menu-champ input,

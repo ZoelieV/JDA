@@ -1,4 +1,5 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
+const { codeTheatre } = require("../_lib/personnages");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
@@ -61,7 +62,6 @@ const PARAMETRES_AUTORISES = {
   voyageur: new Set(["aether", "lumine"]),
   manekin: new Set(["manekin", "manekina"])
 };
-const THEATRES = new Set(["", "1", "2", "3", "4"]);
 // UID Genshin : 9 chiffres (ex. 744102007), ou "" si pas renseigné.
 const FORMAT_UID = /^\d{9}$/;
 const uidValide = uid => uid === "" || FORMAT_UID.test(uid);
@@ -133,11 +133,14 @@ function nettoyerProfil(brut) {
   const profil = {
     uid: uidValide(uid) ? uid : "",
     niveau_monde: NIVEAUX_MONDE.has(String(brut.niveau_monde ?? "")) ? String(brut.niveau_monde ?? "") : "",
-    theatre: THEATRES.has(String(brut.theatre ?? "")) ? String(brut.theatre ?? "") : "",
     characters: nettoyerCollection(brut.characters, "characters"),
     weapons: nettoyerCollection(brut.weapons, "weapons"),
     parametres: nettoyerParametres(brut.parametres)
   };
+
+  // Palier de théâtre ("1".."4") : calculé sur les 5★ limités de la full
+  // box, plus choisi par le joueur (cf. palierTheatre, _lib/personnages.js).
+  profil.theatre = codeTheatre(profil);
 
   const noms = {};
   BOX_RENOMMABLES.forEach(box => {
@@ -190,7 +193,10 @@ module.exports = async (req, res) => {
       }
 
       const rows = await r.json();
-      return res.status(200).json({ profil: rows[0]?.data || null });
+      const data = rows[0]?.data || null;
+      // Palier de théâtre recalculé (profil enregistré avant le calcul
+      // automatique, ou catalogue changé depuis).
+      return res.status(200).json({ profil: data ? { ...data, theatre: codeTheatre(data) } : null });
     }
 
     // ---- SAUVEGARDE DU PROFIL ----

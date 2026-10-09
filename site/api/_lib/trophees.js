@@ -47,7 +47,7 @@ function bonusSerie(victoiresDAffilee) {
 }
 
 // Deux classements séparés (trophées et séries indépendants) : Classique
-// (mode "auto", théâtre du plus petit clear) et Mêlée générale (mode "12").
+// (mode "auto", théâtre du plus petit palier) et Mêlée générale (mode "12").
 // Ancien match sans mode : Classique.
 const CLASSEMENTS = ["classique", "melee"];
 

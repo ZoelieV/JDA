@@ -1439,7 +1439,7 @@ function htmlBossTire(boss) {
 }
 
 // Théâtre de la draft : fixé par le serveur au tirage du boss ; avant,
-// celui qui sera joué (mode imposé, ou plus petit clear des 2 joueurs en
+// celui qui sera joué (mode imposé, ou plus petit palier des 2 joueurs en
 // mode auto, cf. resoudreTheatre dans api/_lib/draft.js).
 function theatreDeLaDraft() {
   if ([6, 8, 10, 12].includes(draft?.theatre)) return draft.theatre;
@@ -1472,9 +1472,9 @@ function afficherModeTheatre() {
 function htmlModeTheatre(theatre) {
   if (![6, 8, 10, 12].includes(theatre)) return "";
   const nbBans = { 6: 1, 8: 2, 10: 3, 12: 4 }[theatre];
-  // "auto" : théâtre du joueur au plus petit clear ; sinon choisi à la
+  // "auto" : théâtre du joueur au plus petit palier ; sinon choisi à la
   // création de la room, ou mêlée générale (matchmaking / classé).
-  const mode = draft.mode_theatre === "auto" ? "plus petit clear"
+  const mode = draft.mode_theatre === "auto" ? "plus petit palier"
     : draft.mode_theatre === "carnage" ? "carnage, sans bans d'équilibrage"
       : typeRoom === "prive" ? "choisi pour la room" : "mêlée générale";
   return `<span class="mode-theatre" title="Draft du théâtre ${theatre} : 4 picks et ${nbBans} ban${nbBans > 1 ? "s" : ""} par joueur (${mode})">` +

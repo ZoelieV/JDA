@@ -87,7 +87,7 @@ async function creerFictive(event) {
   try {
     const { id } = await requeteFictives(API_FICTIVES, {
       method: "POST",
-      body: JSON.stringify({ nom, theatre: document.getElementById("theatre-fictive").value })
+      body: JSON.stringify({ nom })
     });
     // Box créée vide : direction Mon compte pour la remplir.
     window.location.href = lienEditionFictive(id);

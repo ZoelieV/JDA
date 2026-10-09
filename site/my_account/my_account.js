@@ -253,7 +253,7 @@ function preparerModeFictif(nom) {
     <p>Tu remplis une <strong>box fictive</strong> (entraînement, administrateurs seulement) : seule la full box compte. Ton propre compte n'est pas modifié.</p>
     <a class="lien-admin-fictif" href="/admin_ppc/admin_ppc.html">Retour à l'Administration</a>
   `;
-  bandeau.prepend(document.getElementById("theatre").closest(".menu-champ"));
+  bandeau.prepend(document.getElementById("theatre-auto").closest(".menu-champ"));
   titre.after(bandeau);
 }
 
@@ -860,20 +860,29 @@ function rendreCollection(personnages, armes, profil) {
 
 let etatEnregistre = null;
 
-function etatAEnregistrer(profil, uid, theatre, stream, niveauMonde) {
+function etatAEnregistrer(profil, uid, stream, niveauMonde) {
   return JSON.stringify([
     profil.characters, profil.weapons,
-    uid, theatre, stream, niveauMonde, profil.nomsBoxes ?? {}
+    uid, stream, niveauMonde, profil.nomsBoxes ?? {}
   ]);
 }
 
 function etatFormulaire(profil) {
-  return etatAEnregistrer(profil, document.getElementById("uid").value, document.getElementById("theatre").value,
+  return etatAEnregistrer(profil, document.getElementById("uid").value,
     document.getElementById("stream").value.trim(), document.getElementById("niveau-monde").value);
+}
+
+// Palier de théâtre calculé sur la full box en cours d'édition (cf.
+// palierTheatreProfil, commun/cartes.js).
+function afficherTheatreAuto(profil) {
+  const copies = copiesLimitees(profil);
+  document.getElementById("theatre-auto").textContent =
+    `Théâtre ${palierTheatreProfil(profil)} · ${copies} copie${copies > 1 ? "s" : ""} de 5★ limités`;
 }
 
 // Bouton de la page et bouton du menu du compte.
 function mettreAJourBoutonEnregistrer(profil) {
+  afficherTheatreAuto(profil);
   const rienAEnregistrer = etatEnregistre !== null && etatFormulaire(profil) === etatEnregistre;
   document.querySelectorAll(".btn-enregistrer-fixe, #btn-enregistrer-compte").forEach(bouton => {
     bouton.disabled = rienAEnregistrer;
@@ -1045,7 +1054,6 @@ async function initialiserPage() {
     document.getElementById("uid").value = profil.uid || "";
     document.getElementById("niveau-monde").value = profil.niveau_monde || "";
     document.getElementById("stream").value = profil.stream || "";
-    document.getElementById("theatre").value = profil.theatre || "";
 
     // Voyageur (Aether / Lumine), Manekin (Manekin / Manekina) et skins :
     // seule la variante choisie est affichée. Choisis dans Personnalisation
@@ -1295,7 +1303,8 @@ async function initialiserPage() {
       profil.niveau_monde = document.getElementById("niveau-monde").value;
       // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
       profil.stream = document.getElementById("stream").value.trim();
-      profil.theatre = document.getElementById("theatre").value;
+      // Palier de théâtre recalculé (aussi par le serveur) : médaille.
+      profil.theatre = CODES_THEATRE[palierTheatreProfil(profil)];
 
       if (!verifierChampUid()) {
         afficherToast("UID refusé : 9 chiffres attendus (ex. 744102007)", "erreur");
@@ -1321,7 +1330,7 @@ async function initialiserPage() {
     document.getElementById("uid").addEventListener("input", verifierChampUid);
     verifierChampUid();
 
-    ["uid", "niveau-monde", "stream", "theatre"].forEach(id => {
+    ["uid", "niveau-monde", "stream"].forEach(id => {
       const champ = document.getElementById(id);
       champ.addEventListener("input", () => mettreAJourBoutonEnregistrer(profil));
       champ.addEventListener("change", () => mettreAJourBoutonEnregistrer(profil));
@@ -1329,7 +1338,8 @@ async function initialiserPage() {
 
     initialiserReinitialisation(personnages, armes, profil);
 
-    // UID / théâtre (menu du compte) : même enregistrement que le formulaire.
+    // UID, niveau du monde, stream (menu du compte) : même enregistrement
+    // que le formulaire.
     document.getElementById("btn-enregistrer-compte").addEventListener("click", () => {
       document.getElementById("profil-form").requestSubmit();
       fermerMenuCompte();

@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { estModerateur } = require("../_lib/admin");
-const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
+const { getPersonnages, actualiserPoints, migrerCollectionPersos, codeTheatre } = require("../_lib/personnages");
 const { nettoyerProfil } = require("../auth/profile");
 const {
   MAX_BOXES_FICTIVES,
@@ -57,14 +57,15 @@ function masquerBoxOpti(data, visibles) {
 // ---- Box fictives (cf. _lib/boxes_fictives.js) ----
 // Administrateurs et mini admins seulement :
 //   GET    /api/accounts/boxes_fictives          liste { id, nom, theatre, nb_persos, ... }
-//   POST   /api/accounts/boxes_fictives          { nom, theatre? } -> { id }
+//   POST   /api/accounts/boxes_fictives          { nom } -> { id }
 //   GET    /api/accounts/<id fictif>             comme un profil (data = la box)
-//   PUT    /api/accounts/<id fictif>             { nom?, theatre?, data? }
+//   PUT    /api/accounts/<id fictif>             { nom?, data? }
+// Théâtre : palier calculé sur la full box (cf. palierTheatre,
+// _lib/personnages.js), comme pour les vrais comptes.
 //   DELETE /api/accounts/<id fictif>
 // GET d'une box fictive aussi permis à tous avec ?room= d'un entraînement
 // qui la joue (joueur qui a rejoint, spectateurs).
 const LISTE_FICTIVES = "boxes_fictives";
-const THEATRES_FICTIFS = new Set(["", "1", "2", "3", "4"]);
 
 // Personnages possédés (Voyageur compté une fois), comme Tous les comptes.
 function nbPersosFictive(data) {
@@ -72,15 +73,11 @@ function nbPersosFictive(data) {
   return new Set(getPersonnages().filter(p => (full[p.id] ?? -1) >= 0).map(p => p.groupe || p.id)).size;
 }
 
-// Données d'une box fictive : full box seulement (persos, armes) et théâtre.
-function nettoyerDonneesFictive(brut, theatre) {
+// Données d'une box fictive : full box seulement (persos, armes) et son
+// palier de théâtre calculé (cf. nettoyerProfil).
+function nettoyerDonneesFictive(brut) {
   const propre = nettoyerProfil(brut && typeof brut === "object" && !Array.isArray(brut) ? brut : {});
-  return { theatre, characters: propre.characters, weapons: propre.weapons };
-}
-
-function theatreFictif(brut, defaut = "") {
-  const theatre = String(brut ?? defaut);
-  return THEATRES_FICTIFS.has(theatre) ? theatre : defaut;
+  return { theatre: propre.theatre, characters: propre.characters, weapons: propre.weapons };
 }
 
 async function boxJoueeDansRoom(roomId, id) {
@@ -97,7 +94,7 @@ async function gererBoxesFictives(req, res, url, cible, user) {
     if (req.method === "GET") {
       const [boxes] = await Promise.all([lireBoxesFictives(), actualiserPoints()]);
       return res.status(200).json(Object.entries(boxes)
-        .map(([id, box]) => ({ id, nom: box.nom, theatre: box.data?.theatre || "", nb_persos: nbPersosFictive(box.data), createur: box.createur, modifie_le: box.modifie_le }))
+        .map(([id, box]) => ({ id, nom: box.nom, theatre: codeTheatre(box.data), nb_persos: nbPersosFictive(box.data), createur: box.createur, modifie_le: box.modifie_le }))
         .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" })));
     }
     if (req.method === "POST") {
@@ -114,7 +111,7 @@ async function gererBoxesFictives(req, res, url, cible, user) {
       const maintenant = new Date().toISOString();
       boxes[id] = {
         nom,
-        data: nettoyerDonneesFictive({}, theatreFictif(req.body?.theatre)),
+        data: nettoyerDonneesFictive({}),
         createur: user.global_name || user.username || user.id,
         cree_le: maintenant,
         modifie_le: maintenant
@@ -149,8 +146,7 @@ async function gererBoxesFictives(req, res, url, cible, user) {
       }
       box.nom = nom;
     }
-    const theatre = theatreFictif(corps.theatre ?? corps.data?.theatre, box.data?.theatre || "");
-    box.data = corps.data !== undefined ? nettoyerDonneesFictive(corps.data, theatre) : { ...box.data, theatre };
+    if (corps.data !== undefined) box.data = nettoyerDonneesFictive(corps.data);
     box.modifie_le = new Date().toISOString();
     await ecrireBoxesFictives(boxes);
     return res.status(200).json({ ok: true });

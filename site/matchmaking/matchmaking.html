@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Créer un match</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="../commun/entete.css?v=rem25">
+<link rel="stylesheet" href="../commun/entete.css?v=rem26">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/namecards.css?v=2">
 <link rel="stylesheet" href="matchmaking.css?v=11">
 <script src="/commun/fond.js?v=7"></script>
 <script src="/commun/zoom.js?v=2"></script>
-<script src="/commun/compte.js?v=17" defer></script>
+<script src="/commun/compte.js?v=18" defer></script>
 </head>
 <body>
 <a href="../index.html" class="lien-accueil">Accueil</a>
@@ -71,7 +71,7 @@
 
   <!-- Détails de chaque mode. Modes de théâtre : nombre de bans de la
        draft, après le tirage du boss (les bans d'équilibrage ne changent
-       pas). Classique : théâtre du joueur au plus petit clear ; mêlée
+       pas). Classique : théâtre du joueur au plus petit palier ; mêlée
        générale : théâtre 12 pour tout le monde. -->
   <section id="detail-room" class="panneau detail-match cache" data-detail="room">
     <h2>Créer une room</h2>
@@ -89,7 +89,7 @@
       </label>
     </div>
     <div class="modes-match" data-type="prive">
-      <button type="button" class="mode-match" data-mode="auto">Auto<span>théâtre du plus petit clear</span></button>
+      <button type="button" class="mode-match" data-mode="auto">Auto<span>théâtre du plus petit palier</span></button>
       <button type="button" class="mode-match" data-mode="6">Théâtre 6<span>4 picks, 1 ban</span></button>
       <button type="button" class="mode-match" data-mode="8">Théâtre 8<span>4 picks, 2 bans</span></button>
       <button type="button" class="mode-match" data-mode="10">Théâtre 10<span>4 picks, 3 bans</span></button>
@@ -102,7 +102,7 @@
     <h2>Matchmaking</h2>
     <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.</p>
     <div class="modes-match" data-type="matchmaking">
-      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
+      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit palier</span></button>
       <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
       <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
     </div>
@@ -118,7 +118,7 @@
       <li>Prime : battre le joueur à la plus longue série de victoires en cours rapporte +5 trophées.</li>
     </ul>
     <div class="modes-match" data-type="classe">
-      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit clear</span></button>
+      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit palier</span></button>
       <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
     </div>
   </section>
@@ -179,7 +179,7 @@
       <h3>1. Draft</h3>
       <label class="case-entrainement"><input type="checkbox" id="ent-classe"> Draft classée (chronos : analyse 2 min, bans d'équilibrage 6 s par ban (20 s minimum), 30 s par pick / ban de chaque joueur)</label>
       <div class="choix-boutons" id="ent-mode">
-        <button type="button" class="choix-btn active" data-valeur="auto">Classique<span>théâtre du plus petit clear</span></button>
+        <button type="button" class="choix-btn active" data-valeur="auto">Classique<span>théâtre du plus petit palier</span></button>
         <button type="button" class="choix-btn" data-valeur="6">Théâtre 6<span>1 ban</span></button>
         <button type="button" class="choix-btn" data-valeur="8">Théâtre 8<span>2 bans</span></button>
         <button type="button" class="choix-btn" data-valeur="10">Théâtre 10<span>3 bans</span></button>
@@ -216,7 +216,7 @@
   </section>
 
   <script src="/commun/variantes.js?v=4"></script>
-  <script src="/commun/cartes.js?v=14"></script>
+  <script src="/commun/cartes.js?v=15"></script>
   <script src="matchmaking.js?v=20"></script>
 </body>
 </html>

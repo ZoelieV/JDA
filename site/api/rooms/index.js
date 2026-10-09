@@ -4,7 +4,7 @@ const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
 const { annulerAutresMatchs } = require("../_lib/room");
 const { verifierFrequence } = require("../_lib/limites");
-const { MODES_THEATRE, NB_PERSOS_MIN_BOX, erreurModeAuto, etatInitialDraft, calculerPoolJoueur } = require("../_lib/draft");
+const { MODES_THEATRE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
@@ -35,11 +35,6 @@ async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}
     return `Tu as déjà tué ${boss.nom} aujourd'hui : cette légende locale revient demain à 4 h.`;
   }
   return null;
-}
-
-async function lireProfil(discordId) {
-  const { data } = await supabase.from("profiles").select("data").eq("discord_id", discordId).maybeSingle();
-  return data?.data || null;
 }
 
 // Box d'un côté de l'entraînement -> { source } ou { erreur }.
@@ -225,7 +220,7 @@ function genererRoomId() {
 // POST { mode? }                            : match privé (nouvelle room ;
 //                                             1 par minute et par IP, la
 //                                             précédente est supprimée)
-//   mode : "auto" (théâtre du plus petit clear), "6", "8", "10", "12" ou
+//   mode : "auto" (théâtre du plus petit palier), "6", "8", "10", "12" ou
 //   "carnage" ; boss_id : boss imposé (sinon au hasard) ; premier : J1 =
 //   "createur" | "adversaire" | "aleatoire"
 // Démarrer un match (privé ou matchmaking) annule le match en cours du
@@ -259,11 +254,6 @@ module.exports = async (req, res) => {
     if (TYPES_FILE.includes(req.body?.type)) {
       const roomIdAttente = typeof req.body.room_id === "string" ? req.body.room_id : null;
       const mode = MODES_MATCHMAKING[req.body.type].includes(req.body.mode) ? req.body.mode : "auto";
-      // Début de recherche en classique : théâtre renseigné obligatoire.
-      if (!roomIdAttente) {
-        const erreur = erreurModeAuto(mode, await lireProfil(user.id));
-        if (erreur) return res.status(409).json({ error: erreur });
-      }
       try {
         return res.status(200).json(await chercher(user.id, roomIdAttente, req.body.type, mode));
       } catch (erreur) {
@@ -273,8 +263,6 @@ module.exports = async (req, res) => {
     }
 
     const mode = MODES_THEATRE.includes(req.body?.mode) ? req.body.mode : "auto";
-    const erreurMode = erreurModeAuto(mode, await lireProfil(user.id));
-    if (erreurMode) return res.status(409).json({ error: erreurMode });
 
     // Boss et J1 choisis à la création (sinon au hasard au tirage).
     await actualiserPoints();

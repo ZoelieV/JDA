@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
 <link rel="stylesheet" href="/my_account/my_account.css?v=rem33">
-<link rel="stylesheet" href="../commun/entete.css?v=rem25">
+<link rel="stylesheet" href="../commun/entete.css?v=rem26">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <script src="/commun/fond.js?v=7" data-sans-requete></script>
@@ -67,15 +67,11 @@
             <span id="erreur-stream" class="erreur-champ cache">Twitch (twitch.tv) ou YouTube (youtube.com, youtu.be) uniquement.</span>
           </div>
 
+          <!-- Palier de théâtre : calculé sur les 5★ limités de la full box
+               (cf. palierTheatreProfil, commun/cartes.js), plus choisi. -->
           <div class="menu-champ">
-            <label for="theatre">Théâtre clear</label>
-            <select id="theatre" name="theatre" form="profil-form">
-              <option value="">Choisir</option>
-              <option value="1">6</option>
-              <option value="2">8</option>
-              <option value="3">10</option>
-              <option value="4">12</option>
-            </select>
+            <span class="label-champ">Théâtre (automatique)</span>
+            <span id="theatre-auto" class="valeur-champ" title="Copies de 5★ limités de ta full box (C0 = 1, C2 = 3, C6 = 7) : 25 ou plus = théâtre 12, 21 à 24 = 10, 17 à 20 = 8, sinon 6"></span>
           </div>
 
           <button type="button" id="btn-enregistrer-compte" class="menu-btn menu-btn-principal">Enregistrer</button>
@@ -247,9 +243,9 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/my_account/auto_box/detection.js?v=2"></script>
   <script src="/my_account/auto_box/interface.js?v=3"></script>
-  <script src="/commun/cartes.js?v=14"></script>
+  <script src="/commun/cartes.js?v=15"></script>
   <script src="/commun/tri.js?v=16"></script>
   <script src="/commun/personnalisation.js?v=5"></script>
-  <script src="/my_account/my_account.js?v=50"></script>
+  <script src="/my_account/my_account.js?v=51"></script>
 </body>
 </html>

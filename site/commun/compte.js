@@ -20,9 +20,9 @@
       options: [["", "Choisir"], ...["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(n => [n, n])] },
     // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
     { id: "menu-stream", label: "Lien de stream (Twitch ou YouTube)", type: "url", placeholder: "https://twitch.tv/…",
-      lire: p => p.stream || "", ecrire: (p, v) => { p.stream = v.trim(); } },
-    { id: "menu-theatre", label: "Théâtre clear", lire: p => p.theatre || "", ecrire: (p, v) => { p.theatre = v; },
-      options: [["", "Choisir"], ["1", "6"], ["2", "8"], ["3", "10"], ["4", "12"]] }
+      lire: p => p.stream || "", ecrire: (p, v) => { p.stream = v.trim(); } }
+    // Théâtre : palier calculé sur la full box (cf. palierTheatre,
+    // api/_lib/personnages.js), plus choisi ici.
   ];
   // Voyageur, Manekin et skins : dans Personnalisation (commun/personnalisation.js).
 
