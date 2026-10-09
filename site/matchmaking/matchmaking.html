@@ -61,10 +61,10 @@
       </div>
     </button>
     <button type="button" class="carte-section carte-match" data-detail="world-boss" aria-expanded="false" aria-controls="detail-world-boss">
-      <img src="../DB/images/others/Namecard_Background_random_world_boss.webp" alt="" loading="lazy">
+      <img src="../DB/images/others/Namecard_Background_Achievement_Tranquil_Peace.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>Random world boss</h2>
-        <p>Bientôt disponible.</p>
+        <p>Un boss et 4 persos au hasard, en co-op.</p>
       </div>
     </button>
   </div>
@@ -152,9 +152,20 @@
     </div>
   </section>
 
+  <!-- Random world boss (cf. api/_lib/world_boss.js) : room par lien, de 2
+       à 4 joueurs, lancée par le chef (créateur). -->
   <section id="detail-world-boss" class="panneau detail-match cache" data-detail="world-boss">
     <h2>Random world boss</h2>
-    <p>Ce mode arrive bientôt.</p>
+    <p>Envoie le lien à tes amis (2 à 4 joueurs) : tu lances la partie quand tout le monde est là.
+      Un boss et 4 persos sont tirés au hasard, à jouer ensemble en co-op.</p>
+    <ul class="regles-classe">
+      <li>Boss tiré parmi les world boss, les boss hebdomadaires, les légendes locales faisables en co-op et les salles du carnage.</li>
+      <li>4 persos tirés dans les full box des joueurs, toujours jouables par l'équipe : à 2, 2 persos chacun ; à 3, un joueur en joue 2 et les autres 1 ; à 4, 1 chacun. À vous de vous répartir les persos.</li>
+      <li>Après le combat, chacun déclare les persos qu'il a joués et le chef déclare la réussite ou l'échec.</li>
+    </ul>
+    <div class="modes-match" data-type="world_boss">
+      <button type="button" class="mode-match" data-mode="world_boss">Créer la room<span>de 2 à 4 joueurs</span></button>
+    </div>
   </section>
 
   <!-- Configuration de l'entraînement (cf. creerEntrainement, api/rooms/index.js). -->
@@ -206,6 +217,6 @@
 
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=14"></script>
-  <script src="matchmaking.js?v=19"></script>
+  <script src="matchmaking.js?v=20"></script>
 </body>
 </html>

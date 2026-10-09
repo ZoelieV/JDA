@@ -401,8 +401,9 @@ function pourcentage(p) {
   return p > 0 ? `${(100 * p).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %` : "—";
 }
 
-// Boss tirables (hors entraînement) : sans le carnage s'il est désactivé.
-const estTirable = b => !(carnageDesactive && b.type === "carnage_boss");
+// Boss tirables (hors entraînement) : sans le carnage s'il est désactivé,
+// jamais les world boss (mode Random world boss seulement).
+const estTirable = b => b.type !== "world_boss" && !(carnageDesactive && b.type === "carnage_boss");
 
 // Probabilité hors classé d'un boss (catégories vides ignorées).
 function probaHorsClasse(b) {

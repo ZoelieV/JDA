@@ -75,8 +75,9 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: "Room introuvable" });
       }
 
-      // Room d'équipe : page equipe.html (cf. _lib/equipe.js).
-      if (room.type === "equipe") return res.status(200).json(room);
+      // Room d'équipe ou Random world boss : pages equipe.html et
+      // world_boss.html (cf. _lib/equipe.js, _lib/world_boss.js).
+      if (room.type === "equipe" || room.type === "world_boss") return res.status(200).json(room);
 
       // Déjà player1 ou déjà player2 : on renvoie juste l'état actuel, rien à faire
       if (room.player1_discord_id === user.id || room.player2_discord_id === user.id) {

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Historique des matchs</title>
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="historique.css?v=38">
+<link rel="stylesheet" href="historique.css?v=39">
 <link rel="stylesheet" href="../commun/entete.css?v=rem25">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
@@ -24,6 +24,7 @@
     <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="entrainements">Mes entraînements<span>visibles par toi seul</span></button>
     <button type="button" class="onglet-historique active" role="tab" aria-selected="true" data-onglet="matchs">Matchs<span>en cours et terminés</span></button>
     <button type="button" class="onglet-historique" role="tab" aria-selected="false" data-onglet="equipe">Matchs en équipe<span>2v2, 3v3 et 4v4</span></button>
+    <button type="button" class="onglet-historique" role="tab" aria-selected="false" data-onglet="world_boss">Random World Boss<span>parties en co-op</span></button>
     <button type="button" class="onglet-historique" role="tab" aria-selected="false" data-onglet="stats">Statistiques<span>picks, bans et records</span></button>
   </div>
 
@@ -133,6 +134,17 @@
     </section>
   </div>
 
+  <!-- Random world boss (chargé à la 1re ouverture de l'onglet) : joueurs,
+       boss, persos joués et réussite (cf. creerLigneWorldBoss). -->
+  <div class="panneau-historique cache" data-panneau="world_boss">
+    <section class="section-matchs">
+      <h2 class="titre-section">Parties Random world boss</h2>
+      <p id="etat-world_boss" class="etat-historique">Chargement…</p>
+      <div id="liste-world_boss" class="liste-matchs"></div>
+      <nav id="pages-world_boss" class="pagination cache" aria-label="Pages des parties Random world boss"></nav>
+    </section>
+  </div>
+
   <!-- Statistiques (chargées à la 1re ouverture de l'onglet) : tous les
        matchs comptés, ni entraînements ni matchs invalidés par un litige. -->
   <div class="panneau-historique cache" data-panneau="stats">
@@ -142,6 +154,7 @@
       <div class="filtre-stats" role="group" aria-label="Type de matchs">
         <button type="button" class="bouton-historique mode-stats-bouton active" data-mode="1v1">Matchs 1v1</button>
         <button type="button" class="bouton-historique mode-stats-bouton" data-mode="equipe">Matchs en équipe</button>
+        <button type="button" class="bouton-historique mode-stats-bouton" data-mode="world_boss">Random world boss</button>
       </div>
       <select id="saison-stats" class="filtre-boss-historique" title="Saison des statistiques" aria-label="Saison des statistiques">
         <option value="">Toutes les saisons</option>
@@ -186,6 +199,26 @@
         <div id="records-boss" class="records-boss"></div>
       </section>
     </div>
+    <!-- Random world boss : réussites et échecs de chaque perso joué (pas
+         de record dans ce mode). -->
+    <div id="contenu-stats-wb" class="cache">
+      <section class="section-matchs">
+        <h2 class="titre-section">Personnages</h2>
+        <p id="note-stats-wb" class="note-stats"></p>
+        <div class="classements-persos">
+          <div class="classement-persos" data-liste="reussites">
+            <h3 class="sous-titre-section">Les plus de réussites</h3>
+            <ol class="liste-classement-persos"></ol>
+            <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
+          </div>
+          <div class="classement-persos" data-liste="echecs">
+            <h3 class="sous-titre-section">Les plus d'échecs</h3>
+            <ol class="liste-classement-persos"></ol>
+            <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <!-- Signaler un match : raison obligatoire (cf. ouvrirFenetreSignalement
@@ -207,6 +240,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=14"></script>
   <script src="/commun/tri.js?v=16"></script>
-  <script src="historique.js?v=46"></script>
+  <script src="historique.js?v=47"></script>
 </body>
 </html>

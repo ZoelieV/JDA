@@ -8,9 +8,10 @@ const { MODES_THEATRE, NB_PERSOS_MIN_BOX, erreurModeAuto, etatInitialDraft, calc
 const { calculerEquilibrage, donneesBoxRole } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
-const { getBossParId, bossCarnageExclus, ERREUR_CARNAGE_DESACTIVE } = require("../_lib/boss");
+const { getBossParId, bossCarnageExclus, estWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation } = require("../_lib/equipe");
+const { preparerCreation: preparerWorldBoss } = require("../_lib/world_boss");
 const { estModerateur } = require("../_lib/admin");
 const { estIdFictif, lireBoxFictive } = require("../_lib/boxes_fictives");
 
@@ -28,6 +29,7 @@ async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}
   if (!bossId) return null;
   const boss = getBossParId(bossId);
   if (!boss) return "Boss inconnu";
+  if (estWorldBoss(boss)) return ERREUR_WORLD_BOSS;
   if (!entrainement && (await bossCarnageExclus()).includes(bossId)) return ERREUR_CARNAGE_DESACTIVE;
   if ((await legendesTueesAujourdhui([discordId])).includes(bossId)) {
     return `Tu as déjà tué ${boss.nom} aujourd'hui : cette légende locale revient demain à 4 h.`;
@@ -174,6 +176,35 @@ async function creerEquipe(req, res, user) {
   return res.status(200).json({ room_id: roomId, equipe: true });
 }
 
+// POST { type: "world_boss" } : room Random world boss (cf.
+// _lib/world_boss.js), même limite de création que les rooms privées.
+async function creerWorldBoss(req, res, user) {
+  const { draft } = await preparerWorldBoss(user);
+
+  const attente = await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);
+  if (attente > 0) {
+    const secondes = Math.ceil(attente / 1000);
+    res.setHeader("Retry-After", String(secondes));
+    return res.status(429).json({ error: `Une room par minute au maximum : réessaie dans ${secondes} s.`, attente: secondes });
+  }
+
+  await annulerAutresMatchs(supabase, user.id);
+  const roomId = genererRoomId();
+  const { error } = await supabase.from("rooms").insert({
+    room_id: roomId,
+    player1_discord_id: user.id,
+    type: "world_boss",
+    membres: [user.id],
+    draft
+  });
+  if (error) {
+    console.error(error);
+    const sqlManquant = ["42703", "PGRST204"].includes(error.code);
+    return res.status(500).json({ error: sqlManquant ? "Mode pas encore activé (sql/equipes.sql à lancer dans Supabase)." : "Erreur création de la room" });
+  }
+  return res.status(200).json({ room_id: roomId, world_boss: true });
+}
+
 // Modes de théâtre : room privée = au choix ("auto", un théâtre ou
 // "carnage") ; matchmaking = classique ("auto"), mêlée générale ("12") ou
 // carnage ; classé = classique ou mêlée générale seulement.
@@ -223,6 +254,7 @@ module.exports = async (req, res) => {
 
     if (req.body?.type === "entrainement") return await creerEntrainement(req, res, user);
     if (req.body?.type === "equipe") return await creerEquipe(req, res, user);
+    if (req.body?.type === "world_boss") return await creerWorldBoss(req, res, user);
 
     if (TYPES_FILE.includes(req.body?.type)) {
       const roomIdAttente = typeof req.body.room_id === "string" ? req.body.room_id : null;

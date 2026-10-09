@@ -240,5 +240,327 @@
     "type": "carnage_boss",
     "res": [0, 0, 0, 0, 0, 0, 0],
     "image": "images/boss/carnage_chtonien/Guardian_Blade_of_Drifting_Snow_Stygian_Onslaught_Preview_3.webp"
+  },
+  {
+    "id": "lion_aile_chimerique_wb",
+    "nom": "Lion ailé chimérique",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/lion_aile_chimerique_wb.webp"
+  },
+  {
+    "id": "structure_immortelle_wb",
+    "nom": "Structure immortelle",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/structure_immortelle_wb.webp"
+  },
+  {
+    "id": "automate_surveillant_wb",
+    "nom": "Automate de source secrète : Surveillant",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/automate_surveillant_wb.webp"
+  },
+  {
+    "id": "statue_dragon_lave_wb",
+    "nom": "Statue de dragon de lave",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/statue_dragon_lave_wb.webp"
+  },
+  {
+    "id": "spiritoratrice_wb",
+    "nom": "Spiritoratrice excentrique isolée",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/spiritoratrice_wb.webp"
+  },
+  {
+    "id": "papille_obombree_wb",
+    "nom": "Papille obombrée",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/papille_obombree_wb.webp"
+  },
+  {
+    "id": "automate_configurateur_wb",
+    "nom": "Automate de source secrète : Configurateur",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/automate_configurateur_wb.webp"
+  },
+  {
+    "id": "roi_yumkasaure_wb",
+    "nom": "Roi yumkasaure glouton de la montagne",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/roi_yumkasaure_wb.webp"
+  },
+  {
+    "id": "tyran_qucusaure_wb",
+    "nom": "Tyran qucusaure de flamme dorée",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/tyran_qucusaure_wb.webp"
+  },
+  {
+    "id": "legat_golem_wb",
+    "nom": "Légat golem",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/legat_golem_wb.webp"
+  },
+  {
+    "id": "suanni_solitaire_wb",
+    "nom": "Suanni solitaire",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/suanni_solitaire_wb.webp"
+  },
+  {
+    "id": "tulpa_hydro_wb",
+    "nom": "Tulpa Hydro",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/tulpa_hydro_wb.webp"
+  },
+  {
+    "id": "generateur_champ_experimental_wb",
+    "nom": "Générateur de champ expérimental",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/generateur_champ_experimental_wb.webp"
+  },
+  {
+    "id": "hippocampe_perle_wb",
+    "nom": "Hippocampe perlé millénaire",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hippocampe_perle_wb.webp"
+  },
+  {
+    "id": "empereur_feu_ferreux_wb",
+    "nom": "Empereur du feu ferreux",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/empereur_feu_ferreux_wb.webp"
+  },
+  {
+    "id": "suite_cryolienne_wb",
+    "nom": "Suite cryolienne",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/suite_cryolienne_wb.webp"
+  },
+  {
+    "id": "lustrateur_inique_wb",
+    "nom": "Lustrateur inique",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/lustrateur_inique_wb.webp"
+  },
+  {
+    "id": "wenut_setekh_wb",
+    "nom": "Wenut de Setekh",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/wenut_setekh_wb.webp"
+  },
+  {
+    "id": "hypostase_dendro_wb",
+    "nom": "Hypostase Dendro",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hypostase_dendro_wb.webp"
+  },
+  {
+    "id": "algorithme_neo_reseau_wb",
+    "nom": "Algorithme de semi-intransition matriciaire d'observation en néo-réseau",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/algorithme_neo_reseau_wb.webp"
+  },
+  {
+    "id": "dragon_cataclysmique_wb",
+    "nom": "Dragon cataclysmique",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/dragon_cataclysmique_wb.webp"
+  },
+  {
+    "id": "arbre_foudroye_wb",
+    "nom": "Arbre foudroyé",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/arbre_foudroye_wb.webp"
+  },
+  {
+    "id": "champieffroi_panache_wb",
+    "nom": "Champieffroi panaché",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/champieffroi_panache_wb.webp"
+  },
+  {
+    "id": "serpent_ruines_wb",
+    "nom": "Serpent des ruines",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/serpent_ruines_wb.webp"
+  },
+  {
+    "id": "harde_elementosaures_wb",
+    "nom": "Harde d'Élémentosaures abyssaux",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/harde_elementosaures_wb.webp"
+  },
+  {
+    "id": "loup_alpha_dore_wb",
+    "nom": "Loup alpha doré",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/loup_alpha_dore_wb.webp"
+  },
+  {
+    "id": "hypostase_hydro_wb",
+    "nom": "Hypostase Hydro",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hypostase_hydro_wb.webp"
+  },
+  {
+    "id": "manifestation_tonnerre_wb",
+    "nom": "Manifestation du tonnerre",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/manifestation_tonnerre_wb.webp"
+  },
+  {
+    "id": "hypostase_pyro_wb",
+    "nom": "Hypostase Pyro",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hypostase_pyro_wb.webp"
+  },
+  {
+    "id": "matrice_mecanique_wb",
+    "nom": "Matrice mécanique perpétuelle",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/matrice_mecanique_wb.webp"
+  },
+  {
+    "id": "lame_oni_wb",
+    "nom": "Lame oni",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/lame_oni_wb.webp"
+  },
+  {
+    "id": "hypostase_cryo_wb",
+    "nom": "Hypostase Cryo",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hypostase_cryo_wb.webp"
+  },
+  {
+    "id": "arbre_congele_wb",
+    "nom": "Arbre congelé",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/arbre_congele_wb.webp"
+  },
+  {
+    "id": "arbre_enflamme_wb",
+    "nom": "Arbre enflammé",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/arbre_enflamme_wb.webp"
+  },
+  {
+    "id": "geosaure_antique_wb",
+    "nom": "Géosaure antique",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/geosaure_antique_wb.webp"
+  },
+  {
+    "id": "hypostase_anemo_wb",
+    "nom": "Hypostase Anémo",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hypostase_anemo_wb.webp"
+  },
+  {
+    "id": "hypostase_electro_wb",
+    "nom": "Hypostase Électro",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hypostase_electro_wb.webp"
+  },
+  {
+    "id": "hypostase_geo_wb",
+    "nom": "Hypostase Géo",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/hypostase_geo_wb.webp"
+  },
+  {
+    "id": "oceanide_wb",
+    "nom": "Océanide",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/oceanide_wb.webp"
+  },
+  {
+    "id": "canard_torgnoles_wb",
+    "nom": "Canard à torgnoles",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/canard_torgnoles_wb.webp"
+  },
+  {
+    "id": "croiseur_terrestre_wb",
+    "nom": "Croiseur terrestre super-lourd : Forteresse mécanisée",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/croiseur_terrestre_wb.webp"
+  },
+  {
+    "id": "herra_nuit_glaciale_wb",
+    "nom": "Herra de la nuit glaciale",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/herra_nuit_glaciale_wb.webp"
+  },
+  {
+    "id": "lunigecko_radieux_wb",
+    "nom": "Lunigecko radieux",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/lunigecko_radieux_wb.webp"
+  },
+  {
+    "id": "lunillon_radieux_wb",
+    "nom": "Lunillon radieux",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/lunillon_radieux_wb.webp"
+  },
+  {
+    "id": "seigneur_chuchoteur_wb",
+    "nom": "Seigneur chuchoteur de cauchemars des fonds cachés",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/seigneur_chuchoteur_wb.webp"
+  },
+  {
+    "id": "veilleur_veille_dechue_wb",
+    "nom": "Veilleur : Veille déchue",
+    "type": "world_boss",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/veilleur_veille_dechue_wb.webp"
   }
 ]

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random world boss</title>
+<link rel="stylesheet" href="match.css?v=rem49">
+<link rel="stylesheet" href="../commun/entete.css?v=rem25">
+<link rel="stylesheet" href="../commun/cartes.css?v=4">
+<link rel="stylesheet" href="equipe.css?v=6">
+<link rel="stylesheet" href="world_boss.css?v=1">
+<script src="/commun/zoom.js?v=2"></script>
+</head>
+<body>
+<!-- Mode Random world boss (cf. api/_lib/world_boss.js). Accueil à gauche,
+     partage du lien de la room à droite. -->
+<div class="barre-room">
+  <a href="../index.html" class="lien-accueil">Accueil</a>
+  <button id="btn-partager" type="button" class="btn-partager" title="Copier le lien de la room pour l'envoyer aux autres joueurs">Partager le lien</button>
+</div>
+<h1 class="titre-page">Random world boss</h1>
+<p class="sous-titre-equipe">Un boss et 4 persos tirés au hasard, en co-op (2 à 4 joueurs).</p>
+
+<div id="chargement" class="bandeau-info">Chargement…</div>
+
+<!-- ---- Lobby ---- -->
+<section id="phase-lobby" class="phase-equipe cache">
+  <div id="lobby-joueurs" class="lobby-equipes"></div>
+  <div class="actions-lobby">
+    <button id="btn-rejoindre" type="button" class="btn-equipe cache">Rejoindre la room</button>
+    <button id="btn-quitter" type="button" class="btn-equipe secondaire cache">Quitter la room</button>
+    <button id="btn-lancer" type="button" class="btn-equipe principal cache" disabled>Prêt : lancer la partie</button>
+  </div>
+  <p id="aide-lobby" class="aide-equipe"></p>
+</section>
+
+<!-- ---- Partie : boss, persos tirés, déclarations, résultat ---- -->
+<section id="phase-jeu" class="phase-equipe cache">
+  <div id="resultat-wb" class="zone-centre resultat-wb cache"></div>
+  <div class="zone-boss">
+    <div id="boss-wb" class="bandeau-boss"></div>
+  </div>
+  <div class="zone-centre">
+    <h3>Persos tirés</h3>
+    <p id="aide-persos" class="aide-equipe"></p>
+    <div id="persos-tires" class="persos-tires"></div>
+    <div id="actions-declaration" class="actions-lobby cache">
+      <button id="btn-declarer" type="button" class="btn-equipe principal">Valider mes persos</button>
+    </div>
+  </div>
+  <div id="zone-resultat" class="zone-centre cache">
+    <h3>Résultat du combat</h3>
+    <p id="aide-resultat" class="aide-equipe"></p>
+    <div class="actions-lobby">
+      <button id="btn-reussite" type="button" class="btn-equipe">Réussite</button>
+      <button id="btn-echec" type="button" class="btn-equipe">Échec</button>
+    </div>
+  </div>
+  <div id="etat-joueurs" class="zone-centre"></div>
+</section>
+
+<!-- ---- Partie annulée ---- -->
+<section id="phase-annule" class="phase-equipe cache">
+  <div class="match-annule">
+    <p class="ligne-vainqueur"><span class="litige">Partie annulée</span></p>
+    <p id="texte-annule"></p>
+  </div>
+</section>
+
+<!-- Bulles figées en bas : consigne, retour au lobby (chef). -->
+<div id="bulles-bas" class="bulles-bas">
+  <div id="message-wb" class="bandeau-info"></div>
+  <div id="actions-fin" class="actions-fin cache">
+    <button id="btn-rejouer" type="button" class="btn-equipe principal">Nouvelle partie</button>
+  </div>
+</div>
+
+<!-- Localisation d'une légende locale (bouton sous le boss). -->
+<div id="carte-legende" class="carte-legende cache" role="dialog" aria-modal="true">
+  <div class="fenetre-carte-legende">
+    <div class="entete-carte-legende">
+      <span class="titre-carte-legende"></span>
+      <button type="button" class="fermer-carte-legende" title="Fermer">✕</button>
+    </div>
+    <img alt="">
+    <p class="carte-absente cache">La localisation de cette légende locale n'est pas encore disponible.</p>
+  </div>
+</div>
+
+<script src="/commun/variantes.js?v=4"></script>
+<script src="/commun/cartes.js?v=14"></script>
+<script src="/commun/tri.js?v=16"></script>
+<script src="world_boss.js?v=1"></script>
+</body>
+</html>

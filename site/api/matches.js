@@ -492,6 +492,65 @@ async function statistiques(res, saison = null, equipe = false) {
   });
 }
 
+// ---- Random world boss (table world_boss_history, cf. _lib/world_boss.js) ----
+
+// Parties terminées, plus récentes d'abord (table absente : aucune).
+async function chargerPartiesWorldBoss(saison = null) {
+  let requete = supabase.from("world_boss_history").select("*").order("created_at", { ascending: false }).limit(NB_MATCHS_MAX);
+  if (saison !== null) requete = requete.eq("saison", saison);
+  const { data, error } = await requete;
+  if (error) {
+    if (error.code !== "42P01") console.error("Erreur lecture world_boss_history :", error);
+    return [];
+  }
+  return data || [];
+}
+
+// GET ?world_boss=1 : parties (joueurs avec leur bannière actuelle, persos
+// et qui les a joués, boss, réussite).
+async function partiesWorldBoss(res) {
+  const parties = await chargerPartiesWorldBoss();
+  const joueurs = await chargerJoueurs([...new Set(parties.flatMap(p => (p.membres || []).map(m => m.discord_id)).filter(Boolean))]);
+  return res.status(200).json({
+    parties: parties.map(partie => ({
+      id: partie.id,
+      date: partie.created_at,
+      boss_id: partie.boss_id,
+      reussite: !!partie.reussite,
+      saison: saisonDuMatch(partie),
+      createur: partie.createur || null,
+      membres: (partie.membres || []).map(m => {
+        const profil = joueurs.get(m.discord_id);
+        return {
+          discord_id: m.discord_id,
+          nom: profil?.discord_global_name || profil?.discord_username || m.nom || "Joueur",
+          avatar: profil?.discord_avatar_url || m.avatar || null,
+          banniere2: profil?.data?.parametres?.banniere2 || BANNIERE2_DEFAUT,
+          theatre: PALIERS_THEATRE[profil?.data?.theatre] ?? null
+        };
+      }),
+      persos: partie.persos || []
+    }))
+  });
+}
+
+// GET ?stats=1&world_boss=1 : réussites et échecs de chaque perso joué (pas
+// de record dans ce mode).
+async function statistiquesWorldBoss(res, saison = null) {
+  const parties = await chargerPartiesWorldBoss(saison);
+  const persos = {};
+  parties.forEach(partie => (partie.persos || []).forEach(({ perso_id: id }) => {
+    if (!id) return;
+    const stats = (persos[id] ??= { reussites: 0, echecs: 0 });
+    stats[partie.reussite ? "reussites" : "echecs"] += 1;
+  }));
+  return res.status(200).json({
+    parties: parties.length,
+    reussites: parties.filter(p => p.reussite).length,
+    persos
+  });
+}
+
 module.exports = async (req, res) => {
   if (!["GET", "PATCH", "POST"].includes(req.method)) {
     res.setHeader("Allow", "GET, PATCH, POST");
@@ -539,11 +598,23 @@ module.exports = async (req, res) => {
     }
   }
 
+  // Onglet Random world boss (tout le monde).
+  if (req.query?.world_boss === "1" && !req.query?.stats) {
+    try {
+      return await partiesWorldBoss(res);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur chargement des parties Random world boss" });
+    }
+  }
+
   // Onglet Statistiques (tout le monde).
   if (req.query?.stats) {
     try {
       // ?saison=N : matchs de cette saison seulement (sinon toutes).
       const saison = /^\d+$/.test(String(req.query.saison ?? "")) ? Number(req.query.saison) : null;
+      // ?world_boss=1 : parties Random world boss.
+      if (req.query.world_boss === "1") return await statistiquesWorldBoss(res, saison);
       // ?equipe=1 : matchs en équipe (2v2, 3v3, 4v4).
       return await statistiques(res, saison, req.query.equipe === "1");
     } catch (error) {

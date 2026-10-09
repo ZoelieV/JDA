@@ -160,11 +160,13 @@ async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
     .from("rooms")
     .select("room_id, player1_discord_id, player2_discord_id, type, draft")
     .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`)
-    // Rooms d'équipe : cf. quitterEquipes (_lib/equipe.js).
-    .neq("type", "equipe");
+    // Rooms d'équipe et Random world boss : cf. quitterEquipes
+    // (_lib/equipe.js) et quitterWorldBoss (_lib/world_boss.js).
+    .not("type", "in", "(equipe,world_boss)");
   if (sauf) requete = requete.neq("room_id", sauf);
-  // Chargé ici (equipe.js utilise aussi ce fichier).
+  // Chargés ici (equipe.js et world_boss.js utilisent aussi ce fichier).
   await require("./equipe").quitterEquipes(discordId, { sauf });
+  await require("./world_boss").quitterWorldBoss(discordId, { sauf });
   const { data, error } = await requete;
   if (error) {
     console.error("Erreur lecture des matchs du joueur :", error);

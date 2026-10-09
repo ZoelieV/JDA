@@ -189,7 +189,7 @@ function mettreAJourBoutons() {
 // web. Choix gardé sur cet appareil. ----
 const CHOIX_PAR_PAGE = ["10", "20", "50", "tout"];
 const CLE_PAR_PAGE = "historique-matchs-par-page";
-const pages = { matchs: 1, equipe: 1, entrainements: 1, litiges: 1, signalements: 1 };
+const pages = { matchs: 1, equipe: 1, world_boss: 1, entrainements: 1, litiges: 1, signalements: 1 };
 
 function lireParPage() {
   try {
@@ -222,6 +222,7 @@ function initialiserParPage() {
     afficherSignalements();
     afficherLitiges();
     afficherMatchs();
+    afficherWorldBoss();
   });
 }
 
@@ -439,6 +440,85 @@ function creerLigneMatch(match) {
   if (match.litige === "ouvert") brancherCorrectionLitige(ligne, match);
   if (match.signalements) brancherTraitementSignalement(ligne, match);
   ligne.querySelector(".bouton-signaler:not(:disabled)")?.addEventListener("click", () => ouvrirFenetreSignalement(match));
+  return ligne;
+}
+
+// ---- Onglet Random World Boss (GET /api/matches?world_boss=1, chargé à
+// la 1re ouverture) ----
+let partiesWorldBoss = null;
+let chargementWorldBoss = null;
+
+function ouvrirWorldBoss() {
+  if (partiesWorldBoss || chargementWorldBoss) return;
+  chargementWorldBoss = fetch("/api/matches?world_boss=1", { credentials: "include" })
+    .then(async reponse => {
+      if (!reponse.ok) throw new Error("Impossible de charger les parties Random world boss.");
+      partiesWorldBoss = (await reponse.json()).parties || [];
+      afficherWorldBoss();
+    })
+    .catch(erreur => {
+      console.error(erreur);
+      document.getElementById("etat-world_boss").textContent = erreur.message;
+    })
+    .finally(() => { chargementWorldBoss = null; });
+}
+
+function afficherWorldBoss() {
+  if (!partiesWorldBoss) return;
+  const etat = document.getElementById("etat-world_boss");
+  etat.textContent = partiesWorldBoss.length === 0 ? "Aucune partie jouée pour l'instant." : "";
+  etat.classList.toggle("cache", !etat.textContent);
+  document.getElementById("liste-world_boss").replaceChildren(...paginer("world_boss", partiesWorldBoss, afficherWorldBoss).map(creerLigneWorldBoss));
+}
+
+// Ligne d'une partie : bannières des joueurs (★ chef) à gauche, boss et
+// réussite au centre, persos tirés (qui les a joués, constellation) à droite.
+function creerLigneWorldBoss(partie) {
+  const ligne = document.createElement("article");
+  ligne.className = `match match-world-boss ${partie.reussite ? "reussite" : "echec"}`;
+  const boss = bossParId.get(partie.boss_id);
+  const nomMembre = id => partie.membres.find(m => m.discord_id === id)?.nom;
+  const persos = partie.persos.map(p => htmlPerso(p.perso_id, {}, {
+    element: p.element,
+    infos: { constellation: p.constellation, niveau: p.niveau, raffinement: null },
+    joueur: nomMembre(p.joue_par)
+  })).join("");
+  // Qui a joué quoi, en texte sous les persos.
+  const repartition = partie.membres.map(m => {
+    const siens = partie.persos.filter(p => p.joue_par === m.discord_id).map(p => {
+      const nom = personnagesParId.get(p.perso_id)?.nom || p.perso_id;
+      // Voyageur regroupé : nom de son 1er élément, remplacé par le sien.
+      const sansElement = nom.replace(new RegExp(` (${Object.values(NOMS_ELEMENTS).join("|")})$`), "");
+      return p.element ? `${sansElement} ${NOMS_ELEMENTS[p.element] || ""}` : nom;
+    });
+    return `<li><span class="nom-repartition" data-membre="${echapperHtml(m.discord_id)}"></span> : ${echapperHtml(siens.join(", ") || "—")}</li>`;
+  }).join("");
+  ligne.innerHTML = `
+    <div class="match-joueur match-j1">
+      <div class="bannieres-equipe">${partie.membres.map(m => `
+        <div class="match-banniere banniere-joueur banniere-membre cote-gauche" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`../DB/images/${m.banniere2}`))}&quot;)">
+          ${m.avatar ? `<img class="match-avatar photo-joueur" src="${echapperHtml(m.avatar)}" alt="">` : ""}
+          <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
+          ${htmlMedailleTheatre(m.theatre)}
+          ${m.discord_id === partie.createur ? `<span class="etiquette-resultat chef-equipe" title="Chef de la room">★ Chef</span>` : ""}
+        </div>`).join("")}
+      </div>
+    </div>
+    <div class="match-centre">
+      ${boss ? htmlImagesBoss(boss, `class="match-boss" loading="lazy"`) : ""}
+      <span class="match-entrainement match-mode-equipe">Random world boss</span>
+      <span class="etiquette-resultat ${partie.reussite ? "victoire" : "echec-wb"}">${partie.reussite ? "Réussite" : "Échec"}</span>
+      <span class="match-boss-nom">${boss ? echapperHtml(boss.nom) : ""}</span>
+      <span class="match-date">${formaterDate(partie.date)}</span>
+    </div>
+    <div class="match-joueur match-j2">
+      ${htmlLigne("Persos", persos)}
+      <ul class="repartition-wb">${repartition}</ul>
+    </div>`;
+  // Pseudos en texte (pas d'HTML venant des comptes).
+  partie.membres.forEach(m => {
+    ligne.querySelectorAll(`[data-membre="${CSS.escape(m.discord_id)}"]`).forEach(element => { element.textContent = m.nom; });
+  });
   return ligne;
 }
 
@@ -926,7 +1006,7 @@ const CLE_ONGLET = "historique-onglet";
 let onglet = "matchs";
 
 function ongletDisponible(nom) {
-  return nom === "matchs" || nom === "equipe" || nom === "stats" ||
+  return nom === "matchs" || nom === "equipe" || nom === "world_boss" || nom === "stats" ||
     (nom === "litiges" && estAdmin) || (nom === "entrainements" && !!moiDiscordId);
 }
 
@@ -954,6 +1034,7 @@ function choisirOnglet(nouveau) {
   // Pas de classé en équipe : bouton Classés sur l'onglet Matchs seulement.
   document.getElementById("matchs-classes").classList.toggle("masque-onglet", onglet !== "matchs");
   if (onglet === "stats") ouvrirStatistiques();
+  if (onglet === "world_boss") ouvrirWorldBoss();
 }
 
 function initialiserOnglets() {
@@ -981,8 +1062,9 @@ let chargementStats = null;
 let saisonStats = null;
 const cacheStats = new Map();
 let categorieStats = "tous"; // "tous" | "classe" | "non_classe"
-// Matchs comptés : 1v1 ou en équipe (2v2, 3v3, 4v4), séparés.
-let modeStats = "1v1"; // "1v1" | "equipe"
+// Matchs comptés : 1v1, en équipe (2v2, 3v3, 4v4) ou Random world boss,
+// séparés.
+let modeStats = "1v1"; // "1v1" | "equipe" | "world_boss"
 const listesDepliees = new Set();
 
 async function ouvrirStatistiques() {
@@ -995,15 +1077,15 @@ async function ouvrirStatistiques() {
   if (cacheStats.has(cle)) {
     statistiques = cacheStats.get(cle);
     etat.classList.add("cache");
-    document.getElementById("contenu-stats").classList.remove("cache");
-    afficherClassementsPersos();
-    afficherRecords();
+    afficherStatistiques();
     return;
   }
   etat.textContent = "Chargement…";
   etat.classList.remove("cache");
   document.getElementById("contenu-stats").classList.add("cache");
-  chargementStats = fetch(`/api/matches?stats=1${saison === "" ? "" : `&saison=${encodeURIComponent(saison)}`}${modeStats === "equipe" ? "&equipe=1" : ""}`, { credentials: "include" })
+  document.getElementById("contenu-stats-wb").classList.add("cache");
+  const filtreMode = modeStats === "equipe" ? "&equipe=1" : modeStats === "world_boss" ? "&world_boss=1" : "";
+  chargementStats = fetch(`/api/matches?stats=1${saison === "" ? "" : `&saison=${encodeURIComponent(saison)}`}${filtreMode}`, { credentials: "include" })
     .then(async reponse => {
       if (!reponse.ok) throw new Error("Impossible de charger les statistiques.");
       const donnees = await reponse.json();
@@ -1013,15 +1095,73 @@ async function ouvrirStatistiques() {
       if (cle !== `${saisonStats ?? ""}|${modeStats}`) return ouvrirStatistiques();
       statistiques = donnees;
       etat.classList.add("cache");
-      document.getElementById("contenu-stats").classList.remove("cache");
-      afficherClassementsPersos();
-      afficherRecords();
+      afficherStatistiques();
     })
     .catch(erreur => {
       console.error(erreur);
       etat.textContent = erreur.message || "Erreur de chargement.";
       chargementStats = null; // réessayé à la prochaine ouverture
     });
+}
+
+// Statistiques chargées : 1v1 / en équipe (persos, records) ou Random world
+// boss (réussites et échecs des persos).
+function afficherStatistiques() {
+  const worldBoss = modeStats === "world_boss";
+  document.getElementById("contenu-stats").classList.toggle("cache", worldBoss);
+  document.getElementById("contenu-stats-wb").classList.toggle("cache", !worldBoss);
+  if (worldBoss) {
+    afficherStatsWorldBoss();
+    return;
+  }
+  afficherClassementsPersos();
+  afficherRecords();
+}
+
+// Random world boss : un classement des réussites, un des échecs (nombre,
+// puis taux de réussite du perso).
+function afficherStatsWorldBoss() {
+  const parId = new Map();
+  Object.entries(statistiques.persos || {}).forEach(([id, stats]) => {
+    const idDraft = personnagesParId.has(id) ? id : groupeParId.get(id);
+    if (!personnagesParId.has(idDraft)) return; // perso retiré du catalogue
+    const total = parId.get(idDraft) || { reussites: 0, echecs: 0 };
+    total.reussites += stats.reussites;
+    total.echecs += stats.echecs;
+    parId.set(idDraft, total);
+  });
+  const nbParties = statistiques.parties || 0;
+  document.getElementById("note-stats-wb").textContent = nbParties === 0 ? "Aucune partie jouée."
+    : `Sur ${nbParties} partie${nbParties > 1 ? "s" : ""} (${statistiques.reussites} réussite${statistiques.reussites > 1 ? "s" : ""}). Taux : part des parties du perso réussies.`;
+  const taux = stats => Math.round(stats.reussites / Math.max(stats.reussites + stats.echecs, 1) * 100);
+  const nomPerso = id => personnagesParId.get(id).nom;
+
+  document.querySelectorAll("#contenu-stats-wb .classement-persos").forEach(bloc => {
+    const cle = bloc.dataset.liste; // "reussites" | "echecs"
+    const tries = [...parId.entries()].filter(([, stats]) => stats[cle] > 0).sort((a, b) => b[1][cle] - a[1][cle] ||
+      (cle === "reussites" ? taux(b[1]) - taux(a[1]) : taux(a[1]) - taux(b[1])) ||
+      nomPerso(a[0]).localeCompare(nomPerso(b[0]), "fr", { sensitivity: "base" }));
+    const deplie = listesDepliees.has(`wb_${cle}`);
+    const affiches = deplie ? tries : tries.slice(0, NB_PERSOS_RESUME);
+    const max = tries[0]?.[1][cle] || 1;
+    let rang = 0;
+    bloc.querySelector(".liste-classement-persos").innerHTML = affiches.length === 0
+      ? `<li class="note-stats">Aucun perso.</li>`
+      : affiches.map(([id, stats], i) => {
+        if (i === 0 || stats[cle] !== affiches[i - 1][1][cle]) rang = i + 1;
+        const nom = appliquerVariante(personnagesParId.get(id), {}).nom;
+        return `<li class="ligne-perso-stats">
+          <span class="rang-stats">${rang}</span>
+          ${htmlPerso(id, {})}
+          <span class="nom-perso-stats">${echapperHtml(nom)}</span>
+          <span class="valeur-stats" title="${stats.reussites} réussite${stats.reussites > 1 ? "s" : ""}, ${stats.echecs} échec${stats.echecs > 1 ? "s" : ""}">${stats[cle]} · ${taux(stats)} % de réussite</span>
+          <span class="jauge-stats"><span style="width: ${stats[cle] / max * 100}%"></span></span>
+        </li>`;
+      }).join("");
+    const voirTout = bloc.querySelector(".voir-tout");
+    voirTout.classList.toggle("cache", tries.length <= NB_PERSOS_RESUME);
+    voirTout.textContent = deplie ? "Réduire" : `Tout afficher (${tries.length})`;
+  });
 }
 
 // Catégorie choisie ("tous" : classés et non classés additionnés), comptes
@@ -1051,7 +1191,7 @@ function afficherClassementsPersos() {
   });
   const categorie = categorieAffichee();
 
-  document.querySelectorAll(".classement-persos").forEach(bloc => {
+  document.querySelectorAll("#contenu-stats .classement-persos").forEach(bloc => {
     const cle = bloc.dataset.liste;
     // Pourcentage : part des matchs où le perso a été pick (bans : parmi
     // les matchs dont les bans sont enregistrés).
@@ -1126,7 +1266,8 @@ const CATEGORIES_BOSS = [
   { cle: "hebdo", titre: "Boss hebdomadaires", bouton: "Boss hebdo", contient: boss => boss.type === "weekly_boss" },
   { cle: "legendes", titre: "Légendes locales", bouton: "Légendes locales", contient: estLegendeLocale },
   { cle: "carnage", titre: "Boss carnage", bouton: "Boss carnage", contient: boss => boss.type === "carnage_boss" },
-  { cle: "autres", titre: "Autres boss", contient: boss => !["weekly_boss", "carnage_boss"].includes(boss.type) && !estLegendeLocale(boss) }
+  // World boss : jamais dans les drafts (onglet Random World Boss seulement).
+  { cle: "autres", titre: "Autres boss", contient: boss => !["weekly_boss", "carnage_boss", "world_boss"].includes(boss.type) && !estLegendeLocale(boss) }
 ];
 // Ordre du bouton de catégorie (null = tous les boss).
 const CYCLE_CATEGORIES_BOSS = [null, "hebdo", "legendes", "carnage"];
@@ -1214,11 +1355,18 @@ function initialiserStatistiques() {
       afficherClassementsPersos();
     });
   });
-  document.querySelectorAll(".classement-persos").forEach(bloc => {
+  document.querySelectorAll("#contenu-stats .classement-persos").forEach(bloc => {
     bloc.querySelector(".voir-tout").addEventListener("click", () => {
       const cle = bloc.dataset.liste;
       if (!listesDepliees.delete(cle)) listesDepliees.add(cle);
       afficherClassementsPersos();
+    });
+  });
+  document.querySelectorAll("#contenu-stats-wb .classement-persos").forEach(bloc => {
+    bloc.querySelector(".voir-tout").addEventListener("click", () => {
+      const cle = `wb_${bloc.dataset.liste}`;
+      if (!listesDepliees.delete(cle)) listesDepliees.add(cle);
+      afficherStatsWorldBoss();
     });
   });
 }

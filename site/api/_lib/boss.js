@@ -11,6 +11,14 @@ const TYPE_LEGENDE_INFINIE = "legende_locale_infinie";
 // dépendant des patterns).
 const TYPES_BOSS_CLASSE = ["weekly_boss", TYPE_LEGENDE_INFINIE, "carnage_boss"];
 
+// World boss : seulement dans le mode Random world boss (cf.
+// _lib/world_boss.js), jamais tirés ni imposés dans les drafts.
+const TYPE_WORLD_BOSS = "world_boss";
+
+function estWorldBoss(boss) {
+  return boss?.type === TYPE_WORLD_BOSS;
+}
+
 function estTirableEnClasse(boss) {
   return TYPES_BOSS_CLASSE.includes(boss?.type) && boss.classe !== false;
 }
@@ -42,7 +50,7 @@ function auHasard(liste) {
 // exclus : ids des légendes locales déjà tuées aujourd'hui par un des
 // joueurs (cf. legendesTueesAujourdhui), jamais tirées.
 function tirerBossAleatoire(exclureId = null, { classe = false, exclus = [] } = {}) {
-  const tirables = bossList.filter(b => (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
+  const tirables = bossList.filter(b => !estWorldBoss(b) && (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
   const candidats = tirables.filter(b => b.id !== exclureId);
   const liste = candidats.length > 0 ? candidats : tirables;
   if (classe) return auHasard(liste);
@@ -69,6 +77,11 @@ async function bossCarnageExclus() {
   return estCarnageDesactive() ? bossList.filter(estBossCarnage).map(b => b.id) : [];
 }
 
+// Tous les boss (ajouts des administrateurs compris, cf. _lib/personnages.js).
+function listeBoss() {
+  return bossList;
+}
+
 function getBossParId(id) {
   return bossList.find(b => b.id === id) || null;
 }
@@ -88,6 +101,7 @@ function idsLegendesLocales() {
   return bossList.filter(estLegendeLocale).map(b => b.id);
 }
 
+const ERREUR_WORLD_BOSS = "Les world boss sont réservés au mode Random world boss.";
 const ERREUR_CARNAGE_DESACTIVE = "Les boss du carnage sont désactivés en ce moment (plus disponibles dans le jeu).";
 
-module.exports = { bossCarnageExclus, DUREE_DEFI_SECONDES, ERREUR_CARNAGE_DESACTIVE, estDefiEnnemis, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };
+module.exports = { bossCarnageExclus, DUREE_DEFI_SECONDES, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS, estDefiEnnemis, estWorldBoss, listeBoss, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };

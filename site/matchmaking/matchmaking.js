@@ -42,8 +42,8 @@ async function creerMatch(corps) {
 
     const data = await reponse.json();
 
-    // Mode en équipe : page du lobby d'équipe.
-    window.location.href = `${data.equipe ? "equipe" : "match"}.html?room=${data.room_id}`;
+    // Mode en équipe / Random world boss : page de leur lobby.
+    window.location.href = `${data.equipe ? "equipe" : data.world_boss ? "world_boss" : "match"}.html?room=${data.room_id}`;
   } catch (error) {
     console.error(error);
     alert("Erreur lors de la création du match.");
@@ -52,7 +52,9 @@ async function creerMatch(corps) {
 
 // Options d'un menu de choix du boss : légendes locales regroupées à part
 // (celles déjà tuées aujourd'hui sont refusées par le serveur).
-function remplirSelectBoss(select, liste) {
+// World boss : jamais dans les drafts (mode Random world boss seulement).
+function remplirSelectBoss(select, toutes) {
+  const liste = toutes.filter(b => b.type !== "world_boss");
   const groupes = [
     ["Boss", liste.filter(b => !estLegendeLocale(b))],
     ["Légendes locales", liste.filter(estLegendeLocale)]
@@ -97,6 +99,10 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
   bouton.addEventListener("click", () => {
     const type = bouton.closest(".modes-match").dataset.type;
     const mode = bouton.dataset.mode;
+    if (type === "world_boss") {
+      creerMatch({ type });
+      return;
+    }
     if (type === "equipe") {
       creerMatch({
         type,

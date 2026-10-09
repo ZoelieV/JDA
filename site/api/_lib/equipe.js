@@ -32,7 +32,7 @@ const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
 const { actualiserPoints, getPersonnages, getArmes, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("./personnages");
 const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox } = require("./draft");
-const { tirerBossAleatoire, getBossParId, idsLegendesLocales, bossCarnageExclus, ERREUR_CARNAGE_DESACTIVE } = require("./boss");
+const { tirerBossAleatoire, getBossParId, idsLegendesLocales, bossCarnageExclus, estWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("./boss");
 const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
 const { analyserVitrine, erreurVitrine } = require("./vitrine");
@@ -547,6 +547,7 @@ async function preparerCreation(body, user) {
   const formation = FORMATIONS.includes(body?.formation) ? body.formation : "aleatoire";
   const bossImpose = body?.boss_id ? String(body.boss_id) : null;
   if (bossImpose && !getBossParId(bossImpose)) return { erreur: "Boss inconnu" };
+  if (estWorldBoss(getBossParId(bossImpose))) return { erreur: ERREUR_WORLD_BOSS };
   if (BOSS_HORS_COOP.includes(bossImpose)) return { erreur: "Ce boss n'est pas faisable en co-op." };
   if ((await bossCarnageExclus()).includes(bossImpose)) return { erreur: ERREUR_CARNAGE_DESACTIVE };
 
@@ -956,6 +957,7 @@ async function executerRouteEquipe(action, req, res, roomId, user) {
 
 module.exports = {
   MODES,
+  BOSS_HORS_COOP,
   estRouteEquipe,
   executerRouteEquipe,
   preparerCreation,
