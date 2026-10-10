@@ -18,3 +18,7 @@ site/DB/local_boxes.json
 
 # Réglages personnels de Claude Code.
 **/.claude/settings.local.json
+
+# Clés Supabase et sorties de scripts/courbes_boxes.js (données des joueurs).
+scripts/.env
+scripts/sortie/

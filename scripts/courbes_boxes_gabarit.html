@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Courbes des box</title>
+<style>
+:root {
+  color-scheme: light;
+  --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #8d8c87; --grid: #e6e5e0;
+  --reel: #9b9a94; --fictive: #2a78d6; --focus: #eb6834;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #8d8c87; --grid: #2e2e2c;
+    --reel: #6b6a65; --fictive: #3987e5; --focus: #d95926;
+  }
+}
+body { margin: 0; padding: 16px; background: var(--surface); color: var(--ink); font: 14px/1.4 system-ui, sans-serif; }
+h1 { font-size: 18px; margin: 0 0 4px; }
+p.sous { color: var(--ink-2); margin: 0 0 12px; }
+.filtres { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 8px; color: var(--ink-2); }
+.legende { display: flex; gap: 16px; color: var(--ink-2); margin-bottom: 8px; }
+.legende i { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 6px; }
+#graphe { position: relative; }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--muted); font-size: 11px; }
+.ligne { fill: none; stroke-width: 1.5; }
+.ligne.reel { stroke: var(--reel); opacity: .55; }
+.ligne.fictive { stroke: var(--fictive); opacity: .85; }
+.ligne.focus { stroke: var(--focus); stroke-width: 2.5; opacity: 1; }
+#bulle { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--grid); border-radius: 6px; padding: 6px 8px; box-shadow: 0 2px 8px #0003; display: none; white-space: nowrap; }
+#bulle .v { color: var(--ink); font-weight: 600; }
+#bulle .m { color: var(--ink-2); }
+table { border-collapse: collapse; margin-top: 16px; width: 100%; }
+th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--grid); }
+th:nth-child(-n+2), td:nth-child(-n+2) { text-align: left; }
+th { color: var(--ink-2); font-weight: 600; cursor: pointer; }
+tr:hover td { background: var(--grid); }
+.tableau { overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1>Courbes des full box</h1>
+<p class="sous">Personnages triés du plus cher au moins cher · x = nombre de personnages · y = points (perso + arme signature si présente dans la box)</p>
+<div class="filtres">
+  <label><input type="radio" name="mode" value="cumul" checked> Cumulé</label>
+  <label><input type="radio" name="mode" value="points"> Valeur du n-ième perso</label>
+  <label><input type="checkbox" id="voir-reels" checked> Joueurs</label>
+  <label><input type="checkbox" id="voir-fictives" checked> Box fictives</label>
+</div>
+<div class="legende"><span><i style="background:var(--reel)"></i>Joueurs</span><span><i style="background:var(--fictive)"></i>Box fictives</span></div>
+<div id="graphe"><svg id="svg"></svg><div id="bulle"></div></div>
+<div class="tableau"><table id="table"></table></div>
+<script>
+const BOXES = /*DONNEES*/[];
+const NS = "http://www.w3.org/2000/svg";
+const L = 900, H = 520, M = { g: 56, d: 16, h: 12, b: 36 };
+const svg = document.getElementById("svg");
+const bulle = document.getElementById("bulle");
+let focus = null;
+
+const mode = () => document.querySelector("input[name=mode]:checked").value;
+const visibles = () => BOXES.filter(b => b.fictive ? document.getElementById("voir-fictives").checked : document.getElementById("voir-reels").checked);
+const el = (nom, attrs) => { const e = document.createElementNS(NS, nom); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const graduations = max => { const pas = Math.pow(10, Math.floor(Math.log10(max || 1))); const p = [1, 2, 5, 10].map(f => f * pas).find(s => max / s <= 8); const r = []; for (let v = 0; v <= max; v += p) r.push(v); return r; };
+const echapper = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function rendre() {
+  const champ = mode();
+  const boxes = visibles();
+  const xMax = Math.max(1, ...boxes.map(b => b.persos.length));
+  const yMax = Math.max(1, ...boxes.flatMap(b => b.persos.map(p => p[champ])));
+  const x = n => M.g + (n - 1) / Math.max(1, xMax - 1) * (L - M.g - M.d);
+  const y = v => H - M.b - v / yMax * (H - M.h - M.b);
+  svg.setAttribute("viewBox", `0 0 ${L} ${H}`);
+  svg.replaceChildren();
+  graduations(yMax).forEach(v => {
+    svg.append(el("line", { x1: M.g, x2: L - M.d, y1: y(v), y2: y(v), stroke: "var(--grid)" }));
+    const t = el("text", { x: M.g - 6, y: y(v) + 4, "text-anchor": "end" }); t.textContent = v; svg.append(t);
+  });
+  graduations(xMax).filter(n => n >= 1).concat(1).forEach(n => {
+    const t = el("text", { x: x(n), y: H - M.b + 16, "text-anchor": "middle" }); t.textContent = n; svg.append(t);
+  });
+  const tx = el("text", { x: L - M.d, y: H - 4, "text-anchor": "end" }); tx.textContent = "nombre de personnages"; svg.append(tx);
+  // Box en focus dessinée en dernier (au-dessus).
+  [...boxes].sort((a, b) => (a === focus) - (b === focus) || a.fictive - b.fictive).forEach(b => {
+    const d = b.persos.map((p, i) => `${i ? "L" : "M"}${x(i + 1).toFixed(1)},${y(p[champ]).toFixed(1)}`).join("");
+    svg.append(el("path", { d, class: `ligne ${b.fictive ? "fictive" : "reel"}${b === focus ? " focus" : ""}` }));
+  });
+  svg.onmousemove = ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) * L / r.width, py = (ev.clientY - r.top) * H / r.height;
+    const n = Math.round(1 + (px - M.g) / (L - M.g - M.d) * (xMax - 1));
+    let meilleur = null, dist = Infinity;
+    boxes.forEach(b => { const p = b.persos[n - 1]; if (!p) return; const dd = Math.abs(y(p[champ]) - py); if (dd < dist) { dist = dd; meilleur = b; } });
+    if (!meilleur || dist > 40) { bulle.style.display = "none"; if (focus) { focus = null; rendre(); } return; }
+    if (meilleur !== focus) { focus = meilleur; rendre(); }
+    const p = meilleur.persos[n - 1];
+    bulle.innerHTML = `<div class="v">${echapper(meilleur.nom)}${meilleur.fictive ? " (fictive)" : ""}</div><div class="m">${n} persos · cumul ${p.cumul} pts</div><div class="m">n°${n} : ${echapper(p.id)} (${p.points} pts)</div>`;
+    bulle.style.display = "block";
+    const gx = ev.clientX - r.left, gy = ev.clientY - r.top;
+    bulle.style.left = Math.min(gx + 12, r.width - bulle.offsetWidth) + "px";
+    bulle.style.top = gy + 12 + "px";
+  };
+  svg.onmouseleave = () => { bulle.style.display = "none"; if (focus) { focus = null; rendre(); } };
+}
+
+let tri = { cle: "total", desc: true };
+function rendreTable() {
+  const lignes = BOXES.map(b => ({ b, nom: b.nom, type: b.fictive ? "fictive" : "joueur", n: b.persos.length, total: b.persos.at(-1).cumul, top4: b.persos.slice(0, 4).reduce((s, p) => s + p.points, 0), moyenne: Math.round(b.persos.at(-1).cumul / b.persos.length) }));
+  lignes.sort((a, c) => { const v = a[tri.cle] > c[tri.cle] ? 1 : a[tri.cle] < c[tri.cle] ? -1 : 0; return tri.desc ? -v : v; });
+  const cols = [["nom", "Box"], ["type", "Type"], ["n", "Persos"], ["total", "Total"], ["top4", "Top 4"], ["moyenne", "Moyenne"]];
+  document.getElementById("table").innerHTML = `<tr>${cols.map(([c, t]) => `<th data-cle="${c}">${t}</th>`).join("")}</tr>` +
+    lignes.map(l => `<tr data-id="${echapper(l.b.id)}">${cols.map(([c]) => `<td>${echapper(l[c])}</td>`).join("")}</tr>`).join("");
+}
+document.getElementById("table").addEventListener("click", ev => {
+  const th = ev.target.closest("th"); if (!th) return;
+  tri = { cle: th.dataset.cle, desc: tri.cle === th.dataset.cle ? !tri.desc : true }; rendreTable();
+});
+document.getElementById("table").addEventListener("mouseover", ev => {
+  const tr = ev.target.closest("tr[data-id]"); const b = tr && BOXES.find(x => x.id === tr.dataset.id);
+  if (b !== focus) { focus = b || null; rendre(); }
+});
+document.querySelectorAll("input").forEach(i => i.addEventListener("change", rendre));
+rendre(); rendreTable();
+</script>
+</body>
+</html>
