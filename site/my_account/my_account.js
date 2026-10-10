@@ -877,7 +877,7 @@ function etatFormulaire(profil) {
 function afficherTheatreAuto(profil) {
   const copies = copiesLimitees(profil);
   document.getElementById("theatre-auto").textContent =
-    `Théâtre ${palierTheatreProfil(profil)} · ${copies} copie${copies > 1 ? "s" : ""} de 5★ limités`;
+    `${PALIERS_THEATRE[palierTheatreProfil(profil)]?.nom ?? "-"} · ${copies} copie${copies > 1 ? "s" : ""} de 5★ limités`;
 }
 
 // Bouton de la page et bouton du menu du compte.
@@ -1304,7 +1304,7 @@ async function initialiserPage() {
       // Nettoyé par le serveur (http(s) seulement, cf. api/auth/profile.js).
       profil.stream = document.getElementById("stream").value.trim();
       // Palier de théâtre recalculé (aussi par le serveur) : médaille.
-      profil.theatre = CODES_THEATRE[palierTheatreProfil(profil)];
+      profil.theatre = String(palierTheatreProfil(profil));
 
       if (!verifierChampUid()) {
         afficherToast("UID refusé : 9 chiffres attendus (ex. 744102007)", "erreur");

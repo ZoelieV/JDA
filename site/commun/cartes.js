@@ -175,13 +175,38 @@ function estDefiEnnemis(boss) {
 // ---- Palier de théâtre d'un compte et médaille à côté du pseudo ----
 // Calculé, plus choisi par le joueur (même calcul que palierTheatre,
 // api/_lib/personnages.js) : copies de 5★ limités de la full box (C0 = 1,
-// C2 = 3, C6 = 7) ; 25 ou plus -> 12, 21 à 24 -> 10, 17 à 20 -> 8, sinon 6.
-// Sert au mode Classique des drafts et à la médaille. profil.theatre garde
-// le palier calculé par le serveur ("1".."4"), utilisé sans catalogue
-// chargé. Hauteur de la médaille : 1,3 x le texte (cf. cartes.css).
-const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
-const CODES_THEATRE = { 6: "1", 8: "2", 10: "3", 12: "4" };
-const SEUILS_THEATRE = [[25, 12], [21, 10], [17, 8]];
+// C2 = 3, C6 = 7) ; 0 à 19 -> 1 (sardine), 20 à 39 -> 2 (carpe), 40 à 79
+// -> 3 (dauphin), 80 ou plus -> 4 (baleine). Sert au mode Auto des drafts
+// et à la médaille. profil.theatre garde le palier calculé par le serveur
+// ("1".."4"), utilisé sans catalogue chargé. Hauteur de la médaille : 1,3 x
+// le texte (cf. cartes.css).
+// PALIERS_THEATRE : nom, mode de room (cf. MODES_THEATRE, api/_lib/draft.js),
+// bans par joueur avant / après les 2 premiers picks et médaille (image
+// provisoire de l'ancien théâtre). Anciens matchs de l'historique : théâtre
+// 6, 8, 10 ou 12 (cf. infosTheatreJoue).
+const PALIERS_THEATRE = {
+  1: { nom: "Sardine", mode: "sardine", bans: [2, 1], medaille: 6 },
+  2: { nom: "Carpe", mode: "carpe", bans: [2, 2], medaille: 8 },
+  3: { nom: "Dauphin", mode: "dauphin", bans: [3, 2], medaille: 10 },
+  4: { nom: "Baleine", mode: "baleine", bans: [3, 3], medaille: 12 }
+};
+const SEUILS_THEATRE = [[80, 4], [40, 3], [20, 2]];
+// Draft de la mêlée générale (mode "12"), du carnage et du mode en équipe.
+const THEATRE_CARPE = 2;
+
+function urlMedailleTheatre(numero) {
+  return `/DB/images/others/Imaginarium_Theater_Medal_${numero}.webp`;
+}
+
+// Théâtre joué d'un match ou d'une draft : palier actuel (1..4) ou ancien
+// théâtre (6, 8, 10, 12 : 4 picks et 1 à 4 bans) -> { nom, bans, medaille }
+// (bans : total par joueur), ou null.
+function infosTheatreJoue(theatre) {
+  const palier = PALIERS_THEATRE[theatre];
+  if (palier) return { nom: palier.nom, bans: palier.bans[0] + palier.bans[1], medaille: palier.medaille };
+  const ancien = Number(theatre);
+  return [6, 8, 10, 12].includes(ancien) ? { nom: `Théâtre ${ancien}`, bans: ancien / 2 - 2, medaille: ancien } : null;
+}
 
 function copiesLimitees(profilData, personnages = catalogueTheatre) {
   if (typeof migrerCollectionPersos === "function") migrerCollectionPersos(profilData?.characters);
@@ -194,9 +219,9 @@ function copiesLimitees(profilData, personnages = catalogueTheatre) {
 
 function palierTheatreProfil(profilData, personnages = catalogueTheatre) {
   if (!profilData) return null;
-  if (!personnages) return PALIERS_THEATRE[profilData.theatre] ?? null;
+  if (!personnages) return PALIERS_THEATRE[profilData.theatre] ? Number(profilData.theatre) : null;
   const copies = copiesLimitees(profilData, personnages);
-  return SEUILS_THEATRE.find(([seuil]) => copies >= seuil)?.[1] ?? 6;
+  return SEUILS_THEATRE.find(([seuil]) => copies >= seuil)?.[1] ?? 1;
 }
 
 // Lien de stream : uniquement une page Twitch ou YouTube (pour ne jamais
@@ -239,8 +264,9 @@ function htmlPseudo(nom) {
 }
 
 function htmlMedailleTheatre(palier) {
-  if (![6, 8, 10, 12].includes(Number(palier))) return "";
-  return `<img class="medaille-theatre" src="/DB/images/others/Imaginarium_Theater_Medal_${Number(palier)}.webp" alt="Théâtre ${palier}" title="Théâtre ${palier}">`;
+  const infos = PALIERS_THEATRE[palier];
+  if (!infos) return "";
+  return `<img class="medaille-theatre" src="${urlMedailleTheatre(infos.medaille)}" alt="${infos.nom}" title="${infos.nom}">`;
 }
 
 // ---- Fond de carte selon la rareté (classes de commun/cartes.css) ----

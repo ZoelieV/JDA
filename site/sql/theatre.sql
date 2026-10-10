@@ -1,12 +1,13 @@
 -- Modes de théâtre (à lancer une fois dans Supabase : SQL Editor > New
 -- query > Run). Sans risque si relancé.
 
--- Théâtre joué (6, 8, 10 ou 12 : nombre de bans de la draft, affiché avec
--- sa médaille dans l'historique) et mode de la room : "auto" (théâtre du
--- plus petit clear), "12" (mêlée générale en matchmaking / classé, ou
--- théâtre 12 imposé), "6" / "8" / "10" (imposé dans une room privée).
--- Les matchs classés sont comptés dans le classement Classique ("auto")
--- ou Mêlée générale ("12") selon ce mode.
+-- Théâtre joué (palier 1 sardine, 2 carpe, 3 dauphin, 4 baleine : nombre
+-- de bans de la draft, affiché avec sa médaille dans l'historique ; anciens
+-- matchs : 6, 8, 10 ou 12) et mode de la room : "auto" (plus petit palier),
+-- "12" (mêlée générale en matchmaking / classé), un palier imposé
+-- ("sardine"...) ou "carnage" (cf. MODES_THEATRE, api/_lib/draft.js).
+-- Seuls les matchs classés en mêlée générale ("12") comptent au classement
+-- (anciens matchs classés "auto" : ancien classement Classique).
 alter table match_history add column if not exists theatre integer;
 alter table match_history add column if not exists mode_theatre text;
 

@@ -5,7 +5,9 @@
 // joueur en classé, ni un joueur en mode classique sur un joueur en mêlée
 // générale) : rooms de type "matchmaking" ou "classe" sans player2
 // (colonnes type et created_at, cf. sql/rooms_matchmaking.sql), mode de
-// théâtre dans draft.mode_theatre ("auto" = classique, "12" = mêlée). Une
+// théâtre dans draft.mode_theatre ("auto" = classique, "12" = mêlée,
+// "carnage" ; classé : mêlée seulement, cf. MODES_MATCHMAKING dans
+// api/rooms/index.js). Une
 // room "classe" le reste pour les revanches ; ses matchs rapportent des
 // trophées (cf. _lib/trophees.js). Le premier joueur crée sa
 // room et attend dessus ; le suivant prend la plus ancienne room en attente
@@ -90,8 +92,10 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     if (room?.player1_discord_id === discordId && room.player2_discord_id) {
       return { room_id: room.room_id, trouve: true };
     }
-    // Rappel de la page d'attente : même mode que la room d'attente.
-    if (room?.draft?.mode_theatre) mode = room.draft.mode_theatre;
+    // Rappel de la page d'attente : même mode que la room d'attente (classé :
+    // toujours la mêlée générale, même pour une room d'avant sa suppression
+    // du mode classique).
+    if (room?.draft?.mode_theatre && type !== "classe") mode = room.draft.mode_theatre;
   }
 
   // Attente dans l'autre file abandonnée : une seule recherche à la fois.

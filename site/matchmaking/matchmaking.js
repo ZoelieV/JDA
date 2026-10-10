@@ -94,7 +94,8 @@ async function remplirBossRoom(idSelect = "room-boss") {
 }
 
 // Mode choisi : room privée (mode de théâtre au choix) ou recherche
-// (matchmaking / classé : classique ou mêlée générale).
+// (matchmaking : classique, mêlée générale ou carnage ; classé : mêlée
+// générale).
 document.querySelectorAll(".mode-match").forEach(bouton => {
   bouton.addEventListener("click", () => {
     const type = bouton.closest(".modes-match").dataset.type;

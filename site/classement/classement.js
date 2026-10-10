@@ -15,7 +15,9 @@ const SENS_INITIAL = {
 
 let comptes = [];
 let joueurs = []; // joueurs du classement affiché, avec ses stats
-let classement = "classique"; // "classique" | "melee"
+// Seul classement affiché : mêlée générale (cf. CLASSEMENT_AFFICHE,
+// api/_lib/trophees.js).
+const CLASSEMENT = "melee";
 // Saisons (cf. api/_lib/saisons.js) : { actuelle, saisons: [{ numero, nom }] }.
 let infosSaisons = { actuelle: 0, saisons: [] };
 let saison = 0; // saison affichée
@@ -82,7 +84,7 @@ function texteStat(joueur, cle, long = false) {
     case "points": return long ? `${joueur.points ?? 0} pts` : String(joueur.points ?? 0);
     case "nb_persos": return unite(joueur.nb_persos ?? 0, "perso");
     case "nb_c6": return long ? `${joueur.nb_c6 ?? 0} C6 5★` : String(joueur.nb_c6 ?? 0);
-    case "theatre": return joueur.theatre ? (long ? `Théâtre ${joueur.theatre}` : String(joueur.theatre)) : (long ? "Théâtre -" : "-");
+    case "theatre": return PALIERS_THEATRE[joueur.theatre]?.nom ?? (long ? "Théâtre -" : "-");
     case "constellations_5": return unite(joueur.constellations_5 ?? 0, "constellation") + (long ? " 5★" : "");
     default: return "";
   }
@@ -167,7 +169,7 @@ function afficher() {
   const affiches = joueursAffiches();
   const etat = document.getElementById("etat-classement");
   etat.textContent = joueurs.length === 0
-    ? `Personne n'${saison === infosSaisons.actuelle ? "a encore" : "a"} joué de match classé en ${classement === "melee" ? "mêlée générale" : "classique"}${saison === infosSaisons.actuelle ? " cette saison" : " pendant cette saison"}.`
+    ? `Personne n'${saison === infosSaisons.actuelle ? "a encore" : "a"} joué de match classé${saison === infosSaisons.actuelle ? " cette saison" : " pendant cette saison"}.`
     : affiches.length === 0 ? "Aucun joueur trouvé." : "";
   etat.classList.toggle("cache", !etat.textContent);
   document.querySelector(".entete-classement").classList.toggle("cache", affiches.length === 0);
@@ -178,15 +180,13 @@ function afficher() {
 // passée : trophées en fin de saison, sans série ni prime), ou undefined.
 function statsSaison(compte) {
   return saison === infosSaisons.actuelle
-    ? compte.classements?.[classement]
-    : compte.saisons_passees?.[saison]?.[classement];
+    ? compte.classements?.[CLASSEMENT]
+    : compte.saisons_passees?.[saison]?.[CLASSEMENT];
 }
 
-// Joueurs ayant au moins un match dans ce classement (saison affichée), avec
-// ses stats (trophées, matchs et victoires en classé, série) à plat pour les
-// tris.
-function choisirClassement(nouveau) {
-  classement = nouveau;
+// Joueurs ayant au moins un match classé (saison affichée), avec ses stats
+// (trophées, matchs et victoires en classé, série) à plat pour les tris.
+function choisirSaison() {
   joueurs = comptes
     .filter(compte => statsSaison(compte))
     .map(compte => {
@@ -202,11 +202,6 @@ function choisirClassement(nouveau) {
       };
     });
   calculerRangs();
-  document.querySelectorAll(".onglet-classement").forEach(onglet => {
-    const actif = onglet.dataset.classement === classement;
-    onglet.classList.toggle("active", actif);
-    onglet.setAttribute("aria-selected", String(actif));
-  });
   afficher();
 }
 
@@ -224,15 +219,11 @@ function initialiserSaisons() {
   select.addEventListener("change", () => {
     saison = Number(select.value);
     select.classList.toggle("passee", saison !== infosSaisons.actuelle);
-    choisirClassement(classement);
+    choisirSaison();
   });
 }
 
 function initialiserBarre() {
-  document.querySelectorAll(".onglet-classement").forEach(onglet => {
-    onglet.addEventListener("click", () => choisirClassement(onglet.dataset.classement));
-  });
-
   document.querySelectorAll(".tri-classement").forEach(btn => {
     btn.addEventListener("click", () => {
       const cle = btn.dataset.tri;
@@ -257,7 +248,7 @@ async function demarrer() {
     saison = saisons.actuelle;
     initialiserSaisons();
     initialiserBarre();
-    choisirClassement("classique");
+    choisirSaison();
   } catch (erreur) {
     console.error(erreur);
     document.getElementById("etat-classement").textContent = erreur.message || "Erreur de chargement.";

@@ -116,7 +116,7 @@ function texteStat(compte) {
     case "nb_persos": return `${compte.nb_persos ?? 0} persos`;
     case "nb_c6": return `${compte.nb_c6 ?? 0} C6 5★`;
     case "constellations_5": return `${compte.constellations_5 ?? 0} constellation${(compte.constellations_5 ?? 0) > 1 ? "s" : ""} 5★`;
-    case "theatre": return compte.theatre ? `Théâtre ${compte.theatre}` : "Théâtre -";
+    case "theatre": return PALIERS_THEATRE[compte.theatre]?.nom ?? "Théâtre -";
     case "matchs": return `${compte.matchs ?? 0} match${(compte.matchs ?? 0) > 1 ? "s" : ""}`;
     case "ratio": return getRatio(compte) === null ? "Aucun match" : `${Math.round(getRatio(compte) * 100)} %`;
     default: return "";

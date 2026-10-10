@@ -52,14 +52,14 @@ const COMMENTAIRE_LITIGE_MAX = 500;
 const BOX_AUTORISEES = new Set([
   "full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5"
 ]);
-// Classé classique (théâtre "auto") : full box seulement, ni personnages
-// stuff ni box opti (cf. BOX_CLASSE_CLASSIQUE de matchmaking/match.js).
-const BOX_CLASSE_CLASSIQUE = new Set(["full"]);
+// Matchmaking classique (théâtre "auto") : full box seulement, ni
+// personnages stuff ni box opti (cf. BOX_MATCHMAKING_CLASSIQUE de
+// matchmaking/match.js).
+const BOX_MATCHMAKING_CLASSIQUE = new Set(["full"]);
 
-function estClasseClassique(draft, room) {
-  return room?.type === "classe" && (draft.mode_theatre || "auto") === "auto";
+function estMatchmakingClassique(draft, room) {
+  return room?.type === "matchmaking" && (draft.mode_theatre || "auto") === "auto";
 }
-
 function getSegments(req) {
   const url = new URL(req.url, `https://${req.headers.host}`);
   const parts = url.pathname.split("/").filter(Boolean); // ["api","rooms","{room_id}","{action}"]
@@ -196,8 +196,8 @@ async function handleBox(req, res, roomId, user) {
     return res.status(409).json({ error: "Le choix de box n'est plus possible à ce stade" });
   }
   if (refuserSiPause(res, draft)) return;
-  if (estClasseClassique(draft, room) && !BOX_CLASSE_CLASSIQUE.has(box)) {
-    return res.status(400).json({ error: "En classé classique, seule la full box est autorisée." });
+  if (estMatchmakingClassique(draft, room) && !BOX_MATCHMAKING_CLASSIQUE.has(box)) {
+    return res.status(400).json({ error: "En matchmaking classique, seule la full box est autorisée." });
   }
 
   const nbPersos = await compterPersosBox(user.id, box);

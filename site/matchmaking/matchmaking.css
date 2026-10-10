@@ -265,7 +265,7 @@
   font-size: 0.9375rem;
 }
 
-/* Nom des modes de théâtre (Auto, Théâtre 6, Carnage…) en police des titres
+/* Nom des modes de théâtre (Auto, Sardine, Carnage…) en police des titres
    ("Théâtre" : le "â" manque dans la police du texte) ; leur description
    et les choix de box (Ta box, Box adverse…) gardent la police du texte. */
 .mode-match,

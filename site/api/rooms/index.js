@@ -4,7 +4,7 @@ const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
 const { annulerAutresMatchs } = require("../_lib/room");
 const { verifierFrequence } = require("../_lib/limites");
-const { MODES_THEATRE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur } = require("../_lib/draft");
+const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
@@ -200,10 +200,10 @@ async function creerWorldBoss(req, res, user) {
   return res.status(200).json({ room_id: roomId, world_boss: true });
 }
 
-// Modes de théâtre : room privée = au choix ("auto", un théâtre ou
-// "carnage") ; matchmaking = classique ("auto"), mêlée générale ("12") ou
-// carnage ; classé = classique ou mêlée générale seulement.
-const MODES_MATCHMAKING = { matchmaking: ["auto", "12", "carnage"], classe: ["auto", "12"] };
+// Modes de théâtre : room privée = au choix ("auto", un palier ou
+// "carnage") ; matchmaking = classique ("auto"), mêlée générale ou carnage ;
+// classé = mêlée générale seulement (1er mode = mode par défaut).
+const MODES_MATCHMAKING = { matchmaking: ["auto", MODE_MELEE, "carnage"], classe: [MODE_MELEE] };
 
 // Match privé : une création par minute et par adresse IP au plus.
 const DELAI_ROOM_PRIVEE_MS = 60 * 1000;
@@ -220,8 +220,8 @@ function genererRoomId() {
 // POST { mode? }                            : match privé (nouvelle room ;
 //                                             1 par minute et par IP, la
 //                                             précédente est supprimée)
-//   mode : "auto" (théâtre du plus petit palier), "6", "8", "10", "12" ou
-//   "carnage" ; boss_id : boss imposé (sinon au hasard) ; premier : J1 =
+//   mode : "auto" (palier du plus petit des 2), "sardine", "carpe",
+//   "dauphin", "baleine" ou "carnage" (cf. MODES_THEATRE, _lib/draft.js) ; boss_id : boss imposé (sinon au hasard) ; premier : J1 =
 //   "createur" | "adversaire" | "aleatoire"
 // Démarrer un match (privé ou matchmaking) annule le match en cours du
 // joueur (un seul match à la fois, cf. annulerAutresMatchs).
@@ -253,7 +253,8 @@ module.exports = async (req, res) => {
 
     if (TYPES_FILE.includes(req.body?.type)) {
       const roomIdAttente = typeof req.body.room_id === "string" ? req.body.room_id : null;
-      const mode = MODES_MATCHMAKING[req.body.type].includes(req.body.mode) ? req.body.mode : "auto";
+      const modes = MODES_MATCHMAKING[req.body.type];
+      const mode = modes.includes(req.body.mode) ? req.body.mode : modes[0];
       try {
         return res.status(200).json(await chercher(user.id, roomIdAttente, req.body.type, mode));
       } catch (erreur) {

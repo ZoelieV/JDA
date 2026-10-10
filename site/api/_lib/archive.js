@@ -62,8 +62,8 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     temps_j2_affiche: draft.temps_j2?.affiche ?? null,
     temps_j2_secondes: draft.temps_j2?.secondes ?? null,
     vainqueur: draft.vainqueur,
-    // Théâtre joué (nombre de bans) et mode de la room ("auto", "12" =
-    // mêlée générale en matchmaking / classé, ou théâtre imposé).
+    // Théâtre joué (palier 1..4, nombre de bans ; anciens matchs : 6 à 12)
+    // et mode de la room (cf. MODES_THEATRE, _lib/draft.js).
     theatre: draft.theatre ?? null,
     mode_theatre: draft.mode_theatre || "auto",
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),

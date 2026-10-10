@@ -47,9 +47,13 @@ function bonusSerie(victoiresDAffilee) {
 }
 
 // Deux classements séparés (trophées et séries indépendants) : Classique
-// (mode "auto", théâtre du plus petit palier) et Mêlée générale (mode "12").
-// Ancien match sans mode : Classique.
+// (mode "auto", théâtre du plus petit palier ; ancien match sans mode) et
+// Mêlée générale (mode "12"). Le classé ne se joue plus qu'en mêlée
+// générale : seul ce classement est affiché (CLASSEMENT_AFFICHE) ; les
+// anciens matchs classiques restent rejoués à part, pour les trophées
+// gagnés / perdus affichés dans l'historique.
 const CLASSEMENTS = ["classique", "melee"];
+const CLASSEMENT_AFFICHE = "melee";
 
 function classementDuMatch(match) {
   return match.mode_theatre === "12" ? "melee" : "classique";
@@ -154,4 +158,4 @@ async function chargerMatchsClasses(supabase) {
   return data || [];
 }
 
-module.exports = { TROPHEES_MAX, CLASSEMENTS, calculerTrophees, bonusSerie, seriePrime, rejouerClasse, chargerMatchsClasses };
+module.exports = { TROPHEES_MAX, CLASSEMENTS, CLASSEMENT_AFFICHE, calculerTrophees, bonusSerie, seriePrime, rejouerClasse, chargerMatchsClasses };

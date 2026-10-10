@@ -15,7 +15,8 @@
 //                 full box de HOTE_3V3_FULL_BOX_MAX points au plus : le chef
 //                 choisit lequel joue 2 persos (DUREE_CHOIX_HOTE_MS, sinon au
 //                 hasard). Aucun : la plus petite full box.
-//   draft       : théâtre 12, même séquence que le 1v1 (une équipe à la
+//   draft       : draft de la carpe (ancien théâtre 12), même séquence que
+//                 le 1v1 (une équipe à la
 //                 place de chaque joueur). Bannir un perso le retire pour
 //                 tout le monde ; le picker aussi (personne d'autre ne peut
 //                 le prendre). Pick refusé s'il rend impossible de répartir
@@ -31,7 +32,7 @@
 const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
 const { actualiserPoints, getPersonnages, getArmes, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("./personnages");
-const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox } = require("./draft");
+const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox, THEATRE_CARPE, MODE_MELEE } = require("./draft");
 const { tirerBossAleatoire, getBossParId, idsLegendesLocales, bossCarnageExclus, estWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("./boss");
 const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
@@ -47,7 +48,7 @@ const HOTE_3V3_FULL_BOX_MAX = 3000;
 // Règle du match : 5★ limités, par équipe, dans les versions déclarées.
 const C6_MAX_EQUIPE = 1;
 const C3_MAX_EQUIPE = 2;
-const THEATRE_EQUIPE = 12;
+const THEATRE_EQUIPE = THEATRE_CARPE;
 const COMMENTAIRE_LITIGE_MAX = 500;
 const PHASES_EN_COURS = ["chefs", "hotes", "draft", "declaration", "temps", "verification"];
 const PHASES_FINIES = ["termine", "litige", "annule"];
@@ -469,7 +470,7 @@ async function archiverEquipe(draft, { litige = false } = {}) {
     temps_j2_secondes: draft.temps_j2?.secondes ?? null,
     vainqueur: draft.vainqueur,
     theatre: THEATRE_EQUIPE,
-    mode_theatre: "12",
+    mode_theatre: MODE_MELEE,
     actions,
     mode_equipe: MODES[draft.taille],
     equipes: { j1: equipe("j1"), j2: equipe("j2") },

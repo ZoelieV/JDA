@@ -966,14 +966,13 @@ function rendreEntetesJoueurs() {
 // Personnages (Voyageur compté une fois) qu'une box doit contenir pour être
 // choisie (cf. NB_PERSOS_MIN_BOX, api/_lib/draft.js).
 const NB_PERSOS_MIN_BOX = 16;
-// Classé classique (théâtre "auto") : full box seulement, ni stuff ni box
-// opti (cf. BOX_CLASSE_CLASSIQUE de api/rooms/[room_id]/[action].js).
-const BOX_CLASSE_CLASSIQUE = ["full"];
+// Matchmaking classique (théâtre "auto") : full box seulement, ni stuff ni
+// box opti (cf. BOX_MATCHMAKING_CLASSIQUE de api/rooms/[room_id]/[action].js).
+const BOX_MATCHMAKING_CLASSIQUE = ["full"];
 
-function estClasseClassique() {
-  return typeRoom === "classe" && (draft?.mode_theatre || "auto") === "auto";
+function estMatchmakingClassique() {
+  return typeRoom === "matchmaking" && (draft?.mode_theatre || "auto") === "auto";
 }
-
 function nbPersosBox(role, box) {
   const collection = getJoueurDataParRole(role)?.characters || { full: {}, selections: {} };
   return personnagesData.filter(p => estDansBox(collection, p.id, box)).length;
@@ -1004,11 +1003,11 @@ function rendreChoixBox() {
 
     // Box optimisées renommées par le joueur dans Mon compte (profil.nomsBoxes).
     const nomsPerso = getJoueurDataParRole(role)?.nomsBoxes || {};
-    // Entraînement : seulement la box choisie à la création ; classé
-    // classique : full seulement (BOX_CLASSE_CLASSIQUE) ; sinon toutes sauf
-    // "Personnalisée".
+    // Entraînement : seulement la box choisie à la création ; matchmaking
+    // classique : full seulement (BOX_MATCHMAKING_CLASSIQUE) ; sinon toutes
+    // sauf "Personnalisée".
     Object.entries(BOX_LABELS).filter(([valeur]) => draft.entrainement ? draft[`box_${role}`] === valeur
-      : estClasseClassique() ? BOX_CLASSE_CLASSIQUE.includes(valeur) : valeur !== "custom").forEach(([valeur, label]) => {
+      : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : valeur !== "custom").forEach(([valeur, label]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
@@ -1310,7 +1309,7 @@ function ouvrirChoixElement(personnage, elements, valider) {
 
 // Séquence de picks / bans de la manche : fixée par le serveur au tirage du
 // boss selon le mode de théâtre (cf. sequenceTheatre, api/_lib/draft.js) ;
-// draft classique (théâtre 12) avant le tirage.
+// draft de la carpe avant le tirage.
 function getSequence() {
   return Array.isArray(draft?.sequence) ? draft.sequence : SEQUENCE_FIXE;
 }
@@ -1542,15 +1541,16 @@ function htmlBossTire(boss) {
 }
 
 // Théâtre de la draft : fixé par le serveur au tirage du boss ; avant,
-// celui qui sera joué (mode imposé, ou plus petit palier des 2 joueurs en
-// mode auto, cf. resoudreTheatre dans api/_lib/draft.js).
+// celui qui sera joué (palier imposé, carpe en mêlée générale et carnage, ou
+// plus petit palier des 2 joueurs en mode auto, cf. resoudreTheatre dans
+// api/_lib/draft.js).
 function theatreDeLaDraft() {
-  if ([6, 8, 10, 12].includes(draft?.theatre)) return draft.theatre;
-  if (draft?.mode_theatre === "carnage") return 12;
-  const mode = Number(draft?.mode_theatre);
-  if ([6, 8, 10, 12].includes(mode)) return mode;
+  if (infosTheatreJoue(draft?.theatre)) return draft.theatre;
+  if (draft?.mode_theatre === "carnage" || draft?.mode_theatre === "12") return THEATRE_CARPE;
+  const impose = Object.keys(PALIERS_THEATRE).find(palier => PALIERS_THEATRE[palier].mode === draft?.mode_theatre);
+  if (impose) return Number(impose);
   const paliers = [joueur1, joueur2].map(j => palierTheatreProfil(j?.data));
-  return Math.min(...paliers.map(p => p ?? 6));
+  return Math.min(...paliers.map(p => p ?? 1));
 }
 
 // Badge du théâtre de la draft, sous le titre, dès que les 2 joueurs sont
@@ -1571,17 +1571,17 @@ function afficherModeTheatre() {
   }
 }
 
-// Théâtre de la draft (nombre de bans) avec sa médaille.
+// Théâtre de la draft (palier, nombre de bans) avec sa médaille.
 function htmlModeTheatre(theatre) {
-  if (![6, 8, 10, 12].includes(theatre)) return "";
-  const nbBans = { 6: 1, 8: 2, 10: 3, 12: 4 }[theatre];
-  // "auto" : théâtre du joueur au plus petit palier ; sinon choisi à la
+  const infos = infosTheatreJoue(theatre);
+  if (!infos) return "";
+  // "auto" : palier du joueur au plus petit palier ; sinon choisi à la
   // création de la room, ou mêlée générale (matchmaking / classé).
   const mode = draft.mode_theatre === "auto" ? "plus petit palier"
     : draft.mode_theatre === "carnage" ? "carnage, sans bans d'équilibrage"
-      : typeRoom === "prive" ? "choisi pour la room" : "mêlée générale";
-  return `<span class="mode-theatre" title="Draft du théâtre ${theatre} : 4 picks et ${nbBans} ban${nbBans > 1 ? "s" : ""} par joueur (${mode})">` +
-    `<img src="/DB/images/others/Imaginarium_Theater_Medal_${theatre}.webp" alt="">Théâtre ${theatre} · ${mode}</span>`;
+      : draft.mode_theatre === "12" ? "mêlée générale" : "choisi pour la room";
+  return `<span class="mode-theatre" title="Draft ${infos.nom} : 4 picks et ${infos.bans} bans par joueur (${mode})">` +
+    `<img src="${urlMedailleTheatre(infos.medaille)}" alt="">${infos.nom} · ${mode}</span>`;
 }
 
 function initialiserResBoss() {
@@ -2663,7 +2663,7 @@ function rendreAnnule() {
 
 // ---- Chronos de la draft classée (cf. api/_lib/chronos.js) ----
 // Analyse 2 min, bans d'équilibrage 6 s par ban (20 s au minimum), picks /
-// bans 30 s par action du joueur (théâtre 6 : 2 min 30 ; 12 : 4 min) en
+// bans 30 s par action du joueur (sardine : 3 min 30 ; baleine : 5 min) en
 // pendule. C'est la page du joueur dont c'est le tour qui
 // déclare le temps écoulé, à 0 sur SON chrono : bouton grisé, notification,
 // choix aléatoire fait par le serveur. La page de l'adversaire ne le fait

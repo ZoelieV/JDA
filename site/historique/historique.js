@@ -373,11 +373,13 @@ function htmlJoueur(match, role, bansConnus) {
   `;
 }
 
-// Théâtre joué (nombre de bans de la draft) avec sa médaille.
+// Théâtre joué (palier ou ancien théâtre, cf. infosTheatreJoue) avec sa
+// médaille.
 function htmlTheatreJoue(theatre) {
-  if (![6, 8, 10, 12].includes(theatre)) return "";
-  return `<span class="match-theatre" title="Draft du théâtre ${theatre}">` +
-    `<img src="../DB/images/others/Imaginarium_Theater_Medal_${theatre}.webp" alt="">Théâtre ${theatre}</span>`;
+  const infos = infosTheatreJoue(theatre);
+  if (!infos) return "";
+  return `<span class="match-theatre" title="Draft ${infos.nom} : 4 picks et ${infos.bans} bans par joueur">` +
+    `<img src="${urlMedailleTheatre(infos.medaille)}" alt="">${infos.nom}</span>`;
 }
 
 // Ligne d'un match terminé, ou d'un match en cours (phase et lien pour le
@@ -418,7 +420,7 @@ function creerLigneMatch(match) {
       ${match.entrainement ? `<span class="match-entrainement">Entraînement ${ICONE_ENTRAINEMENT}</span>` : ""}
       ${match.equipe ? `<span class="match-entrainement match-mode-equipe">${echapperHtml(match.equipe.mode)}</span>` : ""}
       ${match.classe ? `<span class="match-classe">Classé ${ICONE_TROPHEE}${match.mode_theatre === "12" ? " · Mêlée générale" : ""}</span>` : ""}
-      ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="Théâtre 12 sans bans d'équilibrage">Carnage 💀</span>` : ""}
+      ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="Draft de la carpe sans bans d'équilibrage">Carnage 💀</span>` : ""}
       ${htmlTheatreJoue(match.theatre)}
       <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
       ${infos}

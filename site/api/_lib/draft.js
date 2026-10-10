@@ -79,28 +79,38 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
   Array.from({ length: bloc.nombre }, () => ({ joueur: bloc.joueur, type: bloc.type }))
 );
 
-// ---- Modes de théâtre : nombre de bans de la draft ----
+// ---- Paliers de théâtre : nombre de bans de la draft ----
 //
-// Même squelette que la draft classique (théâtre 12) : bans du 1er tour
-// (j1, j2, j1...), picks j1, j2, j2, j1, bans du 2e tour (j2, j1...),
-// picks j2, j1, j1, j2. Seul le nombre de bans par joueur change :
-//   théâtre 6  : 0 + 1 (le ban arrive après les 2 premiers picks)
-//   théâtre 8  : 1 + 1
-//   théâtre 10 : 2 + 1
-//   théâtre 12 : 2 + 2 (draft classique, = SEQUENCE_FIXE)
+// Même squelette pour tous : bans du 1er tour (j1, j2, j1...), picks j1,
+// j2, j2, j1, bans du 2e tour (j2, j1...), picks j2, j1, j1, j2. Seul le
+// nombre de bans par joueur change (palier du compte, cf. palierTheatre
+// dans _lib/personnages.js) :
+//   1 sardine : 2 + 1 (ancien théâtre 10)
+//   2 carpe   : 2 + 2 (ancien théâtre 12, = SEQUENCE_FIXE ; mêlée générale,
+//               carnage et mode en équipe)
+//   3 dauphin : 3 + 2
+//   4 baleine : 3 + 3
 // Ne s'applique qu'après le tirage du boss : les bans d'équilibrage ne
-// changent pas.
-const BANS_PAR_THEATRE = { 6: [0, 1], 8: [1, 1], 10: [2, 1], 12: [2, 2] };
-const THEATRES = [6, 8, 10, 12];
-// Mode d'une room : "auto" (théâtre du joueur au plus petit palier), un
-// théâtre imposé ("12" = mêlée générale) ou "carnage" (théâtre 12 sans bans
-// d'équilibrage, hors classé).
-const MODES_THEATRE = ["auto", "6", "8", "10", "12", "carnage"];
+// changent pas. Anciens matchs (historique) : théâtre 6, 8, 10 ou 12.
+const PALIERS_THEATRE = {
+  1: { mode: "sardine", bans: [2, 1] },
+  2: { mode: "carpe", bans: [2, 2] },
+  3: { mode: "dauphin", bans: [3, 2] },
+  4: { mode: "baleine", bans: [3, 3] }
+};
+const THEATRE_CARPE = 2;
+// Mode "12" : mêlée générale (matchmaking, classé, entraînement), draft de
+// la carpe pour tous ; valeur gardée pour les anciens matchs (classement).
+const MODE_MELEE = "12";
+// Mode d'une room : "auto" (palier du joueur au plus petit palier), un
+// palier imposé (room privée, entraînement), la mêlée générale ou
+// "carnage" (carpe sans bans d'équilibrage, hors classé).
+const MODES_THEATRE = ["auto", ...Object.values(PALIERS_THEATRE).map(p => p.mode), MODE_MELEE, "carnage"];
 // Ancienne draft sans palier enregistré : considéré comme le plus petit.
-const THEATRE_PAR_DEFAUT = 6;
+const THEATRE_PAR_DEFAUT = 1;
 
 function sequenceTheatre(theatre) {
-  const [bans1, bans2] = BANS_PAR_THEATRE[theatre] || BANS_PAR_THEATRE[12];
+  const [bans1, bans2] = (PALIERS_THEATRE[theatre] || PALIERS_THEATRE[THEATRE_CARPE]).bans;
   const bans = (nombre, premier) => {
     const second = premier === "j1" ? "j2" : "j1";
     return Array.from({ length: nombre * 2 }, (_, i) => ({ joueur: i % 2 === 0 ? premier : second, type: "ban" }));
@@ -120,12 +130,15 @@ function theatreProfil(profilData) {
   return palierTheatre(profilData);
 }
 
-// Théâtre de la draft : imposé par le mode, sinon ("auto") celui du joueur
-// au plus petit palier.
+// Théâtre de la draft (palier 1..4) : imposé par le mode, sinon ("auto")
+// celui du joueur au plus petit palier. Palier inconnu (room d'avant les
+// paliers actuels) : le plus petit.
 function resoudreTheatre(mode, theatreJ1, theatreJ2) {
-  if (mode === "carnage") return 12;
-  if (THEATRES.includes(Number(mode))) return Number(mode);
-  return Math.min(theatreJ1 ?? THEATRE_PAR_DEFAUT, theatreJ2 ?? THEATRE_PAR_DEFAUT);
+  if (mode === "carnage" || mode === MODE_MELEE) return THEATRE_CARPE;
+  const impose = Object.keys(PALIERS_THEATRE).find(palier => PALIERS_THEATRE[palier].mode === mode);
+  if (impose) return Number(impose);
+  const palier = theatre => (PALIERS_THEATRE[theatre] ? Number(theatre) : THEATRE_PAR_DEFAUT);
+  return Math.min(palier(theatreJ1), palier(theatreJ2));
 }
 
 
@@ -135,8 +148,8 @@ function estEntrainementSolo(draft) {
   return !!draft?.entrainement && draft.discord_j1 === draft.discord_j2;
 }
 
-// Séquence de la manche (fixée au tirage du boss) ; draft classique avant
-// le tirage ou pour une ancienne manche.
+// Séquence de la manche (fixée au tirage du boss) ; draft de la carpe
+// avant le tirage ou pour une ancienne manche.
 function getSequence(draft) {
   return Array.isArray(draft?.sequence) ? draft.sequence : SEQUENCE_FIXE;
 }
@@ -184,8 +197,8 @@ function etatInitialDraft() {
     elements_j2: null,
     actions: [], // { joueur, type: "ban" | "pick", perso_id, bonus: bool, element? (pick Voyageur / Manekin) }
     sequence_index: 0,
-    mode_theatre: "auto", // "auto" | "6" | "8" | "10" | "12" (choisi à la création de la room)
-    theatre_j1: null, // palier de théâtre du compte de j1 (6..12, cf. theatreProfil)
+    mode_theatre: "auto", // cf. MODES_THEATRE (choisi à la création de la room)
+    theatre_j1: null, // palier de théâtre du compte de j1 (1..4, cf. theatreProfil)
     theatre_j2: null,
     theatre: null, // théâtre de la draft, fixé au tirage du boss
     sequence: null, // séquence de picks / bans de ce théâtre (cf. sequenceTheatre)
@@ -524,6 +537,8 @@ module.exports = {
   NB_PERSOS_MIN_BOX,
   SEQUENCE_FIXE,
   MODES_THEATRE,
+  MODE_MELEE,
+  THEATRE_CARPE,
   sequenceTheatre,
   theatreProfil,
   resoudreTheatre,

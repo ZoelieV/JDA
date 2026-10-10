@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="../commun/entete.css?v=rem26">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/namecards.css?v=2">
-<link rel="stylesheet" href="matchmaking.css?v=11">
-<script src="/commun/fond.js?v=7"></script>
+<link rel="stylesheet" href="matchmaking.css?v=12">
+<script src="/commun/fond.js?v=8"></script>
 <script src="/commun/zoom.js?v=2"></script>
 <script src="/commun/compte.js?v=18" defer></script>
 </head>
@@ -72,8 +72,10 @@
 
   <!-- Détails de chaque mode. Modes de théâtre : nombre de bans de la
        draft, après le tirage du boss (les bans d'équilibrage ne changent
-       pas). Classique : théâtre du joueur au plus petit palier ; mêlée
-       générale : théâtre 12 pour tout le monde. -->
+       pas ; cf. PALIERS_THEATRE, api/_lib/draft.js). Classique / auto :
+       palier du joueur au plus petit palier ; mêlée générale : draft de la
+       carpe pour tout le monde. Détail par joueur : bans, picks, bans,
+       picks. -->
   <section id="detail-room" class="panneau detail-match cache" data-detail="room">
     <h2>Créer une room</h2>
     <p>Tu reçois un lien à envoyer à ton adversaire : la première personne qui l'ouvre joue contre toi.
@@ -90,12 +92,12 @@
       </label>
     </div>
     <div class="modes-match" data-type="prive">
-      <button type="button" class="mode-match" data-mode="auto">Auto<span>théâtre du plus petit palier</span></button>
-      <button type="button" class="mode-match" data-mode="6">Théâtre 6<span>4 picks, 1 ban</span></button>
-      <button type="button" class="mode-match" data-mode="8">Théâtre 8<span>4 picks, 2 bans</span></button>
-      <button type="button" class="mode-match" data-mode="10">Théâtre 10<span>4 picks, 3 bans</span></button>
-      <button type="button" class="mode-match" data-mode="12">Théâtre 12<span>4 picks, 4 bans</span></button>
-      <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
+      <button type="button" class="mode-match" data-mode="auto">Auto<span>draft du plus petit palier</span></button>
+      <button type="button" class="mode-match" data-mode="sardine">Sardine<span>2 bans, 2 picks, 1 ban, 2 picks</span></button>
+      <button type="button" class="mode-match" data-mode="carpe">Carpe<span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
+      <button type="button" class="mode-match" data-mode="dauphin">Dauphin<span>3 bans, 2 picks, 2 bans, 2 picks</span></button>
+      <button type="button" class="mode-match" data-mode="baleine">Baleine<span>3 bans, 2 picks, 3 bans, 2 picks</span></button>
+      <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>carpe, sans bans d'équilibrage</span></button>
     </div>
   </section>
 
@@ -103,9 +105,9 @@
     <h2>Matchmaking</h2>
     <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.</p>
     <div class="modes-match" data-type="matchmaking">
-      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit palier</span></button>
-      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
-      <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
+      <button type="button" class="mode-match" data-mode="auto">Classique<span>draft du plus petit palier, full box seulement</span></button>
+      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>carpe pour tous</span></button>
+      <button type="button" class="mode-match" data-mode="carnage">Carnage 💀<span>carpe, sans bans d'équilibrage</span></button>
     </div>
   </section>
 
@@ -119,8 +121,7 @@
       <li>Prime : battre le joueur à la plus longue série de victoires en cours rapporte +5 trophées.</li>
     </ul>
     <div class="modes-match" data-type="classe">
-      <button type="button" class="mode-match" data-mode="auto">Classique<span>théâtre du plus petit palier</span></button>
-      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>théâtre 12 pour tous</span></button>
+      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>carpe pour tous</span></button>
     </div>
   </section>
 
@@ -133,7 +134,7 @@
     <ul class="regles-classe">
       <li>Chacun joue avec sa <a href="../my_account/my_account.html">vitrine</a> : 12 persos, 1400 points au maximum (persos et armes), 6 constellations de 5★ limités au maximum, dont 2 persos C2 ou plus au maximum.</li>
       <li>Chaque équipe élit son chef (30 s) : il fait les picks, les bans et saisit le temps. Pas élu à temps ou égalité : tiré au hasard.</li>
-      <li>Draft du théâtre 12. Bannir un perso le retire pour tout le monde ; le picker aussi.</li>
+      <li>Draft de la carpe (2 bans, 2 picks, 2 bans, 2 picks par équipe). Bannir un perso le retire pour tout le monde ; le picker aussi.</li>
       <li>Après la draft, chaque équipe déclare qui joue quel perso : 1 C6 et 2 C3+ de 5★ limités au maximum par équipe.</li>
       <li>3v3 : l'hôte du monde joue 2 persos (full box de 3000 points au maximum, sinon la plus petite).</li>
     </ul>
@@ -180,12 +181,12 @@
       <h3>1. Draft</h3>
       <label class="case-entrainement"><input type="checkbox" id="ent-classe"> Draft classée (chronos : analyse 2 min, bans d'équilibrage 6 s par ban (20 s minimum), 30 s par pick / ban de chaque joueur)</label>
       <div class="choix-boutons" id="ent-mode">
-        <button type="button" class="choix-btn active" data-valeur="auto">Classique<span>théâtre du plus petit palier</span></button>
-        <button type="button" class="choix-btn" data-valeur="6">Théâtre 6<span>1 ban</span></button>
-        <button type="button" class="choix-btn" data-valeur="8">Théâtre 8<span>2 bans</span></button>
-        <button type="button" class="choix-btn" data-valeur="10">Théâtre 10<span>3 bans</span></button>
-        <button type="button" class="choix-btn" data-valeur="12">Mêlée générale<span>théâtre 12</span></button>
-        <button type="button" class="choix-btn" data-valeur="carnage">Carnage 💀<span>théâtre 12, sans bans d'équilibrage</span></button>
+        <button type="button" class="choix-btn active" data-valeur="auto">Classique<span>draft du plus petit palier</span></button>
+        <button type="button" class="choix-btn" data-valeur="sardine">Sardine<span>3 bans</span></button>
+        <button type="button" class="choix-btn" data-valeur="carpe">Carpe<span>4 bans (mêlée générale)</span></button>
+        <button type="button" class="choix-btn" data-valeur="dauphin">Dauphin<span>5 bans</span></button>
+        <button type="button" class="choix-btn" data-valeur="baleine">Baleine<span>6 bans</span></button>
+        <button type="button" class="choix-btn" data-valeur="carnage">Carnage 💀<span>carpe, sans bans d'équilibrage</span></button>
       </div>
     </div>
 
@@ -217,7 +218,7 @@
   </section>
 
   <script src="/commun/variantes.js?v=4"></script>
-  <script src="/commun/cartes.js?v=15"></script>
-  <script src="matchmaking.js?v=20"></script>
+  <script src="/commun/cartes.js?v=16"></script>
+  <script src="matchmaking.js?v=21"></script>
 </body>
 </html>

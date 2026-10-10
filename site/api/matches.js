@@ -698,7 +698,7 @@ module.exports = async (req, res) => {
       boss_id: match.boss_id,
       vainqueur: match.vainqueur,
       entrainement: !!match.entrainement,
-      // Théâtre joué (6 à 12) et mode de la room (cf. sql/theatre.sql).
+      // Théâtre joué (palier 1 à 4 ; anciens matchs : 6 à 12) et mode de la room (cf. sql/theatre.sql).
       theatre: match.theatre ?? null,
       mode_theatre: match.mode_theatre ?? null,
       // Match classé : trophées gagnés par le vainqueur (perdus par l'autre).

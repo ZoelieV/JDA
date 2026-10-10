@@ -19,10 +19,18 @@
   const CLE_URL = "fond-ecran-url";
   const CLE_DATE = "fond-ecran-date";
   const CLE_BANNIERE2 = "banniere2-url";
-  // Palier de théâtre du joueur connecté ("6".."12", "" si non renseigné) :
-  // médaille dans le bouton du compte (cf. appliquerMedaille).
-  const CLE_THEATRE = "theatre-palier";
-  const PALIERS_THEATRE = { 1: 6, 2: 8, 3: 10, 4: 12 };
+  // Palier de théâtre du joueur connecté ("1".."4", "" si non renseigné) :
+  // médaille dans le bouton du compte (cf. appliquerMedaille). Nouvelle clé
+  // depuis les paliers sardine..baleine (l'ancienne gardait "6".."12").
+  const CLE_THEATRE = "theatre-palier-2";
+  // Palier -> nom et médaille (même table que PALIERS_THEATRE,
+  // commun/cartes.js, pas chargé sur toutes les pages).
+  const PALIERS_THEATRE = {
+    1: { nom: "Sardine", medaille: 6 },
+    2: { nom: "Carpe", medaille: 8 },
+    3: { nom: "Dauphin", medaille: 10 },
+    4: { nom: "Baleine", medaille: 12 }
+  };
 
   // Choix par défaut (profil sans choix, ou visiteur non connecté pour le fond).
   const FOND_DEFAUT_ID = "bg/autres/default_bg.webp";
@@ -125,7 +133,7 @@
   // Palier de théâtre du profil ("1".."4", calculé par le serveur sur la
   // full box, cf. palierTheatre dans api/_lib/personnages.js).
   function memoriserTheatre(theatreProfil) {
-    const palier = PALIERS_THEATRE[theatreProfil] ? String(PALIERS_THEATRE[theatreProfil]) : "";
+    const palier = PALIERS_THEATRE[theatreProfil] ? String(theatreProfil) : "";
     ecrire(CLE_THEATRE, palier);
     document.dispatchEvent(new CustomEvent("theatre-change", { detail: palier }));
   }
@@ -135,7 +143,8 @@
   // .medaille-theatre dans commun/entete.css).
   function appliquerMedaille(element, palier) {
     let medaille = element.querySelector(".medaille-theatre");
-    if (!palier) {
+    const infos = PALIERS_THEATRE[palier];
+    if (!infos) {
       medaille?.remove();
       return;
     }
@@ -146,9 +155,9 @@
       if (pseudo) pseudo.after(medaille);
       else element.appendChild(medaille);
     }
-    medaille.src = `/DB/images/others/Imaginarium_Theater_Medal_${palier}.webp`;
-    medaille.alt = `Théâtre ${palier}`;
-    medaille.title = `Théâtre ${palier}`;
+    medaille.src = `/DB/images/others/Imaginarium_Theater_Medal_${infos.medaille}.webp`;
+    medaille.alt = infos.nom;
+    medaille.title = infos.nom;
   }
 
   // Pose (ou retire) la deuxième bannière dans un bouton de compte.

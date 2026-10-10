@@ -4,8 +4,8 @@
 //     BANS_BONUS_MIN_MS au minimum (1 à 3 bans : 20 s, 4 : 24 s, 5 : 30 s…),
 //     pour le joueur qui les choisit ;
 //   - picks / bans : DRAFT_PAR_ACTION_MS par action de la séquence de ce
-//     joueur (théâtre 6 : 5 actions = 2 min 30 ; théâtre 12 : 8 actions =
-//     4 min), au total par joueur, en pendule d'échecs (son chrono tourne
+//     joueur (sardine : 7 actions = 3 min 30 ; baleine : 10 actions =
+//     5 min), au total par joueur, en pendule d'échecs (son chrono tourne
 //     pendant ses tours, s'arrête pendant ceux de l'adversaire) : il répartit
 //     son temps comme il veut.
 // Temps écoulé : choix aléatoires (cf. handleExpirer). Chrono de draft à 0 :

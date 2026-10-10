@@ -6,7 +6,6 @@
 // Utilise echapper (admin_ajout.js).
 
 const API_FICTIVES = "/api/accounts/boxes_fictives";
-const PALIERS_FICTIVES = { 1: 6, 2: 8, 3: 10, 4: 12 };
 
 let boxesFictives = [];
 
@@ -48,7 +47,7 @@ function rendreFictives() {
               ${box.createur ? `<br><span class="details-boss">créée par ${echapper(box.createur)}</span>` : ""}
             </td>
             <td>${box.nb_persos}</td>
-            <td>${PALIERS_FICTIVES[box.theatre] ?? "-"}</td>
+            <td>${PALIERS_THEATRE[box.theatre]?.nom ?? "-"}</td>
             <td>${box.modifie_le ? new Date(box.modifie_le).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : ""}</td>
             <td>
               <div class="actions-fictive">

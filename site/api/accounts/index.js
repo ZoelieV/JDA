@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre } = require("../_lib/personnages");
-const { CLASSEMENTS, rejouerClasse, seriePrime } = require("../_lib/trophees");
+const { CLASSEMENT_AFFICHE, rejouerClasse, seriePrime } = require("../_lib/trophees");
 const { lireSaisons, saisonActuelle } = require("../_lib/saisons");
 
 const supabase = createClient(
@@ -119,11 +119,12 @@ async function chargerResultats() {
     compter(match.player2_discord_id, match.vainqueur === "j2");
   });
 
-  // Classé : saison en cours dans classements, saisons passées dans
-  // saisons_passees (trophées, matchs et victoires, sans série ni prime).
+  // Classé (mêlée générale seulement, cf. CLASSEMENT_AFFICHE) : saison en
+  // cours dans classements, saisons passées dans saisons_passees (trophées,
+  // matchs et victoires, sans série ni prime).
   const actuelle = await saisonActuelle();
   rejouerClasse(data).parSaison.forEach((tables, saison) => {
-    CLASSEMENTS.forEach(classement => {
+    [CLASSEMENT_AFFICHE].forEach(classement => {
       // Porteur(s) de la prime : plus longue série en cours de ce classement.
       const prime = saison === actuelle ? seriePrime(tables[classement]) : 0;
       tables[classement].forEach((stats, discordId) => {
@@ -175,11 +176,11 @@ function resumerProfil(profil, resultats) {
     theatre: palierTheatre(data),
     matchs,
     victoires,
-    // Classé, par classement ("classique", "melee") : { trophees, matchs,
+    // Classé, par classement ("melee" seulement) : { trophees, matchs,
     // victoires, serie (victoires d'affilée en cours) }, absent si aucun
     // match classé dans ce classement. Saison en cours seulement.
     classements,
-    // Saisons passées : { numéro: { classique?, melee? } } ({ trophees,
+    // Saisons passées : { numéro: { melee? } } ({ trophees,
     // matchs, victoires }).
     saisons_passees: saisonsPassees
   };

@@ -857,7 +857,7 @@ img.arme-mini {
   color: var(--texte-doux);
 }
 
-/* Mode carnage (théâtre 12 sans bans d'équilibrage). */
+/* Mode carnage (draft de la carpe sans bans d'équilibrage). */
 .match-carnage {
   padding: 0.125rem 0.625rem;
   border-radius: 62.4375rem;
