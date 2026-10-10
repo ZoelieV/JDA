@@ -19,24 +19,39 @@
   font-display: swap;
 }
 
-/* Logo détaillé au-dessus du titre : au moins un quart de la largeur de
-   l'écran sur ordi, plus large sur téléphone. */
+/* Logo détaillé au-dessus du titre : un quart de la largeur de l'écran sur
+   ordi, plus large sur téléphone. Le titre et le texte remontent sur le quart
+   bas du logo (hauteur du logo = largeur × 1725 / 1593). */
+.accueil-hero {
+  --logo-largeur: 25vw;
+}
+
 .logo-accueil {
   display: block;
-  width: 25vw;
+  width: var(--logo-largeur);
   max-width: 100%;
   height: auto;
-  margin: 0 auto 1rem;
+  margin: 0 auto;
 }
 
 @media (max-width: 700px) {
-  .logo-accueil {
-    width: 55vw;
+  .accueil-hero {
+    --logo-largeur: 55vw;
   }
 }
 
+/* Contour noir de 1 px : texte lisible sur fond clair comme sombre. */
+.accueil-hero h1,
+.accueil-hero p {
+  position: relative;
+  text-shadow:
+    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000,
+    -1px 0 0 #000, 1px 0 0 #000,
+    -1px 1px 0 #000, 0 1px 0 #000, 1px 1px 0 #000;
+}
+
 .accueil-hero h1 {
-  margin: 0 0 0.625rem;
+  margin: calc(var(--logo-largeur) * -1725 / 1593 / 4) 0 0.625rem;
   font-family: "Titre site", var(--police-titre);
   font-weight: normal;
 }
@@ -44,7 +59,7 @@
 .accueil-hero p {
   margin: 0 auto 1.375rem;
   max-width: 38.75rem;
-  color: var(--texte-doux);
+  color: var(--texte);
   font-size: 1.0625rem;
 }
 
