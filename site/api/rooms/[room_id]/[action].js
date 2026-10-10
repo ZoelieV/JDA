@@ -46,7 +46,8 @@ const {
   bansBonusPermis,
   estEquilibrageVH,
   banVHEligible,
-  SEUIL_VH
+  SEUIL_VH,
+  appliquerBansBonus
 } = require("../../_lib/draft");
 
 // Commentaire obligatoire d'un litige signalé (cf. handleLitige).
@@ -435,11 +436,19 @@ async function handleBonusToggle(req, res, roomId, user) {
   }
 
   draft.bans_bonus_choix = draft.bans_bonus_choix || [];
+  draft.bans_joker_choix = draft.bans_joker_choix || [];
   const index = draft.bans_bonus_choix.indexOf(persoId);
+  const indexJoker = draft.bans_joker_choix.indexOf(persoId);
+  // Nombre imposé (ancienne méthode, bans fixes) : bans normaux d'abord,
+  // puis jokers (équilibrage fixe, cf. appliquerBansBonus).
+  const jokers = draft.bans_joker_total || 0;
+  const normaux = (draft.bans_bonus_total || 0) - jokers;
 
   if (index >= 0) {
     // Déjà sélectionné : on le retire (annulation/remplacement).
     draft.bans_bonus_choix.splice(index, 1);
+  } else if (indexJoker >= 0) {
+    draft.bans_joker_choix.splice(indexJoker, 1);
   } else if (equilibrageLibre(draft)) {
     // Méthodes libres : un perso de la box adverse, sans la faire passer
     // sous la sienne (cf. bansBonusPermis).
@@ -460,10 +469,17 @@ async function handleBonusToggle(req, res, roomId, user) {
     if (!draft.pool_disponible.includes(persoId)) {
       return res.status(409).json({ error: "Ce personnage n'est plus disponible" });
     }
-    if (draft.bans_bonus_choix.length >= draft.bans_bonus_total) {
+    if (draft.bans_bonus_choix.length < normaux) {
+      draft.bans_bonus_choix.push(persoId);
+    } else if (draft.bans_joker_choix.length < jokers) {
+      const adverse = joueur === "j1" ? "j2" : "j1";
+      if (!draft[`pool_${adverse}`]?.includes(persoId)) {
+        return res.status(409).json({ error: "Le ban joker vise un personnage de la box adverse" });
+      }
+      draft.bans_joker_choix.push(persoId);
+    } else {
       return res.status(409).json({ error: `Tu as déjà sélectionné tes ${draft.bans_bonus_total} ban(s) bonus` });
     }
-    draft.bans_bonus_choix.push(persoId);
   }
 
   await sauvegarderDraft(roomId, draft);
@@ -497,17 +513,12 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   if (libre && !bansBonusPermis(draft, choix)) {
     return res.status(409).json({ error: "Ces bans feraient passer la box adverse sous la tienne" });
   }
-  if (!libre && choix.length !== draft.bans_bonus_total) {
+  const jokers = libre ? [] : draft.bans_joker_choix || [];
+  if (!libre && choix.length + jokers.length !== draft.bans_bonus_total) {
     return res.status(409).json({ error: `Sélectionne exactement ${draft.bans_bonus_total} personnage(s) avant de confirmer` });
   }
 
-  choix.forEach(persoId => {
-    draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
-    draft.actions.push({ joueur, type: "ban", perso_id: persoId, bonus: true });
-  });
-
-  draft.bans_bonus_faits = choix.length;
-  draft.bans_bonus_choix = [];
+  appliquerBansBonus(draft, joueur, choix, jokers);
   if (libre) draft.bans_bonus_confirmes = true;
 
   await tirageEtDraft(draft, room);
@@ -837,20 +848,25 @@ async function handleExpirer(req, res, roomId, user) {
     // Sélection libre qui ferait passer l'adversaire sous soi (possible avec
     // "Les 2 box" en retirant un ban) : aucun ban.
     if (equilibrageLibre(draft) && !bansBonusPermis(draft, choix)) choix = [];
-    const libres = draft.pool_disponible.filter(id => !choix.includes(id));
+    const libre = equilibrageLibre(draft);
+    const nbJokers = libre ? 0 : draft.bans_joker_total || 0;
+    const jokers = libre ? [] : [...(draft.bans_joker_choix || [])];
     const aleatoires = new Set();
-    while (!equilibrageLibre(draft) && choix.length < draft.bans_bonus_total && libres.length) {
-      const persoId = libres.splice(Math.floor(Math.random() * libres.length), 1)[0];
-      choix.push(persoId);
-      aleatoires.add(persoId);
+    const tirer = (liste, cible, nombre) => {
+      while (cible.length < nombre && liste.length) {
+        const persoId = liste.splice(Math.floor(Math.random() * liste.length), 1)[0];
+        cible.push(persoId);
+        aleatoires.add(persoId);
+      }
+    };
+    if (!libre) {
+      const pris = id => !choix.includes(id) && !jokers.includes(id);
+      tirer(draft.pool_disponible.filter(pris), choix, draft.bans_bonus_total - nbJokers);
+      const adverse = acteur === "j1" ? "j2" : "j1";
+      tirer(draft.pool_disponible.filter(id => pris(id) && draft[`pool_${adverse}`]?.includes(id)), jokers, nbJokers);
     }
-    choix.forEach(persoId => {
-      draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
-      draft.actions.push({ joueur: acteur, type: "ban", perso_id: persoId, bonus: true, ...(aleatoires.has(persoId) ? { aleatoire: true } : {}) });
-    });
-    draft.bans_bonus_faits = choix.length;
-    draft.bans_bonus_choix = [];
-    if (equilibrageLibre(draft)) draft.bans_bonus_confirmes = true;
+    appliquerBansBonus(draft, acteur, choix, jokers, aleatoires);
+    if (libre) draft.bans_bonus_confirmes = true;
     await tirageEtDraft(draft, room);
   } else if (draft.phase === "draft" && draft.chrono) {
     const prochaine = getProchaineAction(draft);

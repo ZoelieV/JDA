@@ -994,6 +994,28 @@ h1 {
   opacity: 1;
 }
 
+/* Ban joker (équilibrage fixe) : interdit à l'adversaire seulement. */
+.slot-bonus.joker {
+  border-color: #e0b84a;
+}
+
+.ban-mini.joker {
+  outline: 2px solid #e0b84a;
+  outline-offset: -2px;
+}
+
+.slot-bonus.joker::after,
+.ban-mini.joker::after {
+  content: "J";
+  position: absolute;
+  top: 0.125rem;
+  left: 0.25rem;
+  color: #e0b84a;
+  font-weight: bold;
+  font-size: 0.75rem;
+  text-shadow: 0 0 2px #000;
+}
+
 /* ---- Phase : temps ---- */
 
 /* Fin de match : le tableau du gagnant s'illumine. */

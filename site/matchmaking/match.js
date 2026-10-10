@@ -1073,39 +1073,66 @@ function placerBoutonPret(bouton) {
 // Les bans choisis vont dans des emplacements dédiés, modifiables (on peut
 // en retirer un et en reprendre un autre) tant qu'on n'a pas confirmé.
 
+// Bans fixes (cf. calculerEquilibrageFixe, api/_lib/draft.js) : nombre
+// imposé comme l'ancienne méthode, jokers compris (bans_joker_total).
+function estEquilibrageFixe() {
+  return typeof draft.equilibrage === "string" && draft.equilibrage.startsWith("fixe_");
+}
+
+// Constat de l'équilibrage fixe : verticalité, horizontalité et ce qui en
+// découle (bans, joker, bans de draft en plus).
+function texteEquilibrageFixe() {
+  const banneur = draft.bans_bonus_joueur;
+  const adverse = getAutreRole(banneur);
+  const box = role => `box de ${pseudoColore(role)} : verticalité ${draft[`verticalite_${role}`]} · horizontalité ${draft[`horizontalite_${role}`]}`;
+  const normaux = draft.bans_bonus_total - (draft.bans_joker_total || 0);
+  const leviers = [`${normaux} ban(s) d'équilibrage`];
+  if (draft.bans_joker_total) leviers.push(`${draft.bans_joker_total} ban(s) joker (interdit à l'adversaire seulement)`);
+  if (draft.theatre_bonus) leviers.push(`${draft.theatre_bonus.filter(Boolean).length} ban(s) de draft en plus`);
+  return `${box(banneur)} — ${box(adverse)}<br>Écart d'équipe prévu : ${draft.ecart_prevu?.avant ?? "?"} pts → ${leviers.join(", ")} pour ${pseudoColore(banneur)}`;
+}
+
 function rendreBansBonus() {
-  if (draft.equilibrage && draft.equilibrage !== "ancien") {
+  if (draft.equilibrage && draft.equilibrage !== "ancien" && !estEquilibrageFixe()) {
     rendreBansBonusLibre();
     return;
   }
   const choix = draft.bans_bonus_choix || [];
-  const restant = draft.bans_bonus_total - choix.length;
+  const jokers = draft.bans_joker_choix || [];
+  const nbJokers = draft.bans_joker_total || 0;
+  const nbNormaux = draft.bans_bonus_total - nbJokers;
+  const restant = draft.bans_bonus_total - choix.length - jokers.length;
   const nomJoueurConcerne = pseudoColore(draft.bans_bonus_joueur); // couleur de son rôle
   const ecart = Math.abs((draft.points_j1 ?? 0) - (draft.points_j2 ?? 0));
+  const constat = estEquilibrageFixe() ? `${texteEquilibrageFixe()}.<br>` : `Écart de ${ecart} pts entre les 2 box : `;
+  const consigneJoker = nbJokers ? " Les premiers vont dans les bans d'équilibrage, les suivants dans les jokers (personnages de la box adverse)." : "";
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
 
   const message = document.getElementById("message-equilibrage");
   if (draft.entrainement && cEstMonTour) {
     message.innerHTML = restant > 0
-      ? `Écart de ${ecart} pts entre les 2 box : à ${pseudoColore(draft.bans_bonus_joueur)} de choisir encore ${restant} personnage(s) à bannir, puis confirme.`
-      : `Écart de ${ecart} pts entre les 2 box : les ${draft.bans_bonus_total} ban(s) bonus de ${pseudoColore(draft.bans_bonus_joueur)} sont sélectionnés. Clique sur "Confirmer les bans".`;
+      ? `${constat}à ${pseudoColore(draft.bans_bonus_joueur)} de choisir encore ${restant} personnage(s) à bannir, puis confirme.${consigneJoker}`
+      : `${constat}les ${draft.bans_bonus_total} ban(s) bonus de ${pseudoColore(draft.bans_bonus_joueur)} sont sélectionnés. Clique sur "Confirmer les bans".`;
   } else if (cEstMonTour) {
-    message.textContent = restant > 0
-      ? `Écart de ${ecart} pts entre les 2 box : choisis encore ${restant} personnage(s) à bannir avant le tirage J1/J2 et du boss (tu peux revenir sur ton choix avant de confirmer).`
-      : `Écart de ${ecart} pts entre les 2 box : tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
+    message.innerHTML = restant > 0
+      ? `${constat}choisis encore ${restant} personnage(s) à bannir avant le tirage J1/J2 et du boss (tu peux revenir sur ton choix avant de confirmer).${consigneJoker}`
+      : `${constat}tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
   } else {
-    message.innerHTML = `Écart de ${ecart} pts entre les 2 box : ${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus. En attente…`;
+    message.innerHTML = `${constat}${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus. En attente…`;
   }
 
   const slots = document.getElementById("bans-bonus-slots");
   slots.innerHTML = "";
 
-  for (let i = 0; i < draft.bans_bonus_total; i++) {
-    const persoId = choix[i];
+  const emplacements = [
+    ...Array.from({ length: nbNormaux }, (_, i) => ({ persoId: choix[i], joker: false })),
+    ...Array.from({ length: nbJokers }, (_, i) => ({ persoId: jokers[i], joker: true }))
+  ];
+  emplacements.forEach(({ persoId, joker }) => {
     const slot = document.createElement("div");
+    const personnage = persoId && getPersonnageParId(persoId);
 
-    if (persoId) {
-      const personnage = getPersonnageParId(persoId);
+    if (personnage) {
       slot.className = "slot-bonus rempli";
       slot.innerHTML = `
         <img src="../DB/${personnage.image}" alt="${personnage.nom}">
@@ -1118,15 +1145,19 @@ function rendreBansBonus() {
     } else {
       slot.className = "slot-bonus";
     }
+    if (joker) {
+      slot.classList.add("joker");
+      slot.title = `${slot.title ? `${slot.title} — ` : ""}Joker : interdit à l'adversaire seulement`;
+    }
 
     slots.appendChild(slot);
-  }
+  });
 
   // Même bouton que "Confirmer" de la draft, en rouge (ban) : grisé pour
   // l'autre joueur ; pour celui qui bannit, contour rouge puis rouge plein
   // une fois tous ses bans choisis. Masqué pour un spectateur.
   const btnConfirmer = document.getElementById("btn-confirmer-bonus");
-  const tousChoisis = choix.length === draft.bans_bonus_total;
+  const tousChoisis = restant === 0;
   btnConfirmer.classList.toggle("cache", !monRole);
   btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
   btnConfirmer.classList.toggle("pret", cEstMonTour && tousChoisis);
@@ -1135,7 +1166,7 @@ function rendreBansBonus() {
 
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
-    choix, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible,
+    choix, jokers, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible,
     draft.pool_j1, draft.pool_j2, draft.discord_j1, draft.discord_j2, monRole,
     ...cleFiltres()
   ]);
@@ -1147,8 +1178,11 @@ function rendreBansBonus() {
 
   remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
     const id = personnage.id;
-    const dejaChoisi = choix.includes(id);
-    const peutCliquer = cEstMonTour && (dejaChoisi || choix.length < draft.bans_bonus_total);
+    const dejaChoisi = choix.includes(id) || jokers.includes(id);
+    // Bans normaux d'abord, puis jokers (personnages de la box adverse).
+    const poolAdverse = draft[`pool_${getAutreRole(draft.bans_bonus_joueur)}`] || [];
+    const placeLibre = choix.length < nbNormaux || (jokers.length < nbJokers && poolAdverse.includes(id));
+    const peutCliquer = cEstMonTour && (dejaChoisi || placeLibre);
 
     return obtenirCarteItem(grille, personnage, {
       selectionnable: peutCliquer,
@@ -1557,11 +1591,15 @@ function rendreBansEquilibrage() {
     bloc.classList.toggle("cache", bans.length === 0);
 
     const grille = document.getElementById(`bans-eq-grille-${role}`);
-    if (!grilleAChange(grille, JSON.stringify(bans.map(a => [a.perso_id, !!a.aleatoire])))) return;
+    if (!grilleAChange(grille, JSON.stringify(bans.map(a => [a.perso_id, !!a.aleatoire, !!a.joker])))) return;
     grille.replaceChildren(...bans
       .filter(a => getPersonnageParId(a.perso_id))
       .map(a => {
         const carte = creerBanMini(getPersonnageParId(a.perso_id));
+        if (a.joker) {
+          carte.classList.add("joker");
+          carte.title += " — joker : interdit à l'adversaire seulement";
+        }
         marquerAleatoire(carte, a);
         return carte;
       }));

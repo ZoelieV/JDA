@@ -9,7 +9,9 @@ const METHODES_EQUILIBRAGE = [
   { valeur: "perso_signature", titre: "Perso + arme signature", description: "Bans libres : la box adverse perd les points du perso banni et de son arme signature (meilleure copie de sa box)." },
   { valeur: "deux_box", titre: "Les 2 box", description: "Bans libres : chaque box perd les points du perso banni si elle l'a (celle de celui qui bannit aussi)." },
   { valeur: "vh_top4", titre: "Verticalité / horizontalité (4 meilleurs)", description: "Bans libres des 5★ adverses de 50 pts ou plus. Horizontalité : nombre de 5★ de 50 pts ou plus ; verticalité : moyenne des 4 meilleurs 5★. La box adverse ne passe sous la sienne sur aucune des 2." },
-  { valeur: "vh_moy50", titre: "Verticalité / horizontalité (moyenne des 50+)", description: "Bans libres des 5★ adverses de 50 pts ou plus. Horizontalité : nombre de 5★ de 50 pts ou plus ; verticalité : moyenne de ces 5★. La box adverse ne passe sous la sienne sur aucune des 2." }
+  { valeur: "vh_moy50", titre: "Verticalité / horizontalité (moyenne des 50+)", description: "Bans libres des 5★ adverses de 50 pts ou plus. Horizontalité : nombre de 5★ de 50 pts ou plus ; verticalité : moyenne de ces 5★. La box adverse ne passe sous la sienne sur aucune des 2." },
+  { valeur: "fixe_joker", titre: "Bans calculés + joker", description: "Verticalité = moyenne des 12 meilleurs persos (perso + signature). Le nombre de bans est calculé d'après les 2 box (sans plafond) : assez pour ramener l'écart d'équipe prévu (4 × écart de verticalité) à 25 pts ou moins. Si les bans n'y arrivent pas : 1 ban joker (interdit à l'adversaire seulement)." },
+  { valeur: "fixe_complet", titre: "Bans calculés + joker + draft", description: "Comme « Bans calculés + joker », et en dernier recours si ça ne suffit toujours pas : la box faible a 1 ban de draft en plus au 1er tour (comme le dauphin), et aussi au 2e tour (comme la baleine) si l'écart prévu dépasse encore 50." }
 ];
 
 function afficherMessageEquilibrage(texte, type = "") {

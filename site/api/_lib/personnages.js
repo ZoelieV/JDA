@@ -57,10 +57,15 @@ function estCarnageDesactive() {
 //                     ce perso s'il l'a ;
 //   vh_top4, vh_moy50 : verticalité / horizontalité des 5★ (cf.
 //                     mesuresVH, _lib/draft.js), bans des 5★ de 50 points
-//                     ou plus seulement.
+//                     ou plus seulement ;
+//   fixe_joker, fixe_complet : nombre de bans calculé d'après les 2 box
+//                     (verticalité), plus un ban joker si les bans ne
+//                     suffisent pas, et en dernier recours ("fixe_complet")
+//                     des bans de draft en plus (cf.
+//                     calculerEquilibrageFixe, _lib/draft.js).
 // Méthodes libres : la box adverse ne passe jamais sous celle de celui qui
 // bannit ; objectif entre +0 et +MARGE_EQUILIBRAGE points (cf. _lib/draft.js).
-const MODES_EQUILIBRAGE = ["ancien", "perso", "perso_signature", "deux_box", "vh_top4", "vh_moy50"];
+const MODES_EQUILIBRAGE = ["ancien", "perso", "perso_signature", "deux_box", "vh_top4", "vh_moy50", "fixe_joker", "fixe_complet"];
 let modeEquilibrage = "ancien";
 
 function getModeEquilibrage() {
