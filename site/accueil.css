@@ -5,10 +5,22 @@
   margin: 0 auto;
 }
 
-/* Bandeau d'accueil */
+/* Bandeau d'accueil : collé en haut de la page, le bouton du compte (barre
+   ci-dessous) ne le décale pas sur ordi. */
 .accueil-hero {
-  margin: 2.25rem 0 1.75rem;
+  margin: 0 0 1.75rem;
   text-align: center;
+}
+
+/* Ordi : bouton du compte posé en haut à droite, hors du flux, pour que le
+   logo monte tout en haut de la page. Téléphone : il reste au-dessus. */
+@media (min-width: 701px) {
+  .accueil-barre {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 100;
+  }
 }
 
 /* Nom du site "Jugement des Archons" : police propre (DB/fonts/true_title.ttf),
@@ -20,7 +32,7 @@
 }
 
 /* Logo détaillé au-dessus du titre : un quart de la largeur de l'écran sur
-   ordi, plus large sur téléphone. Le titre et le texte remontent sur le quart
+   ordi, plus large sur téléphone. Le titre et le texte remontent sur le tiers
    bas du logo (hauteur du logo = largeur × 1725 / 1593). */
 .accueil-hero {
   --logo-largeur: 25vw;
@@ -40,20 +52,28 @@
   }
 }
 
-/* Contour noir de 1 px : texte lisible sur fond clair comme sombre. */
+/* Contour gris de 1 px : texte lisible sur fond clair comme sombre. */
 .accueil-hero h1,
 .accueil-hero p {
   position: relative;
   text-shadow:
-    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000,
-    -1px 0 0 #000, 1px 0 0 #000,
-    -1px 1px 0 #000, 0 1px 0 #000, 1px 1px 0 #000;
+    -1px -1px 0 #707070, 0 -1px 0 #707070, 1px -1px 0 #707070,
+    -1px 0 0 #707070, 1px 0 0 #707070,
+    -1px 1px 0 #707070, 0 1px 0 #707070, 1px 1px 0 #707070;
 }
 
 .accueil-hero h1 {
-  margin: calc(var(--logo-largeur) * -1725 / 1593 / 4) 0 0.625rem;
+  margin: calc(var(--logo-largeur) * -1725 / 1593 / 3) 0 0.625rem;
+  font-size: 3.5rem;
+  line-height: 1.1;
   font-family: "Titre site", var(--police-titre);
   font-weight: normal;
+}
+
+@media (max-width: 700px) {
+  .accueil-hero h1 {
+    font-size: 2.5rem;
+  }
 }
 
 .accueil-hero p {
