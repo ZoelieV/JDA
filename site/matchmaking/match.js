@@ -1169,17 +1169,55 @@ const MARGE_EQUILIBRAGE = 100;
 const LIBELLES_EQUILIBRAGE = {
   perso: "points du perso banni retirés de la box adverse",
   perso_signature: "points du perso banni et de son arme signature retirés de la box adverse",
-  deux_box: "points du perso banni retirés des 2 box"
+  deux_box: "points du perso banni retirés des 2 box",
+  vh_top4: "verticalité (moyenne des 4 meilleurs 5★) et horizontalité (5★ de 50 pts ou plus)",
+  vh_moy50: "verticalité (moyenne des 5★ de 50 pts ou plus) et horizontalité (nombre de ces 5★)"
 };
+
+// Verticalité / horizontalité (cf. mesuresVH, api/_lib/draft.js).
+const SEUIL_VH = 50;
+const MARGE_VH_HORIZONTALITE = 1;
+const MARGE_VH_VERTICALITE = 5;
+
+function estEquilibrageVH() {
+  return draft.equilibrage === "vh_top4" || draft.equilibrage === "vh_moy50";
+}
 
 function pointsApresBansBonus(choix) {
   const banneur = draft.bans_bonus_joueur;
   const adverse = getAutreRole(banneur);
   const retire = role => choix.reduce((somme, id) => somme + (Number(draft[`valeurs_bans_${role}`]?.[id]) || 0), 0);
+  const lesDeux = draft.equilibrage === "deux_box" || estEquilibrageVH();
   return {
-    banneur: (draft[`points_${banneur}`] || 0) - (draft.equilibrage === "deux_box" ? retire(banneur) : 0),
+    banneur: (draft[`points_${banneur}`] || 0) - (lesDeux ? retire(banneur) : 0),
     adverse: (draft[`points_${adverse}`] || 0) - retire(adverse)
   };
+}
+
+function mesuresVH(cinq, bannis) {
+  const exclus = new Set(bannis);
+  const points = Object.entries(cinq || {}).filter(([id]) => !exclus.has(id)).map(([, v]) => Number(v) || 0).sort((a, b) => b - a);
+  const forts = points.filter(v => v >= SEUIL_VH);
+  const moyenne = liste => liste.length ? liste.reduce((a, b) => a + b, 0) / liste.length : 0;
+  const verticalite = draft.equilibrage === "vh_moy50" ? moyenne(forts) : moyenne(points.slice(0, 4));
+  return { horizontalite: forts.length, verticalite: Math.round(verticalite * 10) / 10 };
+}
+
+// Bans permis : 5★ de SEUIL_VH pts ou plus de la box adverse ; sur chaque
+// mesure, la box adverse ne passe pas sous celle du banneur (ou pas plus bas
+// qu'avant si elle y était déjà). Points : jamais sous la box du banneur.
+function bansBonusPermisLocal(choix) {
+  const banneur = draft.bans_bonus_joueur;
+  const adverse = getAutreRole(banneur);
+  if (estEquilibrageVH()) {
+    if (!choix.every(id => (Number(draft[`cinq_${adverse}`]?.[id]) || 0) >= SEUIL_VH)) return false;
+    const b = mesuresVH(draft[`cinq_${banneur}`], choix);
+    const a = mesuresVH(draft[`cinq_${adverse}`], choix);
+    const a0 = mesuresVH(draft[`cinq_${adverse}`], []);
+    return a.horizontalite >= Math.min(a0.horizontalite, b.horizontalite) && a.verticalite >= Math.min(a0.verticalite, b.verticalite);
+  }
+  const points = pointsApresBansBonus(choix);
+  return points.adverse >= points.banneur;
 }
 
 function rendreBansBonusLibre() {
@@ -1189,9 +1227,19 @@ function rendreBansBonusLibre() {
   const cEstMonTour = banneur === monRole;
   const points = pointsApresBansBonus(choix);
   const ecart = points.adverse - points.banneur;
-  const dansObjectif = ecart <= MARGE_EQUILIBRAGE;
-  const etat = `Box de ${pseudoColore(banneur)} : ${points.banneur} pts · box de ${pseudoColore(adverse)} : ${points.adverse} pts (écart ${ecart})`;
-  const regle = `Équilibrage : ${LIBELLES_EQUILIBRAGE[draft.equilibrage] || ""}. Objectif : écart entre 0 et ${MARGE_EQUILIBRAGE} pts, jamais sous 0.`;
+  const vh = estEquilibrageVH();
+  const mesures = vh ? { banneur: mesuresVH(draft[`cinq_${banneur}`], choix), adverse: mesuresVH(draft[`cinq_${adverse}`], choix) } : null;
+  const ecartH = vh ? mesures.adverse.horizontalite - mesures.banneur.horizontalite : 0;
+  const ecartV = vh ? Math.round((mesures.adverse.verticalite - mesures.banneur.verticalite) * 10) / 10 : 0;
+  const dansObjectif = vh ? ecartH <= MARGE_VH_HORIZONTALITE && ecartV <= MARGE_VH_VERTICALITE : ecart <= MARGE_EQUILIBRAGE;
+  const etat = vh
+    ? `Box de ${pseudoColore(banneur)} : horizontalité ${mesures.banneur.horizontalite} · verticalité ${mesures.banneur.verticalite}<br>` +
+      `Box de ${pseudoColore(adverse)} : horizontalité ${mesures.adverse.horizontalite} (écart ${ecartH}) · verticalité ${mesures.adverse.verticalite} (écart ${ecartV})`
+    : `Box de ${pseudoColore(banneur)} : ${points.banneur} pts · box de ${pseudoColore(adverse)} : ${points.adverse} pts (écart ${ecart})`;
+  const regle = vh
+    ? `Équilibrage : ${LIBELLES_EQUILIBRAGE[draft.equilibrage]}. Seuls les 5★ de ${SEUIL_VH} pts ou plus de la box adverse se bannissent. ` +
+      `Objectif : écart d'horizontalité entre 0 et ${MARGE_VH_HORIZONTALITE}, de verticalité entre 0 et ${MARGE_VH_VERTICALITE}, jamais sous 0.`
+    : `Équilibrage : ${LIBELLES_EQUILIBRAGE[draft.equilibrage] || ""}. Objectif : écart entre 0 et ${MARGE_EQUILIBRAGE} pts, jamais sous 0.`;
 
   const message = document.getElementById("message-equilibrage");
   if (cEstMonTour) {
@@ -1223,34 +1271,35 @@ function rendreBansBonusLibre() {
   btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
   btnConfirmer.classList.toggle("pret", cEstMonTour && dansObjectif);
   // "Les 2 box" : retirer un ban peut faire repasser l'adversaire sous soi.
-  btnConfirmer.disabled = !cEstMonTour || ecart < 0 || monTempsEcoule();
+  btnConfirmer.disabled = !cEstMonTour || !bansBonusPermisLocal(choix) || monTempsEcoule();
   btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
 
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
     choix, draft.equilibrage, banneur, draft.pool_disponible, draft[`pool_${adverse}`],
     draft.valeurs_bans_j1, draft.valeurs_bans_j2, draft.points_j1, draft.points_j2, monRole,
+    draft.cinq_j1, draft.cinq_j2,
     ...cleFiltres()
   ]);
   if (!grilleAChange(grille, cleGrille)) return;
 
-  // Seulement les persos de la box adverse encore disponibles.
+  // Seulement les persos de la box adverse encore disponibles (verticalité
+  // / horizontalité : ses 5★ de SEUIL_VH pts ou plus).
   const poolAdverse = new Set(draft[`pool_${adverse}`] || []);
   const personnages = draft.pool_disponible
-    .filter(id => poolAdverse.has(id))
+    .filter(id => poolAdverse.has(id) && (!vh || (Number(draft[`cinq_${adverse}`]?.[id]) || 0) >= SEUIL_VH))
     .map(id => getPersonnageParId(id))
     .filter(p => p && personnageCorrespondFiltres(p));
 
   remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
     const id = personnage.id;
     const dejaChoisi = choix.includes(id);
-    const apres = pointsApresBansBonus([...choix, id]);
-    const permis = apres.adverse >= apres.banneur;
+    const permis = bansBonusPermisLocal([...choix, id]);
     const valeur = Number(draft[`valeurs_bans_${adverse}`]?.[id]) || 0;
     return obtenirCarteItem(grille, personnage, {
       selectionnable: cEstMonTour && (dejaChoisi || permis),
       indisponible: dejaChoisi || !permis,
-      titre: `${personnage.nom} : −${valeur} pts${permis || dejaChoisi ? "" : " (ferait passer la box adverse sous la tienne)"}`,
+      titre: `${personnage.nom} : −${valeur} pts${permis || dejaChoisi ? "" : vh ? " (ferait passer la box adverse sous la tienne en verticalité ou en horizontalité)" : " (ferait passer la box adverse sous la tienne)"}`,
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
       ...getInfosCarte(id)
     });

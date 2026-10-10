@@ -16,6 +16,9 @@ const {
   calculerBansBonus,
   MARGE_EQUILIBRAGE,
   valeursBansBox,
+  valeursCinqEtoiles,
+  estEquilibrageVH,
+  banVHPossible,
   theatreProfil
 } = require("./draft");
 
@@ -110,6 +113,17 @@ async function calculerEquilibrage(draft) {
     draft[`valeurs_bans_${role}`] = valeursBansBox(data, box, personnages, armes, avecSignature);
   });
   draft.bans_bonus_total = calculerBansBonus(ecart);
+  if (estEquilibrageVH(draft)) {
+    // Verticalité / horizontalité : celui qui a la box la plus faible
+    // (points) bannit, s'il peut faire au moins un ban (cf. banVHPossible).
+    ["j1", "j2"].forEach(role => {
+      const { data, box } = boxes[role];
+      draft[`cinq_${role}`] = valeursCinqEtoiles(data, box, personnages);
+    });
+    draft.bans_bonus_joueur = carnage || ecart === 0 ? null : ecart > 0 ? "j2" : "j1";
+    if (draft.bans_bonus_joueur && !banVHPossible(draft)) draft.bans_bonus_joueur = null;
+    return;
+  }
   draft.bans_bonus_joueur = !carnage && Math.abs(ecart) > MARGE_EQUILIBRAGE ? (ecart > 0 ? "j2" : "j1") : null;
 }
 

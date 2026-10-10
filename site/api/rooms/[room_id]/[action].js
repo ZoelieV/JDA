@@ -43,7 +43,10 @@ const {
   getProchaineAction,
   equilibrageLibre,
   bansBonusDus,
-  bansBonusPermis
+  bansBonusPermis,
+  estEquilibrageVH,
+  banVHEligible,
+  SEUIL_VH
 } = require("../../_lib/draft");
 
 // Commentaire obligatoire d'un litige signalé (cf. handleLitige).
@@ -444,8 +447,13 @@ async function handleBonusToggle(req, res, roomId, user) {
     if (!draft.pool_disponible.includes(persoId) || !draft[`pool_${adverse}`]?.includes(persoId)) {
       return res.status(409).json({ error: "Bannis un personnage de la box adverse encore disponible" });
     }
+    if (estEquilibrageVH(draft) && !banVHEligible(draft, persoId)) {
+      return res.status(409).json({ error: `Seuls les 5★ de ${SEUIL_VH} points ou plus de la box adverse peuvent être bannis` });
+    }
     if (!bansBonusPermis(draft, [...draft.bans_bonus_choix, persoId])) {
-      return res.status(409).json({ error: "Ce ban ferait passer la box adverse sous la tienne" });
+      return res.status(409).json({ error: estEquilibrageVH(draft)
+        ? "Ce ban ferait passer la box adverse sous la tienne en verticalité ou en horizontalité"
+        : "Ce ban ferait passer la box adverse sous la tienne" });
     }
     draft.bans_bonus_choix.push(persoId);
   } else {

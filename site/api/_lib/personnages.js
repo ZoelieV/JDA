@@ -54,10 +54,13 @@ function estCarnageDesactive() {
 //   perso_signature : idem + les points de son arme signature dans la box
 //                     adverse ;
 //   deux_box        : idem "perso", et la box de celui qui bannit perd aussi
-//                     ce perso s'il l'a.
+//                     ce perso s'il l'a ;
+//   vh_top4, vh_moy50 : verticalité / horizontalité des 5★ (cf.
+//                     mesuresVH, _lib/draft.js), bans des 5★ de 50 points
+//                     ou plus seulement.
 // Méthodes libres : la box adverse ne passe jamais sous celle de celui qui
 // bannit ; objectif entre +0 et +MARGE_EQUILIBRAGE points (cf. _lib/draft.js).
-const MODES_EQUILIBRAGE = ["ancien", "perso", "perso_signature", "deux_box"];
+const MODES_EQUILIBRAGE = ["ancien", "perso", "perso_signature", "deux_box", "vh_top4", "vh_moy50"];
 let modeEquilibrage = "ancien";
 
 function getModeEquilibrage() {

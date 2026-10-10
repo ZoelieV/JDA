@@ -110,7 +110,7 @@ async function chargerDonnees() {
   bonusSaison = new Set(Array.isArray(config?.bonus_saison) ? config.bonus_saison : []);
   carnageDesactive = config?.carnage_desactive === true;
   if (Number(config?.seuil_equilibrage) > 0) seuil = Number(config.seuil_equilibrage);
-  if (["perso", "perso_signature", "deux_box"].includes(config?.equilibrage)) methodeEquilibrage = config.equilibrage;
+  if (["perso", "perso_signature", "deux_box", "vh_top4", "vh_moy50"].includes(config?.equilibrage)) methodeEquilibrage = config.equilibrage;
 }
 
 // Section "Bans d'équilibrage" selon la méthode en vigueur.
@@ -128,6 +128,19 @@ function htmlBansEquilibrage(paliers) {
         <tbody>${paliers}<tr><td>…</td><td>+1 tous les ${seuil} pts</td></tr></tbody>
       </table>
     </div>`;
+  }
+  if (methodeEquilibrage === "vh_top4" || methodeEquilibrage === "vh_moy50") {
+    const verticalite = methodeEquilibrage === "vh_top4"
+      ? "moyenne des points des 4 meilleurs 5★ de la box"
+      : "moyenne des points des 5★ de 50 pts ou plus de la box";
+    return `
+    <p class="formule-tc">
+      horizontalité = nombre de 5★ de 50 pts ou plus de la box<br>
+      verticalité = ${verticalite}<br>
+      chaque ban retire un 5★ de 50 pts ou plus de la box adverse (et de la tienne si tu l'as)<br>
+      objectif : 0 ≤ écart d'horizontalité ≤ 1 et 0 ≤ écart de verticalité ≤ 5 (jamais sous 0)
+    </p>
+    <p>Le joueur avec la box la plus faible (en points) bannit autant de 5★ de 50 pts ou plus de la box adverse qu'il veut, tant qu'elle ne passe sous la sienne ni en horizontalité, ni en verticalité (si elle y est déjà sur une des 2, elle ne peut pas y descendre plus bas), avant le tirage J1 / J2 et du boss. Les 5★ de 50 pts ou plus sont ceux qui pèsent sur une draft : main dps à partir de 50 (impactants au-delà de 70), sub dps à partir de 50 (au-delà de 65), supports à partir de 50. En classé, il a le même temps que l'ancienne méthode (6 s par tranche de ${seuil} pts d'écart, 20 s au minimum). Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
   }
   const perte = {
     perso: "les points du personnage dans la box adverse (sans les armes)",

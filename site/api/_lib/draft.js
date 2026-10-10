@@ -37,21 +37,90 @@ function bansBonusDus(draft) {
 
 // Méthodes libres : points des 2 box si ces persos sont bannis ->
 // { banneur, adverse }. valeurs_bans_jX : points que perd la box de jX par
-// perso banni (cf. valeursBansBox) ; "deux_box" : celle de celui qui
-// bannit aussi.
+// perso banni (cf. valeursBansBox) ; "deux_box" et verticalité /
+// horizontalité : celle de celui qui bannit aussi (le ban retire le perso
+// pour les 2).
 function pointsApresBansBonus(draft, choix = draft.bans_bonus_choix || []) {
   const banneur = draft.bans_bonus_joueur;
   const adverse = banneur === "j1" ? "j2" : "j1";
   const retire = role => choix.reduce((somme, id) => somme + (Number(draft[`valeurs_bans_${role}`]?.[id]) || 0), 0);
+  const lesDeux = draft.equilibrage === "deux_box" || estEquilibrageVH(draft);
   return {
-    banneur: (draft[`points_${banneur}`] || 0) - (draft.equilibrage === "deux_box" ? retire(banneur) : 0),
+    banneur: (draft[`points_${banneur}`] || 0) - (lesDeux ? retire(banneur) : 0),
     adverse: (draft[`points_${adverse}`] || 0) - retire(adverse)
   };
 }
 
+// ---- Verticalité / horizontalité (méthodes "vh_top4" et "vh_moy50") ----
+//
+// Mesurées sur les 5★ de chaque box (cinq_jX : { id de la draft: points },
+// cf. valeursCinqEtoiles) encore disponibles :
+//   horizontalité = nombre de 5★ à SEUIL_VH points ou plus (un perso
+//                   impactant en draft : main dps à partir de 50-70, sub dps
+//                   50-65, support 50) ;
+//   verticalité   = "vh_top4" : moyenne des 4 meilleurs 5★ (la meilleure
+//                   équipe possible) ; "vh_moy50" : moyenne des 5★ à
+//                   SEUIL_VH points ou plus.
+// Celui qui a la box la plus faible (points) ne bannit que des 5★ de
+// SEUIL_VH points ou plus de la box adverse ; sur chaque mesure, la box
+// adverse ne passe pas sous la sienne (ou, si elle y était déjà, ne descend
+// pas plus bas). Le ban retire le perso pour les 2 box. Objectif : écart
+// d'horizontalité entre 0 et MARGE_VH_HORIZONTALITE, de verticalité entre 0
+// et MARGE_VH_VERTICALITE.
+const SEUIL_VH = 50;
+const MARGE_VH_HORIZONTALITE = 1;
+const MARGE_VH_VERTICALITE = 5;
+
+function estEquilibrageVH(draft) {
+  return draft?.equilibrage === "vh_top4" || draft?.equilibrage === "vh_moy50";
+}
+
+// { horizontalite, verticalite } d'une box (cinq : { id: points }) sans les
+// persos bannis.
+function mesuresVH(cinq, bannis, methode) {
+  const exclus = new Set(bannis);
+  const points = Object.entries(cinq || {}).filter(([id]) => !exclus.has(id)).map(([, v]) => Number(v) || 0).sort((a, b) => b - a);
+  const forts = points.filter(v => v >= SEUIL_VH);
+  const moyenne = liste => liste.length ? liste.reduce((a, b) => a + b, 0) / liste.length : 0;
+  const verticalite = methode === "vh_moy50" ? moyenne(forts) : moyenne(points.slice(0, 4));
+  return { horizontalite: forts.length, verticalite: Math.round(verticalite * 10) / 10 };
+}
+
+// Mesures des 2 box avant (initial) et après ces bans d'équilibrage.
+function mesuresApresBansBonus(draft, choix = draft.bans_bonus_choix || []) {
+  const banneur = draft.bans_bonus_joueur;
+  const adverse = banneur === "j1" ? "j2" : "j1";
+  const mesures = (role, bannis) => mesuresVH(draft[`cinq_${role}`], bannis, draft.equilibrage);
+  return {
+    banneur: mesures(banneur, choix),
+    adverse: mesures(adverse, choix),
+    adverseInitial: mesures(adverse, [])
+  };
+}
+
+// Perso bannissable en verticalité / horizontalité : un 5★ de SEUIL_VH
+// points ou plus de la box adverse.
+function banVHEligible(draft, persoId) {
+  const adverse = draft.bans_bonus_joueur === "j1" ? "j2" : "j1";
+  return (Number(draft[`cinq_${adverse}`]?.[persoId]) || 0) >= SEUIL_VH;
+}
+
 function bansBonusPermis(draft, choix) {
+  if (estEquilibrageVH(draft)) {
+    if (!choix.every(id => banVHEligible(draft, id))) return false;
+    const { banneur, adverse, adverseInitial } = mesuresApresBansBonus(draft, choix);
+    return adverse.horizontalite >= Math.min(adverseInitial.horizontalite, banneur.horizontalite) &&
+      adverse.verticalite >= Math.min(adverseInitial.verticalite, banneur.verticalite);
+  }
   const points = pointsApresBansBonus(draft, choix);
   return points.adverse >= points.banneur;
+}
+
+// Verticalité / horizontalité : au moins un ban possible (sinon pas de
+// phase de bans d'équilibrage).
+function banVHPossible(draft) {
+  const adverse = draft.bans_bonus_joueur === "j1" ? "j2" : "j1";
+  return Object.keys(draft[`cinq_${adverse}`] || {}).some(id => banVHEligible(draft, id) && bansBonusPermis(draft, [id]));
 }
 
 // ---- Séquence fixe de la draft (hors bans bonus) ----
@@ -189,6 +258,8 @@ function etatInitialDraft() {
     bans_bonus_confirmes: false, // méthodes libres : bans confirmés (nombre libre)
     valeurs_bans_j1: null, // méthodes libres : { perso: points perdus par la box de j1 s'il est banni }
     valeurs_bans_j2: null,
+    cinq_j1: null, // verticalité / horizontalité : { perso 5★: points } de la box de j1 (cf. valeursCinqEtoiles)
+    cinq_j2: null,
     boss_id: null,
     pool_disponible: null, // liste d'ids (union), remplie une fois les 2 joueurs prêts
     pool_j1: null, // ids de la box choisie par j1 — restreint ses picks
@@ -277,6 +348,18 @@ function valeursBansBox(profilData, boxChoisie, personnages, armes, avecSignatur
   if (avecSignature) {
     Object.keys(valeurs).forEach(id => { valeurs[id] += pointsSignatureBox(profilData, boxChoisie, armes, id); });
   }
+  return valeurs;
+}
+
+// Points des 5★ d'une box (verticalité / horizontalité) : { id de la
+// draft: points } (Voyageur : son meilleur élément).
+function valeursCinqEtoiles(profilData, boxChoisie, personnages) {
+  const valeurs = {};
+  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
+    if (String(personnage.rarete) !== "5") return;
+    const id = personnage.groupe || personnage.id;
+    valeurs[id] = Math.max(valeurs[id] ?? 0, pointsPersonnage(personnage, valeur, niveau));
+  });
   return valeurs;
 }
 
@@ -477,6 +560,8 @@ function etatRevanche(precedent) {
     bans_bonus_confirmes: !!precedent.bans_bonus_confirmes,
     valeurs_bans_j1: precedent.valeurs_bans_j1 || null,
     valeurs_bans_j2: precedent.valeurs_bans_j2 || null,
+    cinq_j1: precedent.cinq_j1 || null,
+    cinq_j2: precedent.cinq_j2 || null,
     actions: bansBonus,
     // Même room : la version continue (écriture conditionnelle, cf.
     // ecrireDraft dans _lib/room.js).
@@ -551,6 +636,15 @@ module.exports = {
   bansBonusPermis,
   pointsApresBansBonus,
   valeursBansBox,
+  SEUIL_VH,
+  MARGE_VH_HORIZONTALITE,
+  MARGE_VH_VERTICALITE,
+  estEquilibrageVH,
+  mesuresVH,
+  mesuresApresBansBonus,
+  banVHEligible,
+  banVHPossible,
+  valeursCinqEtoiles,
   etatInitialDraft,
   calculerPointsBox,
   calculerPointsArmesBox,

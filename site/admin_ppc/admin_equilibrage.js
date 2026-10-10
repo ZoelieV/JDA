@@ -7,7 +7,9 @@ const METHODES_EQUILIBRAGE = [
   { valeur: "ancien", titre: "Ancienne méthode", description: "Nombre de bans imposé : 1 ban tous les 200 points d'écart entre les box." },
   { valeur: "perso", titre: "Points du perso", description: "Bans libres : la box adverse perd les points du perso banni (sans les armes)." },
   { valeur: "perso_signature", titre: "Perso + arme signature", description: "Bans libres : la box adverse perd les points du perso banni et de son arme signature (meilleure copie de sa box)." },
-  { valeur: "deux_box", titre: "Les 2 box", description: "Bans libres : chaque box perd les points du perso banni si elle l'a (celle de celui qui bannit aussi)." }
+  { valeur: "deux_box", titre: "Les 2 box", description: "Bans libres : chaque box perd les points du perso banni si elle l'a (celle de celui qui bannit aussi)." },
+  { valeur: "vh_top4", titre: "Verticalité / horizontalité (4 meilleurs)", description: "Bans libres des 5★ adverses de 50 pts ou plus. Horizontalité : nombre de 5★ de 50 pts ou plus ; verticalité : moyenne des 4 meilleurs 5★. La box adverse ne passe sous la sienne sur aucune des 2." },
+  { valeur: "vh_moy50", titre: "Verticalité / horizontalité (moyenne des 50+)", description: "Bans libres des 5★ adverses de 50 pts ou plus. Horizontalité : nombre de 5★ de 50 pts ou plus ; verticalité : moyenne de ces 5★. La box adverse ne passe sous la sienne sur aucune des 2." }
 ];
 
 function afficherMessageEquilibrage(texte, type = "") {

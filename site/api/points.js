@@ -18,7 +18,8 @@
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
-//          equilibrage: "ancien" | "perso" | "perso_signature" | "deux_box" }
+//          equilibrage: "ancien" | "perso" | "perso_signature" | "deux_box"
+//                       | "vh_top4" | "vh_moy50" }
 //                                    (méthode des bans d'équilibrage)
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
