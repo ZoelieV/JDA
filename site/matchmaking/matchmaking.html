@@ -65,7 +65,7 @@
       <img src="../DB/images/others/Namecard_Background_Achievement_Tranquil_Peace.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>Random world boss</h2>
-        <p>Un boss et 4 persos au hasard, en co-op.</p>
+        <p>Un boss et 4 persos au hasard, seul ou en co-op.</p>
       </div>
     </button>
   </div>
@@ -154,19 +154,19 @@
     </div>
   </section>
 
-  <!-- Random world boss (cf. api/_lib/world_boss.js) : room par lien, de 2
-       à 4 joueurs, lancée par le chef (créateur). -->
+  <!-- Random world boss (cf. api/_lib/world_boss.js) : room par lien, seul
+       ou de 2 à 4 joueurs, lancée par le chef (créateur). -->
   <section id="detail-world-boss" class="panneau detail-match cache" data-detail="world-boss">
     <h2>Random world boss</h2>
-    <p>Envoie le lien à tes amis (2 à 4 joueurs) : tu lances la partie quand tout le monde est là.
-      Un boss et 4 persos sont tirés au hasard, à jouer ensemble en co-op.</p>
+    <p>Envoie le lien à tes amis (jusqu'à 4 joueurs) : tu lances la partie quand tout le monde est là.
+      Un boss et 4 persos sont tirés au hasard, à jouer ensemble en co-op. Tu peux aussi jouer seul.</p>
     <ul class="regles-classe">
-      <li>Boss tiré parmi les world boss, les boss hebdomadaires, les légendes locales faisables en co-op et les salles du carnage.</li>
-      <li>4 persos tirés dans les full box des joueurs, toujours jouables par l'équipe : à 2, 2 persos chacun ; à 3, un joueur en joue 2 et les autres 1 ; à 4, 1 chacun. À vous de vous répartir les persos.</li>
+      <li>Boss tiré parmi les world boss, les boss hebdomadaires, les légendes locales faisables en co-op et les salles du carnage. Seul : aussi les boss pas faisables en co-op.</li>
+      <li>4 persos tirés dans les full box des joueurs, toujours jouables par l'équipe : seul, tu joues les 4 ; à 2, 2 persos chacun ; à 3, un joueur en joue 2 et les autres 1 ; à 4, 1 chacun. À vous de vous répartir les persos.</li>
       <li>Après le combat, chacun déclare les persos qu'il a joués et le chef déclare la réussite ou l'échec.</li>
     </ul>
     <div class="modes-match" data-type="world_boss">
-      <button type="button" class="mode-match" data-mode="world_boss">Créer la room<span>de 2 à 4 joueurs</span></button>
+      <button type="button" class="mode-match" data-mode="world_boss">Créer la room<span>seul ou de 2 à 4 joueurs</span></button>
     </div>
   </section>
 

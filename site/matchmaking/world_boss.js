@@ -1,11 +1,13 @@
-// Random world boss : lobby (2 à 4 joueurs), boss et 4 persos tirés au
-// hasard, déclaration des persos joués par chacun et du résultat (chef).
+// Random world boss : lobby (seul ou jusqu'à 4 joueurs), boss et 4 persos
+// tirés au hasard (animation du tirage, cf. animerTirage), déclaration des
+// persos joués par chacun et du résultat (chef). Seul : persos et hôte
+// déclarés d'office par le serveur, il ne reste que le résultat.
 // Règles et état côté serveur : api/_lib/world_boss.js (routes
 // /api/rooms/{room_id}/wb_*). La page relit l'état toutes les POLL_MS et le
 // redessine s'il a changé.
 
 const POLL_MS = 2500;
-const TAILLE_MIN = 2;
+const TAILLE_MIN = 1;
 const TAILLE_MAX = 4;
 
 let roomId = null;
@@ -15,6 +17,9 @@ let personnagesDraftParId = new Map(); // ids de la draft (Voyageur regroupé)
 let bossParId = new Map();
 let derniereCle = "";
 let envoiEnCours = false;
+// Heure du serveur - heure de la page (ms) : âge du tirage (cf.
+// animerTirageSiNouveau).
+let decalageHorloge = 0;
 // Persos cochés par le joueur connecté (pas encore envoyés), ou null :
 // sa déclaration enregistrée.
 let selectionPersos = null;
@@ -26,6 +31,7 @@ const nomJoueur = id => draft?.infos?.[id]?.nom || "Joueur";
 const suisMembre = () => !!moi && !!draft?.membres?.includes(moi.id);
 const suisJoueur = () => !!moi && !!draft?.joueurs?.includes(moi.id);
 const suisChef = () => !!moi && draft?.createur === moi.id;
+const enSolo = () => draft?.joueurs?.length === 1;
 
 async function appel(action, corps = null) {
   const reponse = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/${action}`, corps === null
@@ -42,6 +48,7 @@ async function agir(action, corps = {}) {
   envoiEnCours = true;
   try {
     const data = await appel(action, corps);
+    noterHorloge(data);
     if (data.draft) definirDraft(data.draft);
     return true;
   } catch (erreur) {
@@ -74,9 +81,11 @@ function nomPerso(perso) {
 }
 
 // Persos que ce joueur peut déclarer en plus (cf. maxPersosJoueur côté
-// serveur) : à 2, 2 ; à 4, 1 ; à 3, 2 si personne d'autre n'en a déclaré 2.
+// serveur) : seul, 4 ; à 2, 2 ; à 4, 1 ; à 3, 2 si personne d'autre n'en a
+// déclaré 2.
 function maxPersosJoueur(id) {
   const taille = draft.joueurs.length;
+  if (taille === 1) return 4;
   if (taille === 2) return 2;
   if (taille === 4) return 1;
   return draft.joueurs.some(autre => autre !== id && (draft.joues?.[autre] || []).length >= 2) ? 1 : 2;
@@ -89,7 +98,12 @@ function joueurDuPerso(persoId) {
 
 // ---- Rendu général ----
 
+function noterHorloge(data) {
+  if (Number.isFinite(data?.maintenant)) decalageHorloge = data.maintenant - Date.now();
+}
+
 function definirDraft(nouveau) {
+  const ancienne = draft;
   const anciennePartie = draft && `${draft.phase}|${draft.boss_id}`;
   draft = nouveau;
   // Nouvelle partie : sélection repartie de la déclaration enregistrée.
@@ -98,6 +112,7 @@ function definirDraft(nouveau) {
   if (cle === derniereCle) return;
   derniereCle = cle;
   rendre();
+  animerTirageSiNouveau(ancienne);
 }
 
 function afficherPhase(id) {
@@ -118,6 +133,7 @@ function rendre() {
 // ---- Lobby ----
 
 function rendreLobby() {
+  preparerLeurres();
   const membres = draft.membres || [];
   const complet = membres.length >= TAILLE_MAX;
   const places = Array.from({ length: TAILLE_MAX - membres.length }, () => `<li class="place-libre">Place libre</li>`).join("");
@@ -132,8 +148,9 @@ function rendreLobby() {
   $("btn-quitter").classList.toggle("cache", !suisMembre() || suisChef());
   $("btn-lancer").classList.toggle("cache", !suisChef());
   $("btn-lancer").disabled = membres.length < TAILLE_MIN;
+  $("btn-lancer").textContent = membres.length === 1 ? "Prêt : lancer la partie seul" : "Prêt : lancer la partie";
   $("aide-lobby").textContent = suisChef()
-    ? (membres.length < TAILLE_MIN ? `Partage le lien : il faut au moins ${TAILLE_MIN} joueurs.` : "Lance la partie quand tout le monde est là.")
+    ? (membres.length === 1 ? "Lance la partie seul (boss pas faisables en co-op compris), ou partage le lien pour jouer en co-op." : "Lance la partie quand tout le monde est là.")
     : suisMembre() ? "Le chef lance la partie quand tout le monde est là."
       : complet ? `La room est complète (${TAILLE_MAX} joueurs).` : "Rejoins la room pour jouer.";
 }
@@ -154,7 +171,8 @@ function rendreJeu() {
 // api/_lib/world_boss.js).
 function rendreZoneHote() {
   const boss = bossParId.get(draft.boss_id);
-  const visible = draft.phase === "jeu" && estLegendeLocale(boss);
+  // Seul : hôte d'office.
+  const visible = draft.phase === "jeu" && estLegendeLocale(boss) && !enSolo();
   $("zone-hote").classList.toggle("cache", !visible);
   if (!visible) return;
   const hote = draft.hote;
@@ -182,12 +200,14 @@ function rendreResultat() {
 // Cartes des 4 persos : qui les a dans sa full box (constellation), qui
 // les a joués ; le joueur connecté coche les siens pendant la partie.
 function rendrePersos() {
-  const enJeu = draft.phase === "jeu" && suisJoueur();
+  // Seul : les 4 persos sont à lui, déjà déclarés.
+  const enJeu = draft.phase === "jeu" && suisJoueur() && !enSolo();
   const mienne = draft.joues?.[moi?.id] || [];
   if (selectionPersos === null) selectionPersos = new Set(mienne);
   const max = enJeu ? maxPersosJoueur(moi.id) : 0;
 
   $("aide-persos").textContent = draft.phase !== "jeu" ? ""
+    : enSolo() ? (suisJoueur() ? "Tu joues les 4 persos." : `${nomJoueur(draft.joueurs[0])} joue les 4 persos.`)
     : !suisJoueur() ? "Les joueurs déclarent les persos qu'ils ont joués."
       : `Répartissez-vous les persos. Après le combat, coche ${max > 1 ? `les ${max} persos` : "le perso"} que tu as joué${max > 1 ? "s" : ""} puis valide.` +
         (draft.joueurs.length === 3 ? " À 3, un seul joueur joue 2 persos." : "");
@@ -245,8 +265,9 @@ function rendreZoneResultat() {
 // Où en sont les déclarations de chacun.
 function rendreEtatJoueurs() {
   const zone = $("etat-joueurs");
-  zone.classList.toggle("cache", draft.phase !== "jeu");
-  if (draft.phase !== "jeu") return;
+  const visible = draft.phase === "jeu" && !enSolo();
+  zone.classList.toggle("cache", !visible);
+  if (!visible) return;
   zone.innerHTML = `
     <h3>Déclarations</h3>
     <ul class="membres-equipe etat-declarations">${draft.joueurs.map(id => {
@@ -301,7 +322,9 @@ function initialiserBoss() {
     if (event.target === fenetre || event.target.closest(".fermer-carte-legende")) fenetre.classList.add("cache");
   });
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape") fenetre.classList.add("cache");
+    if (event.key !== "Escape") return;
+    fenetre.classList.add("cache");
+    fermerTirage();
   });
 }
 
@@ -358,12 +381,163 @@ function appliquerFond() {
   }
 }
 
+// ---- Animation du tirage ----
+// Par-dessus la page, chez chaque joueur qui voit le tirage arriver (passage
+// du lobby à la partie, ou page ouverte moins de FENETRE_ANIMATION_MS après
+// le tirage, cf. draft.tire_le) : roulette des noms de boss qui ralentit,
+// carte du boss retournée, puis les 4 persos qui défilent et s'arrêtent un à
+// un. Noms de boss plutôt que leurs images (lourdes) ; portraits des persos
+// (légers) préchargés au lobby. "Passer" ferme tout de suite ; rien
+// d'animé si le système demande moins d'animations.
+const DUREE_ROULETTE_BOSS_MS = 2600;
+const PAUSE_APRES_BOSS_MS = 900;
+const DUREE_PREMIER_PERSO_MS = 1100;
+const ECART_PERSOS_MS = 550;
+const FERMETURE_AUTO_MS = 2600;
+const FENETRE_ANIMATION_MS = 12000;
+const NB_LEURRES = 16;
+const TYPES_BOSS_TIRAGE = ["world_boss", "weekly_boss", "carnage_boss", "legende_locale_jour", "legende_locale_infinie"];
+const MOUVEMENT_REDUIT = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+let tirageAnime = null; // tire_le du dernier tirage animé (ou ignoré)
+let leurres = []; // persos qui défilent pendant le tirage
+let minuteursTirage = [];
+
+// Portraits qui défilent : persos au hasard du catalogue, préchargés.
+function preparerLeurres() {
+  if (leurres.length) return;
+  const avecImage = [...personnagesDraftParId.values()].filter(p => p.image);
+  leurres = avecImage.sort(() => Math.random() - 0.5).slice(0, NB_LEURRES);
+  leurres.forEach(p => { new Image().src = `../DB/${p.image}`; });
+}
+
+function animerTirageSiNouveau(ancienne) {
+  if (draft.phase !== "jeu" || !draft.tire_le || draft.tire_le === tirageAnime) return;
+  const recent = ancienne?.phase === "lobby" || Date.now() + decalageHorloge - draft.tire_le < FENETRE_ANIMATION_MS;
+  tirageAnime = draft.tire_le;
+  if (recent && !MOUVEMENT_REDUIT.matches && bossParId.get(draft.boss_id)) animerTirage();
+}
+
+function planifier(delai, action) {
+  minuteursTirage.push(setTimeout(action, delai));
+}
+
+// Ticks de plus en plus espacés (45 ms au début, ~300 ms à la fin) pendant
+// duree, à partir de debut ; fin appelée à debut + duree.
+function roulette(debut, duree, tick, fin) {
+  let t = 0;
+  while (t < duree) {
+    planifier(debut + t, tick);
+    t += 45 + 255 * (t / duree) ** 2;
+  }
+  planifier(debut + duree, fin);
+}
+
+const auHasard = liste => liste[Math.floor(Math.random() * liste.length)];
+
+function animerTirage() {
+  fermerTirage(true);
+  preparerLeurres();
+  const boss = bossParId.get(draft.boss_id);
+  const nomsBoss = [...bossParId.values()].filter(b => TYPES_BOSS_TIRAGE.includes(b.type) && b.id !== boss.id).map(b => b.nom);
+  const persos = (draft.persos || []).map(perso => ({ perso, personnage: personnagesDraftParId.get(perso.perso_id) }));
+  // Images finales chargées pendant la roulette.
+  (Array.isArray(boss.images) && boss.images.length ? boss.images : [boss.image]).forEach(image => { new Image().src = `../DB/${image}`; });
+  persos.forEach(({ personnage }) => { if (personnage?.image) new Image().src = `../DB/${personnage.image}`; });
+
+  const fond = document.createElement("div");
+  fond.id = "tirage-wb";
+  fond.className = "tirage-wb";
+  fond.setAttribute("role", "dialog");
+  fond.setAttribute("aria-modal", "true");
+  fond.setAttribute("aria-label", "Tirage du boss et des persos");
+  fond.innerHTML = `
+    <div class="fenetre-tirage">
+      <p class="etape-tirage">Tirage du boss…</p>
+      <div class="carte-boss-tirage">
+        <div class="interieur-carte-boss">
+          <div class="face-cachee"><span class="roulette-boss"></span></div>
+          <div class="face-boss">${htmlImagesBoss(boss)}<span class="nom-boss-tirage">${echapperHtml(boss.nom)}</span></div>
+        </div>
+      </div>
+      <div class="persos-tirage masque">${persos.map(() => `
+        <div class="slot-perso"><img alt=""><span class="nom-slot"></span></div>`).join("")}
+      </div>
+      <button type="button" class="btn-equipe passer-tirage">Passer</button>
+    </div>`;
+  document.body.appendChild(fond);
+  const bouton = fond.querySelector(".passer-tirage");
+  bouton.addEventListener("click", () => fermerTirage());
+  bouton.focus();
+
+  const etape = fond.querySelector(".etape-tirage");
+  const nomRoulette = fond.querySelector(".roulette-boss");
+  let dernierNom = "";
+  roulette(0, DUREE_ROULETTE_BOSS_MS, () => {
+    let nom = auHasard(nomsBoss) || boss.nom;
+    if (nom === dernierNom && nomsBoss.length > 1) nom = auHasard(nomsBoss);
+    dernierNom = nom;
+    nomRoulette.textContent = nom;
+    nomRoulette.classList.remove("tic");
+    void nomRoulette.offsetWidth; // relance l'animation du tick
+    nomRoulette.classList.add("tic");
+  }, () => {
+    fond.querySelector(".carte-boss-tirage").classList.add("revelee");
+    etape.textContent = "Boss tiré !";
+  });
+
+  const debutPersos = DUREE_ROULETTE_BOSS_MS + PAUSE_APRES_BOSS_MS;
+  planifier(debutPersos, () => {
+    fond.querySelector(".persos-tirage").classList.remove("masque");
+    etape.textContent = "Tirage des persos…";
+  });
+  const slots = [...fond.querySelectorAll(".slot-perso")];
+  slots.forEach((slot, i) => {
+    const image = slot.querySelector("img");
+    const { perso, personnage } = persos[i];
+    roulette(debutPersos, DUREE_PREMIER_PERSO_MS + i * ECART_PERSOS_MS, () => {
+      const leurre = auHasard(leurres);
+      if (!leurre) return;
+      image.src = `../DB/${leurre.image}`;
+      image.className = classeFondRarete(leurre.rarete);
+    }, () => {
+      image.src = `../DB/${personnage?.image || ""}`;
+      image.className = classeFondRarete(personnage?.rarete);
+      slot.querySelector(".nom-slot").textContent = nomPerso(perso);
+      slot.classList.add("arrete");
+    });
+  });
+
+  const finPersos = debutPersos + DUREE_PREMIER_PERSO_MS + (slots.length - 1) * ECART_PERSOS_MS;
+  planifier(finPersos + 300, () => {
+    etape.textContent = "C'est parti !";
+    bouton.textContent = "Continuer";
+  });
+  planifier(finPersos + FERMETURE_AUTO_MS, () => fermerTirage());
+}
+
+// Ferme l'animation (fondu ; immediat : sans fondu, avant d'en relancer une).
+function fermerTirage(immediat = false) {
+  minuteursTirage.forEach(clearTimeout);
+  minuteursTirage = [];
+  const fond = document.getElementById("tirage-wb");
+  if (!fond) return;
+  fond.id = "";
+  if (immediat) {
+    fond.remove();
+    return;
+  }
+  fond.classList.add("ferme");
+  setTimeout(() => fond.remove(), 300);
+}
+
 // ---- Bulles du bas ----
 
 function rendreBulles() {
   const message = $("message-wb");
   message.textContent = "";
   if (draft.phase !== "lobby" && !suisJoueur()) message.textContent = "👁 Tu regardes cette partie en spectateur.";
+  else if (draft.phase === "jeu" && enSolo()) message.textContent = "Après le combat : déclare la réussite ou l'échec.";
   else if (draft.phase === "jeu") message.textContent = estLegendeLocale(bossParId.get(draft.boss_id))
     ? "Après le combat : chacun déclare ses persos, l'hôte se déclare, le chef déclare le résultat."
     : "Après le combat : chacun déclare ses persos, le chef déclare le résultat.";
@@ -422,6 +596,7 @@ function initialiserBoutons() {
 async function rafraichir() {
   try {
     const data = await appel("wb_etat");
+    noterHorloge(data);
     definirDraft(data.draft);
   } catch (erreur) {
     console.error(erreur);

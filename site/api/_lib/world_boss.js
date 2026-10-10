@@ -1,5 +1,5 @@
-// Mode Random world boss : de 2 à 4 joueurs en co-op contre un boss tiré au
-// hasard, avec 4 persos tirés au hasard dans leurs full box. Rooms de type
+// Mode Random world boss : seul ou de 2 à 4 joueurs en co-op contre un boss
+// tiré au hasard, avec 4 persos tirés au hasard dans leurs full box. Rooms de type
 // "world_boss" (colonne membres, cf. sql/equipes.sql), page
 // matchmaking/world_boss.html, routes /api/rooms/{room_id}/wb_* (cf.
 // api/rooms/[room_id]/[action].js). Parties archivées dans la table
@@ -7,16 +7,20 @@
 //
 // Déroulé (draft.phase) :
 //   lobby   : les joueurs rejoignent par le lien (TAILLE_MIN à TAILLE_MAX) ;
-//             le créateur (chef) lance quand il est prêt.
+//             le créateur (chef) lance quand il est prêt, même seul.
 //   jeu     : boss tiré parmi les world boss, les boss hebdomadaires, les
 //             légendes locales faisables en co-op et les salles du carnage
-//             (tous équiprobables) ; 4 persos tirés dans l'union des full
-//             box, toujours répartissables entre les joueurs (à 2 : 2
-//             persos chacun ; à 3 : 2 + 1 + 1 ; à 4 : 1 chacun) sans imposer
-//             qui joue quoi. Après le combat, chaque joueur déclare les
-//             persos qu'il a joués, le chef déclare la réussite ou l'échec.
-//             Légende locale réussie : l'hôte du monde se déclare, elle est
-//             tuée pour lui (cf. _lib/legendes.js).
+//             (tous équiprobables ; seul : aussi les boss pas faisables en
+//             co-op, BOSS_HORS_COOP) ; 4 persos tirés dans l'union des full
+//             box, toujours répartissables entre les joueurs (seul : les 4 ;
+//             à 2 : 2 persos chacun ; à 3 : 2 + 1 + 1 ; à 4 : 1 chacun) sans
+//             imposer qui joue quoi. Après le combat, chaque joueur déclare
+//             les persos qu'il a joués, le chef déclare la réussite ou
+//             l'échec. Légende locale réussie : l'hôte du monde se déclare,
+//             elle est tuée pour lui (cf. _lib/legendes.js). Seul : persos
+//             et hôte déclarés d'office, il ne reste que le résultat.
+//             tire_le : heure du tirage (animation des pages, cf.
+//             matchmaking/world_boss.js).
 //   termine : tout est déclaré -> partie archivée.
 //   annule  : un joueur est parti (autre match démarré).
 // Retour au lobby (chef) à tout moment : mêmes joueurs, nouveau tirage au
@@ -28,7 +32,7 @@ const { listeBoss, getBossParId, estWorldBoss, estLegendeLocale, bossCarnageExcl
 const { legendesTueesAujourdhui, legendesTueesParJoueur } = require("./legendes");
 const { saisonActuelle } = require("./saisons");
 
-const TAILLE_MIN = 2;
+const TAILLE_MIN = 1;
 const TAILLE_MAX = 4;
 const NB_PERSOS = 4;
 // Tirages des persos essayés avant d'abandonner (tirage rejeté s'il est
@@ -101,8 +105,9 @@ async function sauvegarder(roomId, draft, colonnes = {}) {
 
 // Boss du mode : world boss, boss hebdomadaires, légendes locales faisables
 // en co-op et salles du carnage (sauf désactivées), tous équiprobables ;
-// jamais deux fois de suite le même. Légende "une fois par jour" déjà tuée
-// aujourd'hui par tous les joueurs : exclue (personne ne peut l'héberger).
+// jamais deux fois de suite le même. Seul : aussi les boss pas faisables en
+// co-op. Légende "une fois par jour" déjà tuée aujourd'hui par tous les
+// joueurs : exclue (personne ne peut l'héberger).
 async function tirerBoss(precedent, joueurs) {
   const { BOSS_HORS_COOP } = require("./equipe");
   const carnageExclus = await bossCarnageExclus();
@@ -110,7 +115,7 @@ async function tirerBoss(precedent, joueurs) {
   const hebergeable = b => b.type !== TYPE_LEGENDE_JOUR || joueurs.some(id => !tuees.get(id)?.has(b.id));
   const candidats = listeBoss().filter(b =>
     estWorldBoss(b) || b.type === "weekly_boss" || b.type === "carnage_boss" || estLegendeLocale(b))
-    .filter(b => !BOSS_HORS_COOP.includes(b.id) && !carnageExclus.includes(b.id) && hebergeable(b));
+    .filter(b => (joueurs.length === 1 || !BOSS_HORS_COOP.includes(b.id)) && !carnageExclus.includes(b.id) && hebergeable(b));
   const sansPrecedent = candidats.filter(b => b.id !== precedent);
   return auHasard(sansPrecedent.length ? sansPrecedent : candidats)?.id || null;
 }
@@ -143,9 +148,10 @@ function versionDe(box, perso) {
   return (box || []).find(p => p.draft_id === perso.perso_id && (!p.element || !perso.element || p.element === perso.element)) || null;
 }
 
-// Nombre de persos joués par chaque joueur : à 2, 2 chacun ; à 4, 1
-// chacun ; à 3, un joueur (n'importe lequel) en joue 2.
+// Nombre de persos joués par chaque joueur : seul, les 4 ; à 2, 2 chacun ;
+// à 4, 1 chacun ; à 3, un joueur (n'importe lequel) en joue 2.
 function capacitesPossibles(membres) {
+  if (membres.length === 1) return [{ [membres[0]]: NB_PERSOS }];
   if (membres.length === 2) return [Object.fromEntries(membres.map(id => [id, 2]))];
   if (membres.length === 4) return [Object.fromEntries(membres.map(id => [id, 1]))];
   return membres.map(double => Object.fromEntries(membres.map(id => [id, id === double ? 2 : 1])));
@@ -207,6 +213,7 @@ function tirerPersos(membres, boxes) {
 // capacitesPossibles) : à 3, un seul joueur en déclare 2.
 function maxPersosJoueur(draft, discordId) {
   const taille = draft.joueurs.length;
+  if (taille === 1) return NB_PERSOS;
   if (taille === 2) return 2;
   if (taille === 4) return 1;
   const autreADeux = draft.joueurs.some(id => id !== discordId && (draft.joues?.[id] || []).length >= 2);
@@ -373,7 +380,7 @@ async function routeLancer(req, res, roomId, user) {
   const draft = room.draft;
   if (draft.createur !== user.id) throw erreur(403, "Seul le chef de la room lance la partie.");
   if (draft.phase !== "lobby") throw erreur(409, "La partie a déjà commencé.");
-  if (draft.membres.length < TAILLE_MIN) throw erreur(409, `Il faut au moins ${TAILLE_MIN} joueurs.`);
+  if (draft.membres.length < TAILLE_MIN) throw erreur(409, "Il faut au moins un joueur.");
 
   await actualiserPoints();
   const profils = await lireProfils(draft.membres);
@@ -383,7 +390,11 @@ async function routeLancer(req, res, roomId, user) {
     throw erreur(409, `Full box vide (à remplir dans Mon compte) : ${vides.map(id => infosProfil(profils.get(id)).nom).join(", ")}.`);
   }
   const persos = tirerPersos(draft.membres, boxes);
-  if (!persos) throw erreur(409, "Impossible de tirer 4 persos jouables avec vos full box (chaque joueur doit pouvoir jouer ses persos).");
+  if (!persos) {
+    throw erreur(409, draft.membres.length === 1
+      ? "Impossible de tirer 4 persos : il en faut au moins 4 dans ta full box."
+      : "Impossible de tirer 4 persos jouables avec vos full box (chaque joueur doit pouvoir jouer ses persos).");
+  }
 
   // Versions des persos tirés chez chaque joueur (constellation, niveau) :
   // pour la déclaration et l'archive, sans garder les full box entières.
@@ -392,17 +403,22 @@ async function routeLancer(req, res, roomId, user) {
     .filter(([, version]) => version)
     .map(([id, version]) => [id, { constellation: version.constellation, niveau: version.niveau }]))]));
 
+  const bossId = await tirerBoss(draft.boss_precedent_id, draft.membres);
+  // Seul : il joue les 4 persos et héberge la légende locale (tirée
+  // seulement s'il peut encore la tuer aujourd'hui, cf. tirerBoss).
+  const seul = draft.membres.length === 1 ? draft.membres[0] : null;
   Object.assign(draft, {
     phase: "jeu",
     joueurs: [...draft.membres],
     infos: Object.fromEntries(draft.membres.map(id => [id, infosProfil(profils.get(id))])),
-    boss_id: await tirerBoss(draft.boss_precedent_id, draft.membres),
+    boss_id: bossId,
     persos,
     versions,
-    joues: {},
+    joues: seul ? { [seul]: persos.map(perso => perso.perso_id) } : {},
     reussite: null,
-    hote: null,
-    id_partie: null
+    hote: seul && estLegendeLocale(getBossParId(bossId)) ? seul : null,
+    id_partie: null,
+    tire_le: Date.now()
   });
   await sauvegarder(roomId, draft);
   return repondre(res, draft);

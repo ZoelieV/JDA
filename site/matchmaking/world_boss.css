@@ -112,3 +112,206 @@
     width: 100%;
   }
 }
+
+/* ---- Animation du tirage (cf. animerTirage, world_boss.js) : roulette des
+   noms de boss, carte retournée, puis les 4 persos arrêtés un à un. ---- */
+
+.tirage-wb {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  animation: tirage-apparition 0.3s ease-out;
+}
+
+.tirage-wb.ferme {
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}
+
+@keyframes tirage-apparition {
+  from { opacity: 0; }
+}
+
+.fenetre-tirage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 40rem;
+  text-align: center;
+}
+
+.etape-tirage {
+  margin: 0;
+  font-family: var(--police-titre);
+  font-size: 1.75rem;
+  color: white;
+  text-shadow: 0 0 0.75rem rgba(245, 197, 66, 0.6);
+}
+
+/* Carte du boss : face cachée (roulette des noms), retournée sur le boss. */
+.carte-boss-tirage {
+  width: min(24rem, 100%);
+  height: 15rem;
+  perspective: 62.5rem;
+}
+
+.interieur-carte-boss {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+}
+
+.carte-boss-tirage.revelee .interieur-carte-boss {
+  transform: rotateY(180deg);
+}
+
+/* Face cachée retirée à mi-retournement (backface-visibility pas toujours
+   respecté sous un backdrop-filter). */
+.carte-boss-tirage.revelee .face-cachee {
+  visibility: hidden;
+  transition: visibility 0s 0.3s;
+}
+
+.face-cachee,
+.face-boss {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid rgba(245, 197, 66, 0.8);
+  border-radius: 1rem;
+  backface-visibility: hidden;
+}
+
+.face-cachee {
+  background: radial-gradient(circle at 50% 40%, #3a3017, #141414 70%);
+  animation: tirage-lueur 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes tirage-lueur {
+  from { box-shadow: 0 0 0.5rem rgba(245, 197, 66, 0.3); }
+  to { box-shadow: 0 0 2rem rgba(245, 197, 66, 0.7); }
+}
+
+.roulette-boss {
+  font-family: var(--police-titre);
+  font-size: 1.5rem;
+  color: white;
+}
+
+.roulette-boss.tic {
+  animation: tirage-tic 0.12s ease-out;
+}
+
+@keyframes tirage-tic {
+  from { transform: translateY(-0.5rem); opacity: 0.4; }
+}
+
+.face-boss {
+  transform: rotateY(180deg);
+  background-color: #141414;
+  box-shadow: 0 0 2.5rem rgba(245, 197, 66, 0.55);
+}
+
+.face-boss img {
+  max-width: 100%;
+  max-height: 10.5rem;
+  object-fit: contain;
+}
+
+.face-boss .duo-boss {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.face-boss .duo-boss img {
+  max-width: 48%;
+}
+
+.nom-boss-tirage {
+  font-family: var(--police-titre);
+  font-size: 1.375rem;
+  color: white;
+}
+
+/* Persos : portraits qui défilent, puis arrêtés (rebond doré). */
+.persos-tirage {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Place gardée avant le tirage des persos : rien ne bouge à leur arrivée. */
+.persos-tirage.masque {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.slot-perso {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.slot-perso img {
+  width: 6.5rem;
+  height: 6.5rem;
+  max-width: 100%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  object-fit: cover;
+  filter: blur(1px) brightness(0.8);
+}
+
+.slot-perso.arrete img {
+  border-color: rgba(245, 197, 66, 0.9);
+  filter: none;
+  animation: tirage-pop 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.4);
+  box-shadow: 0 0 1.25rem rgba(245, 197, 66, 0.6);
+}
+
+@keyframes tirage-pop {
+  from { transform: scale(1.35); }
+}
+
+.nom-slot {
+  min-height: 1.4em;
+  font-weight: bold;
+  color: white;
+}
+
+@media (max-width: 700px) {
+  .persos-tirage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .carte-boss-tirage {
+    height: 12rem;
+  }
+
+  .face-boss img {
+    max-height: 7.5rem;
+  }
+
+  .etape-tirage {
+    font-size: 1.375rem;
+  }
+}
