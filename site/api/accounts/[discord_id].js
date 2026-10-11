@@ -87,12 +87,14 @@ async function boxJoueeDansRoom(roomId, id) {
 }
 
 async function gererBoxesFictives(req, res, url, cible, user) {
+  // Palier de théâtre des box fictives : points à jour (cf. palierTheatre).
+  await actualiserPoints();
   const moderateur = !!user && await estModerateur(user.id);
 
   if (cible === LISTE_FICTIVES) {
     if (!moderateur) return res.status(403).json({ error: "Réservé aux administrateurs" });
     if (req.method === "GET") {
-      const [boxes] = await Promise.all([lireBoxesFictives(), actualiserPoints()]);
+      const boxes = await lireBoxesFictives();
       return res.status(200).json(Object.entries(boxes)
         .map(([id, box]) => ({ id, nom: box.nom, theatre: codeTheatre(box.data), nb_persos: nbPersosFictive(box.data), createur: box.createur, modifie_le: box.modifie_le }))
         .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" })));

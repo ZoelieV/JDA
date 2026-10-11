@@ -322,7 +322,7 @@ function sequenceTheatre(theatre, bonus = null) {
   ];
 }
 
-// Palier de théâtre du compte, calculé sur les 5★ limités de sa full box
+// Palier de théâtre du compte, calculé sur le cost de sa full box
 // (cf. palierTheatre, _lib/personnages.js).
 function theatreProfil(profilData) {
   return palierTheatre(profilData);

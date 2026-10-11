@@ -174,9 +174,11 @@ function estDefiEnnemis(boss) {
 
 // ---- Palier de théâtre d'un compte et médaille à côté du pseudo ----
 // Calculé, plus choisi par le joueur (même calcul que palierTheatre,
-// api/_lib/personnages.js) : copies de 5★ limités de la full box (C0 = 1,
-// C2 = 3, C6 = 7) ; 0 à 19 -> 1 (sardine), 20 à 39 -> 2 (carpe), 40 à 79
-// -> 3 (dauphin), 80 ou plus -> 4 (baleine). Sert au mode Auto des drafts
+// api/_lib/personnages.js) : cost de la full box (5★ limités, ni standards
+// ni Voyageur : 1 par constellation possédée qui vaut au moins SEUIL_COST
+// points) ; 0 à
+// 19 -> 1 (sardine), 20 à 39 -> 2 (carpe), 40 à 79 -> 3 (dauphin), 80 ou
+// plus -> 4 (baleine). Sert au mode Auto des drafts
 // et à la médaille. profil.theatre garde le palier calculé par le serveur
 // ("1".."4"), utilisé sans catalogue chargé. Hauteur de la médaille : 1,3 x
 // le texte (cf. cartes.css).
@@ -191,6 +193,7 @@ const PALIERS_THEATRE = {
   4: { nom: "Baleine", mode: "baleine", bans: [3, 3], medaille: 12 }
 };
 const SEUILS_THEATRE = [[80, 4], [40, 3], [20, 2]];
+const SEUIL_COST = 40;
 // Draft de la mêlée générale (mode "12"), du carnage et du mode en équipe.
 const THEATRE_CARPE = 2;
 
@@ -208,20 +211,24 @@ function infosTheatreJoue(theatre) {
   return [6, 8, 10, 12].includes(ancien) ? { nom: `Théâtre ${ancien}`, bans: ancien / 2 - 2, medaille: ancien } : null;
 }
 
-function copiesLimitees(profilData, personnages = catalogueTheatre) {
+function costBox(profilData, personnages = catalogueTheatre) {
   if (typeof migrerCollectionPersos === "function") migrerCollectionPersos(profilData?.characters);
   const full = profilData?.characters?.full || {};
-  return (personnages || []).filter(p => String(p.rarete) === "5" && !p.standard).reduce((total, p) => {
+  return (personnages || []).filter(p => String(p.rarete) === "5" && !p.standard && !p.groupe).reduce((total, p) => {
     const constellation = full[p.id];
-    return Number.isInteger(constellation) && constellation >= 0 ? total + constellation + 1 : total;
+    if (!Number.isInteger(constellation) || constellation < 0) return total;
+    for (let c = 0; c <= constellation; c++) {
+      if (Number(p.PPC?.[c] ?? 0) >= SEUIL_COST) total++;
+    }
+    return total;
   }, 0);
 }
 
 function palierTheatreProfil(profilData, personnages = catalogueTheatre) {
   if (!profilData) return null;
   if (!personnages) return PALIERS_THEATRE[profilData.theatre] ? Number(profilData.theatre) : null;
-  const copies = copiesLimitees(profilData, personnages);
-  return SEUILS_THEATRE.find(([seuil]) => copies >= seuil)?.[1] ?? 1;
+  const cost = costBox(profilData, personnages);
+  return SEUILS_THEATRE.find(([seuil]) => cost >= seuil)?.[1] ?? 1;
 }
 
 // Lien de stream : uniquement une page Twitch ou YouTube (pour ne jamais

@@ -1,5 +1,5 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
-const { codeTheatre } = require("../_lib/personnages");
+const { codeTheatre, actualiserPoints } = require("../_lib/personnages");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
@@ -138,8 +138,8 @@ function nettoyerProfil(brut) {
     parametres: nettoyerParametres(brut.parametres)
   };
 
-  // Palier de théâtre ("1".."4") : calculé sur les 5★ limités de la full
-  // box, plus choisi par le joueur (cf. palierTheatre, _lib/personnages.js).
+  // Palier de théâtre ("1".."4") : calculé sur le cost de la full box,
+  // plus choisi par le joueur (cf. palierTheatre, _lib/personnages.js).
   profil.theatre = codeTheatre(profil);
 
   const noms = {};
@@ -167,7 +167,8 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: "Variables Supabase manquantes." });
     }
 
-    const user = await getUser(req);
+    // Palier de théâtre : calculé avec les points à jour (cf. palierTheatre).
+    const [user] = await Promise.all([getUser(req), actualiserPoints()]);
     if (!user) {
       return res.status(401).json({ error: "Non connecté" });
     }

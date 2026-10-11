@@ -10,7 +10,7 @@
 // _lib/signalements.js). Tout dans ce fichier pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel.
 const { supabase } = require("./_lib/supabase");
-const { infosPersoJoueur, palierTheatre } = require("./_lib/personnages");
+const { infosPersoJoueur, palierTheatre, actualiserPoints } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estModerateur } = require("./_lib/admin");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
@@ -301,12 +301,13 @@ async function chargerRoomsEnCours() {
 
 // Box fictives (entraînements des administrateurs, cf. _lib/boxes_fictives.js) :
 // leur nom à la place du pseudo.
+// Points à jour : palier de théâtre (cf. palierTheatre).
 async function chargerJoueurs(ids) {
   if (ids.length === 0) return new Map();
-  const { data, error } = await supabase
+  const [{ data, error }] = await Promise.all([supabase
     .from("profiles")
     .select("discord_id, discord_username, discord_global_name, discord_avatar_url, data")
-    .in("discord_id", ids.filter(id => !estIdFictif(id)));
+    .in("discord_id", ids.filter(id => !estIdFictif(id))), actualiserPoints()]);
   if (error) throw error;
   const joueurs = new Map((data || []).map(profil => [profil.discord_id, profil]));
   if (ids.some(estIdFictif)) {

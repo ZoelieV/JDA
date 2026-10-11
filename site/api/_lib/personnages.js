@@ -278,31 +278,41 @@ function aBonusSaison(persoId, element = null) {
 }
 
 // ---- Palier de théâtre d'un compte (calculé, plus choisi par le joueur) ----
-// Copies de 5★ limités (ni standards, ni 4★) de la full box : un perso C0
-// compte 1, C2 compte 3 (obtenu 3 fois), C6 compte 7. Palier : 0 à 19
-// copies -> 1 (sardine), 20 à 39 -> 2 (carpe), 40 à 79 -> 3 (dauphin), 80
-// ou plus -> 4 (baleine). Sert au mode Auto des drafts (draft du plus petit
-// palier, cf. PALIERS_THEATRE dans _lib/draft.js) et à la médaille à côté
-// du pseudo. Même calcul côté client : palierTheatreProfil
-// (commun/cartes.js). Valeur stockée dans le profil : le palier en texte
-// ("1".."4").
+// Cost de la full box : pour chaque 5★ limité (ni standard, ni Voyageur),
+// 1 par constellation possédée (C0 comprise) qui vaut au moins SEUIL_COST
+// points (PPC brut, sans bonus de niveau ni buff du théâtre). Ex. : 41 pts
+// en C0 -> C6 = 7 ; 39 en C0 et 40+ dès la C1 -> C6 = 6. Palier : 0 à 19 -> 1 (sardine), 20 à 39 -> 2 (carpe), 40 à 79
+// -> 3 (dauphin), 80 ou plus -> 4 (baleine). Sert au mode Auto des drafts
+// (draft du plus petit palier, cf. PALIERS_THEATRE dans _lib/draft.js) et
+// à la médaille à côté du pseudo. Même calcul côté client :
+// palierTheatreProfil (commun/cartes.js). Valeur stockée dans le profil :
+// le palier en texte ("1".."4"). Dépend des points : actualiserPoints avant.
 const SEUILS_THEATRE = [[80, 4], [40, 3], [20, 2]];
+const SEUIL_COST = 40;
 
 function estLimite5(personnage) {
-  return String(personnage?.rarete) === "5" && !personnage.standard;
+  return String(personnage?.rarete) === "5" && !personnage.standard && !personnage.groupe;
 }
 
-function copiesLimitees(profilData) {
+function costPersonnage(personnage, constellation) {
+  let cost = 0;
+  for (let c = 0; c <= constellation; c++) {
+    if (Number(personnage.PPC?.[c] ?? 0) >= SEUIL_COST) cost++;
+  }
+  return cost;
+}
+
+function costBox(profilData) {
   const full = migrerCollectionPersos(profilData?.characters)?.full || {};
   return getPersonnages().filter(estLimite5).reduce((total, personnage) => {
     const constellation = full[personnage.id];
-    return Number.isInteger(constellation) && constellation >= 0 ? total + constellation + 1 : total;
+    return Number.isInteger(constellation) && constellation >= 0 ? total + costPersonnage(personnage, constellation) : total;
   }, 0);
 }
 
 function palierTheatre(profilData) {
-  const copies = copiesLimitees(profilData);
-  return SEUILS_THEATRE.find(([seuil]) => copies >= seuil)?.[1] ?? 1;
+  const cost = costBox(profilData);
+  return SEUILS_THEATRE.find(([seuil]) => cost >= seuil)?.[1] ?? 1;
 }
 
 function codeTheatre(profilData) {
@@ -314,8 +324,7 @@ module.exports = {
   MODES_POINTS,
   getModeEquilibrage,
   codeTheatre,
-  copiesLimitees,
-  estLimite5,
+  costBox,
   palierTheatre,
   aBonusSaison,
   actualiserPoints,

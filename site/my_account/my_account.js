@@ -875,9 +875,9 @@ function etatFormulaire(profil) {
 // Palier de théâtre calculé sur la full box en cours d'édition (cf.
 // palierTheatreProfil, commun/cartes.js).
 function afficherTheatreAuto(profil) {
-  const copies = copiesLimitees(profil);
+  const cost = costBox(profil);
   document.getElementById("theatre-auto").textContent =
-    `${PALIERS_THEATRE[palierTheatreProfil(profil)]?.nom ?? "-"} · ${copies} copie${copies > 1 ? "s" : ""} de 5★ limités`;
+    `${PALIERS_THEATRE[palierTheatreProfil(profil)]?.nom ?? "-"} · ${cost} cost`;
 }
 
 // Bouton de la page et bouton du menu du compte.
