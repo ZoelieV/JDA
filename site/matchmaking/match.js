@@ -493,11 +493,14 @@ function libelleBoxEntrainement(role) {
 }
 
 // Raffinement (0 = R1 ... 4 = R5) de l'arme signature d'un personnage chez
-// un joueur donné (meilleure copie), ou null s'il ne la possède pas.
-function getRefinementArmeSignature(joueurData, personnageId) {
+// un joueur (meilleure copie de la box de son rôle), ou null s'il ne la
+// possède pas.
+function getRefinementArmeSignature(role, personnageId) {
   const personnage = getPersonnageParId(personnageId);
   const arme = personnage && trouverArmeSignature(armesData, personnage);
-  const raffinement = arme ? meilleurRaffinement(joueurData?.weapons?.full, arme.id) : -1;
+  if (!arme) return null;
+  const raffinement = Math.max(-1, ...getArmesBox(getJoueurDataParRole(role), draft?.[`box_${role}`] || "full")
+    .filter(copie => copie.id === arme.id).map(copie => copie.raffinement));
   return raffinement >= 0 ? raffinement : null;
 }
 
@@ -595,7 +598,7 @@ function getInfosCarte(persoId, roles = ["j1", "j2"], element = null) {
     const suffixe = role === "j1" ? "J1" : "J2";
     infos[`constellation${suffixe}`] = `C${constellation}`;
     infos[`niveau${suffixe}`] = getNiveauPersonnage(data, persoId);
-    infos[`refinement${suffixe}`] = getRefinementArmeSignature(data, persoId);
+    infos[`refinement${suffixe}`] = getRefinementArmeSignature(role, persoId);
   });
   return infos;
 }
@@ -617,7 +620,7 @@ function getValeursTri(roles) {
     // Arme signature : meilleur raffinement parmi les propriétaires du
     // personnage (-1 : arme non possédée ou pas d'arme signature).
     raffinement: personnage => Math.max(-1, ...getRolesProprietaires(personnage.id, roles, roles.length > 1)
-      .map(r => getRefinementArmeSignature(getJoueurDataParRole(r), personnage.id) ?? -1)),
+      .map(r => getRefinementArmeSignature(r, personnage.id) ?? -1)),
     favoris: personnage => estFavori(personnage.id) ? 1 : 0,
     bonus_saison: personnage => aBonusSaisonPerso(personnage) ? 1 : 0
   };
@@ -866,21 +869,30 @@ function carteDraftOuArme(grille, creerCartePerso, rolesPersos = ["j1", "j2"]) {
   };
 }
 
-// Draft et bans d'équilibrage : armes des box des 2 joueurs (meilleure
+// Draft et bans d'équilibrage : armes des box des 2 joueurs (chaque
 // copie de chacun), à la suite des personnages ; filtre J1/J2 respecté.
 function groupesArmesDraft() {
+  // Copies d'une arme : une carte par copie, la n-ième meilleure copie de
+  // chaque joueur sur la n-ième carte (J1 et J2 partagent les cartes).
   const parId = new Map();
   ["j1", "j2"].forEach(role => {
     if (filtreProprietaire && filtreProprietaire !== role) return;
+    const copies = new Map();
     getArmesBox(getJoueurDataParRole(role), draft[`box_${role}`] || "full").forEach(arme => {
-      const entree = parId.get(arme.id) || { ...arme, instanceId: null, infosArme: {} };
-      entree.infosArme[role] = Math.max(entree.infosArme[role] ?? -1, arme.raffinement);
-      parId.set(arme.id, entree);
+      copies.set(arme.id, [...(copies.get(arme.id) || []), arme]);
+    });
+    copies.forEach((liste, id) => {
+      const cartes = parId.get(id) || [];
+      liste.sort((a, b) => b.raffinement - a.raffinement).forEach((arme, n) => {
+        cartes[n] ??= { ...arme, instanceId: n ? `${id}#${n}` : null, infosArme: {} };
+        cartes[n].infosArme[role] = arme.raffinement;
+      });
+      parId.set(id, cartes);
     });
   });
 
   const raffinements = arme => Object.values(arme.infosArme);
-  return trierEtGrouper([...parId.values()].filter(armeCorrespondFiltres), etatTri, {
+  return trierEtGrouper([...parId.values()].flat().filter(armeCorrespondFiltres), etatTri, {
     vue: "weapons",
     valeurs: {
       points: arme => Math.max(...raffinements(arme).map(r => Number(arme.PPW?.[r] ?? 0))),
@@ -978,6 +990,28 @@ function nbPersosBox(role, box) {
   return personnagesData.filter(p => estDansBox(collection, p.id, box)).length;
 }
 
+// Points d'une box (persos + armes, copies comprises) : même calcul que
+// calculerPointsBox + calculerPointsArmesBox (api/_lib/draft.js) ; Voyageur :
+// seul son meilleur élément compte.
+function pointsBoxJoueur(role, box) {
+  const joueurData = getJoueurDataParRole(role);
+  const collection = joueurData?.characters || { full: {}, selections: {} };
+  const niveaux = collection.niveaux || {};
+  let total = 0;
+  const meilleurParGroupe = {};
+  personnagesBase.forEach(perso => {
+    const c = collection.full?.[perso.id];
+    if (typeof c !== "number" || c < 0) return;
+    if (box !== "full" && !collection.selections?.[box]?.[perso.id]) return;
+    const points = pointsPersonnage(perso, c, niveaux[perso.groupe || perso.id] ?? null);
+    if (perso.groupe) meilleurParGroupe[perso.groupe] = Math.max(meilleurParGroupe[perso.groupe] ?? 0, points);
+    else total += points;
+  });
+  Object.values(meilleurParGroupe).forEach(points => { total += points; });
+  getArmesBox(joueurData, box).forEach(arme => { total += Number(arme.PPW?.[arme.raffinement] ?? 0); });
+  return total;
+}
+
 function rendreChoixBox() {
   const enAnalyse = draft.phase === "analyse";
 
@@ -1012,6 +1046,14 @@ function rendreChoixBox() {
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
       btn.textContent = typeof nomsPerso[valeur] === "string" && nomsPerso[valeur] ? nomsPerso[valeur] : label;
+      // Points de ses propres box seulement (celles de l'adversaire restent
+      // cachées jusqu'à l'analyse).
+      if (peutChoisir) {
+        const pts = document.createElement("span");
+        pts.className = "points-box";
+        pts.textContent = `${pointsBoxJoueur(role, valeur)} pts`;
+        btn.appendChild(pts);
+      }
       // Box trop petite (ex. que des armes) : pas choisissable.
       const nbPersos = peutChoisir ? nbPersosBox(role, valeur) : NB_PERSOS_MIN_BOX;
       const tropPetite = nbPersos < NB_PERSOS_MIN_BOX;

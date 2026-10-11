@@ -2300,6 +2300,13 @@ h1 {
   margin-bottom: calc((var(--taille-avatar) - 1.3em) / 2);
 }
 
+/* Choix de box : points de la box (ses propres box seulement). */
+.box-btn .points-box {
+  margin-left: 0.4em;
+  opacity: 0.7;
+  font-size: 0.8em;
+}
+
 /* Choix de box : box de moins de 16 personnages, pas choisissable. */
 .box-btn.trop-petite {
   opacity: 0.4;
