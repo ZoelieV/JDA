@@ -105,7 +105,9 @@ function getRatio(compte) {
 
 // Valeur numérique d'un tri de stats ; les comptes sans valeur (théâtre non
 // renseigné, aucun match) passent toujours en dernier.
+// Théâtre : trié au cost (plus fin que le palier, qui en découle).
 function getStatTri(compte, cle) {
+  if (cle === "theatre") return compte.cost ?? compte.theatre ?? null;
   return cle === "ratio" ? getRatio(compte) : compte[cle] ?? null;
 }
 
@@ -116,7 +118,9 @@ function texteStat(compte) {
     case "nb_persos": return `${compte.nb_persos ?? 0} persos`;
     case "nb_c6": return `${compte.nb_c6 ?? 0} C6 5★`;
     case "constellations_5": return `${compte.constellations_5 ?? 0} constellation${(compte.constellations_5 ?? 0) > 1 ? "s" : ""} 5★`;
-    case "theatre": return PALIERS_THEATRE[compte.theatre]?.nom ?? "Théâtre -";
+    case "theatre": return PALIERS_THEATRE[compte.theatre]
+      ? `${PALIERS_THEATRE[compte.theatre].nom}${compte.cost != null ? ` · ${compte.cost}` : ""}`
+      : "Théâtre -";
     case "matchs": return `${compte.matchs ?? 0} match${(compte.matchs ?? 0) > 1 ? "s" : ""}`;
     case "ratio": return getRatio(compte) === null ? "Aucun match" : `${Math.round(getRatio(compte) * 100)} %`;
     default: return "";

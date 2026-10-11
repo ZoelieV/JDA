@@ -1,6 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
-const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre } = require("../_lib/personnages");
+const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre, costBox } = require("../_lib/personnages");
 const { CLASSEMENT_AFFICHE, rejouerClasse, seriePrime } = require("../_lib/trophees");
 const { lireSaisons, saisonActuelle } = require("../_lib/saisons");
 
@@ -174,6 +174,8 @@ function resumerProfil(profil, resultats) {
       .reduce((somme, p) => somme + full[p.id], 0),
     // Palier de théâtre calculé sur la full box (cf. palierTheatre).
     theatre: palierTheatre(data),
+    // Cost de la full box, qui donne ce palier (cf. costBox).
+    cost: costBox(data),
     matchs,
     victoires,
     // Classé, par classement ("melee" seulement) : { trophees, matchs,
