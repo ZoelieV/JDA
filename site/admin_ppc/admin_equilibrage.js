@@ -20,8 +20,12 @@ const CHAMPS_LIMITES = [
   { cle: "plancher", titre: "Plancher" }
 ];
 
-function rendreLimites(limites) {
+// pointsMax : points max d'une box jouable hors full box (config.points_max_box).
+function rendreLimites(limites, pointsMax) {
   document.getElementById("limites-equilibrage").innerHTML = `
+    <label class="champ-points-max-box">Points max d'une box jouable (hors full box)
+      <input type="number" min="1" step="1" name="points_max_box" value="${pointsMax ?? ""}" required>
+    </label>
     <table class="tableau-boss tableau-limites">
       <thead><tr><th class="col-nom">Palier</th>${CHAMPS_LIMITES.map(c => `<th>${c.titre}</th>`).join("")}</tr></thead>
       <tbody>
@@ -63,6 +67,7 @@ function initialiserEquilibrage() {
   // réponse), puis suivie à chaque enregistrement.
   let actuelle = null;
   let limites = null;
+  let pointsMax = null;
   const fermer = () => modal.classList.remove("active");
 
   document.getElementById("ouvrir-equilibrage").addEventListener("click", async () => {
@@ -73,13 +78,14 @@ function initialiserEquilibrage() {
         const config = await chargerPointsAdmin();
         actuelle = METHODES_EQUILIBRAGE.some(m => m.valeur === config?.equilibrage) ? config.equilibrage : "ancien";
         limites = config?.limites_equilibrage || null;
+        pointsMax = config?.points_max_box ?? null;
       } catch (erreur) {
         console.error(erreur);
         actuelle = "ancien";
       }
     }
     rendreEquilibrage(actuelle);
-    rendreLimites(limites);
+    rendreLimites(limites, pointsMax);
   });
   document.getElementById("fermer-equilibrage").addEventListener("click", fermer);
   modal.addEventListener("click", event => {
@@ -96,14 +102,18 @@ function initialiserEquilibrage() {
     bouton.disabled = true;
     afficherMessageEquilibrage("Enregistrement…");
     try {
-      const config = await envoyerAjout({ limites_equilibrage: lireFormulaireLimites(formulaire) });
+      const config = await envoyerAjout({
+        limites_equilibrage: lireFormulaireLimites(formulaire),
+        points_max_box: Number(formulaire.elements.points_max_box.value)
+      });
       limites = config.limites_equilibrage;
+      pointsMax = config.points_max_box;
       afficherMessageEquilibrage("Limites enregistrées : elles s'appliquent aux prochaines drafts.", "succes");
     } catch (erreur) {
       console.error(erreur);
       afficherMessageEquilibrage(erreur.message, "erreur");
     }
-    rendreLimites(limites);
+    rendreLimites(limites, pointsMax);
   });
 
   liste.addEventListener("change", async event => {

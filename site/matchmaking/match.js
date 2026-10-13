@@ -1059,7 +1059,7 @@ function rendreChoixBox() {
     const permises = draft.boxes_permises?.[role];
     Object.entries(BOX_LABELS).filter(([valeur]) => draft.entrainement ? draft[`box_${role}`] === valeur
       : permises ? permises.includes(valeur)
-        : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : valeur !== "custom").forEach(([valeur, label]) => {
+        : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : !["custom", "stuff"].includes(valeur)).forEach(([valeur, label]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
@@ -1072,13 +1072,17 @@ function rendreChoixBox() {
         pts.textContent = `${pointsBoxJoueur(role, valeur)} pts`;
         btn.appendChild(pts);
       }
-      // Box trop petite (ex. que des armes) : pas choisissable.
+      // Box trop petite (ex. que des armes) ou trop chère (hors full box) :
+      // pas choisissable.
       const nbPersos = peutChoisir ? nbPersosBox(role, valeur) : NB_PERSOS_MIN_BOX;
       const tropPetite = nbPersos < NB_PERSOS_MIN_BOX;
-      btn.classList.toggle("trop-petite", tropPetite);
+      // Hors full box : pointsMaxBox points au plus (commun/cartes.js).
+      const tropChere = peutChoisir && valeur !== "full" && pointsBoxJoueur(role, valeur) > pointsMaxBox;
+      btn.classList.toggle("trop-petite", tropPetite || tropChere);
       if (tropPetite) btn.title = `${nbPersos} personnage${nbPersos > 1 ? "s" : ""} : il en faut au moins ${NB_PERSOS_MIN_BOX}`;
-      btn.disabled = !peutChoisir || tropPetite;
-      if (peutChoisir && !tropPetite) {
+      else if (tropChere) btn.title = `Hors full box, une box jouable vaut ${pointsMaxBox} points au plus`;
+      btn.disabled = !peutChoisir || tropPetite || tropChere;
+      if (peutChoisir && !tropPetite && !tropChere) {
         btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));
       }
       conteneur.appendChild(btn);

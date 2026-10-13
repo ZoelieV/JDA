@@ -15,7 +15,7 @@ const { tirerBossAleatoire, bossCarnageExclus, DUREE_DEFI_SECONDES, estDefiEnnem
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserResultat, messageFormatInvalide, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
-const { calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH } = require("../../_lib/boxes");
+const { calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH, erreurPointsBox } = require("../../_lib/boxes");
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
 const {
@@ -52,9 +52,9 @@ const {
 // Commentaire obligatoire d'un litige signalé (cf. handleLitige).
 const COMMENTAIRE_LITIGE_MAX = 500;
 
-const BOX_AUTORISEES = new Set([
-  "full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5"
-]);
+// Box choisissables en match (la box "stuff" n'est plus jouable : indication
+// pour Tous les comptes seulement).
+const BOX_AUTORISEES = new Set(BOX_MATCH);
 // Matchmaking classique (théâtre "auto") : full box seulement, ni
 // personnages stuff ni box opti (cf. BOX_MATCHMAKING_CLASSIQUE de
 // matchmaking/match.js).
@@ -219,15 +219,17 @@ async function sauvegarderApresArchivage(roomId, draft) {
   }
 }
 
-// Nombre de personnages (Voyageur compté une fois) de la box d'un joueur.
-async function compterPersosBox(discordId, box) {
+// Box d'un joueur pas jouable -> message d'erreur, sinon null : au moins
+// NB_PERSOS_MIN_BOX personnages (Voyageur compté une fois) et, hors full
+// box, un maximum de points (cf. erreurPointsBox, _lib/boxes.js).
+async function erreurBoxJoueur(discordId, box) {
   // Catalogue déjà à jour (actualiserPoints dans le dispatch).
   const { data: profil } = await supabase.from("profiles").select("data").eq("discord_id", discordId).single();
-  return calculerPoolJoueur(profil?.data, getPersonnages(), box).length;
-}
-
-function erreurBoxTropPetite(nbPersos) {
-  return `Une box doit contenir au moins ${NB_PERSOS_MIN_BOX} personnages pour être choisie (celle-ci en a ${nbPersos}).`;
+  const nbPersos = calculerPoolJoueur(profil?.data, getPersonnages(), box).length;
+  if (nbPersos < NB_PERSOS_MIN_BOX) {
+    return `Une box doit contenir au moins ${NB_PERSOS_MIN_BOX} personnages pour être choisie (celle-ci en a ${nbPersos}).`;
+  }
+  return erreurPointsBox(profil?.data, box);
 }
 
 // ---- box ----
@@ -258,10 +260,8 @@ async function handleBox(req, res, roomId, user) {
     return res.status(400).json({ error: "Cette box ne s'équilibre avec aucune box de ton adversaire : choisis-en une autre." });
   }
 
-  const nbPersos = await compterPersosBox(user.id, box);
-  if (nbPersos < NB_PERSOS_MIN_BOX) {
-    return res.status(400).json({ error: erreurBoxTropPetite(nbPersos) });
-  }
+  const erreurBox = await erreurBoxJoueur(user.id, box);
+  if (erreurBox) return res.status(400).json({ error: erreurBox });
 
   draft[`box_${joueur}`] = box;
   draft[`pret_${joueur}`] = false;
@@ -295,12 +295,10 @@ async function handleReady(req, res, roomId, user) {
     return res.status(400).json({ error: "Choisis d'abord ta box avant de te marquer prêt" });
   }
 
-  // Box vidée depuis son choix (Mon compte modifié entre-temps).
+  // Box modifiée depuis son choix (Mon compte modifié entre-temps).
   if (draft.phase === "choix_box" && pret) {
-    const nbPersos = await compterPersosBox(user.id, draft[`box_${joueur}`]);
-    if (nbPersos < NB_PERSOS_MIN_BOX) {
-      return res.status(400).json({ error: erreurBoxTropPetite(nbPersos) });
-    }
+    const erreurBox = await erreurBoxJoueur(user.id, draft[`box_${joueur}`]);
+    if (erreurBox) return res.status(400).json({ error: erreurBox });
   }
 
   draft[`pret_${joueur}`] = pret;

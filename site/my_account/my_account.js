@@ -996,13 +996,24 @@ function mettreAJourTotalBox(personnages, armes, profil) {
   document.getElementById("total-ppc").textContent = total;
   mettreAJourCopieBox();
 
-  // Vitrine : conforme ou non aux modes en équipe.
+  // Sous le total : vitrine conforme ou non aux modes en équipe ; box opti
+  // jouable ou non en match (pointsMaxBox points au plus, cf.
+  // commun/cartes.js) ; box stuff :
+  // indication seulement.
   const statut = document.getElementById("statut-vitrine");
-  statut.classList.toggle("cache", boxActive !== "vitrine");
+  statut.classList.toggle("cache", boxActive === "full");
   if (boxActive === "vitrine") {
     const { erreurs } = analyserVitrine(personnages, armes, profil);
     statut.classList.toggle("conforme", erreurs.length === 0);
     statut.textContent = erreurs.length ? `Modes en équipe : ${erreurs.join(", ")}` : "Conforme aux modes en équipe ✓";
+  } else if (boxActive === "stuff") {
+    statut.classList.remove("conforme");
+    statut.textContent = "Indication pour Tous les comptes : pas jouable en match.";
+  } else {
+    statut.classList.toggle("conforme", total <= pointsMaxBox);
+    statut.textContent = total <= pointsMaxBox
+      ? `Jouable en match ✓ (${pointsMaxBox} pts au plus hors full box)`
+      : `Pas jouable en match : ${pointsMaxBox} pts au plus hors full box`;
   }
 }
 

@@ -121,7 +121,7 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
 
 // ---- Mode entraînement ----
 // Configuration : draft (classée ou non, mode de théâtre), ta box et la box
-// adverse (une des tiennes ; full ou stuff d'un autre joueur ; ou une box
+// adverse (une des tiennes ; full d'un autre joueur ; ou une box
 // personnalisée cochée dans la full box d'un joueur), boss et J1.
 // Administrateurs et mini admins : box fictives en plus des joueurs (full,
 // opti ou personnalisée, cf. api/_lib/boxes_fictives.js).
@@ -168,11 +168,12 @@ async function rendreSelecteurBox(cote) {
   const estMoi = etat.proprietaire === entrainement.moi.id;
   const profil = await profilJoueur(etat.proprietaire);
   const nomsBoxes = estMoi ? profil.nomsBoxes || {} : {};
-  // Box d'un autre joueur : full ou stuff (ses box opti restent privées) ;
-  // box fictive : full ou sa box opti.
+  // Box d'un autre joueur : full (ses box opti restent privées ; la box
+  // "stuff" n'est plus jouable) ; box fictive : full ou sa box opti. Hors
+  // full box : 5000 points au plus (vérifié par le serveur).
   const fictive = etat.proprietaire.startsWith("fictif_");
-  const boxes = estMoi ? ["full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5", "custom"]
-    : fictive ? ["full", "opti1", "custom"] : ["full", "stuff", "custom"];
+  const boxes = estMoi ? ["full", "opti1", "opti2", "opti3", "opti4", "opti5", "custom"]
+    : fictive ? ["full", "opti1", "custom"] : ["full", "custom"];
   if (!boxes.includes(etat.box)) etat.box = "full";
 
   zone.innerHTML = `

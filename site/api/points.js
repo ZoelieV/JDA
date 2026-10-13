@@ -22,7 +22,9 @@
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
 //          equilibrage: "ancien" | "fixe_joker",
 //          limites_equilibrage: { palier: { min_persos, seuil_bas,
-//                       seuil_haut, plancher } } }  (cf. _lib/personnages.js)
+//                       seuil_haut, plancher } },  (cf. _lib/personnages.js)
+//          points_max_box: nombre }  (box jouable hors full box, cf.
+//                       erreurPointsBox dans _lib/boxes.js)
 //                                    (méthode des bans d'équilibrage)
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
@@ -36,14 +38,16 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
-//   { limites_equilibrage: {...} }   limites de l'équilibrage calculé
+//   { limites_equilibrage: {...}, points_max_box }  limites de
+//                                    l'équilibrage calculé, points max
+//                                    d'une box jouable hors full box
 //   { equilibrage: méthode }         méthode des bans d'équilibrage des
 //                                    prochaines drafts (cf. _lib/personnages.js)
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
-const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage } = require("./_lib/personnages");
+const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lirePointsMaxBox } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -234,7 +238,12 @@ module.exports = async (req, res) => {
       const donnees = user && await estModerateur(user.id) ? config : versionPublique(config);
       // limites_equilibrage : complétées des valeurs par défaut (page admin,
       // Theorycraft).
-      return res.status(200).json({ ...donnees, seuil_equilibrage: SEUIL_EQUILIBRAGE, limites_equilibrage: lireLimitesEquilibrage(config.limites_equilibrage) });
+      return res.status(200).json({
+        ...donnees,
+        seuil_equilibrage: SEUIL_EQUILIBRAGE,
+        limites_equilibrage: lireLimitesEquilibrage(config.limites_equilibrage),
+        points_max_box: lirePointsMaxBox(config.points_max_box)
+      });
     }
 
     if (req.method === "POST") {
@@ -303,7 +312,11 @@ module.exports = async (req, res) => {
         }
         config = { ...ancienne, boss: modifs };
       } else if (corps.limites_equilibrage && typeof corps.limites_equilibrage === "object") {
-        config = { ...ancienne, limites_equilibrage: lireLimitesEquilibrage(corps.limites_equilibrage) };
+        config = {
+          ...ancienne,
+          limites_equilibrage: lireLimitesEquilibrage(corps.limites_equilibrage),
+          points_max_box: lirePointsMaxBox(corps.points_max_box ?? ancienne.points_max_box)
+        };
       } else if (typeof corps.equilibrage === "string") {
         if (!MODES_EQUILIBRAGE.includes(corps.equilibrage)) return res.status(400).json({ error: "Méthode d'équilibrage inconnue" });
         config = { ...ancienne, equilibrage: corps.equilibrage };

@@ -6,7 +6,7 @@
 // joueur, sans dévoiler ses box opti), ou une box fictive (cf.
 // _lib/boxes_fictives.js).
 const { lireDonneesProprietaire } = require("./boxes_fictives");
-const { getPersonnages, getArmes, actualiserPoints, getModeEquilibrage, getLimitesEquilibrage } = require("./personnages");
+const { getPersonnages, getArmes, actualiserPoints, getModeEquilibrage, getLimitesEquilibrage, getPointsMaxBox } = require("./personnages");
 const {
   calculerPointsBox,
   calculerPointsArmesBox,
@@ -44,9 +44,26 @@ function evaluerEquilibrageFixe(boxes, palier) {
   return { faible, fort, modeles, resultat };
 }
 
-// Box de match d'un joueur : celles qu'il peut choisir (BOX_MATCH dans
-// boxesPermises) avec assez de persos.
-const BOX_MATCH = ["full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5"];
+// Box de match d'un joueur : la full box et ses box opti (la box "stuff"
+// n'est qu'une indication pour Tous les comptes, plus jouable).
+const BOX_MATCH = ["full", "opti1", "opti2", "opti3", "opti4", "opti5"];
+
+// Toute box jouable autre que la full box (opti, personnalisée, opti d'une
+// box fictive) : getPointsMaxBox() points au plus (persos + armes ; réglé
+// sur la page admin, 5000 par défaut).
+function pointsBoxProfil(data, box) {
+  return calculerPointsBox(data, box, getPersonnages()) + calculerPointsArmesBox(data, box, getArmes());
+}
+
+// Message d'erreur si la box dépasse getPointsMaxBox(), sinon null.
+function erreurPointsBox(data, box) {
+  if (box === "full") return null;
+  const points = pointsBoxProfil(data, box);
+  const max = getPointsMaxBox();
+  return points > max
+    ? `Hors full box, une box jouable vaut ${max} points au plus (celle-ci en vaut ${points}).`
+    : null;
+}
 
 // Combinaisons de box (non entraînement) dont l'équilibrage calculé marche,
 // pour proposer de revenir au choix des box -> [{ j1, j2 }]. boxesPermises :
@@ -59,7 +76,8 @@ async function combinaisonsEquilibrables(draft, boxesPermises = BOX_MATCH) {
   ]);
   const personnages = getPersonnages();
   const palier = resoudreTheatre(draft.mode_theatre, theatreProfil(dataJ1), theatreProfil(dataJ2));
-  const jouables = data => boxesPermises.filter(box => poolJoueur(data, personnages, box).length >= NB_PERSOS_MIN_BOX);
+  const jouables = data => boxesPermises.filter(box =>
+    poolJoueur(data, personnages, box).length >= NB_PERSOS_MIN_BOX && !erreurPointsBox(data, box));
   const combinaisons = [];
   jouables(dataJ1).forEach(boxJ1 => {
     jouables(dataJ2).forEach(boxJ2 => {
@@ -180,4 +198,13 @@ async function calculerEquilibrage(draft) {
   draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
 }
 
-module.exports = { coteEntrainement, sourceBoxRole, donneesBoxRole, chargerDonneesBoxes, calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH };
+module.exports = {
+  coteEntrainement,
+  sourceBoxRole,
+  donneesBoxRole,
+  chargerDonneesBoxes,
+  calculerEquilibrage,
+  combinaisonsEquilibrables,
+  BOX_MATCH,
+  erreurPointsBox
+};

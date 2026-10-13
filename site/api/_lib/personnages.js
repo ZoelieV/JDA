@@ -99,6 +99,20 @@ function getLimitesEquilibrage(palier) {
   return limitesEquilibrage[palier] || limitesEquilibrage[2];
 }
 
+// Points max d'une box jouable hors full box (config.points_max_box, réglé
+// sur la page admin ; cf. erreurPointsBox dans _lib/boxes.js).
+const POINTS_MAX_BOX_DEFAUT = 5000;
+let pointsMaxBox = POINTS_MAX_BOX_DEFAUT;
+
+function lirePointsMaxBox(brut) {
+  const valeur = Number(brut);
+  return Number.isFinite(valeur) && valeur > 0 ? Math.round(valeur) : POINTS_MAX_BOX_DEFAUT;
+}
+
+function getPointsMaxBox() {
+  return pointsMaxBox;
+}
+
 function appliquerBonus(points, cle, valeur) {
   const bonus = Number(valeur ?? 0);
   if (modesBonus[cle] === "multiplication") return bonus ? points * bonus : points;
@@ -184,6 +198,7 @@ async function actualiserPoints() {
     carnageDesactive = config.carnage_desactive === true;
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
+    pointsMaxBox = lirePointsMaxBox(config.points_max_box);
     modesBonus = config.modes || {};
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
@@ -355,6 +370,8 @@ module.exports = {
   LIMITES_EQUILIBRAGE_DEFAUT,
   lireLimitesEquilibrage,
   getLimitesEquilibrage,
+  lirePointsMaxBox,
+  getPointsMaxBox,
   ALTERNATIVES_ARMES,
   MODES_POINTS,
   getModeEquilibrage,

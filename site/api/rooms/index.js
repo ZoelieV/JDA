@@ -5,7 +5,7 @@ const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
 const { annulerAutresMatchs } = require("../_lib/room");
 const { verifierFrequence } = require("../_lib/limites");
 const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur } = require("../_lib/draft");
-const { calculerEquilibrage, donneesBoxRole } = require("../_lib/boxes");
+const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
 const { getBossParId, bossCarnageExclus, estWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
@@ -38,9 +38,11 @@ async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}
 }
 
 // Box d'un côté de l'entraînement -> { source } ou { erreur }.
-// Box du lanceur : n'importe laquelle ; d'un autre joueur : full ou stuff
-// (ses box opti restent privées) ; personnalisée ("custom") : persos cochés
-// parmi ceux de la full box du joueur. NB_PERSOS_MIN_BOX persos minimum.
+// Box du lanceur : full, opti ou personnalisée ; d'un autre joueur : full
+// ou personnalisée (ses box opti restent privées ; la box "stuff" n'est plus
+// jouable) ; personnalisée ("custom") : persos cochés parmi ceux de la full
+// box du joueur. NB_PERSOS_MIN_BOX persos minimum ; hors full box, un
+// maximum de points (cf. erreurPointsBox, _lib/boxes.js).
 // Box fictive (cf. _lib/boxes_fictives.js) : administrateurs et mini admins
 // seulement, full box, box opti ou personnalisée.
 async function validerBoxEntrainement(brut, lanceurId, libelle) {
@@ -48,7 +50,7 @@ async function validerBoxEntrainement(brut, lanceurId, libelle) {
   const box = brut?.box;
   if (!proprietaire) return { erreur: `${libelle} : joueur manquant` };
   const fictive = estIdFictif(proprietaire);
-  const autorisees = fictive ? ["full", "opti1", "custom"] : ["full", "stuff", "custom", ...(proprietaire === lanceurId ? BOX_OPTI : [])];
+  const autorisees = fictive ? ["full", "opti1", "custom"] : ["full", "custom", ...(proprietaire === lanceurId ? BOX_OPTI : [])];
   if (!autorisees.includes(box)) return { erreur: `${libelle} : box non autorisée` };
 
   let profil;
@@ -75,6 +77,8 @@ async function validerBoxEntrainement(brut, lanceurId, libelle) {
   if (nbPersos < NB_PERSOS_MIN_BOX) {
     return { erreur: `${libelle} : ${nbPersos} personnage(s), il en faut au moins ${NB_PERSOS_MIN_BOX}` };
   }
+  const erreurPoints = erreurPointsBox(donneesBoxRole(profil.data, source), box);
+  if (erreurPoints) return { erreur: `${libelle} : ${erreurPoints}` };
   return { source };
 }
 

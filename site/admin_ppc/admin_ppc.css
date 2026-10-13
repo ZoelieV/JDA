@@ -1534,3 +1534,22 @@ body {
 .limites-equilibrage .bouton-creer {
   margin-top: 0.5rem;
 }
+
+.champ-points-max-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.champ-points-max-box input {
+  box-sizing: border-box;
+  width: 6rem;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
