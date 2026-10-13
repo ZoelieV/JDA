@@ -5,6 +5,7 @@ const {
   setCookie,
   createSessionToken
 } = require("../../_lib/session");
+const { retourValide } = require("./login");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -103,8 +104,11 @@ module.exports = async (req, res) => {
       maxAge: SESSION_TTL_SECONDS
     });
 
+    // Page où le bouton de connexion a été cliqué (cf. login.js), accueil
+    // par défaut.
+    setCookie(res, "discord_oauth_retour", "", { httpOnly: true, secure: true, sameSite: "Lax", path: "/", maxAge: 0 });
     res.writeHead(302, {
-      Location: process.env.AUTH_SUCCESS_REDIRECT || "/"
+      Location: retourValide(cookies.discord_oauth_retour)
     });
     res.end();
   } catch (error) {

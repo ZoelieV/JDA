@@ -260,7 +260,8 @@
 
     const connexion = document.createElement("a");
     connexion.className = "compte-connexion";
-    connexion.href = "/api/auth/discord/login";
+    // Retour sur la page en cours après la connexion (cf. api/auth/discord/login.js).
+    connexion.href = `/api/auth/discord/login?retour=${encodeURIComponent(location.pathname + location.search)}`;
     connexion.textContent = "Connexion Discord";
     zone.appendChild(connexion);
   }

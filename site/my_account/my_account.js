@@ -73,7 +73,8 @@ async function chargerSessionDiscord() {
   const logoutBtn = document.getElementById("discord-logout-btn");
 
   loginBtn.addEventListener("click", () => {
-    window.location.href = "/api/auth/discord/login";
+    // Retour sur cette page (box fictive comprise) après la connexion.
+    window.location.href = `/api/auth/discord/login?retour=${encodeURIComponent(location.pathname + location.search)}`;
   });
 
   logoutBtn.addEventListener("click", () => {
