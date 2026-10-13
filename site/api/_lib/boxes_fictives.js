@@ -7,8 +7,9 @@
 //
 // Stockées dans la table points, ligne "boxes_fictives" (pas de table à
 // créer) : { boxes: { <id>: { nom, data, createur, cree_le, modifie_le } } }.
-// data a le format des données d'un profil (characters, weapons, theatre),
-// full box seulement. Id "fictif_<hex>" : jamais un ID Discord (chiffres).
+// data a le format des données d'un profil (characters, weapons, theatre) :
+// full box et une box opti (sélection "opti1", visible et jouable par les
+// administrateurs seulement, comme le reste de la box fictive). Id "fictif_<hex>" : jamais un ID Discord (chiffres).
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 

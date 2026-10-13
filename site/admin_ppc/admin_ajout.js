@@ -491,7 +491,7 @@ function initialiserAjout() {
   const fermer = () => modal.classList.remove("active");
 
   document.getElementById("ouvrir-ajout").addEventListener("click", async () => {
-    genreAjout = vue;
+    genreAjout = genre();
     cacheImages.clear();
     promesseCosmetiques = null;
     rendreFormulaire();

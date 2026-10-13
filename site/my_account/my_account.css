@@ -1688,7 +1688,8 @@ body {
 
 /* ---- Box fictive (my_account?box_fictive=<id>, cf. preparerModeFictif) :
    full box seulement, champs du compte connecté cachés. ---- */
-.mode-fictif .box-btn:not([data-box="full"]),
+.mode-fictif .box-btn:not([data-box="full"], [data-box="opti1"]),
+.mode-fictif .renommer-box,
 .mode-fictif #copie-box,
 .mode-fictif #menu-compte .menu-champ,
 .mode-fictif #btn-enregistrer-compte,

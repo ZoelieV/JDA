@@ -229,7 +229,8 @@ function normaliserProfil(profil) {
 // ---- Box fictive (my_account?box_fictive=<id>) ----
 // Faux profil pour l'entraînement, créé depuis la page Administration (cf.
 // admin_ppc/admin_fictives.js, api/_lib/boxes_fictives.js) : la page sert à
-// remplir sa full box (persos, armes, niveaux) et son théâtre, chargés et
+// remplir sa full box (persos, armes, niveaux), sa box opti ("opti1") et son
+// théâtre, chargés et
 // enregistrés via api/accounts/[discord_id].js. Les autres box, l'UID, le
 // stream, le niveau du monde et la personnalisation (ceux du compte
 // connecté) sont cachés.
@@ -250,10 +251,11 @@ function preparerModeFictif(nom) {
   const bandeau = document.createElement("div");
   bandeau.className = "bandeau-fictif";
   bandeau.innerHTML = `
-    <p>Tu remplis une <strong>box fictive</strong> (entraînement, administrateurs seulement) : seule la full box compte. Ton propre compte n'est pas modifié.</p>
+    <p>Tu remplis une <strong>box fictive</strong> (entraînement, administrateurs seulement) : sa full box et sa box opti. Ton propre compte n'est pas modifié.</p>
     <a class="lien-admin-fictif" href="/admin_ppc/admin_ppc.html">Retour à l'Administration</a>
   `;
   bandeau.prepend(document.getElementById("theatre-auto").closest(".menu-champ"));
+  document.querySelector('.box-btn[data-box="opti1"] .nom-box').textContent = "Box opti";
   titre.after(bandeau);
 }
 

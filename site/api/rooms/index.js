@@ -42,13 +42,13 @@ async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}
 // (ses box opti restent privées) ; personnalisée ("custom") : persos cochés
 // parmi ceux de la full box du joueur. NB_PERSOS_MIN_BOX persos minimum.
 // Box fictive (cf. _lib/boxes_fictives.js) : administrateurs et mini admins
-// seulement, full box ou personnalisée.
+// seulement, full box, box opti ou personnalisée.
 async function validerBoxEntrainement(brut, lanceurId, libelle) {
   const proprietaire = typeof brut?.proprietaire === "string" ? brut.proprietaire : null;
   const box = brut?.box;
   if (!proprietaire) return { erreur: `${libelle} : joueur manquant` };
   const fictive = estIdFictif(proprietaire);
-  const autorisees = fictive ? ["full", "custom"] : ["full", "stuff", "custom", ...(proprietaire === lanceurId ? BOX_OPTI : [])];
+  const autorisees = fictive ? ["full", "opti1", "custom"] : ["full", "stuff", "custom", ...(proprietaire === lanceurId ? BOX_OPTI : [])];
   if (!autorisees.includes(box)) return { erreur: `${libelle} : box non autorisée` };
 
   let profil;

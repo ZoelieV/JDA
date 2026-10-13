@@ -2762,3 +2762,24 @@ h1 {
   opacity: 0.4;
   cursor: default;
 }
+
+/* Échange de 5 bans d'équilibrage contre 1 joker (couleur du joker). */
+.btn-echanger-joker {
+  padding: 0.5rem 0.875rem;
+  border: 2px solid #e0b84a;
+  border-radius: 0.5rem;
+  background-color: rgba(224, 184, 74, 0.12);
+  color: #e0b84a;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-echanger-joker:hover:not(:disabled) {
+  background-color: rgba(224, 184, 74, 0.25);
+}
+
+.btn-echanger-joker:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

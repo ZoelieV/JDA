@@ -330,7 +330,8 @@ function htmlJoueur(match, role, bansConnus) {
   const nbTrophees = reel ? Math.abs(reel[role]) : match.trophees;
   const saison = reel?.saison?.[role] ? `, bonus de saison ${gagnant ? "+" : "−"}${reel.saison[role]}${gagnant ? "" : " de perte"}` : "";
   const bonus = (gagnant && reel?.bonus ? ` dont +${reel.bonus} de série` : "") +
-    (gagnant && reel?.prime ? `, prime +${reel.prime} (plus longue série battue)` : "") + saison;
+    (gagnant && reel?.prime ? `, prime +${reel.prime} (plus longue série battue)` : "") +
+    (gagnant && reel?.ecart ? `, bonus d'écart +${reel.ecart} (adversaire mieux classé)` : "") + saison;
   const trophees = match.classe && match.trophees && (gagnant || perdant)
     ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} ${ICONE_TROPHEE}${bonus ? " 🔥" : ""}</span>`
     : "";

@@ -16,114 +16,40 @@ function calculerBansBonus(ecart) {
   return Math.floor(Math.abs(ecart) / SEUIL_EQUILIBRAGE);
 }
 
-// Méthodes libres (draft.equilibrage, cf. getModeEquilibrage dans
-// _lib/personnages.js) : celui qui a la box la plus faible bannit autant de
-// persos qu'il veut, sans faire passer la box adverse sous la sienne ;
-// objectif : box adverse entre +0 et +MARGE_EQUILIBRAGE points. Pas de bans
-// si l'écart est déjà dans la marge. Temps des bans en classé : celui de
-// l'ancienne méthode (calculerBansBonus, cf. dureeBansBonus).
-const MARGE_EQUILIBRAGE = 100;
-
-function equilibrageLibre(draft) {
-  return !!draft.equilibrage && draft.equilibrage !== "ancien" && !estEquilibrageFixe(draft);
-}
-
-// Bans d'équilibrage encore à faire (ancienne méthode : nombre imposé ;
-// libre : pas encore confirmés).
+// Bans d'équilibrage encore à faire (nombre imposé, jokers compris).
 function bansBonusDus(draft) {
-  if (equilibrageLibre(draft)) return !!draft.bans_bonus_joueur && !draft.bans_bonus_confirmes;
   return (draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0);
 }
 
-// Méthodes libres : points des 2 box si ces persos sont bannis ->
-// { banneur, adverse }. valeurs_bans_jX : points que perd la box de jX par
-// perso banni (cf. valeursBansBox) ; "deux_box" et verticalité /
-// horizontalité : celle de celui qui bannit aussi (le ban retire le perso
-// pour les 2).
-function pointsApresBansBonus(draft, choix = draft.bans_bonus_choix || []) {
-  const banneur = draft.bans_bonus_joueur;
-  const adverse = banneur === "j1" ? "j2" : "j1";
-  const retire = role => choix.reduce((somme, id) => somme + (Number(draft[`valeurs_bans_${role}`]?.[id]) || 0), 0);
-  const lesDeux = draft.equilibrage === "deux_box" || estEquilibrageVH(draft);
-  return {
-    banneur: (draft[`points_${banneur}`] || 0) - (lesDeux ? retire(banneur) : 0),
-    adverse: (draft[`points_${adverse}`] || 0) - retire(adverse)
-  };
-}
-
-// ---- Verticalité / horizontalité (méthodes "vh_top4" et "vh_moy50") ----
+// ---- Échange de bans contre un joker (toutes les drafts 1v1) ----
 //
-// Mesurées sur les 5★ de chaque box (cinq_jX : { id de la draft: points },
-// cf. valeursCinqEtoiles) encore disponibles :
-//   horizontalité = nombre de 5★ à SEUIL_VH points ou plus (un perso
-//                   impactant en draft : main dps à partir de 50-70, sub dps
-//                   50-65, support 50) ;
-//   verticalité   = "vh_top4" : moyenne des 4 meilleurs 5★ (la meilleure
-//                   équipe possible) ; "vh_moy50" : moyenne des 5★ à
-//                   SEUIL_VH points ou plus.
-// Celui qui a la box la plus faible (points) ne bannit que des 5★ de
-// SEUIL_VH points ou plus de la box adverse ; sur chaque mesure, la box
-// adverse ne passe pas sous la sienne (ou, si elle y était déjà, ne descend
-// pas plus bas). Le ban retire le perso pour les 2 box. Objectif : écart
-// d'horizontalité entre 0 et MARGE_VH_HORIZONTALITE, de verticalité entre 0
-// et MARGE_VH_VERTICALITE.
-const SEUIL_VH = 50;
-const MARGE_VH_HORIZONTALITE = 1;
-const MARGE_VH_VERTICALITE = 5;
+// Pendant la phase des bans d'équilibrage, celui qui bannit peut échanger
+// BANS_PAR_JOKER de ses bans d'équilibrage normaux contre un ban joker
+// (interdit à l'adversaire seulement, cf. appliquerBansBonus). Une seule
+// fois par draft, cumulable avec le joker donné par "fixe_joker" ;
+// annulable tant que les bans ne sont pas confirmés (draft.echange_joker).
+const BANS_PAR_JOKER = 5;
 
-function estEquilibrageVH(draft) {
-  return draft?.equilibrage === "vh_top4" || draft?.equilibrage === "vh_moy50";
+function bansNormaux(draft) {
+  return (draft.bans_bonus_total || 0) - (draft.bans_joker_total || 0);
 }
 
-// { horizontalite, verticalite } d'une box (cinq : { id: points }) sans les
-// persos bannis.
-function mesuresVH(cinq, bannis, methode) {
-  const exclus = new Set(bannis);
-  const points = Object.entries(cinq || {}).filter(([id]) => !exclus.has(id)).map(([, v]) => Number(v) || 0).sort((a, b) => b - a);
-  const forts = points.filter(v => v >= SEUIL_VH);
-  const moyenne = liste => liste.length ? liste.reduce((a, b) => a + b, 0) / liste.length : 0;
-  const verticalite = methode === "vh_moy50" ? moyenne(forts) : moyenne(points.slice(0, 4));
-  return { horizontalite: forts.length, verticalite: Math.round(verticalite * 10) / 10 };
+function echangeJokerPossible(draft) {
+  return draft.phase === "bans_bonus" && !draft.echange_joker && bansNormaux(draft) >= BANS_PAR_JOKER;
 }
 
-// Mesures des 2 box avant (initial) et après ces bans d'équilibrage.
-function mesuresApresBansBonus(draft, choix = draft.bans_bonus_choix || []) {
-  const banneur = draft.bans_bonus_joueur;
-  const adverse = banneur === "j1" ? "j2" : "j1";
-  const mesures = (role, bannis) => mesuresVH(draft[`cinq_${role}`], bannis, draft.equilibrage);
-  return {
-    banneur: mesures(banneur, choix),
-    adverse: mesures(adverse, choix),
-    adverseInitial: mesures(adverse, [])
-  };
+// Échange (annuler = false) ou annulation (annuler = true). Choix en trop
+// retirés de la sélection (les derniers ajoutés).
+function echangerBansContreJoker(draft, annuler = false) {
+  const signe = annuler ? -1 : 1;
+  draft.bans_bonus_total = (draft.bans_bonus_total || 0) - signe * (BANS_PAR_JOKER - 1);
+  draft.bans_joker_total = (draft.bans_joker_total || 0) + signe;
+  draft.echange_joker = !annuler;
+  draft.bans_bonus_choix = (draft.bans_bonus_choix || []).slice(0, bansNormaux(draft));
+  draft.bans_joker_choix = (draft.bans_joker_choix || []).slice(0, draft.bans_joker_total);
 }
 
-// Perso bannissable en verticalité / horizontalité : un 5★ de SEUIL_VH
-// points ou plus de la box adverse.
-function banVHEligible(draft, persoId) {
-  const adverse = draft.bans_bonus_joueur === "j1" ? "j2" : "j1";
-  return (Number(draft[`cinq_${adverse}`]?.[persoId]) || 0) >= SEUIL_VH;
-}
-
-function bansBonusPermis(draft, choix) {
-  if (estEquilibrageVH(draft)) {
-    if (!choix.every(id => banVHEligible(draft, id))) return false;
-    const { banneur, adverse, adverseInitial } = mesuresApresBansBonus(draft, choix);
-    return adverse.horizontalite >= Math.min(adverseInitial.horizontalite, banneur.horizontalite) &&
-      adverse.verticalite >= Math.min(adverseInitial.verticalite, banneur.verticalite);
-  }
-  const points = pointsApresBansBonus(draft, choix);
-  return points.adverse >= points.banneur;
-}
-
-// Verticalité / horizontalité : au moins un ban possible (sinon pas de
-// phase de bans d'équilibrage).
-function banVHPossible(draft) {
-  const adverse = draft.bans_bonus_joueur === "j1" ? "j2" : "j1";
-  return Object.keys(draft[`cinq_${adverse}`] || {}).some(id => banVHEligible(draft, id) && bansBonusPermis(draft, [id]));
-}
-
-// ---- Bans calculés ("fixe_joker", "fixe_complet") ----
+// ---- Bans calculés ("fixe_joker") ----
 //
 // Le nombre de bans d'équilibrage est calculé par l'algorithme (pas de
 // plafond) ; le joueur ne choisit que les persos. Calibré par simulation de
@@ -139,24 +65,16 @@ function banVHPossible(draft) {
 // retire un à un le perso qui réduit le plus l'écart prévu (ban global : un
 // perso que les 2 ont est retiré des 2 box), jusqu'à un écart prévu de
 // MARGE_FIXE ou moins. Si les bans n'y arrivent pas (plus aucun ban utile,
-// ou une box passerait sous NB_PERSOS_MIN_BOX persos) :
-//   1. un ban joker (JOKERS_MAX au plus), retiré de la box adverse seulement
-//      (le banneur peut encore le picker) ;
-//   2. en dernier recours ("fixe_complet" seulement) : bans de draft d'un
-//      palier au-dessus pour lui seul (+1 ban au 1er tour, comme le
-//      dauphin ; +1 aux 2 tours, comme la baleine, si l'écart prévu reste
-//      au-delà de 2 × MARGE_FIXE).
+// ou une box passerait sous NB_PERSOS_MIN_BOX persos) : un ban joker
+// (JOKERS_MAX au plus), retiré de la box adverse seulement (le banneur peut
+// encore le picker).
 const VERTICALITE_PERSOS = 12;
 const TAILLE_EQUIPE = 4;
 const MARGE_FIXE = 25;
 const JOKERS_MAX = 1;
-const LEVIERS_FIXES = {
-  fixe_joker: { theatre: false },
-  fixe_complet: { theatre: true }
-};
 
 function estEquilibrageFixe(draft) {
-  return !!LEVIERS_FIXES[draft?.equilibrage];
+  return draft?.equilibrage === "fixe_joker";
 }
 
 // valeurs : { id: points } (cf. valeursBansBox).
@@ -169,16 +87,15 @@ function horizontalite(valeurs) {
   return Object.values(valeurs || {}).filter(v => Number(v) > 0).length;
 }
 
-// -> { bans, jokers, theatre_bonus ([+1 tour 1, +1 tour 2] ou null),
-// ecart_avant, ecart_apres (après bans et jokers), suggestion (bans puis
-// jokers supposés par le calcul) }. marge : objectif d'écart prévu
-// (simulations : 25 équilibre mieux que 50, qui sous-estime les gros écarts).
-function calculerEquilibrageFixe(valeursFaible, valeursFort, methode, marge = MARGE_FIXE) {
-  const leviers = LEVIERS_FIXES[methode] || {};
+// -> { bans, jokers, ecart_avant, ecart_apres (après bans et jokers),
+// suggestion (bans puis jokers supposés par le calcul) }. marge : objectif
+// d'écart prévu (simulations : 25 équilibre mieux que 50, qui sous-estime
+// les gros écarts).
+function calculerEquilibrageFixe(valeursFaible, valeursFort, marge = MARGE_FIXE) {
   const fort = { ...valeursFort };
   const faible = { ...valeursFaible };
   const prevu = () => Math.round(TAILLE_EQUIPE * (verticalite(fort) - verticalite(faible)));
-  const resultat = { bans: 0, jokers: 0, theatre_bonus: null, ecart_avant: prevu(), ecart_apres: prevu(), suggestion: [] };
+  const resultat = { bans: 0, jokers: 0, ecart_avant: prevu(), ecart_apres: prevu(), suggestion: [] };
 
   // Meilleur retrait (le plus grand gain d'écart prévu) parmi les persos de
   // la box forte ; joker : retiré de la box forte seulement.
@@ -214,9 +131,6 @@ function calculerEquilibrageFixe(valeursFaible, valeursFort, methode, marge = MA
     resultat.suggestion.push(retrait.id);
   }
   resultat.ecart_apres = prevu();
-  if (resultat.ecart_apres > marge && leviers.theatre) {
-    resultat.theatre_bonus = resultat.ecart_apres > 2 * marge ? [1, 1] : [1, 0];
-  }
   return resultat;
 }
 
@@ -295,15 +209,11 @@ const MODES_THEATRE = ["auto", ...Object.values(PALIERS_THEATRE).map(p => p.mode
 // Ancienne draft sans palier enregistré : considéré comme le plus petit.
 const THEATRE_PAR_DEFAUT = 1;
 
-// bonus (équilibrage "fixe_complet", dernier recours) : { joueur, bans:
-// [+tour 1, +tour 2] } : bans en plus pour ce joueur seul, joués après
-// l'alternance du tour.
-function sequenceTheatre(theatre, bonus = null) {
+function sequenceTheatre(theatre) {
   const [bans1, bans2] = (PALIERS_THEATRE[theatre] || PALIERS_THEATRE[THEATRE_CARPE]).bans;
-  const bans = (nombre, premier, tour) => {
+  const bans = (nombre, premier) => {
     const second = premier === "j1" ? "j2" : "j1";
     const reste = { [premier]: nombre, [second]: nombre };
-    if (bonus?.joueur in reste) reste[bonus.joueur] += Number(bonus.bans?.[tour]) || 0;
     const res = [];
     for (let joueur = premier; reste.j1 + reste.j2 > 0; joueur = joueur === "j1" ? "j2" : "j1") {
       if (reste[joueur] > 0) {
@@ -315,9 +225,9 @@ function sequenceTheatre(theatre, bonus = null) {
   };
   const picks = ordre => ordre.map(joueur => ({ joueur, type: "pick" }));
   return [
-    ...bans(bans1, "j1", 0),
+    ...bans(bans1, "j1"),
     ...picks(["j1", "j2", "j2", "j1"]),
-    ...bans(bans2, "j2", 1),
+    ...bans(bans2, "j2"),
     ...picks(["j2", "j1", "j1", "j2"])
   ];
 }
@@ -384,14 +294,9 @@ function etatInitialDraft() {
     bans_bonus_joueur: null, // "j1" | "j2" | null si pas d'écart suffisant
     bans_bonus_choix: [], // ids en cours de sélection, pas encore confirmés
     equilibrage: "ancien", // méthode figée au calcul de l'équilibrage (cf. getModeEquilibrage)
-    bans_bonus_confirmes: false, // méthodes libres : bans confirmés (nombre libre)
-    valeurs_bans_j1: null, // méthodes libres : { perso: points perdus par la box de j1 s'il est banni }
-    valeurs_bans_j2: null,
-    cinq_j1: null, // verticalité / horizontalité : { perso 5★: points } de la box de j1 (cf. valeursCinqEtoiles)
-    cinq_j2: null,
-    bans_joker_total: 0, // équilibrage fixe : bans joker (compris dans bans_bonus_total), interdits à l'adversaire seulement
+    bans_joker_total: 0, // bans joker (compris dans bans_bonus_total), interdits à l'adversaire seulement
     bans_joker_choix: [], // jokers en cours de sélection, pas encore confirmés
-    theatre_bonus: null, // équilibrage fixe : [+1 tour 1, +1 tour 2] bans de draft en plus pour bans_bonus_joueur
+    echange_joker: false, // BANS_PAR_JOKER bans échangés contre un joker (cf. echangerBansContreJoker)
     verticalite_j1: null, // équilibrage fixe : verticalité / horizontalité de la box de j1 (cf. verticalite)
     verticalite_j2: null,
     horizontalite_j1: null,
@@ -472,8 +377,8 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
   return total + Object.values(meilleurParGroupe).reduce((somme, points) => somme + points, 0);
 }
 
-// ---- Points perdus par une box si un perso est banni (méthodes
-// d'équilibrage libres) : { id de la draft: points } ----
+// ---- Valeur de chaque perso d'une box (verticalité de l'équilibrage
+// "fixe_joker") : { id de la draft: points } ----
 // Points du perso (Voyageur : son meilleur élément) ; avecSignature : plus
 // sa meilleure copie d'arme signature présente dans la box.
 function valeursBansBox(profilData, boxChoisie, personnages, armes, avecSignature = false) {
@@ -485,18 +390,6 @@ function valeursBansBox(profilData, boxChoisie, personnages, armes, avecSignatur
   if (avecSignature) {
     Object.keys(valeurs).forEach(id => { valeurs[id] += pointsSignatureBox(profilData, boxChoisie, armes, id); });
   }
-  return valeurs;
-}
-
-// Points des 5★ d'une box (verticalité / horizontalité) : { id de la
-// draft: points } (Voyageur : son meilleur élément).
-function valeursCinqEtoiles(profilData, boxChoisie, personnages) {
-  const valeurs = {};
-  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
-    if (String(personnage.rarete) !== "5") return;
-    const id = personnage.groupe || personnage.id;
-    valeurs[id] = Math.max(valeurs[id] ?? 0, pointsPersonnage(personnage, valeur, niveau));
-  });
   return valeurs;
 }
 
@@ -639,10 +532,7 @@ function lancerTirage(draft, tirerBossAleatoire) {
   draft.sequence_index = 0;
   // Mode de théâtre : nombre de bans de la draft (après le boss seulement).
   draft.theatre = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
-  // Bans en plus du joueur à la box faible (équilibrage fixe, cas non
-  // équilibrable) : bans_bonus_joueur suit les échanges de rôles.
-  const bonus = draft.theatre_bonus && draft.bans_bonus_joueur ? { joueur: draft.bans_bonus_joueur, bans: draft.theatre_bonus } : null;
-  draft.sequence = sequenceTheatre(draft.theatre, bonus);
+  draft.sequence = sequenceTheatre(draft.theatre);
 }
 
 // ---- Boss proposé (matchmaking non classé, room privée sans boss imposé) ----
@@ -698,13 +588,8 @@ function etatRevanche(precedent) {
     bans_bonus_joueur: precedent.bans_bonus_joueur,
     // Méthode d'équilibrage de la 1re manche, bans déjà confirmés.
     equilibrage: precedent.equilibrage || "ancien",
-    bans_bonus_confirmes: !!precedent.bans_bonus_confirmes,
-    valeurs_bans_j1: precedent.valeurs_bans_j1 || null,
-    valeurs_bans_j2: precedent.valeurs_bans_j2 || null,
-    cinq_j1: precedent.cinq_j1 || null,
-    cinq_j2: precedent.cinq_j2 || null,
     bans_joker_total: precedent.bans_joker_total || 0,
-    theatre_bonus: precedent.theatre_bonus || null,
+    echange_joker: !!precedent.echange_joker,
     verticalite_j1: precedent.verticalite_j1 ?? null,
     verticalite_j2: precedent.verticalite_j2 ?? null,
     horizontalite_j1: precedent.horizontalite_j1 ?? null,
@@ -779,27 +664,18 @@ module.exports = {
   estEntrainementSolo,
   getSequence,
   calculerBansBonus,
-  MARGE_EQUILIBRAGE,
-  equilibrageLibre,
   bansBonusDus,
-  bansBonusPermis,
-  pointsApresBansBonus,
+  BANS_PAR_JOKER,
+  bansNormaux,
+  echangeJokerPossible,
+  echangerBansContreJoker,
   valeursBansBox,
-  SEUIL_VH,
-  MARGE_VH_HORIZONTALITE,
-  MARGE_VH_VERTICALITE,
-  estEquilibrageVH,
   estEquilibrageFixe,
   verticalite,
   horizontalite,
   calculerEquilibrageFixe,
   appliquerBansBonus,
   MARGE_FIXE,
-  mesuresVH,
-  mesuresApresBansBonus,
-  banVHEligible,
-  banVHPossible,
-  valeursCinqEtoiles,
   etatInitialDraft,
   calculerPointsBox,
   calculerPointsArmesBox,

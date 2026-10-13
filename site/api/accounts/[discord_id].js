@@ -73,11 +73,17 @@ function nbPersosFictive(data) {
   return new Set(getPersonnages().filter(p => (full[p.id] ?? -1) >= 0).map(p => p.groupe || p.id)).size;
 }
 
-// Données d'une box fictive : full box seulement (persos, armes) et son
-// palier de théâtre calculé (cf. nettoyerProfil).
+// Données d'une box fictive : full box et box opti (sélection "opti1" ;
+// persos, armes) et son palier de théâtre calculé (cf. nettoyerProfil).
+const BOX_FICTIVE = ["opti1"];
+
 function nettoyerDonneesFictive(brut) {
   const propre = nettoyerProfil(brut && typeof brut === "object" && !Array.isArray(brut) ? brut : {});
-  return { theatre: propre.theatre, characters: propre.characters, weapons: propre.weapons };
+  const garderBoxFictive = collection => ({
+    ...collection,
+    selections: Object.fromEntries(BOX_FICTIVE.map(box => [box, collection.selections?.[box] || {}]))
+  });
+  return { theatre: propre.theatre, characters: garderBoxFictive(propre.characters), weapons: garderBoxFictive(propre.weapons) };
 }
 
 async function boxJoueeDansRoom(roomId, id) {

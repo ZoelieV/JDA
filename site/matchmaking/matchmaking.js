@@ -123,8 +123,8 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
 // Configuration : draft (classée ou non, mode de théâtre), ta box et la box
 // adverse (une des tiennes ; full ou stuff d'un autre joueur ; ou une box
 // personnalisée cochée dans la full box d'un joueur), boss et J1.
-// Administrateurs et mini admins : box fictives en plus des joueurs (full
-// ou personnalisée, cf. api/_lib/boxes_fictives.js).
+// Administrateurs et mini admins : box fictives en plus des joueurs (full,
+// opti ou personnalisée, cf. api/_lib/boxes_fictives.js).
 const MIN_PERSOS_BOX = 16; // cf. NB_PERSOS_MIN_BOX, api/_lib/draft.js
 const LIBELLES_BOX = { full: "Full box", stuff: "Stuff", opti1: "Opti 1", opti2: "Opti 2", opti3: "Opti 3", opti4: "Opti 4", opti5: "Opti 5", custom: "Personnalisée" };
 
@@ -169,10 +169,10 @@ async function rendreSelecteurBox(cote) {
   const profil = await profilJoueur(etat.proprietaire);
   const nomsBoxes = estMoi ? profil.nomsBoxes || {} : {};
   // Box d'un autre joueur : full ou stuff (ses box opti restent privées) ;
-  // box fictive : full seulement.
+  // box fictive : full ou sa box opti.
   const fictive = etat.proprietaire.startsWith("fictif_");
   const boxes = estMoi ? ["full", "stuff", "opti1", "opti2", "opti3", "opti4", "opti5", "custom"]
-    : fictive ? ["full", "custom"] : ["full", "stuff", "custom"];
+    : fictive ? ["full", "opti1", "custom"] : ["full", "stuff", "custom"];
   if (!boxes.includes(etat.box)) etat.box = "full";
 
   zone.innerHTML = `
@@ -193,7 +193,7 @@ async function rendreSelecteurBox(cote) {
   // Libellés en texte (noms de box choisis par le joueur).
   zone.querySelectorAll(".ent-box .choix-btn").forEach(btn => {
     const box = btn.dataset.valeur;
-    btn.textContent = typeof nomsBoxes[box] === "string" && nomsBoxes[box] ? nomsBoxes[box] : LIBELLES_BOX[box];
+    btn.textContent = typeof nomsBoxes[box] === "string" && nomsBoxes[box] ? nomsBoxes[box] : fictive && box === "opti1" ? "Opti" : LIBELLES_BOX[box];
   });
 
   const select = zone.querySelector(".ent-joueur");

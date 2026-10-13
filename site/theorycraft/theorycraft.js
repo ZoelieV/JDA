@@ -110,11 +110,19 @@ async function chargerDonnees() {
   bonusSaison = new Set(Array.isArray(config?.bonus_saison) ? config.bonus_saison : []);
   carnageDesactive = config?.carnage_desactive === true;
   if (Number(config?.seuil_equilibrage) > 0) seuil = Number(config.seuil_equilibrage);
-  if (["perso", "perso_signature", "deux_box", "vh_top4", "vh_moy50", "fixe_joker", "fixe_complet"].includes(config?.equilibrage)) methodeEquilibrage = config.equilibrage;
+  if (config?.equilibrage === "fixe_joker") methodeEquilibrage = config.equilibrage;
 }
+
+// Échange de 5 bans contre 1 joker : toutes les méthodes (cf.
+// echangerBansContreJoker, api/_lib/draft.js).
+const TEXTE_ECHANGE_JOKER = "<p><strong>Échange contre un joker</strong> : celui qui bannit peut, une seule fois par draft, échanger 5 de ses bans d'équilibrage contre 1 ban joker (un personnage de la box adverse, interdit à l'adversaire seulement : toi, tu peux encore le picker). Il s'ajoute au joker éventuellement déjà accordé. L'échange peut être annulé tant que les bans ne sont pas confirmés.</p>";
 
 // Section "Bans d'équilibrage" selon la méthode en vigueur.
 function htmlBansEquilibrage(paliers) {
+  return htmlMethodeEquilibrage(paliers) + TEXTE_ECHANGE_JOKER;
+}
+
+function htmlMethodeEquilibrage(paliers) {
   if (methodeEquilibrage === "ancien") {
     return `
     <p class="formule-tc">
@@ -129,25 +137,8 @@ function htmlBansEquilibrage(paliers) {
       </table>
     </div>`;
   }
-  if (methodeEquilibrage === "vh_top4" || methodeEquilibrage === "vh_moy50") {
-    const verticalite = methodeEquilibrage === "vh_top4"
-      ? "moyenne des points des 4 meilleurs 5★ de la box"
-      : "moyenne des points des 5★ de 50 pts ou plus de la box";
-    return `
-    <p class="formule-tc">
-      horizontalité = nombre de 5★ de 50 pts ou plus de la box<br>
-      verticalité = ${verticalite}<br>
-      chaque ban retire un 5★ de 50 pts ou plus de la box adverse (et de la tienne si tu l'as)<br>
-      objectif : 0 ≤ écart d'horizontalité ≤ 1 et 0 ≤ écart de verticalité ≤ 5 (jamais sous 0)
-    </p>
-    <p>Le joueur avec la box la plus faible (en points) bannit autant de 5★ de 50 pts ou plus de la box adverse qu'il veut, tant qu'elle ne passe sous la sienne ni en horizontalité, ni en verticalité (si elle y est déjà sur une des 2, elle ne peut pas y descendre plus bas), avant le tirage J1 / J2 et du boss. Les 5★ de 50 pts ou plus sont ceux qui pèsent sur une draft : main dps à partir de 50 (impactants au-delà de 70), sub dps à partir de 50 (au-delà de 65), supports à partir de 50. En classé, il a le même temps que l'ancienne méthode (6 s par tranche de ${seuil} pts d'écart, 20 s au minimum). Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
-  }
-  if (methodeEquilibrage.startsWith("fixe_")) {
-    const leviers = [
-      "<li><strong>Ban joker</strong> (1 au plus) : un ban de plus, sur un personnage de la box adverse, interdit à l'adversaire seulement (toi, tu peux encore le picker).</li>",
-      methodeEquilibrage === "fixe_complet" ? "<li>En dernier recours, <strong>bans de draft en plus</strong> : tu bannis une fois de plus que l'adversaire au 1er tour de bans (comme le dauphin), et aussi au 2e tour (comme la baleine) si l'écart prévu dépasse encore 50.</li>" : ""
-    ].join("");
-    return `
+  // Bans calculés + joker ("fixe_joker").
+  return `
     <p class="formule-tc">
       valeur d'un personnage = ses points + ceux de sa meilleure arme signature dans la box<br>
       horizontalité = nombre de personnages qui valent des points<br>
@@ -155,22 +146,8 @@ function htmlBansEquilibrage(paliers) {
       écart d'équipe prévu = 4 × écart de verticalité<br>
       bans d'équilibrage = nombre de bans qui ramène l'écart prévu à 25 ou moins, en retirant à chaque fois le personnage qui réduit le plus l'écart (un personnage que les 2 box ont est retiré des 2)
     </p>
-    <p>Le nombre de bans est calculé d'après les 2 box, sans plafond : le joueur à la verticalité la plus faible choisit seulement quels personnages il bannit, avant le tirage J1 / J2 et du boss. Si les bans ne suffisent pas (plus aucun ban utile, ou une box passerait sous 16 personnages) :</p>
-    <ul class="notes-theorycraft">${leviers}</ul>
+    <p>Le nombre de bans est calculé d'après les 2 box, sans plafond : le joueur à la verticalité la plus faible choisit seulement quels personnages il bannit, avant le tirage J1 / J2 et du boss. Si les bans ne suffisent pas (plus aucun ban utile, ou une box passerait sous 16 personnages) : 1 <strong>ban joker</strong> en plus, sur un personnage de la box adverse, interdit à l'adversaire seulement (toi, tu peux encore le picker).</p>
     <p>Pourquoi 12 : c'est ce qu'il reste à un joueur une fois les bans et les picks adverses passés, et ce qui prédit le mieux l'écart entre les équipes dans les simulations de drafts. Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
-  }
-  const perte = {
-    perso: "les points du personnage dans la box adverse (sans les armes)",
-    perso_signature: "les points du personnage et de son arme signature (meilleure copie) dans la box adverse",
-    deux_box: "les points du personnage dans chaque box qui l'a (celle de celui qui bannit aussi)"
-  }[methodeEquilibrage];
-  return `
-    <p class="formule-tc">
-      écart = points box adverse − points box de celui qui bannit<br>
-      chaque ban retire ${perte}<br>
-      objectif : 0 ≤ écart ≤ 100 (jamais sous 0)
-    </p>
-    <p>Si l'écart entre les box dépasse 100 points, le joueur avec la box la plus faible bannit autant de personnages de la box adverse qu'il veut, tant qu'elle ne passe pas sous la sienne, avant le tirage J1 / J2 et du boss. En classé, il a le même temps que l'ancienne méthode (6 s par tranche de ${seuil} pts d'écart, 20 s au minimum). Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
 }
 
 function points(item, vue) {

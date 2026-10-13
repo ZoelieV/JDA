@@ -1,5 +1,5 @@
-// Fusion de 14 routes (box, ready, action, bonus_toggle, bonus_confirmer,
-// temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
+// Fusion de 15 routes (box, ready, action, bonus_toggle, bonus_echanger,
+// bonus_confirmer, temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
 // boss_vote, crash, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
@@ -41,12 +41,11 @@ const {
   etatRevanche,
   vuePourJoueur,
   getProchaineAction,
-  equilibrageLibre,
   bansBonusDus,
-  bansBonusPermis,
-  estEquilibrageVH,
-  banVHEligible,
-  SEUIL_VH,
+  bansNormaux,
+  echangeJokerPossible,
+  echangerBansContreJoker,
+  BANS_PAR_JOKER,
   appliquerBansBonus
 } = require("../../_lib/draft");
 
@@ -439,32 +438,15 @@ async function handleBonusToggle(req, res, roomId, user) {
   draft.bans_joker_choix = draft.bans_joker_choix || [];
   const index = draft.bans_bonus_choix.indexOf(persoId);
   const indexJoker = draft.bans_joker_choix.indexOf(persoId);
-  // Nombre imposé (ancienne méthode, bans fixes) : bans normaux d'abord,
-  // puis jokers (équilibrage fixe, cf. appliquerBansBonus).
+  // Nombre imposé : bans normaux d'abord, puis jokers (cf. appliquerBansBonus).
   const jokers = draft.bans_joker_total || 0;
-  const normaux = (draft.bans_bonus_total || 0) - jokers;
+  const normaux = bansNormaux(draft);
 
   if (index >= 0) {
     // Déjà sélectionné : on le retire (annulation/remplacement).
     draft.bans_bonus_choix.splice(index, 1);
   } else if (indexJoker >= 0) {
     draft.bans_joker_choix.splice(indexJoker, 1);
-  } else if (equilibrageLibre(draft)) {
-    // Méthodes libres : un perso de la box adverse, sans la faire passer
-    // sous la sienne (cf. bansBonusPermis).
-    const adverse = joueur === "j1" ? "j2" : "j1";
-    if (!draft.pool_disponible.includes(persoId) || !draft[`pool_${adverse}`]?.includes(persoId)) {
-      return res.status(409).json({ error: "Bannis un personnage de la box adverse encore disponible" });
-    }
-    if (estEquilibrageVH(draft) && !banVHEligible(draft, persoId)) {
-      return res.status(409).json({ error: `Seuls les 5★ de ${SEUIL_VH} points ou plus de la box adverse peuvent être bannis` });
-    }
-    if (!bansBonusPermis(draft, [...draft.bans_bonus_choix, persoId])) {
-      return res.status(409).json({ error: estEquilibrageVH(draft)
-        ? "Ce ban ferait passer la box adverse sous la tienne en verticalité ou en horizontalité"
-        : "Ce ban ferait passer la box adverse sous la tienne" });
-    }
-    draft.bans_bonus_choix.push(persoId);
   } else {
     if (!draft.pool_disponible.includes(persoId)) {
       return res.status(409).json({ error: "Ce personnage n'est plus disponible" });
@@ -481,6 +463,41 @@ async function handleBonusToggle(req, res, roomId, user) {
       return res.status(409).json({ error: `Tu as déjà sélectionné tes ${draft.bans_bonus_total} ban(s) bonus` });
     }
   }
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
+}
+
+// ---- bonus_echanger (BANS_PAR_JOKER bans d'équilibrage contre un joker,
+// cf. echangerBansContreJoker) ----
+// { annuler: true } : rend les bans (tant que rien n'est confirmé).
+async function handleBonusEchanger(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
+  const draft = room.draft;
+
+  if (draft.phase !== "bans_bonus") {
+    return res.status(409).json({ error: "Aucun ban d'équilibrage à échanger à ce stade" });
+  }
+  if (refuserSiPause(res, draft)) return;
+  if (draft.bans_bonus_joueur !== joueur) {
+    return res.status(403).json({ error: "Ce n'est pas à toi de choisir les bans d'équilibrage" });
+  }
+
+  const annuler = req.body?.annuler === true;
+  if (annuler && !draft.echange_joker) {
+    return res.status(409).json({ error: "Aucun échange à annuler" });
+  }
+  if (!annuler && !echangeJokerPossible(draft)) {
+    return res.status(409).json({ error: draft.echange_joker
+      ? "Tu as déjà échangé des bans contre un joker"
+      : `Il faut au moins ${BANS_PAR_JOKER} bans d'équilibrage pour les échanger contre un joker` });
+  }
+  echangerBansContreJoker(draft, annuler);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -506,20 +523,12 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   }
 
   const choix = draft.bans_bonus_choix || [];
-  const libre = equilibrageLibre(draft);
-
-  // Méthodes libres : autant de bans que voulu (même aucun), sélection
-  // toujours permise (vérifiée à chaque ajout).
-  if (libre && !bansBonusPermis(draft, choix)) {
-    return res.status(409).json({ error: "Ces bans feraient passer la box adverse sous la tienne" });
-  }
-  const jokers = libre ? [] : draft.bans_joker_choix || [];
-  if (!libre && choix.length + jokers.length !== draft.bans_bonus_total) {
+  const jokers = draft.bans_joker_choix || [];
+  if (choix.length + jokers.length !== draft.bans_bonus_total) {
     return res.status(409).json({ error: `Sélectionne exactement ${draft.bans_bonus_total} personnage(s) avant de confirmer` });
   }
 
   appliquerBansBonus(draft, joueur, choix, jokers);
-  if (libre) draft.bans_bonus_confirmes = true;
 
   await tirageEtDraft(draft, room);
 
@@ -842,15 +851,10 @@ async function handleExpirer(req, res, roomId, user) {
   } else if (draft.phase === "bans_bonus") {
     const acteur = draft.bans_bonus_joueur;
     if (!draft.fin_bans_bonus || !peutExpirer(draft.fin_bans_bonus, joueur === acteur)) return pasEncore();
-    // Choix déjà sélectionnés gardés, le reste au hasard ; méthodes libres :
-    // sélection en cours confirmée telle quelle (nombre libre).
-    let choix = [...(draft.bans_bonus_choix || [])];
-    // Sélection libre qui ferait passer l'adversaire sous soi (possible avec
-    // "Les 2 box" en retirant un ban) : aucun ban.
-    if (equilibrageLibre(draft) && !bansBonusPermis(draft, choix)) choix = [];
-    const libre = equilibrageLibre(draft);
-    const nbJokers = libre ? 0 : draft.bans_joker_total || 0;
-    const jokers = libre ? [] : [...(draft.bans_joker_choix || [])];
+    // Choix déjà sélectionnés gardés, le reste au hasard.
+    const choix = [...(draft.bans_bonus_choix || [])];
+    const nbJokers = draft.bans_joker_total || 0;
+    const jokers = [...(draft.bans_joker_choix || [])];
     const aleatoires = new Set();
     const tirer = (liste, cible, nombre) => {
       while (cible.length < nombre && liste.length) {
@@ -859,14 +863,11 @@ async function handleExpirer(req, res, roomId, user) {
         aleatoires.add(persoId);
       }
     };
-    if (!libre) {
-      const pris = id => !choix.includes(id) && !jokers.includes(id);
-      tirer(draft.pool_disponible.filter(pris), choix, draft.bans_bonus_total - nbJokers);
-      const adverse = acteur === "j1" ? "j2" : "j1";
-      tirer(draft.pool_disponible.filter(id => pris(id) && draft[`pool_${adverse}`]?.includes(id)), jokers, nbJokers);
-    }
+    const pris = id => !choix.includes(id) && !jokers.includes(id);
+    tirer(draft.pool_disponible.filter(pris), choix, draft.bans_bonus_total - nbJokers);
+    const adverse = acteur === "j1" ? "j2" : "j1";
+    tirer(draft.pool_disponible.filter(id => pris(id) && draft[`pool_${adverse}`]?.includes(id)), jokers, nbJokers);
     appliquerBansBonus(draft, acteur, choix, jokers, aleatoires);
-    if (libre) draft.bans_bonus_confirmes = true;
     await tirageEtDraft(draft, room);
   } else if (draft.phase === "draft" && draft.chrono) {
     const prochaine = getProchaineAction(draft);
@@ -1038,6 +1039,8 @@ function executerAction(action, req, res, roomId, user) {
       return handleAction(req, res, roomId, user);
     case "bonus_toggle":
       return handleBonusToggle(req, res, roomId, user);
+    case "bonus_echanger":
+      return handleBonusEchanger(req, res, roomId, user);
     case "bonus_confirmer":
       return handleBonusConfirmer(req, res, roomId, user);
     case "temps":

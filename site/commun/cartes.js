@@ -177,7 +177,7 @@ function estDefiEnnemis(boss) {
 // api/_lib/personnages.js) : cost de la full box (5★ limités, ni standards
 // ni Voyageur : 1 par constellation possédée qui vaut au moins SEUIL_COST
 // points) ; 0 à
-// 19 -> 1 (sardine), 20 à 39 -> 2 (carpe), 40 à 79 -> 3 (dauphin), 80 ou
+// 15 -> 1 (sardine), 16 à 35 -> 2 (carpe), 36 à 55 -> 3 (dauphin), 56 ou
 // plus -> 4 (baleine). Sert au mode Auto des drafts
 // et à la médaille. profil.theatre garde le palier calculé par le serveur
 // ("1".."4"), utilisé sans catalogue chargé. Hauteur de la médaille : 1,3 x
@@ -192,7 +192,7 @@ const PALIERS_THEATRE = {
   3: { nom: "Dauphin", mode: "dauphin", bans: [3, 2], medaille: 10 },
   4: { nom: "Baleine", mode: "baleine", bans: [3, 3], medaille: 12 }
 };
-const SEUILS_THEATRE = [[80, 4], [40, 3], [20, 2]];
+const SEUILS_THEATRE = [[56, 4], [36, 3], [16, 2]];
 const SEUIL_COST = 40;
 // Draft de la mêlée générale (mode "12"), du carnage et du mode en équipe.
 const THEATRE_CARPE = 2;

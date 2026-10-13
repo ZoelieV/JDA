@@ -14,11 +14,7 @@ const {
   calculerElementsGroupes,
   calculerPoolDisponible,
   calculerBansBonus,
-  MARGE_EQUILIBRAGE,
   valeursBansBox,
-  valeursCinqEtoiles,
-  estEquilibrageVH,
-  banVHPossible,
   estEquilibrageFixe,
   verticalite,
   horizontalite,
@@ -96,19 +92,11 @@ async function calculerEquilibrage(draft) {
   draft.pool_disponible = calculerPoolDisponible(draft.pool_j1, draft.pool_j2);
   draft.bans_bonus_faits = 0;
   draft.bans_bonus_choix = [];
-  draft.bans_bonus_confirmes = false;
+  draft.bans_joker_choix = [];
+  draft.bans_joker_total = 0;
+  draft.echange_joker = false;
 
-  if (draft.equilibrage === "ancien") {
-    // Mode carnage : jamais de bans d'équilibrage.
-    const bansBonus = carnage ? 0 : calculerBansBonus(ecart);
-    draft.bans_bonus_total = bansBonus;
-    draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
-    draft.valeurs_bans_j1 = null;
-    draft.valeurs_bans_j2 = null;
-    return;
-  }
-
-  // Bans fixes (cf. calculerEquilibrageFixe, _lib/draft.js) : la box à la
+  // Bans calculés (cf. calculerEquilibrageFixe, _lib/draft.js) : la box à la
   // verticalité la plus faible bannit (nombre imposé, jokers compris).
   if (estEquilibrageFixe(draft)) {
     const valeurs = {};
@@ -120,41 +108,21 @@ async function calculerEquilibrage(draft) {
     });
     const faible = verticalite(valeurs.j1) <= verticalite(valeurs.j2) ? "j1" : "j2";
     const fort = faible === "j1" ? "j2" : "j1";
-    const resultat = calculerEquilibrageFixe(valeurs[faible], valeurs[fort], draft.equilibrage);
+    const resultat = calculerEquilibrageFixe(valeurs[faible], valeurs[fort]);
     // Mode carnage : jamais de bans d'équilibrage.
     const total = carnage ? 0 : resultat.bans + resultat.jokers;
     draft.bans_bonus_total = total;
     draft.bans_joker_total = carnage ? 0 : resultat.jokers;
-    draft.bans_joker_choix = [];
-    draft.theatre_bonus = carnage ? null : resultat.theatre_bonus;
     draft.ecart_prevu = { avant: resultat.ecart_avant, apres: resultat.ecart_apres };
     draft.bans_bonus_joueur = total > 0 ? faible : null;
-    draft.valeurs_bans_j1 = null;
-    draft.valeurs_bans_j2 = null;
     return;
   }
 
-  // Méthodes libres (cf. pointsApresBansBonus, _lib/draft.js) : bans si
-  // l'écart dépasse la marge ; bans_bonus_total = nombre de l'ancienne
-  // méthode, pour le temps des bans en classé seulement.
-  const avecSignature = draft.equilibrage === "perso_signature";
-  ["j1", "j2"].forEach(role => {
-    const { data, box } = boxes[role];
-    draft[`valeurs_bans_${role}`] = valeursBansBox(data, box, personnages, armes, avecSignature);
-  });
-  draft.bans_bonus_total = calculerBansBonus(ecart);
-  if (estEquilibrageVH(draft)) {
-    // Verticalité / horizontalité : celui qui a la box la plus faible
-    // (points) bannit, s'il peut faire au moins un ban (cf. banVHPossible).
-    ["j1", "j2"].forEach(role => {
-      const { data, box } = boxes[role];
-      draft[`cinq_${role}`] = valeursCinqEtoiles(data, box, personnages);
-    });
-    draft.bans_bonus_joueur = carnage || ecart === 0 ? null : ecart > 0 ? "j2" : "j1";
-    if (draft.bans_bonus_joueur && !banVHPossible(draft)) draft.bans_bonus_joueur = null;
-    return;
-  }
-  draft.bans_bonus_joueur = !carnage && Math.abs(ecart) > MARGE_EQUILIBRAGE ? (ecart > 0 ? "j2" : "j1") : null;
+  // Ancienne méthode (et méthode inconnue) : ⌊ écart / SEUIL_EQUILIBRAGE ⌋
+  // bans. Mode carnage : jamais de bans d'équilibrage.
+  const bansBonus = carnage ? 0 : calculerBansBonus(ecart);
+  draft.bans_bonus_total = bansBonus;
+  draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
 }
 
 module.exports = { coteEntrainement, sourceBoxRole, donneesBoxRole, chargerDonneesBoxes, calculerEquilibrage };

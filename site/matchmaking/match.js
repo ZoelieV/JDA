@@ -257,6 +257,11 @@ async function postBonusToggle(persoId) {
   await definirDraft(data.draft);
 }
 
+async function postBonusEchanger(annuler) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/bonus_echanger`, { annuler });
+  await definirDraft(data.draft);
+}
+
 async function postBonusConfirmer() {
   const data = await envoyerAction(`/api/rooms/${roomId}/bonus_confirmer`, {});
   await definirDraft(data.draft);
@@ -1115,14 +1120,18 @@ function placerBoutonPret(bouton) {
 // Les bans choisis vont dans des emplacements dédiés, modifiables (on peut
 // en retirer un et en reprendre un autre) tant qu'on n'a pas confirmé.
 
-// Bans fixes (cf. calculerEquilibrageFixe, api/_lib/draft.js) : nombre
+// Bans calculés (cf. calculerEquilibrageFixe, api/_lib/draft.js) : nombre
 // imposé comme l'ancienne méthode, jokers compris (bans_joker_total).
 function estEquilibrageFixe() {
-  return typeof draft.equilibrage === "string" && draft.equilibrage.startsWith("fixe_");
+  return draft.equilibrage === "fixe_joker";
 }
 
-// Constat de l'équilibrage fixe : verticalité, horizontalité et ce qui en
-// découle (bans, joker, bans de draft en plus).
+// Échange de BANS_PAR_JOKER bans contre un joker (cf.
+// echangerBansContreJoker, api/_lib/draft.js) : une fois par draft.
+const BANS_PAR_JOKER = 5;
+
+// Constat de l'équilibrage calculé : verticalité, horizontalité et ce qui en
+// découle (bans, joker).
 function texteEquilibrageFixe() {
   const banneur = draft.bans_bonus_joueur;
   const adverse = getAutreRole(banneur);
@@ -1130,15 +1139,25 @@ function texteEquilibrageFixe() {
   const normaux = draft.bans_bonus_total - (draft.bans_joker_total || 0);
   const leviers = [`${normaux} ban(s) d'équilibrage`];
   if (draft.bans_joker_total) leviers.push(`${draft.bans_joker_total} ban(s) joker (interdit à l'adversaire seulement)`);
-  if (draft.theatre_bonus) leviers.push(`${draft.theatre_bonus.filter(Boolean).length} ban(s) de draft en plus`);
   return `${box(banneur)} — ${box(adverse)}<br>Écart d'équipe prévu : ${draft.ecart_prevu?.avant ?? "?"} pts → ${leviers.join(", ")} pour ${pseudoColore(banneur)}`;
 }
 
+// Bouton d'échange (ou d'annulation de l'échange), pour celui qui bannit.
+function rendreEchangeJoker(cEstMonTour, nbNormaux) {
+  const bouton = document.getElementById("btn-echanger-joker");
+  const possible = !draft.echange_joker && nbNormaux >= BANS_PAR_JOKER;
+  bouton.classList.toggle("cache", !cEstMonTour || (!possible && !draft.echange_joker));
+  bouton.textContent = draft.echange_joker
+    ? `Annuler l'échange (récupérer ${BANS_PAR_JOKER} bans)`
+    : `Échanger ${BANS_PAR_JOKER} bans contre 1 joker`;
+  bouton.title = draft.echange_joker
+    ? "Rend les bans échangés et retire le joker obtenu"
+    : `Une seule fois : ${BANS_PAR_JOKER} bans d'équilibrage en moins, 1 ban joker en plus (personnage de la box adverse, interdit à l'adversaire seulement)`;
+  bouton.disabled = monTempsEcoule();
+  bouton.onclick = () => postBonusEchanger(!!draft.echange_joker).catch(err => alert(err.message));
+}
+
 function rendreBansBonus() {
-  if (draft.equilibrage && draft.equilibrage !== "ancien" && !estEquilibrageFixe()) {
-    rendreBansBonusLibre();
-    return;
-  }
   const choix = draft.bans_bonus_choix || [];
   const jokers = draft.bans_joker_choix || [];
   const nbJokers = draft.bans_joker_total || 0;
@@ -1148,7 +1167,9 @@ function rendreBansBonus() {
   const ecart = Math.abs((draft.points_j1 ?? 0) - (draft.points_j2 ?? 0));
   const constat = estEquilibrageFixe() ? `${texteEquilibrageFixe()}.<br>` : `Écart de ${ecart} pts entre les 2 box : `;
   const consigneJoker = nbJokers ? " Les premiers vont dans les bans d'équilibrage, les suivants dans les jokers (personnages de la box adverse)." : "";
+  const echange = draft.echange_joker ? ` (dont 1 joker obtenu contre ${BANS_PAR_JOKER} bans)` : "";
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
+  rendreEchangeJoker(cEstMonTour, nbNormaux);
 
   const message = document.getElementById("message-equilibrage");
   if (draft.entrainement && cEstMonTour) {
@@ -1160,7 +1181,7 @@ function rendreBansBonus() {
       ? `${constat}choisis encore ${restant} personnage(s) à bannir avant le tirage J1/J2 et du boss (tu peux revenir sur ton choix avant de confirmer).${consigneJoker}`
       : `${constat}tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
   } else {
-    message.innerHTML = `${constat}${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus. En attente…`;
+    message.innerHTML = `${constat}${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus${echange}. En attente…`;
   }
 
   const slots = document.getElementById("bans-bonus-slots");
@@ -1229,153 +1250,6 @@ function rendreBansBonus() {
     return obtenirCarteItem(grille, personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi,
-      onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
-      ...getInfosCarte(id)
-    });
-  }));
-}
-
-// ---- Phase 2 bis : bans d'équilibrage libres (cf. pointsApresBansBonus,
-// api/_lib/draft.js) ----
-// Celui qui a la box la plus faible bannit autant de persos de la box
-// adverse qu'il veut, sans la faire passer sous la sienne ; objectif : box
-// adverse entre +0 et +MARGE_EQUILIBRAGE points. Chaque perso affiche les
-// points qu'il retire.
-const MARGE_EQUILIBRAGE = 100;
-const LIBELLES_EQUILIBRAGE = {
-  perso: "points du perso banni retirés de la box adverse",
-  perso_signature: "points du perso banni et de son arme signature retirés de la box adverse",
-  deux_box: "points du perso banni retirés des 2 box",
-  vh_top4: "verticalité (moyenne des 4 meilleurs 5★) et horizontalité (5★ de 50 pts ou plus)",
-  vh_moy50: "verticalité (moyenne des 5★ de 50 pts ou plus) et horizontalité (nombre de ces 5★)"
-};
-
-// Verticalité / horizontalité (cf. mesuresVH, api/_lib/draft.js).
-const SEUIL_VH = 50;
-const MARGE_VH_HORIZONTALITE = 1;
-const MARGE_VH_VERTICALITE = 5;
-
-function estEquilibrageVH() {
-  return draft.equilibrage === "vh_top4" || draft.equilibrage === "vh_moy50";
-}
-
-function pointsApresBansBonus(choix) {
-  const banneur = draft.bans_bonus_joueur;
-  const adverse = getAutreRole(banneur);
-  const retire = role => choix.reduce((somme, id) => somme + (Number(draft[`valeurs_bans_${role}`]?.[id]) || 0), 0);
-  const lesDeux = draft.equilibrage === "deux_box" || estEquilibrageVH();
-  return {
-    banneur: (draft[`points_${banneur}`] || 0) - (lesDeux ? retire(banneur) : 0),
-    adverse: (draft[`points_${adverse}`] || 0) - retire(adverse)
-  };
-}
-
-function mesuresVH(cinq, bannis) {
-  const exclus = new Set(bannis);
-  const points = Object.entries(cinq || {}).filter(([id]) => !exclus.has(id)).map(([, v]) => Number(v) || 0).sort((a, b) => b - a);
-  const forts = points.filter(v => v >= SEUIL_VH);
-  const moyenne = liste => liste.length ? liste.reduce((a, b) => a + b, 0) / liste.length : 0;
-  const verticalite = draft.equilibrage === "vh_moy50" ? moyenne(forts) : moyenne(points.slice(0, 4));
-  return { horizontalite: forts.length, verticalite: Math.round(verticalite * 10) / 10 };
-}
-
-// Bans permis : 5★ de SEUIL_VH pts ou plus de la box adverse ; sur chaque
-// mesure, la box adverse ne passe pas sous celle du banneur (ou pas plus bas
-// qu'avant si elle y était déjà). Points : jamais sous la box du banneur.
-function bansBonusPermisLocal(choix) {
-  const banneur = draft.bans_bonus_joueur;
-  const adverse = getAutreRole(banneur);
-  if (estEquilibrageVH()) {
-    if (!choix.every(id => (Number(draft[`cinq_${adverse}`]?.[id]) || 0) >= SEUIL_VH)) return false;
-    const b = mesuresVH(draft[`cinq_${banneur}`], choix);
-    const a = mesuresVH(draft[`cinq_${adverse}`], choix);
-    const a0 = mesuresVH(draft[`cinq_${adverse}`], []);
-    return a.horizontalite >= Math.min(a0.horizontalite, b.horizontalite) && a.verticalite >= Math.min(a0.verticalite, b.verticalite);
-  }
-  const points = pointsApresBansBonus(choix);
-  return points.adverse >= points.banneur;
-}
-
-function rendreBansBonusLibre() {
-  const choix = draft.bans_bonus_choix || [];
-  const banneur = draft.bans_bonus_joueur;
-  const adverse = getAutreRole(banneur);
-  const cEstMonTour = banneur === monRole;
-  const points = pointsApresBansBonus(choix);
-  const ecart = points.adverse - points.banneur;
-  const vh = estEquilibrageVH();
-  const mesures = vh ? { banneur: mesuresVH(draft[`cinq_${banneur}`], choix), adverse: mesuresVH(draft[`cinq_${adverse}`], choix) } : null;
-  const ecartH = vh ? mesures.adverse.horizontalite - mesures.banneur.horizontalite : 0;
-  const ecartV = vh ? Math.round((mesures.adverse.verticalite - mesures.banneur.verticalite) * 10) / 10 : 0;
-  const dansObjectif = vh ? ecartH <= MARGE_VH_HORIZONTALITE && ecartV <= MARGE_VH_VERTICALITE : ecart <= MARGE_EQUILIBRAGE;
-  const etat = vh
-    ? `Box de ${pseudoColore(banneur)} : horizontalité ${mesures.banneur.horizontalite} · verticalité ${mesures.banneur.verticalite}<br>` +
-      `Box de ${pseudoColore(adverse)} : horizontalité ${mesures.adverse.horizontalite} (écart ${ecartH}) · verticalité ${mesures.adverse.verticalite} (écart ${ecartV})`
-    : `Box de ${pseudoColore(banneur)} : ${points.banneur} pts · box de ${pseudoColore(adverse)} : ${points.adverse} pts (écart ${ecart})`;
-  const regle = vh
-    ? `Équilibrage : ${LIBELLES_EQUILIBRAGE[draft.equilibrage]}. Seuls les 5★ de ${SEUIL_VH} pts ou plus de la box adverse se bannissent. ` +
-      `Objectif : écart d'horizontalité entre 0 et ${MARGE_VH_HORIZONTALITE}, de verticalité entre 0 et ${MARGE_VH_VERTICALITE}, jamais sous 0.`
-    : `Équilibrage : ${LIBELLES_EQUILIBRAGE[draft.equilibrage] || ""}. Objectif : écart entre 0 et ${MARGE_EQUILIBRAGE} pts, jamais sous 0.`;
-
-  const message = document.getElementById("message-equilibrage");
-  if (cEstMonTour) {
-    message.innerHTML = `${etat}<br>${regle}<br>${dansObjectif
-      ? "Objectif atteint : confirme pour lancer le tirage J1/J2 et du boss (tu peux encore changer tes bans)."
-      : "Bannis des persos de la box adverse autant que tu veux, puis confirme (tu peux revenir sur tes choix)."}`;
-  } else {
-    message.innerHTML = `${etat}<br>${regle}<br>${pseudoColore(banneur)} choisit ses bans d'équilibrage. En attente…`;
-  }
-
-  // Emplacements : un par ban choisi, cliquable pour le retirer.
-  const slots = document.getElementById("bans-bonus-slots");
-  slots.innerHTML = "";
-  choix.forEach(persoId => {
-    const personnage = getPersonnageParId(persoId);
-    const slot = document.createElement("div");
-    slot.className = "slot-bonus rempli";
-    slot.innerHTML = `<img src="../DB/${personnage.image}" alt="${personnage.nom}"><span class="retirer">✕</span>`;
-    slot.title = `${personnage.nom} : −${Number(draft[`valeurs_bans_${adverse}`]?.[persoId]) || 0} pts${cEstMonTour ? " (cliquer pour retirer)" : ""}`;
-    if (cEstMonTour) slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alert(err.message)));
-    slots.appendChild(slot);
-  });
-  if (!choix.length) slots.innerHTML = `<div class="slot-bonus" title="Aucun ban pour l'instant"></div>`;
-
-  // Confirmer : possible à tout moment (même sans ban), plein une fois
-  // l'objectif atteint.
-  const btnConfirmer = document.getElementById("btn-confirmer-bonus");
-  btnConfirmer.classList.toggle("cache", !monRole);
-  btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
-  btnConfirmer.classList.toggle("pret", cEstMonTour && dansObjectif);
-  // "Les 2 box" : retirer un ban peut faire repasser l'adversaire sous soi.
-  btnConfirmer.disabled = !cEstMonTour || !bansBonusPermisLocal(choix) || monTempsEcoule();
-  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
-
-  const grille = document.getElementById("grille-bans-bonus");
-  const cleGrille = JSON.stringify([
-    choix, draft.equilibrage, banneur, draft.pool_disponible, draft[`pool_${adverse}`],
-    draft.valeurs_bans_j1, draft.valeurs_bans_j2, draft.points_j1, draft.points_j2, monRole,
-    draft.cinq_j1, draft.cinq_j2,
-    ...cleFiltres()
-  ]);
-  if (!grilleAChange(grille, cleGrille)) return;
-
-  // Seulement les persos de la box adverse encore disponibles (verticalité
-  // / horizontalité : ses 5★ de SEUIL_VH pts ou plus).
-  const poolAdverse = new Set(draft[`pool_${adverse}`] || []);
-  const personnages = draft.pool_disponible
-    .filter(id => poolAdverse.has(id) && (!vh || (Number(draft[`cinq_${adverse}`]?.[id]) || 0) >= SEUIL_VH))
-    .map(id => getPersonnageParId(id))
-    .filter(p => p && personnageCorrespondFiltres(p));
-
-  remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
-    const id = personnage.id;
-    const dejaChoisi = choix.includes(id);
-    const permis = bansBonusPermisLocal([...choix, id]);
-    const valeur = Number(draft[`valeurs_bans_${adverse}`]?.[id]) || 0;
-    return obtenirCarteItem(grille, personnage, {
-      selectionnable: cEstMonTour && (dejaChoisi || permis),
-      indisponible: dejaChoisi || !permis,
-      titre: `${personnage.nom} : −${valeur} pts${permis || dejaChoisi ? "" : vh ? " (ferait passer la box adverse sous la tienne en verticalité ou en horizontalité)" : " (ferait passer la box adverse sous la tienne)"}`,
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
       ...getInfosCarte(id)
     });
@@ -2634,7 +2508,8 @@ function rendreTermine() {
     const delta = role => resultat ? resultat[role] : (draft.vainqueur === role ? enJeu : -enJeu);
     const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
     const bonus = (resultat?.bonus ? ` (dont +${resultat.bonus} de série 🔥)` : "") +
-      (resultat?.prime ? ` (dont +${resultat.prime} de prime ${ICONE_ENTRAINEMENT} : tu as battu la plus longue série en cours)` : "");
+      (resultat?.prime ? ` (dont +${resultat.prime} de prime ${ICONE_ENTRAINEMENT} : tu as battu la plus longue série en cours)` : "") +
+      (resultat?.ecart ? ` (dont +${resultat.ecart} de bonus d'écart : adversaire mieux classé)` : "");
     // Bonus de saison (persos cochés dans l'admin) : gain augmenté, perte réduite.
     const saison = role => resultat?.saison?.[role]
       ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}🌟)`

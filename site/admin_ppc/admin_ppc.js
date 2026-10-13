@@ -2,7 +2,8 @@
 // théâtre), PPW des armes (R1..R5) et personnages / armes masqués (pas
 // encore sortis dans le jeu, visibles seulement ici), enregistrés dans
 // Supabase via api/points.js (réservé aux administrateurs) et appliqués sur
-// tout le site.
+// tout le site. Vue "Perso + signa" (lecture seule) : points de chaque
+// constellation plus ceux de l'arme signature R1.
 
 const COLONNES = {
   characters: {
@@ -26,6 +27,36 @@ const BONUS = [
   { cle: "theatre", index: 9 }
 ];
 const INDEX_THEATRE = 9;
+
+// Vue "Perso + signa" : pas de colonnes propres, mêmes personnages, filtres
+// et masqués que la vue Personnages ; colonnes C0R1..C6R1 (PPC de la
+// constellation + PPW R1 de l'arme signature, 0 sans signature) puis la
+// signature seule (index NB_SOMMES). Calculée sur les valeurs en cours
+// (modifications pas encore enregistrées comprises), sans niveau ni théâtre.
+const VUE_SOMMES = "sommes";
+const NB_SOMMES = 7;
+const LIBELLES_SOMMES = Array.from({ length: NB_SOMMES }, (_, c) => `C${c}R1`);
+
+// Genre des données affichées : "characters" ou "weapons".
+function genre() {
+  return vue === "weapons" ? "weapons" : "characters";
+}
+
+function armeSignature(perso) {
+  return trouverArmeSignature(armes, perso);
+}
+
+// -> [C0R1, ..., C6R1, signature R1]
+function sommesPerso(perso) {
+  const arme = armeSignature(perso);
+  const signa = arme ? valeurs.weapons[arme.id]?.[0] ?? 0 : 0;
+  return [...valeurs.characters[perso.id].slice(0, NB_SOMMES).map(p => p + signa), signa];
+}
+
+// Valeur d'une colonne triable (index) pour un item de la vue.
+function valeurColonne(item, index) {
+  return vue === VUE_SOMMES ? sommesPerso(item)[index] : valeurs[vue][item.id][index];
+}
 
 let vue = "characters";
 let personnages = [];
@@ -60,13 +91,13 @@ function basculerBonusSaison(id, actif) {
 }
 
 function estMasque(id) {
-  return masques[vue].includes(id);
+  return masques[genre()].includes(id);
 }
 
 function basculerMasque(id) {
-  masques[vue] = estMasque(id)
-    ? masques[vue].filter(m => m !== id)
-    : [...masques[vue], id].sort();
+  masques[genre()] = estMasque(id)
+    ? masques[genre()].filter(m => m !== id)
+    : [...masques[genre()], id].sort();
 }
 
 function lireMasquesConfig(config) {
@@ -114,22 +145,22 @@ function correspondElements(item) {
 }
 
 function listeVue() {
-  return vue === "characters" ? personnages : armes;
+  return genre() === "characters" ? personnages : armes;
 }
 
 // Points enregistrés d'un item (pour le filtre "modifiés").
 function valeursEnregistrees(id) {
-  return JSON.parse(etatEnregistre)[0][vue][id];
+  return JSON.parse(etatEnregistre)[0][genre()][id];
 }
 
 function itemsAffiches() {
   const recherche = document.getElementById("recherche-admin").value.trim().toLowerCase();
-  const persos = vue === "characters";
+  const persos = genre() === "characters";
   const champType = persos ? "arme" : "type";
-  const nbConstellations = COLONNES[vue].derniereChaine + 1;
+  const nbConstellations = COLONNES[genre()].derniereChaine + 1;
 
   const items = listeVue().filter(item => {
-    const points = valeurs[vue][item.id];
+    const points = valeurs[genre()][item.id];
     if (recherche && !item.nom.toLowerCase().includes(recherche)) return false;
     if (filtres.elements.size && !correspondElements(item)) return false;
     if (filtres.armes.size && !filtres.armes.has(item[champType])) return false;
@@ -151,7 +182,7 @@ function itemsAffiches() {
     .sort((a, b) => {
       const ecart = tri.cle === "nom"
         ? a.item.nom.localeCompare(b.item.nom, "fr", { sensitivity: "base" })
-        : valeurs[vue][b.item.id][tri.cle] - valeurs[vue][a.item.id][tri.cle];
+        : valeurColonne(b.item, tri.cle) - valeurColonne(a.item, tri.cle);
       return (ecart * tri.sens) || (a.index - b.index);
     })
     .map(e => e.item);
@@ -187,7 +218,7 @@ function cyclerTriAdmin(cle) {
 
 // Barre des filtres (selon la vue).
 function rendreFiltres() {
-  const persos = vue === "characters";
+  const persos = genre() === "characters";
   const icones = (valeurs, set, cle) => Object.entries(valeurs).map(([valeur, src]) =>
     `<button type="button" class="filtre-admin filtre-icone${set.has(valeur) ? " active" : ""}" data-filtre="${cle}" data-valeur="${valeur}" title="${valeur}"><img src="${src}" alt="${valeur}"></button>`
   ).join("");
@@ -295,6 +326,7 @@ async function chargerDonnees() {
 // ---- Tableau ----
 
 function rendreEntete() {
+  if (vue === VUE_SOMMES) return rendreEnteteSommes();
   const { libelles } = COLONNES[vue];
   const modeBonus = index => BONUS.find(b => b.index === index);
 
@@ -331,7 +363,8 @@ function rendreCorps() {
   const items = itemsAffiches();
 
   document.getElementById("compte-admin").textContent =
-    `${items.length} / ${listeVue().length} ${vue === "characters" ? "personnages" : "armes"}`;
+    `${items.length} / ${listeVue().length} ${genre() === "characters" ? "personnages" : "armes"}`;
+  if (vue === VUE_SOMMES) return rendreCorpsSommes(corps, items);
 
   corps.innerHTML = items
     .map(item => `
@@ -375,6 +408,48 @@ function rendreCorps() {
 
   // Noms en texte (pas d'HTML venant des données).
   corps.querySelectorAll(".nom-admin").forEach((span, i) => { span.textContent = items[i].nom; });
+}
+
+// ---- Vue "Perso + signa" (lecture seule) ----
+
+function flecheTri(cle) {
+  return tri?.cle === cle ? `<span class="fleche-admin">${tri.sens === 1 ? "▼" : "▲"}</span>` : "";
+}
+
+function rendreEnteteSommes() {
+  document.getElementById("entete-admin").innerHTML = `
+    <tr>
+      <th class="col-nom triable" data-tri="nom" title="Trier par nom">Personnage${flecheTri("nom")}</th>
+      <th class="triable col-signa" data-tri="${NB_SOMMES}" title="Trier par points de l'arme signature R1">Signa R1${flecheTri(NB_SOMMES)}</th>
+      ${LIBELLES_SOMMES.map((libelle, index) => `<th class="triable" data-tri="${index}" title="Trier par ${libelle} (perso C${index} + signature R1)">${libelle}${flecheTri(index)}</th>`).join("")}
+    </tr>
+  `;
+}
+
+function rendreCorpsSommes(corps, items) {
+  corps.innerHTML = items.map(item => {
+    const sommes = sommesPerso(item);
+    const arme = armeSignature(item);
+    return `
+      <tr class="${estMasque(item.id) ? "ligne-masquee" : ""}">
+        <td class="col-nom">
+          <span class="miniature ${classeFondRarete(item.rarete)}"><img src="../DB/${item.image}" alt="" loading="lazy"></span>
+          <span class="nom-admin"></span>
+          ${estMasque(item.id) ? `<span class="tag-masque" title="Invisible sur le reste du site">Masqué</span>` : ""}
+        </td>
+        <td class="col-signa">
+          ${arme ? `<span class="signa-somme"><span class="miniature ${classeFondRarete(arme.rarete)}"><img src="../DB/${arme.image}" alt="" loading="lazy"></span><span class="nom-signa"></span><strong>${sommes[NB_SOMMES]}</strong></span>` : `<span class="sans-signa" title="Pas d'arme signature">—</span>`}
+        </td>
+        ${sommes.slice(0, NB_SOMMES).map(somme => `<td class="case-somme">${somme}</td>`).join("")}
+      </tr>`;
+  }).join("");
+
+  // Noms en texte (pas d'HTML venant des données).
+  corps.querySelectorAll("tr").forEach((ligne, i) => {
+    ligne.querySelector(".nom-admin").textContent = items[i].nom;
+    const nomSigna = ligne.querySelector(".nom-signa");
+    if (nomSigna) nomSigna.textContent = armeSignature(items[i]).nom;
+  });
 }
 
 function rendre() {
@@ -854,7 +929,9 @@ async function afficherLogoPersonnages() {
   try {
     const reponse = await fetch("/api/auth/profile", { credentials: "include" });
     const parametres = reponse.ok ? (await reponse.json()).profil?.parametres : null;
-    document.getElementById("logo-vue-personnages").src = `../DB/${getIconeVuePersonnages(parametres)}`;
+    const icone = `../DB/${getIconeVuePersonnages(parametres)}`;
+    document.getElementById("logo-vue-personnages").src = icone;
+    document.querySelector(".vue-sommes img").src = icone;
   } catch (erreur) {
     console.error(erreur);
   }

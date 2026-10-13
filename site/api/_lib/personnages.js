@@ -48,24 +48,14 @@ function estCarnageDesactive() {
 // administrateur sur la page admin) : figée dans chaque draft au calcul de
 // l'équilibrage (cf. calculerEquilibrage, _lib/boxes.js), une draft en cours
 // ne change donc pas de méthode.
-//   ancien          : ⌊ écart / SEUIL_EQUILIBRAGE ⌋ bans, nombre imposé ;
-//   perso           : bans libres, la box adverse perd les points du perso
-//                     banni (sans les armes) ;
-//   perso_signature : idem + les points de son arme signature dans la box
-//                     adverse ;
-//   deux_box        : idem "perso", et la box de celui qui bannit perd aussi
-//                     ce perso s'il l'a ;
-//   vh_top4, vh_moy50 : verticalité / horizontalité des 5★ (cf.
-//                     mesuresVH, _lib/draft.js), bans des 5★ de 50 points
-//                     ou plus seulement ;
-//   fixe_joker, fixe_complet : nombre de bans calculé d'après les 2 box
-//                     (verticalité), plus un ban joker si les bans ne
-//                     suffisent pas, et en dernier recours ("fixe_complet")
-//                     des bans de draft en plus (cf.
-//                     calculerEquilibrageFixe, _lib/draft.js).
-// Méthodes libres : la box adverse ne passe jamais sous celle de celui qui
-// bannit ; objectif entre +0 et +MARGE_EQUILIBRAGE points (cf. _lib/draft.js).
-const MODES_EQUILIBRAGE = ["ancien", "perso", "perso_signature", "deux_box", "vh_top4", "vh_moy50", "fixe_joker", "fixe_complet"];
+//   ancien     : ⌊ écart / SEUIL_EQUILIBRAGE ⌋ bans, nombre imposé ;
+//   fixe_joker : nombre de bans calculé d'après les 2 box (verticalité),
+//                plus un ban joker si les bans ne suffisent pas (cf.
+//                calculerEquilibrageFixe, _lib/draft.js).
+// Dans les 2 cas, celui qui bannit peut échanger 5 bans contre un joker
+// (cf. echangerBansContreJoker, _lib/draft.js). Ancienne méthode
+// enregistrée qui n'existe plus : "ancien".
+const MODES_EQUILIBRAGE = ["ancien", "fixe_joker"];
 let modeEquilibrage = "ancien";
 
 function getModeEquilibrage() {
@@ -281,13 +271,13 @@ function aBonusSaison(persoId, element = null) {
 // Cost de la full box : pour chaque 5★ limité (ni standard, ni Voyageur),
 // 1 par constellation possédée (C0 comprise) qui vaut au moins SEUIL_COST
 // points (PPC brut, sans bonus de niveau ni buff du théâtre). Ex. : 41 pts
-// en C0 -> C6 = 7 ; 39 en C0 et 40+ dès la C1 -> C6 = 6. Palier : 0 à 19 -> 1 (sardine), 20 à 39 -> 2 (carpe), 40 à 79
-// -> 3 (dauphin), 80 ou plus -> 4 (baleine). Sert au mode Auto des drafts
+// en C0 -> C6 = 7 ; 39 en C0 et 40+ dès la C1 -> C6 = 6. Palier : 0 à 15 -> 1 (sardine), 16 à 35 -> 2 (carpe), 36 à 55
+// -> 3 (dauphin), 56 ou plus -> 4 (baleine). Sert au mode Auto des drafts
 // (draft du plus petit palier, cf. PALIERS_THEATRE dans _lib/draft.js) et
 // à la médaille à côté du pseudo. Même calcul côté client :
 // palierTheatreProfil (commun/cartes.js). Valeur stockée dans le profil :
 // le palier en texte ("1".."4"). Dépend des points : actualiserPoints avant.
-const SEUILS_THEATRE = [[80, 4], [40, 3], [20, 2]];
+const SEUILS_THEATRE = [[56, 4], [36, 3], [16, 2]];
 const SEUIL_COST = 40;
 
 function estLimite5(personnage) {
