@@ -159,12 +159,24 @@
       }
     });
 
+    // Déconnexion en POST (cf. api/auth/logout.js), puis page d'accueil.
+    async function deconnecter() {
+      try {
+        const reponse = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+        const { redirection } = await reponse.json().catch(() => ({}));
+        if (!reponse.ok) throw new Error();
+        window.location.href = redirection || "/";
+      } catch {
+        alert("Erreur lors de la déconnexion : réessaie.");
+      }
+    }
+
     menu.querySelector('[data-action="deconnexion"]').addEventListener("click", () => {
       if (!confirm("Se déconnecter ?")) return;
       // Plus de fond personnalisé une fois déconnecté (comme sur Mon compte).
       window.FondEcran?.memoriser(null, null);
       window.FondEcran?.memoriserTheatre(null);
-      window.location.href = "/api/auth/logout";
+      deconnecter();
     });
 
     // Clic en dehors du menu ou Échap : fermeture.

@@ -2,9 +2,12 @@
 // draft sur les vitrines, déclaration de qui joue quoi, temps et résultat.
 // Règles et état côté serveur : api/_lib/equipe.js (routes
 // /api/rooms/{room_id}/equipe_*). La page relit l'état toutes les
-// POLL_MS et le redessine s'il a changé.
+// POLL_MS (plus lentement pendant le combat et en fin de manche, cf.
+// POLL_LENT_MS) et le redessine s'il a changé.
 
 const POLL_MS = 2500;
+const POLL_LENT_MS = { temps: 6000, verification: 4000, termine: 6000, litige: 6000, annule: 10000 };
+const delaiPolling = () => POLL_LENT_MS[draft?.phase] || POLL_MS;
 const ROLES = ["j1", "j2"];
 const NOMS_EQUIPES = { j1: "Équipe 1", j2: "Équipe 2" };
 const MODES = { 2: "2v2", 3: "3v3", 4: "4v4" };
@@ -833,14 +836,27 @@ async function demarrer() {
     }
   }
 
-  let intervalle = setInterval(rafraichir, POLL_MS);
+  // Relectures en chaîne, au délai de la phase affichée ; arrêtées onglet
+  // masqué.
+  let minuteur = null;
+  let actif = true;
+  const programmer = () => {
+    clearTimeout(minuteur);
+    if (!actif) return;
+    minuteur = setTimeout(async () => {
+      await rafraichir();
+      programmer();
+    }, delaiPolling());
+  };
+  programmer();
   // Comptes à rebours (vote, hôte) : bulles mises à jour chaque seconde.
   setInterval(() => { if (draft && ["chefs", "hotes"].includes(draft.phase)) rendreBulles(); }, 1000);
   document.addEventListener("visibilitychange", () => {
-    clearInterval(intervalle);
-    if (!document.hidden) {
+    actif = !document.hidden;
+    clearTimeout(minuteur);
+    if (actif) {
       rafraichir();
-      intervalle = setInterval(rafraichir, POLL_MS);
+      programmer();
     }
   });
 }

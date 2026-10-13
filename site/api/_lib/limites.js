@@ -1,6 +1,7 @@
-// Limites de fréquence par adresse IP (table limites_frequence, cf.
-// sql/abandons_limites.sql). L'IP n'est jamais stockée en clair : seulement
-// une empreinte HMAC (clé SESSION_SECRET), impossible à inverser sans la clé.
+// Limites de fréquence par adresse IP ou par compte (table
+// limites_frequence, cf. sql/abandons_limites.sql). L'IP ou l'ID Discord
+// n'est jamais stocké en clair : seulement une empreinte HMAC (clé
+// SESSION_SECRET), impossible à inverser sans la clé.
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 
@@ -11,15 +12,24 @@ function ipClient(req) {
   return String(transmise || req.socket?.remoteAddress || "inconnue").trim();
 }
 
-function empreinteIp(req) {
-  return crypto.createHmac("sha256", process.env.SESSION_SECRET || "").update(ipClient(req)).digest("hex");
+function empreinte(texte) {
+  return crypto.createHmac("sha256", process.env.SESSION_SECRET || "").update(texte).digest("hex");
 }
 
 // Action "action" autorisée au plus une fois par delaiMs pour cette IP.
 // -> 0 si autorisée (et notée), sinon le temps à attendre en ms.
 // Table absente : pas de limite (erreur journalisée).
-async function verifierFrequence(req, action, delaiMs) {
-  const cle = `${action}:${empreinteIp(req)}`;
+function verifierFrequence(req, action, delaiMs) {
+  return verifierCle(`${action}:${empreinte(ipClient(req))}`, delaiMs);
+}
+
+// Même chose pour un compte (ID Discord de la session), quelle que soit
+// son IP.
+function verifierFrequenceCompte(discordId, action, delaiMs) {
+  return verifierCle(`${action}:compte:${empreinte(String(discordId))}`, delaiMs);
+}
+
+async function verifierCle(cle, delaiMs) {
   const maintenant = Date.now();
 
   const { data, error } = await supabase
@@ -42,4 +52,4 @@ async function verifierFrequence(req, action, delaiMs) {
   return 0;
 }
 
-module.exports = { verifierFrequence };
+module.exports = { verifierFrequence, verifierFrequenceCompte };

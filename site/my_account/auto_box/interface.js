@@ -12,6 +12,14 @@ const AUTO_BOX_TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/
 // Empreinte du fichier ci-dessus (SRI) : un fichier modifié sur le CDN est
 // refusé par le navigateur. À recalculer si la version change :
 // curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A
+// Fichiers chargés ensuite par Tesseract (worker, moteur, données de la
+// langue) : chemins fixés ici, les seuls que la CSP de vercel.json autorise
+// sur cdn.jsdelivr.net. À changer avec la CSP si la version change.
+const AUTO_BOX_TESSERACT_CHEMINS = {
+  workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+  corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+  langPath: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int"
+};
 const AUTO_BOX_TESSERACT_SRI = "sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F";
 const AUTO_BOX_MODELE_URL = "/my_account/auto_box/modele_constellations.json";
 const AUTO_BOX_NB_WORKERS = 3;
@@ -70,7 +78,7 @@ function versCanvas(image, hauteurMax = null) {
 async function creerOcr() {
   await chargerScriptTesseract();
   const workers = await Promise.all(
-    Array.from({ length: AUTO_BOX_NB_WORKERS }, () => window.Tesseract.createWorker("eng"))
+    Array.from({ length: AUTO_BOX_NB_WORKERS }, () => window.Tesseract.createWorker("eng", 1, AUTO_BOX_TESSERACT_CHEMINS))
   );
   const libres = [...workers];
   const attente = [];

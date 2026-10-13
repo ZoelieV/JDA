@@ -1,5 +1,6 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { codeTheatre, actualiserPoints } = require("../_lib/personnages");
+const { verifierFrequenceCompte } = require("../_lib/limites");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
@@ -45,6 +46,10 @@ function lienStreamAutorise(texte) {
 }
 
 const ERREUR_LIEN_STREAM = "Lien de stream refusé : seuls les liens Twitch (twitch.tv) et YouTube (youtube.com, youtu.be) sont acceptés.";
+
+// Enregistrements du profil : un toutes les 10 s au plus par compte (quota
+// Supabase protégé d'un envoi en boucle).
+const DELAI_ENREGISTREMENT_MS = 10 * 1000;
 
 // Profil envoyé : taille maximale (une box complète pèse quelques dizaines
 // de Ko).
@@ -228,6 +233,13 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: ERREUR_UID });
       }
       profil = nettoyerProfil(profil);
+
+      // Profil valide seulement : un envoi refusé ne compte pas.
+      const attente = await verifierFrequenceCompte(discordId, "profil", DELAI_ENREGISTREMENT_MS);
+      if (attente > 0) {
+        res.setHeader("Retry-After", String(Math.ceil(attente / 1000)));
+        return res.status(429).json({ error: `Un enregistrement toutes les 10 s au maximum : réessaie dans ${Math.ceil(attente / 1000)} s.` });
+      }
 
       const r = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
         method: "POST",

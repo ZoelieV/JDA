@@ -77,12 +77,20 @@ async function chargerSessionDiscord() {
     window.location.href = `/api/auth/discord/login?retour=${encodeURIComponent(location.pathname + location.search)}`;
   });
 
-  logoutBtn.addEventListener("click", () => {
+  logoutBtn.addEventListener("click", async () => {
     if (!confirm("Se déconnecter ?")) return;
     // Plus de fond personnalisé une fois déconnecté.
     window.FondEcran?.memoriser(null, null);
     window.FondEcran?.memoriserTheatre(null);
-    window.location.href = "/api/auth/logout";
+    // Déconnexion en POST (cf. api/auth/logout.js).
+    try {
+      const reponse = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      const { redirection } = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error();
+      window.location.href = redirection || "/";
+    } catch {
+      afficherToast("Erreur lors de la déconnexion : réessaie.", "erreur");
+    }
   });
 
   initialiserMenuCompte();

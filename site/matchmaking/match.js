@@ -39,7 +39,16 @@ const SEQUENCE_FIXE = BLOCS_SEQUENCE.flatMap(bloc =>
   Array.from({ length: bloc.nombre }, () => ({ joueur: bloc.joueur, type: bloc.type }))
 );
 
+// Relecture de la draft : toutes les 2,5 s, plus lentement dans les
+// phases où rien ne change pendant des minutes (combat, fin de manche) ;
+// chaque relecture coûte un appel Vercel et une lecture Supabase. Toujours
+// sous PRESENCE_JOUEUR_MS (15 s, api/rooms/[room_id]/[action].js).
 const POLL_INTERVAL_MS = 2500;
+const POLL_LENT_MS = { temps: 6000, verification: 4000, termine: 6000, litige: 6000, annule: 10000 };
+
+function delaiPolling() {
+  return POLL_LENT_MS[draft?.phase] || POLL_INTERVAL_MS;
+}
 
 let roomId = null;
 let typeRoom = "prive"; // "prive" | "matchmaking" | "classe" (trophées en fin de match)
@@ -50,7 +59,8 @@ let personnagesData = [];   // catalogue de draft (un seul Voyageur), variantes 
 let armesData = [];
 let bossData = [];
 let draft = null;
-let intervalPolling = null;
+let intervalPolling = null; // minuteur de la prochaine relecture (cf. programmerPolling)
+let pollingActif = false;
 
 // Données des 2 joueurs : { discordId, nom, avatar, data } ou null.
 // j1/j2 sont les rôles DE LA MANCHE EN COURS (draft.discord_j1/discord_j2),
@@ -122,7 +132,7 @@ async function rejoindreOuConsulterRoom(id) {
   // compte pour le renseigner.
   if (reponse.status === 409) {
     const { error } = await reponse.json().catch(() => ({}));
-    clearInterval(intervalPolling);
+    arreterPolling();
     alert(error || "Impossible de rejoindre cette room.");
     window.location.href = "/my_account/my_account.html";
     throw new Error(error || "Impossible de rejoindre cette room.");
@@ -3174,6 +3184,29 @@ async function rafraichirEtatRoomEtJoueurs() {
   }
 }
 
+// Relectures en chaîne : la suivante est programmée après la fin de la
+// précédente, au délai de la phase affichée (cf. delaiPolling).
+function programmerPolling() {
+  clearTimeout(intervalPolling);
+  intervalPolling = null;
+  if (!pollingActif) return;
+  intervalPolling = setTimeout(async () => {
+    await tick();
+    programmerPolling();
+  }, delaiPolling());
+}
+
+function demarrerPolling() {
+  pollingActif = true;
+  programmerPolling();
+}
+
+function arreterPolling() {
+  pollingActif = false;
+  clearTimeout(intervalPolling);
+  intervalPolling = null;
+}
+
 async function tick() {
   try {
     if (!(joueur1 && joueur2)) {
@@ -3318,7 +3351,7 @@ async function demarrer() {
 
     await tick();
 
-    intervalPolling = setInterval(tick, POLL_INTERVAL_MS);
+    demarrerPolling();
     // Chronos de la draft classée : affichage et fin de temps, 4 fois par
     // seconde (sans requête tant que rien n'expire).
     setInterval(majChronos, 250);
@@ -3326,11 +3359,10 @@ async function demarrer() {
     // Onglet masqué : plus de requêtes ; au retour, état rafraîchi tout de
     // suite puis polling normal.
     document.addEventListener("visibilitychange", () => {
-      clearInterval(intervalPolling);
-      intervalPolling = null;
+      arreterPolling();
       if (!document.hidden) {
         tick();
-        intervalPolling = setInterval(tick, POLL_INTERVAL_MS);
+        demarrerPolling();
       }
     });
   } catch (error) {
