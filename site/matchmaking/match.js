@@ -1152,11 +1152,13 @@ function rendreChoixBox() {
       // pas choisissable.
       const nbPersos = peutChoisir ? nbPersosBox(role, valeur) : NB_PERSOS_MIN_BOX;
       const tropPetite = nbPersos < NB_PERSOS_MIN_BOX;
-      // Hors full box : pointsMaxBox points au plus (commun/cartes.js).
-      const tropChere = peutChoisir && valeur !== "full" && pointsBoxJoueur(role, valeur) > pointsMaxBox;
+      // Hors full box : plafond du palier de la draft (pointsMaxBox,
+      // commun/cartes.js).
+      const maxBox = pointsMaxBox(theatreDeLaDraft());
+      const tropChere = peutChoisir && valeur !== "full" && pointsBoxJoueur(role, valeur) > maxBox;
       btn.classList.toggle("trop-petite", tropPetite || tropChere);
       if (tropPetite) btn.title = `${nbPersos} personnage${nbPersos > 1 ? "s" : ""} : il en faut au moins ${NB_PERSOS_MIN_BOX}`;
-      else if (tropChere) btn.title = `Hors full box, une box jouable vaut ${pointsMaxBox} points au plus`;
+      else if (tropChere) btn.title = `Hors full box, une box jouable en draft ${PALIERS_THEATRE[theatreDeLaDraft()]?.nom.toLowerCase() || "carpe"} vaut ${maxBox} points au plus`;
       btn.disabled = !peutChoisir || tropPetite || tropChere;
       if (peutChoisir && !tropPetite && !tropChere) {
         btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));

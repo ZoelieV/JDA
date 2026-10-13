@@ -74,13 +74,16 @@ function getModeEquilibrage() {
 //   seuil_haut : top 12 du gros joueur au-dessus duquel le petit compte a
 //                droit au joker dès un ban qui le touche ;
 //   plancher   : petit compte face à un gros joueur entre seuil_bas et
-//                seuil_haut : top 12 des 2 joueurs à garder au-dessus.
-const CHAMPS_LIMITES = ["min_persos", "seuil_bas", "seuil_haut", "plancher"];
+//                seuil_haut : top 12 des 2 joueurs à garder au-dessus ;
+//   points_max_box : points max d'une box jouable hors full box (opti,
+//                personnalisée) dans une draft de ce palier (toutes
+//                méthodes ; cf. erreurPointsBox dans _lib/boxes.js).
+const CHAMPS_LIMITES = ["min_persos", "seuil_bas", "seuil_haut", "plancher", "points_max_box"];
 const LIMITES_EQUILIBRAGE_DEFAUT = {
-  1: { min_persos: 14, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 },
-  2: { min_persos: 16, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 },
-  3: { min_persos: 18, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 },
-  4: { min_persos: 20, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 }
+  1: { min_persos: 14, seuil_bas: 1000, seuil_haut: 1500, plancher: 850, points_max_box: 3000 },
+  2: { min_persos: 16, seuil_bas: 1000, seuil_haut: 1500, plancher: 850, points_max_box: 5000 },
+  3: { min_persos: 18, seuil_bas: 1000, seuil_haut: 1500, plancher: 850, points_max_box: 7000 },
+  4: { min_persos: 20, seuil_bas: 1000, seuil_haut: 1500, plancher: 850, points_max_box: 9000 }
 };
 let limitesEquilibrage = LIMITES_EQUILIBRAGE_DEFAUT;
 
@@ -99,18 +102,11 @@ function getLimitesEquilibrage(palier) {
   return limitesEquilibrage[palier] || limitesEquilibrage[2];
 }
 
-// Points max d'une box jouable hors full box (config.points_max_box, réglé
-// sur la page admin ; cf. erreurPointsBox dans _lib/boxes.js).
-const POINTS_MAX_BOX_DEFAUT = 5000;
-let pointsMaxBox = POINTS_MAX_BOX_DEFAUT;
-
-function lirePointsMaxBox(brut) {
-  const valeur = Number(brut);
-  return Number.isFinite(valeur) && valeur > 0 ? Math.round(valeur) : POINTS_MAX_BOX_DEFAUT;
-}
-
-function getPointsMaxBox() {
-  return pointsMaxBox;
+// Points max d'une box jouable hors full box dans une draft de ce palier
+// (limites_equilibrage[palier].points_max_box ; cf. erreurPointsBox dans
+// _lib/boxes.js).
+function getPointsMaxBox(palier) {
+  return getLimitesEquilibrage(palier).points_max_box;
 }
 
 function appliquerBonus(points, cle, valeur) {
@@ -198,7 +194,6 @@ async function actualiserPoints() {
     carnageDesactive = config.carnage_desactive === true;
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
-    pointsMaxBox = lirePointsMaxBox(config.points_max_box);
     modesBonus = config.modes || {};
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
@@ -370,7 +365,6 @@ module.exports = {
   LIMITES_EQUILIBRAGE_DEFAUT,
   lireLimitesEquilibrage,
   getLimitesEquilibrage,
-  lirePointsMaxBox,
   getPointsMaxBox,
   ALTERNATIVES_ARMES,
   MODES_POINTS,

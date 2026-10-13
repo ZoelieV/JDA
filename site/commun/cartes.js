@@ -36,9 +36,14 @@ function chargerPointsAdmin() {
   return promessePointsAdmin;
 }
 
-// Points max d'une box jouable hors full box (réglé sur la page admin, cf.
-// erreurPointsBox dans api/_lib/boxes.js) : lu avec les armes (chargerArmes).
-let pointsMaxBox = 5000;
+// Points max d'une box jouable hors full box, par palier de la draft (réglé
+// sur la page admin, cf. erreurPointsBox dans api/_lib/boxes.js) : lu avec
+// les armes (chargerArmes).
+const pointsMaxBoxParPalier = { 1: 3000, 2: 5000, 3: 7000, 4: 9000 };
+
+function pointsMaxBox(palier) {
+  return pointsMaxBoxParPalier[palier] ?? pointsMaxBoxParPalier[2];
+}
 
 function appliquerPointsAdmin(liste, points, champ) {
   liste.forEach(item => {
@@ -131,7 +136,10 @@ const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("ch
 const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.weapons), points.weapons, "PPW");
-    if (Number(points.points_max_box) > 0) pointsMaxBox = Number(points.points_max_box);
+    Object.keys(pointsMaxBoxParPalier).forEach(palier => {
+      const max = Number(points.limites_equilibrage?.[palier]?.points_max_box);
+      if (max > 0) pointsMaxBoxParPalier[palier] = max;
+    });
     // Valeur alternative (copies en double, signature sans son perso).
     liste.forEach(arme => { arme.alternatif = ALTERNATIVES_ARMES.includes(points.alternatives_armes?.[arme.id]) ? points.alternatives_armes[arme.id] : 100; });
     // Catégories (support, standard) modifiées par les administrateurs.

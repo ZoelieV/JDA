@@ -10,22 +10,20 @@ const METHODES_EQUILIBRAGE = [
   { valeur: "fixe_joker", titre: "Bans calculés + joker", description: "Verticalité = moyenne des 12 meilleurs persos (perso + signature). Le nombre de bans est calculé d'après les 2 box (sans plafond) : assez pour ramener l'écart d'équipe prévu (4 × écart de verticalité) à 25 pts ou moins. Si les bans n'y arrivent pas : 1 ban joker (interdit à l'adversaire seulement). Armes en double et signatures sans leur perso : attribuées à leur valeur alternative aux persos sans signature du même type (armes support : persos support ou sub-dps)." }
 ];
 
-// Limites des bans calculés par palier (config.limites_equilibrage, cf.
-// getLimitesEquilibrage dans api/_lib/personnages.js).
+// Limites par palier de draft (config.limites_equilibrage, cf.
+// getLimitesEquilibrage dans api/_lib/personnages.js) : bans calculés, et
+// points max d'une box jouable hors full box (toutes méthodes).
 const PALIERS_LIMITES = { 1: "Sardine", 2: "Carpe", 3: "Dauphin", 4: "Baleine" };
 const CHAMPS_LIMITES = [
   { cle: "min_persos", titre: "Persos min" },
   { cle: "seuil_bas", titre: "Seuil bas" },
   { cle: "seuil_haut", titre: "Seuil haut" },
-  { cle: "plancher", titre: "Plancher" }
+  { cle: "plancher", titre: "Plancher" },
+  { cle: "points_max_box", titre: "Box max (hors full)" }
 ];
 
-// pointsMax : points max d'une box jouable hors full box (config.points_max_box).
-function rendreLimites(limites, pointsMax) {
+function rendreLimites(limites) {
   document.getElementById("limites-equilibrage").innerHTML = `
-    <label class="champ-points-max-box">Points max d'une box jouable (hors full box)
-      <input type="number" min="1" step="1" name="points_max_box" value="${pointsMax ?? ""}" required>
-    </label>
     <table class="tableau-boss tableau-limites">
       <thead><tr><th class="col-nom">Palier</th>${CHAMPS_LIMITES.map(c => `<th>${c.titre}</th>`).join("")}</tr></thead>
       <tbody>
@@ -67,7 +65,6 @@ function initialiserEquilibrage() {
   // réponse), puis suivie à chaque enregistrement.
   let actuelle = null;
   let limites = null;
-  let pointsMax = null;
   const fermer = () => modal.classList.remove("active");
 
   document.getElementById("ouvrir-equilibrage").addEventListener("click", async () => {
@@ -78,14 +75,13 @@ function initialiserEquilibrage() {
         const config = await chargerPointsAdmin();
         actuelle = METHODES_EQUILIBRAGE.some(m => m.valeur === config?.equilibrage) ? config.equilibrage : "ancien";
         limites = config?.limites_equilibrage || null;
-        pointsMax = config?.points_max_box ?? null;
       } catch (erreur) {
         console.error(erreur);
         actuelle = "ancien";
       }
     }
     rendreEquilibrage(actuelle);
-    rendreLimites(limites, pointsMax);
+    rendreLimites(limites);
   });
   document.getElementById("fermer-equilibrage").addEventListener("click", fermer);
   modal.addEventListener("click", event => {
@@ -102,18 +98,14 @@ function initialiserEquilibrage() {
     bouton.disabled = true;
     afficherMessageEquilibrage("Enregistrement…");
     try {
-      const config = await envoyerAjout({
-        limites_equilibrage: lireFormulaireLimites(formulaire),
-        points_max_box: Number(formulaire.elements.points_max_box.value)
-      });
+      const config = await envoyerAjout({ limites_equilibrage: lireFormulaireLimites(formulaire) });
       limites = config.limites_equilibrage;
-      pointsMax = config.points_max_box;
       afficherMessageEquilibrage("Limites enregistrées : elles s'appliquent aux prochaines drafts.", "succes");
     } catch (erreur) {
       console.error(erreur);
       afficherMessageEquilibrage(erreur.message, "erreur");
     }
-    rendreLimites(limites, pointsMax);
+    rendreLimites(limites);
   });
 
   liste.addEventListener("change", async event => {

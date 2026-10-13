@@ -1005,10 +1005,9 @@ function mettreAJourTotalBox(personnages, armes, profil) {
   document.getElementById("total-ppc").textContent = total;
   mettreAJourCopieBox();
 
-  // Sous le total : vitrine conforme ou non aux modes en équipe ; box opti
-  // jouable ou non en match (pointsMaxBox points au plus, cf.
-  // commun/cartes.js) ; box stuff :
-  // indication seulement.
+  // Sous le total : vitrine conforme ou non aux modes en équipe ; box opti :
+  // drafts où elle est jouable (plafond de points par palier, pointsMaxBox
+  // dans commun/cartes.js) ; box stuff : indication seulement.
   const statut = document.getElementById("statut-vitrine");
   statut.classList.toggle("cache", boxActive === "full");
   if (boxActive === "vitrine") {
@@ -1019,10 +1018,11 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     statut.classList.remove("conforme");
     statut.textContent = "Indication pour Tous les comptes : pas jouable en match.";
   } else {
-    statut.classList.toggle("conforme", total <= pointsMaxBox);
-    statut.textContent = total <= pointsMaxBox
-      ? `Jouable en match ✓ (${pointsMaxBox} pts au plus hors full box)`
-      : `Pas jouable en match : ${pointsMaxBox} pts au plus hors full box`;
+    const paliers = Object.keys(PALIERS_THEATRE).filter(palier => total <= pointsMaxBox(palier));
+    statut.classList.toggle("conforme", paliers.length > 0);
+    statut.textContent = paliers.length
+      ? `Jouable en draft ${paliers.map(palier => PALIERS_THEATRE[palier].nom.toLowerCase()).join(", ")} ✓`
+      : `Pas jouable en match : ${pointsMaxBox(4)} pts au plus en draft baleine`;
   }
 }
 

@@ -49,20 +49,36 @@ function evaluerEquilibrageFixe(boxes, palier) {
 const BOX_MATCH = ["full", "opti1", "opti2", "opti3", "opti4", "opti5"];
 
 // Toute box jouable autre que la full box (opti, personnalisée, opti d'une
-// box fictive) : getPointsMaxBox() points au plus (persos + armes ; réglé
-// sur la page admin, 5000 par défaut).
+// box fictive) : getPointsMaxBox(palier) points au plus (persos + armes),
+// palier = celui de la draft (cf. resoudreTheatre) ; réglé par palier sur
+// la page admin (3000 sardine, 5000 carpe, 7000 dauphin, 9000 baleine par
+// défaut).
 function pointsBoxProfil(data, box) {
   return calculerPointsBox(data, box, getPersonnages()) + calculerPointsArmesBox(data, box, getArmes());
 }
 
-// Message d'erreur si la box dépasse getPointsMaxBox(), sinon null.
-function erreurPointsBox(data, box) {
+const NOMS_PALIERS = { 1: "sardine", 2: "carpe", 3: "dauphin", 4: "baleine" };
+
+// Message d'erreur si la box dépasse le plafond du palier de la draft,
+// sinon null.
+function erreurPointsBox(data, box, palier) {
   if (box === "full") return null;
   const points = pointsBoxProfil(data, box);
-  const max = getPointsMaxBox();
+  const max = getPointsMaxBox(palier);
+  const nom = NOMS_PALIERS[palier] || NOMS_PALIERS[2];
   return points > max
-    ? `Hors full box, une box jouable vaut ${max} points au plus (celle-ci en vaut ${points}).`
+    ? `Hors full box, une box jouable en draft ${nom} vaut ${max} points au plus (celle-ci en vaut ${points}).`
     : null;
+}
+
+// Palier de la draft d'une room de match (pas un entraînement) : mode de
+// la room et paliers des 2 joueurs (cf. resoudreTheatre).
+async function palierDraftRoom(draft) {
+  const [dataJ1, dataJ2] = await Promise.all([
+    lireDonneesProprietaire(draft.discord_j1),
+    lireDonneesProprietaire(draft.discord_j2)
+  ]);
+  return resoudreTheatre(draft.mode_theatre, theatreProfil(dataJ1), theatreProfil(dataJ2));
 }
 
 // Combinaisons de box (non entraînement) dont l'équilibrage calculé marche,
@@ -77,7 +93,7 @@ async function combinaisonsEquilibrables(draft, boxesPermises = BOX_MATCH) {
   const personnages = getPersonnages();
   const palier = resoudreTheatre(draft.mode_theatre, theatreProfil(dataJ1), theatreProfil(dataJ2));
   const jouables = data => boxesPermises.filter(box =>
-    poolJoueur(data, personnages, box).length >= NB_PERSOS_MIN_BOX && !erreurPointsBox(data, box));
+    poolJoueur(data, personnages, box).length >= NB_PERSOS_MIN_BOX && !erreurPointsBox(data, box, palier));
   const combinaisons = [];
   jouables(dataJ1).forEach(boxJ1 => {
     jouables(dataJ2).forEach(boxJ2 => {
@@ -206,5 +222,6 @@ module.exports = {
   calculerEquilibrage,
   combinaisonsEquilibrables,
   BOX_MATCH,
-  erreurPointsBox
+  erreurPointsBox,
+  palierDraftRoom
 };

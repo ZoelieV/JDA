@@ -130,10 +130,10 @@ function htmlLimitesEquilibrage() {
   return `
     <div class="tableau-conteneur tableau-paliers-tc">
       <table class="tableau-theorycraft">
-        <thead><tr><th>Draft</th><th>Persos min</th><th>Seuil bas</th><th>Seuil haut</th><th>Plancher</th></tr></thead>
+        <thead><tr><th>Draft</th><th>Persos min</th><th>Seuil bas</th><th>Seuil haut</th><th>Plancher</th><th>Box max (hors full)</th></tr></thead>
         <tbody>${Object.entries(NOMS_PALIERS).map(([palier, nom]) => {
           const l = limitesEquilibrage[palier] || {};
-          return `<tr><td>${nom}${palier === "2" ? " (et mêlée générale)" : ""}</td><td>${l.min_persos}</td><td>${l.seuil_bas}</td><td>${l.seuil_haut}</td><td>${l.plancher}</td></tr>`;
+          return `<tr><td>${nom}${palier === "2" ? " (et mêlée générale)" : ""}</td><td>${l.min_persos}</td><td>${l.seuil_bas}</td><td>${l.seuil_haut}</td><td>${l.plancher}</td><td>${l.points_max_box}</td></tr>`;
         }).join("")}</tbody>
       </table>
     </div>`;
@@ -613,6 +613,7 @@ function rendreEquilibrage() {
     <h2>3. Points d'une box</h2>
     <p class="formule-tc">points de la box = Σ points des personnages + Σ points des armes</p>
     <p>Seuls les personnages et armes de la box choisie pour le match comptent (Full box ou box sélectionnée).</p>
+    <p>La full box est toujours jouable. Une autre box (opti, personnalisée en entraînement) ne l'est que si ses points ne dépassent pas le plafond du palier de la draft : ${Object.entries(NOMS_PALIERS).map(([palier, nom]) => `${nom.toLowerCase()} ${limitesEquilibrage?.[palier]?.points_max_box ?? "?"}`).join(", ")} points. Le palier de la draft est celui du mode (carpe en mêlée générale et en carnage) ou, en mode classique, le plus petit des 2 joueurs : une baleine qui affronte une sardine ne peut venir qu'avec sa full box ou une opti sous le plafond sardine.</p>
 
     <h2>4. Bans d'équilibrage</h2>
     ${htmlBansEquilibrage(paliers)}

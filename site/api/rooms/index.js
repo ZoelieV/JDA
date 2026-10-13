@@ -4,7 +4,7 @@ const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
 const { annulerAutresMatchs } = require("../_lib/room");
 const { verifierFrequence } = require("../_lib/limites");
-const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur } = require("../_lib/draft");
+const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur, resoudreTheatre, theatreProfil } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
@@ -41,8 +41,9 @@ async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}
 // Box du lanceur : full, opti ou personnalisée ; d'un autre joueur : full
 // ou personnalisée (ses box opti restent privées ; la box "stuff" n'est plus
 // jouable) ; personnalisée ("custom") : persos cochés parmi ceux de la full
-// box du joueur. NB_PERSOS_MIN_BOX persos minimum ; hors full box, un
-// maximum de points (cf. erreurPointsBox, _lib/boxes.js).
+// box du joueur. NB_PERSOS_MIN_BOX persos minimum. Plafond de points hors
+// full box : vérifié ensuite, une fois le palier de la draft connu (cf.
+// creerEntrainement). -> { source, data } (data : données de la box jouée).
 // Box fictive (cf. _lib/boxes_fictives.js) : administrateurs et mini admins
 // seulement, full box, box opti ou personnalisée.
 async function validerBoxEntrainement(brut, lanceurId, libelle) {
@@ -77,9 +78,7 @@ async function validerBoxEntrainement(brut, lanceurId, libelle) {
   if (nbPersos < NB_PERSOS_MIN_BOX) {
     return { erreur: `${libelle} : ${nbPersos} personnage(s), il en faut au moins ${NB_PERSOS_MIN_BOX}` };
   }
-  const erreurPoints = erreurPointsBox(donneesBoxRole(profil.data, source), box);
-  if (erreurPoints) return { erreur: `${libelle} : ${erreurPoints}` };
-  return { source };
+  return { source, data: donneesBoxRole(profil.data, source) };
 }
 
 // POST { type: "entrainement", config } : room d'entraînement, créée
@@ -97,6 +96,13 @@ async function creerEntrainement(req, res, user) {
     validerBoxEntrainement(config.boxes?.adverse, user.id, "Box adverse")
   ]);
   if (moi.erreur || adverse.erreur) return res.status(400).json({ error: moi.erreur || adverse.erreur });
+  // Hors full box : plafond de points du palier de la draft de
+  // l'entraînement (cf. erreurPointsBox, _lib/boxes.js).
+  const palier = resoudreTheatre(mode, theatreProfil(moi.data), theatreProfil(adverse.data));
+  for (const [cote, libelle] of [[moi, "Ta box"], [adverse, "Box adverse"]]) {
+    const erreurPoints = erreurPointsBox(cote.data, cote.source.box, palier);
+    if (erreurPoints) return res.status(400).json({ error: `${libelle} : ${erreurPoints}` });
+  }
 
   const bossId = config.boss_id ? String(config.boss_id) : null;
   const erreurBoss = await erreurBossImpose(bossId, user.id, { entrainement: true });
