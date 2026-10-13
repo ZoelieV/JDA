@@ -308,6 +308,36 @@
   white-space: nowrap;
 }
 
+/* Perso + signa : arme signature avec ses points R1. */
+.tableau-theorycraft .col-signa-tc {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.signa-tc {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.signa-tc .miniature-tc {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-right: 0;
+}
+
+.nom-signa-tc {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8125rem;
+  opacity: 0.8;
+}
+
+.sans-signa-tc {
+  opacity: 0.5;
+}
+
 /* ---- Boss ---- */
 .icone-element-tc {
   width: 1.25rem;

@@ -707,7 +707,8 @@ function creerCarteItem(personnage, {
   refinementJ1 = null,
   refinementJ2 = null,
   selectionnee = false,
-  titre = null
+  titre = null,
+  omni = false
 } = {}) {
   const card = document.createElement("div");
   card.title = titre || personnage.nom;
@@ -740,19 +741,84 @@ function creerCarteItem(personnage, {
       ${constellationHtml}
       ${niveauHtml}
       ${raffinementHtml}
+      ${omni ? `<button type="button" class="btn-omni-element" title="Éléments du Voyageur de chaque joueur"><img src="../DB/images/others/omni_element.webp" alt="Éléments"></button>` : ""}
     </div>
   `;
 
   if (selectionnable && onClick) {
     card.addEventListener("click", onClick);
   }
+  // Bouton omni élément : fenêtre des éléments, sans sélectionner la carte.
+  card.querySelector(".btn-omni-element")?.addEventListener("click", event => {
+    event.stopPropagation();
+    ouvrirElementsVoyageur(personnage);
+  });
 
   return card;
+}
+
+// Bouton "omni élément" sur le Voyageur (groupe), de l'analyse à la fin de
+// la draft : éléments de sa box du match chez chaque joueur
+// (draft.elements_jX, calculés par le serveur).
+const PHASES_OMNI = ["analyse", "non_equilibrable", "bans_bonus", "boss", "draft"];
+
+function avecBoutonOmni(personnage) {
+  return !!draft && PHASES_OMNI.includes(draft.phase) && membresGroupe(personnagesBase, personnage.id).length > 0;
+}
+
+// Fenêtre : pour chaque joueur, les éléments du Voyageur de sa box (avec
+// leur constellation) et celui pické, le cas échéant.
+function ouvrirElementsVoyageur(personnage) {
+  document.getElementById("choix-element")?.remove();
+  const membres = membresGroupe(personnagesBase, personnage.id);
+  const ligne = role => {
+    const elements = draft[`elements_${role}`]?.[personnage.id] || [];
+    const collection = getJoueurDataParRole(role)?.characters;
+    const pick = (draft.actions || []).find(a => a.type === "pick" && a.joueur === role && a.perso_id === personnage.id);
+    const icones = Object.keys(ICONES_ELEMENTS_TRI).filter(e => elements.includes(e)).map(e => {
+      const c = collection?.full?.[membres.find(m => m.element === e)?.id];
+      const pique = pick?.element === e;
+      return `<span class="element-voyageur${pique ? " pique" : ""}" title="${NOMS_ELEMENTS[e] || e}${pique ? " (pické)" : ""}">
+        <img src="${ICONES_ELEMENTS_TRI[e]}" alt="${NOMS_ELEMENTS[e] || e}">
+        ${typeof c === "number" ? `<span class="constellation-${role}">C${c}</span>` : ""}
+      </span>`;
+    }).join("");
+    return `
+      <div class="ligne-elements-voyageur">
+        <p>${pseudoColore(role)}</p>
+        <div class="choix-element-liste">${icones || `<span class="aucun-element">Aucun</span>`}</div>
+      </div>`;
+  };
+
+  const fond = document.createElement("div");
+  fond.id = "choix-element";
+  fond.className = "choix-element";
+  fond.innerHTML = `
+    <div class="choix-element-contenu">
+      <p>Éléments de ${personnage.nom}</p>
+      ${ligne("j1")}
+      ${ligne("j2")}
+      <button type="button" class="choix-element-annuler">Fermer</button>
+    </div>
+  `;
+  const fermer = () => {
+    fond.remove();
+    document.removeEventListener("keydown", surTouche);
+  };
+  const surTouche = event => {
+    if (event.key === "Escape") fermer();
+  };
+  fond.addEventListener("click", event => {
+    if (event.target === fond || event.target.closest(".choix-element-annuler")) fermer();
+  });
+  document.addEventListener("keydown", surTouche);
+  document.body.appendChild(fond);
 }
 
 // Carte recyclée si rien de ce qu'elle affiche (ni son comportement au clic,
 // cf. mode) n'a changé depuis le dernier rendu de la grille.
 function obtenirCarteItem(grille, personnage, options = {}, mode = "") {
+  options = { ...options, omni: avecBoutonOmni(personnage) };
   const { onClick, ...affichage } = options;
   const cle = JSON.stringify([personnage.id, personnage.nom, personnage.image, affichage, mode]);
   return obtenirCarte(grille, cle, () => creerCarteItem(personnage, options));
@@ -1335,6 +1401,16 @@ function getProchaineActionLocale() {
   return action || null;
 }
 
+// Prochaine action d'un joueur dans la draft (la courante comprise) ->
+// { action, index } ou null : cible d'une présélection hors de son tour.
+function getProchaineActionDe(role) {
+  const sequence = getSequence();
+  for (let index = draft.sequence_index; index < sequence.length; index++) {
+    if (sequence[index].joueur === role) return { action: sequence[index], index };
+  }
+  return null;
+}
+
 // Titre d'un tableau joueur : pseudo, remplacé par "J1"/"J2" sur téléphone
 // (tableaux côte à côte, cf. CSS).
 // En-tête d'un tableau joueur : sa namecard (largeur du tableau) avec photo
@@ -1736,11 +1812,18 @@ function rendreDraft(phasePrecedente) {
 
   const prochaine = getProchaineActionLocale();
   const cEstMonTour = !!prochaine && prochaine.joueur === monRole;
-  const restrictionPick = cEstMonTour && prochaine.type === "pick";
+  // Action que vise une sélection : la courante à mon tour ; sinon ma
+  // prochaine (présélection pendant le tour de l'adversaire, gardée pour
+  // mon tour, que je confirme alors).
+  const cible = monRole ? getProchaineActionDe(monRole) : null;
+  const preselection = !!cible && !cEstMonTour;
+  const restrictionPick = cible?.action.type === "pick";
+  const monPool = monRole === "j1" ? draft.pool_j1 : draft.pool_j2;
+  const jePeuxLePicker = id => !restrictionPick || !!monPool?.includes(id);
 
   // Sélection périmée (action jouée, personnage plus disponible) : oubliée.
-  if (selectionDraft && (!cEstMonTour || selectionDraft.index !== draft.sequence_index ||
-      !draft.pool_disponible.includes(selectionDraft.persoId))) {
+  if (selectionDraft && (!cible || selectionDraft.index !== cible.index ||
+      !draft.pool_disponible.includes(selectionDraft.persoId) || !jePeuxLePicker(selectionDraft.persoId))) {
     selectionDraft = null;
   }
   const persoSelectionne = selectionDraft && getPersonnageParId(selectionDraft.persoId);
@@ -1770,7 +1853,12 @@ function rendreDraft(phasePrecedente) {
     } else {
       // Pseudo dans la couleur de son rôle ; action sans couleur (pas mon tour).
       const nomAdversaire = pseudoColore(prochaine.joueur);
-      tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong class="verbe-action">${verbe}</strong> un personnage.`;
+      const monAction = cible?.action.type === "ban" ? "ban" : "pick";
+      const textePreselection = !preselection ? ""
+        : persoSelectionne
+        ? `<br>Présélection pour ton ${monAction} : <strong>${persoSelectionne.nom}${selectionDraft.element ? ` ${NOMS_ELEMENTS[selectionDraft.element] || ""}` : ""}</strong> (à confirmer à ton tour).`
+        : `<br>Tu peux présélectionner ton prochain ${monAction}.`;
+      tourContainer.innerHTML = `En attente : ${nomAdversaire} doit <strong class="verbe-action">${verbe}</strong> un personnage.${textePreselection}`;
     }
   }
 
@@ -1806,19 +1894,17 @@ function rendreDraft(phasePrecedente) {
   ]);
   if (!grilleAChange(grille, cleGrille)) return;
 
-  const monPool = monRole === "j1" ? draft.pool_j1 : draft.pool_j2;
-
   const personnages = draft.pool_disponible
     .map(id => getPersonnageParId(id))
     .filter(p => p && personnageCorrespondFiltres(p));
 
   remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
-    const jePeuxLePicker = !restrictionPick || (monPool && monPool.includes(personnage.id));
-    const selectionnable = cEstMonTour && jePeuxLePicker;
+    const peutLePicker = jePeuxLePicker(personnage.id);
+    const selectionnable = !!cible && peutLePicker;
 
     return obtenirCarteItem(grille, personnage, {
       selectionnable,
-      indisponible: cEstMonTour && !jePeuxLePicker,
+      indisponible: !!cible && !peutLePicker,
       selectionnee: selectionDraft?.persoId === personnage.id,
       // Clic : sélectionne (ou désélectionne) le personnage ; l'action n'est
       // envoyée qu'avec "Confirmer". Pick du Voyageur / Manekin : élément
@@ -1830,7 +1916,7 @@ function rendreDraft(phasePrecedente) {
           return;
         }
         const choisir = element => {
-          selectionDraft = { persoId: personnage.id, element, index: draft.sequence_index };
+          selectionDraft = { persoId: personnage.id, element, index: cible.index };
           rendrePhase();
         };
         const choix = restrictionPick ? getElementsAuPick(personnage.id) : null;

@@ -18,7 +18,7 @@ let personnagesDraftParId = new Map(); // ids de la draft (Voyageur regroupé)
 let armesParId = new Map();
 let vueVitrines = "persos"; // "persos" | "armes"
 let bossParId = new Map();
-let selection = null; // { perso_id, element } choisi dans les vitrines
+let selection = null; // { perso_id, element, index } choisi dans les vitrines (index : action visée)
 let derniereCle = "";
 let envoiEnCours = false;
 // Déclaration en cours de saisie par le chef : { perso_id: discord_id }.
@@ -91,6 +91,7 @@ function definirDraft(nouveau) {
   const cle = JSON.stringify(draft);
   if (cle === derniereCle) return;
   derniereCle = cle;
+  verifierSelection();
   rendre();
 }
 
@@ -237,6 +238,24 @@ function rendreHotes() {
 const actionCourante = () => (draft.phase === "draft" ? draft.sequence?.[draft.sequence_index] || null : null);
 const aMonTour = () => !!actionCourante() && actionCourante().joueur === monCamp() && suisChef();
 
+// Prochaine action de mon équipe (la courante comprise), chef seulement ->
+// { action, index } ou null : hors de son tour, le chef présélectionne un
+// perso pour cette action et le confirme à son tour.
+function maProchaineAction() {
+  if (draft.phase !== "draft" || !suisChef()) return null;
+  const sequence = draft.sequence || [];
+  for (let index = draft.sequence_index; index < sequence.length; index++) {
+    if (sequence[index].joueur === monCamp()) return { action: sequence[index], index };
+  }
+  return null;
+}
+
+// Sélection périmée (action jouée, perso plus disponible) : oubliée.
+function verifierSelection() {
+  const cible = maProchaineAction();
+  if (selection && (!cible || selection.index !== cible.index || !draft.pool_disponible?.includes(selection.perso_id))) selection = null;
+}
+
 function picksDe(role) {
   return (draft.actions || []).filter(a => a.type === "pick" && a.joueur === role);
 }
@@ -299,13 +318,14 @@ function etatPerso(draftId) {
   return action.type === "ban" ? "banni" : `pick-${action.joueur}`;
 }
 
-// Carte cliquable : à mon tour (chef), ban = tout perso encore disponible,
-// pick = seulement ceux des vitrines de mon équipe.
+// Carte cliquable (chef, à son tour ou en présélection de sa prochaine
+// action) : ban = tout perso encore disponible, pick = seulement ceux des
+// vitrines de mon équipe.
 function estCliquable(role, entree) {
-  const action = actionCourante();
-  if (!aMonTour() || envoiEnCours) return false;
+  const cible = maProchaineAction();
+  if (!cible || envoiEnCours) return false;
   if (!draft.pool_disponible?.includes(entree.draft_id)) return false;
-  return action.type === "ban" || role === monCamp();
+  return cible.action.type === "ban" || role === monCamp();
 }
 
 // Vitrines d'armes (pour info, pas draftées) : raffinement de chaque copie.
@@ -382,17 +402,19 @@ function initialiserVitrines() {
     if (!carte) return;
     const entree = draft.vitrines?.[carte.dataset.membre]?.persos?.[Number(carte.dataset.index)];
     if (!entree) return;
-    const action = actionCourante();
+    const cible = maProchaineAction();
+    if (!cible) return;
+    const action = cible.action;
     // Manekin au pick : élément libre, choisi dans une fenêtre.
-    if (action?.type === "pick" && ELEMENTS_LIBRES[entree.draft_id]) {
+    if (action.type === "pick" && ELEMENTS_LIBRES[entree.draft_id]) {
       choisirElement(element => {
-        selection = { perso_id: entree.draft_id, element };
+        selection = { perso_id: entree.draft_id, element, index: cible.index };
         rendreVitrines();
         rendreBulles();
       });
       return;
     }
-    selection = { perso_id: entree.draft_id, element: action?.type === "pick" ? entree.element : null };
+    selection = { perso_id: entree.draft_id, element: action.type === "pick" ? entree.element : null, index: cible.index };
     rendreVitrines();
     rendreBulles();
   });
@@ -682,7 +704,13 @@ function rendreBulles() {
       bouton.disabled = !selection;
     } else {
       const chef = draft.chefs?.[action.joueur];
-      tour.innerHTML = `${NOMS_EQUIPES[action.joueur]} : ${htmlPseudoJoueur(chef)} doit <strong class="verbe-action">${verbe}</strong>`;
+      const cible = maProchaineAction();
+      const monAction = cible?.action.type === "pick" ? "pick" : "ban";
+      const textePreselection = !cible ? ""
+        : selection
+        ? `<br>Présélection pour ton ${monAction} : <strong>${echapperHtml(personnagesDraftParId.get(selection.perso_id)?.nom || "")}${selection.element ? ` ${NOMS_ELEMENTS[selection.element] || ""}` : ""}</strong> (à confirmer à ton tour).`
+        : `<br>Tu peux présélectionner ton prochain ${monAction}.`;
+      tour.innerHTML = `${NOMS_EQUIPES[action.joueur]} : ${htmlPseudoJoueur(chef)} doit <strong class="verbe-action">${verbe}</strong>${textePreselection}`;
     }
   }
   if (draft.phase === "declaration") tour.textContent = "Déclaration : qui joue quel perso ?";

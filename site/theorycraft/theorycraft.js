@@ -2,8 +2,8 @@
 // cf. api/auth/me.js). Les autres sont renvoyés à l'accueil, comme si la
 // page n'existait pas.
 //
-// Lecture seule : points des personnages et des armes (même tableau que la
-// page Administration, masqués exclus), résistances et probabilités de
+// Lecture seule : points des personnages et des armes, et personnage + arme
+// signature R1 (mêmes tableaux que la page Administration, masqués exclus), résistances et probabilités de
 // tirage des boss, formules du système d'équilibrage. Mêmes calculs que le
 // serveur (api/_lib/draft.js, api/_lib/boss.js) : à garder synchronisés.
 
@@ -15,6 +15,12 @@ const COLONNES = {
   weapons: {
     champ: "PPW",
     libelles: ["R1", "R2", "R3", "R4", "R5"]
+  },
+  // Personnage + arme signature R1 (vue "Perso + signa" de la page
+  // Administration) : signature R1 seule (0 sans signature), puis
+  // C0R1..C6R1 = points de constellation + signature R1. Cf. sommesPerso.
+  sommes: {
+    libelles: ["Signa R1", "C0R1", "C1R1", "C2R1", "C3R1", "C4R1", "C5R1", "C6R1"]
   }
 };
 
@@ -184,15 +190,24 @@ function htmlMethodeEquilibrage(paliers) {
 }
 
 function points(item, vue) {
+  if (vue === "sommes") return sommesPerso(item);
   const { champ, libelles } = COLONNES[vue];
   return Array.from({ length: libelles.length }, (_, i) => Number(item[champ]?.[i] ?? 0));
 }
 
+// -> [signature R1, C0R1, ..., C6R1] (cf. COLONNES.sommes).
+function sommesPerso(perso) {
+  const arme = trouverArmeSignature(armes, perso);
+  const signa = arme ? Number(arme.PPW?.[0] ?? 0) : 0;
+  return [signa, ...Array.from({ length: 7 }, (_, c) => Number(perso.PPC?.[c] ?? 0) + signa)];
+}
+
 // ---- Onglets ----
 
-// Onglet ouvert gardé dans l'adresse (#characters, #weapons, #boss,
-// #equilibrage) : lien direct et retour au même onglet au rechargement.
-const ONGLETS = ["characters", "weapons", "boss", "equilibrage"];
+// Onglet ouvert gardé dans l'adresse (#characters, #weapons, #sommes,
+// #boss, #equilibrage) : lien direct et retour au même onglet au
+// rechargement.
+const ONGLETS = ["characters", "weapons", "sommes", "boss", "equilibrage"];
 
 function ouvrirOnglet(nom) {
   onglet = nom;
@@ -202,7 +217,7 @@ function ouvrirOnglet(nom) {
     bouton.classList.toggle("active", actif);
     bouton.setAttribute("aria-selected", String(actif));
   });
-  const tableau = nom === "characters" || nom === "weapons";
+  const tableau = nom === "characters" || nom === "weapons" || nom === "sommes";
   document.getElementById("panneau-points").hidden = !tableau;
   document.getElementById("panneau-boss").hidden = nom !== "boss";
   document.getElementById("panneau-equilibrage").hidden = nom !== "equilibrage";
@@ -228,7 +243,7 @@ function correspondElements(item) {
 
 function itemsAffiches() {
   const vue = onglet;
-  const persos = vue === "characters";
+  const persos = vue !== "weapons";
   const liste = persos ? personnages : armes;
   const champType = persos ? "arme" : "type";
   const recherche = document.getElementById("recherche-theorycraft").value.trim().toLowerCase();
@@ -277,7 +292,7 @@ function trierParFiltres(items, champType) {
 }
 
 function rendreFiltres() {
-  const persos = onglet === "characters";
+  const persos = onglet !== "weapons";
   const icones = (valeurs, set, cle) => Object.entries(valeurs).map(([valeur, src]) =>
     `<button type="button" class="filtre-tc filtre-icone${set.has(valeur) ? " active" : ""}" data-filtre="${cle}" data-valeur="${valeur}" title="${valeur}"><img src="${src}" alt="${valeur}"></button>`
   ).join("");
@@ -306,6 +321,15 @@ function rendreEntete() {
   const persos = onglet === "characters";
   const fleche = cle => tri?.cle === cle ? `<span class="fleche-tc">${tri.sens === 1 ? "▼" : "▲"}</span>` : "";
 
+  if (onglet === "sommes") {
+    document.getElementById("entete-theorycraft").innerHTML = `
+      <tr>
+        <th class="col-nom triable" data-tri="nom" title="Trier par nom">Personnage${fleche("nom")}</th>
+        ${libelles.map((libelle, index) => `<th class="triable${index === 0 ? " col-signa-tc" : ""}" data-tri="${index}" title="Trier par ${index === 0 ? "points de l'arme signature R1" : `${libelle} (perso C${index - 1} + signature R1)`}">${libelle}${fleche(index)}</th>`).join("")}
+      </tr>`;
+    return;
+  }
+
   document.getElementById("entete-theorycraft").innerHTML = `
     <tr>
       <th class="col-nom triable" data-tri="nom" title="Trier par nom">${persos ? "Personnage" : "Arme"}${fleche("nom")}</th>
@@ -328,11 +352,29 @@ function rendreCorps() {
   const vue = onglet;
   const persos = vue === "characters";
   const items = itemsAffiches();
-  const total = (persos ? personnages : armes).length;
+  const total = (vue === "weapons" ? armes : personnages).length;
   document.getElementById("compte-theorycraft").textContent =
-    `${items.length} / ${total} ${persos ? "personnages" : "armes"}`;
+    `${items.length} / ${total} ${vue === "weapons" ? "armes" : "personnages"}`;
 
   const corps = document.getElementById("corps-theorycraft");
+  if (vue === "sommes") {
+    corps.innerHTML = items.map(item => {
+      const [signa, ...sommes] = points(item, vue);
+      const arme = trouverArmeSignature(armes, item);
+      return `
+        <tr>
+          <td class="col-nom">
+            <span class="miniature-tc ${classeFondRarete(item.rarete)}"><img src="../DB/${echapper(item.image)}" alt="" loading="lazy"></span>
+            <span class="nom-tc">${echapper(item.nom)}</span>
+          </td>
+          <td class="col-signa-tc">
+            ${arme ? `<span class="signa-tc"><span class="miniature-tc ${classeFondRarete(arme.rarete)}"><img src="../DB/${echapper(arme.image)}" alt="" loading="lazy"></span><span class="nom-signa-tc">${echapper(arme.nom)}</span><strong>${signa}</strong></span>` : `<span class="sans-signa-tc" title="Pas d'arme signature">—</span>`}
+          </td>
+          ${sommes.map(somme => `<td>${somme}</td>`).join("")}
+        </tr>`;
+    }).join("");
+    return;
+  }
   corps.innerHTML = items.map(item => `
     <tr>
       <td class="col-nom">
@@ -348,7 +390,9 @@ function rendreCorps() {
 
 function rendreTableau() {
   const persos = onglet === "characters";
-  document.getElementById("aide-points").innerHTML = persos
+  document.getElementById("aide-points").innerHTML = onglet === "sommes"
+    ? `Chaque personnage avec son arme signature R1 : C0R1 à C6R1 = points de constellation (sans bonus de niveau ni de théâtre) + points de la signature R1 (0 sans signature). Clic sur un titre de colonne pour trier.`
+    : persos
     ? `Points de constellation (C0 à C6), puis les bonus de niveau 95 / 100 et du théâtre, chacun <strong>ajouté</strong> ou <strong>multiplié</strong> aux points de constellation selon le mode affiché sous le titre de la colonne. Le bonus théâtre ne compte que pour les personnages buffés par le théâtre du mois (case dorée). <strong>Aperçu</strong> : toutes les combinaisons d'un personnage. Clic sur un titre de colonne pour trier.`
     : `Points de chaque raffinement (R1 à R5). Chaque copie d'une arme dans une box compte. Clic sur un titre de colonne pour trier.`;
   rendreFiltres();
