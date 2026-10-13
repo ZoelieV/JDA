@@ -209,7 +209,7 @@ function rendrePersos() {
   $("aide-persos").textContent = draft.phase !== "jeu" ? ""
     : enSolo() ? (suisJoueur() ? "Tu joues les 4 persos." : `${nomJoueur(draft.joueurs[0])} joue les 4 persos.`)
     : !suisJoueur() ? "Les joueurs déclarent les persos qu'ils ont joués."
-      : `Répartissez-vous les persos. Après le combat, coche ${max > 1 ? `les ${max} persos` : "le perso"} que tu as joué${max > 1 ? "s" : ""} puis valide.` +
+      : `Répartissez-vous les persos : sélectionne ${max > 1 ? `tes ${max} persos` : "ton perso"}, puis valide après le combat.` +
         (draft.joueurs.length === 3 ? " À 3, un seul joueur joue 2 persos." : "");
 
   $("persos-tires").innerHTML = (draft.persos || []).map(perso => {
@@ -227,7 +227,7 @@ function rendrePersos() {
         <span class="nom-perso-wb">${echapperHtml(nomPerso(perso))}</span>
         ${joueur ? `<span class="joue-par">Joué par ${echapperHtml(nomJoueur(joueur))}</span>` : ""}
         <ul class="proprietaires-wb" title="Full box qui ont ce perso">${proprietaires}</ul>
-        ${possede ? `<button type="button" class="btn-equipe petit${coche ? " actif" : ""}" data-perso="${echapperHtml(perso.perso_id)}"${prisParAutre ? " disabled" : ""}>${coche ? "Je l'ai joué ✓" : "Je l'ai joué"}</button>` : ""}
+        ${possede ? `<button type="button" class="btn-equipe petit${coche ? " actif" : ""}" data-perso="${echapperHtml(perso.perso_id)}"${prisParAutre ? " disabled" : ""}>${coche ? "Sélectionné ✓" : "Sélectionner"}</button>` : ""}
       </div>`;
   }).join("");
 
@@ -543,11 +543,10 @@ function rendreBulles() {
     : "Après le combat : chacun déclare ses persos, le chef déclare le résultat.";
   else if (draft.phase === "termine") message.textContent = suisChef() ? "Lance une nouvelle partie avec les mêmes joueurs." : "Le chef peut lancer une nouvelle partie.";
 
-  // Chef : nouvelle partie (retour au lobby), aussi pendant une partie
-  // (tirage abandonné, pas enregistré).
+  // Chef : nouveau tirage tout de suite ou retour au lobby, aussi pendant
+  // une partie (tirage abandonné, pas enregistré).
   const visible = suisChef() && draft.phase !== "lobby";
   $("actions-fin").classList.toggle("cache", !visible);
-  $("btn-rejouer").textContent = draft.phase === "jeu" ? "Abandonner ce tirage" : "Nouvelle partie";
 }
 
 // ---- Démarrage ----
@@ -572,11 +571,13 @@ function initialiserBoutons() {
   $("btn-reussite").addEventListener("click", () => agir("wb_resultat", { reussite: true }));
   $("btn-echec").addEventListener("click", () => agir("wb_resultat", { reussite: false }));
   $("btn-hote").addEventListener("click", () => agir("wb_hote", { hote: draft.hote !== moi.id }));
+  // Partie en cours : confirmation (elle ne sera pas enregistrée).
+  const abandon = () => draft.phase !== "jeu" || confirm("Abandonner ce tirage ? La partie ne sera pas enregistrée.");
+  $("btn-relancer").addEventListener("click", () => {
+    if (abandon()) agir("wb_rejouer", { relancer: true });
+  });
   $("btn-rejouer").addEventListener("click", () => {
-    const texte = draft.phase === "jeu"
-      ? "Abandonner ce tirage et retourner au lobby ? La partie ne sera pas enregistrée."
-      : "Retourner au lobby pour une nouvelle partie avec les mêmes joueurs ?";
-    if (confirm(texte)) agir("wb_rejouer", {});
+    if (abandon()) agir("wb_rejouer", {});
   });
 
   const partager = $("btn-partager");

@@ -380,6 +380,14 @@ async function routeLancer(req, res, roomId, user) {
   const draft = room.draft;
   if (draft.createur !== user.id) throw erreur(403, "Seul le chef de la room lance la partie.");
   if (draft.phase !== "lobby") throw erreur(409, "La partie a déjà commencé.");
+  await tirerPartie(draft);
+  await sauvegarder(roomId, draft);
+  return repondre(res, draft);
+}
+
+// Tirage d'une partie (4 persos et boss) pour les membres de la room : la
+// draft (lobby) passe en phase "jeu".
+async function tirerPartie(draft) {
   if (draft.membres.length < TAILLE_MIN) throw erreur(409, "Il faut au moins un joueur.");
 
   await actualiserPoints();
@@ -420,8 +428,6 @@ async function routeLancer(req, res, roomId, user) {
     id_partie: null,
     tire_le: Date.now()
   });
-  await sauvegarder(roomId, draft);
-  return repondre(res, draft);
 }
 
 async function terminerSiComplet(roomId, draft) {
@@ -509,6 +515,8 @@ async function routeHote(req, res, roomId, user) {
 
 // Chef : retour au lobby avec les mêmes joueurs (partie en cours abandonnée,
 // pas archivée).
+// { relancer: true } : nouveau tirage tout de suite avec les mêmes joueurs ;
+// sinon retour au lobby. Partie en cours : abandonnée (pas enregistrée).
 async function routeRejouer(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
@@ -521,6 +529,7 @@ async function routeRejouer(req, res, roomId, user) {
     bossPrecedent: draft.boss_id || draft.boss_precedent_id || null,
     version: draft.version
   });
+  if (req.body?.relancer === true) await tirerPartie(nouveau);
   await sauvegarder(roomId, nouveau, { membres: nouveau.membres });
   return repondre(res, nouveau);
 }
