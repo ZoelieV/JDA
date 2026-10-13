@@ -1908,18 +1908,22 @@ function rendreDraft(phasePrecedente) {
       selectionnee: selectionDraft?.persoId === personnage.id,
       // Clic : sélectionne (ou désélectionne) le personnage ; l'action n'est
       // envoyée qu'avec "Confirmer". Pick du Voyageur / Manekin : élément
-      // choisi à la sélection.
+      // choisi à la sélection. Action visée relue au clic, pas au rendu :
+      // une carte inchangée est recyclée avec ce gestionnaire (cf.
+      // obtenirCarteItem), par exemple d'un pick au suivant d'un double pick.
       onClick: () => {
         if (selectionDraft?.persoId === personnage.id) {
           selectionDraft = null;
           rendrePhase();
           return;
         }
+        const cibleClic = monRole ? getProchaineActionDe(monRole) : null;
+        if (!cibleClic) return;
         const choisir = element => {
-          selectionDraft = { persoId: personnage.id, element, index: cible.index };
+          selectionDraft = { persoId: personnage.id, element, index: cibleClic.index };
           rendrePhase();
         };
-        const choix = restrictionPick ? getElementsAuPick(personnage.id) : null;
+        const choix = cibleClic.action.type === "pick" ? getElementsAuPick(personnage.id) : null;
         if (!choix) choisir(null);
         else if (choix.length === 1) choisir(choix[0]);
         else ouvrirChoixElement(personnage, choix, choisir);
