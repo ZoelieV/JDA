@@ -81,16 +81,18 @@ function estEquilibrageFixe(draft) {
 //
 // valeur d'un perso = ses points (Voyageur : son meilleur élément) + la
 // meilleure copie de son arme signature dans la box (pleine valeur).
-// Armes libres : copies en double d'une signature et signatures dont le
-// perso n'est pas dans la box, à leur valeur alternative (arme.alternatif,
-// cf. calculerPointsArmesBox) ; les armes standard (signature d'aucun perso)
-// sont ignorées. Chaque arme libre est attribuée à un perso sans sa
-// signature, du même type d'arme (arme support : persos support ou sub-dps
-// seulement), un perso par arme, au plus grand gain de verticalité (cf.
-// attribuerArmesLibres).
-// -> { persos: { id: { valeur, type, support, signature: { pleine,
+// Armes libres, à la même valeur que dans les points de la box (cf.
+// calculerPointsArmesBox) : copies en double d'une signature et signatures
+// dont le perso n'est pas dans la box (valeur alternative, arme.alternatif),
+// armes signature d'aucun perso (perma, Ultime soupir... : 1re copie pleine
+// valeur, doublons valeur alternative). Chaque arme libre est attribuée à un
+// perso sans sa signature, du même type d'arme (arme support : persos
+// support ou sub-dps ; autre arme : persos sub-dps ou dps), un perso par
+// arme, au plus grand gain de verticalité (cf. attribuerArmesLibres).
+// -> { persos: { id: { valeur, type, support, attaque, signature: { pleine,
 //      alternative, type, support } | null } }, libres: [{ valeur, type, support }] }
 const CATEGORIES_ARME_SUPPORT = ["support", "subdps"];
+const CATEGORIES_ARME_ATTAQUE = ["subdps", "dps"];
 
 function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
   const persos = {};
@@ -102,6 +104,7 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
       valeur: points,
       type: personnage.arme,
       support: CATEGORIES_ARME_SUPPORT.includes(personnage.categorie),
+      attaque: CATEGORIES_ARME_ATTAQUE.includes(personnage.categorie),
       signature: null
     };
   });
@@ -123,12 +126,13 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
   copies.forEach((raffinements, id) => {
     const arme = parId.get(id);
     const cle = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/)?.[1];
-    if (!clesCatalogue.has(cle)) return;
+    const signature = clesCatalogue.has(cle);
     const support = Array.isArray(arme.categories) && arme.categories.includes("support");
     raffinements.sort((a, b) => b - a).forEach((raffinement, index) => {
       const pleine = Number(arme.PPW?.[raffinement] ?? 0);
       const alternative = Math.round(pleine * (arme.alternatif ?? 100) / 100);
-      if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support };
+      if (!signature) libres.push({ valeur: index === 0 ? pleine : alternative, type: arme.type, support });
+      else if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support };
       else libres.push({ valeur: alternative, type: arme.type, support });
     });
   });
@@ -146,7 +150,7 @@ function mesurerVerticalite(modele, bannis = new Set(), garderArmes = true) {
       if (garderArmes && p.signature) libres.push({ valeur: p.signature.alternative, type: p.signature.type, support: p.signature.support });
       return;
     }
-    persos.push({ id, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support });
+    persos.push({ id, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support, attaque: p.attaque });
   });
   attribuerArmesLibres(persos, libres);
   persos.sort((a, b) => b.valeur - a.valeur);
@@ -165,7 +169,7 @@ function attribuerArmesLibres(persos, libres) {
     const dernier = persos.length >= VERTICALITE_PERSOS ? persos[VERTICALITE_PERSOS - 1].valeur : 0;
     let meilleur = null;
     persos.forEach((p, rang) => {
-      if (!p.receveur || p.type !== arme.type || (arme.support && !p.support)) return;
+      if (!p.receveur || p.type !== arme.type || !(arme.support ? p.support : p.attaque)) return;
       const gain = rang < VERTICALITE_PERSOS ? arme.valeur : Math.max(0, p.valeur + arme.valeur - dernier);
       if (gain > 0 && (!meilleur || gain > meilleur.gain)) meilleur = { p, gain };
     });

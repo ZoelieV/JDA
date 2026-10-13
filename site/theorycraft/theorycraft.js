@@ -161,7 +161,7 @@ function htmlMethodeEquilibrage(paliers) {
   return `
     <p class="formule-tc">
       valeur d'un personnage = ses points + ceux de sa meilleure arme signature dans la box<br>
-      armes libres (copies en double, signatures sans leur personnage) : à leur valeur alternative, une par personnage sans sa signature<br>
+      armes libres (copies en double, signatures sans leur personnage, armes perma et armes sans personnage) : une par personnage sans sa signature<br>
       horizontalité = nombre de personnages qui valent des points<br>
       verticalité = moyenne des 12 meilleurs personnages<br>
       écart d'équipe prévu = 4 × écart de verticalité<br>
@@ -178,7 +178,7 @@ function htmlMethodeEquilibrage(paliers) {
     </ul>
     ${htmlLimitesEquilibrage()}
     <p>Si l'écart prévu reste au-dessus de 30 malgré tout, le match n'est pas équilibrable : les joueurs peuvent revenir au choix des box si une autre combinaison de leurs box s'équilibre (seulement celles-là), ou annuler le match. Si aucune combinaison ne s'équilibre, le match est annulé d'office, ne compte pas et les administrateurs en sont prévenus ; en classé, ces 2 joueurs ne sont plus mis face à face tant qu'aucun des 2 n'a modifié son compte. En entraînement, tu es prévenu et tu choisis de continuer ou de changer de box.</p>
-    <p><strong>Armes libres</strong> : chaque copie en double d'une arme signature, et chaque arme signature dont le personnage n'est pas dans la box, est donnée à un personnage qui n'a pas sa propre signature, du même type d'arme (une arme support ne va qu'à un support ou un sub-dps), à sa valeur alternative. Une arme par personnage, attribuée là où elle fait le plus monter la verticalité (de la plus forte à la plus faible). Les armes standard (qui ne sont la signature de personne) ne sont pas attribuées. Ainsi, une box avec beaucoup d'armes est mieux prise en compte.</p>
+    <p><strong>Armes libres</strong> : chaque copie en double d'une arme signature, chaque arme signature dont le personnage n'est pas dans la box, et chaque arme qui n'est la signature de personne (armes perma, Ultime soupir…) est donnée à un personnage qui n'a pas sa propre signature, du même type d'arme : une arme support va à un support ou un sub-dps, une autre arme à un sub-dps ou un dps. Elle compte pour la même valeur que dans les points de la box : valeur alternative pour les copies en double et les signatures sans leur personnage, pleine valeur pour la 1re copie d'une arme qui n'est la signature de personne. Une arme par personnage, attribuée là où elle fait le plus monter la verticalité (de la plus forte à la plus faible). Ainsi, une box avec beaucoup d'armes est mieux prise en compte.</p>
     <p>Quand un personnage est banni dans le calcul, son arme signature reste dans la box comme arme libre si les 2 box ont moins de 4000 points d'écart ; à 4000 points d'écart ou plus, elle part avec lui, pour que chaque ban retire davantage et que la draft ne se joue pas presque sans 5★.</p>
     <p>Pourquoi 12 : c'est ce qu'il reste à un joueur une fois les bans et les picks adverses passés, et ce qui prédit le mieux l'écart entre les équipes dans les simulations de drafts. Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
 }
