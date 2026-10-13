@@ -1513,3 +1513,24 @@ body {
   font-size: 0.75rem;
   opacity: 0.75;
 }
+
+/* Limites des bans calculés (fenêtre Équilibrage). */
+.titre-limites-equilibrage {
+  margin: 1rem 0 0.25rem;
+}
+
+.tableau-limites input {
+  box-sizing: border-box;
+  width: 5.5rem;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
+
+.limites-equilibrage .bouton-creer {
+  margin-top: 0.5rem;
+}

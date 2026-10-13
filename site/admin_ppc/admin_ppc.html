@@ -6,7 +6,7 @@
 <title>Administration</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=26">
+<link rel="stylesheet" href="admin_ppc.css?v=27">
 <link rel="stylesheet" href="../commun/entete.css?v=rem26">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -196,12 +196,18 @@
       </div>
       <p class="aide-apercu">
         Méthode des bans d'équilibrage, enregistrée dès le clic. Elle s'applique aux drafts dont l'équilibrage
-        n'est pas encore calculé (une draft en cours et ses revanches gardent la leur). Méthodes libres : celui qui a
-        la box la plus faible bannit autant de persos de la box adverse qu'il veut, sans la faire passer sous la
-        sienne (objectif : entre +0 et +100 points ; verticalité / horizontalité : sur aucune des 2 mesures) ; en
-        classé, le temps des bans reste celui de l'ancienne méthode.
+        n'est pas encore calculé (une draft en cours et ses revanches gardent la leur).
       </p>
       <div id="liste-equilibrage" class="liste-equilibrage"></div>
+      <h3 class="titre-limites-equilibrage">Limites des bans calculés</h3>
+      <p class="aide-apercu">
+        Par palier de la draft (mêlée générale : carpe). Top 12 = somme des 12 meilleurs persos avec leur arme.
+        <strong>Persos min</strong> : aucune box ne descend en dessous. <strong>Seuil bas</strong> : top 12 du petit joueur
+        à ne pas franchir (joker à la place, puis match non équilibrable). <strong>Seuil haut</strong> : petit joueur sous
+        le seuil bas face à un top 12 au-dessus : joker dès un ban qui le touche. <strong>Plancher</strong> : petit joueur
+        sous le seuil bas face à un top 12 entre les 2 seuils : les 2 top 12 restent au-dessus (pas de joker).
+      </p>
+      <form id="limites-equilibrage" class="limites-equilibrage"></form>
       <div class="actions-ajout">
         <span id="message-equilibrage" class="message-ajout"></span>
       </div>
@@ -245,9 +251,9 @@
   <script src="admin_boss.js?v=4"></script>
   <script src="admin_categories.js?v=1"></script>
   <script src="admin_bans.js?v=1"></script>
-  <script src="admin_equilibrage.js?v=4"></script>
+  <script src="admin_equilibrage.js?v=5"></script>
   <script src="admin_comparateur.js?v=2"></script>
-  <script src="admin_fictives.js?v=3"></script>
-  <script src="admin_ppc.js?v=27"></script>
+  <script src="admin_fictives.js?v=4"></script>
+  <script src="admin_ppc.js?v=28"></script>
 </body>
 </html>

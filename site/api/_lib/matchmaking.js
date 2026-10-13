@@ -71,6 +71,28 @@ async function prendreRoom(roomId, discordId) {
   return data;
 }
 
+// Classé : 2 joueurs dont un match a été annulé d'office parce qu'aucune
+// combinaison de leurs box ne s'équilibrait (litige "equilibrage", cf.
+// traiterNonEquilibrable dans api/rooms/[room_id]/[action].js) ne sont plus
+// mis face à face, tant qu'aucun des 2 n'a modifié son compte depuis.
+async function nonEquilibrables(discordId, autreId) {
+  const paire = `and(player1_discord_id.eq.${discordId},player2_discord_id.eq.${autreId}),and(player1_discord_id.eq.${autreId},player2_discord_id.eq.${discordId})`;
+  const { data: annulations, error } = await supabase
+    .from("match_history")
+    .select("created_at")
+    .eq("litige_par", "equilibrage")
+    .or(paire)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error || !annulations?.length) return false;
+  const { data: profils } = await supabase
+    .from("profiles")
+    .select("updated_at")
+    .in("discord_id", [discordId, autreId]);
+  const derniere = Date.parse(annulations[0].created_at);
+  return !(profils || []).some(p => Date.parse(p.updated_at) > derniere);
+}
+
 async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "auto") {
   // Joueur banni du classé (sanction d'un administrateur).
   if (type === "classe") {
@@ -125,6 +147,7 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     // Classé : pas contre un joueur avec qui l'un des deux a déjà 2
     // victoires aujourd'hui (cf. _lib/serie_classe.js).
     if (type === "classe" && (await serieDuJour(discordId, candidate.player1_discord_id)).terminee) continue;
+    if (type === "classe" && await nonEquilibrables(discordId, candidate.player1_discord_id)) continue;
     const prise = await prendreRoom(candidate.room_id, discordId);
     if (prise) {
       await supprimerRooms(miennes.map(r => r.room_id));

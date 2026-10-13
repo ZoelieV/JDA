@@ -111,6 +111,26 @@ async function chargerDonnees() {
   carnageDesactive = config?.carnage_desactive === true;
   if (Number(config?.seuil_equilibrage) > 0) seuil = Number(config.seuil_equilibrage);
   if (config?.equilibrage === "fixe_joker") methodeEquilibrage = config.equilibrage;
+  limitesEquilibrage = config?.limites_equilibrage || null;
+}
+
+// Limites des bans calculés par palier (cf. getLimitesEquilibrage,
+// api/_lib/personnages.js).
+let limitesEquilibrage = null;
+const NOMS_PALIERS = { 1: "Sardine", 2: "Carpe", 3: "Dauphin", 4: "Baleine" };
+
+function htmlLimitesEquilibrage() {
+  if (!limitesEquilibrage) return "";
+  return `
+    <div class="tableau-conteneur tableau-paliers-tc">
+      <table class="tableau-theorycraft">
+        <thead><tr><th>Draft</th><th>Persos min</th><th>Seuil bas</th><th>Seuil haut</th><th>Plancher</th></tr></thead>
+        <tbody>${Object.entries(NOMS_PALIERS).map(([palier, nom]) => {
+          const l = limitesEquilibrage[palier] || {};
+          return `<tr><td>${nom}${palier === "2" ? " (et mêlée générale)" : ""}</td><td>${l.min_persos}</td><td>${l.seuil_bas}</td><td>${l.seuil_haut}</td><td>${l.plancher}</td></tr>`;
+        }).join("")}</tbody>
+      </table>
+    </div>`;
 }
 
 // Échange de 5 bans contre 1 joker : toutes les méthodes (cf.
@@ -147,7 +167,17 @@ function htmlMethodeEquilibrage(paliers) {
       écart d'équipe prévu = 4 × écart de verticalité<br>
       bans d'équilibrage = nombre de bans qui ramène l'écart prévu à 25 ou moins, en retirant à chaque fois le personnage qui réduit le plus l'écart (un personnage que les 2 box ont est retiré des 2)
     </p>
-    <p>Le nombre de bans est calculé d'après les 2 box, sans plafond : le joueur à la verticalité la plus faible choisit seulement quels personnages il bannit, avant le tirage J1 / J2 et du boss. Si les bans ne suffisent pas (plus aucun ban utile, ou une box passerait sous 16 personnages) : 1 <strong>ban joker</strong> en plus, sur un personnage de la box adverse, interdit à l'adversaire seulement (toi, tu peux encore le picker).</p>
+    <p>Le nombre de bans est calculé d'après les 2 box, sans plafond : le joueur à la verticalité la plus faible (le petit joueur) choisit seulement quels personnages il bannit, avant le tirage J1 / J2 et du boss. Un personnage que les 2 box ont est retiré des 2 : bannir lui coûte aussi un de ses persos. D'où des limites, selon le <strong>top 12</strong> (somme des 12 meilleurs personnages avec leur arme) de chaque box au départ :</p>
+    <ul class="notes-theorycraft">
+      <li><strong>Petit joueur au-dessus du seuil bas</strong> : dès qu'un ban ferait passer son top 12 sous le seuil bas, il reçoit 1 <strong>ban joker</strong> à la place (un personnage de la box adverse, interdit à l'adversaire seulement : toi, tu peux encore le picker).</li>
+      <li><strong>Petit joueur sous le seuil bas, adversaire au-dessus du seuil haut</strong> : ban joker dès qu'un ban toucherait un de ses propres personnages.</li>
+      <li><strong>Petit joueur sous le seuil bas, adversaire entre les 2 seuils</strong> : pas de joker, les 2 top 12 doivent rester au-dessus du plancher.</li>
+      <li><strong>Les 2 sous le seuil bas</strong> : pas de joker.</li>
+      <li>Aucune box ne descend sous le nombre de persos minimum de la draft ; si un ban y obligerait, même règle : le joker, s'il est permis.</li>
+      <li>Après le joker, seuls les bans de personnages que le petit joueur n'a pas continuent.</li>
+    </ul>
+    ${htmlLimitesEquilibrage()}
+    <p>Si l'écart prévu reste au-dessus de 30 malgré tout, le match n'est pas équilibrable : les joueurs peuvent revenir au choix des box si une autre combinaison de leurs box s'équilibre (seulement celles-là), ou annuler le match. Si aucune combinaison ne s'équilibre, le match est annulé d'office, ne compte pas et les administrateurs en sont prévenus ; en classé, ces 2 joueurs ne sont plus mis face à face tant qu'aucun des 2 n'a modifié son compte. En entraînement, tu es prévenu et tu choisis de continuer ou de changer de box.</p>
     <p><strong>Armes libres</strong> : chaque copie en double d'une arme signature, et chaque arme signature dont le personnage n'est pas dans la box, est donnée à un personnage qui n'a pas sa propre signature, du même type d'arme (une arme support ne va qu'à un support ou un sub-dps), à sa valeur alternative. Une arme par personnage, attribuée là où elle fait le plus monter la verticalité (de la plus forte à la plus faible). Les armes standard (qui ne sont la signature de personne) ne sont pas attribuées. Ainsi, une box avec beaucoup d'armes est mieux prise en compte.</p>
     <p>Quand un personnage est banni dans le calcul, son arme signature reste dans la box comme arme libre si les 2 box ont moins de 4000 points d'écart ; à 4000 points d'écart ou plus, elle part avec lui, pour que chaque ban retire davantage et que la draft ne se joue pas presque sans 5★.</p>
     <p>Pourquoi 12 : c'est ce qu'il reste à un joueur une fois les bans et les picks adverses passés, et ce qui prédit le mieux l'écart entre les équipes dans les simulations de drafts. Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;

@@ -199,7 +199,8 @@ async function quitterRoom(supabase, room, discordId) {
     let ecrite;
     if (PHASES_FINIES.includes(draft.phase)) {
       ecrite = await ecrireDraft(supabase, room.room_id, { ...draft, quitte_par: role, rejouer_j1: false, rejouer_j2: false });
-    } else if (room.type === "classe") {
+    } else if (room.type === "classe" && draft.phase !== "non_equilibrable") {
+      // Box non équilibrables (pas encore de match) : simple annulation.
       ecrite = await abandonnerMatchClasse(supabase, room.room_id, draft, role);
     } else {
       ecrite = await ecrireDraft(supabase, room.room_id, { ...draft, phase: "annule", annule_par: role });

@@ -65,6 +65,40 @@ function getModeEquilibrage() {
   return modeEquilibrage;
 }
 
+// Limites de l'équilibrage calculé ("fixe_joker", cf. calculerEquilibrageFixe
+// dans _lib/draft.js), par palier de théâtre de la draft (1 sardine ... 4
+// baleine), réglables sur la page admin (config.limites_equilibrage) :
+//   min_persos : nombre de persos sous lequel aucune box ne descend ;
+//   seuil_bas  : top 12 du petit joueur à ne pas franchir (et "petit compte"
+//                sous ce seuil) ;
+//   seuil_haut : top 12 du gros joueur au-dessus duquel le petit compte a
+//                droit au joker dès un ban qui le touche ;
+//   plancher   : petit compte face à un gros joueur entre seuil_bas et
+//                seuil_haut : top 12 des 2 joueurs à garder au-dessus.
+const CHAMPS_LIMITES = ["min_persos", "seuil_bas", "seuil_haut", "plancher"];
+const LIMITES_EQUILIBRAGE_DEFAUT = {
+  1: { min_persos: 14, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 },
+  2: { min_persos: 16, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 },
+  3: { min_persos: 18, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 },
+  4: { min_persos: 20, seuil_bas: 1000, seuil_haut: 1500, plancher: 850 }
+};
+let limitesEquilibrage = LIMITES_EQUILIBRAGE_DEFAUT;
+
+// Limites d'un palier (enregistrées par les admins, valeurs par défaut sinon).
+function lireLimitesEquilibrage(brutes) {
+  return Object.fromEntries(Object.entries(LIMITES_EQUILIBRAGE_DEFAUT).map(([palier, defaut]) => [
+    palier,
+    Object.fromEntries(CHAMPS_LIMITES.map(champ => {
+      const valeur = Number(brutes?.[palier]?.[champ]);
+      return [champ, Number.isFinite(valeur) && valeur >= 0 ? Math.round(valeur) : defaut[champ]];
+    }))
+  ]));
+}
+
+function getLimitesEquilibrage(palier) {
+  return limitesEquilibrage[palier] || limitesEquilibrage[2];
+}
+
 function appliquerBonus(points, cle, valeur) {
   const bonus = Number(valeur ?? 0);
   if (modesBonus[cle] === "multiplication") return bonus ? points * bonus : points;
@@ -149,6 +183,7 @@ async function actualiserPoints() {
     bonusSaison = new Set(Array.isArray(config.bonus_saison) ? config.bonus_saison : []);
     carnageDesactive = config.carnage_desactive === true;
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
+    limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     modesBonus = config.modes || {};
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
@@ -317,6 +352,9 @@ function codeTheatre(profilData) {
 
 module.exports = {
   MODES_EQUILIBRAGE,
+  LIMITES_EQUILIBRAGE_DEFAUT,
+  lireLimitesEquilibrage,
+  getLimitesEquilibrage,
   ALTERNATIVES_ARMES,
   MODES_POINTS,
   getModeEquilibrage,

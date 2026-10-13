@@ -37,7 +37,7 @@ function rendreFictives() {
   zone.innerHTML = `
     <table class="tableau-boss">
       <thead>
-        <tr><th class="col-nom">Box</th><th>Persos</th><th>Théâtre</th><th>Modifiée</th><th></th></tr>
+        <tr><th class="col-nom">Box</th><th>Persos</th><th title="Points de la full box (persos + armes)">Points</th><th>Théâtre</th><th>Modifiée</th><th></th></tr>
       </thead>
       <tbody>
         ${boxesFictives.map(box => `
@@ -47,6 +47,7 @@ function rendreFictives() {
               ${box.createur ? `<br><span class="details-boss">créée par ${echapper(box.createur)}</span>` : ""}
             </td>
             <td>${box.nb_persos}</td>
+            <td>${box.points ?? "-"}</td>
             <td>${PALIERS_THEATRE[box.theatre]?.nom ?? "-"}</td>
             <td>${box.modifie_le ? new Date(box.modifie_le).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : ""}</td>
             <td>

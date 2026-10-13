@@ -366,3 +366,8 @@ async function choisirCarte(carte) {
 document.querySelectorAll(".carte-match").forEach(carte => {
   carte.addEventListener("click", () => choisirCarte(carte));
 });
+
+// matchmaking.html#entrainement (ex. "Changer de box" d'un entraînement non
+// équilibrable, cf. match.js) : panneau de l'entraînement ouvert.
+const carteAncre = location.hash && document.querySelector(`.carte-match[data-detail="${CSS.escape(location.hash.slice(1))}"]`);
+if (carteAncre) choisirCarte(carteAncre);

@@ -112,8 +112,10 @@ async function chargerStatsLitiges() {
   }
 
   const stats = new Map();
-  // Matchs invalidés après un signalement : pas des litiges.
-  (data || []).filter(match => match.litige !== "invalide").forEach(match => {
+  // Matchs invalidés après un signalement : pas des litiges ; matchs annulés
+  // pour des box non équilibrables (litige_par "equilibrage") : pas la faute
+  // des joueurs.
+  (data || []).filter(match => match.litige !== "invalide" && match.litige_par !== LITIGE_EQUILIBRAGE).forEach(match => {
     ["j1", "j2"].forEach(role => {
       const discordId = match[`player${role === "j1" ? 1 : 2}_discord_id`];
       if (!discordId) return;
@@ -127,6 +129,28 @@ async function chargerStatsLitiges() {
     });
   });
   return [...stats.values()];
+}
+
+// Litige d'un match annulé d'office pour des box non équilibrables (cf.
+// traiterNonEquilibrable dans api/rooms/[room_id]/[action].js) : à vérifier
+// par les administrateurs, joueurs pas sanctionnables.
+const LITIGE_EQUILIBRAGE = "equilibrage";
+
+// ---- PATCH ?id= { action: "clore_equilibrage" } (administrateurs) :
+// litige d'équilibrage vérifié, dossier clos (litige = "traite"). ----
+async function cloreLitigeEquilibrage(req, res, user) {
+  const id = req.query?.id;
+  if (!id) return res.status(400).json({ error: "Match manquant" });
+  const { data, error } = await supabase
+    .from("match_history")
+    .update({ litige: "traite", republie_par: user.id, republie_le: new Date().toISOString() })
+    .eq("id", id)
+    .eq("litige", "ouvert")
+    .eq("litige_par", LITIGE_EQUILIBRAGE)
+    .select("id");
+  if (error) throw error;
+  if (!data?.length) return res.status(404).json({ error: "Dossier introuvable ou déjà traité" });
+  return res.status(200).json({ ok: true });
 }
 
 // ---- PATCH ?id= { action: "sanction", sanctions: { j1, j2 }, fin_saison }
@@ -144,11 +168,12 @@ async function sanctionnerLitige(req, res, user) {
 
   const { data: match, error } = await supabase
     .from("match_history")
-    .select("id, player1_discord_id, player2_discord_id, litige")
+    .select("id, player1_discord_id, player2_discord_id, litige, litige_par")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   if (!match || match.litige !== "ouvert") return res.status(404).json({ error: "Dossier introuvable ou déjà traité" });
+  if (match.litige_par === LITIGE_EQUILIBRAGE) return res.status(409).json({ error: "Match annulé pour l'équilibrage : les joueurs ne sont pas sanctionnables." });
 
   let lignes;
   try {
@@ -242,6 +267,8 @@ async function republierLitige(req, res, user) {
     .eq("id", id)
     .maybeSingle();
   if (erreurLecture) throw erreurLecture;
+  // Match annulé avant la draft (box non équilibrables) : rien à republier.
+  if (litige?.litige_par === LITIGE_EQUILIBRAGE) return res.status(409).json({ error: "Match annulé pour l'équilibrage : rien à republier, clos le dossier." });
   const bossId = litige?.boss_id ?? null;
   const tempsJ1 = parserTempsOuAbandon(req.body?.temps_j1, bossId);
   const tempsJ2 = parserTempsOuAbandon(req.body?.temps_j2, bossId);
@@ -579,6 +606,7 @@ module.exports = async (req, res) => {
     if (!admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
     try {
       if (req.body?.action === "sanction") return await sanctionnerLitige(req, res, user);
+      if (req.body?.action === "clore_equilibrage") return await cloreLitigeEquilibrage(req, res, user);
       if (req.body?.action === "lever_ban") return await leverBan(req, res);
       if (req.body?.action === "signalement") return await traiterSignalement(req, res, user);
       return await republierLitige(req, res, user);

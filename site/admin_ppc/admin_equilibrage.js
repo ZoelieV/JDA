@@ -10,6 +10,38 @@ const METHODES_EQUILIBRAGE = [
   { valeur: "fixe_joker", titre: "Bans calculés + joker", description: "Verticalité = moyenne des 12 meilleurs persos (perso + signature). Le nombre de bans est calculé d'après les 2 box (sans plafond) : assez pour ramener l'écart d'équipe prévu (4 × écart de verticalité) à 25 pts ou moins. Si les bans n'y arrivent pas : 1 ban joker (interdit à l'adversaire seulement). Armes en double et signatures sans leur perso : attribuées à leur valeur alternative aux persos sans signature du même type (armes support : persos support ou sub-dps)." }
 ];
 
+// Limites des bans calculés par palier (config.limites_equilibrage, cf.
+// getLimitesEquilibrage dans api/_lib/personnages.js).
+const PALIERS_LIMITES = { 1: "Sardine", 2: "Carpe", 3: "Dauphin", 4: "Baleine" };
+const CHAMPS_LIMITES = [
+  { cle: "min_persos", titre: "Persos min" },
+  { cle: "seuil_bas", titre: "Seuil bas" },
+  { cle: "seuil_haut", titre: "Seuil haut" },
+  { cle: "plancher", titre: "Plancher" }
+];
+
+function rendreLimites(limites) {
+  document.getElementById("limites-equilibrage").innerHTML = `
+    <table class="tableau-boss tableau-limites">
+      <thead><tr><th class="col-nom">Palier</th>${CHAMPS_LIMITES.map(c => `<th>${c.titre}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${Object.entries(PALIERS_LIMITES).map(([palier, nom]) => `
+          <tr>
+            <td class="col-nom">${nom}</td>
+            ${CHAMPS_LIMITES.map(c => `<td><input type="number" min="0" step="1" name="${palier}-${c.cle}" value="${limites?.[palier]?.[c.cle] ?? ""}" required></td>`).join("")}
+          </tr>`).join("")}
+      </tbody>
+    </table>
+    <button type="submit" class="bouton-creer">Enregistrer les limites</button>`;
+}
+
+function lireFormulaireLimites(formulaire) {
+  return Object.fromEntries(Object.keys(PALIERS_LIMITES).map(palier => [
+    palier,
+    Object.fromEntries(CHAMPS_LIMITES.map(c => [c.cle, Number(formulaire.elements[`${palier}-${c.cle}`].value)]))
+  ]));
+}
+
 function afficherMessageEquilibrage(texte, type = "") {
   const message = document.getElementById("message-equilibrage");
   message.className = `message-ajout${type ? ` ${type}` : ""}`;
@@ -30,6 +62,7 @@ function initialiserEquilibrage() {
   // Méthode enregistrée : lue une fois (chargerPointsAdmin garde la 1re
   // réponse), puis suivie à chaque enregistrement.
   let actuelle = null;
+  let limites = null;
   const fermer = () => modal.classList.remove("active");
 
   document.getElementById("ouvrir-equilibrage").addEventListener("click", async () => {
@@ -39,12 +72,14 @@ function initialiserEquilibrage() {
       try {
         const config = await chargerPointsAdmin();
         actuelle = METHODES_EQUILIBRAGE.some(m => m.valeur === config?.equilibrage) ? config.equilibrage : "ancien";
+        limites = config?.limites_equilibrage || null;
       } catch (erreur) {
         console.error(erreur);
         actuelle = "ancien";
       }
     }
     rendreEquilibrage(actuelle);
+    rendreLimites(limites);
   });
   document.getElementById("fermer-equilibrage").addEventListener("click", fermer);
   modal.addEventListener("click", event => {
@@ -52,6 +87,23 @@ function initialiserEquilibrage() {
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
+  });
+
+  document.getElementById("limites-equilibrage").addEventListener("submit", async event => {
+    event.preventDefault();
+    const formulaire = event.currentTarget;
+    const bouton = formulaire.querySelector("button[type=submit]");
+    bouton.disabled = true;
+    afficherMessageEquilibrage("Enregistrement…");
+    try {
+      const config = await envoyerAjout({ limites_equilibrage: lireFormulaireLimites(formulaire) });
+      limites = config.limites_equilibrage;
+      afficherMessageEquilibrage("Limites enregistrées : elles s'appliquent aux prochaines drafts.", "succes");
+    } catch (erreur) {
+      console.error(erreur);
+      afficherMessageEquilibrage(erreur.message, "erreur");
+    }
+    rendreLimites(limites);
   });
 
   liste.addEventListener("change", async event => {

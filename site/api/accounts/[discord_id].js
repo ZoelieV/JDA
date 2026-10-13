@@ -1,7 +1,8 @@
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { estModerateur } = require("../_lib/admin");
-const { getPersonnages, actualiserPoints, migrerCollectionPersos, codeTheatre } = require("../_lib/personnages");
+const { getPersonnages, getArmes, actualiserPoints, migrerCollectionPersos, codeTheatre } = require("../_lib/personnages");
+const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { nettoyerProfil } = require("../auth/profile");
 const {
   MAX_BOXES_FICTIVES,
@@ -56,7 +57,7 @@ function masquerBoxOpti(data, visibles) {
 
 // ---- Box fictives (cf. _lib/boxes_fictives.js) ----
 // Administrateurs et mini admins seulement :
-//   GET    /api/accounts/boxes_fictives          liste { id, nom, theatre, nb_persos, ... }
+//   GET    /api/accounts/boxes_fictives          liste { id, nom, theatre, nb_persos, points, ... }
 //   POST   /api/accounts/boxes_fictives          { nom } -> { id }
 //   GET    /api/accounts/<id fictif>             comme un profil (data = la box)
 //   PUT    /api/accounts/<id fictif>             { nom?, data? }
@@ -102,7 +103,16 @@ async function gererBoxesFictives(req, res, url, cible, user) {
     if (req.method === "GET") {
       const boxes = await lireBoxesFictives();
       return res.status(200).json(Object.entries(boxes)
-        .map(([id, box]) => ({ id, nom: box.nom, theatre: codeTheatre(box.data), nb_persos: nbPersosFictive(box.data), createur: box.createur, modifie_le: box.modifie_le }))
+        .map(([id, box]) => ({
+          id,
+          nom: box.nom,
+          theatre: codeTheatre(box.data),
+          nb_persos: nbPersosFictive(box.data),
+          // Points de la full box (persos + armes), comme Tous les comptes.
+          points: calculerPointsBox(box.data, "full", getPersonnages()) + calculerPointsArmesBox(box.data, "full", getArmes()),
+          createur: box.createur,
+          modifie_le: box.modifie_le
+        }))
         .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" })));
     }
     if (req.method === "POST") {

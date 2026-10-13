@@ -65,14 +65,13 @@ function echangerBansContreJoker(draft, annuler = false) {
 // Celui qui a la verticalité la plus faible bannit ; nombre de bans : on
 // retire un à un le perso qui réduit le plus l'écart prévu (ban global : un
 // perso que les 2 ont est retiré des 2 box), jusqu'à un écart prévu de
-// MARGE_FIXE ou moins. Si les bans n'y arrivent pas (plus aucun ban utile,
-// ou une box passerait sous NB_PERSOS_MIN_BOX persos) : un ban joker
-// (JOKERS_MAX au plus), retiré de la box adverse seulement (le banneur peut
-// encore le picker).
+// MARGE_FIXE ou moins, dans les limites de getLimitesEquilibrage (top 12
+// du petit joueur, nombre de persos) : un ban joker au plus (retiré de la
+// box adverse seulement, le banneur peut encore le picker), et match non
+// équilibrable si l'écart reste trop grand (cf. calculerEquilibrageFixe).
 const VERTICALITE_PERSOS = 12;
 const TAILLE_EQUIPE = 4;
 const MARGE_FIXE = 25;
-const JOKERS_MAX = 1;
 
 function estEquilibrageFixe(draft) {
   return draft?.equilibrage === "fixe_joker";
@@ -190,13 +189,40 @@ function horizontalite(modele) {
 // sinon il en faudrait tant que la draft se jouerait presque sans 5★.
 const SEUIL_ARMES_BANNIES = 4000;
 
+// Écart prévu accepté en fin de calcul (objectif MARGE_FIXE) : au-delà, le
+// match n'est pas équilibrable.
+const TOLERANCE_FIXE = 30;
+
+// Cas du calcul selon le top 12 (somme des VERTICALITE_PERSOS meilleurs) des
+// 2 box au départ (limites : cf. getLimitesEquilibrage, _lib/personnages.js) :
+//   "normal"   : petit joueur au-dessus de seuil_bas ; joker dès qu'un ban
+//                optimal ferait passer son top 12 sous seuil_bas ;
+//   "petit"    : petit joueur sous seuil_bas, gros au-dessus de seuil_haut ;
+//                joker dès qu'un ban optimal touche un de ses persos ;
+//   "plancher" : petit joueur sous seuil_bas, gros entre les deux seuils ;
+//                pas de joker, les 2 top 12 restent au-dessus de plancher ;
+//   "deux_petits" : les 2 sous seuil_bas ; pas de joker.
+function casEquilibrage(topFaible, topFort, limites) {
+  if (topFaible >= limites.seuil_bas) return "normal";
+  if (topFort > limites.seuil_haut) return "petit";
+  if (topFort >= limites.seuil_bas) return "plancher";
+  return "deux_petits";
+}
+
 // modeleFaible / modeleFort : cf. modeleEquilibrage ; ecartPoints : écart
-// de points entre les 2 box (cf. SEUIL_ARMES_BANNIES).
-// -> { bans, jokers, ecart_avant, ecart_apres (après bans et jokers),
-// suggestion (bans puis jokers supposés par le calcul) }. marge : objectif
-// d'écart prévu (simulations : 25 équilibre mieux que 50, qui sous-estime
-// les gros écarts).
-function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints = 0, marge = MARGE_FIXE) {
+// de points entre les 2 box (cf. SEUIL_ARMES_BANNIES) ; limites : cf.
+// getLimitesEquilibrage. Bans optimaux un à un (le plus grand gain d'écart
+// prévu) jusqu'à un écart prévu de MARGE_FIXE ou moins. Un ban qui ne
+// respecte pas les limites du cas (cf. casEquilibrage) ou qui ferait passer
+// une box sous min_persos : joker à la place si le cas le permet (une fois),
+// sinon arrêt. Après le joker, seuls les bans à sens unique (persos que le
+// petit joueur n'a pas) continuent : le prochain ban optimal qui le touche
+// arrête le calcul. Écart prévu final au-delà de TOLERANCE_FIXE : pas
+// équilibrable.
+// -> { bans, jokers, ecart_avant, ecart_apres, suggestion (bans puis joker
+// supposés par le calcul), equilibrable, cas, top_faible, top_fort,
+// top_faible_apres, top_fort_apres }.
+function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE) {
   const garderArmes = Math.abs(ecartPoints) < SEUIL_ARMES_BANNIES;
   const bannisFort = new Set();
   const bannisFaible = new Set();
@@ -205,48 +231,68 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints = 0, marg
     fort: mesurerVerticalite(modeleFort, bannisFort, garderArmes),
     faible: mesurerVerticalite(modeleFaible, bannisFaible, garderArmes)
   });
+  const top = m => Math.round(m.verticalite * VERTICALITE_PERSOS);
   const prevu = () => {
     const { fort, faible } = mesure();
     return Math.round(TAILLE_EQUIPE * (fort.verticalite - faible.verticalite));
   };
-  const resultat = { bans: 0, jokers: 0, ecart_avant: prevu(), ecart_apres: prevu(), suggestion: [] };
-
-  // Meilleur retrait (le plus grand gain d'écart prévu) parmi les persos du
-  // top de la box forte (retirer un autre perso ne la fait pas baisser) ;
-  // joker : retiré de la box forte seulement.
-  const meilleurRetrait = joker => {
-    let meilleur = null;
-    const avant = prevu();
-    const valeur = id => modeleFort.persos[id].valeur + (modeleFort.persos[id].signature?.pleine || 0);
-    mesure().fort.top.forEach(id => {
-      const commun = !joker && id in modeleFaible.persos && !bannisFaible.has(id);
-      if (commun && restants(modeleFaible, bannisFaible) <= NB_PERSOS_MIN_BOX) return;
-      bannisFort.add(id);
-      if (commun) bannisFaible.add(id);
-      const gain = avant - prevu();
-      bannisFort.delete(id);
-      if (commun) bannisFaible.delete(id);
-      if (gain > 0 && (!meilleur || gain > meilleur.gain || (gain === meilleur.gain && valeur(id) > valeur(meilleur.id)))) meilleur = { id, gain };
-    });
-    return meilleur;
+  const depart = mesure();
+  const cas = casEquilibrage(top(depart.faible), top(depart.fort), limites);
+  const jokerPermis = cas === "normal" || cas === "petit";
+  const resultat = {
+    bans: 0, jokers: 0, ecart_avant: prevu(), ecart_apres: null, suggestion: [], equilibrable: true,
+    cas, top_faible: top(depart.faible), top_fort: top(depart.fort)
   };
 
-  while (prevu() > marge && restants(modeleFort, bannisFort) > NB_PERSOS_MIN_BOX) {
-    const retrait = meilleurRetrait(false);
-    if (!retrait) break;
-    bannisFort.add(retrait.id);
-    if (retrait.id in modeleFaible.persos) bannisFaible.add(retrait.id);
-    resultat.bans++;
-    resultat.suggestion.push(retrait.id);
-  }
-  while (prevu() > marge && resultat.jokers < JOKERS_MAX) {
-    const retrait = meilleurRetrait(true);
-    if (!retrait) break;
-    bannisFort.add(retrait.id);
+  // Retrait candidat (persos du top de la box forte : en retirer un autre ne
+  // la fait pas baisser) -> { id, gain, commun, valide } ; joker : retiré
+  // de la box forte seulement.
+  const essayer = (id, joker) => {
+    const commun = !joker && id in modeleFaible.persos && !bannisFaible.has(id);
+    const avant = prevu();
+    bannisFort.add(id);
+    if (commun) bannisFaible.add(id);
+    const gain = avant - prevu();
+    const apres = mesure();
+    bannisFort.delete(id);
+    if (commun) bannisFaible.delete(id);
+    const persosOk = restants(modeleFort, bannisFort) - 1 >= limites.min_persos &&
+      (!commun || restants(modeleFaible, bannisFaible) - 1 >= limites.min_persos);
+    const limitesOk = cas === "normal" ? !commun || top(apres.faible) >= limites.seuil_bas
+      : cas === "petit" ? !commun
+        : cas === "plancher" ? top(apres.faible) >= limites.plancher && top(apres.fort) >= limites.plancher
+          : true;
+    return { id, gain, commun, valide: persosOk && limitesOk };
+  };
+  const valeur = id => modeleFort.persos[id].valeur + (modeleFort.persos[id].signature?.pleine || 0);
+  const meilleur = joker => mesure().fort.top
+    .map(id => essayer(id, joker))
+    .filter(r => r.gain > 0)
+    .reduce((m, r) => (!m || r.gain > m.gain || (r.gain === m.gain && valeur(r.id) > valeur(m.id)) ? r : m), null);
+
+  while (prevu() > marge) {
+    const ban = meilleur(false);
+    if (!ban) break;
+    if (ban.valide && !(resultat.jokers && ban.commun)) {
+      bannisFort.add(ban.id);
+      if (ban.commun) bannisFaible.add(ban.id);
+      resultat.bans++;
+      resultat.suggestion.push(ban.id);
+      continue;
+    }
+    // Ban impossible : joker (une fois, si le cas le permet), sinon fin.
+    if (!jokerPermis || resultat.jokers) break;
+    const joker = meilleur(true);
+    if (!joker || !joker.valide) break;
+    bannisFort.add(joker.id);
     resultat.jokers++;
-    resultat.suggestion.push(retrait.id);
+    resultat.suggestion.push(joker.id);
   }
+  const fin = mesure();
   resultat.ecart_apres = prevu();
+  resultat.top_faible_apres = top(fin.faible);
+  resultat.top_fort_apres = top(fin.fort);
+  resultat.equilibrable = resultat.ecart_apres <= TOLERANCE_FIXE;
   return resultat;
 }
 
@@ -394,7 +440,7 @@ function getSequence(draft) {
 // (lancerTirage). En revanche, ils sont échangés sans tirage.
 function etatInitialDraft() {
   return {
-    phase: "choix_box", // choix_box -> analyse -> bans_bonus (si écart) -> draft -> temps -> verification -> termine | litige
+    phase: "choix_box", // choix_box -> [non_equilibrable ->] analyse -> bans_bonus (si écart) -> draft -> temps -> verification -> termine | litige | annule
     discord_j1: null,
     discord_j2: null,
     roles_tires: false, // true une fois j1/j2 définitifs pour la manche
@@ -413,11 +459,16 @@ function etatInitialDraft() {
     bans_joker_total: 0, // bans joker (compris dans bans_bonus_total), interdits à l'adversaire seulement
     bans_joker_choix: [], // jokers en cours de sélection, pas encore confirmés
     echange_joker: false, // BANS_PAR_JOKER bans échangés contre un joker (cf. echangerBansContreJoker)
+    equilibrable: true, // équilibrage calculé : false si les box ne s'équilibrent pas (cf. calculerEquilibrageFixe)
+    combinaisons_equilibrables: null, // phase non_equilibrable : [{ j1, j2 }] box qui s'équilibrent
+    votes_equilibrage: { j1: null, j2: null }, // phase non_equilibrable : "revenir" | "annuler"
+    boxes_permises: null, // choix des box après non_equilibrable : { j1: [box], j2: [box] }
+    alerte_equilibrage_vue: false, // entraînement non équilibrable : alerte acceptée
     verticalite_j1: null, // équilibrage fixe : verticalité / horizontalité de la box de j1 (cf. verticalite)
     verticalite_j2: null,
     horizontalite_j1: null,
     horizontalite_j2: null,
-    ecart_prevu: null, // équilibrage fixe : { avant, apres } écart d'équipe prévu (bans normaux)
+    ecart_prevu: null, // équilibrage fixe : { avant, apres, cas, top, top_apres } écart d'équipe prévu et top 12 des box
     boss_id: null,
     pool_disponible: null, // liste d'ids (union), remplie une fois les 2 joueurs prêts
     pool_j1: null, // ids de la box choisie par j1 — restreint ses picks
@@ -815,6 +866,7 @@ module.exports = {
   modeleEquilibrage,
   mesurerVerticalite,
   SEUIL_ARMES_BANNIES,
+  TOLERANCE_FIXE,
   appliquerBansBonus,
   MARGE_FIXE,
   etatInitialDraft,

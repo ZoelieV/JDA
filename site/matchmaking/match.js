@@ -231,6 +231,11 @@ async function postBox(box) {
   }
 }
 
+async function postEquilibrageVote(choix) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/equilibrage_vote`, { choix });
+  await definirDraft(data.draft);
+}
+
 async function postReady(pret) {
   const ancienPret = draft[`pret_${monRole}`];
 
@@ -1025,7 +1030,10 @@ function rendreChoixBox() {
     ? (draft.roles_tires
       ? "Revanche : mêmes box et mêmes bans d'équilibrage, rôles J1/J2 inversés. Analyse la box adverse puis clique sur \"Prêt\" pour tirer le boss."
       : "Analyse la box adverse puis clique sur \"Prêt\". Suite : bans d'équilibrage (si écart), puis tirage J1/J2 et du boss.")
-    : `Choisis ta box (au moins ${NB_PERSOS_MIN_BOX} personnages) et valide-la. La box adverse sera visible une fois les 2 box validées.`;
+    : draft.boxes_permises
+      ? "Les box choisies ne s'équilibraient pas : choisis parmi les box qui s'équilibrent avec celles de ton adversaire, puis valide."
+      : `Choisis ta box (au moins ${NB_PERSOS_MIN_BOX} personnages) et valide-la. La box adverse sera visible une fois les 2 box validées.`;
+  if (enAnalyse && draft.entrainement && draft.equilibrable === false) afficherAlerteEquilibrage();
 
   ["j1", "j2"].forEach(role => {
     const estMoi = role === monRole;
@@ -1046,8 +1054,12 @@ function rendreChoixBox() {
     // Entraînement : seulement la box choisie à la création ; matchmaking
     // classique : full seulement (BOX_MATCHMAKING_CLASSIQUE) ; sinon toutes
     // sauf "Personnalisée".
+    // Retour au choix des box (box non équilibrables) : seulement les box
+    // des combinaisons qui s'équilibrent (draft.boxes_permises).
+    const permises = draft.boxes_permises?.[role];
     Object.entries(BOX_LABELS).filter(([valeur]) => draft.entrainement ? draft[`box_${role}`] === valeur
-      : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : valeur !== "custom").forEach(([valeur, label]) => {
+      : permises ? permises.includes(valeur)
+        : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : valeur !== "custom").forEach(([valeur, label]) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
@@ -1366,7 +1378,7 @@ let presences = null;
 // Pendant toute la draft (choix des box, analyse, bans d'équilibrage,
 // picks / bans) : dans les rectangles des joueurs puis sur les namecards
 // des tableaux. Choix des box / analyse : à côté de la pastille "prêt".
-const PHASES_PRESENCE = ["choix_box", "analyse", "bans_bonus", "boss", "draft"];
+const PHASES_PRESENCE = ["choix_box", "analyse", "non_equilibrable", "bans_bonus", "boss", "draft"];
 
 function mettreAJourPastillesPresence() {
   const visible = PHASES_PRESENCE.includes(draft?.phase) && !!presences;
@@ -2653,6 +2665,16 @@ function rendreAnnule() {
   }
 
   titre.textContent = "Match annulé";
+  if (draft.annule_raison === "equilibrage") {
+    texte.innerHTML = "Aucune combinaison de vos box ne s'équilibre : le match est annulé et ne compte pas. Les administrateurs en sont prévenus pour vérifier ce cas.";
+    return;
+  }
+  if (draft.annule_raison === "equilibrage_refuse") {
+    texte.innerHTML = draft.annule_par === monRole
+      ? "Tu as annulé le match : les box choisies ne s'équilibraient pas. Il ne compte pas."
+      : `${parti?.pseudo || "Ton adversaire"} a annulé le match : les box choisies ne s'équilibraient pas. Il ne compte pas.`;
+    return;
+  }
   if (draft.annule_raison === "crash") {
     texte.innerHTML = draft.annule_par === monRole
       ? "Tu n'es pas revenu dans les 10 minutes après ton crash : la draft est annulée et ne compte pas."
@@ -2664,6 +2686,62 @@ function rendreAnnule() {
     : parti
       ? `${parti.pseudo} a démarré un autre match : celui-ci est annulé et ne compte pas.`
       : "Ce match a été annulé et ne compte pas.";
+}
+
+// ---- Box non équilibrables (cf. traiterNonEquilibrable,
+// api/rooms/[room_id]/[action].js) ----
+// D'autres combinaisons de box s'équilibrent : chacun vote pour y revenir
+// (les 2 doivent accepter) ou annule le match.
+function libelleBox(role, box) {
+  const noms = getJoueurDataParRole(role)?.nomsBoxes || {};
+  return typeof noms[box] === "string" && noms[box] ? noms[box] : BOX_LABELS[box] || box;
+}
+
+function rendreNonEquilibrable() {
+  const combinaisons = draft.combinaisons_equilibrables || [];
+  const nom = role => pseudoColore(role);
+  const e = draft.ecart_prevu || {};
+  document.getElementById("texte-non-equilibrable").innerHTML =
+    `Les box choisies ne s'équilibrent pas (écart d'équipe prévu ${e.avant ?? "?"} pts, encore ${e.apres ?? "?"} après tous les bans possibles). ` +
+    (combinaisons.length === 1
+      ? "Une seule combinaison de vos box s'équilibre : en revenant au choix des box, elle vous est imposée."
+      : `${combinaisons.length} combinaisons de vos box s'équilibrent : en revenant au choix des box, vous choisissez parmi elles.`);
+  document.getElementById("combinaisons-equilibrables").innerHTML = combinaisons
+    .map(c => `<li>${nom("j1")} : ${echapperHtml(libelleBox("j1", c.j1))} — ${nom("j2")} : ${echapperHtml(libelleBox("j2", c.j2))}</li>`)
+    .join("");
+
+  const votes = draft.votes_equilibrage || {};
+  const autre = monRole ? getAutreRole(monRole) : null;
+  const revenir = document.getElementById("btn-revenir-box");
+  const annuler = document.getElementById("btn-annuler-match");
+  [revenir, annuler].forEach(b => b.classList.toggle("cache", !monRole));
+  revenir.disabled = votes[monRole] === "revenir";
+  revenir.textContent = votes[monRole] === "revenir" ? "En attente de ton adversaire…" : "Revenir au choix des box";
+  revenir.onclick = () => postEquilibrageVote("revenir").catch(err => alert(err.message));
+  annuler.onclick = () => {
+    if (confirm("Annuler le match ? Il ne comptera pas.")) postEquilibrageVote("annuler").catch(err => alert(err.message));
+  };
+  document.getElementById("etat-non-equilibrable").innerHTML = autre && votes[autre] === "revenir"
+    ? `${nom(autre)} veut revenir au choix des box.`
+    : "";
+}
+
+// Entraînement dont les box ne s'équilibrent pas : en classé, le match
+// aurait été annulé ; le lanceur continue ou change de box (une fois par
+// room et par onglet).
+function afficherAlerteEquilibrage() {
+  const cle = `alerte-equilibrage-${roomId}`;
+  try {
+    if (sessionStorage.getItem(cle)) return;
+  } catch {}
+  const message = document.getElementById("message-choix-box");
+  message.innerHTML = `⚠ Ces box ne s'équilibrent pas : en match normal ou classé, ce match aurait été annulé. ` +
+    `<button type="button" class="btn-alerte-equilibrage" id="btn-continuer-equilibrage">Continuer quand même</button> ` +
+    `<a class="btn-alerte-equilibrage" href="matchmaking.html#entrainement">Changer de box</a>`;
+  document.getElementById("btn-continuer-equilibrage").onclick = () => {
+    try { sessionStorage.setItem(cle, "1"); } catch {}
+    rendreChoixBox();
+  };
 }
 
 // ---- Chronos de la draft classée (cf. api/_lib/chronos.js) ----
@@ -2916,6 +2994,7 @@ function rendrePhase() {
     termine: "phase-draft",
     litige: "phase-draft",
     annule: "phase-annule",
+    non_equilibrable: "phase-non-equilibrable",
     boss: "phase-boss"
   };
 
@@ -2969,6 +3048,7 @@ function rendrePhase() {
   else if (draft.phase === "termine") rendreTermine();
   else if (draft.phase === "litige") rendreLitige();
   else if (draft.phase === "annule") rendreAnnule();
+  else if (draft.phase === "non_equilibrable") rendreNonEquilibrable();
   else if (draft.phase === "boss") rendreChoixBoss();
 }
 

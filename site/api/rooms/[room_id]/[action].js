@@ -1,5 +1,5 @@
-// Fusion de 15 routes (box, ready, action, bonus_toggle, bonus_echanger,
-// bonus_confirmer, temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
+// Fusion de 16 routes (box, ready, equilibrage_vote, action, bonus_toggle,
+// bonus_echanger, bonus_confirmer, temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
 // boss_vote, crash, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
@@ -15,7 +15,7 @@ const { tirerBossAleatoire, bossCarnageExclus, DUREE_DEFI_SECONDES, estDefiEnnem
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserResultat, messageFormatInvalide, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
-const { calculerEquilibrage } = require("../../_lib/boxes");
+const { calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH } = require("../../_lib/boxes");
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
 const {
@@ -133,6 +133,14 @@ async function passerApresPrets(draft, room) {
 
   if (draft.phase === "choix_box") {
     await calculerEquilibrage(draft);
+    // Box qui ne s'équilibrent pas (équilibrage calculé) : retour au choix
+    // des box proposé, ou match annulé (cf. traiterNonEquilibrable).
+    // Entraînement : alerte seulement, le lanceur choisit (cf. match.js).
+    if (!draft.equilibrable && !draft.entrainement) {
+      await traiterNonEquilibrable(draft, room);
+      return;
+    }
+    draft.boxes_permises = null;
     draft.phase = "analyse";
     demarrerAnalyse(draft);
   } else if (bansBonusDus(draft)) {
@@ -142,6 +150,48 @@ async function passerApresPrets(draft, room) {
     // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
     await tirageEtDraft(draft, room);
   }
+}
+
+// ---- Box non équilibrables (équilibrage calculé, cf. calculerEquilibrageFixe
+// dans _lib/draft.js) ----
+// Au moins une combinaison des box des 2 joueurs s'équilibre : phase
+// "non_equilibrable", les joueurs votent pour revenir au choix des box
+// (limité à ces combinaisons) ou annuler le match (cf.
+// handleEquilibrageVote). Aucune : match annulé d'office, transmis aux
+// administrateurs comme litige "équilibrage non fonctionnel" (cf.
+// archiverNonEquilibrable ; joueurs pas sanctionnables).
+async function traiterNonEquilibrable(draft, room) {
+  const permises = estMatchmakingClassique(draft, room) ? [...BOX_MATCHMAKING_CLASSIQUE] : BOX_MATCH;
+  const combinaisons = await combinaisonsEquilibrables(draft, permises);
+  draft.pret_j1 = false;
+  draft.pret_j2 = false;
+  if (combinaisons.length) {
+    draft.phase = "non_equilibrable";
+    draft.combinaisons_equilibrables = combinaisons;
+    draft.votes_equilibrage = { j1: null, j2: null };
+    return;
+  }
+  draft.phase = "annule";
+  draft.annule_par = null;
+  draft.annule_raison = "equilibrage";
+  draft.litige_par = "equilibrage";
+  draft.litige_commentaire = texteNonEquilibrable(draft);
+}
+
+// Commentaire du litige d'équilibrage (lu par les administrateurs).
+function texteNonEquilibrable(draft) {
+  const e = draft.ecart_prevu || {};
+  const top = role => e.top?.[role] ?? "?";
+  return `Équilibrage non fonctionnel : aucune combinaison de box ne s'équilibre. ` +
+    `Box jouées : ${draft.box_j1} (top 12 : ${top("j1")}, ${draft.points_j1} pts) contre ${draft.box_j2} (top 12 : ${top("j2")}, ${draft.points_j2} pts). ` +
+    `Écart d'équipe prévu ${e.avant ?? "?"} -> ${e.apres ?? "?"} après le calcul (cas ${e.cas || "?"}).`;
+}
+
+// Après l'enregistrement de la room (une seule archive) : match annulé
+// d'office archivé comme litige pour les administrateurs.
+async function archiverNonEquilibrable(draft, room) {
+  if (draft.phase !== "annule" || draft.annule_raison !== "equilibrage" || draft.entrainement) return;
+  await archiverMatch(draft, { litige: true, classe: room.type === "classe" });
 }
 
 // Écriture conditionnelle (cf. ecrireDraft) : room modifiée par une autre
@@ -202,6 +252,11 @@ async function handleBox(req, res, roomId, user) {
   if (estMatchmakingClassique(draft, room) && !BOX_MATCHMAKING_CLASSIQUE.has(box)) {
     return res.status(400).json({ error: "En matchmaking classique, seule la full box est autorisée." });
   }
+  // Retour au choix des box après des box non équilibrables : seulement
+  // celles des combinaisons qui s'équilibrent.
+  if (draft.boxes_permises?.[joueur] && !draft.boxes_permises[joueur].includes(box)) {
+    return res.status(400).json({ error: "Cette box ne s'équilibre avec aucune box de ton adversaire : choisis-en une autre." });
+  }
 
   const nbPersos = await compterPersosBox(user.id, box);
   if (nbPersos < NB_PERSOS_MIN_BOX) {
@@ -256,6 +311,57 @@ async function handleReady(req, res, roomId, user) {
   }
 
   if (draft.pret_j1 && draft.pret_j2) await passerApresPrets(draft, room);
+
+  await sauvegarderDraft(roomId, draft);
+  await archiverNonEquilibrable(draft, room);
+  return repondreDraft(res, draft, joueur);
+}
+
+// ---- equilibrage_vote { choix: "revenir" | "annuler" } (phase
+// "non_equilibrable", cf. traiterNonEquilibrable) ----
+// "annuler" d'un joueur : match annulé (rien d'archivé). Les 2 "revenir" :
+// retour au choix des box, limité aux box des combinaisons qui
+// s'équilibrent (une seule combinaison : imposée aux 2).
+async function handleEquilibrageVote(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+  const choix = req.body?.choix;
+  if (!["revenir", "annuler"].includes(choix)) return res.status(400).json({ error: "Choix inconnu" });
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
+  const draft = room.draft;
+  if (draft.phase !== "non_equilibrable") {
+    return res.status(409).json({ error: "Rien à décider à ce stade" });
+  }
+
+  if (choix === "annuler") {
+    draft.phase = "annule";
+    draft.annule_par = joueur;
+    draft.annule_raison = "equilibrage_refuse";
+  } else {
+    draft.votes_equilibrage = { ...(draft.votes_equilibrage || {}), [joueur]: "revenir" };
+    if (estEntrainementSolo(draft)) draft.votes_equilibrage = { j1: "revenir", j2: "revenir" };
+    if (draft.votes_equilibrage.j1 === "revenir" && draft.votes_equilibrage.j2 === "revenir") {
+      const combinaisons = draft.combinaisons_equilibrables || [];
+      draft.boxes_permises = {
+        j1: [...new Set(combinaisons.map(c => c.j1))],
+        j2: [...new Set(combinaisons.map(c => c.j2))]
+      };
+      if (combinaisons.length === 1) {
+        draft.box_j1 = combinaisons[0].j1;
+        draft.box_j2 = combinaisons[0].j2;
+      } else {
+        ["j1", "j2"].forEach(role => {
+          if (!draft.boxes_permises[role].includes(draft[`box_${role}`])) draft[`box_${role}`] = null;
+        });
+      }
+      draft.pret_j1 = false;
+      draft.pret_j2 = false;
+      draft.phase = "choix_box";
+    }
+  }
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -1035,6 +1141,8 @@ function executerAction(action, req, res, roomId, user) {
       return handleBox(req, res, roomId, user);
     case "ready":
       return handleReady(req, res, roomId, user);
+    case "equilibrage_vote":
+      return handleEquilibrageVote(req, res, roomId, user);
     case "action":
       return handleAction(req, res, roomId, user);
     case "bonus_toggle":

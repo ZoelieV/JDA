@@ -56,6 +56,7 @@ function tempsRecherche(texte) {
 const LIBELLES_PHASES = {
   choix_box: "Choix des box",
   analyse: "Analyse des box",
+  non_equilibrable: "Box non équilibrables",
   bans_bonus: "Bans d'équilibrage",
   boss: "Choix du boss",
   draft: "Draft",
@@ -407,7 +408,7 @@ function creerLigneMatch(match) {
        <a class="match-regarder" href="${lienSpectateur}">Regarder</a>`
     : `<span class="match-date">${formaterDate(match.date)}</span>
        ${match.bans_connus ? "" : `<span class="match-note">Bans non enregistrés</span>`}
-       ${match.litige === "ouvert" ? htmlCorrectionLitige(match) : ""}
+       ${match.litige === "ouvert" ? (estLitigeEquilibrage(match) ? htmlLitigeEquilibrage() : htmlCorrectionLitige(match)) : ""}
        ${match.litige === "republie" ? `<span class="match-note match-litige-corrige">Litige corrigé (${nomLitigePar(match)})</span>` : ""}
        ${match.signalements ? htmlTraitementSignalement(match) : htmlBoutonSignaler(match)}`;
   if (match.litige === "ouvert") ligne.classList.add("litige");
@@ -440,7 +441,10 @@ function creerLigneMatch(match) {
     ligne.querySelector(".match-j1 .match-nom").textContent = match.j1.nom;
     ligne.querySelector(".match-j2 .match-nom").textContent = match.j2.nom;
   }
-  if (match.litige === "ouvert") brancherCorrectionLitige(ligne, match);
+  if (match.litige === "ouvert") {
+    if (estLitigeEquilibrage(match)) brancherLitigeEquilibrage(ligne, match);
+    else brancherCorrectionLitige(ligne, match);
+  }
   if (match.signalements) brancherTraitementSignalement(ligne, match);
   ligne.querySelector(".bouton-signaler:not(:disabled)")?.addEventListener("click", () => ouvrirFenetreSignalement(match));
   return ligne;
@@ -682,6 +686,42 @@ function brancherSanctionLitige(ligne, match) {
       });
       const data = await reponse.json().catch(() => ({}));
       if (!reponse.ok) throw new Error(data.error || "Erreur lors de l'application des sanctions.");
+      await rafraichir();
+    } catch (erreur) {
+      alert(erreur.message);
+      bouton.disabled = false;
+    }
+  });
+}
+
+// Match annulé d'office avant la draft, aucune combinaison de box ne
+// s'équilibrant (cf. traiterNonEquilibrable, api/rooms/[room_id]/[action].js) :
+// à vérifier, joueurs pas sanctionnables, rien à republier.
+function estLitigeEquilibrage(match) {
+  return match.litige_par === "equilibrage";
+}
+
+function htmlLitigeEquilibrage() {
+  return `
+    <span class="match-litige">Équilibrage non fonctionnel</span>
+    <p class="commentaire-litige-historique"></p>
+    <button type="button" class="bouton-historique bouton-clore-equilibrage">Vérifié : clore le dossier</button>`;
+}
+
+function brancherLitigeEquilibrage(ligne, match) {
+  ligne.querySelector(".commentaire-litige-historique").textContent = match.litige_commentaire || "";
+  const bouton = ligne.querySelector(".bouton-clore-equilibrage");
+  bouton.addEventListener("click", async () => {
+    bouton.disabled = true;
+    try {
+      const reponse = await fetch(`/api/matches?id=${encodeURIComponent(match.id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clore_equilibrage" })
+      });
+      const data = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(data.error || "Erreur lors de la clôture.");
       await rafraichir();
     } catch (erreur) {
       alert(erreur.message);

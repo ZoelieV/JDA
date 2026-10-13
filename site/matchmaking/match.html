@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
-<link rel="stylesheet" href="match.css?v=rem50">
+<link rel="stylesheet" href="match.css?v=rem51">
 <link rel="stylesheet" href="../commun/entete.css?v=rem26">
 <script src="/commun/zoom.js?v=2"></script>
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -95,6 +95,21 @@
         <p class="ligne-vainqueur"><span class="litige">Match annulé</span></p>
         <p id="texte-annule"></p>
         <a href="matchmaking.html" class="lien-creer-match">Créer un match</a>
+      </div>
+    </section>
+
+    <!-- Box non équilibrables : revenir au choix des box (combinaisons qui
+         s'équilibrent) ou annuler le match. -->
+    <section id="phase-non-equilibrable" class="phase cache">
+      <div class="match-annule">
+        <p class="ligne-vainqueur"><span class="litige">Box non équilibrables</span></p>
+        <p id="texte-non-equilibrable"></p>
+        <ul id="combinaisons-equilibrables" class="combinaisons-equilibrables"></ul>
+        <p id="etat-non-equilibrable"></p>
+        <div class="choix-non-equilibrable">
+          <button type="button" id="btn-revenir-box" class="btn-confirmer-action">Revenir au choix des box</button>
+          <button type="button" id="btn-annuler-match" class="btn-confirmer-action action-ban">Annuler le match</button>
+        </div>
       </div>
     </section>
 
@@ -250,6 +265,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/cartes.js?v=18"></script>
   <script src="/commun/tri.js?v=17"></script>
-  <script src="match.js?v=89"></script>
+  <script src="match.js?v=90"></script>
 </body>
 </html>
