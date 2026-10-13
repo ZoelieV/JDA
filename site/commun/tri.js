@@ -142,6 +142,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
 //   elements         : Set des éléments filtrés (ordre des clics)
 //   armes            : Set des types d'arme filtrés (ordre des clics)
 //   rareteParDefaut  : un filtre est actif (possédés, sélectionnés, étoiles…)
+//   possede          : fonction(item) => bool ; avec un tri par points, les
+//                      possédés d'abord puis les autres, chacun dans l'ordre
 // Renvoie [{ cles: { element?, arme?, rarete? }, items: [...] }].
 
 function trierEtGrouper(items, etat, options = {}) {
@@ -180,6 +182,7 @@ function trierEtGrouper(items, etat, options = {}) {
     (groupes.length || options.rareteParDefaut || favorisSeulement || getSensTri(etat, "constellation") ? 1 : 0);
 
   const trisValeurs = etat.tris.filter(t => valeurs[t.cle] && t.cle !== "favoris");
+  const separerPossedes = typeof options.possede === "function" && trisValeurs.some(t => t.cle === "points");
 
   if (!groupes.length && !sensRarete && !trisValeurs.length) {
     return items.length ? [{ cles: {}, items }] : [];
@@ -196,7 +199,8 @@ function trierEtGrouper(items, etat, options = {}) {
     index,
     g: groupes.map(g => indexOrdre(g.ordre, item[g.champ])),
     r: rangRarete(item),
-    v: trisValeurs.map(t => Number(valeurs[t.cle](item)) || 0)
+    v: trisValeurs.map(t => Number(valeurs[t.cle](item)) || 0),
+    p: separerPossedes && options.possede(item) ? 0 : 1
   }));
 
   entrees.sort((a, b) => {
@@ -204,6 +208,7 @@ function trierEtGrouper(items, etat, options = {}) {
       if (a.g[i] !== b.g[i]) return (a.g[i] - b.g[i]) * groupes[i].sens;
     }
     if (sensRarete && a.r !== b.r) return (b.r - a.r) * sensRarete;
+    if (a.p !== b.p) return a.p - b.p;
     for (let i = 0; i < trisValeurs.length; i++) {
       if (a.v[i] !== b.v[i]) return (b.v[i] - a.v[i]) * trisValeurs[i].sens;
     }

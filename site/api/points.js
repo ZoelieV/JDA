@@ -16,15 +16,18 @@
 //          masques: { characters: [id...], weapons: [id...] },
 //          boss: { id: { nom, res } }, categoriesArmes: { id: [...] },
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
+//          alternatives_armes: { id: 0|25|50|75 },  (valeur alternative des
+//                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
 //          equilibrage: "ancien" | "fixe_joker" }
 //                                    (méthode des bans d'équilibrage)
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
-//   { characters, weapons, modes, masques, theatre, bonus_saison }  remplace
-//                                    les points, les masqués, les buffs
-//                                    théâtre et le bonus de saison
+//   { characters, weapons, modes, masques, theatre, bonus_saison,
+//     alternatives_armes }           remplace les points, les masqués, les
+//                                    buffs théâtre, le bonus de saison et
+//                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
 //   { boss: { id: { nom, res } } }   modifie des boss
@@ -37,7 +40,7 @@ const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
-const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ELEMENTS, estAjout } = require("./_lib/personnages");
+const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -166,6 +169,10 @@ function versionPublique(config) {
     if (genre === "characters" && Array.isArray(config.bonus_saison)) {
       publique.bonus_saison = config.bonus_saison.filter(id => !caches.has(id));
     }
+    if (genre === "weapons" && config.alternatives_armes) {
+      publique.alternatives_armes = { ...config.alternatives_armes };
+      caches.forEach(id => { delete publique.alternatives_armes[id]; });
+    }
     if (genre === "weapons" && config.categoriesArmes) {
       publique.categoriesArmes = { ...config.categoriesArmes };
       caches.forEach(id => { delete publique.categoriesArmes[id]; });
@@ -190,6 +197,13 @@ async function lireConfig() {
   const { data, error } = await supabase.from("points").select("data").eq("id", "config").maybeSingle();
   if (error) throw error;
   return data?.data || {};
+}
+
+// Valeurs alternatives des armes : ids connus, pourcentages permis (100,
+// la valeur par défaut, n'est pas gardé).
+function nettoyerAlternatives(valeurs, ids) {
+  return Object.fromEntries(Object.entries(valeurs || {})
+    .filter(([id, pourcentage]) => ids.has(id) && pourcentage !== 100 && ALTERNATIVES_ARMES.includes(pourcentage)));
 }
 
 // Garde seulement des nombres, pour des ids connus, à la bonne taille.
@@ -317,7 +331,8 @@ module.exports = async (req, res) => {
           ])),
           theatre: nettoyerMasques(corps.theatre ?? ancienne.theatre, ids("characters")),
           // Bonus de saison : trophées en classé (cf. _lib/trophees.js).
-          bonus_saison: nettoyerMasques(corps.bonus_saison ?? ancienne.bonus_saison, ids("characters"))
+          bonus_saison: nettoyerMasques(corps.bonus_saison ?? ancienne.bonus_saison, ids("characters")),
+          alternatives_armes: nettoyerAlternatives(corps.alternatives_armes ?? ancienne.alternatives_armes, ids("weapons"))
         };
       }
 

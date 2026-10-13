@@ -127,6 +127,8 @@ const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("ch
 const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.json"), chargerPointsAdmin()])
   .then(([liste, points]) => {
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.weapons), points.weapons, "PPW");
+    // Valeur alternative (copies en double, signature sans son perso).
+    liste.forEach(arme => { arme.alternatif = ALTERNATIVES_ARMES.includes(points.alternatives_armes?.[arme.id]) ? points.alternatives_armes[arme.id] : 100; });
     // Catégories (support, standard) modifiées par les administrateurs.
     appliquerPointsAdmin(liste, points.categoriesArmes, "categories");
     return avecMasques ? liste : retirerMasques(liste, points.masques?.weapons);
@@ -327,6 +329,60 @@ function trouverArmeSignature(armes, personnage) {
 function trouverPersonnageSignature(armes, personnages, idArme) {
   const cle = getIndexSignatures(armes).cleParArme.get(idArme);
   return cle ? personnages.find(p => getCleSignature(p) === cle) || null : null;
+}
+
+// ---- Valeur alternative des armes ----
+// Pourcentage des points d'une copie d'arme (ALTERNATIVES_ARMES), réglé
+// par arme sur la page admin (arme.alternatif, 100 par défaut), appliqué
+// dans les points d'une box à chaque copie en double (toutes sauf la
+// meilleure) et à une arme signature dont le perso n'est pas dans la box
+// (une seule fois si les 2). Arrondi à l'entier. Même calcul côté serveur :
+// calculerPointsArmesBox (api/_lib/draft.js).
+const ALTERNATIVES_ARMES = [0, 25, 50, 75, 100];
+
+// Clés signature (cf. getCleSignature) des persos d'une box.
+function clesPersosBox(collectionPersos, personnages, box) {
+  const cles = new Set();
+  personnages.forEach(p => {
+    const constellation = collectionPersos?.full?.[p.id];
+    if (typeof constellation !== "number" || constellation < 0) return;
+    if (box !== "full" && !collectionPersos.selections?.[box]?.[p.id]) return;
+    cles.add(getCleSignature(p));
+  });
+  return cles;
+}
+
+// Copies d'armes d'une box -> [{ arme, raffinement }].
+function copiesArmesBox(collectionArmes, armes, box) {
+  const parId = new Map(armes.map(arme => [arme.id, arme]));
+  return Object.entries(collectionArmes?.full || {})
+    .filter(([instance, raffinement]) => Number.isInteger(raffinement) && raffinement >= 0 &&
+      (box === "full" || !!collectionArmes.selections?.[box]?.[instance]))
+    .map(([instance, raffinement]) => ({ arme: parId.get(instance.split("#")[0]), raffinement }))
+    .filter(copie => copie.arme);
+}
+
+// Points des armes d'une box (copies : cf. copiesArmesBox ; clesPersos :
+// cf. clesPersosBox), valeur alternative comprise. personnages : catalogue
+// (une arme n'est une signature que si un perso a sa clé).
+function pointsArmesBox(copies, clesPersos, armes, personnages) {
+  const { cleParArme } = getIndexSignatures(armes);
+  const clesCatalogue = new Set(personnages.map(getCleSignature));
+  const parId = new Map();
+  copies.forEach(copie => {
+    if (!parId.has(copie.arme.id)) parId.set(copie.arme.id, []);
+    parId.get(copie.arme.id).push(copie);
+  });
+  let total = 0;
+  parId.forEach(liste => {
+    liste.sort((a, b) => b.raffinement - a.raffinement).forEach(({ arme, raffinement }, index) => {
+      const points = Number(arme.PPW?.[raffinement] ?? 0);
+      const cle = cleParArme.get(arme.id);
+      const reduite = index > 0 || (clesCatalogue.has(cle) && !clesPersos.has(cle));
+      total += reduite ? Math.round(points * (arme.alternatif ?? 100) / 100) : points;
+    });
+  });
+  return total;
 }
 
 // Meilleur raffinement (0 = R1 ... 4 = R5) d'une arme parmi ses copies

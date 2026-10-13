@@ -1013,7 +1013,8 @@ function pointsBoxJoueur(role, box) {
     else total += points;
   });
   Object.values(meilleurParGroupe).forEach(points => { total += points; });
-  getArmesBox(joueurData, box).forEach(arme => { total += Number(arme.PPW?.[arme.raffinement] ?? 0); });
+  // Armes : valeur alternative comprise (cf. pointsArmesBox, commun/cartes.js).
+  total += pointsArmesBox(copiesArmesBox(joueurData?.weapons, armesData, box), clesPersosBox(collection, personnagesBase, box), armesData, personnagesBase);
   return total;
 }
 

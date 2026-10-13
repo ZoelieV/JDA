@@ -364,13 +364,14 @@ function initialiserGrille() {
 // ---- Barre recherche / tri / filtres ----
 
 // Points d'une box du profil ouvert : personnages + armes (copies
-// comprises), comme le total de Mon compte ; Voyageur : seul l'élément qui
-// vaut le plus de points compte.
+// comprises, valeur alternative : cf. pointsArmesBox), comme le total de
+// Mon compte ; Voyageur : seul l'élément qui vaut le plus de points compte.
 function calculerPointsBox(box) {
-  let total = 0;
+  const data = profilCourant.data || {};
+  let total = pointsArmesBox(copiesArmesBox(data.weapons, armesData, box), clesPersosBox(data.characters, personnagesBase, box), armesData, personnagesBase);
   const meilleurParGroupe = {};
 
-  [["characters", personnagesData], ["weapons", armesData]].forEach(([vue, items]) => {
+  [["characters", personnagesData]].forEach(([vue, items]) => {
     const collection = profilCourant.data?.[vue] || {};
     const parId = new Map(items.map(item => [item.id, item]));
 

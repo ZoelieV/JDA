@@ -1487,3 +1487,29 @@ body {
 .tableau-admin td.case-somme {
   font-variant-numeric: tabular-nums;
 }
+
+/* Valeur alternative des armes (copies en double, signature sans son
+   perso) : choix du pourcentage et points qui en résultent (R1..R5). */
+.tableau-admin td.col-alternative {
+  white-space: nowrap;
+}
+
+.tableau-admin td.avec-alternative {
+  background-color: rgba(120, 180, 245, 0.12);
+}
+
+.choix-alternative {
+  padding: 0.125rem 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: inherit;
+  font: inherit;
+}
+
+.apercu-alternative {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}

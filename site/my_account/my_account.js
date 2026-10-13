@@ -30,7 +30,7 @@ function analyserVitrine(personnages, armes, profil) {
   const constellations = limites.reduce((somme, id) => somme + collection.full[id], 0);
   const c2 = limites.filter(id => collection.full[id] >= 2).length;
   const points = calculerTotalCollection(personnages, "characters", "vitrine", profil) +
-    calculerTotalCollection(armes, "weapons", "vitrine", profil);
+    calculerTotalArmes(armes, personnages, "vitrine", profil);
 
   const erreurs = [];
   if (possedes.length !== REGLES_VITRINE.persos) erreurs.push(`${REGLES_VITRINE.persos} persos exactement (${possedes.length})`);
@@ -653,10 +653,12 @@ function getValeurItem(item, vueActive, collectionProfil) {
 
 function getValeursTri(vueActive, collectionProfil) {
   return {
+    // Non possédé (grisé, full box) : compté comme C0 / R1, trié après les
+    // possédés (option possede de trierEtGrouper).
     points: item => {
-      const valeur = getValeurItem(item, vueActive, collectionProfil);
+      const valeur = Math.max(0, getValeurItem(item, vueActive, collectionProfil));
       const niveau = vueActive === "characters" ? collectionProfil.niveaux?.[cleNiveau(item)] : null;
-      return valeur < 0 ? -1 : Number(getPPC(item, valeur, vueActive, niveau) || 0);
+      return Number(getPPC(item, valeur, vueActive, niveau) || 0);
     },
     constellation: item => getValeurItem(item, vueActive, collectionProfil),
     // 100 > 95 > non renseigné (persos uniquement).
@@ -793,6 +795,7 @@ function rendreCollection(personnages, armes, profil) {
     valeurs: getValeursTri(vueActive, collectionProfil),
     elements: selectionElements,
     armes: selectionArmes,
+    possede: item => itemPossede(item, vueActive, collectionProfil),
     rareteParDefaut: filtreCoche || rareteSelectionnees.length > 0 || voeuxSelectionnes.length > 0 ||
       categoriesArmesSelectionnees.length > 0
   });
@@ -984,7 +987,7 @@ function initialiserCopieBox(personnages, armes, profil) {
 function mettreAJourTotalBox(personnages, armes, profil) {
   const boxActive = getBoxActive();
   const total = calculerTotalCollection(personnages, "characters", boxActive, profil) +
-    calculerTotalCollection(armes, "weapons", boxActive, profil);
+    calculerTotalArmes(armes, personnages, boxActive, profil);
 
   const vueActive = getVueActive();
   document.getElementById("box-total-label").textContent = boxActive === "vitrine"
@@ -1042,6 +1045,17 @@ function calculerTotalCollection(items, vueActive, boxActive, profil) {
   });
 
   return total + Object.values(meilleurParGroupe).reduce((somme, points) => somme + points, 0);
+}
+
+// Points des armes d'une box : valeur alternative des copies en double et
+// des signatures sans leur perso comprise (cf. pointsArmesBox, commun/cartes.js).
+function calculerTotalArmes(armes, personnages, boxActive, profil) {
+  return pointsArmesBox(
+    copiesArmesBox(profil.weapons, armes, boxActive),
+    clesPersosBox(profil.characters, personnages, boxActive),
+    armes,
+    personnages
+  );
 }
 
 async function initialiserPage() {

@@ -1,4 +1,4 @@
-const { migrerCollectionPersos, pointsPersonnage, palierTheatre } = require("./personnages");
+const { migrerCollectionPersos, pointsPersonnage, palierTheatre, getPersonnages } = require("./personnages");
 
 // ---- Équilibrage ----
 //
@@ -411,17 +411,39 @@ function pointsSignatureBox(profilData, boxChoisie, armes, persoId) {
 
 // ---- Points des armes d'une box (PPW du raffinement), copies comprises
 // ("idArme#2"...) : même sélection que Mon compte et l'aperçu des box du
-// match. Box personnalisée (entraînement, persos seulement) : aucune arme. ----
+// match. Box personnalisée (entraînement, persos seulement) : aucune arme.
+// Valeur alternative (arme.alternatif, % réglé sur la page admin, 100 par
+// défaut) : chaque copie en double (toutes sauf la meilleure) et une arme
+// signature dont le perso n'est pas dans la box (une seule fois si les 2),
+// arrondi à l'entier. Même calcul côté client : pointsArmesBox
+// (commun/cartes.js). ----
 function calculerPointsArmesBox(profilData, boxChoisie, armes) {
   const collection = profilData?.weapons || {};
   const parId = new Map(armes.map(arme => [arme.id, arme]));
-  return Object.entries(collection.full || {}).reduce((total, [instance, valeur]) => {
+  const persos = new Set(getPersonnagesBox(profilData, getPersonnages(), boxChoisie)
+    .map(({ personnage }) => personnage.groupe || personnage.id));
+  // Une arme n'est une signature que si un perso du catalogue a sa clé.
+  const clesCatalogue = new Set(getPersonnages().map(p => p.groupe || p.id));
+  const copies = new Map();
+  Object.entries(collection.full || {}).forEach(([instance, valeur]) => {
     const arme = parId.get(instance.split("#")[0]);
     const raffinement = Number(valeur);
-    if (!arme || !Number.isInteger(raffinement) || raffinement < 0) return total;
-    if (boxChoisie !== "full" && !collection.selections?.[boxChoisie]?.[instance]) return total;
-    return total + Number(arme.PPW?.[raffinement] ?? 0);
-  }, 0);
+    if (!arme || !Number.isInteger(raffinement) || raffinement < 0) return;
+    if (boxChoisie !== "full" && !collection.selections?.[boxChoisie]?.[instance]) return;
+    if (!copies.has(arme.id)) copies.set(arme.id, []);
+    copies.get(arme.id).push(raffinement);
+  });
+  let total = 0;
+  copies.forEach((raffinements, id) => {
+    const arme = parId.get(id);
+    const signature = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/)?.[1];
+    raffinements.sort((a, b) => b - a).forEach((raffinement, index) => {
+      const points = Number(arme.PPW?.[raffinement] ?? 0);
+      const reduite = index > 0 || (clesCatalogue.has(signature) && !persos.has(signature));
+      total += reduite ? Math.round(points * (arme.alternatif ?? 100) / 100) : points;
+    });
+  });
+  return total;
 }
 
 // ---- Pool d'un joueur : les personnages de la box choisie pour le match,

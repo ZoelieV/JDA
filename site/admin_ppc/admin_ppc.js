@@ -66,6 +66,7 @@ let modes = {};                                  // cle bonus -> "addition" | "m
 let masques = { characters: [], weapons: [] };  // ids masqués (triés)
 let buffs = [];                                  // personnages buffés par le théâtre du mois (triés)
 let bonusSaison = [];                            // personnages au bonus de saison (triés) : trophées en classé
+let alternatives = {};                           // arme -> valeur alternative en % (absente = 100)
 let etatEnregistre = "";
 
 // Buff théâtre : le bonus théâtre du personnage s'applique à ses points de
@@ -88,6 +89,18 @@ function aBonusSaison(id) {
 function basculerBonusSaison(id, actif) {
   bonusSaison = bonusSaison.filter(b => b !== id);
   if (actif) bonusSaison = [...bonusSaison, id].sort();
+}
+
+// Valeur alternative d'une arme (% de ses points, cf. ALTERNATIVES_ARMES
+// dans commun/cartes.js) : copies en double et signature sans son perso,
+// dans les points d'une box (cf. calculerPointsArmesBox, api/_lib/draft.js).
+function alternativeArme(id) {
+  return alternatives[id] ?? 100;
+}
+
+function changerAlternative(id, pourcentage) {
+  const { [id]: _, ...reste } = alternatives;
+  alternatives = pourcentage === 100 ? reste : { ...reste, [id]: pourcentage };
 }
 
 function estMasque(id) {
@@ -283,7 +296,7 @@ function initialiserFiltres() {
 }
 
 function etatActuel() {
-  return JSON.stringify([valeurs, modes, masques, buffs, bonusSaison]);
+  return JSON.stringify([valeurs, modes, masques, buffs, bonusSaison, alternatives]);
 }
 
 // ---- Chargement ----
@@ -320,6 +333,7 @@ async function chargerDonnees() {
   masques = lireMasquesConfig(config);
   buffs = Array.isArray(config?.theatre) ? [...config.theatre].sort() : [];
   bonusSaison = Array.isArray(config?.bonus_saison) ? [...config.bonus_saison].sort() : [];
+  alternatives = { ...(config?.alternatives_armes || {}) };
   etatEnregistre = etatActuel();
 }
 
@@ -337,6 +351,7 @@ function rendreEntete() {
       <th class="col-nom triable" data-tri="nom" title="Trier par nom">${vue === "characters" ? "Personnage" : "Arme"}${fleche("nom")}</th>
       ${libelles.map((libelle, index) => `<th class="triable" data-tri="${index}" title="Trier par ${libelle}">${libelle}${fleche(index)}</th>`).join("")}
       ${vue === "characters" ? `<th class="col-bonus-saison" title="En match classé : +3 trophées par perso coché dans l'équipe (gain augmenté, perte réduite)">Bonus de saison</th>` : ""}
+      ${vue === "weapons" ? `<th class="col-alternative" title="Part des points comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box (arrondi à l'entier)">Valeur alt.</th>` : ""}
     </tr>
     ${vue === "characters" ? `
       <tr class="ligne-modes">
@@ -403,6 +418,13 @@ function rendreCorps() {
               <input type="checkbox" class="case-bonus-saison" data-id="${item.id}" ${aBonusSaison(item.id) ? "checked" : ""}> +3 ${ICONE_TROPHEE}
             </label>
           </td>` : ""}
+        ${vue === "weapons" ? `
+          <td class="col-alternative${alternativeArme(item.id) !== 100 ? " avec-alternative" : ""}">
+            <select class="choix-alternative" data-id="${item.id}" title="Copie en double ou signature sans son perso : ${alternativeArme(item.id)} % des points">
+              ${ALTERNATIVES_ARMES.map(p => `<option value="${p}"${p === alternativeArme(item.id) ? " selected" : ""}>${p} %</option>`).join("")}
+            </select>
+            <span class="apercu-alternative">${texteAlternative(item.id)}</span>
+          </td>` : ""}
       </tr>`)
     .join("");
 
@@ -450,6 +472,13 @@ function rendreCorpsSommes(corps, items) {
     const nomSigna = ligne.querySelector(".nom-signa");
     if (nomSigna) nomSigna.textContent = armeSignature(items[i]).nom;
   });
+}
+
+// Points R1..R5 avec la valeur alternative (arrondis), ou rien à 100 %.
+function texteAlternative(id) {
+  const pourcentage = alternativeArme(id);
+  if (pourcentage === 100) return "";
+  return valeurs.weapons[id].map(p => Math.round(p * pourcentage / 100)).join(" · ");
 }
 
 function rendre() {
@@ -564,6 +593,17 @@ function initialiserSaisie() {
     input.nextElementSibling.textContent = "";
   });
 
+  // Valeur alternative d'une arme.
+  corps.addEventListener("change", event => {
+    const choix = event.target.closest(".choix-alternative");
+    if (!choix) return;
+    changerAlternative(choix.dataset.id, Number(choix.value));
+    const cellule = choix.closest("td");
+    cellule.classList.toggle("avec-alternative", Number(choix.value) !== 100);
+    cellule.querySelector(".apercu-alternative").textContent = texteAlternative(choix.dataset.id);
+    mettreAJourPied();
+  });
+
   // Case Bonus de saison : ajouté / retiré.
   corps.addEventListener("change", event => {
     const caseBonus = event.target.closest(".case-bonus-saison");
@@ -647,6 +687,8 @@ function signeEcart(liste, index) {
 
 // Pourcentages d'une ligne, après une modification.
 function mettreAJourEcarts(id) {
+  const alternative = vue === "weapons" && document.querySelector(`#corps-admin .choix-alternative[data-id="${id}"]`);
+  if (alternative) alternative.closest("td").querySelector(".apercu-alternative").textContent = texteAlternative(id);
   document.querySelectorAll(`#corps-admin .ecart-points[data-id="${id}"]`).forEach(span => {
     const index = Number(span.dataset.index);
     span.textContent = texteEcart(valeurs[vue][id], index);
@@ -828,7 +870,7 @@ async function enregistrer() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison })
+      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison, alternatives_armes: alternatives })
     });
     if (!reponse.ok) throw new Error((await reponse.json().catch(() => ({}))).error || "Erreur d'enregistrement.");
     etatEnregistre = etatActuel();
@@ -841,7 +883,7 @@ async function enregistrer() {
 }
 
 function annuler() {
-  [valeurs, modes, masques, buffs, bonusSaison] = JSON.parse(etatEnregistre);
+  [valeurs, modes, masques, buffs, bonusSaison, alternatives] = JSON.parse(etatEnregistre);
   rendre();
 }
 

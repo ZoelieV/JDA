@@ -56,6 +56,9 @@ function estCarnageDesactive() {
 // (cf. echangerBansContreJoker, _lib/draft.js). Ancienne méthode
 // enregistrée qui n'existe plus : "ancien".
 const MODES_EQUILIBRAGE = ["ancien", "fixe_joker"];
+// Valeurs alternatives permises pour les armes (% des points, cf.
+// api/points.js) ; 100 = aucune réduction.
+const ALTERNATIVES_ARMES = [0, 25, 50, 75, 100];
 let modeEquilibrage = "ancien";
 
 function getModeEquilibrage() {
@@ -159,6 +162,9 @@ async function actualiserPoints() {
     });
     armes.forEach(a => {
       if (Array.isArray(config.weapons?.[a.id])) a.PPW = config.weapons[a.id];
+      // Valeur alternative (% : copies en double, signature sans son perso,
+      // cf. calculerPointsArmesBox dans _lib/draft.js).
+      a.alternatif = ALTERNATIVES_ARMES.includes(config.alternatives_armes?.[a.id]) ? config.alternatives_armes[a.id] : 100;
       if (Array.isArray(config.categoriesArmes?.[a.id])) a.categories = config.categoriesArmes[a.id];
     });
     pointsLusA = Date.now();
@@ -311,6 +317,7 @@ function codeTheatre(profilData) {
 
 module.exports = {
   MODES_EQUILIBRAGE,
+  ALTERNATIVES_ARMES,
   MODES_POINTS,
   getModeEquilibrage,
   codeTheatre,
