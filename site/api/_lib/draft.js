@@ -54,8 +54,9 @@ function echangerBansContreJoker(draft, annuler = false) {
 // Le nombre de bans d'équilibrage est calculé par l'algorithme (pas de
 // plafond) ; le joueur ne choisit que les persos. Calibré par simulation de
 // drafts entre les vraies box (cf. scripts/simulation_equilibrage.js) :
-// équipes de 4, valeur d'un perso = points + arme signature (valeursBansBox
-// avec signature).
+// équipes de 4, valeur d'un perso = points + arme signature, plus une arme
+// libre pour les persos sans signature (cf. modeleEquilibrage ; calibrage
+// fait avant les armes libres).
 //   horizontalité = nombre de persos qui valent des points ;
 //   verticalité   = moyenne des VERTICALITE_PERSOS meilleurs persos (ce qui
 //                   reste à un joueur une fois les bans et les picks
@@ -77,56 +78,171 @@ function estEquilibrageFixe(draft) {
   return draft?.equilibrage === "fixe_joker";
 }
 
-// valeurs : { id: points } (cf. valeursBansBox).
-function verticalite(valeurs) {
-  const tries = Object.values(valeurs || {}).map(v => Number(v) || 0).sort((a, b) => b - a);
-  return tries.slice(0, VERTICALITE_PERSOS).reduce((a, b) => a + b, 0) / VERTICALITE_PERSOS;
+// ---- Modèle d'une box pour la verticalité ----
+//
+// valeur d'un perso = ses points (Voyageur : son meilleur élément) + la
+// meilleure copie de son arme signature dans la box (pleine valeur).
+// Armes libres : copies en double d'une signature et signatures dont le
+// perso n'est pas dans la box, à leur valeur alternative (arme.alternatif,
+// cf. calculerPointsArmesBox) ; les armes standard (signature d'aucun perso)
+// sont ignorées. Chaque arme libre est attribuée à un perso sans sa
+// signature, du même type d'arme (arme support : persos support ou sub-dps
+// seulement), un perso par arme, au plus grand gain de verticalité (cf.
+// attribuerArmesLibres).
+// -> { persos: { id: { valeur, type, support, signature: { pleine,
+//      alternative, type, support } | null } }, libres: [{ valeur, type, support }] }
+const CATEGORIES_ARME_SUPPORT = ["support", "subdps"];
+
+function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
+  const persos = {};
+  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
+    const id = personnage.groupe || personnage.id;
+    const points = pointsPersonnage(personnage, valeur, niveau);
+    if (persos[id] && persos[id].valeur >= points) return;
+    persos[id] = {
+      valeur: points,
+      type: personnage.arme,
+      support: CATEGORIES_ARME_SUPPORT.includes(personnage.categorie),
+      signature: null
+    };
+  });
+
+  const collection = profilData?.weapons || {};
+  const parId = new Map(armes.map(arme => [arme.id, arme]));
+  const clesCatalogue = new Set(personnages.map(p => p.groupe || p.id));
+  const copies = new Map();
+  Object.entries(collection.full || {}).forEach(([instance, valeur]) => {
+    const arme = parId.get(instance.split("#")[0]);
+    const raffinement = Number(valeur);
+    if (!arme || !Number.isInteger(raffinement) || raffinement < 0) return;
+    if (boxChoisie !== "full" && !collection.selections?.[boxChoisie]?.[instance]) return;
+    if (!copies.has(arme.id)) copies.set(arme.id, []);
+    copies.get(arme.id).push(raffinement);
+  });
+
+  const libres = [];
+  copies.forEach((raffinements, id) => {
+    const arme = parId.get(id);
+    const cle = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/)?.[1];
+    if (!clesCatalogue.has(cle)) return;
+    const support = Array.isArray(arme.categories) && arme.categories.includes("support");
+    raffinements.sort((a, b) => b - a).forEach((raffinement, index) => {
+      const pleine = Number(arme.PPW?.[raffinement] ?? 0);
+      const alternative = Math.round(pleine * (arme.alternatif ?? 100) / 100);
+      if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support };
+      else libres.push({ valeur: alternative, type: arme.type, support });
+    });
+  });
+  return { persos, libres };
 }
 
-function horizontalite(valeurs) {
-  return Object.values(valeurs || {}).filter(v => Number(v) > 0).length;
+// Verticalité d'un modèle sans les persos bannis -> { verticalite, top (ids
+// des VERTICALITE_PERSOS meilleurs) }. garderArmes : la signature d'un perso
+// banni reste dans la box comme arme libre (sinon elle part avec lui).
+function mesurerVerticalite(modele, bannis = new Set(), garderArmes = true) {
+  const libres = [...modele.libres];
+  const persos = [];
+  Object.entries(modele.persos).forEach(([id, p]) => {
+    if (bannis.has(id)) {
+      if (garderArmes && p.signature) libres.push({ valeur: p.signature.alternative, type: p.signature.type, support: p.signature.support });
+      return;
+    }
+    persos.push({ id, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support });
+  });
+  attribuerArmesLibres(persos, libres);
+  persos.sort((a, b) => b.valeur - a.valeur);
+  const top = persos.slice(0, VERTICALITE_PERSOS);
+  return { verticalite: top.reduce((somme, p) => somme + p.valeur, 0) / VERTICALITE_PERSOS, top: top.map(p => p.id) };
 }
 
+// Attribution gloutonne, de l'arme libre la plus forte à la plus faible :
+// au perso compatible qui fait le plus monter la somme du top (dans le top :
+// toute la valeur de l'arme ; hors du top : ce qui dépasse le dernier du
+// top) ; ex aequo : le mieux classé. Arme sans gain : pas attribuée.
+function attribuerArmesLibres(persos, libres) {
+  libres.sort((a, b) => b.valeur - a.valeur).forEach(arme => {
+    if (arme.valeur <= 0) return;
+    persos.sort((a, b) => b.valeur - a.valeur);
+    const dernier = persos.length >= VERTICALITE_PERSOS ? persos[VERTICALITE_PERSOS - 1].valeur : 0;
+    let meilleur = null;
+    persos.forEach((p, rang) => {
+      if (!p.receveur || p.type !== arme.type || (arme.support && !p.support)) return;
+      const gain = rang < VERTICALITE_PERSOS ? arme.valeur : Math.max(0, p.valeur + arme.valeur - dernier);
+      if (gain > 0 && (!meilleur || gain > meilleur.gain)) meilleur = { p, gain };
+    });
+    if (!meilleur) return;
+    meilleur.p.valeur += arme.valeur;
+    meilleur.p.receveur = false;
+  });
+}
+
+function verticalite(modele) {
+  return mesurerVerticalite(modele).verticalite;
+}
+
+function horizontalite(modele) {
+  return Object.values(modele?.persos || {}).filter(p => p.valeur > 0).length;
+}
+
+// Écart de points entre les 2 box (draft.points_jX) à partir duquel la
+// signature d'un perso banni part avec lui au lieu de rester comme arme
+// libre : face à une box bien plus investie, chaque ban doit retirer plus,
+// sinon il en faudrait tant que la draft se jouerait presque sans 5★.
+const SEUIL_ARMES_BANNIES = 4000;
+
+// modeleFaible / modeleFort : cf. modeleEquilibrage ; ecartPoints : écart
+// de points entre les 2 box (cf. SEUIL_ARMES_BANNIES).
 // -> { bans, jokers, ecart_avant, ecart_apres (après bans et jokers),
 // suggestion (bans puis jokers supposés par le calcul) }. marge : objectif
 // d'écart prévu (simulations : 25 équilibre mieux que 50, qui sous-estime
 // les gros écarts).
-function calculerEquilibrageFixe(valeursFaible, valeursFort, marge = MARGE_FIXE) {
-  const fort = { ...valeursFort };
-  const faible = { ...valeursFaible };
-  const prevu = () => Math.round(TAILLE_EQUIPE * (verticalite(fort) - verticalite(faible)));
+function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints = 0, marge = MARGE_FIXE) {
+  const garderArmes = Math.abs(ecartPoints) < SEUIL_ARMES_BANNIES;
+  const bannisFort = new Set();
+  const bannisFaible = new Set();
+  const restants = (modele, bannis) => Object.keys(modele.persos).filter(id => !bannis.has(id)).length;
+  const mesure = () => ({
+    fort: mesurerVerticalite(modeleFort, bannisFort, garderArmes),
+    faible: mesurerVerticalite(modeleFaible, bannisFaible, garderArmes)
+  });
+  const prevu = () => {
+    const { fort, faible } = mesure();
+    return Math.round(TAILLE_EQUIPE * (fort.verticalite - faible.verticalite));
+  };
   const resultat = { bans: 0, jokers: 0, ecart_avant: prevu(), ecart_apres: prevu(), suggestion: [] };
 
-  // Meilleur retrait (le plus grand gain d'écart prévu) parmi les persos de
-  // la box forte ; joker : retiré de la box forte seulement.
+  // Meilleur retrait (le plus grand gain d'écart prévu) parmi les persos du
+  // top de la box forte (retirer un autre perso ne la fait pas baisser) ;
+  // joker : retiré de la box forte seulement.
   const meilleurRetrait = joker => {
     let meilleur = null;
     const avant = prevu();
-    Object.keys(fort).forEach(id => {
-      if (!joker && id in faible && Object.keys(faible).length <= NB_PERSOS_MIN_BOX) return;
-      const sauve = [fort[id], faible[id]];
-      delete fort[id];
-      if (!joker) delete faible[id];
+    const valeur = id => modeleFort.persos[id].valeur + (modeleFort.persos[id].signature?.pleine || 0);
+    mesure().fort.top.forEach(id => {
+      const commun = !joker && id in modeleFaible.persos && !bannisFaible.has(id);
+      if (commun && restants(modeleFaible, bannisFaible) <= NB_PERSOS_MIN_BOX) return;
+      bannisFort.add(id);
+      if (commun) bannisFaible.add(id);
       const gain = avant - prevu();
-      fort[id] = sauve[0];
-      if (!joker && sauve[1] !== undefined) faible[id] = sauve[1];
-      if (gain > 0 && (!meilleur || gain > meilleur.gain || (gain === meilleur.gain && fort[id] > fort[meilleur.id]))) meilleur = { id, gain };
+      bannisFort.delete(id);
+      if (commun) bannisFaible.delete(id);
+      if (gain > 0 && (!meilleur || gain > meilleur.gain || (gain === meilleur.gain && valeur(id) > valeur(meilleur.id)))) meilleur = { id, gain };
     });
     return meilleur;
   };
 
-  while (prevu() > marge && Object.keys(fort).length > NB_PERSOS_MIN_BOX) {
+  while (prevu() > marge && restants(modeleFort, bannisFort) > NB_PERSOS_MIN_BOX) {
     const retrait = meilleurRetrait(false);
     if (!retrait) break;
-    delete fort[retrait.id];
-    delete faible[retrait.id];
+    bannisFort.add(retrait.id);
+    if (retrait.id in modeleFaible.persos) bannisFaible.add(retrait.id);
     resultat.bans++;
     resultat.suggestion.push(retrait.id);
   }
   while (prevu() > marge && resultat.jokers < JOKERS_MAX) {
     const retrait = meilleurRetrait(true);
     if (!retrait) break;
-    delete fort[retrait.id];
+    bannisFort.add(retrait.id);
     resultat.jokers++;
     resultat.suggestion.push(retrait.id);
   }
@@ -696,6 +812,9 @@ module.exports = {
   verticalite,
   horizontalite,
   calculerEquilibrageFixe,
+  modeleEquilibrage,
+  mesurerVerticalite,
+  SEUIL_ARMES_BANNIES,
   appliquerBansBonus,
   MARGE_FIXE,
   etatInitialDraft,

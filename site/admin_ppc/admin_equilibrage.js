@@ -7,7 +7,7 @@
 // (une fois par draft, cf. echangerBansContreJoker dans api/_lib/draft.js).
 const METHODES_EQUILIBRAGE = [
   { valeur: "ancien", titre: "Ancienne méthode", description: "Nombre de bans imposé : 1 ban tous les 200 points d'écart entre les box." },
-  { valeur: "fixe_joker", titre: "Bans calculés + joker", description: "Verticalité = moyenne des 12 meilleurs persos (perso + signature). Le nombre de bans est calculé d'après les 2 box (sans plafond) : assez pour ramener l'écart d'équipe prévu (4 × écart de verticalité) à 25 pts ou moins. Si les bans n'y arrivent pas : 1 ban joker (interdit à l'adversaire seulement)." }
+  { valeur: "fixe_joker", titre: "Bans calculés + joker", description: "Verticalité = moyenne des 12 meilleurs persos (perso + signature). Le nombre de bans est calculé d'après les 2 box (sans plafond) : assez pour ramener l'écart d'équipe prévu (4 × écart de verticalité) à 25 pts ou moins. Si les bans n'y arrivent pas : 1 ban joker (interdit à l'adversaire seulement). Armes en double et signatures sans leur perso : attribuées à leur valeur alternative aux persos sans signature du même type (armes support : persos support ou sub-dps)." }
 ];
 
 function afficherMessageEquilibrage(texte, type = "") {

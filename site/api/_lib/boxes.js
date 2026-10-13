@@ -14,7 +14,7 @@ const {
   calculerElementsGroupes,
   calculerPoolDisponible,
   calculerBansBonus,
-  valeursBansBox,
+  modeleEquilibrage,
   estEquilibrageFixe,
   verticalite,
   horizontalite,
@@ -99,16 +99,18 @@ async function calculerEquilibrage(draft) {
   // Bans calculés (cf. calculerEquilibrageFixe, _lib/draft.js) : la box à la
   // verticalité la plus faible bannit (nombre imposé, jokers compris).
   if (estEquilibrageFixe(draft)) {
-    const valeurs = {};
+    // Armes libres attribuées aux persos sans signature (cf.
+    // modeleEquilibrage, _lib/draft.js).
+    const modeles = {};
     ["j1", "j2"].forEach(role => {
       const { data, box } = boxes[role];
-      valeurs[role] = valeursBansBox(data, box, personnages, armes, true);
-      draft[`verticalite_${role}`] = Math.round(verticalite(valeurs[role]) * 10) / 10;
-      draft[`horizontalite_${role}`] = horizontalite(valeurs[role]);
+      modeles[role] = modeleEquilibrage(data, box, personnages, armes);
+      draft[`verticalite_${role}`] = Math.round(verticalite(modeles[role]) * 10) / 10;
+      draft[`horizontalite_${role}`] = horizontalite(modeles[role]);
     });
-    const faible = verticalite(valeurs.j1) <= verticalite(valeurs.j2) ? "j1" : "j2";
+    const faible = verticalite(modeles.j1) <= verticalite(modeles.j2) ? "j1" : "j2";
     const fort = faible === "j1" ? "j2" : "j1";
-    const resultat = calculerEquilibrageFixe(valeurs[faible], valeurs[fort]);
+    const resultat = calculerEquilibrageFixe(modeles[faible], modeles[fort], ecart);
     // Mode carnage : jamais de bans d'équilibrage.
     const total = carnage ? 0 : resultat.bans + resultat.jokers;
     draft.bans_bonus_total = total;
