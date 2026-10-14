@@ -550,6 +550,16 @@
     "PPW": [0, 0, 0, 0, 0]
   },
   {
+    "id": "refrain_w",
+    "nom": "Refrain dans le vent",
+    "element": "all",
+    "type": "bow",
+    "image": "images/weapons/refrain_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
     "id": "vodyanitsa_w",
     "nom": "Hymne dans le maelström",
     "element": "hydro",
@@ -745,6 +755,16 @@
     "type": "catalyst",
     "image": "images/weapons/sw_catalyst_w.webp",
     "rarete": "5",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "evenstar_w",
+    "nom": "Étoile du soir errante",
+    "element": "all",
+    "type": "catalyst",
+    "image": "images/weapons/evenstar_w.webp",
+    "rarete": "4",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
   }
