@@ -458,6 +458,7 @@ function rendreCorpsSommes(corps, items) {
           <span class="miniature ${classeFondRarete(item.rarete)}"><img src="../DB/${item.image}" alt="" loading="lazy"></span>
           <span class="nom-admin"></span>
           ${estMasque(item.id) ? `<span class="tag-masque" title="Invisible sur le reste du site">Masqué</span>` : ""}
+          <button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points (perso + signature R1)">Aperçu</button>
         </td>
         <td class="col-signa">
           ${arme ? `<span class="signa-somme"><span class="miniature ${classeFondRarete(arme.rarete)}"><img src="../DB/${arme.image}" alt="" loading="lazy"></span><span class="nom-signa"></span><strong>${sommes[NB_SOMMES]}</strong></span>` : `<span class="sans-signa" title="Pas d'arme signature">—</span>`}
@@ -777,8 +778,15 @@ function fermerApercu() {
   rendreCorps();
 }
 
+// Vue "Perso + signa" : signature R1 ajoutée à chaque combinaison (niveau et
+// théâtre ne s'appliquent qu'aux points du perso, comme sur le reste du site).
 function rendreApercu() {
   const liste = valeurs.characters[persoApercu.id];
+  const arme = vue === VUE_SOMMES ? armeSignature(persoApercu) : null;
+  const signa = arme ? valeurs.weapons[arme.id]?.[0] ?? 0 : 0;
+  const noteSigna = document.getElementById("apercu-signa");
+  noteSigna.hidden = vue !== VUE_SOMMES;
+  noteSigna.textContent = arme ? `Perso + ${arme.nom} R1 (${signa} points).` : "Perso + signature R1 : pas d'arme signature (0 point).";
 
   document.getElementById("apercu-modificateurs").innerHTML = BONUS.map(({ cle, index }) => `
     <div class="bloc-modificateur">
@@ -803,7 +811,7 @@ function rendreApercu() {
       ${liste.slice(0, 7).map((_, c) => `
         <tr>
           <th>C${c}</th>
-          ${colonnes.map(([niveau, theatre]) => `<td>${pointsCombinaison(liste, c, niveau, theatre)}</td>`).join("")}
+          ${colonnes.map(([niveau, theatre]) => `<td>${pointsCombinaison(liste, c, niveau, theatre) + signa}</td>`).join("")}
         </tr>`).join("")}
     </tbody>
   `;
