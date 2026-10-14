@@ -284,7 +284,7 @@
     "nom": "Mort-du-loup",
     "element": "pyro",
     "type": "claymore",
-    "image": "images/weapons/diluc_w.webp",
+    "image": "images/weapons/wgs_w.webp",
     "rarete": "5",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
@@ -394,7 +394,7 @@
     "nom": "Lance de jade ailée",
     "element": "anemo",
     "type": "polearm",
-    "image": "images/weapons/xiao_w.webp",
+    "image": "images/weapons/pjws_w.webp",
     "rarete": "5",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
@@ -404,7 +404,7 @@
     "nom": "Perceur prismatique",
     "element": "geo",
     "type": "polearm",
-    "image": "images/weapons/zhongli_w.webp",
+    "image": "images/weapons/vv_w.webp",
     "rarete": "5",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
@@ -534,7 +534,7 @@
     "nom": "Arc d'Amos",
     "element": "cryo",
     "type": "bow",
-    "image": "images/weapons/ganyu_w.webp",
+    "image": "images/weapons/amos_w.webp",
     "rarete": "5",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
