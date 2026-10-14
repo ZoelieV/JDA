@@ -244,7 +244,7 @@
     "nom": "Balise de la mer de roseaux",
     "element": "pyro",
     "type": "claymore",
-    "image": "images/weapons/dehya_w.webp",
+    "image": "images/weapons/beacon_w.webp",
     "rarete": "5",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
