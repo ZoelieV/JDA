@@ -9,9 +9,10 @@
 //   lobby   : les joueurs rejoignent par le lien (TAILLE_MIN à TAILLE_MAX) ;
 //             le créateur (chef) lance quand il est prêt, même seul.
 //   jeu     : boss tiré parmi les world boss, les boss hebdomadaires, les
-//             légendes locales faisables en co-op et les salles du carnage
+//             légendes locales faisables en co-op (dont celles réservées à
+//             ce mode, "world_boss_seulement") et les salles du carnage
 //             (tous équiprobables ; seul : aussi les boss pas faisables en
-//             co-op, BOSS_HORS_COOP) ; 4 persos tirés dans l'union des full
+//             co-op, "coop": false) ; 4 persos tirés dans l'union des full
 //             box, toujours répartissables entre les joueurs (seul : les 4 ;
 //             à 2 : 2 persos chacun ; à 3 : 2 + 1 + 1 ; à 4 : 1 chacun) sans
 //             imposer qui joue quoi. Après le combat, chaque joueur déclare
@@ -28,7 +29,7 @@
 const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
 const { actualiserPoints, getPersonnages, migrerCollectionPersos, ELEMENTS_LIBRES } = require("./personnages");
-const { listeBoss, getBossParId, estWorldBoss, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
+const { listeBoss, getBossParId, estWorldBoss, estHorsCoop, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
 const { legendesTueesAujourdhui, legendesTueesParJoueur } = require("./legendes");
 const { saisonActuelle } = require("./saisons");
 
@@ -104,18 +105,17 @@ async function sauvegarder(roomId, draft, colonnes = {}) {
 // ---- Tirage du boss ----
 
 // Boss du mode : world boss, boss hebdomadaires, légendes locales faisables
-// en co-op et salles du carnage (sauf désactivées), tous équiprobables ;
-// jamais deux fois de suite le même. Seul : aussi les boss pas faisables en
+// en co-op (réservées à ce mode comprises) et salles du carnage (sauf
+// désactivées), tous équiprobables ; jamais deux fois de suite le même. Seul : aussi les boss pas faisables en
 // co-op. Légende "une fois par jour" déjà tuée aujourd'hui par tous les
 // joueurs : exclue (personne ne peut l'héberger).
 async function tirerBoss(precedent, joueurs) {
-  const { BOSS_HORS_COOP } = require("./equipe");
   const carnageExclus = await bossCarnageExclus();
   const tuees = await legendesTueesParJoueur(joueurs);
   const hebergeable = b => b.type !== TYPE_LEGENDE_JOUR || joueurs.some(id => !tuees.get(id)?.has(b.id));
   const candidats = listeBoss().filter(b =>
     estWorldBoss(b) || b.type === "weekly_boss" || b.type === "carnage_boss" || estLegendeLocale(b))
-    .filter(b => (joueurs.length === 1 || !BOSS_HORS_COOP.includes(b.id)) && !carnageExclus.includes(b.id) && hebergeable(b));
+    .filter(b => (joueurs.length === 1 || !estHorsCoop(b)) && !carnageExclus.includes(b.id) && hebergeable(b));
   const sansPrecedent = candidats.filter(b => b.id !== precedent);
   return auHasard(sansPrecedent.length ? sansPrecedent : candidats)?.id || null;
 }

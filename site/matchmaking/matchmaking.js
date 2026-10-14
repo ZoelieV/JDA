@@ -52,9 +52,10 @@ async function creerMatch(corps) {
 
 // Options d'un menu de choix du boss : légendes locales regroupées à part
 // (celles déjà tuées aujourd'hui sont refusées par le serveur).
-// World boss : jamais dans les drafts (mode Random world boss seulement).
+// World boss et légendes "world_boss_seulement" : jamais dans les drafts
+// (mode Random world boss seulement, cf. estReserveWorldBoss, api/_lib/boss.js).
 function remplirSelectBoss(select, toutes) {
-  const liste = toutes.filter(b => b.type !== "world_boss");
+  const liste = toutes.filter(b => b.type !== "world_boss" && b.world_boss_seulement !== true);
   const groupes = [
     ["Boss", liste.filter(b => !estLegendeLocale(b))],
     ["Légendes locales", liste.filter(estLegendeLocale)]
@@ -72,8 +73,6 @@ function remplirSelectBoss(select, toutes) {
   });
 }
 
-const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll", "defi_mer_dantan"];
-
 // Room privée / en équipe : liste des boss, remplie à la 1re ouverture.
 const selectsBossCharges = new Set();
 async function remplirBossRoom(idSelect = "room-boss") {
@@ -84,9 +83,9 @@ async function remplirBossRoom(idSelect = "room-boss") {
     // Boss du carnage désactivés par les admins : seulement en entraînement
     // (cf. bossCarnageExclus, api/_lib/boss.js).
     const liste = points.carnage_desactive === true ? tous.filter(b => b.type !== "carnage_boss") : tous;
-    // En équipe : sans les boss pas faisables en co-op (cf. BOSS_HORS_COOP,
-    // api/_lib/equipe.js).
-    remplirSelectBoss(document.getElementById(idSelect), idSelect === "equipe-boss" ? liste.filter(b => !BOSS_HORS_COOP.includes(b.id)) : liste);
+    // En équipe : sans les boss pas faisables en co-op ("coop": false, cf.
+    // estHorsCoop, api/_lib/boss.js).
+    remplirSelectBoss(document.getElementById(idSelect), idSelect === "equipe-boss" ? liste.filter(b => b.coop !== false) : liste);
   } catch (erreur) {
     console.error(erreur);
     selectsBossCharges.delete(idSelect);

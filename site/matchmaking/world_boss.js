@@ -439,7 +439,8 @@ function animerTirage() {
   fermerTirage(true);
   preparerLeurres();
   const boss = bossParId.get(draft.boss_id);
-  const nomsBoss = [...bossParId.values()].filter(b => TYPES_BOSS_TIRAGE.includes(b.type) && b.id !== boss.id).map(b => b.nom);
+  // En co-op : sans les boss pas faisables en co-op (jamais tirés).
+  const nomsBoss = [...bossParId.values()].filter(b => TYPES_BOSS_TIRAGE.includes(b.type) && b.id !== boss.id && (enSolo() || b.coop !== false)).map(b => b.nom);
   const persos = (draft.persos || []).map(perso => ({ perso, personnage: personnagesDraftParId.get(perso.perso_id) }));
   // Images finales chargées pendant la roulette.
   (Array.isArray(boss.images) && boss.images.length ? boss.images : [boss.image]).forEach(image => { new Image().src = `../DB/${image}`; });

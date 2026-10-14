@@ -8,7 +8,7 @@ const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculer
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
-const { getBossParId, bossCarnageExclus, estWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
+const { getBossParId, bossCarnageExclus, estReserveWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation } = require("../_lib/equipe");
 const { preparerCreation: preparerWorldBoss } = require("../_lib/world_boss");
@@ -29,7 +29,7 @@ async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}
   if (!bossId) return null;
   const boss = getBossParId(bossId);
   if (!boss) return "Boss inconnu";
-  if (estWorldBoss(boss)) return ERREUR_WORLD_BOSS;
+  if (estReserveWorldBoss(boss)) return ERREUR_WORLD_BOSS;
   if (!entrainement && (await bossCarnageExclus()).includes(bossId)) return ERREUR_CARNAGE_DESACTIVE;
   if ((await legendesTueesAujourdhui([discordId])).includes(bossId)) {
     return `Tu as déjà tué ${boss.nom} aujourd'hui : cette légende locale revient demain à 4 h.`;

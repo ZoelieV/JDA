@@ -33,7 +33,7 @@ const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
 const { actualiserPoints, getPersonnages, getArmes, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("./personnages");
 const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox, THEATRE_CARPE, MODE_MELEE } = require("./draft");
-const { tirerBossAleatoire, getBossParId, idsLegendesLocales, bossCarnageExclus, estWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("./boss");
+const { tirerBossAleatoire, getBossParId, listeBoss, idsLegendesLocales, bossCarnageExclus, estHorsCoop, estReserveWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("./boss");
 const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
 const { analyserVitrine, erreurVitrine } = require("./vitrine");
@@ -54,8 +54,6 @@ const PHASES_EN_COURS = ["chefs", "hotes", "draft", "declaration", "temps", "ver
 const PHASES_FINIES = ["termine", "litige", "annule"];
 const TEMPS_MASQUE = { affiche: null, secondes: null, masque: true };
 const MODES = { 2: "2v2", 3: "3v3", 4: "4v4" };
-// Boss pas faisables en co-op : jamais tirés ni imposés en équipe.
-const BOSS_HORS_COOP = ["ichcahuipilli_ll", "potapo_ll", "defi_mer_dantan"];
 // Spectateurs (colonne rooms.spectateurs, comme le 1v1) : présents s'ils ont
 // lu l'état il y a moins de PRESENCE_SPECTATEUR_MS ; réécrit au plus toutes
 // les ECRITURE_SPECTATEUR_MS.
@@ -345,7 +343,7 @@ async function lancerDraft(draft, { revanche = false } = {}) {
   const tuees = await legendesTueesParJoueur([...draft.equipes.j1, ...draft.equipes.j2]);
   const libre = (paire, bossId) => !tuees.get(paire.j1)?.has(bossId) && !tuees.get(paire.j2)?.has(bossId);
   const legendes = idsLegendesLocales();
-  const exclus = [...legendes.filter(id => !paires.some(paire => libre(paire, id))), ...BOSS_HORS_COOP, ...await bossCarnageExclus()];
+  const exclus = [...legendes.filter(id => !paires.some(paire => libre(paire, id))), ...listeBoss().filter(estHorsCoop).map(b => b.id), ...await bossCarnageExclus()];
   const impose = draft.boss_impose && getBossParId(draft.boss_impose) && !exclus.includes(draft.boss_impose) ? draft.boss_impose : null;
   draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus })?.id || null;
   draft.legendes = paires.length > 0;
@@ -548,8 +546,9 @@ async function preparerCreation(body, user) {
   const formation = FORMATIONS.includes(body?.formation) ? body.formation : "aleatoire";
   const bossImpose = body?.boss_id ? String(body.boss_id) : null;
   if (bossImpose && !getBossParId(bossImpose)) return { erreur: "Boss inconnu" };
-  if (estWorldBoss(getBossParId(bossImpose))) return { erreur: ERREUR_WORLD_BOSS };
-  if (BOSS_HORS_COOP.includes(bossImpose)) return { erreur: "Ce boss n'est pas faisable en co-op." };
+  if (estReserveWorldBoss(getBossParId(bossImpose))) return { erreur: ERREUR_WORLD_BOSS };
+  // Boss pas faisables en co-op : jamais tirés ni imposés en équipe.
+  if (estHorsCoop(getBossParId(bossImpose))) return { erreur: "Ce boss n'est pas faisable en co-op." };
   if ((await bossCarnageExclus()).includes(bossImpose)) return { erreur: ERREUR_CARNAGE_DESACTIVE };
 
   await actualiserPoints();
@@ -958,7 +957,6 @@ async function executerRouteEquipe(action, req, res, roomId, user) {
 
 module.exports = {
   MODES,
-  BOSS_HORS_COOP,
   estRouteEquipe,
   executerRouteEquipe,
   preparerCreation,

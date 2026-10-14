@@ -19,6 +19,19 @@ function estWorldBoss(boss) {
   return boss?.type === TYPE_WORLD_BOSS;
 }
 
+// Réservé au mode Random world boss : les world boss et les légendes locales
+// marquées "world_boss_seulement": true dans DB/boss.json (jamais tirées ni
+// imposées en 1v1 ou en équipe).
+function estReserveWorldBoss(boss) {
+  return estWorldBoss(boss) || boss?.world_boss_seulement === true;
+}
+
+// Pas faisable en co-op ("coop": false dans DB/boss.json, ex. défis de
+// totem de Natlan) : jamais en équipe, en Random world boss seulement seul.
+function estHorsCoop(boss) {
+  return boss?.coop === false;
+}
+
 function estTirableEnClasse(boss) {
   return TYPES_BOSS_CLASSE.includes(boss?.type) && boss.classe !== false;
 }
@@ -50,7 +63,7 @@ function auHasard(liste) {
 // exclus : ids des légendes locales déjà tuées aujourd'hui par un des
 // joueurs (cf. legendesTueesAujourdhui), jamais tirées.
 function tirerBossAleatoire(exclureId = null, { classe = false, exclus = [] } = {}) {
-  const tirables = bossList.filter(b => !estWorldBoss(b) && (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
+  const tirables = bossList.filter(b => !estReserveWorldBoss(b) && (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
   const candidats = tirables.filter(b => b.id !== exclureId);
   const liste = candidats.length > 0 ? candidats : tirables;
   if (classe) return auHasard(liste);
@@ -101,7 +114,7 @@ function idsLegendesLocales() {
   return bossList.filter(estLegendeLocale).map(b => b.id);
 }
 
-const ERREUR_WORLD_BOSS = "Les world boss sont réservés au mode Random world boss.";
+const ERREUR_WORLD_BOSS = "Ce boss est réservé au mode Random world boss.";
 const ERREUR_CARNAGE_DESACTIVE = "Les boss du carnage sont désactivés en ce moment (plus disponibles dans le jeu).";
 
-module.exports = { bossCarnageExclus, DUREE_DEFI_SECONDES, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS, estDefiEnnemis, estWorldBoss, listeBoss, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };
+module.exports = { bossCarnageExclus, DUREE_DEFI_SECONDES, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS, estDefiEnnemis, estHorsCoop, estReserveWorldBoss, estWorldBoss, listeBoss, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };

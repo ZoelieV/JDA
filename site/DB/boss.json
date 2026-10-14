@@ -125,7 +125,8 @@
     "type": "legende_locale_infinie",
     "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/ichcahuipilli_ll.webp",
-    "fonds_supplementaires": ["totem_interieur"]
+    "fonds_supplementaires": ["totem_interieur"],
+    "coop": false
   },
   {
     "id": "potapo_ll",
@@ -133,7 +134,8 @@
     "type": "legende_locale_infinie",
     "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/legend_local/potapo_ll.webp",
-    "fonds_supplementaires": ["totem_interieur"]
+    "fonds_supplementaires": ["totem_interieur"],
+    "coop": false
   },
   {
     "id": "sappho_ll",
@@ -218,7 +220,244 @@
     "type": "legende_locale_infinie",
     "score": "ennemis",
     "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/defi_mer_dantan.webp"
+    "image": "images/boss/legend_local/defi_mer_dantan.webp",
+    "coop": false
+  },
+  {
+    "id": "seigneurs_chizhang_ll",
+    "nom": "Seigneurs de Chizhang",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 70, 10, 50, 10],
+    "image": "images/boss/legend_local/seigneurs_chizhang_ll.webp"
+  },
+  {
+    "id": "cineas_ll",
+    "nom": "Cineas",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 70, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/cineas_ll.webp"
+  },
+  {
+    "id": "yseut_ll",
+    "nom": "Yseut",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/yseut_ll.webp"
+  },
+  {
+    "id": "vivianne_ll",
+    "nom": "Vivianne du lac",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 999, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/vivianne_ll.webp"
+  },
+  {
+    "id": "lui_qui_ne_meut_jamais_ll",
+    "nom": "Lui qui ne meut jamais",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/lui_qui_ne_meut_jamais_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "atlatl_ll",
+    "nom": "Bénédiction d'Atlatl",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 10, 10, 10, 50, 10],
+    "image": "images/boss/legend_local/atlatl_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "chimalli_ll",
+    "nom": "Ombre de Chimalli",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 50, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/chimalli_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "tupayo_ll",
+    "nom": "Aide de Tupayo",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [50, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/tupayo_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "tupu_ll",
+    "nom": "Luxuriance de Tupu",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 50, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/tupu_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "cihuacoatl_ll",
+    "nom": "Cihuacoatl d'os chimérique",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/cihuacoatl_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "tlatzacuilotl_ll",
+    "nom": "Tlatzacuilotl",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/tlatzacuilotl_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "barbe_fer_ll",
+    "nom": "Barbe-fer",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/barbe_fer_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "reji_ll",
+    "nom": "Reji",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/reji_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "esprit_etoile_filante_ll",
+    "nom": "Esprit d'étoile filante déchue",
+    "type": "legende_locale_infinie",
+    "world_boss_seulement": true,
+    "coop": false,
+    "res": [10, 10, 10, 50, 10, 10, 10],
+    "image": "images/boss/legend_local/esprit_etoile_filante_ll.webp",
+    "fonds_supplementaires": ["totem_interieur"]
+  },
+  {
+    "id": "cocijo_ll",
+    "nom": "Cocijo",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/cocijo_ll.webp"
+  },
+  {
+    "id": "balachko_ll",
+    "nom": "Balachko",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/balachko_ll.webp"
+  },
+  {
+    "id": "vasily_ll",
+    "nom": "Tri-étoile polychrome : Vasily",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/vasily_ll.webp"
+  },
+  {
+    "id": "nomokonov_ll",
+    "nom": "Tri-étoile polychrome : Nomokonov",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/nomokonov_ll.webp"
+  },
+  {
+    "id": "sidorenko_ll",
+    "nom": "Tri-étoile polychrome : Sidorenko",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/sidorenko_ll.webp"
+  },
+  {
+    "id": "le_pic_ll",
+    "nom": "Le pic",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 50, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/le_pic_ll.webp"
+  },
+  {
+    "id": "sigurd_ll",
+    "nom": "Sigurd",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/sigurd_ll.webp"
+  },
+  {
+    "id": "tsar_crabe_ll",
+    "nom": "Tsar-crabe",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/tsar_crabe_ll.webp"
+  },
+  {
+    "id": "mandragore_ll",
+    "nom": "Mandragore hexadécatonique",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/mandragore_ll.webp"
+  },
+  {
+    "id": "loup_solitaire_ll",
+    "nom": "Le loup solitaire nostalgique",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/loup_solitaire_ll.webp"
+  },
+  {
+    "id": "maha_vasudevayaputra_ll",
+    "nom": "Maha Vasudevayaputra",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/maha_vasudevayaputra_ll.webp"
+  },
+  {
+    "id": "mushteshir_ll",
+    "nom": "Mushteshir",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/mushteshir_ll.webp"
+  },
+  {
+    "id": "churin_ll",
+    "nom": "Churin",
+    "type": "legende_locale_jour",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 30, 30, 10, 10],
+    "image": "images/boss/legend_local/churin_ll.webp"
   },
   {
     "id": "boss_1",

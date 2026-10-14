@@ -520,8 +520,9 @@ function pourcentage(p) {
 }
 
 // Boss tirables (hors entraînement) : sans le carnage s'il est désactivé,
-// jamais les world boss (mode Random world boss seulement).
-const estTirable = b => b.type !== "world_boss" && !(carnageDesactive && b.type === "carnage_boss");
+// jamais les world boss ni les légendes "world_boss_seulement" (mode Random
+// world boss seulement).
+const estTirable = b => b.type !== "world_boss" && b.world_boss_seulement !== true && !(carnageDesactive && b.type === "carnage_boss");
 
 // Probabilité hors classé d'un boss (catégories vides ignorées).
 function probaHorsClasse(b) {
@@ -563,7 +564,7 @@ function rendreBoss() {
                 <span class="images-boss-tc">${htmlImagesBoss(b, `loading="lazy"`)}</span>
                 <span class="infos-boss-tc">
                   <span class="nom-tc">${echapper(b.nom)}</span>
-                  <span class="type-boss-tc">${TYPES_BOSS[b.type] || echapper(b.type || "")}</span>
+                  <span class="type-boss-tc">${TYPES_BOSS[b.type] || echapper(b.type || "")}${b.world_boss_seulement ? ` · Random world boss${b.coop === false ? " (seul)" : ""}` : ""}</span>
                 </span>
               </td>
               ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}

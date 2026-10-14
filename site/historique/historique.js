@@ -1308,10 +1308,11 @@ function creerRecord(record, titre) {
 // les autres types s'il y en a.
 const CATEGORIES_BOSS = [
   { cle: "hebdo", titre: "Boss hebdomadaires", bouton: "Boss hebdo", contient: boss => boss.type === "weekly_boss" },
-  { cle: "legendes", titre: "Légendes locales", bouton: "Légendes locales", contient: estLegendeLocale },
+  // Légendes "world_boss_seulement" : jamais dans les drafts non plus.
+  { cle: "legendes", titre: "Légendes locales", bouton: "Légendes locales", contient: boss => estLegendeLocale(boss) && boss.world_boss_seulement !== true },
   { cle: "carnage", titre: "Boss carnage", bouton: "Boss carnage", contient: boss => boss.type === "carnage_boss" },
   // World boss : jamais dans les drafts (onglet Random World Boss seulement).
-  { cle: "autres", titre: "Autres boss", contient: boss => !["weekly_boss", "carnage_boss", "world_boss"].includes(boss.type) && !estLegendeLocale(boss) }
+  { cle: "autres", titre: "Autres boss", contient: boss => !["weekly_boss", "carnage_boss", "world_boss"].includes(boss.type) && !estLegendeLocale(boss) && boss.world_boss_seulement !== true }
 ];
 // Ordre du bouton de catégorie (null = tous les boss).
 const CYCLE_CATEGORIES_BOSS = [null, "hebdo", "legendes", "carnage"];
