@@ -463,21 +463,21 @@
     "id": "boss_1",
     "nom": "Carnage 4 : Salle 1",
     "type": "carnage_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [90, 90, 90, 90, 90, 90, 90],
     "image": "images/boss/carnage_chtonien/Battle-Hardened_Domovoy_Sculptor_Stygian_Onslaught_Preview_1.webp"
   },
   {
     "id": "boss_2",
     "nom": "Carnage 4 : Salle 2",
     "type": "carnage_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [30, 30, 30, -30, 30, 30, 30],
     "image": "images/boss/carnage_chtonien/Secret_Source_Automaton_Overseer_Device_Stygian_Onslaught_Preview_2.webp"
   },
   {
     "id": "boss_3",
     "nom": "Carnage 4 : Salle 3",
     "type": "carnage_boss",
-    "res": [0, 0, 0, 0, 0, 0, 0],
+    "res": [10, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/carnage_chtonien/Guardian_Blade_of_Drifting_Snow_Stygian_Onslaught_Preview_3.webp"
   },
   {
