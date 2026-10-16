@@ -345,7 +345,9 @@
   vertical-align: middle;
 }
 
-.tableau-boss-tc .col-nom {
+/* Cellules du corps seulement : en flex, la case "Boss" de l'en-tête ne
+   serait plus une cellule et ne prendrait que la hauteur de son texte. */
+.tableau-boss-tc td.col-nom {
   display: flex;
   align-items: center;
   gap: 0.75rem;
