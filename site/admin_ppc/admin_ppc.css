@@ -997,9 +997,42 @@ body {
   text-align: left;
 }
 
+/* Fenêtre des boss : aussi large que le tableau dès l'ouverture (dans la
+   limite de l'écran), sans défilement horizontal. Largeurs fixes pour que
+   le tableau ne s'élargisse pas pendant la saisie. */
+#modal-boss .modal-apercu-contenu {
+  width: max-content;
+  max-width: calc(100% - 2rem);
+}
+
+.tableau-boss .nom-boss {
+  width: 15rem;
+}
+
+.tableau-boss .infos-boss {
+  min-width: 0;
+}
+
+/* "Immunisé" sous la case plutôt qu'à côté : la colonne garde sa largeur. */
+.tableau-boss .champ-pourcent {
+  position: relative;
+}
+
+.tableau-boss .champ-pourcent.immunise::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.tableau-boss .champ-pourcent.immunise {
+  padding-right: 0.8rem; /* place du "%" retiré */
+}
+
 /* Début du chrono : "—" (aucun, pas de bouton Chrono) en grisé. */
 .chrono-boss {
-  max-width: 11rem;
   padding: 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.375rem;
