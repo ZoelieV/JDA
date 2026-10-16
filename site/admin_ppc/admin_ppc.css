@@ -997,6 +997,22 @@ body {
   text-align: left;
 }
 
+/* Début du chrono : "—" (aucun, pas de bouton Chrono) en grisé. */
+.chrono-boss {
+  max-width: 11rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  background-color: #2b2b2b;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.chrono-boss.sans-chrono {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 /* Fenêtre des boss : ligne des éléments collée en haut pendant le
    défilement (comme Enregistrer en bas, cf. .actions-figees). La liste ne
    défile pas d'elle-même pour que la fenêtre porte le défilement. */

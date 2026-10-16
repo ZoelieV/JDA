@@ -12,7 +12,7 @@
 // _lib/feedbacks.js). Tout dans ce fichier pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel.
 const { supabase } = require("./_lib/supabase");
-const { infosPersoJoueur, palierTheatre, actualiserPoints } = require("./_lib/personnages");
+const { infosPersoJoueur, palierTheatre, actualiserPoints, estWorldBossPublic } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
@@ -674,8 +674,12 @@ module.exports = async (req, res) => {
   }
 
   // Random world boss (onglet et statistiques) : administrateurs et mini
-  // admins seulement, comme le mode (cf. _lib/world_boss.js).
-  if (req.query?.world_boss === "1" && !admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
+  // admins, tout le monde une fois le mode activé, comme le mode (cf.
+  // _lib/world_boss.js).
+  if (req.query?.world_boss === "1" && !admin) {
+    await actualiserPoints();
+    if (!estWorldBossPublic()) return res.status(403).json({ error: "Réservé aux administrateurs" });
+  }
 
   // Onglet Random world boss.
   if (req.query?.world_boss === "1" && !req.query?.stats) {

@@ -27,12 +27,12 @@
 // Retour au lobby (chef) à tout moment : mêmes joueurs, nouveau tirage au
 // lancement (partie en cours pas archivée).
 //
-// Accès : administrateurs et mini admins seulement (mode en test, page
-// Événements), et seulement si le mode n'est pas désactivé depuis la page
-// admin (config.world_boss_desactive) ; cf. erreurAcces.
+// Accès : administrateurs et mini admins (mode en test, page Événements),
+// tout le monde une fois le mode activé depuis la page admin
+// (config.world_boss_public) ; cf. erreurAcces.
 const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
-const { actualiserPoints, getPersonnages, migrerCollectionPersos, estWorldBossDesactive, ELEMENTS_LIBRES } = require("./personnages");
+const { actualiserPoints, getPersonnages, migrerCollectionPersos, estWorldBossPublic, ELEMENTS_LIBRES } = require("./personnages");
 const { estModerateur } = require("./admin");
 const { listeBoss, getBossParId, estWorldBoss, estHorsCoop, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
 const { legendesTueesAujourdhui, legendesTueesParJoueur } = require("./legendes");
@@ -334,7 +334,7 @@ async function retirerMembre(roomId, draft, discordId) {
 // Message d'erreur si l'utilisateur ne peut pas jouer à ce mode (sinon null).
 async function erreurAcces(user) {
   await actualiserPoints();
-  if (estWorldBossDesactive()) return erreur(403, "Le mode Random world boss est désactivé.");
+  if (estWorldBossPublic()) return null;
   if (!user || !await estModerateur(user.id)) return erreur(403, "Le mode Random world boss est réservé aux administrateurs.");
   return null;
 }

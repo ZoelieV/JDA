@@ -91,14 +91,40 @@ function appliquerResSemaine(liste, maintenant = Date.now()) {
   return liste;
 }
 
-// Nom et résistances des boss modifiés par les administrateurs.
+// Nom, résistances et début du chrono des boss modifiés par les
+// administrateurs.
 function appliquerModifsBoss(liste, modifs) {
   liste.forEach(boss => {
     const modif = modifs?.[boss.id];
     if (typeof modif?.nom === "string") boss.nom = modif.nom;
     if (Array.isArray(modif?.res)) boss.res = modif.res;
+    if (modif && "chrono" in modif) boss.chrono = MOMENTS_CHRONO[modif.chrono] ? modif.chrono : null;
   });
   return liste;
+}
+
+// ---- Début du chrono d'un boss (boss.chrono, choisi dans la fenêtre Boss
+// de la page admin) : bouton "Chrono" au-dessus de "Localisation" en fin de
+// draft (saisie des temps). Pas de moment choisi : pas de bouton. ----
+const MOMENTS_CHRONO = {
+  message: { libelle: "Fin du message", phrase: "Lance le chrono à la fin du message." },
+  cinematique: { libelle: "Fin de cinématique", phrase: "Lance le chrono à la fin de la cinématique." },
+  barre_vie: { libelle: "Apparition de la barre de vie", phrase: "Lance le chrono à l'apparition de la barre de vie." }
+};
+
+// Bouton et sa bulle (cachée, cf. basculerChrono), ou "".
+function htmlBoutonChrono(boss) {
+  const moment = MOMENTS_CHRONO[boss?.chrono];
+  if (!moment) return "";
+  return `<button type="button" class="btn-chrono" title="Comment chronométrer" aria-expanded="false">⏱️ Chrono</button>
+    <span class="bulle-chrono cache">${moment.phrase}</span>`;
+}
+
+// Clic sur le bouton Chrono : affiche ou cache sa bulle.
+function basculerChrono(bouton) {
+  const bulle = bouton.nextElementSibling;
+  const ouvert = bulle.classList.toggle("cache") === false;
+  bouton.setAttribute("aria-expanded", String(ouvert));
 }
 
 // ---- Points d'un personnage chez un joueur ----

@@ -1,5 +1,6 @@
-// Événements : modes de la page Événements (evenements.html) activés ou
-// désactivés. Random world boss (config.world_boss_desactive, cf.
+// Événements : modes de la page Événements (evenements.html), toujours
+// visibles par les administrateurs, activés pour tout le monde ou non.
+// Random world boss (config.world_boss_public, cf.
 // api/_lib/world_boss.js) : enregistré dès le clic. Mini admins : lecture
 // seule (case verrouillée, cf. ZONES_MODIFIABLES, admin_ppc.js).
 // Utilise envoyerAjout (admin_ajout.js).
@@ -10,7 +11,7 @@ function initialiserEvenements() {
   const message = document.getElementById("message-world-boss");
   const fermer = () => modal.classList.remove("active");
 
-  chargerPointsAdmin().then(config => { caseWorldBoss.checked = config?.world_boss_desactive !== true; });
+  chargerPointsAdmin().then(config => { caseWorldBoss.checked = config?.world_boss_public === true; });
   document.getElementById("ouvrir-evenements").addEventListener("click", () => modal.classList.add("active"));
   document.getElementById("fermer-evenements").addEventListener("click", fermer);
   modal.addEventListener("click", event => {
@@ -26,8 +27,8 @@ function initialiserEvenements() {
     message.className = "message-ajout";
     message.textContent = "Enregistrement…";
     try {
-      await envoyerAjout({ world_boss_desactive: !actif });
-      message.textContent = actif ? "Random world boss activé." : "Random world boss désactivé.";
+      await envoyerAjout({ world_boss_public: actif });
+      message.textContent = actif ? "Random world boss ouvert à tous." : "Random world boss réservé aux administrateurs.";
       message.classList.add("succes");
     } catch (erreur) {
       console.error(erreur);

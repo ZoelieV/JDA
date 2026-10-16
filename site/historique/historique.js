@@ -15,6 +15,9 @@ let erreurSignalements = null;
 // signalés } (cf. api/_lib/signalements.js), null si déconnecté.
 let etatSignalement = null;
 let estAdmin = false;
+// Random world boss (onglet et statistiques) : administrateurs et mini
+// admins, tout le monde une fois le mode activé (config.world_boss_public).
+let worldBossVisible = false;
 // Modération : colonne triée (décroissant) et joueur filtré dans les litiges.
 let triLitiges = "total";
 let joueurLitiges = null;
@@ -1050,10 +1053,9 @@ const CLE_ONGLET = "historique-onglet";
 let onglet = "matchs";
 
 function ongletDisponible(nom) {
-  // Random world boss : administrateurs et mini admins seulement, comme le
-  // mode (cf. api/_lib/world_boss.js).
+  // Random world boss : comme le mode (cf. api/_lib/world_boss.js).
   return nom === "matchs" || nom === "equipe" || nom === "stats" ||
-    ((nom === "litiges" || nom === "world_boss") && estAdmin) || (nom === "entrainements" && !!moiDiscordId);
+    (nom === "litiges" && estAdmin) || (nom === "world_boss" && worldBossVisible) || (nom === "entrainements" && !!moiDiscordId);
 }
 
 function choisirOnglet(nouveau) {
@@ -1384,8 +1386,8 @@ function initialiserSaisonStats() {
   });
 
   document.querySelectorAll(".mode-stats-bouton").forEach(bouton => {
-    // Statistiques Random world boss : administrateurs seulement.
-    bouton.classList.toggle("cache", bouton.dataset.mode === "world_boss" && !estAdmin);
+    // Statistiques Random world boss : comme l'onglet.
+    bouton.classList.toggle("cache", bouton.dataset.mode === "world_boss" && !worldBossVisible);
     bouton.addEventListener("click", () => {
       modeStats = bouton.dataset.mode;
       document.querySelectorAll(".mode-stats-bouton").forEach(b => b.classList.toggle("active", b === bouton));
@@ -1527,6 +1529,12 @@ async function demarrer() {
     moiDiscordId = utilisateur?.id || null;
     // Mini admins : litiges et sanctions comme les administrateurs.
     estAdmin = !!(utilisateur?.admin || utilisateur?.mini_admin);
+    const config = await chargerPointsAdmin().catch(() => ({}));
+    worldBossVisible = estAdmin || config?.world_boss_public === true;
+    // Mode ouvert à tous : plus de mention "administrateurs".
+    if (config?.world_boss_public === true) {
+      document.querySelector('.onglet-historique[data-onglet="world_boss"] span').textContent = "seul ou en co-op";
+    }
 
     initialiserBarre();
     initialiserParPage();

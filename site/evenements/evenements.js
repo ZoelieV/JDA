@@ -1,10 +1,11 @@
 // Événements : modes de jeu ponctuels ou en test, une namecard chacun (même
 // présentation que Créer un match, cf. matchmaking/matchmaking.js).
 //
-// Random world boss (cf. api/_lib/world_boss.js) : visible et jouable par
-// les administrateurs et mini admins seulement (pastille "Admin"), et
-// seulement si le mode n'est pas désactivé dans la page admin
-// (config.world_boss_desactive). Le serveur refuse aussi les autres.
+// Chaque événement est toujours visible et jouable par les administrateurs
+// et mini admins (pastille "Admin") ; activé dans la page admin, il l'est
+// par tout le monde, sans pastille. Random world boss (cf.
+// api/_lib/world_boss.js) : config.world_boss_public. Le serveur refuse
+// aussi les autres joueurs tant qu'il n'est pas activé.
 
 async function chargerUtilisateur() {
   try {
@@ -67,10 +68,13 @@ async function demarrer() {
     chargerPointsAdmin().catch(erreur => { console.error(erreur); return {}; })
   ]);
   const admin = !!(utilisateur?.admin || utilisateur?.mini_admin);
-  const worldBoss = admin && config?.world_boss_desactive !== true;
+  // { data-detail : activé pour tous }
+  const evenements = { "world-boss": config?.world_boss_public === true };
 
-  const carteWorldBoss = document.querySelector('.carte-match[data-detail="world-boss"]');
-  carteWorldBoss.classList.toggle("cache", !worldBoss);
+  for (const [nom, public_] of Object.entries(evenements)) {
+    document.querySelector(`.carte-match[data-detail="${nom}"]`).classList.toggle("cache", !public_ && !admin);
+    document.querySelectorAll(`[data-detail="${nom}"] .badge-admin, [data-detail="${nom}"] .regle-admin`).forEach(e => e.classList.toggle("cache", public_));
+  }
 
   const visibles = document.querySelectorAll(".carte-match:not(.cache)").length;
   etat.textContent = visibles ? "" : "Aucun événement en cours pour le moment.";

@@ -2419,8 +2419,9 @@ function rendreRecap() {
   if (blocBoss.dataset.cle !== cleBoss) {
     blocBoss.dataset.cle = cleBoss;
     blocBoss.innerHTML = boss
-      ? `${htmlImagesBoss(boss)}<span class="nom-boss">${boss.nom}</span>${estLegendeLocale(boss) ? htmlBoutonCarteLegende() : ""}`
+      ? `${htmlImagesBoss(boss)}<span class="nom-boss">${boss.nom}</span>${htmlBoutonChrono(boss)}${estLegendeLocale(boss) ? htmlBoutonCarteLegende() : ""}`
       : "";
+    blocBoss.querySelector(".btn-chrono")?.addEventListener("click", event => basculerChrono(event.currentTarget));
     blocBoss.querySelector(".btn-carte-legende")?.addEventListener("click", () => ouvrirCarteLegende(boss));
   }
 

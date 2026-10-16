@@ -14,13 +14,15 @@
 // GET  : { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
-//          boss: { id: { nom, res } }, categoriesArmes: { id: [...] },
+//          boss: { id: { nom, res, chrono } }, categoriesArmes: { id: [...] },
+//                       (chrono : "message" | "cinematique" | "barre_vie" | null)
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
 //          alternatives_armes: { id: 0|25|50|75 },  (valeur alternative des
 //                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
-//          world_boss_desactive: bool,  (mode Random world boss fermé)
+//          world_boss_public: bool,  (Random world boss ouvert à tous,
+//                       sinon réservé aux administrateurs)
 //          equilibrage: "ancien" | "fixe_joker",
 //          limites_equilibrage: { palier: { min_persos, seuil_bas,
 //                       seuil_haut, plancher, points_max_box } } }  (cf.
@@ -35,12 +37,13 @@
 //                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
-//   { boss: { id: { nom, res } } }   modifie des boss
+//   { boss: { id: { nom, res, chrono } } }  modifie des boss
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
-//   { world_boss_desactive: true|false }  ferme / rouvre le mode Random
-//                                    world boss (cf. _lib/world_boss.js)
+//   { world_boss_public: true|false }  ouvre le mode Random world boss à
+//                                    tous / le réserve aux administrateurs
+//                                    (cf. _lib/world_boss.js)
 //   { limites_equilibrage: {...} }   limites par palier : équilibrage
 //                                    calculé, points max d'une box
 //                                    jouable hors full box
@@ -151,11 +154,16 @@ function nettoyerMasques(masques, ids) {
   return Array.from(new Set((Array.isArray(masques) ? masques : []).filter(id => ids.has(id)))).sort();
 }
 
-// Nom et 7 résistances d'un boss, ou null.
+// Début du chrono d'un boss (bouton "Chrono" de la saisie des temps, cf.
+// MOMENTS_CHRONO dans commun/cartes.js) ; absent = bouton pas affiché.
+const MOMENTS_CHRONO = ["message", "cinematique", "barre_vie"];
+
+// Nom, 7 résistances et début du chrono (facultatif) d'un boss, ou null.
 function validerModifBoss(brut = {}) {
   const nom = texte(brut.nom);
   const res = Array.from({ length: NB_RESISTANCES }, (_, i) => Number(brut.res?.[i] ?? 0));
-  return nom && res.every(Number.isFinite) ? { nom, res } : null;
+  if (brut.chrono != null && !MOMENTS_CHRONO.includes(brut.chrono)) return null;
+  return nom && res.every(Number.isFinite) ? { nom, res, chrono: brut.chrono ?? null } : null;
 }
 
 // Réponse du GET hors administrateurs : les ajouts masqués (absents des JSON
@@ -309,7 +317,7 @@ module.exports = async (req, res) => {
         for (const [id, brut] of Object.entries(corps.boss)) {
           if (!ids.has(id)) return res.status(404).json({ error: `Boss "${id}" introuvable` });
           const modif = validerModifBoss(brut);
-          if (!modif) return res.status(400).json({ error: `Nom ou résistances invalides (${id})` });
+          if (!modif) return res.status(400).json({ error: `Nom, résistances ou chrono invalides (${id})` });
           modifs[id] = modif;
         }
         config = { ...ancienne, boss: modifs };
@@ -323,8 +331,10 @@ module.exports = async (req, res) => {
         config = { ...ancienne, equilibrage: corps.equilibrage };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
-      } else if (typeof corps.world_boss_desactive === "boolean") {
-        config = { ...ancienne, world_boss_desactive: corps.world_boss_desactive };
+      } else if (typeof corps.world_boss_public === "boolean") {
+        // Ancien interrupteur (world_boss_desactive) retiré.
+        const { world_boss_desactive: _ancien, ...reste } = ancienne;
+        config = { ...reste, world_boss_public: corps.world_boss_public };
       } else if (corps.categoriesArmes) {
         const ids = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));
         const modifs = { ...(ancienne.categoriesArmes || {}) };

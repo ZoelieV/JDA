@@ -1,10 +1,11 @@
-// Boss : consultation et modification du nom et des résistances de chaque
-// boss (JSON de DB/ et ajouts), enregistrés dans Supabase (api/points.js,
+// Boss : consultation et modification du nom, des résistances et du début
+// du chrono (MOMENTS_CHRONO, commun/cartes.js ; aucun = pas de bouton Chrono
+// en fin de draft) de chaque boss (JSON de DB/ et ajouts), enregistrés dans Supabase (api/points.js,
 // config.boss) et appliqués sur tout le site. Utilise listeBoss,
 // ELEMENTS_AJOUT, LIBELLES_ELEMENTS, TYPES_BOSS, echapper, lireResistance et
 // envoyerAjout (admin_ajout.js). Résistances en pourcentage (10 = 10 %).
 
-let brouillonBoss = {};  // id -> { nom, res }
+let brouillonBoss = {};  // id -> { nom, res, chrono }
 let bossEnregistres = "";
 
 function etatBoss() {
@@ -22,6 +23,7 @@ function rendreBoss() {
         <tr>
           <th class="col-nom">Boss</th>
           ${ELEMENTS_AJOUT.map(element => `<th title="Résistance ${LIBELLES_ELEMENTS[element]}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${LIBELLES_ELEMENTS[element]}"></th>`).join("")}
+          <th title="Début du chrono (bouton Chrono en fin de draft)">Chrono</th>
         </tr>
       </thead>
       <tbody>
@@ -43,6 +45,12 @@ function rendreBoss() {
             </td>
             ${b.res.map((valeur, i) => `
               <td><span class="champ-pourcent${estImmunise(valeur) ? " immunise" : ""}"><input type="text" class="res-ajout res-boss${Number.isFinite(valeur) ? "" : " invalide"}" data-id="${echapper(boss.id)}" data-index="${i}" value="${Number.isFinite(valeur) ? valeur : ""}" inputmode="decimal" title="${LIBELLES_ELEMENTS[ELEMENTS_AJOUT[i]]} (%)"></span></td>`).join("")}
+            <td>
+              <select class="chrono-boss${b.chrono ? "" : " sans-chrono"}" data-id="${echapper(boss.id)}" title="Début du chrono">
+                <option value="">—</option>
+                ${Object.entries(MOMENTS_CHRONO).map(([cle, moment]) => `<option value="${cle}"${b.chrono === cle ? " selected" : ""}>${moment.libelle}</option>`).join("")}
+              </select>
+            </td>
           </tr>`;
         }).join("")}
       </tbody>
@@ -68,7 +76,8 @@ function afficherMessageBoss(texte, type = "") {
 function ouvrirBoss() {
   brouillonBoss = Object.fromEntries(listeBoss.map(boss => [boss.id, {
     nom: boss.nom,
-    res: Array.from({ length: ELEMENTS_AJOUT.length }, (_, i) => Number(boss.res?.[i] ?? 0))
+    res: Array.from({ length: ELEMENTS_AJOUT.length }, (_, i) => Number(boss.res?.[i] ?? 0)),
+    chrono: MOMENTS_CHRONO[boss.chrono] ? boss.chrono : null
   }]));
   bossEnregistres = etatBoss();
   afficherMessageBoss("");
@@ -87,14 +96,14 @@ async function enregistrerBoss() {
   const avant = JSON.parse(bossEnregistres);
   const modifs = Object.fromEntries(Object.entries(brouillonBoss)
     .filter(([id, b]) => JSON.stringify(b) !== JSON.stringify(avant[id]))
-    .map(([id, b]) => [id, { nom: b.nom.trim(), res: b.res }]));
+    .map(([id, b]) => [id, { nom: b.nom.trim(), res: b.res, chrono: b.chrono }]));
   bouton.disabled = true;
   try {
     await envoyerAjout({ boss: modifs });
     Object.entries(modifs).forEach(([id, modif]) => {
       const boss = listeBoss.find(b => b.id === id);
-      if (boss) Object.assign(boss, { nom: modif.nom, res: [...modif.res] });
-      brouillonBoss[id] = { nom: modif.nom, res: [...modif.res] };
+      if (boss) Object.assign(boss, { nom: modif.nom, res: [...modif.res], chrono: modif.chrono });
+      brouillonBoss[id] = { nom: modif.nom, res: [...modif.res], chrono: modif.chrono };
     });
     bossEnregistres = etatBoss();
     afficherMessageBoss("Boss enregistrés : les changements s'appliquent sur tout le site.", "succes");
@@ -164,5 +173,13 @@ function initialiserBoss() {
       document.getElementById("message-boss").classList.remove("succes");
       majPiedBoss();
     }
+  });
+  document.getElementById("liste-boss").addEventListener("change", event => {
+    const chrono = event.target.closest(".chrono-boss");
+    if (!chrono) return;
+    brouillonBoss[chrono.dataset.id].chrono = chrono.value || null;
+    chrono.classList.toggle("sans-chrono", !chrono.value);
+    document.getElementById("message-boss").classList.remove("succes");
+    majPiedBoss();
   });
 }

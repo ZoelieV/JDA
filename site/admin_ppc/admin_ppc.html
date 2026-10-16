@@ -6,7 +6,7 @@
 <title>Administration</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=29">
+<link rel="stylesheet" href="admin_ppc.css?v=30">
 <link rel="stylesheet" href="../commun/entete.css?v=rem27">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -117,7 +117,7 @@
         <button type="button" id="fermer-boss" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
       <p class="aide-apercu">
-        Nom et résistances de chaque boss, en pourcentage (<strong>10</strong> pour 10 %, <strong>-20</strong> pour -20 %, <strong>999</strong> pour immunisé). Les nouveaux boss s'ajoutent avec <strong>+ Ajouter</strong>.
+        Nom et résistances de chaque boss, en pourcentage (<strong>10</strong> pour 10 %, <strong>-20</strong> pour -20 %, <strong>999</strong> pour immunisé). <strong>Chrono</strong> : moment où lancer le chrono, affiché par le bouton « Chrono » en fin de draft (« — » : pas de bouton). Les nouveaux boss s'ajoutent avec <strong>+ Ajouter</strong>.
       </p>
       <!-- Carnage : enregistré dès le clic (config.carnage_desactive). -->
       <div id="option-carnage" class="option-carnage">
@@ -172,8 +172,8 @@
   </div>
 
   <!-- Bans du mode classé en cours (décidés dans les litiges de l'historique). -->
-  <!-- Événements : modes de la page Événements, activés ou désactivés dès
-       le clic (config.world_boss_desactive). -->
+  <!-- Événements : modes de la page Événements, ouverts à tous ou réservés
+       aux administrateurs dès le clic (config.world_boss_public). -->
   <div id="modal-evenements" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
@@ -181,13 +181,13 @@
         <button type="button" id="fermer-evenements" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
       <p class="aide-apercu">
-        Modes de la page Événements. <strong>Random world boss</strong> : visible et jouable par les administrateurs
-        et mini admins seulement ; désactivé, plus personne ne peut le voir ni créer ou jouer une room.
+        Modes de la page Événements, toujours visibles et jouables par les administrateurs et mini admins
+        (pastille « Admin »). Activé, un mode perd sa pastille et devient visible et jouable par tout le monde.
       </p>
       <div id="option-world-boss" class="option-carnage">
         <label>
           <input type="checkbox" id="world-boss-actif">
-          Random world boss activé
+          Random world boss activé (ouvert à tous)
         </label>
         <span id="message-world-boss" class="message-ajout"></span>
       </div>
@@ -293,16 +293,16 @@
   </div>
 
   <script src="/commun/variantes.js?v=4"></script>
-  <script src="/commun/cartes.js?v=21"></script>
+  <script src="/commun/cartes.js?v=22"></script>
   <script src="/commun/tri.js?v=17"></script>
   <script src="admin_ajout.js?v=7"></script>
-  <script src="admin_boss.js?v=4"></script>
+  <script src="admin_boss.js?v=5"></script>
   <script src="admin_categories.js?v=1"></script>
   <script src="admin_bans.js?v=1"></script>
   <script src="admin_equilibrage.js?v=7"></script>
   <script src="admin_comparateur.js?v=2"></script>
   <script src="admin_fictives.js?v=4"></script>
-  <script src="admin_evenements.js?v=1"></script>
+  <script src="admin_evenements.js?v=2"></script>
   <script src="admin_feedback.js?v=1"></script>
   <script src="admin_ppc.js?v=31"></script>
 </body>

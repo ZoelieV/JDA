@@ -39,16 +39,16 @@ let bonusSaison = new Set();
 // Boss du carnage désactivés (config.carnage_desactive, page admin) : plus
 // disponibles dans le jeu, jamais tirés hors entraînement (cf. _lib/boss.js).
 let carnageDesactive = false;
-// Mode Random world boss désactivé (config.world_boss_desactive, page
-// admin) : plus jouable, même par les administrateurs (cf. _lib/world_boss.js).
-let worldBossDesactive = false;
+// Mode Random world boss ouvert à tous (config.world_boss_public, page
+// admin) ; sinon réservé aux administrateurs (cf. _lib/world_boss.js).
+let worldBossPublic = false;
 
 function estCarnageDesactive() {
   return carnageDesactive;
 }
 
-function estWorldBossDesactive() {
-  return worldBossDesactive;
+function estWorldBossPublic() {
+  return worldBossPublic;
 }
 
 // Méthode des bans d'équilibrage (config.equilibrage, choisie par un
@@ -199,7 +199,7 @@ async function actualiserPoints() {
     buffsTheatre = new Set(Array.isArray(config.theatre) ? config.theatre : []);
     bonusSaison = new Set(Array.isArray(config.bonus_saison) ? config.bonus_saison : []);
     carnageDesactive = config.carnage_desactive === true;
-    worldBossDesactive = config.world_boss_desactive === true;
+    worldBossPublic = config.world_boss_public === true;
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     modesBonus = config.modes || {};
@@ -384,7 +384,7 @@ module.exports = {
   actualiserPoints,
   estAjout,
   estCarnageDesactive,
-  estWorldBossDesactive,
+  estWorldBossPublic,
   getArmes,
   getCatalogueComplet,
   infosPersoJoueur,
