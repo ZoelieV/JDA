@@ -77,7 +77,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=4";
+    lien.href = "/commun/personnalisation.css?v=5";
     document.head.appendChild(lien);
   }
 

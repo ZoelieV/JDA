@@ -101,6 +101,10 @@
   background-color: rgba(255, 255, 255, 0.06);
   background-size: cover;
   background-position: center;
+  /* Image calée sur tout le cadre, bordure comprise, sans répétition : sinon
+     le bord opposé de l'image réapparaît sous la bordure (effet de repli). */
+  background-origin: border-box;
+  background-repeat: no-repeat;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
   font-size: 0.8125rem;
