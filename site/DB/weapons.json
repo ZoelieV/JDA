@@ -180,6 +180,16 @@
     "PPW": [0, 0, 0, 0, 0]
   },
   {
+    "id": "wolffang_w",
+    "nom": "Croc de loup",
+    "element": "all",
+    "type": "sword",
+    "image": "images/weapons/wolffang_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
     "id": "aquila_w",
     "nom": "Épée du faucon",
     "element": "all",
@@ -300,6 +310,16 @@
     "PPW": [0, 0, 0, 0, 0]
   },
   {
+    "id": "serpent_w",
+    "nom": "Ossature du dragon",
+    "element": "all",
+    "type": "claymore",
+    "image": "images/weapons/serpent_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
     "id": "lohen_w",
     "nom": "Désastre et remords",
     "element": "cryo",
@@ -416,6 +436,26 @@
     "type": "polearm",
     "image": "images/weapons/sw_polearm_w.webp",
     "rarete": "5",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "fjord_w",
+    "nom": "Ballade des fjords",
+    "element": "all",
+    "type": "polearm",
+    "image": "images/weapons/fjord_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "deathmatch_w",
+    "nom": "Scion de la victoire",
+    "element": "all",
+    "type": "polearm",
+    "image": "images/weapons/deathmatch_w.webp",
+    "rarete": "4",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
   },
@@ -764,6 +804,16 @@
     "element": "all",
     "type": "catalyst",
     "image": "images/weapons/evenstar_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "sacjade_w",
+    "nom": "Jade sacrificiel",
+    "element": "all",
+    "type": "catalyst",
+    "image": "images/weapons/sacjade_w.webp",
     "rarete": "4",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
