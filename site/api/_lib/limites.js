@@ -52,4 +52,16 @@ async function verifierCle(cle, delaiMs) {
   return 0;
 }
 
-module.exports = { verifierFrequence, verifierFrequenceCompte };
+// Temps à attendre (ms) avant que "action" soit de nouveau permise pour ce
+// compte, sans rien noter (affichage) ; 0 si permise ou table absente.
+async function attenteCompte(discordId, action, delaiMs) {
+  const cle = `${action}:compte:${empreinte(String(discordId))}`;
+  const { data, error } = await supabase.from("limites_frequence").select("dernier").eq("cle", cle).maybeSingle();
+  if (error) {
+    console.error("Erreur lecture limites_frequence :", error);
+    return 0;
+  }
+  return data ? Math.max(0, delaiMs - (Date.now() - Date.parse(data.dernier))) : 0;
+}
+
+module.exports = { attenteCompte, verifierFrequence, verifierFrequenceCompte };

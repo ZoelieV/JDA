@@ -1,0 +1,191 @@
+/* ---- Feedback (accueil, cf. commun/feedback.js) : bouton fixe en bas à
+   gauche de l'écran, fenêtre d'envoi ---- */
+
+.bouton-feedback {
+  position: fixed;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--texte);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.bouton-feedback:hover,
+.bouton-feedback:focus-visible {
+  transform: translateY(-0.1875rem);
+}
+
+/* "Feedback" au-dessus de l'icône, police du titre du site (accueil.css). */
+.bouton-feedback-texte {
+  font-family: "Titre site", var(--police-titre);
+  font-size: 1.125rem;
+  line-height: 1;
+  text-shadow:
+    -1px -1px 0 #707070, 0 -1px 0 #707070, 1px -1px 0 #707070,
+    -1px 0 0 #707070, 1px 0 0 #707070,
+    -1px 1px 0 #707070, 0 1px 0 #707070, 1px 1px 0 #707070;
+}
+
+.bouton-feedback img {
+  display: block;
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0.125rem 0.375rem rgba(0, 0, 0, 0.6));
+}
+
+@media (max-width: 700px) {
+  .bouton-feedback {
+    left: 0.75rem;
+    bottom: 0.75rem;
+  }
+
+  .bouton-feedback img {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .bouton-feedback-texte {
+    font-size: 0.9375rem;
+  }
+}
+
+/* Fenêtre (même rendu que la personnalisation, commun/personnalisation.css). */
+.modal-feedback {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.modal-feedback.active {
+  display: flex;
+}
+
+.feedback-contenu {
+  box-sizing: border-box;
+  width: min(36rem, calc(100% - 2rem));
+  max-height: 90vh;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  background-color: rgba(20, 20, 20, 0.85);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  color: white;
+}
+
+.feedback-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.feedback-entete h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.feedback-fermer {
+  padding: 0 0.25rem;
+  border: none;
+  background: none;
+  color: white;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.feedback-aide {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 0.875rem;
+}
+
+.feedback-texte {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 10rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.35);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  resize: vertical;
+}
+
+.feedback-texte:focus {
+  outline: none;
+  border-color: var(--accent-bordure);
+}
+
+.feedback-pied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.feedback-compteur {
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+}
+
+.feedback-compteur.trop {
+  color: #ff6b6b;
+}
+
+.feedback-message {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.feedback-message.erreur {
+  color: #ff6b6b;
+}
+
+.feedback-message.succes {
+  color: #7ddc8a;
+}
+
+.feedback-envoyer {
+  padding: 0.5rem 1.125rem;
+  border: 2px solid var(--accent-bordure);
+  border-radius: 0.5625rem;
+  background-color: var(--accent-fond);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.feedback-envoyer:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Bas de page : place pour le bouton fixe (il ne cache pas les dernières
+   cartes). */
+body:has(> .bouton-feedback) {
+  padding-bottom: 4.5rem;
+}

@@ -7,12 +7,14 @@
 // bannis et records de temps par boss (onglet Statistiques). PATCH ?id= corrige les temps d'un
 // litige et republie le match. POST ?id= : signalement d'un match par un
 // joueur ; administrateurs : signalements ouverts et leur traitement (cf.
-// _lib/signalements.js). Tout dans ce fichier pour rester sous la limite de
+// _lib/signalements.js). ?feedback=... : feedbacks des joueurs (envoi depuis
+// l'accueil, lecture et gestion par les administrateurs, cf.
+// _lib/feedbacks.js). Tout dans ce fichier pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel.
 const { supabase } = require("./_lib/supabase");
 const { infosPersoJoueur, palierTheatre, actualiserPoints } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
-const { estModerateur } = require("./_lib/admin");
+const { estAdmin, estModerateur } = require("./_lib/admin");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
 const { lireSaisons, saisonDuMatch } = require("./_lib/saisons");
@@ -20,6 +22,7 @@ const { SANCTIONS, finSanction } = require("./_lib/sanctions");
 const { estSignalable, etatSignalementsJoueur, signalerMatch, chargerSignalementsOuverts, traiterSignalement } = require("./_lib/signalements");
 const { estIdFictif, lireBoxesFictives } = require("./_lib/boxes_fictives");
 const { estDefiEnnemis } = require("./_lib/boss");
+const { etatFeedback, envoyerFeedback, listerFeedbacks, modifierFeedback } = require("./_lib/feedbacks");
 
 const NB_MATCHS_MAX = 200;
 const NB_ROOMS_MAX = 30;
@@ -587,6 +590,27 @@ module.exports = async (req, res) => {
 
   const user = await verifySessionToken(parseCookies(req).session);
 
+  // Feedback (accueil) : envoi par un joueur connecté, un toutes les 24 h
+  // (cf. _lib/feedbacks.js).
+  if (req.method === "POST" && req.query?.feedback) {
+    if (!user) return res.status(401).json({ error: "Connecte-toi pour envoyer un feedback." });
+    try {
+      return await envoyerFeedback(req, res, user);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur lors de l'envoi du feedback" });
+    }
+  }
+  // GET ?feedback=etat : connecté ? délai avant le prochain feedback.
+  if (req.method === "GET" && req.query?.feedback === "etat") {
+    try {
+      return await etatFeedback(res, user);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur lecture du feedback" });
+    }
+  }
+
   // Signalement d'un match (tout joueur connecté, cf. _lib/signalements.js).
   if (req.method === "POST") {
     if (!user) return res.status(401).json({ error: "Connecte-toi pour signaler un match." });
@@ -604,6 +628,17 @@ module.exports = async (req, res) => {
 
   if (req.method === "PATCH") {
     if (!admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
+    // Feedbacks : statut et suppression par les administrateurs seulement
+    // (mini admins : lecture).
+    if (["feedback", "feedback_supprimer"].includes(req.body?.action)) {
+      if (!estAdmin(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+      try {
+        return await modifierFeedback(req, res, user);
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Erreur modification du feedback" });
+      }
+    }
     try {
       if (req.body?.action === "sanction") return await sanctionnerLitige(req, res, user);
       if (req.body?.action === "clore_equilibrage") return await cloreLitigeEquilibrage(req, res, user);
@@ -613,6 +648,17 @@ module.exports = async (req, res) => {
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Erreur republication du match" });
+    }
+  }
+
+  // Page admin : feedbacks des joueurs (administrateurs et mini admins).
+  if (req.query?.feedback === "liste") {
+    if (!admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
+    try {
+      return await listerFeedbacks(res, chargerJoueurs);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur lecture des feedbacks" });
     }
   }
 

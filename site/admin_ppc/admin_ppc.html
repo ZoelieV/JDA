@@ -6,7 +6,7 @@
 <title>Administration</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=28">
+<link rel="stylesheet" href="admin_ppc.css?v=29">
 <link rel="stylesheet" href="../commun/entete.css?v=rem27">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -38,6 +38,7 @@
         <button type="button" id="ouvrir-comparateur" class="btn-ouvrir-ajout" title="Comparer des combos personnage + arme">Comparateur</button>
         <button type="button" id="ouvrir-bans" class="btn-ouvrir-ajout" title="Joueurs bannis du mode classé">Bans en cours</button>
         <button type="button" id="ouvrir-equilibrage" class="btn-ouvrir-ajout" title="Méthode des bans d'équilibrage des drafts">Équilibrage</button>
+        <button type="button" id="ouvrir-feedback" class="btn-ouvrir-ajout" title="Feedbacks envoyés par les joueurs depuis l'accueil">Feedback</button>
         <button type="button" id="ouvrir-evenements" class="btn-ouvrir-ajout" title="Modes de la page Événements : activer ou désactiver">Événements</button>
         <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
@@ -192,6 +193,30 @@
       </div>
     </div>
   </div>
+  <!-- Feedbacks des joueurs (cf. admin_feedback.js) : filtre par statut,
+       statut et suppression (administrateurs). -->
+  <div id="modal-feedback" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Feedback des joueurs</h2>
+        <button type="button" id="fermer-feedback" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Envoyés depuis l'accueil par les joueurs connectés (1000 caractères au plus, sans lien, un par jour, reset à 4 h).
+        Classe-les en <strong>Pris en compte</strong> ou <strong>Terminé</strong>, ou supprime-les.
+      </p>
+      <div class="filtres-feedback">
+        <button type="button" class="mode-modificateur filtre-feedback active" data-statut="tous" data-libelle="Tous">Tous</button>
+        <button type="button" class="mode-modificateur filtre-feedback" data-statut="nouveau" data-libelle="Nouveaux">Nouveaux</button>
+        <button type="button" class="mode-modificateur filtre-feedback" data-statut="pris_en_compte" data-libelle="Pris en compte">Pris en compte</button>
+        <button type="button" class="mode-modificateur filtre-feedback" data-statut="termine" data-libelle="Terminés">Terminés</button>
+      </div>
+      <div id="liste-feedbacks" class="liste-feedbacks"></div>
+      <div class="actions-ajout">
+        <span id="message-feedback" class="message-ajout"></span>
+      </div>
+    </div>
+  </div>
   <div id="modal-bans" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
@@ -278,6 +303,7 @@
   <script src="admin_comparateur.js?v=2"></script>
   <script src="admin_fictives.js?v=4"></script>
   <script src="admin_evenements.js?v=1"></script>
-  <script src="admin_ppc.js?v=30"></script>
+  <script src="admin_feedback.js?v=1"></script>
+  <script src="admin_ppc.js?v=31"></script>
 </body>
 </html>

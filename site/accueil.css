@@ -13,10 +13,12 @@
 }
 
 /* Ordi : bouton du compte posé en haut à droite, hors du flux, pour que le
-   logo monte tout en haut de la page. Téléphone : il reste au-dessus. */
+   logo monte tout en haut de la page, et fixé à l'écran (il suit le
+   défilement, comme le bouton Feedback en bas à gauche, cf.
+   commun/feedback.css). Téléphone : il reste au-dessus. */
 @media (min-width: 701px) {
   .accueil-barre {
-    position: absolute;
+    position: fixed;
     top: 1.25rem;
     right: 1.25rem;
     z-index: 100;

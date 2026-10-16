@@ -1553,3 +1553,72 @@ body {
   font: inherit;
   text-align: center;
 }
+
+/* ---- Feedback des joueurs (cf. admin_feedback.js) ---- */
+.filtres-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.liste-feedbacks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.carte-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-left: 4px solid #f5c542;
+  border-radius: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.carte-feedback.statut-pris_en_compte {
+  border-left-color: #5aa9ff;
+}
+
+.carte-feedback.statut-termine {
+  border-left-color: #7ddc8a;
+  opacity: 0.75;
+}
+
+.carte-feedback p {
+  margin: 0;
+}
+
+.entete-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.infos-feedback {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.statut-feedback {
+  font-size: 0.8125rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Texte du joueur tel qu'écrit (retours à la ligne), mots longs coupés. */
+.texte-feedback {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.actions-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
