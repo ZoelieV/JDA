@@ -15,7 +15,7 @@
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
 //          boss: { id: { nom, res, chrono } }, categoriesArmes: { id: [...] },
-//                       (chrono : "message" | "cinematique" | "barre_vie" | null)
+//                       (chrono : "message" | "premier_pas" | "barre_vie" | null)
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
 //          alternatives_armes: { id: 0|25|50|75 },  (valeur alternative des
 //                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
@@ -156,7 +156,7 @@ function nettoyerMasques(masques, ids) {
 
 // Début du chrono d'un boss (bouton "Chrono" de la saisie des temps, cf.
 // MOMENTS_CHRONO dans commun/cartes.js) ; absent = bouton pas affiché.
-const MOMENTS_CHRONO = ["message", "cinematique", "barre_vie"];
+const MOMENTS_CHRONO = ["message", "premier_pas", "barre_vie"];
 
 // Nom, 7 résistances et début du chrono (facultatif) d'un boss, ou null.
 function validerModifBoss(brut = {}) {

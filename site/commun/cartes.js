@@ -108,7 +108,7 @@ function appliquerModifsBoss(liste, modifs) {
 // draft (saisie des temps). Pas de moment choisi : pas de bouton. ----
 const MOMENTS_CHRONO = {
   message: { libelle: "Fin du message", phrase: "Lance le chrono à la fin du message." },
-  cinematique: { libelle: "Fin de cinématique", phrase: "Lance le chrono à la fin de la cinématique." },
+  premier_pas: { libelle: "Premier pas", phrase: "Lance le chrono à ton premier pas." },
   barre_vie: { libelle: "Apparition de la barre de vie", phrase: "Lance le chrono à l'apparition de la barre de vie." }
 };
 
