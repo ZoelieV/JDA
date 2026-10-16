@@ -26,9 +26,14 @@
 //   annule  : un joueur est parti (autre match démarré).
 // Retour au lobby (chef) à tout moment : mêmes joueurs, nouveau tirage au
 // lancement (partie en cours pas archivée).
+//
+// Accès : administrateurs et mini admins seulement (mode en test, page
+// Événements), et seulement si le mode n'est pas désactivé depuis la page
+// admin (config.world_boss_desactive) ; cf. erreurAcces.
 const { supabase } = require("./supabase");
 const { ecrireDraft } = require("./room");
-const { actualiserPoints, getPersonnages, migrerCollectionPersos, ELEMENTS_LIBRES } = require("./personnages");
+const { actualiserPoints, getPersonnages, migrerCollectionPersos, estWorldBossDesactive, ELEMENTS_LIBRES } = require("./personnages");
+const { estModerateur } = require("./admin");
 const { listeBoss, getBossParId, estWorldBoss, estHorsCoop, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
 const { legendesTueesAujourdhui, legendesTueesParJoueur } = require("./legendes");
 const { saisonActuelle } = require("./saisons");
@@ -324,6 +329,16 @@ async function retirerMembre(roomId, draft, discordId) {
   }
 }
 
+// ---- Accès ----
+
+// Message d'erreur si l'utilisateur ne peut pas jouer à ce mode (sinon null).
+async function erreurAcces(user) {
+  await actualiserPoints();
+  if (estWorldBossDesactive()) return erreur(403, "Le mode Random world boss est désactivé.");
+  if (!user || !await estModerateur(user.id)) return erreur(403, "Le mode Random world boss est réservé aux administrateurs.");
+  return null;
+}
+
 // ---- Création (POST /api/rooms { type: "world_boss" }, cf. api/rooms/index.js) ----
 async function preparerCreation(user) {
   const profil = (await lireProfils([user.id])).get(user.id);
@@ -555,10 +570,13 @@ async function executerRouteWorldBoss(action, req, res, roomId, user) {
     res.setHeader("Allow", methode);
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
+  const refus = await erreurAcces(user);
+  if (refus) return res.status(refus.status).json({ error: refus.message });
   return route(req, res, roomId, user);
 }
 
 module.exports = {
+  erreurAcces,
   estRouteWorldBoss,
   executerRouteWorldBoss,
   preparerCreation,

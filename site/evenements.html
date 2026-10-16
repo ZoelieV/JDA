@@ -7,6 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="commun/theme.css?v=rem5">
   <link rel="stylesheet" href="commun/entete.css?v=rem27">
+  <link rel="stylesheet" href="commun/namecards.css?v=2">
+  <link rel="stylesheet" href="matchmaking/matchmaking.css?v=13">
+  <link rel="stylesheet" href="evenements/evenements.css?v=1">
 <script src="/commun/fond.js?v=8"></script>
 <script src="/commun/zoom.js?v=3"></script>
 <script src="/commun/compte.js?v=20" defer></script>
@@ -14,5 +17,42 @@
 <body>
   <a href="index.html" class="lien-accueil">Accueil</a>
   <h1 class="titre-page">Événements</h1>
+
+  <p id="etat-evenements" class="panneau etat-evenements">Chargement…</p>
+
+  <!-- Une namecard par événement (même présentation que Créer un match) :
+       cliquer dessus affiche ses détails dans le rectangle en dessous.
+       Random world boss : administrateurs et mini admins seulement, si le
+       mode n'est pas désactivé dans la page admin (cf. evenements.js). -->
+  <div class="cartes-match cartes-evenements">
+    <button type="button" class="carte-section carte-match cache" data-detail="world-boss" aria-expanded="false" aria-controls="detail-world-boss">
+      <img src="DB/images/others/Namecard_Background_Achievement_Tranquil_Peace.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Random world boss <span class="badge-admin">Admin</span></h2>
+        <p>Un boss et 4 persos au hasard, seul ou en co-op.</p>
+      </div>
+    </button>
+  </div>
+
+  <!-- Random world boss (cf. api/_lib/world_boss.js) : room par lien, seul
+       ou de 2 à 4 joueurs, lancée par le chef (créateur). -->
+  <section id="detail-world-boss" class="panneau detail-match cache" data-detail="world-boss">
+    <h2>Random world boss <span class="badge-admin">Admin</span></h2>
+    <p>Envoie le lien à tes amis (jusqu'à 4 joueurs) : tu lances la partie quand tout le monde est là.
+      Un boss et 4 persos sont tirés au hasard, à jouer ensemble en co-op. Tu peux aussi jouer seul.</p>
+    <ul class="regles-classe">
+      <li>Boss tiré parmi les world boss, les boss hebdomadaires, les légendes locales faisables en co-op (dont des boss réservés à ce mode) et les salles du carnage. Seul : aussi les boss pas faisables en co-op, comme les défis de totem de Natlan.</li>
+      <li>4 persos tirés dans les full box des joueurs, toujours jouables par l'équipe : seul, tu joues les 4 ; à 2, 2 persos chacun ; à 3, un joueur en joue 2 et les autres 1 ; à 4, 1 chacun. À vous de vous répartir les persos.</li>
+      <li>Après le combat, chacun déclare les persos qu'il a joués et le chef déclare la réussite ou l'échec.</li>
+      <li>Mode en test : seuls les administrateurs le voient et peuvent y jouer (les autres joueurs de la room aussi doivent être administrateurs).</li>
+    </ul>
+    <div class="modes-match">
+      <button type="button" id="creer-world-boss" class="mode-match">Créer la room<span>seul ou de 2 à 4 joueurs</span></button>
+    </div>
+  </section>
+
+  <script src="/commun/variantes.js?v=4"></script>
+  <script src="/commun/cartes.js?v=21"></script>
+  <script src="evenements/evenements.js?v=1"></script>
 </body>
 </html>

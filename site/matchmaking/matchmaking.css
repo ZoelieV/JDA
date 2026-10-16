@@ -68,9 +68,35 @@
   color: var(--accent);
 }
 
+/* Ordi : grille de 6 colonnes, chaque carte en couvre 2 (3 par ligne) ;
+   dernière ligne de 2 cartes centrée (la 1re des 2 commence à la 2e
+   colonne). */
+@media (min-width: 1001px) {
+  .cartes-match {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .carte-match {
+    grid-column: span 2;
+  }
+
+  .carte-match:nth-child(3n + 1):nth-last-child(2) {
+    grid-column: 2 / span 2;
+  }
+}
+
 @media (max-width: 1000px) {
   .cartes-match {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Entre-deux : 2 par ligne, carte seule sur la dernière ligne centrée. */
+@media (min-width: 701px) and (max-width: 1000px) {
+  .carte-match:nth-child(2n + 1):last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(50% - 0.5625rem);
   }
 }
 

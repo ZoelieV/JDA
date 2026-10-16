@@ -38,6 +38,7 @@
         <button type="button" id="ouvrir-comparateur" class="btn-ouvrir-ajout" title="Comparer des combos personnage + arme">Comparateur</button>
         <button type="button" id="ouvrir-bans" class="btn-ouvrir-ajout" title="Joueurs bannis du mode classé">Bans en cours</button>
         <button type="button" id="ouvrir-equilibrage" class="btn-ouvrir-ajout" title="Méthode des bans d'équilibrage des drafts">Équilibrage</button>
+        <button type="button" id="ouvrir-evenements" class="btn-ouvrir-ajout" title="Modes de la page Événements : activer ou désactiver">Événements</button>
         <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
@@ -170,6 +171,27 @@
   </div>
 
   <!-- Bans du mode classé en cours (décidés dans les litiges de l'historique). -->
+  <!-- Événements : modes de la page Événements, activés ou désactivés dès
+       le clic (config.world_boss_desactive). -->
+  <div id="modal-evenements" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Événements</h2>
+        <button type="button" id="fermer-evenements" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Modes de la page Événements. <strong>Random world boss</strong> : visible et jouable par les administrateurs
+        et mini admins seulement ; désactivé, plus personne ne peut le voir ni créer ou jouer une room.
+      </p>
+      <div id="option-world-boss" class="option-carnage">
+        <label>
+          <input type="checkbox" id="world-boss-actif">
+          Random world boss activé
+        </label>
+        <span id="message-world-boss" class="message-ajout"></span>
+      </div>
+    </div>
+  </div>
   <div id="modal-bans" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
@@ -255,6 +277,7 @@
   <script src="admin_equilibrage.js?v=7"></script>
   <script src="admin_comparateur.js?v=2"></script>
   <script src="admin_fictives.js?v=4"></script>
-  <script src="admin_ppc.js?v=29"></script>
+  <script src="admin_evenements.js?v=1"></script>
+  <script src="admin_ppc.js?v=30"></script>
 </body>
 </html>

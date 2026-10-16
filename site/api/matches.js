@@ -627,7 +627,11 @@ module.exports = async (req, res) => {
     }
   }
 
-  // Onglet Random world boss (tout le monde).
+  // Random world boss (onglet et statistiques) : administrateurs et mini
+  // admins seulement, comme le mode (cf. _lib/world_boss.js).
+  if (req.query?.world_boss === "1" && !admin) return res.status(403).json({ error: "Réservé aux administrateurs" });
+
+  // Onglet Random world boss.
   if (req.query?.world_boss === "1" && !req.query?.stats) {
     try {
       return await partiesWorldBoss(res);

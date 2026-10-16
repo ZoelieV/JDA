@@ -558,7 +558,7 @@ function initialiserBoutons() {
     if (!confirm("Quitter la room ?")) return;
     try {
       await appel("wb_quitter", {});
-      window.location.href = "matchmaking.html";
+      window.location.href = "../evenements.html";
     } catch (erreur) {
       alert(erreur.message);
     }

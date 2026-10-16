@@ -20,6 +20,7 @@
 //                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
+//          world_boss_desactive: bool,  (mode Random world boss fermé)
 //          equilibrage: "ancien" | "fixe_joker",
 //          limites_equilibrage: { palier: { min_persos, seuil_bas,
 //                       seuil_haut, plancher, points_max_box } } }  (cf.
@@ -38,6 +39,8 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
+//   { world_boss_desactive: true|false }  ferme / rouvre le mode Random
+//                                    world boss (cf. _lib/world_boss.js)
 //   { limites_equilibrage: {...} }   limites par palier : équilibrage
 //                                    calculé, points max d'une box
 //                                    jouable hors full box
@@ -320,6 +323,8 @@ module.exports = async (req, res) => {
         config = { ...ancienne, equilibrage: corps.equilibrage };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
+      } else if (typeof corps.world_boss_desactive === "boolean") {
+        config = { ...ancienne, world_boss_desactive: corps.world_boss_desactive };
       } else if (corps.categoriesArmes) {
         const ids = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));
         const modifs = { ...(ancienne.categoriesArmes || {}) };

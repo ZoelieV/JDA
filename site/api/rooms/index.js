@@ -11,7 +11,7 @@ const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("..
 const { getBossParId, bossCarnageExclus, estReserveWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation } = require("../_lib/equipe");
-const { preparerCreation: preparerWorldBoss } = require("../_lib/world_boss");
+const { preparerCreation: preparerWorldBoss, erreurAcces: erreurAccesWorldBoss } = require("../_lib/world_boss");
 const { estModerateur } = require("../_lib/admin");
 const { estIdFictif, lireBoxFictive } = require("../_lib/boxes_fictives");
 
@@ -183,7 +183,10 @@ async function creerEquipe(req, res, user) {
 
 // POST { type: "world_boss" } : room Random world boss (cf.
 // _lib/world_boss.js), même limite de création que les rooms privées.
+// Administrateurs et mini admins seulement, mode pas désactivé.
 async function creerWorldBoss(req, res, user) {
+  const refus = await erreurAccesWorldBoss(user);
+  if (refus) return res.status(refus.status).json({ error: refus.message });
   const { draft } = await preparerWorldBoss(user);
 
   const attente = await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);

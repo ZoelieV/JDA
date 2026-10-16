@@ -99,10 +99,6 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
   bouton.addEventListener("click", () => {
     const type = bouton.closest(".modes-match").dataset.type;
     const mode = bouton.dataset.mode;
-    if (type === "world_boss") {
-      creerMatch({ type });
-      return;
-    }
     if (type === "equipe") {
       creerMatch({
         type,

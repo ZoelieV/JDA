@@ -1,0 +1,23 @@
+/* ---- Événements : namecards et détails (style de Créer un match,
+   matchmaking/matchmaking.css) ---- */
+
+.etat-evenements {
+  max-width: 68.75rem;
+  margin: 0 auto 1.125rem;
+  box-sizing: border-box;
+  color: var(--texte-doux);
+  text-align: center;
+}
+
+/* Pastille "Admin" : même style que la pastille "Bêta" (badge-beta,
+   my_account/my_account.css). */
+.badge-admin {
+  padding: 1px 0.4375rem;
+  border-radius: 62.4375rem;
+  background-color: #f5c542;
+  color: #1e1e1e;
+  font-size: 0.6875rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}

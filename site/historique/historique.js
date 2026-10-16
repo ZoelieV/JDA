@@ -1050,8 +1050,10 @@ const CLE_ONGLET = "historique-onglet";
 let onglet = "matchs";
 
 function ongletDisponible(nom) {
-  return nom === "matchs" || nom === "equipe" || nom === "world_boss" || nom === "stats" ||
-    (nom === "litiges" && estAdmin) || (nom === "entrainements" && !!moiDiscordId);
+  // Random world boss : administrateurs et mini admins seulement, comme le
+  // mode (cf. api/_lib/world_boss.js).
+  return nom === "matchs" || nom === "equipe" || nom === "stats" ||
+    ((nom === "litiges" || nom === "world_boss") && estAdmin) || (nom === "entrainements" && !!moiDiscordId);
 }
 
 function choisirOnglet(nouveau) {
@@ -1382,6 +1384,8 @@ function initialiserSaisonStats() {
   });
 
   document.querySelectorAll(".mode-stats-bouton").forEach(bouton => {
+    // Statistiques Random world boss : administrateurs seulement.
+    bouton.classList.toggle("cache", bouton.dataset.mode === "world_boss" && !estAdmin);
     bouton.addEventListener("click", () => {
       modeStats = bouton.dataset.mode;
       document.querySelectorAll(".mode-stats-bouton").forEach(b => b.classList.toggle("active", b === bouton));
