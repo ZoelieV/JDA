@@ -607,6 +607,28 @@ body::before {
   cursor: pointer;
 }
 
+/* Boutons − / + : 5 % par clic, répété si maintenu. */
+.zoom-site-pas {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.zoom-site-pas:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
 /* Valeur actuelle : clic pour revenir à 100 %. */
 .zoom-site-valeur {
   flex: 0 0 auto;

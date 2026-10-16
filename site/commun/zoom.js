@@ -1,6 +1,10 @@
-// Zoom du site sur ordinateur : curseur horizontal de 50 à 200 % dans le
-// menu des paramètres du compte (sur Mac, dézoomer une page n'est pas
-// intuitif). La valeur est gardée sur l'appareil (localStorage) et
+// Zoom du site sur ordinateur : curseur horizontal de 50 à 200 % et boutons
+// − / + (pas de 5 %) dans le menu des paramètres du compte (sur Mac,
+// dézoomer une page n'est pas intuitif).
+//
+// Le zoom n'est appliqué qu'au relâché (curseur ou bouton maintenu) :
+// appliqué en direct, il agrandirait le réglage sous la souris pendant le
+// geste, qui s'emballerait. Pendant le geste, seule la valeur affichée suit. La valeur est gardée sur l'appareil (localStorage) et
 // appliquée à toutes les pages, sans passer par "Enregistrer".
 //
 // Le zoom change la taille de base du texte (--zoom-site dans la taille de
@@ -64,7 +68,9 @@
     bloc.innerHTML = `
       <label for="zoom-site-${reglages.length}">Zoom du site <span class="zoom-site-note">(cet appareil)</span></label>
       <div class="zoom-site-ligne">
+        <button type="button" class="zoom-site-pas" data-sens="-1" title="Dézoomer (maintenir pour continuer)" aria-label="Dézoomer">−</button>
         <input type="range" id="zoom-site-${reglages.length}" class="zoom-site-curseur" min="${MIN}" max="${MAX}" step="${PAS}">
+        <button type="button" class="zoom-site-pas" data-sens="1" title="Zoomer (maintenir pour continuer)" aria-label="Zoomer">+</button>
         <button type="button" class="zoom-site-valeur" title="Revenir à 100 %"></button>
       </div>
     `;
@@ -75,10 +81,49 @@
       if (enregistrer) ecrire(zoom);
       appliquer();
     };
-    // Pendant le glissement : appliqué en direct ; enregistré au relâché.
-    curseur.addEventListener("input", () => changer(Number(curseur.value), false));
+    // Valeur affichée pendant le geste, sans toucher au zoom.
+    const apercu = nouveau => {
+      curseur.value = String(nouveau);
+      valeur.textContent = `${nouveau} %`;
+    };
+    const borner = v => Math.min(MAX, Math.max(MIN, v));
+    // Curseur : valeur suivie pendant le glissement, zoom appliqué au relâché.
+    curseur.addEventListener("input", () => apercu(Number(curseur.value)));
     curseur.addEventListener("change", () => changer(Number(curseur.value), true));
     valeur.addEventListener("click", () => changer(DEFAUT, true));
+    // Boutons − / + : un clic = 5 %, maintenu = répété ; zoom appliqué au
+    // relâché (capture du pointeur : relâché même hors du bouton).
+    bloc.querySelectorAll(".zoom-site-pas").forEach(bouton => {
+      const sens = Number(bouton.dataset.sens);
+      let enCours = null;
+      let minuteur = null;
+      const avancer = () => {
+        enCours = borner(enCours + sens * PAS);
+        apercu(enCours);
+      };
+      const finir = () => {
+        if (enCours === null) return;
+        clearTimeout(minuteur);
+        clearInterval(minuteur);
+        const final = enCours;
+        enCours = null;
+        changer(final, true);
+      };
+      bouton.addEventListener("pointerdown", event => {
+        if (event.button !== 0) return;
+        bouton.setPointerCapture(event.pointerId);
+        enCours = zoom;
+        avancer();
+        minuteur = setTimeout(() => { minuteur = setInterval(avancer, 80); }, 400);
+      });
+      bouton.addEventListener("pointerup", finir);
+      bouton.addEventListener("pointercancel", finir);
+      bouton.addEventListener("lostpointercapture", finir);
+      // Clavier (Entrée, Espace) : un pas, appliqué tout de suite.
+      bouton.addEventListener("click", event => {
+        if (event.detail === 0) changer(borner(zoom + sens * PAS), true);
+      });
+    });
     reglages.push({ bloc, curseur, valeur });
     appliquer();
     return bloc;
