@@ -211,12 +211,11 @@
   font-weight: bold;
 }
 
-/* Tableaux des thèmes : défilent dans leur cadre (aussi en largeur sur
-   téléphone), en-tête figé en haut du cadre. */
+/* Tableaux des thèmes : pas de défilement propre au tableau (comme dans la
+   page admin), seule la page défile ; l'en-tête reste figé en haut de
+   l'écran. */
 .panneau-theorycraft .tableau-conteneur {
-  max-height: calc(100vh - 2rem);
-  max-height: calc(100dvh - 2rem);
-  overflow: auto;
+  overflow: visible;
 }
 
 .panneau-theorycraft .tableau-theorycraft thead {
