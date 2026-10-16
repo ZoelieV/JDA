@@ -1307,8 +1307,9 @@ function creerRecord(record, titre) {
 // hebdomadaires, légendes locales (une fois par jour ou à l'infini), puis
 // les autres types s'il y en a.
 const CATEGORIES_BOSS = [
-  { cle: "hebdo", titre: "Boss hebdomadaires", bouton: "Boss hebdo", contient: boss => boss.type === "weekly_boss" },
-  // Légendes "world_boss_seulement" : jamais dans les drafts non plus.
+  // Boss et légendes "world_boss_seulement" (ex. Azhdaha) : jamais dans les
+  // drafts.
+  { cle: "hebdo", titre: "Boss hebdomadaires", bouton: "Boss hebdo", contient: boss => boss.type === "weekly_boss" && boss.world_boss_seulement !== true },
   { cle: "legendes", titre: "Légendes locales", bouton: "Légendes locales", contient: boss => estLegendeLocale(boss) && boss.world_boss_seulement !== true },
   { cle: "carnage", titre: "Boss carnage", bouton: "Boss carnage", contient: boss => boss.type === "carnage_boss" },
   // World boss : jamais dans les drafts (onglet Random World Boss seulement).

@@ -78,6 +78,23 @@
     "image": "images/boss/boss_hebdo/childe_boss.webp"
   },
   {
+    "id": "azhdaha_boss",
+    "nom": "Azhdaha",
+    "type": "weekly_boss",
+    "world_boss_seulement": true,
+    "res": [10, 10, 10, 10, 10, 70, 10],
+    "res_par_semaine": {
+      "debut": "2026-10-12T03:00:00Z",
+      "res": [
+        [70, 10, 10, 60, 10, 70, 10],
+        [10, 70, 10, 60, 10, 70, 10],
+        [70, 10, 60, 10, 10, 70, 10],
+        [10, 70, 60, 10, 10, 70, 10]
+      ]
+    },
+    "image": "images/boss/boss_hebdo/azhdaha_boss.webp"
+  },
+  {
     "id": "churldric_ll",
     "nom": "Churldric",
     "type": "legende_locale_jour",

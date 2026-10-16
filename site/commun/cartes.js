@@ -72,6 +72,25 @@ function retirerMasques(liste, masques) {
   return caches.size ? liste.filter(item => !caches.has(item.id)) : liste;
 }
 
+// Résistances qui changent chaque semaine ("res_par_semaine" dans
+// DB/boss.json, ex. Azhdaha : éléments absorbés selon une rotation fixe) :
+// res[0] la semaine qui commence à "debut" (lundi, reset à 4 h heure du
+// serveur Europe), puis une par semaine, en boucle. Appliquées avant les
+// modifs des administrateurs, qui restent prioritaires.
+const DUREE_SEMAINE_MS = 7 * 24 * 3600 * 1000;
+
+function appliquerResSemaine(liste, maintenant = Date.now()) {
+  liste.forEach(boss => {
+    const rotation = boss.res_par_semaine;
+    const debut = Date.parse(rotation?.debut);
+    if (!Array.isArray(rotation?.res) || !rotation.res.length || !Number.isFinite(debut)) return;
+    const n = rotation.res.length;
+    const semaine = Math.floor((maintenant - debut) / DUREE_SEMAINE_MS);
+    boss.res = rotation.res[((semaine % n) + n) % n];
+  });
+  return liste;
+}
+
 // Nom et résistances des boss modifiés par les administrateurs.
 function appliquerModifsBoss(liste, modifs) {
   liste.forEach(boss => {
@@ -147,7 +166,7 @@ const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.
     return avecMasques ? liste : retirerMasques(liste, points.masques?.weapons);
   });
 const chargerBoss = () => Promise.all([chargerJSON("boss.json"), chargerPointsAdmin()])
-  .then(([liste, points]) => appliquerModifsBoss(fusionnerAjouts(liste, points.ajouts?.boss), points.boss));
+  .then(([liste, points]) => appliquerModifsBoss(appliquerResSemaine(fusionnerAjouts(liste, points.ajouts?.boss)), points.boss));
 
 // Icônes dans le texte (à la place des emojis 🏆 et 🎯), cf. .icone-texte
 // (commun/entete.css).

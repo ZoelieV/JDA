@@ -564,7 +564,7 @@ function rendreBoss() {
                 <span class="images-boss-tc">${htmlImagesBoss(b, `loading="lazy"`)}</span>
                 <span class="infos-boss-tc">
                   <span class="nom-tc">${echapper(b.nom)}</span>
-                  <span class="type-boss-tc">${TYPES_BOSS[b.type] || echapper(b.type || "")}${b.world_boss_seulement ? ` · Random world boss${b.coop === false ? " (seul)" : ""}` : ""}</span>
+                  <span class="type-boss-tc">${TYPES_BOSS[b.type] || echapper(b.type || "")}${b.world_boss_seulement ? ` · Random world boss${b.coop === false ? " (seul)" : ""}` : ""}${b.res_par_semaine ? " · résistances de cette semaine" : ""}</span>
                 </span>
               </td>
               ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}
