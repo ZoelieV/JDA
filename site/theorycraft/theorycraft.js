@@ -141,7 +141,7 @@ function htmlLimitesEquilibrage() {
 
 // Échange de 5 bans contre 1 joker : toutes les méthodes (cf.
 // echangerBansContreJoker, api/_lib/draft.js).
-const TEXTE_ECHANGE_JOKER = "<p><strong>Échange contre un joker</strong> : celui qui bannit peut, une seule fois par draft, échanger 5 de ses bans d'équilibrage contre 1 ban joker (un personnage de la box adverse, interdit à l'adversaire seulement : toi, tu peux encore le picker). Il s'ajoute au joker éventuellement déjà accordé. L'échange peut être annulé tant que les bans ne sont pas confirmés.</p>";
+const TEXTE_ECHANGE_JOKER = "<p><strong>Échange contre un joker</strong> : celui qui bannit peut, une seule fois par draft, échanger 5 de ses bans d'équilibrage contre 1 ban joker (un personnage de la box adverse, interdit à l'adversaire : toi, tu peux encore le picker). Il s'ajoute au joker éventuellement déjà accordé. L'échange peut être annulé tant que les bans ne sont pas confirmés.</p>";
 
 // Section "Bans d'équilibrage" selon la méthode en vigueur.
 function htmlBansEquilibrage(paliers) {
@@ -175,7 +175,7 @@ function htmlMethodeEquilibrage(paliers) {
     </p>
     <p>Le nombre de bans est calculé d'après les 2 box, sans plafond : le joueur à la verticalité la plus faible (le petit joueur) choisit seulement quels personnages il bannit, avant le tirage J1 / J2 et du boss. Un personnage que les 2 box ont est retiré des 2 : bannir lui coûte aussi un de ses persos. D'où des limites, selon le <strong>top 12</strong> (somme des 12 meilleurs personnages avec leur arme) de chaque box au départ :</p>
     <ul class="notes-theorycraft">
-      <li><strong>Petit joueur au-dessus du seuil bas</strong> : dès qu'un ban ferait passer son top 12 sous le seuil bas, il reçoit 1 <strong>ban joker</strong> à la place (un personnage de la box adverse, interdit à l'adversaire seulement : toi, tu peux encore le picker).</li>
+      <li><strong>Petit joueur au-dessus du seuil bas</strong> : dès qu'un ban ferait passer son top 12 sous le seuil bas, il reçoit 1 <strong>ban joker</strong> à la place (un personnage de la box adverse, interdit à l'adversaire : toi, tu peux encore le picker).</li>
       <li><strong>Petit joueur sous le seuil bas, adversaire au-dessus du seuil haut</strong> : ban joker dès qu'un ban toucherait un de ses propres personnages.</li>
       <li><strong>Petit joueur sous le seuil bas, adversaire entre les 2 seuils</strong> : pas de joker, les 2 top 12 doivent rester au-dessus du plancher.</li>
       <li><strong>Les 2 sous le seuil bas</strong> : pas de joker.</li>
@@ -185,7 +185,7 @@ function htmlMethodeEquilibrage(paliers) {
     ${htmlLimitesEquilibrage()}
     <p>Si l'écart prévu reste au-dessus de 30 malgré tout, le match n'est pas équilibrable : les joueurs peuvent revenir au choix des box si une autre combinaison de leurs box s'équilibre (seulement celles-là), ou annuler le match. Si aucune combinaison ne s'équilibre, le match est annulé d'office, ne compte pas et les administrateurs en sont prévenus ; en classé, ces 2 joueurs ne sont plus mis face à face tant qu'aucun des 2 n'a modifié son compte. En entraînement, tu es prévenu et tu choisis de continuer ou de changer de box.</p>
     <p><strong>Armes libres</strong> : chaque copie en double d'une arme signature, chaque arme signature dont le personnage n'est pas dans la box, et chaque arme qui n'est la signature de personne (armes perma, Ultime soupir…) est donnée à un personnage qui n'a pas sa propre signature, du même type d'arme : une arme support va à un support ou un sub-dps, une autre arme à un sub-dps ou un dps. Elle compte pour la même valeur que dans les points de la box : valeur alternative pour les copies en double et les signatures sans leur personnage, pleine valeur pour la 1re copie d'une arme qui n'est la signature de personne. Une arme par personnage, attribuée là où elle fait le plus monter la verticalité (de la plus forte à la plus faible). Ainsi, une box avec beaucoup d'armes est mieux prise en compte.</p>
-    <p>Quand un personnage est banni dans le calcul, son arme signature reste dans la box comme arme libre si les 2 box ont moins de 4000 points d'écart ; à 4000 points d'écart ou plus, elle part avec lui, pour que chaque ban retire davantage et que la draft ne se joue pas presque sans 5★.</p>
+    <p>Quand un personnage est banni dans le calcul, son arme signature reste dans la box comme arme libre si les 2 box ont moins de 4000 points d'écart ; à 4000 points d'écart ou plus, elle part avec lui, pour que chaque ban retire davantage.</p>
     <p>Pourquoi 12 : c'est ce qu'il reste à un joueur une fois les bans et les picks adverses passés, et ce qui prédit le mieux l'écart entre les équipes dans les simulations de drafts. Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
 }
 
@@ -596,25 +596,33 @@ function rendreEquilibrage() {
 
   document.getElementById("panneau-equilibrage").innerHTML = `
     <h2>1. Points d'un personnage</h2>
-    <p>Chaque personnage a des points par constellation (C0 à C6) et trois bonus (niveau 95, niveau 100, théâtre), réglés par les administrateurs (onglet Personnages).</p>
+    <p>Chaque personnage a des points selon sa constellation (C0 à C6) et trois bonus possibles (niveau 95, niveau 100, théâtre).</p>
     <p class="formule-tc">
       points = C<sub>constellation</sub><br>
       si niveau 95 : points = points ${formuleBonus("niveau95", 7)}<br>
       si niveau 100 : points = points ${formuleBonus("niveau100", 8)}<br>
-      si buffé par le théâtre du mois : points = points ${formuleBonus("theatre", 9)}<br>
-      résultat arrondi à l'entier
+      si buffé par le théâtre du mois : points = points ${formuleBonus("theatre", 9)}
     </p>
-    <p>Modes actuels : ${BONUS.map(({ cle, libelle }) => `${libelle} en <strong>${modes[cle]}</strong>`).join(", ")}. Le niveau est celui renseigné par le joueur dans Mon compte (90 par défaut, sans bonus).</p>
+    <p>Modes actuels : ${BONUS.map(({ cle, libelle }) => `${libelle} en <strong>${modes[cle]}</strong>`).join(", ")}. Le niveau des personnages est celui renseigné par le joueur dans Mon compte (90 sans bonus par défaut).</p>
     <p>Voyageur : un seul élément compte, celui qui rapporte le plus de points.</p>
 
     <h2>2. Points d'une arme</h2>
     <p class="formule-tc">points = R<sub>raffinement</sub></p>
-    <p>Chaque copie d'une arme présente dans la box compte (onglet Armes). Certaines armes ont une <strong>valeur alternative</strong> (0, 25, 50 ou 75 % de leurs points, arrondie à l'entier), qui remplace leurs points dans 2 cas : pour chaque copie en double (la meilleure copie compte en entier), et pour une arme signature quand son personnage n'est pas dans la box. Si les 2 cas se cumulent, la réduction ne s'applique qu'une fois.</p>
+    <p>Chaque copie d'une arme présente dans la box compte (onglet Armes). Certaines armes ont une <strong>valeur alternative</strong> (25, 50 ou 75 % de leurs points, arrondie à l'entier), qui remplace leurs points dans 2 cas :</p>
+    <ul class="notes-theorycraft">
+      <li>pour chaque copie en double (la meilleure copie compte en entier),</li>
+      <li>et pour une arme signature quand son personnage n'est pas dans la box.</li>
+    </ul>
+    <p>Si les 2 cas se cumulent, la réduction ne s'applique qu'une fois.</p>
 
     <h2>3. Points d'une box</h2>
     <p class="formule-tc">points de la box = Σ points des personnages + Σ points des armes</p>
-    <p>Seuls les personnages et armes de la box choisie pour le match comptent (Full box ou box sélectionnée).</p>
-    <p>La full box est toujours jouable. Une autre box (opti, personnalisée en entraînement) ne l'est que si ses points ne dépassent pas le plafond du palier de la draft : ${Object.entries(NOMS_PALIERS).map(([palier, nom]) => `${nom.toLowerCase()} ${limitesEquilibrage?.[palier]?.points_max_box ?? "?"}`).join(", ")} points. Le palier de la draft est celui du mode (carpe en mêlée générale et en carnage) ou, en mode classique, le plus petit des 2 joueurs : une baleine qui affronte une sardine ne peut venir qu'avec sa full box ou une opti sous le plafond sardine.</p>
+    <p>Seuls les personnages et armes de la box choisie pour le match comptent (Full box ou box opti).</p>
+    <p>La full box est toujours jouable. Une box opti ne l'est que si ses points ne dépassent pas le plafond du palier de la draft : ${Object.entries(NOMS_PALIERS).map(([palier, nom]) => `${nom.toLowerCase()} ${limitesEquilibrage?.[palier]?.points_max_box ?? "?"}`).join(", ")} points. Le palier de la draft est celui du mode :</p>
+    <ul class="notes-theorycraft">
+      <li>carpe en mêlée générale et en carnage</li>
+      <li>en mode classique, le plus petit des 2 joueurs : une baleine qui affronte une sardine ne peut venir qu'avec sa full box ou une opti sous le plafond sardine.</li>
+    </ul>
 
     <h2>4. Bans d'équilibrage</h2>
     ${htmlBansEquilibrage(paliers)}
