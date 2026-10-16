@@ -23,9 +23,10 @@
   transform: translateY(-0.1875rem);
 }
 
-/* "Feedback" au-dessus de l'icône, police du titre du site (accueil.css). */
+/* "Feedback" au-dessus de l'icône, police des titres (DB/fonts/title.woff2,
+   --police-titre dans commun/entete.css). */
 .bouton-feedback-texte {
-  font-family: "Titre site", var(--police-titre);
+  font-family: var(--police-titre);
   font-size: 1.125rem;
   line-height: 1;
   text-shadow:
