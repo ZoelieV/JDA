@@ -2233,6 +2233,68 @@ function placerFiltresDraft() {
   figeables.appendChild(trisFiges);
   if (fige("clear")) figeables.appendChild(btnClear);
   else container.appendChild(btnClear);
+  compacterFiltresFiges();
+}
+
+// Téléphone : bloc figé en grille de COLONNES_FIGES boutons par ligne (cf.
+// CSS). Éléments puis types d'arme : chacun en début de sa propre ligne,
+// sans coupure ; la fin de ces lignes, puis les suivantes, sont remplies
+// par les autres filtres puis par les tris (un groupe entier s'il tient
+// dans la place restante, sinon le début du suivant). Recherche figée :
+// seule sur la 1re ligne. Seuls les boutons visibles comptent (refait à
+// chaque rendu : J1/J2, favoris, bonus de saison changent selon la phase).
+const COLONNES_FIGES = 8;
+
+function compacterFiltresFiges() {
+  if (!barreFiltres) return;
+  const { figeables } = barreFiltres;
+  figeables.querySelectorAll("button, input").forEach(el => {
+    el.style.gridRow = "";
+    el.style.gridColumn = "";
+  });
+  if (!MEDIA_TELEPHONE.matches) return;
+
+  const visible = el => !el.closest(".cache, .filtre-masque, [hidden]");
+  const poser = (el, ligne, colonne) => {
+    el.style.gridRow = String(ligne + 1);
+    el.style.gridColumn = String(colonne + 1);
+  };
+  let ligne = 0;
+  const recherche = figeables.querySelector('[data-filtre="recherche"]');
+  if (recherche && visible(recherche)) {
+    recherche.style.gridRow = "1";
+    recherche.style.gridColumn = "1 / -1";
+    ligne = 1;
+  }
+
+  // Groupes de boutons visibles, dans l'ordre : filtres puis tris (un tri
+  // = un groupe).
+  const groupes = [];
+  [...figeables.children].forEach(enfant => {
+    if (enfant === recherche) return;
+    const boutons = enfant.classList.contains("tris-figes")
+      ? [...enfant.querySelectorAll(".tri-btn")].filter(visible).map(bouton => ({ id: bouton.dataset.filtre, boutons: [bouton] }))
+      : [{ id: enfant.dataset.filtre, boutons: (enfant.matches("button") ? [enfant] : [...enfant.querySelectorAll("button")]).filter(visible) }];
+    groupes.push(...boutons.filter(groupe => groupe.boutons.length));
+  });
+
+  const remplir = (colonne) => {
+    while (colonne < COLONNES_FIGES && groupes.length) {
+      const libre = COLONNES_FIGES - colonne;
+      const index = groupes.findIndex(groupe => groupe.boutons.length <= libre);
+      const boutons = index >= 0 ? groupes.splice(index, 1)[0].boutons : groupes[0].boutons.splice(0, libre);
+      boutons.forEach(bouton => poser(bouton, ligne, colonne++));
+    }
+    ligne++;
+  };
+  ["elements", "armes"].forEach(id => {
+    const index = groupes.findIndex(groupe => groupe.id === id && groupe.boutons.length <= COLONNES_FIGES);
+    if (index < 0) return;
+    const { boutons } = groupes.splice(index, 1)[0];
+    boutons.forEach((bouton, colonne) => poser(bouton, ligne, colonne));
+    remplir(boutons.length);
+  });
+  while (groupes.length) remplir(0);
 }
 
 // Filtre J1/J2 : inutile pendant le choix de box et l'analyse (une colonne
@@ -2242,6 +2304,8 @@ function mettreAJourFiltreProprietaire() {
   // Favoris : ceux du joueur connecté, pas de sens pour un spectateur.
   const btnFavoris = document.querySelector('#barre-outils .tri-btn[data-tri="favoris"]');
   if (btnFavoris) btnFavoris.hidden = !monRole;
+  // Après les changements de visibilité ci-dessous (fin de fonction).
+  queueMicrotask(compacterFiltresFiges);
   // Bonus de saison : matchs classés seulement.
   const btnBonus = document.querySelector('#barre-outils .tri-btn[data-tri="bonus_saison"]');
   if (btnBonus) btnBonus.hidden = !estMatchClasse();
@@ -3196,9 +3260,9 @@ function rendrePhase() {
   const zoneMatch = document.getElementById("zone-match");
   zoneMatch.classList.toggle("mode-draft", draft.phase === "draft" || enRecap);
   zoneMatch.classList.toggle("mode-recap", enRecap);
-  // Analyse des box et bans d'équilibrage sur ordi : barre des filtres et
+  // Choix et analyse des box, bans d'équilibrage : barre des filtres et
   // tris figée en haut au défilement, comme pendant la draft.
-  zoneMatch.classList.toggle("outils-figes", draft.phase === "analyse" || draft.phase === "bans_bonus");
+  zoneMatch.classList.toggle("outils-figes", ["choix_box", "analyse", "bans_bonus"].includes(draft.phase));
   document.getElementById("grille-pool-draft").classList.toggle("cache", enRecap);
   document.getElementById("recap-centre").classList.toggle("cache", !enRecap);
   document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);

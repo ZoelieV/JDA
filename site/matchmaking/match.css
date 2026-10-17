@@ -2139,8 +2139,51 @@ h1 {
   }
 
   #zone-match.outils-figes .btn-clear-filtres {
-    display: block;
     margin: 0.625rem 0 1rem;
+  }
+
+  /* Bloc figé compacté : 8 boutons par ligne, placés par
+     compacterFiltresFiges (match.js) ; blocs de filtres effacés (leurs
+     boutons sont directement dans la grille), pas de texte hors des
+     boutons ("Trier :"). */
+  #zone-match.mode-draft .filtres-figeables,
+  #zone-match.outils-figes .filtres-figeables {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+
+  #zone-match .filtres-figeables > div,
+  #zone-match .filtres-figeables .tris {
+    display: contents;
+  }
+
+  #zone-match .filtres-figeables .tris-label {
+    display: none;
+  }
+
+  #zone-match .filtres-figeables .filtre-icone-btn,
+  #zone-match .filtres-figeables .filtre-etoile-btn,
+  #zone-match .filtres-figeables .filtre-proprietaire-btn,
+  #zone-match .filtres-figeables .tri-btn,
+  #zone-match .filtres-figeables .btn-clear-filtres {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    aspect-ratio: 1;
+    margin: 0;
+    padding: 0.1875rem;
+    font-size: 0.875rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  #zone-match .filtres-figeables .tri-logo,
+  #zone-match .filtres-figeables .btn-clear-filtres img {
+    max-width: 100%;
+    height: auto;
+    max-height: 1.375rem;
   }
 
   #zone-match.mode-draft #grille-pool-draft {
