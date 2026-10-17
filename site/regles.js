@@ -1,4 +1,5 @@
-// Pages de règles : sections repliables (<details>) et sommaire.
+// Pages de règles : sections repliables (<details>, dépliées par défaut)
+// et sommaire.
 // Un lien du sommaire (ou une adresse avec #section) déplie la section
 // visée avant d'y aller.
 
