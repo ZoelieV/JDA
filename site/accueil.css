@@ -15,13 +15,31 @@
 /* Ordi : bouton du compte posé en haut à droite, hors du flux, pour que le
    logo monte tout en haut de la page, et fixé à l'écran (il suit le
    défilement, comme le bouton Feedback en bas à gauche, cf.
-   commun/feedback.css). Téléphone : il reste au-dessus. */
+   commun/feedback.css). Téléphone : au-dessus du logo, puis figé en haut
+   de l'écran au défilement ; la bande vide à côté laisse passer les clics. */
 @media (min-width: 701px) {
   .accueil-barre {
     position: fixed;
     top: 1.25rem;
     right: 1.25rem;
     z-index: 100;
+  }
+}
+
+@media (max-width: 700px) {
+  .accueil-barre {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .accueil-barre .zone-compte {
+    pointer-events: none;
+  }
+
+  .accueil-barre .zone-compte > * {
+    pointer-events: auto;
   }
 }
 

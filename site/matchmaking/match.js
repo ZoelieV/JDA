@@ -3196,6 +3196,9 @@ function rendrePhase() {
   const zoneMatch = document.getElementById("zone-match");
   zoneMatch.classList.toggle("mode-draft", draft.phase === "draft" || enRecap);
   zoneMatch.classList.toggle("mode-recap", enRecap);
+  // Analyse des box et bans d'équilibrage sur ordi : barre des filtres et
+  // tris figée en haut au défilement, comme pendant la draft.
+  zoneMatch.classList.toggle("outils-figes", draft.phase === "analyse" || draft.phase === "bans_bonus");
   document.getElementById("grille-pool-draft").classList.toggle("cache", enRecap);
   document.getElementById("recap-centre").classList.toggle("cache", !enRecap);
   document.getElementById("entete-centre").classList.toggle("cache", !avecBoss);

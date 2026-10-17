@@ -1697,6 +1697,17 @@ h1 {
     margin-bottom: 1rem;
   }
 
+  /* Analyse et bans d'équilibrage : barre figée elle aussi (cf. rendrePhase). */
+  #zone-match.outils-figes #barre-outils {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 0.625rem;
+    border-radius: 0.75rem;
+    background-color: rgba(20, 20, 20, 0.45);
+    backdrop-filter: blur(0.5rem);
+  }
+
   #zone-match.mode-draft #barre-outils {
     grid-area: outils;
     position: sticky;
@@ -2061,6 +2072,8 @@ h1 {
   }
 
   #zone-match.mode-draft .filtres-libres:not(:has(> :not(.filtre-masque):not(.cache))),
+  #zone-match.outils-figes .filtres-libres:not(:has(> :not(.filtre-masque):not(.cache))),
+  #zone-match.outils-figes .filtres-figeables:not(:has(> :not(.filtre-masque):not(.cache):not(.tris), > .tris .tri-btn:not(.filtre-masque):not([hidden]))),
   #zone-match.mode-draft .filtres-figeables:not(:has(> :not(.filtre-masque):not(.cache):not(.tris), > .tris .tri-btn:not(.filtre-masque):not([hidden]))) {
     display: none;
   }
@@ -2088,6 +2101,46 @@ h1 {
     grid-area: clear;
     justify-self: start;
     margin: 0.625rem 0;
+  }
+
+  /* Analyse des box et bans d'équilibrage (cf. rendrePhase) : mêmes filtres
+     figés que pendant la draft. La barre et ses blocs s'effacent
+     (display: contents) pour que le bloc figé reste collé en haut de tout
+     #zone-match, pas seulement de la barre. */
+  #zone-match.outils-figes #barre-outils,
+  #zone-match.outils-figes .toolbar-droite,
+  #zone-match.outils-figes .filtres-tri {
+    display: contents;
+  }
+
+  #zone-match.outils-figes .filtres-libres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem 0.75rem;
+    margin-top: 0.625rem;
+  }
+
+  #zone-match.outils-figes .filtres-figeables .recherche-personnage {
+    flex: 1 1 100%;
+  }
+
+  #zone-match.outils-figes .filtres-figeables {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem 0.75rem;
+    margin-top: 0.625rem;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    background-color: rgba(20, 20, 20, 0.45);
+    backdrop-filter: blur(0.5rem);
+  }
+
+  #zone-match.outils-figes .btn-clear-filtres {
+    display: block;
+    margin: 0.625rem 0 1rem;
   }
 
   #zone-match.mode-draft #grille-pool-draft {
