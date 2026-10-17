@@ -2194,7 +2194,7 @@ function initialiserFiltresTri() {
 // commun/filtres_draft.js) : masqués ou affichés, figés ou non en haut de
 // l'écran sur téléphone. Sur ordi, toute la barre reste figée : chacun à
 // sa place habituelle. ----
-const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
+// MEDIA_TELEPHONE : commun/cartes.js.
 let choixFiltresDraft = lireFiltresDraft(null);
 let barreFiltres = null;
 
