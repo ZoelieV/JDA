@@ -41,8 +41,9 @@
    Polices des namecards : Titre pour les titres, Classic pour le texte. */
 .page-regles {
   display: grid;
-  grid-template-columns: 17rem minmax(0, 46rem);
-  justify-content: center;
+  /* Texte au centre de l'écran, sommaire dans la marge de gauche (colonne
+     de droite vide, de même largeur, pour garder le texte centré). */
+  grid-template-columns: minmax(13rem, 1fr) minmax(0, 46rem) minmax(13rem, 1fr);
   align-items: start;
   gap: 1.25rem;
   padding-bottom: 2rem;
@@ -51,6 +52,10 @@
 .sommaire-regles {
   position: sticky;
   top: 1rem;
+  justify-self: end;
+  width: 17rem;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .sommaire-regles h2 {
@@ -107,6 +112,7 @@
 }
 
 .sections-regles {
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -191,6 +197,12 @@
 
   .sommaire-regles {
     position: static;
+    justify-self: stretch;
+    width: auto;
+  }
+
+  .sections-regles {
+    grid-column: 1;
   }
 
   .section-regles > summary {
