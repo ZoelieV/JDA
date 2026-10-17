@@ -104,7 +104,7 @@
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
-  const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=1",
+  const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=2",
     () => typeof FILTRES_DRAFT !== "undefined", "Impossible de charger les filtres de la draft.");
 
   async function chargerCosmetiques() {
