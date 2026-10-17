@@ -1,9 +1,11 @@
-// Personnalisation (fond d'écran, namecard, bannière, skins) : fenêtre
+// Personnalisation (fond d'écran, namecard, bannière, skins, filtres et tris
+// affichés en draft) : fenêtre
 // commune à tout le site, ouverte sur place depuis le menu du compte
 // (commun/compte.js) et depuis Mon compte (my_account/my_account.js).
 // Styles : commun/personnalisation.css, chargé à la 1re ouverture. Fonds et
 // bannières listés dans DB/images/cosmetiques.json ; Voyageur, Manekin et
-// skins dans commun/variantes.js (chargé si la page ne l'a pas déjà).
+// skins dans commun/variantes.js, filtres et tris de la draft dans
+// commun/filtres_draft.js (chargés si la page ne l'a pas déjà).
 //
 // Enregistrer relit le profil (changements faits ailleurs entre-temps) et
 // n'y change que ces choix (profil.parametres), puis envoie l'événement
@@ -62,7 +64,7 @@
   };
   const valeurComparable = valeur => JSON.stringify(Array.isArray(valeur) ? [...valeur].sort() : valeur ?? null);
   const differe = (a, b, cle) => valeurComparable(a[cle]) !== valeurComparable(b[cle]);
-  const cles = () => [...Object.keys(PARAMETRES_DEFAUT), "skins"];
+  const cles = () => [...Object.keys(PARAMETRES_DEFAUT), "skins", "filtres_draft"];
 
   // "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
   function nomNamecard(chemin) {
@@ -77,23 +79,33 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=5";
+    lien.href = "/commun/personnalisation.css?v=6";
     document.head.appendChild(lien);
   }
 
-  // Voyageur, Manekin et skins (commun/variantes.js).
-  let promesseVariantes = null;
-  function chargerVariantes() {
-    if (typeof SKINS_PERSONNAGES !== "undefined") return Promise.resolve();
-    promesseVariantes ??= new Promise((resoudre, rejeter) => {
+  // Script commun chargé une seule fois (sauf si la page l'a déjà).
+  const promessesScripts = {};
+  function chargerScript(src, dejaCharge, erreur) {
+    if (dejaCharge()) return Promise.resolve();
+    promessesScripts[src] ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/variantes.js?v=4";
+      script.src = src;
       script.onload = resoudre;
-      script.onerror = () => rejeter(new Error("Impossible de charger les variantes."));
+      script.onerror = () => {
+        delete promessesScripts[src];
+        rejeter(new Error(erreur));
+      };
       document.head.appendChild(script);
     });
-    return promesseVariantes;
+    return promessesScripts[src];
   }
+
+  // Voyageur, Manekin et skins (commun/variantes.js).
+  const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
+    () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
+  // Filtres et tris de la draft (commun/filtres_draft.js).
+  const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=1",
+    () => typeof FILTRES_DRAFT !== "undefined", "Impossible de charger les filtres de la draft.");
 
   async function chargerCosmetiques() {
     if (cosmetiques) return cosmetiques;
@@ -125,7 +137,17 @@
   function avecDefauts(parametres = {}) {
     return {
       ...Object.fromEntries(Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, parametres[cle] || defaut])),
-      skins: Array.isArray(parametres.skins) ? parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)) : []
+      skins: Array.isArray(parametres.skins) ? parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)) : [],
+      filtres_draft: lireFiltresDraft(parametres.filtres_draft)
+    };
+  }
+
+  // Copie indépendante des choix (listes copiées).
+  function copieChoix(choix) {
+    return {
+      ...choix,
+      skins: [...choix.skins],
+      filtres_draft: { masques: [...choix.filtres_draft.masques], figes: [...choix.filtres_draft.figes] }
     };
   }
 
@@ -211,6 +233,10 @@
             <span class="perso-apercu-titre">Skins</span>
             <span class="perso-apercu-image perso-apercu-skins" data-apercu="skins"></span>
           </button>
+          <button type="button" class="perso-apercu-bloc" data-onglet="filtres">
+            <span class="perso-apercu-titre">Filtres et tris en Draft</span>
+            <span class="perso-apercu-image perso-apercu-filtres" data-apercu="filtres"></span>
+          </button>
         </div>
         <input type="text" class="perso-recherche" placeholder="Rechercher…" autocomplete="off">
         <div class="perso-choix"></div>
@@ -292,14 +318,18 @@
       fond: urlFond(brouillon.fond, true),
       banniere: brouillon.banniere && urlImage(brouillon.banniere),
       banniere2: brouillon.banniere2 && urlImage(brouillon.banniere2),
-      skins: urlImage(voyageur.image.replace(/^images\//, ""))
+      skins: urlImage(voyageur.image.replace(/^images\//, "")),
+      filtres: urlImage("others/remove_filters.webp")
+    };
+    const affiches = FILTRES_DRAFT.length - brouillon.filtres_draft.masques.length;
+    const textes = {
+      skins: `${brouillon.skins.length} skin${brouillon.skins.length > 1 ? "s" : ""}`,
+      filtres: `${affiches} / ${FILTRES_DRAFT.length}`
     };
     modal.querySelectorAll("[data-apercu]").forEach(bloc => {
       const url = urls[bloc.dataset.apercu];
       bloc.style.backgroundImage = url ? `url("${url}")` : "";
-      bloc.textContent = bloc.dataset.apercu === "skins"
-        ? `${brouillon.skins.length} skin${brouillon.skins.length > 1 ? "s" : ""}`
-        : url ? "" : "Aucun";
+      bloc.textContent = textes[bloc.dataset.apercu] ?? (url ? "" : "Aucun");
     });
   }
 
@@ -372,6 +402,60 @@
     conteneur.append(titreSection("Skins (clic pour activer / retirer)"), grille);
   }
 
+  // Filtres et tris de la draft : une ligne chacun (case "affiché", logo,
+  // fonctionnement, case "figé sur téléphone"). Cocher / décocher ne
+  // reconstruit pas la liste (défilement gardé).
+  function rendreFiltresDraft(conteneur, recherche) {
+    const choix = brouillon.filtres_draft;
+    const basculer = (liste, id, actif) => {
+      const reste = choix[liste].filter(autre => autre !== id);
+      choix[liste] = (actif ? [...reste, id] : reste).sort();
+      rendreApercus();
+      mettreAJourPied();
+    };
+    const note = document.createElement("p");
+    note.className = "perso-note";
+    note.textContent = "Décoche ceux que tu ne veux pas voir dans la barre de la draft. « Figé » : sur téléphone, il reste en haut de l'écran quand tu fais défiler les persos. Tris : 1er clic dans un sens, 2e dans l'autre, 3e pour l'enlever.";
+    conteneur.appendChild(note);
+
+    [["filtres", "Filtres"], ["tris", "Tris"]].forEach(([groupe, titre]) => {
+      const filtres = FILTRES_DRAFT.filter(filtre => filtre.groupe === groupe &&
+        (!recherche || `${filtre.nom} ${filtre.description}`.toLowerCase().includes(recherche)));
+      if (!filtres.length) return;
+      const tableau = document.createElement("table");
+      tableau.className = "perso-filtres";
+      tableau.innerHTML = `<thead><tr><th>Affiché</th><th></th><th>Fonctionnement</th><th>Figé<span>sur téléphone</span></th></tr></thead>`;
+      const corps = document.createElement("tbody");
+      filtres.forEach(filtre => {
+        const ligne = document.createElement("tr");
+        const affiche = !choix.masques.includes(filtre.id);
+        ligne.classList.toggle("masque", !affiche);
+        ligne.innerHTML = `
+          <td><input type="checkbox" class="filtre-affiche" aria-label="Afficher : ${filtre.nom}"></td>
+          <td class="perso-filtre-logo">${filtre.logo ? `<img src="${filtre.logo}" alt="">` : `<span></span>`}</td>
+          <td><strong></strong> <span class="perso-filtre-description"></span></td>
+          <td><input type="checkbox" class="filtre-fige" aria-label="Figé sur téléphone : ${filtre.nom}"></td>`;
+        if (!filtre.logo) ligne.querySelector(".perso-filtre-logo span").textContent = filtre.texte;
+        ligne.querySelector("strong").textContent = filtre.nom;
+        ligne.querySelector(".perso-filtre-description").textContent = filtre.description;
+        const caseAffiche = ligne.querySelector(".filtre-affiche");
+        const caseFige = ligne.querySelector(".filtre-fige");
+        caseAffiche.checked = affiche;
+        caseFige.checked = choix.figes.includes(filtre.id);
+        caseFige.disabled = !affiche;
+        caseAffiche.addEventListener("change", () => {
+          basculer("masques", filtre.id, !caseAffiche.checked);
+          ligne.classList.toggle("masque", !caseAffiche.checked);
+          caseFige.disabled = !caseAffiche.checked;
+        });
+        caseFige.addEventListener("change", () => basculer("figes", filtre.id, caseFige.checked));
+        corps.appendChild(ligne);
+      });
+      tableau.appendChild(corps);
+      conteneur.append(titreSection(titre), tableau);
+    });
+  }
+
   function rendreChoix() {
     const conteneur = modal.querySelector(".perso-choix");
     conteneur.innerHTML = "";
@@ -383,6 +467,10 @@
 
     if (ongletActif === "skins") {
       rendreSkins(conteneur, recherche);
+      return;
+    }
+    if (ongletActif === "filtres") {
+      rendreFiltresDraft(conteneur, recherche);
       return;
     }
 
@@ -456,11 +544,11 @@
     mettreAJourPied();
     try {
       const [profil, image] = await Promise.all([
-        lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerNomsPersos()
+        lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerFiltresDraft(), chargerNomsPersos()
       ]);
       imageEnregistree = imageBrouillon = image;
       enregistres = avecDefauts(profil.parametres);
-      brouillon = { ...enregistres, skins: [...enregistres.skins] };
+      brouillon = copieChoix(enregistres);
       afficherEtat("");
     } catch (erreur) {
       console.error(erreur);
@@ -508,7 +596,7 @@
         throw new Error(error || "Erreur lors de l'enregistrement.");
       }
       const persosChanges = CLES_PERSOS.some(cle => differe(brouillon, enregistres, cle));
-      enregistres = { ...brouillon, skins: [...brouillon.skins] };
+      enregistres = copieChoix(brouillon);
       // Fond et deuxième bannière gardés pour tout le site (commun/fond.js).
       // Fond personnel : marqueur FOND_PERSO (image relue par commun/fond.js).
       const valeurFond = brouillon.fond === FOND_PERSO ? FOND_PERSO : urlFond(brouillon.fond);

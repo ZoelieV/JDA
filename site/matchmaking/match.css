@@ -1578,9 +1578,23 @@ h1 {
   pointer-events: none;
 }
 
-/* Filtres figeables : un bloc sur téléphone, sans effet sur ordi. */
-.filtres-figeables {
+/* Filtres figeables : un bloc sur téléphone, sans effet sur ordi ; de même
+   pour les filtres non figés (cf. placerFiltresDraft dans match.js). */
+.filtres-figeables,
+.filtres-libres {
   display: contents;
+}
+
+/* Filtres et tris masqués par le joueur (Personnalisation). */
+.filtre-masque {
+  display: none !important;
+}
+
+/* Tris, recherche : rien à afficher -> bloc caché (libellé "Trier :"
+   compris). */
+.tris:not(:has(.tri-btn:not(.filtre-masque):not([hidden]))),
+.zone-recherche:not(:has(.recherche-personnage:not(.filtre-masque), .tri-btn:not(.filtre-masque):not([hidden]))) {
+  display: none;
 }
 
 /* ---- Barre du haut de la room : Accueil / Partager le lien ---- */
@@ -1995,6 +2009,7 @@ h1 {
       "j1 j2"
       "bans bans"
       "recherche recherche"
+      "libres libres"
       "figes figes"
       "clear clear"
       "pool pool";
@@ -2035,6 +2050,23 @@ h1 {
   #zone-match.mode-draft .zone-recherche {
     grid-area: recherche;
     margin-top: 0.75rem;
+  }
+
+  #zone-match.mode-draft .filtres-libres {
+    grid-area: libres;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem 0.75rem;
+    margin-top: 0.625rem;
+  }
+
+  #zone-match.mode-draft .filtres-libres:not(:has(> :not(.filtre-masque):not(.cache))),
+  #zone-match.mode-draft .filtres-figeables:not(:has(> :not(.filtre-masque):not(.cache):not(.tris), > .tris .tri-btn:not(.filtre-masque):not([hidden]))) {
+    display: none;
+  }
+
+  #zone-match.mode-draft .filtres-figeables .recherche-personnage {
+    flex: 1 1 100%;
   }
 
   #zone-match.mode-draft .filtres-figeables {

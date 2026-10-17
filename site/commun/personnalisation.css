@@ -133,6 +133,95 @@
   text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.95);
 }
 
+/* Filtres et tris en Draft : logo des filtres, nombre affichés par-dessus. */
+.perso-apercu-filtres {
+  width: 5.625rem;
+  align-items: flex-end;
+  padding-bottom: 0.25rem;
+  background-size: 55%;
+  font-weight: bold;
+  text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.95);
+}
+
+/* Liste des filtres et tris : case "affiché", logo, fonctionnement, case
+   "figé sur téléphone". */
+.perso-filtres {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.perso-filtres th {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: normal;
+  opacity: 0.75;
+  text-align: left;
+}
+
+.perso-filtres th:first-child,
+.perso-filtres th:last-child {
+  width: 1%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.perso-filtres th span {
+  display: block;
+  font-size: 0.6875rem;
+}
+
+.perso-filtres td {
+  padding: 0.375rem 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+.perso-filtres td:first-child,
+.perso-filtres td:last-child {
+  text-align: center;
+}
+
+.perso-filtres input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: #f5c542;
+  cursor: pointer;
+}
+
+.perso-filtres input[type="checkbox"]:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.perso-filtre-logo {
+  width: 2.25rem;
+  text-align: center;
+}
+
+.perso-filtre-logo img {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.perso-filtre-logo span {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.perso-filtre-description {
+  opacity: 0.8;
+}
+
+/* Filtre masqué : ligne éteinte. */
+.perso-filtres tr.masque .perso-filtre-logo,
+.perso-filtres tr.masque td:nth-child(3) {
+  opacity: 0.45;
+}
+
 .perso-recherche {
   box-sizing: border-box;
   align-self: center;
@@ -354,8 +443,18 @@
     grid-template-columns: 1fr;
   }
 
-  .perso-apercu-skins {
+  .perso-apercu-skins,
+  .perso-apercu-filtres {
     width: 3.75rem;
+  }
+
+  .perso-filtres {
+    font-size: 0.8125rem;
+  }
+
+  .perso-filtres td,
+  .perso-filtres th {
+    padding: 0.3125rem 0.25rem;
   }
 
   .perso-grille-variantes,

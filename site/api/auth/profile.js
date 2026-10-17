@@ -3,6 +3,7 @@ const { codeTheatre, actualiserPoints } = require("../_lib/personnages");
 const { verifierFrequenceCompte } = require("../_lib/limites");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
+const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -84,6 +85,11 @@ function nettoyerParametres(parametres) {
   if (Array.isArray(parametres.skins)) {
     const skins = [...new Set(parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)))];
     if (skins.length) propres.skins = skins;
+  }
+  // Filtres et tris de la draft affichés / figés : ids connus seulement (cf.
+  // commun/filtres_draft.js).
+  if (parametres.filtres_draft && typeof parametres.filtres_draft === "object") {
+    propres.filtres_draft = lireFiltresDraft(parametres.filtres_draft);
   }
   return propres;
 }

@@ -2006,6 +2006,7 @@ function initialiserFiltresTri() {
     });
     zoneVue.appendChild(btn);
   });
+  zoneVue.dataset.filtre = "vue";
   figeables.appendChild(zoneVue);
 
   const zoneIcones = document.createElement("div");
@@ -2022,6 +2023,7 @@ function initialiserFiltresTri() {
     });
     zoneIcones.appendChild(btn);
   });
+  zoneIcones.dataset.filtre = "elements";
   figeables.appendChild(zoneIcones);
 
   const zoneArmes = document.createElement("div");
@@ -2038,6 +2040,7 @@ function initialiserFiltresTri() {
     });
     zoneArmes.appendChild(btn);
   });
+  zoneArmes.dataset.filtre = "armes";
   figeables.appendChild(zoneArmes);
 
   const zoneEtoiles = document.createElement("div");
@@ -2054,6 +2057,7 @@ function initialiserFiltresTri() {
     });
     zoneEtoiles.appendChild(btn);
   });
+  zoneEtoiles.dataset.filtre = "etoiles";
   figeables.appendChild(zoneEtoiles);
 
   const zoneVoeux = document.createElement("div");
@@ -2071,6 +2075,7 @@ function initialiserFiltresTri() {
     });
     zoneVoeux.appendChild(btn);
   });
+  zoneVoeux.dataset.filtre = "voeux";
   figeables.appendChild(zoneVoeux);
 
   // Favoris du joueur connecté : filtre (seuls les favoris), activé /
@@ -2088,6 +2093,7 @@ function initialiserFiltresTri() {
     rendrePhase();
   });
   zoneFavoris.appendChild(btnFavoris);
+  zoneFavoris.dataset.filtre = "favoris";
   figeables.appendChild(zoneFavoris);
 
   const zoneProprio = document.createElement("div");
@@ -2111,6 +2117,7 @@ function initialiserFiltresTri() {
     });
     zoneProprio.appendChild(btn);
   });
+  zoneProprio.dataset.filtre = "proprietaire";
   figeables.appendChild(zoneProprio);
 
   const btnClear = document.createElement("button");
@@ -2134,6 +2141,7 @@ function initialiserFiltresTri() {
     if (input) input.value = "";
     rendrePhase();
   });
+  btnClear.dataset.filtre = "clear";
   container.appendChild(btnClear);
 
   const inputRecherche = document.createElement("input");
@@ -2141,6 +2149,7 @@ function initialiserFiltresTri() {
   inputRecherche.id = "recherche-personnage";
   inputRecherche.className = "recherche-personnage";
   inputRecherche.placeholder = "Rechercher…";
+  inputRecherche.dataset.filtre = "recherche";
   inputRecherche.addEventListener("input", () => {
     rechercheTexte = inputRecherche.value;
     rendrePhase();
@@ -2157,15 +2166,73 @@ function initialiserFiltresTri() {
     btn.type = "button";
     btn.className = "filtre-etoile-btn tri-btn";
     btn.dataset.tri = valeur;
+    btn.dataset.filtre = `tri_${valeur}`;
     majBoutonTri(btn, etatTri);
     btn.addEventListener("click", () => {
       cyclerTri(etatTri, valeur);
-      zoneTris.querySelectorAll(".tri-btn").forEach(b => majBoutonTri(b, etatTri));
+      document.querySelectorAll("#barre-outils .tris .tri-btn").forEach(b => majBoutonTri(b, etatTri));
       rendrePhase();
     });
     zoneTris.appendChild(btn);
   });
   zoneRecherche.appendChild(zoneTris);
+
+  // Téléphone : filtres non figés (au-dessus du bloc figé) et tris figés
+  // (dans le bloc figé), cf. placerFiltresDraft.
+  const libres = document.createElement("div");
+  libres.className = "filtres-libres";
+  container.insertBefore(libres, figeables);
+  const trisFiges = document.createElement("div");
+  trisFiges.className = "tris tris-figes";
+  trisFiges.innerHTML = `<span class="tris-label">Trier :</span>`;
+  barreFiltres = { container, figeables, libres, zoneRecherche, zoneTris, trisFiges, btnClear };
+  placerFiltresDraft();
+  MEDIA_TELEPHONE.addEventListener("change", placerFiltresDraft);
+}
+
+// ---- Filtres et tris choisis par le joueur (Personnalisation, cf.
+// commun/filtres_draft.js) : masqués ou affichés, figés ou non en haut de
+// l'écran sur téléphone. Sur ordi, toute la barre reste figée : chacun à
+// sa place habituelle. ----
+const MEDIA_TELEPHONE = window.matchMedia("(max-width: 700px)");
+let choixFiltresDraft = lireFiltresDraft(null);
+let barreFiltres = null;
+
+// Choix du joueur connecté (profil), lus au démarrage de la page.
+async function chargerChoixFiltresDraft() {
+  try {
+    const reponse = await fetch("/api/auth/profile", { credentials: "include" });
+    if (!reponse.ok) return;
+    choixFiltresDraft = lireFiltresDraft((await reponse.json()).profil?.parametres?.filtres_draft);
+  } catch (erreur) {
+    console.error(erreur);
+  }
+}
+
+function placerFiltresDraft() {
+  if (!barreFiltres) return;
+  const { container, figeables, libres, zoneRecherche, zoneTris, trisFiges, btnClear } = barreFiltres;
+  const telephone = MEDIA_TELEPHONE.matches;
+  const masques = new Set(choixFiltresDraft.masques);
+  const fige = id => telephone && choixFiltresDraft.figes.includes(id);
+  const element = id => container.closest("#barre-outils").querySelector(`[data-filtre="${id}"]`);
+
+  // Recherche : en tête du bloc figé, ou avant les tris.
+  const recherche = element("recherche");
+  if (fige("recherche")) figeables.prepend(recherche);
+  else zoneRecherche.prepend(recherche);
+  // Filtres, puis tris figés et Réinitialiser (dans l'ordre de la liste).
+  FILTRES_DRAFT.forEach(filtre => {
+    const el = element(filtre.id);
+    if (!el) return;
+    el.classList.toggle("filtre-masque", masques.has(filtre.id));
+    if (filtre.id === "recherche" || filtre.id === "clear") return;
+    if (filtre.groupe === "tris") (fige(filtre.id) ? trisFiges : zoneTris).appendChild(el);
+    else (telephone && !fige(filtre.id) ? libres : figeables).appendChild(el);
+  });
+  figeables.appendChild(trisFiges);
+  if (fige("clear")) figeables.appendChild(btnClear);
+  else container.appendChild(btnClear);
 }
 
 // Filtre J1/J2 : inutile pendant le choix de box et l'analyse (une colonne
@@ -3342,7 +3409,8 @@ async function demarrer() {
       chargerPersonnages(),
       chargerBoss(),
       chargerArmes(),
-      chargerFondsBoss()
+      chargerFondsBoss(),
+      chargerChoixFiltresDraft()
     ]);
     personnagesData = regrouperPourDraft(personnagesBase);
 
