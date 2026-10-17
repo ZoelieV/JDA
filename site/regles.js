@@ -19,11 +19,24 @@ document.querySelectorAll(".sommaire-regles a[href^='#']").forEach(lien => {
   });
 });
 
-document.querySelectorAll(".sommaire-actions [data-tout]").forEach(bouton => {
-  bouton.addEventListener("click", () => {
-    const ouvrir = bouton.dataset.tout === "ouvrir";
-    document.querySelectorAll(".section-regles").forEach(section => { section.open = ouvrir; });
-  });
+// Bouton unique : "Tout replier" si tout est déplié, sinon "Tout déplier".
+const sectionsRegles = document.querySelectorAll(".section-regles");
+const boutonTout = document.querySelector(".sommaire-actions .btn-tout");
+
+function toutEstOuvert() {
+  return [...sectionsRegles].every(section => section.open);
+}
+
+function majBoutonTout() {
+  if (boutonTout) boutonTout.textContent = toutEstOuvert() ? "Tout replier" : "Tout déplier";
+}
+
+boutonTout?.addEventListener("click", () => {
+  const ouvrir = !toutEstOuvert();
+  sectionsRegles.forEach(section => { section.open = ouvrir; });
 });
+
+sectionsRegles.forEach(section => section.addEventListener("toggle", majBoutonTout));
+majBoutonTout();
 
 ouvrirSection(decodeURIComponent(location.hash.slice(1)));

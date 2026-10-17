@@ -91,13 +91,12 @@
 
 .sommaire-actions {
   display: flex;
-  gap: 0.5rem;
+  justify-content: center;
   margin-top: 0.75rem;
 }
 
 .sommaire-actions button {
-  flex: 1;
-  padding: 0.375rem 0.5rem;
+  padding: 0.375rem 1rem;
   border: 1px solid var(--bordure);
   border-radius: 0.5rem;
   background-color: transparent;
