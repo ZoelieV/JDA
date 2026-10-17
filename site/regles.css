@@ -14,3 +14,9 @@
 .cartes-regles .carte-section[hidden] {
   display: none;
 }
+
+/* Pages de règles pas encore rédigées. */
+.regles-en-cours {
+  text-align: center;
+  color: var(--texte-doux);
+}
