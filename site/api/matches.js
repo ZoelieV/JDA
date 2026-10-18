@@ -15,6 +15,7 @@ const { supabase } = require("./_lib/supabase");
 const { infosPersoJoueur, palierTheatre, actualiserPoints, estWorldBossPublic } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
+const { crediterMatchArchive } = require("./_lib/koyns");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
 const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
 const { lireSaisons, saisonDuMatch } = require("./_lib/saisons");
@@ -302,6 +303,8 @@ async function republierLitige(req, res, user) {
   if (!data || data.length === 0) {
     return res.status(404).json({ error: "Litige introuvable ou déjà republié" });
   }
+  // Litige vérifié : Koyns de fin de match donnés (cf. _lib/koyns.js).
+  await crediterMatchArchive(litige);
   return res.status(200).json({ ok: true });
 }
 

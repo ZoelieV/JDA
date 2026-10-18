@@ -469,3 +469,43 @@
     display: none;
   }
 }
+
+/* ---- Koyns (cf. personnalisation.js) ---- */
+/* Solde, à droite du titre. */
+.perso-solde {
+  margin-left: auto;
+  margin-right: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(245, 197, 66, 0.8);
+  border-radius: 1rem;
+  background-color: rgba(245, 197, 66, 0.15);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.perso-solde:empty {
+  display: none;
+}
+
+/* Cosmétique pas encore possédé : assombri, cadenas et prix en bas. */
+.perso-choix-image.verrouille {
+  position: relative;
+}
+
+.perso-choix-image.verrouille img {
+  filter: brightness(0.45) grayscale(0.4);
+}
+
+.perso-prix {
+  position: absolute;
+  left: 50%;
+  bottom: 0.25rem;
+  transform: translateX(-50%);
+  padding: 0.0625rem 0.5rem;
+  border-radius: 0.75rem;
+  background-color: rgba(10, 10, 10, 0.85);
+  color: #f5c542;
+  font-size: 0.75rem;
+  font-weight: bold;
+  white-space: nowrap;
+}

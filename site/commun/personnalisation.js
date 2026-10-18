@@ -14,6 +14,10 @@
 // nouvelles images, sauf ouvrir({ recharger: false }) (Mon compte, qui les
 // met à jour elle-même).
 //
+// Koyns (cf. commun/koyns.js) : les cosmétiques pas encore possédés sont
+// marqués d'un cadenas et s'achètent d'un clic (prix, solde affiché en
+// haut) ; exclusifs : pas en vente. Filtres et tris de la draft : libres.
+//
 // Fond "Mon image" (fond = "perso") : image importée par le joueur,
 // redimensionnée et ré-encodée ici (canvas : seuls les pixels sont gardés,
 // sans métadonnées ni contenu caché), puis gardée dans ce navigateur
@@ -46,6 +50,7 @@
   let brouillon = null;   // choix en cours, appliqués seulement à l'enregistrement
   let ongletActif = "fond";
   let options = {};
+  let koyns = null;       // { solde, prix, tout, possedes: Set, exclusifs: Set } (api/auth/profile.js)
   let imageEnregistree = null; // fond personnel gardé dans ce navigateur (Blob)
   let imageBrouillon = null;   // fond personnel en cours (importé ou retiré)
   const urlsImages = new WeakMap(); // Blob -> URL blob:
@@ -79,7 +84,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=6";
+    lien.href = "/commun/personnalisation.css?v=7";
     document.head.appendChild(lien);
   }
 
@@ -103,6 +108,9 @@
   // Voyageur, Manekin et skins (commun/variantes.js).
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
+  // Ids et cosmétiques gratuits des Koyns (commun/koyns.js).
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=1",
+    () => typeof idCosmetique !== "undefined", "Impossible de charger les Koyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=2",
     () => typeof FILTRES_DRAFT !== "undefined", "Impossible de charger les filtres de la draft.");
@@ -127,10 +135,70 @@
     return nomsPersos;
   }
 
+  // Profil enregistré ; Koyns (solde, cosmétiques possédés) mis à jour au
+  // passage.
   async function lireProfil() {
     const reponse = await fetch("/api/auth/profile", { credentials: "include" });
     if (!reponse.ok) throw new Error("Impossible de charger le profil.");
-    return (await reponse.json()).profil || {};
+    const donnees = await reponse.json();
+    if (donnees.koyns) lireEtatKoyns(donnees.koyns);
+    return donnees.profil || {};
+  }
+
+  // ---- Koyns ----
+
+  function lireEtatKoyns(etat) {
+    koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []) };
+    if (modal) modal.querySelector(".perso-solde").textContent = `${koyns.solde} Koyn${koyns.solde > 1 ? "s" : ""}`;
+  }
+
+  // Choix pas possédés (cosmétiques payants) : sans Koyns chargés, tout est
+  // considéré comme possédé (le serveur vérifie de toute façon).
+  const possede = id => !koyns || koyns.tout || COSMETIQUES_GRATUITS.has(id) || koyns.possedes.has(id);
+  const estExclusif = id => !!koyns?.exclusifs.has(id);
+
+  // Choix enregistrés réduits aux cosmétiques possédés (comme le serveur).
+  function sansNonPossedes(parametres = {}) {
+    const propres = { ...parametres };
+    cosmetiquesParametres(parametres).filter(id => !possede(id)).forEach(id => {
+      const [choix, ...reste] = id.split(":");
+      if (choix === "skin") propres.skins = (propres.skins || []).filter(skin => skin !== reste.join(":"));
+      else delete propres[choix];
+    });
+    return propres;
+  }
+
+  // Achat d'un cosmétique (confirmation d'abord). -> true si possédé ensuite.
+  async function acheter(id, nom) {
+    if (possede(id)) return true;
+    if (estExclusif(id)) {
+      afficherEtat("Cosmétique exclusif : il se gagne aux classements et aux événements.");
+      return false;
+    }
+    const prix = `${koyns.prix} Koyn${koyns.prix > 1 ? "s" : ""}`;
+    if (koyns.solde < koyns.prix) {
+      afficherEtat(`Il faut ${prix} : joue des matchs pour en gagner (5 par match).`);
+      return false;
+    }
+    if (!confirm(`Obtenir « ${nom} » pour ${prix} ? (solde : ${koyns.solde})`)) return false;
+    afficherEtat("Achat…");
+    try {
+      const reponse = await fetch("/api/auth/profile?action=acheter", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cosmetique: id })
+      });
+      const donnees = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(donnees.error || "Achat impossible.");
+      lireEtatKoyns(donnees.koyns);
+      afficherEtat(`« ${nom} » obtenu !`);
+      return true;
+    } catch (erreur) {
+      console.error(erreur);
+      afficherEtat(erreur.message);
+      return false;
+    }
   }
 
   // Choix manquant (ou ancien "aucun") : valeur par défaut.
@@ -214,6 +282,7 @@
       <div class="perso-contenu" role="dialog" aria-modal="true" aria-label="Personnalisation">
         <div class="perso-entete">
           <h2>Personnalisation</h2>
+          <span class="perso-solde" title="Koyns : gagnés en jouant (5 par match), ils servent à obtenir les cosmétiques"></span>
           <button type="button" class="perso-fermer" aria-label="Fermer">×</button>
         </div>
         <div class="perso-apercus">
@@ -335,12 +404,15 @@
 
   // Une image cliquable ; choisir() applique le choix au brouillon.
   // image null : bouton texte (titre affiché), ex. "Importer une image".
-  function creerChoix(image, titre, actif, choisir, classe = "") {
+  // cosmetique : id du cosmétique (commun/koyns.js) ; pas possédé : cadenas
+  // et prix, acheté au clic avant d'être choisi.
+  function creerChoix(image, titre, actif, choisir, classe = "", cosmetique = null) {
     const bouton = document.createElement("button");
     bouton.type = "button";
     bouton.className = `perso-choix-image ${classe}`.trim();
     bouton.title = titre;
     bouton.classList.toggle("active", actif);
+    const verrouille = !!cosmetique && !possede(cosmetique);
     if (image) {
       const img = document.createElement("img");
       img.src = image;
@@ -350,8 +422,17 @@
     } else {
       bouton.textContent = titre;
     }
-    bouton.addEventListener("click", () => {
+    if (verrouille) {
+      bouton.classList.add("verrouille");
+      const badge = document.createElement("span");
+      badge.className = "perso-prix";
+      badge.textContent = estExclusif(cosmetique) ? "🔒 Exclusif" : `🔒 ${koyns.prix} Koyn${koyns.prix > 1 ? "s" : ""}`;
+      bouton.appendChild(badge);
+      bouton.title = `${titre} — ${badge.textContent.slice(3)}`;
+    }
+    bouton.addEventListener("click", async () => {
       if (!brouillon) return;
+      if (verrouille && !await acheter(cosmetique, titre)) return;
       choisir();
       rendreApercus();
       rendreChoix();
@@ -384,7 +465,7 @@
       const grille = nouvelleGrille("variantes");
       choix.forEach(([valeur, option]) => grille.appendChild(creerChoix(
         urlImage(option.image.replace(/^images\//, "")), option.nom, brouillon[cle] === valeur,
-        () => { brouillon[cle] = valeur; })));
+        () => { brouillon[cle] = valeur; }, "", idCosmetique(cle, valeur))));
       conteneur.append(titreSection(titre), grille);
     });
 
@@ -397,7 +478,8 @@
         urlImage(imagesSkin(id).item.replace(/^images\//, "")),
         `${nomsPersos.get(id) || id} : ${actif ? "skin activé (clic pour le retirer)" : "clic pour activer le skin"}`,
         actif,
-        () => { brouillon.skins = actif ? brouillon.skins.filter(s => s !== id) : [...brouillon.skins, id]; }));
+        () => { brouillon.skins = actif ? brouillon.skins.filter(s => s !== id) : [...brouillon.skins, id]; },
+        "", actif ? null : idCosmetique("skin", id)));
     });
     conteneur.append(titreSection("Skins (clic pour activer / retirer)"), grille);
   }
@@ -484,10 +566,13 @@
       if (!recherche || "mon image".includes(recherche)) {
         const grille = nouvelleGrille();
         if (imageBrouillon) {
-          grille.appendChild(creerChoix(urlBlob(imageBrouillon), "Mon image", brouillon.fond === FOND_PERSO, choisir(FOND_PERSO)));
+          grille.appendChild(creerChoix(urlBlob(imageBrouillon), "Mon image", brouillon.fond === FOND_PERSO, choisir(FOND_PERSO), "", idCosmetique("fond", FOND_PERSO)));
         }
+        // Mon image : cosmétique payant (acheté avant d'ouvrir le sélecteur).
         const importer = creerChoix(null, imageBrouillon ? "Changer d'image" : "＋ Importer une image", false, () => {}, "perso-choix-action");
-        importer.addEventListener("click", () => modal.querySelector(".perso-fichier-image").click());
+        importer.addEventListener("click", async () => {
+          if (await acheter(idCosmetique("fond", FOND_PERSO), "Mon image")) modal.querySelector(".perso-fichier-image").click();
+        });
         grille.appendChild(importer);
         if (imageBrouillon) {
           grille.appendChild(creerChoix(null, "Retirer mon image", false, () => {
@@ -511,7 +596,7 @@
         if (!fonds.length) return;
         const grille = nouvelleGrille();
         fonds.forEach(fond => grille.appendChild(creerChoix(
-          urlImage(fond.miniature), fond.id.split("/").pop(), brouillon.fond === fond.id, choisir(fond.id))));
+          urlImage(fond.miniature), fond.id.split("/").pop(), brouillon.fond === fond.id, choisir(fond.id), "", idCosmetique("fond", fond.id))));
         conteneur.append(titreSection((categorie || "Divers").replace(/_/g, " ")), grille);
       });
       return;
@@ -524,7 +609,7 @@
       .sort((a, b) => (b === PARAMETRES_DEFAUT[ongletActif]) - (a === PARAMETRES_DEFAUT[ongletActif]))
       .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche))
       .forEach(chemin => grille.appendChild(creerChoix(
-        urlImage(chemin), nomNamecard(chemin), brouillon[ongletActif] === chemin, choisir(chemin))));
+        urlImage(chemin), nomNamecard(chemin), brouillon[ongletActif] === chemin, choisir(chemin), "", idCosmetique(ongletActif, chemin))));
     conteneur.appendChild(grille);
   }
 
@@ -544,10 +629,11 @@
     mettreAJourPied();
     try {
       const [profil, image] = await Promise.all([
-        lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerFiltresDraft(), chargerNomsPersos()
+        lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerFiltresDraft(), chargerNomsPersos(), chargerKoyns()
       ]);
       imageEnregistree = imageBrouillon = image;
-      enregistres = avecDefauts(profil.parametres);
+      // Cosmétiques plus possédés (lancement des Koyns) : choix par défaut.
+      enregistres = avecDefauts(sansNonPossedes(profil.parametres));
       brouillon = copieChoix(enregistres);
       afficherEtat("");
     } catch (erreur) {

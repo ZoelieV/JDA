@@ -37,6 +37,7 @@ const { estModerateur } = require("./admin");
 const { listeBoss, getBossParId, estWorldBoss, estHorsCoop, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
 const { legendesTueesAujourdhui, legendesTueesParJoueur } = require("./legendes");
 const { saisonActuelle } = require("./saisons");
+const { crediterPartie } = require("./koyns");
 
 const TAILLE_MIN = 1;
 const TAILLE_MAX = 4;
@@ -452,6 +453,13 @@ async function terminerSiComplet(roomId, draft) {
   draft.phase = "termine";
   await sauvegarder(roomId, draft);
   draft.id_partie = await archiver(draft);
+  // Koyns de chaque joueur (plafond : mêmes coéquipiers), écran de fin.
+  if (draft.id_partie) {
+    draft.koyns = await crediterPartie(draft.joueurs.map(id => ({
+      discordId: id,
+      adversaires: draft.joueurs.filter(autre => autre !== id)
+    })), `wb:${draft.id_partie}`);
+  }
   try {
     await sauvegarder(roomId, draft);
   } catch (e) {

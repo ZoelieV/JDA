@@ -32,7 +32,7 @@
   function chargerPersonnalisation() {
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=7";
+      script.src = "/commun/personnalisation.js?v=8";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;
@@ -188,6 +188,21 @@
     });
   }
 
+  // Bonus de connexion d'un événement (Koyns et / ou cosmétique, cf.
+  // api/_lib/koyns.js) : petite annonce en bas de l'écran, quelques
+  // secondes.
+  function annoncerBonusConnexion({ koyns, cosmetique }) {
+    const annonce = document.createElement("div");
+    annonce.className = "annonce-koyns";
+    annonce.setAttribute("role", "status");
+    annonce.textContent = `Bonus de connexion de l'événement : ${[
+      koyns ? `+${koyns} Koyn${koyns > 1 ? "s" : ""}` : "",
+      cosmetique ? "un cosmétique exclusif (à porter depuis Personnalisation)" : ""
+    ].filter(Boolean).join(" et ")} !`;
+    document.body.appendChild(annonce);
+    setTimeout(() => annonce.remove(), 8000);
+  }
+
   async function demarrer() {
     let zone = document.getElementById("zone-compte");
     if (!zone) {
@@ -201,8 +216,9 @@
       const reponse = await fetch("/api/auth/me", { credentials: "include" });
 
       if (reponse.ok) {
-        const { user } = await reponse.json();
+        const { user, bonus_connexion: bonus } = await reponse.json();
         const nom = user.global_name || user.username || "Mon compte";
+        if (bonus) annoncerBonusConnexion(bonus);
 
         // Accès réservés aux administrateurs et mini admins (ex. carte
         // Administration de l'accueil ; lecture seule pour les mini admins).

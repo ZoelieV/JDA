@@ -38,6 +38,8 @@ const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
 const { analyserVitrine, erreurVitrine } = require("./vitrine");
 const { saisonActuelle } = require("./saisons");
+const { detecterTriche, detecterTempsSuspects } = require("./sanctions");
+const { crediterPartie } = require("./koyns");
 
 const TAILLES = [2, 3, 4];
 const FORMATIONS = ["aleatoire", "choix"];
@@ -827,8 +829,17 @@ async function routeConfirmer(req, res, roomId, user) {
   // Manche réservée (écriture conditionnelle) avant d'être archivée.
   draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
   draft.phase = "termine";
+  // Anti-triche (cf. _lib/sanctions.js) : match terminé, mais sans Koyns.
+  const suspect = !!(detecterTriche(draft) || detecterTempsSuspects(draft));
   await sauvegarder(roomId, draft);
   draft.id_match = await archiverEquipe(draft);
+  // Koyns de chaque joueur (adversaires : l'autre équipe), écran de fin.
+  if (draft.id_match) {
+    draft.koyns = await crediterPartie(ROLES.flatMap(role => draft.equipes[role].map(id => ({
+      discordId: id,
+      adversaires: draft.equipes[role === "j1" ? "j2" : "j1"]
+    }))), `match:${draft.id_match}`, suspect ? "suspicion" : null);
+  }
   try {
     await sauvegarder(roomId, draft);
   } catch (e) {

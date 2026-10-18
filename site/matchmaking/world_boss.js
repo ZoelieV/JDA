@@ -194,6 +194,7 @@ function rendreResultat() {
   zone.classList.toggle("reussite", draft.reussite);
   zone.classList.toggle("echec", !draft.reussite);
   zone.innerHTML = `<p class="ligne-vainqueur"><span class="${draft.reussite ? "vainqueur" : "perdant"}">${draft.reussite ? "Défi réussi !" : "Échec"}</span></p>
+    ${htmlGainKoyns(draft.koyns?.[moi?.id])}
     <p class="aide-equipe">Partie enregistrée dans l'historique (onglet Random world boss).</p>`;
 }
 

@@ -1,6 +1,7 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { codeTheatre, actualiserPoints } = require("../_lib/personnages");
 const { verifierFrequenceCompte } = require("../_lib/limites");
+const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique } = require("../_lib/koyns");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
@@ -207,8 +208,19 @@ module.exports = async (req, res) => {
       const rows = await r.json();
       const data = rows[0]?.data || null;
       // Palier de théâtre recalculé (profil enregistré avant le calcul
-      // automatique, ou catalogue changé depuis).
-      return res.status(200).json({ profil: data ? { ...data, theatre: codeTheatre(data) } : null });
+      // automatique, ou catalogue changé depuis). Koyns : solde et
+      // cosmétiques possédés (personnalisation, cf. _lib/koyns.js).
+      return res.status(200).json({
+        profil: data ? { ...data, theatre: codeTheatre(data) } : null,
+        koyns: await etatKoyns(discordId)
+      });
+    }
+
+    // ---- ACHAT D'UN COSMÉTIQUE (?action=acheter, { cosmetique }) ----
+    if (req.method === "POST" && new URL(req.url, "http://x").searchParams.get("action") === "acheter") {
+      const resultat = await acheterCosmetique(discordId, req.body?.cosmetique);
+      if (!resultat.ok) return res.status(resultat.status).json({ error: resultat.erreur });
+      return res.status(200).json({ koyns: await etatKoyns(discordId) });
     }
 
     // ---- SAUVEGARDE DU PROFIL ----
@@ -239,6 +251,8 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: ERREUR_UID });
       }
       profil = nettoyerProfil(profil);
+      // Cosmétiques pas possédés : retirés (retour au choix par défaut).
+      profil.parametres = filtrerParametresPossedes(profil.parametres, await lirePossedes(discordId));
 
       // Profil valide seulement : un envoi refusé ne compte pas.
       const attente = await verifierFrequenceCompte(discordId, "profil", DELAI_ENREGISTREMENT_MS);

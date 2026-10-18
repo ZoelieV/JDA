@@ -49,6 +49,14 @@
 //   { limites_equilibrage: {...} }   limites par palier : équilibrage
 //                                    calculé, points max d'une box
 //                                    jouable hors full box
+//   { cosmetiques_exclusifs: [id...] }  Koyns : cosmétiques pas en vente
+//                                    (gagnés aux classements, événements)
+//   { bonus_connexion: { debut, fin, koyns, cosmetique } | null }  bonus
+//                                    quotidien de connexion d'un événement
+//   { don: { discord_id, koyns, cosmetique } }  donne des Koyns (négatif :
+//                                    en retire) et / ou un cosmétique à un
+//                                    joueur (config inchangée ; cf.
+//                                    _lib/koyns.js)
 //   { equilibrage: méthode }         méthode des bans d'équilibrage des
 //                                    prochaines drafts (cf. _lib/personnages.js)
 const { supabase } = require("./_lib/supabase");
@@ -56,6 +64,8 @@ const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
+const { COSMETIQUES_GRATUITS } = require("../commun/koyns.js");
+const { estCosmetique, donner, MAX_KOYNS_DON } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
@@ -339,6 +349,37 @@ module.exports = async (req, res) => {
         // Ancien interrupteur (world_boss_desactive) retiré.
         const { world_boss_desactive: _ancien, ...reste } = ancienne;
         config = { ...reste, world_boss_public: corps.world_boss_public };
+      } else if (Array.isArray(corps.cosmetiques_exclusifs)) {
+        const inconnus = corps.cosmetiques_exclusifs.filter(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id));
+        if (inconnus.length) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnus[0]}` });
+        config = { ...ancienne, cosmetiques_exclusifs: [...new Set(corps.cosmetiques_exclusifs)].sort() };
+      } else if ("bonus_connexion" in corps) {
+        const bonus = corps.bonus_connexion;
+        if (bonus === null) {
+          const { bonus_connexion: _ancien, ...reste } = ancienne;
+          config = reste;
+        } else {
+          const debut = Date.parse(bonus?.debut);
+          const fin = Date.parse(bonus?.fin);
+          const koyns = Number(bonus?.koyns ?? 0);
+          const cosmetique = bonus?.cosmetique || null;
+          if (!Number.isFinite(debut) || !Number.isFinite(fin) || fin <= debut) return res.status(400).json({ error: "Dates du bonus invalides (fin après le début)" });
+          if (!Number.isInteger(koyns) || koyns < 0 || koyns > MAX_KOYNS_DON) return res.status(400).json({ error: `Koyns du bonus : entier de 0 à ${MAX_KOYNS_DON}` });
+          if (cosmetique !== null && !estCosmetique(cosmetique)) return res.status(400).json({ error: "Cosmétique du bonus inconnu" });
+          if (!koyns && !cosmetique) return res.status(400).json({ error: "Le bonus ne donne rien (ni Koyns ni cosmétique)" });
+          config = { ...ancienne, bonus_connexion: { debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString(), koyns, cosmetique } };
+        }
+      } else if (corps.don) {
+        const { discord_id: cible, koyns: brutKoyns = 0, cosmetique = null } = corps.don;
+        const koyns = Number(brutKoyns);
+        if (typeof cible !== "string" || !/^\d{5,25}$/.test(cible)) return res.status(400).json({ error: "Joueur invalide" });
+        if (!Number.isInteger(koyns) || Math.abs(koyns) > MAX_KOYNS_DON) return res.status(400).json({ error: `Koyns : entier de -${MAX_KOYNS_DON} à ${MAX_KOYNS_DON}` });
+        if (cosmetique !== null && !estCosmetique(cosmetique)) return res.status(400).json({ error: "Cosmétique inconnu" });
+        if (!koyns && !cosmetique) return res.status(400).json({ error: "Rien à donner" });
+        const { data: profil } = await supabase.from("profiles").select("discord_id").eq("discord_id", cible).maybeSingle();
+        if (!profil) return res.status(404).json({ error: "Joueur introuvable" });
+        await donner(cible, { koyns, cosmetique }, user.id);
+        return res.status(200).json({ ok: true });
       } else if (corps.categoriesArmes) {
         const ids = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));
         const modifs = { ...(ancienne.categoriesArmes || {}) };

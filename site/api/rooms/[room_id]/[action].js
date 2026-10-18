@@ -17,6 +17,7 @@ const { TEMPS_ABANDON, parserResultat, messageFormatInvalide, determinerVainqueu
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
 const { calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH, erreurPointsBox, palierDraftRoom } = require("../../_lib/boxes");
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
+const { crediterMatch } = require("../../_lib/koyns");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
 const {
   PHASES_PAUSABLES,
@@ -748,14 +749,15 @@ async function handleConfirmerTemps(req, res, roomId, user) {
 
   if (draft.temps_confirme_j1 && draft.temps_confirme_j2) {
     const classe = room.type === "classe";
-    // Anti-triche (classé) : somme des temps supérieure au temps écoulé
-    // depuis l'affichage de la saisie = impossible -> match invalidé et
-    // transmis aux administrateurs (cf. _lib/sanctions.js).
-    const triche = classe ? detecterTriche(draft) : null;
-    // Temps sous les meilleurs temps connus de ce boss : transmis aussi aux
-    // administrateurs (danger 1 ou 2, cf. TEMPS_SUSPECTS).
-    const suspicion = classe ? detecterTempsSuspects(draft) : null;
-    if (triche || suspicion) {
+    // Anti-triche : somme des temps supérieure au temps écoulé depuis
+    // l'affichage de la saisie = impossible ; temps sous les meilleurs
+    // temps connus de ce boss (danger 1 ou 2, cf. TEMPS_SUSPECTS). Classé :
+    // match invalidé et transmis aux administrateurs (cf.
+    // _lib/sanctions.js) ; autres matchs : terminés normalement, mais sans
+    // Koyns (cf. _lib/koyns.js).
+    const triche = detecterTriche(draft);
+    const suspicion = detecterTempsSuspects(draft);
+    if (classe && (triche || suspicion)) {
       draft.phase = "litige";
       draft.litige_par = null;
       draft.vainqueur = null;
@@ -775,6 +777,8 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     draft.serie_classe = null;
     await sauvegarderDraft(roomId, draft);
     const idMatch = await archiverMatch(draft, { classe });
+    // { discordId: { montant, raison } } : Koyns gagnés, écran de fin.
+    draft.koyns = await crediterMatch(draft, idMatch, triche || suspicion ? "suspicion" : null);
     // { j1, j2, bonus } (null hors classé) : écran de fin de match.
     draft.resultat_trophees = classe ? await resultatTrophees(idMatch) : null;
     // Classé : victoires du jour de chacun contre l'autre (2 au plus).

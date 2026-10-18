@@ -647,3 +647,21 @@ body::before {
 .zoom-site-valeur:hover {
   border-color: rgba(245, 197, 66, 0.8);
 }
+
+/* Bonus de connexion d'un événement (Koyns, cf. commun/compte.js). */
+.annonce-koyns {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  z-index: 1000;
+  transform: translateX(-50%);
+  max-width: calc(100% - 2rem);
+  padding: 0.75rem 1.25rem;
+  border: 1px solid rgba(245, 197, 66, 0.8);
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.95);
+  color: #ffffff;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 0 1.5rem rgba(245, 197, 66, 0.3);
+}

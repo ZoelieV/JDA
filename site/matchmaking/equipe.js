@@ -546,6 +546,8 @@ function rendreTemps() {
   }
   if (draft.phase === "termine") {
     contenu += `<p class="ligne-resultat">${draft.vainqueur === "egalite" ? "Égalité" : `Victoire de l'${NOMS_EQUIPES[draft.vainqueur]?.toLowerCase() || "équipe"}`}</p>`;
+    // Koyns gagnés par le joueur connecté (cf. commun/koyns.js).
+    contenu += htmlGainKoyns(draft.koyns?.[moi?.id]);
   }
   if (draft.phase === "litige") contenu += `<p class="ligne-resultat litige">Litige : match transmis aux administrateurs</p>`;
 

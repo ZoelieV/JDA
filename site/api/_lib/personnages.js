@@ -182,6 +182,14 @@ function estAjout(genre, id) {
 const DUREE_CACHE_POINTS_MS = 30 * 1000;
 let pointsLusA = 0;
 
+// Koyns (cf. _lib/koyns.js) : cosmétiques exclusifs (pas en vente, gagnés
+// aux classements ou aux événements) et bonus de connexion d'événement.
+let configKoyns = { exclusifs: new Set(), bonusConnexion: null };
+
+function getConfigKoyns() {
+  return configKoyns;
+}
+
 async function actualiserPoints() {
   if (Date.now() - pointsLusA < DUREE_CACHE_POINTS_MS) return;
   try {
@@ -203,6 +211,10 @@ async function actualiserPoints() {
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     modesBonus = config.modes || {};
+    configKoyns = {
+      exclusifs: new Set(Array.isArray(config.cosmetiques_exclusifs) ? config.cosmetiques_exclusifs : []),
+      bonusConnexion: config.bonus_connexion || null
+    };
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
     bossList.forEach(b => {
@@ -369,6 +381,7 @@ function codeTheatre(profilData) {
 }
 
 module.exports = {
+  getConfigKoyns,
   MODES_EQUILIBRAGE,
   LIMITES_EQUILIBRAGE_DEFAUT,
   lireLimitesEquilibrage,

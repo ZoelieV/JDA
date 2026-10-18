@@ -2775,6 +2775,7 @@ function rendreTermine() {
     <p class="ligne-vainqueur">${ligneVainqueur}</p>
     <p class="ligne-temps">${joueur1.pseudo} : ${draft.temps_j1.affiche} — ${joueur2.pseudo} : ${draft.temps_j2.affiche}</p>
     ${ligneTrophees}
+    ${monRole ? htmlGainKoyns(draft.koyns?.[draft[`discord_${monRole}`]]) : ""}
     ${ligneSerie}
     ${legende ? `<p class="ligne-temps">${legende}</p>` : ""}
   `;
