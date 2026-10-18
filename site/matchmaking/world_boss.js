@@ -284,28 +284,19 @@ function rendreAnnule() {
 
 // ---- Boss, fond d'écran, localisation des légendes ----
 
-const ELEMENTS_RES_BOSS = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
 const FOND_DEFAUT = "/DB/images/bg_web/autres/default_bg.webp";
 let fondsBoss = [];
 let fondApplique = null;
 let bossAffiche = null;
 
-// Image cliquable (résistances), nom, et localisation d'une légende locale.
+// Image cliquable (résistances et recommandations), nom, et localisation
+// d'une légende locale.
 function rendreBoss() {
   const boss = bossParId.get(draft.boss_id);
   if (!boss || bossAffiche === boss.id) return;
   bossAffiche = boss.id;
-  const res = ELEMENTS_RES_BOSS.map((element, i) => {
-    const valeur = Number(boss.res?.[i] ?? 0);
-    const nom = element.charAt(0).toUpperCase() + element.slice(1);
-    return `<span class="res-boss${estImmunise(valeur) ? " immunise" : ""}" title="${estImmunise(valeur) ? `Immunisé ${nom}` : `Résistance ${nom}`}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${nom}">${texteResistance(valeur, "")}</span>`;
-  }).join("");
   $("boss-wb").innerHTML = `
-    <button type="button" class="image-boss-res" title="Voir les résistances">
-      ${htmlImagesBoss(boss)}
-      <span class="resistances-boss">${res}</span>
-    </button>
-    <span class="indice-res-boss">Voir les Res</span>
+    ${htmlImageInfosBoss(boss, false)}
     <span class="nom-boss">${echapperHtml(boss.nom)}</span>
     ${estLegendeLocale(boss) ? `<button type="button" class="btn-carte-legende" title="Où trouver cette légende locale"><img src="../DB/images/others/Icon_Map.webp" alt="">Localisation</button>` : ""}`;
 }

@@ -14,8 +14,10 @@
 // GET  : { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
-//          boss: { id: { nom, res, chrono } }, categoriesArmes: { id: [...] },
-//                       (chrono : "message" | "premier_pas" | "barre_vie" | null)
+//          boss: { id: { nom, res, chrono, reco } }, categoriesArmes: { id: [...] },
+//                       (chrono : "message" | "premier_pas" | "barre_vie" | null ;
+//                       reco : { elements, reactions, mecaniques } | null,
+//                       cf. commun/recommandations_boss.js)
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
 //          alternatives_armes: { id: 0|25|50|75 },  (valeur alternative des
 //                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
@@ -37,7 +39,7 @@
 //                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
-//   { boss: { id: { nom, res, chrono } } }  modifie des boss
+//   { boss: { id: { nom, res, chrono, reco } } }  modifie des boss
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
@@ -53,6 +55,7 @@ const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
+const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
@@ -158,12 +161,13 @@ function nettoyerMasques(masques, ids) {
 // MOMENTS_CHRONO dans commun/cartes.js) ; absent = bouton pas affiché.
 const MOMENTS_CHRONO = ["message", "premier_pas", "barre_vie"];
 
-// Nom, 7 résistances et début du chrono (facultatif) d'un boss, ou null.
+// Nom, 7 résistances, début du chrono (facultatif) et recommandations
+// (facultatives : valeurs inconnues ignorées) d'un boss, ou null.
 function validerModifBoss(brut = {}) {
   const nom = texte(brut.nom);
   const res = Array.from({ length: NB_RESISTANCES }, (_, i) => Number(brut.res?.[i] ?? 0));
   if (brut.chrono != null && !MOMENTS_CHRONO.includes(brut.chrono)) return null;
-  return nom && res.every(Number.isFinite) ? { nom, res, chrono: brut.chrono ?? null } : null;
+  return nom && res.every(Number.isFinite) ? { nom, res, chrono: brut.chrono ?? null, reco: lireRecommandationsBoss(brut.reco) } : null;
 }
 
 // Réponse du GET hors administrateurs : les ajouts masqués (absents des JSON

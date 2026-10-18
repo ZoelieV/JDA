@@ -91,7 +91,8 @@ function appliquerResSemaine(liste, maintenant = Date.now()) {
   return liste;
 }
 
-// Nom, résistances et début du chrono des boss modifiés par les
+// Nom, résistances, début du chrono et recommandations (cf.
+// commun/recommandations_boss.js) des boss modifiés par les
 // administrateurs.
 function appliquerModifsBoss(liste, modifs) {
   liste.forEach(boss => {
@@ -99,6 +100,7 @@ function appliquerModifsBoss(liste, modifs) {
     if (typeof modif?.nom === "string") boss.nom = modif.nom;
     if (Array.isArray(modif?.res)) boss.res = modif.res;
     if (modif && "chrono" in modif) boss.chrono = MOMENTS_CHRONO[modif.chrono] ? modif.chrono : null;
+    if (modif && "reco" in modif) boss.reco = modif.reco || null;
   });
   return liste;
 }

@@ -1671,3 +1671,83 @@ body {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+/* Recommandations d'un boss (cf. admin_boss.js) : bouton "n conseils" et
+   éditeur déplié sous la ligne du boss. L'éditeur prend la largeur du
+   tableau sans l'élargir (width: 0 + min-width: 100%). */
+.btn-reco-boss {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  background-color: #2b2b2b;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-reco-boss[aria-expanded="true"] {
+  border-color: var(--accent-bordure);
+}
+
+.tableau-boss tbody tr.ligne-reco-boss {
+  border-top: none;
+}
+
+.editeur-reco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 0;
+  min-width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  text-align: left;
+}
+
+.groupe-reco {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.titre-groupe-reco {
+  width: 6rem;
+  font-weight: bold;
+}
+
+.choix-reco {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  background: none;
+  color: var(--texte-doux);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.choix-reco img {
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.45;
+}
+
+.choix-reco.actif {
+  border-color: var(--accent-bordure);
+  background-color: var(--accent-fond);
+  color: var(--texte);
+}
+
+.choix-reco.actif img {
+  opacity: 1;
+}
+
+.saisie-mecanique {
+  width: 12rem;
+}

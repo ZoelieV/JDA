@@ -1627,25 +1627,14 @@ function rendreBansEquilibrage() {
   });
 }
 
-// Boss tiré : image cliquable qui affiche / masque ses résistances
-// élémentaires par-dessus (en %, même ordre que boss.res, cf.
-// admin_ppc/admin_ajout.js), avec une petite indication sous l'image.
-const ELEMENTS_RES_BOSS = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
-
+// Boss tiré : image cliquable qui affiche / masque ses résistances et ses
+// recommandations par-dessus, sauf en match classé (compétitif : image
+// seule, cf. commun/recommandations_boss.js).
 function htmlBossTire(boss) {
   if (!boss) return "";
-  const res = ELEMENTS_RES_BOSS.map((element, i) => {
-    const valeur = Number(boss.res?.[i] ?? 0);
-    const nom = element.charAt(0).toUpperCase() + element.slice(1);
-    return `<span class="res-boss${estImmunise(valeur) ? " immunise" : ""}" title="${estImmunise(valeur) ? `Immunisé ${nom}` : `Résistance ${nom}`}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${nom}">${texteResistance(valeur, "")}</span>`;
-  }).join("");
   return `
-    <button type="button" class="image-boss-res" title="Voir les résistances">
-      ${htmlImagesBoss(boss)}
-      <span class="resistances-boss">${res}</span>
-    </button>
-    <span class="indice-res-boss">Voir les Res</span>
-    <span class="nom-boss">${boss.nom}</span>`;
+    ${htmlImageInfosBoss(boss, estMatchClasse())}
+    <span class="nom-boss">${echapperHtml(boss.nom)}</span>`;
 }
 
 // Théâtre de la draft : fixé par le serveur au tirage du boss ; avant,

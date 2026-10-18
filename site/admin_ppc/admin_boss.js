@@ -1,12 +1,16 @@
-// Boss : consultation et modification du nom, des résistances et du début
+// Boss : consultation et modification du nom, des résistances, du début
 // du chrono (MOMENTS_CHRONO, commun/cartes.js ; aucun = pas de bouton Chrono
-// en fin de draft) de chaque boss (JSON de DB/ et ajouts), enregistrés dans Supabase (api/points.js,
+// en fin de draft) et des recommandations (éléments, réactions, mécaniques,
+// affichées hors match classé, cf. commun/recommandations_boss.js) de chaque
+// boss (JSON de DB/ et ajouts), enregistrés dans Supabase (api/points.js,
 // config.boss) et appliqués sur tout le site. Utilise listeBoss,
 // ELEMENTS_AJOUT, LIBELLES_ELEMENTS, TYPES_BOSS, echapper, lireResistance et
 // envoyerAjout (admin_ajout.js). Résistances en pourcentage (10 = 10 %).
 
-let brouillonBoss = {};  // id -> { nom, res, chrono }
+let brouillonBoss = {};  // id -> { nom, res, chrono, reco }
 let bossEnregistres = "";
+// Boss dont l'éditeur des recommandations est déplié.
+const recoOuvertes = new Set();
 
 function etatBoss() {
   return JSON.stringify(brouillonBoss);
@@ -24,6 +28,7 @@ function rendreBoss() {
           <th class="col-nom">Boss</th>
           ${ELEMENTS_AJOUT.map(element => `<th title="Résistance ${LIBELLES_ELEMENTS[element]}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${LIBELLES_ELEMENTS[element]}"></th>`).join("")}
           <th title="Début du chrono (bouton Chrono en fin de draft)">Chrono</th>
+          <th title="Éléments, réactions et mécaniques recommandés (hors match classé)">Conseils</th>
         </tr>
       </thead>
       <tbody>
@@ -51,11 +56,88 @@ function rendreBoss() {
                 ${Object.entries(MOMENTS_CHRONO).map(([cle, moment]) => `<option value="${cle}"${b.chrono === cle ? " selected" : ""}>${moment.libelle}</option>`).join("")}
               </select>
             </td>
+            <td>
+              <button type="button" class="btn-reco-boss" data-id="${echapper(boss.id)}" aria-expanded="${recoOuvertes.has(boss.id)}">${texteBoutonReco(b.reco)}</button>
+            </td>
+          </tr>
+          <tr class="ligne-reco-boss${recoOuvertes.has(boss.id) ? "" : " cache"}" data-id="${echapper(boss.id)}">
+            <td colspan="${ELEMENTS_AJOUT.length + 3}">${htmlEditeurReco(boss.id)}</td>
           </tr>`;
         }).join("")}
       </tbody>
     </table>`;
   majPiedBoss();
+}
+
+// ---- Recommandations (cf. commun/recommandations_boss.js) ----
+
+function nbRecos(reco) {
+  return reco ? reco.elements.length + reco.reactions.length + reco.mecaniques.length : 0;
+}
+
+function texteBoutonReco(reco) {
+  const n = nbRecos(reco);
+  return n ? `${n} conseil${n > 1 ? "s" : ""}` : "Ajouter";
+}
+
+function htmlChoixReco(id, genre, valeur, libelle, actif, contenu = libelle) {
+  return `<button type="button" class="choix-reco${actif ? " actif" : ""}" data-id="${echapper(id)}" data-genre="${genre}" data-valeur="${echapper(valeur)}" aria-pressed="${actif}" title="${echapper(libelle)}">${contenu}</button>`;
+}
+
+function htmlEditeurReco(id) {
+  const reco = brouillonBoss[id].reco || { elements: [], reactions: [], mecaniques: [] };
+  return `
+    <div class="editeur-reco">
+      <div class="groupe-reco">
+        <span class="titre-groupe-reco">Éléments</span>
+        ${ELEMENTS_BOSS.map(e => htmlChoixReco(id, "elements", e, LIBELLES_ELEMENTS[e], reco.elements.includes(e), `<img src="${ICONES_ELEMENTS_TRI[e]}" alt="${LIBELLES_ELEMENTS[e]}">`)).join("")}
+      </div>
+      <div class="groupe-reco">
+        <span class="titre-groupe-reco">Réactions</span>
+        ${Object.entries(REACTIONS_BOSS).map(([r, nom]) => htmlChoixReco(id, "reactions", r, nom, reco.reactions.includes(r))).join("")}
+      </div>
+      <div class="groupe-reco">
+        <span class="titre-groupe-reco">Mécaniques</span>
+        ${reco.mecaniques.map(m => htmlChoixReco(id, "mecaniques", m, `Retirer « ${m} »`, true, `${echapper(m)} ×`)).join("")}
+        ${MECANIQUES_SUGGEREES.filter(m => !reco.mecaniques.some(x => x.toLowerCase() === m.toLowerCase()))
+          .map(m => htmlChoixReco(id, "mecaniques", m, `Ajouter « ${m} »`, false, `+ ${echapper(m)}`)).join("")}
+        <input type="text" class="texte-ajout saisie-mecanique" data-id="${echapper(id)}" maxlength="30" placeholder="Autre mécanique (Entrée)" autocomplete="off">
+      </div>
+    </div>`;
+}
+
+// Recommandations du boss modifiées : rangées et nettoyées comme par le
+// serveur (null si aucune), éditeur et bouton de la ligne mis à jour.
+function modifierReco(id, changer) {
+  const reco = brouillonBoss[id].reco || { elements: [], reactions: [], mecaniques: [] };
+  const copie = { elements: [...reco.elements], reactions: [...reco.reactions], mecaniques: [...reco.mecaniques] };
+  changer(copie);
+  brouillonBoss[id].reco = lireRecommandationsBoss(copie);
+  const liste = document.getElementById("liste-boss");
+  const ligne = [...liste.querySelectorAll(".ligne-reco-boss")].find(l => l.dataset.id === id);
+  if (ligne) ligne.firstElementChild.innerHTML = htmlEditeurReco(id);
+  const bouton = [...liste.querySelectorAll(".btn-reco-boss")].find(b => b.dataset.id === id);
+  if (bouton) bouton.textContent = texteBoutonReco(brouillonBoss[id].reco);
+  document.getElementById("message-boss").classList.remove("succes");
+  majPiedBoss();
+}
+
+function basculerChoixReco(bouton) {
+  const { id, genre, valeur } = bouton.dataset;
+  modifierReco(id, reco => {
+    const avant = reco[genre].length;
+    reco[genre] = reco[genre].filter(v => v !== valeur);
+    if (reco[genre].length === avant) reco[genre].push(valeur);
+  });
+}
+
+function ajouterMecanique(champ) {
+  const texte = champ.value.trim();
+  if (!texte) return;
+  const id = champ.dataset.id;
+  modifierReco(id, reco => { reco.mecaniques.push(texte); });
+  const nouveau = [...document.querySelectorAll("#liste-boss .saisie-mecanique")].find(c => c.dataset.id === id);
+  nouveau?.focus();
 }
 
 function majPiedBoss() {
@@ -77,8 +159,10 @@ function ouvrirBoss() {
   brouillonBoss = Object.fromEntries(listeBoss.map(boss => [boss.id, {
     nom: boss.nom,
     res: Array.from({ length: ELEMENTS_AJOUT.length }, (_, i) => Number(boss.res?.[i] ?? 0)),
-    chrono: MOMENTS_CHRONO[boss.chrono] ? boss.chrono : null
+    chrono: MOMENTS_CHRONO[boss.chrono] ? boss.chrono : null,
+    reco: lireRecommandationsBoss(boss.reco)
   }]));
+  recoOuvertes.clear();
   bossEnregistres = etatBoss();
   afficherMessageBoss("");
   rendreBoss();
@@ -96,14 +180,14 @@ async function enregistrerBoss() {
   const avant = JSON.parse(bossEnregistres);
   const modifs = Object.fromEntries(Object.entries(brouillonBoss)
     .filter(([id, b]) => JSON.stringify(b) !== JSON.stringify(avant[id]))
-    .map(([id, b]) => [id, { nom: b.nom.trim(), res: b.res, chrono: b.chrono }]));
+    .map(([id, b]) => [id, { nom: b.nom.trim(), res: b.res, chrono: b.chrono, reco: b.reco }]));
   bouton.disabled = true;
   try {
     await envoyerAjout({ boss: modifs });
     Object.entries(modifs).forEach(([id, modif]) => {
       const boss = listeBoss.find(b => b.id === id);
-      if (boss) Object.assign(boss, { nom: modif.nom, res: [...modif.res], chrono: modif.chrono });
-      brouillonBoss[id] = { nom: modif.nom, res: [...modif.res], chrono: modif.chrono };
+      if (boss) Object.assign(boss, { nom: modif.nom, res: [...modif.res], chrono: modif.chrono, reco: modif.reco });
+      brouillonBoss[id] = { nom: modif.nom, res: [...modif.res], chrono: modif.chrono, reco: modif.reco };
     });
     bossEnregistres = etatBoss();
     afficherMessageBoss("Boss enregistrés : les changements s'appliquent sur tout le site.", "succes");
@@ -155,6 +239,25 @@ function initialiserBoss() {
   });
   document.getElementById("enregistrer-boss").addEventListener("click", enregistrerBoss);
 
+  document.getElementById("liste-boss").addEventListener("click", event => {
+    const ouvrir = event.target.closest(".btn-reco-boss");
+    const choix = event.target.closest(".choix-reco");
+    if (ouvrir) {
+      const id = ouvrir.dataset.id;
+      const ouverte = !recoOuvertes.has(id);
+      if (ouverte) recoOuvertes.add(id);
+      else recoOuvertes.delete(id);
+      ouvrir.setAttribute("aria-expanded", ouverte);
+      [...document.querySelectorAll("#liste-boss .ligne-reco-boss")].find(l => l.dataset.id === id)?.classList.toggle("cache", !ouverte);
+    }
+    if (choix) basculerChoixReco(choix);
+  });
+  document.getElementById("liste-boss").addEventListener("keydown", event => {
+    const champ = event.target.closest(".saisie-mecanique");
+    if (!champ || event.key !== "Enter") return;
+    event.preventDefault();
+    ajouterMecanique(champ);
+  });
   document.getElementById("liste-boss").addEventListener("input", event => {
     const nom = event.target.closest(".nom-boss");
     const res = event.target.closest(".res-boss");
