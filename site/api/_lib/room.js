@@ -155,6 +155,36 @@ async function abandonnerMatchClasse(supabase, roomId, draft, role) {
   return true;
 }
 
+// Match classé en cours du joueur (room complète, manche pas finie, room
+// consultée depuis moins de ACTIVITE_MATCH_CLASSE_MS) : il n'est jamais
+// quitté en démarrant ou rejoignant un autre match (ce serait un abandon,
+// cf. abandonnerMatchClasse) ; la recherche y renvoie, le reste est refusé.
+// Room inactive (match laissé à l'abandon) : plus bloquante.
+// -> id de la room, ou null.
+const ACTIVITE_MATCH_CLASSE_MS = 10 * 60 * 1000;
+const ERREUR_MATCH_CLASSE = "Tu as un match classé en cours : termine-le d'abord.";
+
+async function matchClasseEnCours(supabase, discordId, { sauf = null } = {}) {
+  let requete = supabase
+    .from("rooms")
+    .select("room_id, draft")
+    .eq("type", "classe")
+    .not("player2_discord_id", "is", null)
+    .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`)
+    .gte("last_active_at", new Date(Date.now() - ACTIVITE_MATCH_CLASSE_MS).toISOString());
+  if (sauf) requete = requete.neq("room_id", sauf);
+  const { data, error } = await requete;
+  if (error) {
+    console.error("Erreur lecture des matchs classés du joueur :", error);
+    return null;
+  }
+  const enCours = (data || []).find(room => {
+    const draft = room.draft || {};
+    return !PHASES_FINIES.includes(draft.phase) && draft.phase !== "non_equilibrable" && !draft.quitte_par;
+  });
+  return enCours?.room_id || null;
+}
+
 async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
   let requete = supabase
     .from("rooms")
@@ -225,6 +255,8 @@ async function quitterRoom(supabase, room, discordId) {
 
 module.exports = {
   ecrireDraft,
+  ERREUR_MATCH_CLASSE,
+  matchClasseEnCours,
   annulerAutresMatchs,
   determinerRole,
   getAutreJoueur,

@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
-const { annulerAutresMatchs } = require("../_lib/room");
+const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("../_lib/room");
 const { verifierFrequence } = require("../_lib/limites");
 const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur, resoudreTheatre, theatreProfil } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
@@ -164,6 +164,8 @@ async function creerEquipe(req, res, user) {
     return res.status(429).json({ error: `Une room par minute au maximum : réessaie dans ${secondes} s.`, attente: secondes });
   }
 
+  const enCours = await matchClasseEnCours(supabase, user.id);
+  if (enCours) return res.status(409).json({ error: ERREUR_MATCH_CLASSE, room_id: enCours });
   await annulerAutresMatchs(supabase, user.id);
   const roomId = genererRoomId();
   const { error } = await supabase.from("rooms").insert({
@@ -196,6 +198,8 @@ async function creerWorldBoss(req, res, user) {
     return res.status(429).json({ error: `Une room par minute au maximum : réessaie dans ${secondes} s.`, attente: secondes });
   }
 
+  const enCours = await matchClasseEnCours(supabase, user.id);
+  if (enCours) return res.status(409).json({ error: ERREUR_MATCH_CLASSE, room_id: enCours });
   await annulerAutresMatchs(supabase, user.id);
   const roomId = genererRoomId();
   const { error } = await supabase.from("rooms").insert({
@@ -292,7 +296,10 @@ module.exports = async (req, res) => {
       return res.status(429).json({ error: `Une room privée par minute au maximum : réessaie dans ${secondes} s.`, attente: secondes });
     }
 
-    // Ancienne room en attente supprimée, match en cours annulé.
+    // Ancienne room en attente supprimée, match en cours annulé (sauf un
+    // match classé en cours : refusé).
+    const enCours = await matchClasseEnCours(supabase, user.id);
+    if (enCours) return res.status(409).json({ error: ERREUR_MATCH_CLASSE, room_id: enCours });
     await annulerAutresMatchs(supabase, user.id);
 
     const roomId = genererRoomId();

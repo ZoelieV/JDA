@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE } = require("../_lib/matchmaking");
-const { annulerAutresMatchs } = require("../_lib/room");
+const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("../_lib/room");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -116,6 +116,10 @@ module.exports = async (req, res) => {
       if (room.player2_discord_id || TYPES_FILE.includes(room.type) || enSpectateur) {
         return res.status(200).json({ ...room, spectateur: true });
       }
+
+      // Match classé en cours : pas d'autre match (ce serait un abandon).
+      const enCours = await matchClasseEnCours(supabase, user.id, { sauf: roomId });
+      if (enCours) return res.status(409).json({ error: ERREUR_MATCH_CLASSE, room_id: enCours });
 
       // Mise à jour conditionnelle : si deux personnes ouvrent le lien en
       // même temps, une seule devient player2.

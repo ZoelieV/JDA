@@ -4,7 +4,16 @@
 // via api/rooms. On arrive ensuite sur la page du match (attente de
 // l'adversaire).
 
+// Une seule demande à la fois, et plus rien une fois la page du match en
+// cours d'ouverture : un 2e clic (double clic, page lente à s'ouvrir)
+// relançait une recherche qui faisait quitter le match à peine trouvé
+// (abandon en classé, cf. annulerAutresMatchs dans api/_lib/room.js).
+let creationEnCours = false;
+
 async function creerMatch(corps) {
+  if (creationEnCours) return;
+  creationEnCours = true;
+  let ouverture = false;
   try {
     const reponse = await fetch("/api/rooms", {
       method: "POST",
@@ -22,8 +31,14 @@ async function creerMatch(corps) {
     // Refus avec un message du serveur (mode classique sans théâtre, box
     // d'entraînement trop petite...).
     if (reponse.status === 409 || reponse.status === 400) {
-      const { error } = await reponse.json().catch(() => ({}));
+      const { error, room_id: matchEnCours } = await reponse.json().catch(() => ({}));
       alert(error || "Impossible de lancer ce mode.");
+      // Match classé en cours (cf. matchClasseEnCours, api/_lib/room.js) :
+      // retour à ce match.
+      if (matchEnCours) {
+        ouverture = true;
+        window.location.href = `match.html?room=${encodeURIComponent(matchEnCours)}`;
+      }
       return;
     }
 
@@ -43,12 +58,21 @@ async function creerMatch(corps) {
     const data = await reponse.json();
 
     // Mode en équipe / Random world boss : page de leur lobby.
+    ouverture = true;
     window.location.href = `${data.equipe ? "equipe" : data.world_boss ? "world_boss" : "match"}.html?room=${data.room_id}`;
   } catch (error) {
     console.error(error);
     alert("Erreur lors de la création du match.");
+  } finally {
+    if (!ouverture) creationEnCours = false;
   }
 }
+
+// Retour sur cette page par le bouton Précédent (page gardée en cache) :
+// nouvelle demande de nouveau possible.
+window.addEventListener("pageshow", event => {
+  if (event.persisted) creationEnCours = false;
+});
 
 // Options d'un menu de choix du boss : légendes locales regroupées à part
 // (celles déjà tuées aujourd'hui sont refusées par le serveur).

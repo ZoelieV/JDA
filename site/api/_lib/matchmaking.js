@@ -25,7 +25,7 @@
 // DELETE -> annuler() : supprime les rooms en attente du joueur (2 files).
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
-const { annulerAutresMatchs } = require("./room");
+const { annulerAutresMatchs, matchClasseEnCours } = require("./room");
 const { banClasse, messageBan } = require("./sanctions");
 const { serieDuJour } = require("./serie_classe");
 
@@ -101,8 +101,13 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
   }
 
   // Début d'une recherche (pas un rappel de la page d'attente) : un seul
-  // match à la fois, le match en cours du joueur est annulé.
-  if (!roomIdAttente) await annulerAutresMatchs(supabase, discordId);
+  // match à la fois, le match en cours du joueur est annulé. Sauf un match
+  // classé en cours : on y retourne (pas d'abandon, ex. double clic).
+  if (!roomIdAttente) {
+    const enCours = await matchClasseEnCours(supabase, discordId);
+    if (enCours) return { room_id: enCours, trouve: true, match_en_cours: true };
+    await annulerAutresMatchs(supabase, discordId);
+  }
 
   // Room d'attente déjà prise par un adversaire : match trouvé.
   if (roomIdAttente) {

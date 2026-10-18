@@ -129,12 +129,13 @@ async function rejoindreOuConsulterRoom(id) {
   if (reponse.status === 404) throw new Error("Cette room n'existe pas.");
 
   // Room en mode classique / auto sans théâtre renseigné : direction Mon
-  // compte pour le renseigner.
+  // compte pour le renseigner. Match classé en cours (room_id) : retour à
+  // ce match.
   if (reponse.status === 409) {
-    const { error } = await reponse.json().catch(() => ({}));
+    const { error, room_id: matchEnCours } = await reponse.json().catch(() => ({}));
     arreterPolling();
     alert(error || "Impossible de rejoindre cette room.");
-    window.location.href = "/my_account/my_account.html";
+    window.location.href = matchEnCours ? `match.html?room=${encodeURIComponent(matchEnCours)}` : "/my_account/my_account.html";
     throw new Error(error || "Impossible de rejoindre cette room.");
   }
 

@@ -31,7 +31,7 @@
 // tout le monde une fois le mode activé depuis la page admin
 // (config.world_boss_public) ; cf. erreurAcces.
 const { supabase } = require("./supabase");
-const { ecrireDraft } = require("./room");
+const { ecrireDraft, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("./room");
 const { actualiserPoints, getPersonnages, migrerCollectionPersos, estWorldBossPublic, ELEMENTS_LIBRES } = require("./personnages");
 const { estModerateur } = require("./admin");
 const { listeBoss, getBossParId, estWorldBoss, estHorsCoop, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
@@ -372,6 +372,8 @@ async function routeRejoindre(req, res, roomId, user) {
   if (draft.membres.includes(user.id)) return repondre(res, draft);
   if (draft.phase !== "lobby") throw erreur(409, "La partie a déjà commencé.");
   if (draft.membres.length >= TAILLE_MAX) throw erreur(409, `La room est complète (${TAILLE_MAX} joueurs au maximum).`);
+  // Match classé en cours : pas d'autre match (ce serait un abandon).
+  if (await matchClasseEnCours(supabase, user.id)) throw erreur(409, ERREUR_MATCH_CLASSE);
 
   const profil = (await lireProfils([user.id])).get(user.id);
   const membres = [...draft.membres, user.id];
