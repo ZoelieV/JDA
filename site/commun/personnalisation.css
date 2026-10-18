@@ -509,3 +509,14 @@
   font-weight: bold;
   white-space: nowrap;
 }
+
+/* Icône du Koyn dans le prix : pas la taille ni l'assombrissement des
+   images de cosmétiques (.perso-choix-image img). */
+.perso-choix-image .perso-prix .icone-koyn {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.3em;
+  object-fit: contain;
+  filter: none;
+}

@@ -84,7 +84,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=7";
+    lien.href = "/commun/personnalisation.css?v=8";
     document.head.appendChild(lien);
   }
 
@@ -109,7 +109,7 @@
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Koyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=1",
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=2",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Koyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=2",
@@ -149,7 +149,7 @@
 
   function lireEtatKoyns(etat) {
     koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []) };
-    if (modal) modal.querySelector(".perso-solde").textContent = `${koyns.solde} Koyn${koyns.solde > 1 ? "s" : ""}`;
+    if (modal) modal.querySelector(".perso-solde").innerHTML = `${koyns.solde} ${ICONE_KOYN}`;
   }
 
   // Choix pas possédés (cosmétiques payants) : sans Koyns chargés, tout est
@@ -426,9 +426,10 @@
       bouton.classList.add("verrouille");
       const badge = document.createElement("span");
       badge.className = "perso-prix";
-      badge.textContent = estExclusif(cosmetique) ? "🔒 Exclusif" : `🔒 ${koyns.prix} Koyn${koyns.prix > 1 ? "s" : ""}`;
+      const exclusif = estExclusif(cosmetique);
+      badge.innerHTML = exclusif ? "🔒 Exclusif" : `🔒 ${koyns.prix} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
-      bouton.title = `${titre} — ${badge.textContent.slice(3)}`;
+      bouton.title = `${titre} — ${exclusif ? "exclusif" : `${koyns.prix} Koyn${koyns.prix > 1 ? "s" : ""}`}`;
     }
     bouton.addEventListener("click", async () => {
       if (!brouillon) return;

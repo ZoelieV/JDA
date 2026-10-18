@@ -190,8 +190,13 @@ async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
 // entre-temps par une autre requête : relue, jusqu'à 3 essais.
 async function quitterRoom(supabase, room, discordId) {
   for (let essai = 0; essai < 3; essai++) {
-    // Room complète pas encore ouverte (draft pas encore créée).
-    const draft = room.draft || { ...etatInitialDraft(), discord_j1: room.player1_discord_id, discord_j2: room.player2_discord_id };
+    // Room complète pas encore ouverte : draft absente, ou partielle (créée
+    // par le matchmaking avec ses seuls réglages, cf. _lib/matchmaking.js) ;
+    // complétée comme dans assurerRolesDraft (sinon l'archivage d'un
+    // abandon classé échoue : pas d'actions).
+    const draft = { ...etatInitialDraft(), ...(room.draft || {}) };
+    draft.discord_j1 ||= room.player1_discord_id;
+    draft.discord_j2 ||= room.player2_discord_id;
     const role = determinerRole({ ...room, draft }, discordId);
     if (!role) return;
     if (draft.phase === "annule" || draft.quitte_par) return;

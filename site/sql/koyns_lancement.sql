@@ -5,8 +5,8 @@
 -- reçoivent leurs 30 Koyns de départ à leur première visite (cf.
 -- api/_lib/koyns.js).
 --
--- IDs Discord des administrateurs : ceux de la variable Vercel
--- ADMIN_DISCORD_IDS, à recopier ci-dessous.
+-- IDs Discord des administrateurs (variable Vercel ADMIN_DISCORD_IDS) :
+-- Koy, Strike_LittleBig, Lightningstorm01.
 
 update profiles
 set data = jsonb_set(
@@ -16,7 +16,9 @@ set data = jsonb_set(
 )
 where data ? 'parametres'
   and discord_id <> all (array[
-    'ID_ADMIN_1'
+    '544240202416128012',
+    '642409257597272077',
+    '956258311139885106'
   ]::text[]);
 
 -- Vérification : cosmétiques encore portés (administrateurs seulement).

@@ -32,7 +32,7 @@
   function chargerPersonnalisation() {
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=8";
+      script.src = "/commun/personnalisation.js?v=10";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;
@@ -195,8 +195,8 @@
     const annonce = document.createElement("div");
     annonce.className = "annonce-koyns";
     annonce.setAttribute("role", "status");
-    annonce.textContent = `Bonus de connexion de l'événement : ${[
-      koyns ? `+${koyns} Koyn${koyns > 1 ? "s" : ""}` : "",
+    annonce.innerHTML = `Bonus de connexion de l'événement : ${[
+      koyns ? `+${koyns} <img class="icone-koyn" src="${ICONES}koyn.webp" alt="Koyns">` : "",
       cosmetique ? "un cosmétique exclusif (à porter depuis Personnalisation)" : ""
     ].filter(Boolean).join(" et ")} !`;
     document.body.appendChild(annonce);

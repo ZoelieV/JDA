@@ -665,3 +665,12 @@ body::before {
   text-align: center;
   box-shadow: 0 0 1.5rem rgba(245, 197, 66, 0.3);
 }
+
+/* Icône du Koyn à côté des montants (cf. commun/koyns.js). */
+.icone-koyn {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.3em;
+  object-fit: contain;
+}

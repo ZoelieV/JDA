@@ -6,6 +6,9 @@
 
 const PRIX_COSMETIQUE = 1;
 
+// Icône du Koyn (DB/images/others/koyn.webp), à côté des montants.
+const ICONE_KOYN = `<img class="icone-koyn" src="/DB/images/others/koyn.webp" alt="Koyns">`;
+
 // Id d'un cosmétique : "<choix>:<valeur>" (choix de profil.parametres ;
 // "skin" pour chaque skin), ex. "fond:bg/autres/x.png", "skin:hutao".
 function idCosmetique(choix, valeur) {
@@ -37,7 +40,7 @@ function cosmetiquesParametres(parametres = {}) {
 // entraînement).
 function htmlGainKoyns(gain) {
   if (!gain) return "";
-  const texte = gain.montant > 0 ? `+${gain.montant} Koyns`
+  const texte = gain.montant > 0 ? `+${gain.montant} ${ICONE_KOYN}`
     : gain.raison === "plafond" ? "Pas de Koyns : 3 games récompensées par jour au plus contre les mêmes adversaires (reset à 4 h)"
       : gain.raison === "suspicion" ? "Pas de Koyns : temps jugés suspects par l'anti-triche"
         : "";
