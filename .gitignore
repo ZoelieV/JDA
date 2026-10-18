@@ -22,3 +22,7 @@ site/DB/local_boxes.json
 # Clés Supabase et sorties de scripts/courbes_boxes.js (données des joueurs).
 scripts/.env
 scripts/sortie/
+
+# Export des profils des joueurs (box opti privées, cf.
+# scripts/graphes_boxes.js) : jamais dans le dépôt public.
+scripts/box.txt

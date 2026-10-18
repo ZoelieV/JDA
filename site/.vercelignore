@@ -13,3 +13,7 @@ node_modules/
 /DB/local_boxes.json
 # Réglages de Claude Code.
 /.claude/
+# Documents de travail (règles .odt, PDF du GA) : pas publiés sur le site.
+/DB/temp/
+# Exports de profils de joueurs (box opti privées) : jamais publiés.
+/box.txt

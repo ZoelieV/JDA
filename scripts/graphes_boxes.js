@@ -1,9 +1,9 @@
-// Points par perso de chaque box d'un export (site/box.txt : un profil JSON
+// Points par perso de chaque box d'un export (scripts/box.txt, hors du dépôt public : un profil JSON
 // par ligne, plus une ligne { boxes: {...} } pour les box fictives), pour
 // scripts/graphes_boxes.py. Valeur d'un perso = ses points + sa meilleure
 // arme signature de la box (valeursBansBox, site/api/_lib/draft.js).
 //
-//   node scripts/graphes_boxes.js site/box.txt sortie.json [points.json]
+//   node scripts/graphes_boxes.js scripts/box.txt sortie.json [points.json]
 // points.json : réponse de GET /api/points du site (points admin, PPW des
 // armes, buffs du théâtre). Sans lui : points des JSON de site/DB (PPW à 0).
 const fs = require("fs"), path = require("path");
