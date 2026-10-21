@@ -332,6 +332,7 @@
 
 /* Mon image : boutons texte (importer, retirer) au format des fonds. */
 .perso-choix-action {
+  position: relative;
   border: 0.1875rem dashed rgba(255, 255, 255, 0.35);
   color: white;
   font-family: inherit;

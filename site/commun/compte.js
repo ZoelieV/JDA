@@ -52,7 +52,7 @@
   function chargerPersonnalisation() {
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=15";
+      script.src = "/commun/personnalisation.js?v=16";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;

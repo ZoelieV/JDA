@@ -84,7 +84,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=8";
+    lien.href = "/commun/personnalisation.css?v=9";
     document.head.appendChild(lien);
   }
 
@@ -600,7 +600,13 @@
         }
         // Mon image : PRIX_IMPORT_FOND à chaque image importée, payés une
         // fois l'image choisie (cf. payerImport).
-        const importer = creerChoix(null, `${imageBrouillon ? "Changer d'image" : "＋ Importer une image"} (${PRIX_IMPORT_FOND} Rikoyns)`, false, () => {}, "perso-choix-action");
+        const importer = creerChoix(null, imageBrouillon ? "Changer d'image" : "＋ Importer une image", false, () => {}, "perso-choix-action");
+        // Prix en bas, avec l'icône des Rikoyns (comme les cosmétiques à acheter).
+        const prixImport = document.createElement("span");
+        prixImport.className = "perso-prix";
+        prixImport.innerHTML = `${PRIX_IMPORT_FOND} ${ICONE_KOYN}`;
+        importer.appendChild(prixImport);
+        importer.title = `${importer.title} — ${PRIX_IMPORT_FOND} Rikoyns à chaque image importée`;
         importer.addEventListener("click", () => {
           if (koyns && !koyns.tout && koyns.solde < PRIX_IMPORT_FOND) {
             afficherEtat(`Importer une image coûte ${PRIX_IMPORT_FOND} Rikoyns : joue des matchs pour en gagner (5 par match).`);
