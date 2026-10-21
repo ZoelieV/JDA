@@ -965,8 +965,8 @@ async function demarrer() {
 // boutons qui modifient désactivés (y compris dans ce qui est redessiné plus
 // tard), ajouts et enregistrements cachés. Le serveur refuse de toute façon
 // les enregistrements (api/points.js, administrateurs seulement).
-const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage", "contenu-synergie"];
-const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button, .action-synergie";
+const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage", "contenu-synergie", "modal-recommandations"];
+const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button, .action-synergie, .action-reco";
 
 function passerEnLectureSeule() {
   document.body.classList.add("lecture-seule");

@@ -1041,6 +1041,7 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     : nomBox(profil, boxActive);
   document.getElementById("total-ppc").textContent = total;
   mettreAJourCopieBox();
+  rendreRecommandationsStuff(personnages, boxActive, profil);
 
   // Sous le total : vitrine conforme ou non aux modes en équipe ; box opti :
   // drafts où elle est jouable (plafond de points par palier, pointsMaxBox
@@ -1053,7 +1054,7 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     statut.textContent = erreurs.length ? `Modes en équipe : ${erreurs.join(", ")}` : "Conforme aux modes en équipe ✓";
   } else if (boxActive === "stuff") {
     statut.classList.remove("conforme");
-    statut.textContent = "Indication pour Tous les comptes : pas jouable en match.";
+    statut.textContent = "Tes persos montés : pas jouable en match, sert aux recommandations ci-dessous.";
   } else {
     const paliers = Object.keys(PALIERS_THEATRE).filter(palier => total <= pointsMaxBox(palier));
     statut.classList.toggle("conforme", paliers.length > 0);
@@ -1117,12 +1118,65 @@ function calculerTotalArmes(armes, personnages, boxActive, profil) {
   );
 }
 
+// ---- Box stuff : recommandations (cf. commun/recommandations_stuff.js) ----
+// Règles des admins (config.recommandations_stuff), lues au chargement.
+let reglesStuff = [];
+const NB_RECOMMANDATIONS = 5;
+
+function rendreRecommandationsStuff(personnages, boxActive, profil) {
+  const zone = document.getElementById("recommandations-stuff");
+  zone.classList.toggle("cache", boxActive !== "stuff");
+  if (boxActive !== "stuff") return;
+
+  const collection = profil.characters;
+  const parId = new Map(personnages.map(p => [p.id, p]));
+  const presents = idsDraftCollection(collection, personnages, "full");
+  // Poids d'un DPS : ses points dans la full box.
+  const pointsDps = id => {
+    const perso = parId.get(id);
+    return perso ? pointsPersonnageBox(perso, collection.full[id], collection.niveaux?.[cleNiveau(perso)], presents) : 0;
+  };
+  const { supports, dps } = calculerRecommandationsStuff(reglesStuff.filter(l => parId.has(l.dps)), collection, pointsDps);
+
+  const miniature = (id, titre = "") => {
+    const perso = parId.get(id);
+    return perso
+      ? `<span class="reco-miniature ${classeFondRarete(perso.rarete)}" title="${echapperHtml(titre || perso.nom)}"><img src="../DB/${perso.image}" alt="${echapperHtml(perso.nom)}" loading="lazy"></span>`
+      : "";
+  };
+  const ligne = (id, legende, minis) => `
+    <li class="reco-ligne">
+      ${miniature(id)}
+      <span class="reco-texte"><strong>${echapperHtml(parId.get(id)?.nom || id)}</strong><span class="reco-legende">${legende}</span></span>
+      <span class="reco-minis">${minis}</span>
+    </li>`;
+  const listeSupports = supports.slice(0, NB_RECOMMANDATIONS).map(s => ligne(s.id,
+    `Améliore ${s.dps.length} de tes DPS`,
+    s.dps.map(d => miniature(d.id, `${parId.get(d.id)?.nom || d.id} : prio ${d.rang}`)).join(""))).join("");
+  const listeDps = dps.slice(0, NB_RECOMMANDATIONS).map(d => ligne(d.id,
+    `${d.supports.length} de ses supports déjà montés`,
+    d.supports.map(id => miniature(id)).join(""))).join("");
+
+  zone.innerHTML = `
+    <div class="reco-bloc">
+      <h3>Supports à monter</h3>
+      ${listeSupports ? `<ul class="reco-liste">${listeSupports}</ul>` : `<p class="reco-vide">Ajoute tes DPS montés dans cette box (et possède leurs supports) pour avoir des recommandations.</p>`}
+    </div>
+    <div class="reco-bloc">
+      <h3>DPS à monter</h3>
+      ${listeDps ? `<ul class="reco-liste">${listeDps}</ul>` : `<p class="reco-vide">Aucun DPS possédé non monté n'a encore de support monté.</p>`}
+    </div>
+    <p class="reco-aide">Supports possédés pas encore montés qui complètent le plus les 5 meilleurs supports de tes DPS montés (les plus versatiles d'abord, les DPS qui valent le plus de points comptent plus).</p>`;
+}
+
 async function initialiserPage() {
   try {
-    const [personnagesBase, armes] = await Promise.all([
+    const [personnagesBase, armes, config] = await Promise.all([
       chargerPersonnages(),
-      chargerArmes()
+      chargerArmes(),
+      chargerPointsAdmin().catch(() => null)
     ]);
+    reglesStuff = lireRecommandationsStuff(config?.recommandations_stuff);
 
     const profil = await chargerProfil();
 

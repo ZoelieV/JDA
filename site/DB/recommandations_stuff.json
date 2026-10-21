@@ -1,0 +1,1162 @@
+[
+  {
+    "dps": "skirk",
+    "supports": [
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "shenhe"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "charlotte"
+      },
+      {
+        "id": "layla"
+      },
+      {
+        "id": "kokomi"
+      },
+      {
+        "id": "barbara"
+      },
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "mualani"
+      }
+    ]
+  },
+  {
+    "dps": "sandrone",
+    "supports": [
+      {
+        "id": "yae",
+        "constellation_min": 1
+      },
+      {
+        "id": "mitya"
+      },
+      {
+        "id": "odette"
+      },
+      {
+        "id": "alyosha"
+      },
+      {
+        "id": "diona",
+        "constellation_min": 6
+      },
+      {
+        "id": "qiqi"
+      },
+      {
+        "id": "sucrose"
+      }
+    ]
+  },
+  {
+    "dps": "columbina",
+    "supports": [
+      {
+        "id": "ineffa"
+      },
+      {
+        "id": "flin"
+      },
+      {
+        "id": "lauma"
+      },
+      {
+        "id": "nefer"
+      },
+      {
+        "id": "zibai"
+      },
+      {
+        "id": "linnea"
+      },
+      {
+        "id": "navia"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "nilou"
+      },
+      {
+        "id": "baizhu"
+      },
+      {
+        "id": "yaoyao"
+      },
+      {
+        "id": "kirara",
+        "constellation_min": 4
+      }
+    ]
+  },
+  {
+    "dps": "vesna",
+    "supports": [
+      {
+        "id": "odette"
+      },
+      {
+        "id": "traveler_cryo"
+      },
+      {
+        "id": "faruzan"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "diona",
+        "constellation_min": 6
+      },
+      {
+        "id": "qiqi"
+      },
+      {
+        "id": "jean",
+        "constellation_min": 4
+      },
+      {
+        "id": "lynette"
+      }
+    ]
+  },
+  {
+    "dps": "zibai",
+    "supports": [
+      {
+        "id": "columbina"
+      },
+      {
+        "id": "linnea"
+      },
+      {
+        "id": "illuga"
+      },
+      {
+        "id": "aino"
+      },
+      {
+        "id": "gorou"
+      },
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "zhongli"
+      },
+      {
+        "id": "nilou"
+      },
+      {
+        "id": "candace"
+      },
+      {
+        "id": "diona",
+        "constellation_min": 6
+      },
+      {
+        "id": "barbara"
+      }
+    ]
+  },
+  {
+    "dps": "mavuika",
+    "supports": [
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "iansan"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "sucrose"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "chevreuse"
+      },
+      {
+        "id": "ororon"
+      },
+      {
+        "id": "alyosha"
+      },
+      {
+        "id": "varesa"
+      },
+      {
+        "id": "rosaria"
+      },
+      {
+        "id": "chasca"
+      },
+      {
+        "id": "mualani"
+      },
+      {
+        "id": "kinich"
+      },
+      {
+        "id": "kazuha"
+      }
+    ]
+  },
+  {
+    "dps": "flin",
+    "supports": [
+      {
+        "id": "columbina"
+      },
+      {
+        "id": "ineffa"
+      },
+      {
+        "id": "aino"
+      },
+      {
+        "id": "sucrose"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "alyosha"
+      },
+      {
+        "id": "ororon"
+      },
+      {
+        "id": "lanyan"
+      },
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "nilou"
+      },
+      {
+        "id": "candace"
+      },
+      {
+        "id": "barbara"
+      }
+    ]
+  },
+  {
+    "dps": "nefer",
+    "supports": [
+      {
+        "id": "lauma"
+      },
+      {
+        "id": "columbina"
+      },
+      {
+        "id": "aino"
+      },
+      {
+        "id": "nahida"
+      },
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "kuki"
+      },
+      {
+        "id": "baizhu"
+      },
+      {
+        "id": "yaoyao"
+      },
+      {
+        "id": "kirara",
+        "constellation_min": 4
+      },
+      {
+        "id": "barbara"
+      },
+      {
+        "id": "nilou"
+      },
+      {
+        "id": "candace"
+      },
+      {
+        "id": "collei"
+      },
+      {
+        "id": "kokomi"
+      }
+    ]
+  },
+  {
+    "dps": "wriothesley",
+    "supports": [
+      {
+        "id": "mitya"
+      },
+      {
+        "id": "odette"
+      },
+      {
+        "id": "yae"
+      }
+    ]
+  },
+  {
+    "dps": "varka",
+    "supports": [
+      {
+        "id": "prune"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "chevreuse"
+      },
+      {
+        "id": "venti"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "fufu"
+      }
+    ]
+  },
+  {
+    "dps": "varesa",
+    "supports": [
+      {
+        "id": "iansan"
+      },
+      {
+        "id": "chevreuse"
+      },
+      {
+        "id": "mavuika"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "ororon"
+      },
+      {
+        "id": "traveler_pyro"
+      }
+    ]
+  },
+  {
+    "dps": "mualani",
+    "supports": [
+      {
+        "id": "mavuika"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "traveler_pyro"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "sucrose"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "xilonen"
+      }
+    ]
+  },
+  {
+    "dps": "kinich",
+    "supports": [
+      {
+        "id": "durin"
+      },
+      {
+        "id": "emilie"
+      },
+      {
+        "id": "mavuika"
+      },
+      {
+        "id": "traveler_pyro"
+      },
+      {
+        "id": "lauma"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "iansan"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "yaoyao"
+      }
+    ]
+  },
+  {
+    "dps": "neuvillette",
+    "supports": [
+      {
+        "id": "ineffa"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "linnea"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "kazuha"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "citlali"
+      }
+    ]
+  },
+  {
+    "dps": "chasca",
+    "supports": [
+      {
+        "id": "durin"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "mavuika"
+      },
+      {
+        "id": "diona"
+      },
+      {
+        "id": "chevreuse"
+      },
+      {
+        "id": "ineffa"
+      },
+      {
+        "id": "columbina"
+      },
+      {
+        "id": "iansan"
+      }
+    ]
+  },
+  {
+    "dps": "navia",
+    "supports": [
+      {
+        "id": "columbina"
+      },
+      {
+        "id": "linnea"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "xiangling"
+      },
+      {
+        "id": "zhongli"
+      },
+      {
+        "id": "illuga"
+      }
+    ]
+  },
+  {
+    "dps": "arlecchino",
+    "supports": [
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "sucrose"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "chevreuse"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "kazuha"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "alyosha"
+      }
+    ]
+  },
+  {
+    "dps": "traveler_cryo",
+    "supports": [
+      {
+        "id": "yae",
+        "constellation_min": 1
+      },
+      {
+        "id": "mitya"
+      },
+      {
+        "id": "odette"
+      },
+      {
+        "id": "sucrose"
+      },
+      {
+        "id": "alyosha"
+      }
+    ]
+  },
+  {
+    "dps": "lohen",
+    "supports": [
+      {
+        "id": "durin"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "mitya"
+      },
+      {
+        "id": "odette"
+      },
+      {
+        "id": "yae",
+        "constellation_min": 1
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "fufu"
+      }
+    ]
+  },
+  {
+    "dps": "cyno",
+    "supports": [
+      {
+        "id": "odette"
+      },
+      {
+        "id": "yae",
+        "constellation_min": 1
+      },
+      {
+        "id": "mitya"
+      }
+    ]
+  },
+  {
+    "dps": "mizuki",
+    "supports": [
+      {
+        "id": "odette"
+      },
+      {
+        "id": "traveler_cryo"
+      },
+      {
+        "id": "faruzan"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "sucrose"
+      },
+      {
+        "id": "diona",
+        "constellation_min": 6
+      },
+      {
+        "id": "qiqi"
+      },
+      {
+        "id": "jean",
+        "constellation_min": 4
+      }
+    ]
+  },
+  {
+    "dps": "clorinde",
+    "supports": [
+      {
+        "id": "durin"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "chevreuse"
+      },
+      {
+        "id": "alyosha"
+      },
+      {
+        "id": "ororon"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "iansan"
+      },
+      {
+        "id": "lauma"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "nahida"
+      },
+      {
+        "id": "xingqiu"
+      }
+    ]
+  },
+  {
+    "dps": "raiden",
+    "supports": [
+      {
+        "id": "ineffa"
+      },
+      {
+        "id": "columbina"
+      },
+      {
+        "id": "lauma"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "fufu"
+      }
+    ]
+  },
+  {
+    "dps": "alhaitham",
+    "supports": [
+      {
+        "id": "kuki"
+      },
+      {
+        "id": "lauma"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "raiden"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "nahida"
+      },
+      {
+        "id": "yaoyao"
+      }
+    ]
+  },
+  {
+    "dps": "tighnari",
+    "supports": [
+      {
+        "id": "kuki"
+      },
+      {
+        "id": "lauma"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "raiden"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "nahida"
+      },
+      {
+        "id": "yaoyao"
+      }
+    ]
+  },
+  {
+    "dps": "venti",
+    "supports": [
+      {
+        "id": "durin"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "faruzan"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "ganyu"
+      }
+    ]
+  },
+  {
+    "dps": "ayato",
+    "supports": [
+      {
+        "id": "ineffa"
+      },
+      {
+        "id": "linnea"
+      }
+    ]
+  },
+  {
+    "dps": "ayaya",
+    "supports": [
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "shenhe"
+      }
+    ]
+  },
+  {
+    "dps": "lyney",
+    "supports": [
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "xiangling"
+      },
+      {
+        "id": "kazuha"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "zhongli"
+      }
+    ]
+  },
+  {
+    "dps": "hutao",
+    "supports": [
+      {
+        "id": "xingqiu"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "mona"
+      },
+      {
+        "id": "sucrose"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "fischl"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "kazuha"
+      },
+      {
+        "id": "xiangling"
+      }
+    ]
+  },
+  {
+    "dps": "yoimiya",
+    "supports": [
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "xilonen"
+      },
+      {
+        "id": "yelan"
+      },
+      {
+        "id": "xingqiu"
+      }
+    ]
+  },
+  {
+    "dps": "ganyu",
+    "supports": [
+      {
+        "id": "durin"
+      },
+      {
+        "id": "mavuika"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "shenhe"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "venti"
+      }
+    ]
+  },
+  {
+    "dps": "xiao",
+    "supports": [
+      {
+        "id": "faruzan"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "xianyun"
+      },
+      {
+        "id": "bennett"
+      }
+    ]
+  },
+  {
+    "dps": "itto",
+    "supports": [
+      {
+        "id": "columbina"
+      },
+      {
+        "id": "linnea"
+      },
+      {
+        "id": "illuga"
+      },
+      {
+        "id": "gorou"
+      }
+    ]
+  },
+  {
+    "dps": "wanderer",
+    "supports": [
+      {
+        "id": "faruzan"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "bennett"
+      }
+    ]
+  },
+  {
+    "dps": "tartaglia",
+    "supports": [
+      {
+        "id": "vodyanitsa"
+      },
+      {
+        "id": "durin"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "mavuika"
+      },
+      {
+        "id": "xiangling"
+      },
+      {
+        "id": "bennett"
+      }
+    ]
+  },
+  {
+    "dps": "gaming",
+    "supports": [
+      {
+        "id": "citlali"
+      },
+      {
+        "id": "escoffier"
+      },
+      {
+        "id": "bennett"
+      },
+      {
+        "id": "xianyun"
+      },
+      {
+        "id": "rosaria"
+      },
+      {
+        "id": "fufu"
+      },
+      {
+        "id": "nicole"
+      },
+      {
+        "id": "prune"
+      },
+      {
+        "id": "mona"
+      }
+    ]
+  }
+]

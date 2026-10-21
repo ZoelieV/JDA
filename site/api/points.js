@@ -29,6 +29,8 @@
 //                       sinon réservé aux administrateurs)
 //          equilibrage: "ancien" | "fixe_joker" | "fixe_horizontal",
 //          seuil_horizontal: points d'écart par ban horizontal,
+//          recommandations_stuff: [...]  (box stuff, défaut :
+//                       DB/recommandations_stuff.json ; masqués retirés hors admins),
 //          limites_equilibrage: { palier: { min_persos, seuil_bas,
 //                       seuil_haut, plancher, points_max_box } } }  (cf.
 //                       _lib/personnages.js ; points_max_box : box jouable
@@ -61,6 +63,9 @@
 //                                    en retire) et / ou un cosmétique à un
 //                                    joueur (config inchangée ; cf.
 //                                    _lib/koyns.js)
+//   { recommandations_stuff: [{ dps, supports: [{ id, constellation_min? }] }] }
+//                                    recommandations de la box stuff (cf.
+//                                    commun/recommandations_stuff.js)
 //   { equilibrage: méthode }         méthode des bans d'équilibrage des
 //                                    prochaines drafts (cf. _lib/personnages.js)
 const { supabase } = require("./_lib/supabase");
@@ -69,6 +74,10 @@ const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
 const { lireSynergies } = require("../commun/synergies.js");
+const { lireRecommandationsStuff } = require("../commun/recommandations_stuff.js");
+// Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
+// modifiées, cf. commun/recommandations_stuff.js).
+const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
 const { COSMETIQUES_GRATUITS } = require("../commun/koyns.js");
 const { estCosmetique, donner, MAX_KOYNS_DON } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
@@ -279,14 +288,22 @@ module.exports = async (req, res) => {
       const config = await lireConfig();
       // Mini admins : tout voir (page Administration en lecture seule), rien modifier.
       // seuil_equilibrage : points d'écart par ban d'équilibrage (page Theorycraft).
-      const donnees = user && await estModerateur(user.id) ? config : versionPublique(config);
+      const moderateur = user && await estModerateur(user.id);
+      const donnees = moderateur ? config : versionPublique(config);
+      // Recommandations de la box stuff (par défaut si jamais modifiées) ;
+      // hors admins, sans les persos masqués (ni DPS, ni supports).
+      const masquesPersos = moderateur ? new Set() : new Set(lireMasques(config).characters);
+      const recommandationsStuff = lireRecommandationsStuff(config.recommandations_stuff ?? RECOMMANDATIONS_STUFF_DEFAUT)
+        .filter(ligne => !masquesPersos.has(ligne.dps))
+        .map(ligne => ({ ...ligne, supports: ligne.supports.filter(s => !masquesPersos.has(s.id)) }));
       // limites_equilibrage : complétées des valeurs par défaut (page admin,
       // Theorycraft).
       return res.status(200).json({
         ...donnees,
         seuil_equilibrage: SEUIL_EQUILIBRAGE,
         limites_equilibrage: lireLimitesEquilibrage(config.limites_equilibrage),
-        seuil_horizontal: lireSeuilHorizontal(config.seuil_horizontal)
+        seuil_horizontal: lireSeuilHorizontal(config.seuil_horizontal),
+        recommandations_stuff: recommandationsStuff
       });
     }
 
@@ -361,6 +378,11 @@ module.exports = async (req, res) => {
         const { points_max_box: _ancienPlafond, ...reste } = ancienne;
         config = { ...reste, limites_equilibrage: lireLimitesEquilibrage(corps.limites_equilibrage) };
         if ("seuil_horizontal" in corps) config.seuil_horizontal = lireSeuilHorizontal(corps.seuil_horizontal);
+      } else if (Array.isArray(corps.recommandations_stuff)) {
+        // Recommandations de la box stuff : persos du catalogue (masqués et
+        // ajouts compris).
+        const persos = new Set([...listeJSON("characters"), ...ajouts.characters].map(e => e.id));
+        config = { ...ancienne, recommandations_stuff: lireRecommandationsStuff(corps.recommandations_stuff, persos) };
       } else if (typeof corps.equilibrage === "string") {
         if (!MODES_EQUILIBRAGE.includes(corps.equilibrage)) return res.status(400).json({ error: "Méthode d'équilibrage inconnue" });
         config = { ...ancienne, equilibrage: corps.equilibrage };

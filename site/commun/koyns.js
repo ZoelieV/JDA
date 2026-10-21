@@ -18,7 +18,8 @@ const PERSOS_PRIX_DOUBLE = [
   ["fufu", "Furina"], ["columbina", "Columbina"], ["arlecchino", "Arlecchino"], ["skirk", "Skirk"],
   ["flin", "Flins"], ["hutao", "Hu_Tao"], ["neuvillette", "Neuvillette"], ["mavuika", "Mavuika"],
   ["raiden", "Raiden_Shogun"], ["wanderer", "Wanderer"], ["citlali", "Citlali"], ["wriothesley", "Wriothesley"],
-  ["vodyanitsa", "Vodyanitsa"], ["durin", "Durin"], ["xiao", "Xiao"], ["lohen", "Lohen"]
+  ["vodyanitsa", "Vodyanitsa"], ["durin", "Durin"], ["xiao", "Xiao"], ["lohen", "Lohen"],
+  ["mitya", "Mitya"]
 ];
 const SKINS_PRIX_DOUBLE = new Set(PERSOS_PRIX_DOUBLE.map(([id]) => id));
 const NAMECARDS_PRIX_DOUBLE = new RegExp(`/Namecard_(Background|Banner)_(${PERSOS_PRIX_DOUBLE.map(([, nom]) => nom).join("|")})_`);
