@@ -1,4 +1,4 @@
-// Koyns : monnaie du site (cf. commun/koyns.js), tables koyns_mouvements et
+// Rikoyns : monnaie du site (cf. commun/koyns.js), tables koyns_mouvements et
 // cosmetiques_possedes (cf. sql/koyns.sql). Tables absentes (SQL pas lancé) :
 // aucun gain, rien de possédé (erreurs journalisées).
 //
@@ -10,21 +10,24 @@
 //   ensuite (signalement) ; donnés si un litige est republié.
 // - Au plus MAX_GAMES_PAR_ADVERSAIRE games récompensées par journée (reset
 //   à 4 h, cf. _lib/journee.js) contre les mêmes adversaires (anti-farm).
-// - DEPART_MINI_ADMIN une fois pour les mini admins.
+// - DEPART_MINI_ADMIN une fois pour les mini admins (en 2 mouvements :
+//   les 30 d'origine, ref "depart", puis le complément, ref "depart_100",
+//   que reçoivent aussi ceux qui avaient déjà les 30).
 // - Bonus de connexion pendant un événement (config.bonus_connexion) et
-//   dons des administrateurs (Koyns, cosmétiques exclusifs).
+//   dons des administrateurs (Rikoyns, cosmétiques exclusifs).
 // Les administrateurs possèdent tous les cosmétiques.
 const { supabase } = require("./supabase");
 const { estAdmin, estMiniAdmin } = require("./admin");
 const { debutJournee } = require("./journee");
 const { getConfigKoyns } = require("./personnages");
-const { PRIX_COSMETIQUE, COSMETIQUES_GRATUITS, idCosmetique, cosmetiquesParametres } = require("../../commun/koyns.js");
+const { prixCosmetique, COSMETIQUES_GRATUITS, idCosmetique, cosmetiquesParametres } = require("../../commun/koyns.js");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
 const KOYNS_PAR_MATCH = 5;
 const MAX_GAMES_PAR_ADVERSAIRE = 3;
-const DEPART_MINI_ADMIN = 30;
+const DEPART_MINI_ADMIN = 100;
+const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100", montant: DEPART_MINI_ADMIN - 30 }];
 const MAX_KOYNS_DON = 1000;
 
 // Tous les cosmétiques existants (ids), gratuits compris. "fond:perso" :
@@ -44,11 +47,13 @@ const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 
 // ---- Lecture ----
 
-// Solde d'un joueur (somme de ses mouvements). Mini admin : Koyns de départ
+// Solde d'un joueur (somme de ses mouvements). Mini admin : Rikoyns de départ
 // ajoutés à la première lecture (une seule fois, ref "depart").
 async function lireSolde(discordId) {
   if (await estMiniAdmin(discordId)) {
-    await ajouterMouvement({ discord_id: discordId, montant: DEPART_MINI_ADMIN, raison: "depart", ref: "depart" });
+    for (const { ref, montant } of DEPARTS_MINI_ADMIN) {
+      await ajouterMouvement({ discord_id: discordId, montant, raison: "depart", ref });
+    }
   }
   const { data, error } = await supabase.from("koyns_mouvements").select("montant").eq("discord_id", discordId);
   if (error) {
@@ -76,7 +81,6 @@ async function etatKoyns(discordId) {
   const [solde, possedes] = await Promise.all([lireSolde(discordId), lirePossedes(discordId)]);
   return {
     solde,
-    prix: PRIX_COSMETIQUE,
     tout: possedes === null,
     possedes: possedes ? [...possedes] : [],
     exclusifs: [...getConfigKoyns().exclusifs]
@@ -114,19 +118,19 @@ async function ajouterMouvement(ligne) {
   return !!data?.length;
 }
 
-// Achat d'un cosmétique (prix unique pour l'instant). -> { ok } ou
+// Achat d'un cosmétique (prix selon son type, cf. prixCosmetique). -> { ok } ou
 // { erreur, status }.
 async function acheterCosmetique(discordId, id) {
   if (!estCosmetique(id) || COSMETIQUES_GRATUITS.has(id)) return { status: 400, erreur: "Cosmétique inconnu." };
   if (estAdmin(discordId)) return { ok: true };
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
-  await lireSolde(discordId); // Koyns de départ d'un mini admin, avant l'achat.
-  const { data, error } = await supabase.rpc("acheter_cosmetique", { p_discord_id: discordId, p_cosmetique: id, p_prix: PRIX_COSMETIQUE });
+  await lireSolde(discordId); // Rikoyns de départ d'un mini admin, avant l'achat.
+  const { data, error } = await supabase.rpc("acheter_cosmetique", { p_discord_id: discordId, p_cosmetique: id, p_prix: prixCosmetique(id) });
   if (error) {
     console.error("Erreur achat de cosmétique :", error);
     return { status: 500, erreur: "Boutique indisponible pour l'instant." };
   }
-  if (data === "solde") return { status: 409, erreur: "Pas assez de Koyns : joue des matchs pour en gagner." };
+  if (data === "solde") return { status: 409, erreur: "Pas assez de Rikoyns : joue des matchs pour en gagner." };
   return { ok: true };
 }
 
@@ -202,7 +206,7 @@ async function reprendrePartie(ref) {
   }
 }
 
-// Don d'un administrateur : Koyns (positif ou négatif) et / ou cosmétique.
+// Don d'un administrateur : Rikoyns (positif ou négatif) et / ou cosmétique.
 async function donner(discordId, { koyns = 0, cosmetique = null }, admin) {
   if (koyns) {
     await ajouterMouvement({ discord_id: discordId, montant: koyns, raison: "don", ref: `don:${admin}:${Date.now()}` });

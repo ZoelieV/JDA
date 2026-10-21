@@ -14,7 +14,7 @@
 // nouvelles images, sauf ouvrir({ recharger: false }) (Mon compte, qui les
 // met à jour elle-même).
 //
-// Koyns (cf. commun/koyns.js) : les cosmétiques pas encore possédés sont
+// Rikoyns (cf. commun/koyns.js) : les cosmétiques pas encore possédés sont
 // marqués d'un cadenas et s'achètent d'un clic (prix, solde affiché en
 // haut) ; exclusifs : pas en vente. Filtres et tris de la draft : libres.
 //
@@ -108,9 +108,9 @@
   // Voyageur, Manekin et skins (commun/variantes.js).
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
-  // Ids et cosmétiques gratuits des Koyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=2",
-    () => typeof idCosmetique !== "undefined", "Impossible de charger les Koyns.");
+  // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=5",
+    () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=2",
     () => typeof FILTRES_DRAFT !== "undefined", "Impossible de charger les filtres de la draft.");
@@ -135,7 +135,7 @@
     return nomsPersos;
   }
 
-  // Profil enregistré ; Koyns (solde, cosmétiques possédés) mis à jour au
+  // Profil enregistré ; Rikoyns (solde, cosmétiques possédés) mis à jour au
   // passage.
   async function lireProfil() {
     const reponse = await fetch("/api/auth/profile", { credentials: "include" });
@@ -145,14 +145,14 @@
     return donnees.profil || {};
   }
 
-  // ---- Koyns ----
+  // ---- Rikoyns ----
 
   function lireEtatKoyns(etat) {
     koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []) };
     if (modal) modal.querySelector(".perso-solde").innerHTML = `${koyns.solde} ${ICONE_KOYN}`;
   }
 
-  // Choix pas possédés (cosmétiques payants) : sans Koyns chargés, tout est
+  // Choix pas possédés (cosmétiques payants) : sans Rikoyns chargés, tout est
   // considéré comme possédé (le serveur vérifie de toute façon).
   const possede = id => !koyns || koyns.tout || COSMETIQUES_GRATUITS.has(id) || koyns.possedes.has(id);
   const estExclusif = id => !!koyns?.exclusifs.has(id);
@@ -175,8 +175,9 @@
       afficherEtat("Cosmétique exclusif : il se gagne aux classements et aux événements.");
       return false;
     }
-    const prix = `${koyns.prix} Koyn${koyns.prix > 1 ? "s" : ""}`;
-    if (koyns.solde < koyns.prix) {
+    const montant = prixCosmetique(id);
+    const prix = `${montant} Rikoyn${montant > 1 ? "s" : ""}`;
+    if (koyns.solde < montant) {
       afficherEtat(`Il faut ${prix} : joue des matchs pour en gagner (5 par match).`);
       return false;
     }
@@ -282,7 +283,7 @@
       <div class="perso-contenu" role="dialog" aria-modal="true" aria-label="Personnalisation">
         <div class="perso-entete">
           <h2>Personnalisation</h2>
-          <span class="perso-solde" title="Koyns : gagnés en jouant (5 par match), ils servent à obtenir les cosmétiques"></span>
+          <span class="perso-solde" title="Rikoyns : gagnés en jouant (5 par match), ils servent à obtenir les cosmétiques"></span>
           <button type="button" class="perso-fermer" aria-label="Fermer">×</button>
         </div>
         <div class="perso-apercus">
@@ -427,9 +428,10 @@
       const badge = document.createElement("span");
       badge.className = "perso-prix";
       const exclusif = estExclusif(cosmetique);
-      badge.innerHTML = exclusif ? "🔒 Exclusif" : `🔒 ${koyns.prix} ${ICONE_KOYN}`;
+      const montant = prixCosmetique(cosmetique);
+      badge.innerHTML = exclusif ? "🔒 Exclusif" : `🔒 ${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
-      bouton.title = `${titre} — ${exclusif ? "exclusif" : `${koyns.prix} Koyn${koyns.prix > 1 ? "s" : ""}`}`;
+      bouton.title = `${titre} — ${exclusif ? "exclusif" : `${montant} Rikoyn${montant > 1 ? "s" : ""}`}`;
     }
     bouton.addEventListener("click", async () => {
       if (!brouillon) return;
@@ -633,7 +635,7 @@
         lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerFiltresDraft(), chargerNomsPersos(), chargerKoyns()
       ]);
       imageEnregistree = imageBrouillon = image;
-      // Cosmétiques plus possédés (lancement des Koyns) : choix par défaut.
+      // Cosmétiques plus possédés (lancement des Rikoyns) : choix par défaut.
       enregistres = avecDefauts(sansNonPossedes(profil.parametres));
       brouillon = copieChoix(enregistres);
       afficherEtat("");

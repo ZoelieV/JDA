@@ -455,7 +455,7 @@ async function terminerSiComplet(roomId, draft) {
   draft.phase = "termine";
   await sauvegarder(roomId, draft);
   draft.id_partie = await archiver(draft);
-  // Koyns de chaque joueur (plafond : mêmes coéquipiers), écran de fin.
+  // Rikoyns de chaque joueur (plafond : mêmes coéquipiers), écran de fin.
   if (draft.id_partie) {
     draft.koyns = await crediterPartie(draft.joueurs.map(id => ({
       discordId: id,

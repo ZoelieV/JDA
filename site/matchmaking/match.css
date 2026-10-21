@@ -3086,7 +3086,7 @@ h1 {
   cursor: pointer;
 }
 
-/* Koyns gagnés en fin de match (cf. htmlGainKoyns, commun/koyns.js) :
+/* Rikoyns gagnés en fin de match (cf. htmlGainKoyns, commun/koyns.js) :
    écrans de fin 1v1, en équipe et Random world boss. */
 .ligne-koyns {
   margin: 0.25rem 0;

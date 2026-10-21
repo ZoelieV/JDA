@@ -831,11 +831,11 @@ async function routeConfirmer(req, res, roomId, user) {
   // Manche réservée (écriture conditionnelle) avant d'être archivée.
   draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
   draft.phase = "termine";
-  // Anti-triche (cf. _lib/sanctions.js) : match terminé, mais sans Koyns.
+  // Anti-triche (cf. _lib/sanctions.js) : match terminé, mais sans Rikoyns.
   const suspect = !!(detecterTriche(draft) || detecterTempsSuspects(draft));
   await sauvegarder(roomId, draft);
   draft.id_match = await archiverEquipe(draft);
-  // Koyns de chaque joueur (adversaires : l'autre équipe), écran de fin.
+  // Rikoyns de chaque joueur (adversaires : l'autre équipe), écran de fin.
   if (draft.id_match) {
     draft.koyns = await crediterPartie(ROLES.flatMap(role => draft.equipes[role].map(id => ({
       discordId: id,

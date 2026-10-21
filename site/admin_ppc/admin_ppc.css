@@ -1763,7 +1763,7 @@ body {
   width: 12rem;
 }
 
-/* ---- Fenêtre Koyns (cf. admin_koyns.js) ---- */
+/* ---- Fenêtre Rikoyns (cf. admin_koyns.js) ---- */
 #modal-koyns .modal-apercu-contenu {
   max-width: min(56rem, calc(100% - 2rem));
 }

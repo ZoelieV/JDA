@@ -470,7 +470,7 @@
   }
 }
 
-/* ---- Koyns (cf. personnalisation.js) ---- */
+/* ---- Rikoyns (cf. personnalisation.js) ---- */
 /* Solde, à droite du titre. */
 .perso-solde {
   margin-left: auto;
@@ -510,7 +510,7 @@
   white-space: nowrap;
 }
 
-/* Icône du Koyn dans le prix : pas la taille ni l'assombrissement des
+/* Icône du Rikoyn dans le prix : pas la taille ni l'assombrissement des
    images de cosmétiques (.perso-choix-image img). */
 .perso-choix-image .perso-prix .icone-koyn {
   display: inline-block;

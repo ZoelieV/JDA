@@ -175,7 +175,7 @@ async function traiterSignalement(req, res, user) {
       .eq("id", match.id);
     if (erreurMaj) throw erreurMaj;
   }
-  // Match invalidé : Koyns gagnés repris (cf. _lib/koyns.js).
+  // Match invalidé : Rikoyns gagnés repris (cf. _lib/koyns.js).
   if (decision === "invalide") await reprendrePartie(`match:${match.id}`);
   if (bans.length) {
     const { error: erreurBans } = await supabase.from("sanctions").insert(bans);

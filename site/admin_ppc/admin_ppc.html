@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="../commun/tri.css?v=6">
 <script src="/commun/fond.js?v=8"></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=23" defer></script>
+<script src="/commun/compte.js?v=24" defer></script>
 </head>
 <body>
 <a href="../index.html" class="lien-accueil">Accueil</a>
@@ -40,7 +40,7 @@
         <button type="button" id="ouvrir-equilibrage" class="btn-ouvrir-ajout" title="Méthode des bans d'équilibrage des drafts">Équilibrage</button>
         <button type="button" id="ouvrir-feedback" class="btn-ouvrir-ajout" title="Feedbacks envoyés par les joueurs depuis l'accueil">Feedback</button>
         <button type="button" id="ouvrir-evenements" class="btn-ouvrir-ajout" title="Modes de la page Événements : activer ou désactiver">Événements</button>
-        <button type="button" id="ouvrir-koyns" class="btn-ouvrir-ajout" title="Koyns : dons aux joueurs, cosmétiques exclusifs, bonus de connexion">Koyns</button>
+        <button type="button" id="ouvrir-koyns" class="btn-ouvrir-ajout" title="Rikoyns : dons aux joueurs, cosmétiques exclusifs, bonus de connexion">Rikoyns</button>
         <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
@@ -212,17 +212,18 @@
       </div>
     </div>
   </div>
-  <!-- Koyns (cf. admin_koyns.js) : dons, cosmétiques exclusifs, bonus de
+  <!-- Rikoyns (cf. admin_koyns.js) : dons, cosmétiques exclusifs, bonus de
        connexion d'un événement. -->
   <div id="modal-koyns" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
-        <h2>Koyns <img class="icone-koyn" src="../DB/images/others/koyn.webp" alt=""></h2>
+        <h2>Rikoyns <img class="icone-koyn" src="../DB/images/others/rikoyn.webp" alt=""></h2>
         <button type="button" id="fermer-koyns" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
       <p class="aide-apercu">
-        Les Koyns se gagnent en jouant (5 par match réel et par joueur, 3 games récompensées par jour au plus contre les mêmes adversaires,
-        rien en entraînement ni en cas de soupçon de triche) et servent à obtenir les cosmétiques (1 Koyn chacun).
+        Les Rikoyns se gagnent en jouant (5 par match réel et par joueur, 3 games récompensées par jour au plus contre les mêmes adversaires,
+        rien en entraînement ni en cas de soupçon de triche) et servent à obtenir les cosmétiques (fonds d'écran et skins 10, namecards et bannières 15, Voyageur / Manekin 1 ; le double pour les persos de PERSOS_PRIX_DOUBLE, commun/koyns.js).
+        Les administrateurs ont tout, les mini admins commencent avec 100 Rikoyns, les autres avec 0.
         Ids des cosmétiques : <code>fond:…</code>, <code>banniere:…</code>, <code>banniere2:…</code>, <code>skin:…</code>, <code>voyageur:lumine</code>, <code>manekin:manekina</code> (suggestions en tapant).
       </p>
       <datalist id="catalogue-koyns"></datalist>
@@ -230,12 +231,12 @@
       <h3 class="titre-koyns">Donner à un joueur</h3>
       <div class="ligne-koyns-admin">
         <select id="don-joueur" class="texte-ajout"></select>
-        <label>Koyns <input type="number" id="don-koyns" class="texte-ajout champ-nombre-koyns" step="1" placeholder="0"></label>
+        <label>Rikoyns <input type="number" id="don-koyns" class="texte-ajout champ-nombre-koyns" step="1" placeholder="0"></label>
         <input type="text" id="don-cosmetique" class="texte-ajout champ-cosmetique-koyns" list="catalogue-koyns" placeholder="Cosmétique (facultatif)" autocomplete="off">
         <button type="button" id="donner-koyns" class="bouton-creer">Donner</button>
         <span id="message-don" class="message-ajout"></span>
       </div>
-      <p class="aide-apercu">Un nombre négatif retire des Koyns (correction).</p>
+      <p class="aide-apercu">Un nombre négatif retire des Rikoyns (correction).</p>
 
       <h3 class="titre-koyns">Cosmétiques exclusifs</h3>
       <p class="aide-apercu">Pas en vente : ils se gagnent aux classements et aux événements (dons ci-dessus ou bonus de connexion).</p>
@@ -247,11 +248,11 @@
       </div>
 
       <h3 class="titre-koyns">Bonus de connexion d'un événement</h3>
-      <p class="aide-apercu">Une fois par jour (reset à 4 h) entre le début et la fin, à la première visite connectée : des Koyns et / ou un cosmétique.</p>
+      <p class="aide-apercu">Une fois par jour (reset à 4 h) entre le début et la fin, à la première visite connectée : des Rikoyns et / ou un cosmétique.</p>
       <div class="ligne-koyns-admin">
         <label>Début <input type="datetime-local" id="bonus-debut" class="texte-ajout"></label>
         <label>Fin <input type="datetime-local" id="bonus-fin" class="texte-ajout"></label>
-        <label>Koyns <input type="number" id="bonus-koyns" class="texte-ajout champ-nombre-koyns" min="0" step="1" placeholder="0"></label>
+        <label>Rikoyns <input type="number" id="bonus-koyns" class="texte-ajout champ-nombre-koyns" min="0" step="1" placeholder="0"></label>
         <input type="text" id="bonus-cosmetique" class="texte-ajout champ-cosmetique-koyns" list="catalogue-koyns" placeholder="Cosmétique (facultatif)" autocomplete="off">
       </div>
       <div class="ligne-koyns-admin">
@@ -374,8 +375,8 @@
   <script src="admin_fictives.js?v=4"></script>
   <script src="admin_evenements.js?v=2"></script>
   <script src="admin_feedback.js?v=1"></script>
-  <script src="/commun/koyns.js?v=2"></script>
-  <script src="admin_koyns.js?v=2"></script>
+  <script src="/commun/koyns.js?v=5"></script>
+  <script src="admin_koyns.js?v=3"></script>
   <script src="admin_synergies.js?v=1"></script>
   <script src="admin_ppc.js?v=32"></script>
 </body>

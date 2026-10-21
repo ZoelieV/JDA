@@ -208,7 +208,7 @@ module.exports = async (req, res) => {
       const rows = await r.json();
       const data = rows[0]?.data || null;
       // Palier de théâtre recalculé (profil enregistré avant le calcul
-      // automatique, ou catalogue changé depuis). Koyns : solde et
+      // automatique, ou catalogue changé depuis). Rikoyns : solde et
       // cosmétiques possédés (personnalisation, cf. _lib/koyns.js).
       return res.status(200).json({
         profil: data ? { ...data, theatre: codeTheatre(data) } : null,

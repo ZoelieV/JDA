@@ -801,7 +801,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     // temps connus de ce boss (danger 1 ou 2, cf. TEMPS_SUSPECTS). Classé :
     // match invalidé et transmis aux administrateurs (cf.
     // _lib/sanctions.js) ; autres matchs : terminés normalement, mais sans
-    // Koyns (cf. _lib/koyns.js).
+    // Rikoyns (cf. _lib/koyns.js).
     const triche = detecterTriche(draft);
     const suspicion = detecterTempsSuspects(draft);
     if (classe && (triche || suspicion)) {
@@ -824,7 +824,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     draft.serie_classe = null;
     await sauvegarderDraft(roomId, draft);
     const idMatch = await archiverMatch(draft, { classe });
-    // { discordId: { montant, raison } } : Koyns gagnés, écran de fin.
+    // { discordId: { montant, raison } } : Rikoyns gagnés, écran de fin.
     draft.koyns = await crediterMatch(draft, idMatch, triche || suspicion ? "suspicion" : null);
     // { j1, j2, bonus } (null hors classé) : écran de fin de match.
     draft.resultat_trophees = classe ? await resultatTrophees(idMatch) : null;

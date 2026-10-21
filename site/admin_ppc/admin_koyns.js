@@ -1,5 +1,5 @@
-// Koyns (cf. api/_lib/koyns.js) : fenêtre des administrateurs pour donner
-// des Koyns ou un cosmétique à un joueur, choisir les cosmétiques exclusifs
+// Rikoyns (cf. api/_lib/koyns.js) : fenêtre des administrateurs pour donner
+// des Rikoyns ou un cosmétique à un joueur, choisir les cosmétiques exclusifs
 // (pas en vente : récompenses de classements et d'événements) et régler le
 // bonus de connexion d'un événement (config.cosmetiques_exclusifs,
 // config.bonus_connexion, api/points.js). Utilise envoyerAjout

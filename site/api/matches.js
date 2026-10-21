@@ -303,7 +303,7 @@ async function republierLitige(req, res, user) {
   if (!data || data.length === 0) {
     return res.status(404).json({ error: "Litige introuvable ou déjà republié" });
   }
-  // Litige vérifié : Koyns de fin de match donnés (cf. _lib/koyns.js).
+  // Litige vérifié : Rikoyns de fin de match donnés (cf. _lib/koyns.js).
   await crediterMatchArchive(litige);
   return res.status(200).json({ ok: true });
 }

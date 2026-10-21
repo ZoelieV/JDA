@@ -214,7 +214,7 @@ function estAjout(genre, id) {
 const DUREE_CACHE_POINTS_MS = 30 * 1000;
 let pointsLusA = 0;
 
-// Koyns (cf. _lib/koyns.js) : cosmétiques exclusifs (pas en vente, gagnés
+// Rikoyns (cf. _lib/koyns.js) : cosmétiques exclusifs (pas en vente, gagnés
 // aux classements ou aux événements) et bonus de connexion d'événement.
 let configKoyns = { exclusifs: new Set(), bonusConnexion: null };
 

@@ -1,13 +1,42 @@
-// Koyns : monnaie du site, gagnée en jouant (jamais achetable avec de
+// Rikoyns : monnaie du site, gagnée en jouant (jamais achetable avec de
 // l'argent réel), qui sert à obtenir les cosmétiques de la personnalisation
 // (fonds, namecards, bannières, Voyageur / Manekin, skins). Les filtres et
 // tris de la draft restent libres. Règles et gains : api/_lib/koyns.js.
 // Partagé avec le serveur.
 
+// Prix d'un cosmétique selon son choix (début de l'id, cf. idCosmetique) :
+// fonds d'écran (image importée comprise) et skins 10, namecards
+// ("banniere") et bannières ("banniere2") 15 ; Voyageur / Manekin :
+// PRIX_COSMETIQUE. Double pour les persos de PERSOS_PRIX_DOUBLE.
 const PRIX_COSMETIQUE = 1;
+const PRIX_PAR_CHOIX = { fond: 10, skin: 10, banniere: 15, banniere2: 15 };
 
-// Icône du Koyn (DB/images/others/koyn.webp), à côté des montants.
-const ICONE_KOYN = `<img class="icone-koyn" src="/DB/images/others/koyn.webp" alt="Koyns">`;
+// Persos dont la namecard, la bannière et le skin valent le double : ids
+// des persos (skins, "skin:<id>") et noms dans les fichiers des namecards
+// ("Namecard_Background_<nom>_..." / "Namecard_Banner_<nom>_...").
+const PERSOS_PRIX_DOUBLE = [
+  ["fufu", "Furina"], ["columbina", "Columbina"], ["arlecchino", "Arlecchino"], ["skirk", "Skirk"],
+  ["flin", "Flins"], ["hutao", "Hu_Tao"], ["neuvillette", "Neuvillette"], ["mavuika", "Mavuika"],
+  ["raiden", "Raiden_Shogun"], ["wanderer", "Wanderer"], ["citlali", "Citlali"], ["wriothesley", "Wriothesley"],
+  ["vodyanitsa", "Vodyanitsa"], ["durin", "Durin"], ["xiao", "Xiao"], ["lohen", "Lohen"]
+];
+const SKINS_PRIX_DOUBLE = new Set(PERSOS_PRIX_DOUBLE.map(([id]) => id));
+const NAMECARDS_PRIX_DOUBLE = new RegExp(`/Namecard_(Background|Banner)_(${PERSOS_PRIX_DOUBLE.map(([, nom]) => nom).join("|")})_`);
+
+function estPrixDouble(id) {
+  const [choix, ...reste] = String(id).split(":");
+  const valeur = reste.join(":");
+  if (choix === "skin") return SKINS_PRIX_DOUBLE.has(valeur);
+  return (choix === "banniere" || choix === "banniere2") && NAMECARDS_PRIX_DOUBLE.test(valeur);
+}
+
+function prixCosmetique(id) {
+  const prix = PRIX_PAR_CHOIX[String(id).split(":")[0]] ?? PRIX_COSMETIQUE;
+  return estPrixDouble(id) ? prix * 2 : prix;
+}
+
+// Icône du Rikoyn (DB/images/others/rikoyn.webp), à côté des montants.
+const ICONE_KOYN = `<img class="icone-koyn" src="/DB/images/others/rikoyn.webp" alt="Rikoyns">`;
 
 // Id d'un cosmétique : "<choix>:<valeur>" (choix de profil.parametres ;
 // "skin" pour chaque skin), ex. "fond:bg/autres/x.png", "skin:hutao".
@@ -41,12 +70,12 @@ function cosmetiquesParametres(parametres = {}) {
 function htmlGainKoyns(gain) {
   if (!gain) return "";
   const texte = gain.montant > 0 ? `+${gain.montant} ${ICONE_KOYN}`
-    : gain.raison === "plafond" ? "Pas de Koyns : 3 games récompensées par jour au plus contre les mêmes adversaires (reset à 4 h)"
-      : gain.raison === "suspicion" ? "Pas de Koyns : temps jugés suspects par l'anti-triche"
+    : gain.raison === "plafond" ? "Pas de Rikoyns : 3 games récompensées par jour au plus contre les mêmes adversaires (reset à 4 h)"
+      : gain.raison === "suspicion" ? "Pas de Rikoyns : temps jugés suspects par l'anti-triche"
         : "";
   return texte ? `<p class="ligne-koyns${gain.montant > 0 ? " gain" : ""}">${texte}</p>` : "";
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { PRIX_COSMETIQUE, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, idCosmetique, cosmetiquesParametres };
+  module.exports = { PRIX_COSMETIQUE, prixCosmetique, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, idCosmetique, cosmetiquesParametres };
 }
