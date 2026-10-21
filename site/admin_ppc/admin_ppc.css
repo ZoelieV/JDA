@@ -1568,7 +1568,15 @@ body {
   margin: 1rem 0 0.25rem;
 }
 
-.tableau-limites input {
+.seuil-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tableau-limites input,
+.seuil-horizontal input {
   box-sizing: border-box;
   width: 5.5rem;
   padding: 0.125rem 0.25rem;

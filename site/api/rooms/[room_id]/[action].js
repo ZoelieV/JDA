@@ -47,7 +47,11 @@ const {
   echangeJokerPossible,
   echangerBansContreJoker,
   BANS_PAR_JOKER,
-  appliquerBansBonus
+  appliquerBansBonus,
+  ciblesHorizontales,
+  preparerBansHorizontaux,
+  appliquerBansHorizontaux,
+  acteurBansBonus
 } = require("../../_lib/draft");
 
 // Commentaire obligatoire d'un litige signalé (cf. handleLitige).
@@ -126,6 +130,25 @@ async function tirageEtDraft(draft, room) {
   demarrerChronoDraft(draft);
 }
 
+// Après l'analyse ou des bans d'équilibrage confirmés : bans verticaux
+// encore dus, puis bans horizontaux ("fixe_horizontal", calculés d'après
+// les bans verticaux faits), sinon tirage j1/j2 et boss.
+async function suiteEquilibrage(draft, room) {
+  if (bansBonusDus(draft)) {
+    draft.phase = "bans_bonus";
+    draft.etape_bonus = "vertical";
+    demarrerBansBonus(draft);
+  } else if (preparerBansHorizontaux(draft)) {
+    draft.phase = "bans_bonus";
+    draft.etape_bonus = "horizontal";
+    demarrerBansBonus(draft);
+  } else {
+    // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
+    draft.etape_bonus = null;
+    await tirageEtDraft(draft, room);
+  }
+}
+
 // Les 2 joueurs sont prêts (ou le temps d'analyse est écoulé) : phase
 // suivante.
 async function passerApresPrets(draft, room) {
@@ -144,12 +167,8 @@ async function passerApresPrets(draft, room) {
     draft.boxes_permises = null;
     draft.phase = "analyse";
     demarrerAnalyse(draft);
-  } else if (bansBonusDus(draft)) {
-    draft.phase = "bans_bonus";
-    demarrerBansBonus(draft);
   } else {
-    // Pas de ban d'équilibrage dû, ou déjà faits (revanche).
-    await tirageEtDraft(draft, room);
+    await suiteEquilibrage(draft, room);
   }
 }
 
@@ -537,8 +556,24 @@ async function handleBonusToggle(req, res, roomId, user) {
   }
   if (refuserSiPause(res, draft)) return;
 
-  if (draft.bans_bonus_joueur !== joueur) {
+  if (acteurBansBonus(draft) !== joueur) {
     return res.status(403).json({ error: "Ce n'est pas à toi de choisir les bans d'équilibrage" });
+  }
+
+  if (draft.etape_bonus === "horizontal") {
+    const choix = draft.bans_horizontaux_choix = draft.bans_horizontaux_choix || [];
+    const index = choix.indexOf(persoId);
+    if (index >= 0) {
+      choix.splice(index, 1);
+    } else if (choix.length >= draft.bans_horizontaux_total) {
+      return res.status(409).json({ error: `Tu as déjà sélectionné tes ${draft.bans_horizontaux_total} ban(s) horizontaux` });
+    } else if (!ciblesHorizontales(draft).includes(persoId)) {
+      return res.status(409).json({ error: "Un ban horizontal vise un personnage horizontal de la box adverse (sans faire passer une box sous le nombre de persos minimum)" });
+    } else {
+      choix.push(persoId);
+    }
+    await sauvegarderDraft(roomId, draft);
+    return repondreDraft(res, draft, joueur);
   }
 
   draft.bans_bonus_choix = draft.bans_bonus_choix || [];
@@ -587,7 +622,7 @@ async function handleBonusEchanger(req, res, roomId, user) {
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
 
-  if (draft.phase !== "bans_bonus") {
+  if (draft.phase !== "bans_bonus" || draft.etape_bonus === "horizontal") {
     return res.status(409).json({ error: "Aucun ban d'équilibrage à échanger à ce stade" });
   }
   if (refuserSiPause(res, draft)) return;
@@ -625,8 +660,20 @@ async function handleBonusConfirmer(req, res, roomId, user) {
   }
   if (refuserSiPause(res, draft)) return;
 
-  if (draft.bans_bonus_joueur !== joueur) {
+  if (acteurBansBonus(draft) !== joueur) {
     return res.status(403).json({ error: "Ce n'est pas à toi de confirmer les bans d'équilibrage" });
+  }
+
+  // Bans horizontaux : tous choisis, ou plus aucune cible possible.
+  if (draft.etape_bonus === "horizontal") {
+    const choix = draft.bans_horizontaux_choix || [];
+    if (choix.length < draft.bans_horizontaux_total && ciblesHorizontales(draft).length) {
+      return res.status(409).json({ error: `Sélectionne ${draft.bans_horizontaux_total} personnage(s) avant de confirmer` });
+    }
+    appliquerBansHorizontaux(draft, choix);
+    await suiteEquilibrage(draft, room);
+    await sauvegarderDraft(roomId, draft);
+    return repondreDraft(res, draft, joueur);
   }
 
   const choix = draft.bans_bonus_choix || [];
@@ -637,7 +684,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
 
   appliquerBansBonus(draft, joueur, choix, jokers);
 
-  await tirageEtDraft(draft, room);
+  await suiteEquilibrage(draft, room);
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -958,6 +1005,21 @@ async function handleExpirer(req, res, roomId, user) {
   if (draft.phase === "analyse") {
     if (!draft.fin_analyse || !peutExpirer(draft.fin_analyse, true)) return pasEncore();
     await passerApresPrets(draft, room);
+  } else if (draft.phase === "bans_bonus" && draft.etape_bonus === "horizontal") {
+    const acteur = draft.bans_horizontaux_joueur;
+    if (!draft.fin_bans_bonus || !peutExpirer(draft.fin_bans_bonus, joueur === acteur)) return pasEncore();
+    // Choix déjà sélectionnés gardés, le reste au hasard parmi les cibles.
+    const choix = [...(draft.bans_horizontaux_choix || [])];
+    const aleatoires = new Set();
+    while (choix.length < draft.bans_horizontaux_total) {
+      const cibles = ciblesHorizontales(draft, choix);
+      if (!cibles.length) break;
+      const persoId = cibles[Math.floor(Math.random() * cibles.length)];
+      choix.push(persoId);
+      aleatoires.add(persoId);
+    }
+    appliquerBansHorizontaux(draft, choix, aleatoires);
+    await suiteEquilibrage(draft, room);
   } else if (draft.phase === "bans_bonus") {
     const acteur = draft.bans_bonus_joueur;
     if (!draft.fin_bans_bonus || !peutExpirer(draft.fin_bans_bonus, joueur === acteur)) return pasEncore();
@@ -978,7 +1040,7 @@ async function handleExpirer(req, res, roomId, user) {
     const adverse = acteur === "j1" ? "j2" : "j1";
     tirer(draft.pool_disponible.filter(id => pris(id) && draft[`pool_${adverse}`]?.includes(id)), jokers, nbJokers);
     appliquerBansBonus(draft, acteur, choix, jokers, aleatoires);
-    await tirageEtDraft(draft, room);
+    await suiteEquilibrage(draft, room);
   } else if (draft.phase === "draft" && draft.chrono) {
     const prochaine = getProchaineAction(draft);
     if (!prochaine) return pasEncore();

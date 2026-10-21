@@ -347,6 +347,7 @@ function htmlJoueur(match, role, bansConnus) {
   const htmlBan = ban => htmlPerso(ban.id, joueur.parametres, { banni: true, infosJoueurs: ban.infos, aleatoire: ban.aleatoire });
   const bans = joueur.bans.map(htmlBan).join("");
   const equilibrage = joueur.bans_equilibrage.map(htmlBan).join("");
+  const horizontaux = (joueur.bans_horizontaux || []).map(htmlBan).join("");
 
   // Match en équipe : bannière de chaque joueur (★ chef), puis résultat et
   // temps de l'équipe ; sinon la bannière du joueur avec son temps.
@@ -374,6 +375,7 @@ function htmlJoueur(match, role, bansConnus) {
       ${htmlLigne("Équipe", equipe)}
       ${bansConnus ? htmlLigne("Bans", bans, "ligne-bans") : ""}
       ${htmlLigne("Équilibrage", equilibrage, "ligne-bans")}
+      ${htmlLigne("Bans horizontaux", horizontaux, "ligne-bans")}
     </div>
   `;
 }
@@ -1218,12 +1220,12 @@ function categorieAffichee() {
   const sources = categorieStats === "tous"
     ? Object.values(statistiques.categories)
     : [statistiques.categories[categorieStats]];
-  const total = { matchs: 0, matchs_bans: 0, picks: new Map(), bans: new Map(), bans_equilibrage: new Map() };
+  const total = { matchs: 0, matchs_bans: 0, picks: new Map(), bans: new Map(), bans_equilibrage: new Map(), bans_horizontaux: new Map() };
   sources.forEach(source => {
     total.matchs += source.matchs;
     total.matchs_bans += source.matchs_bans;
-    ["picks", "bans", "bans_equilibrage"].forEach(cle => {
-      Object.entries(source[cle]).forEach(([id, nb]) => {
+    ["picks", "bans", "bans_equilibrage", "bans_horizontaux"].forEach(cle => {
+      Object.entries(source[cle] || {}).forEach(([id, nb]) => {
         const idDraft = personnagesParId.has(id) ? id : groupeParId.get(id);
         if (!personnagesParId.has(idDraft)) return; // perso retiré du catalogue
         total[cle].set(idDraft, (total[cle].get(idDraft) || 0) + nb);

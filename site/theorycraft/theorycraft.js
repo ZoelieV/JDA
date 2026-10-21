@@ -116,13 +116,17 @@ async function chargerDonnees() {
   bonusSaison = new Set(Array.isArray(config?.bonus_saison) ? config.bonus_saison : []);
   carnageDesactive = config?.carnage_desactive === true;
   if (Number(config?.seuil_equilibrage) > 0) seuil = Number(config.seuil_equilibrage);
-  if (config?.equilibrage === "fixe_joker") methodeEquilibrage = config.equilibrage;
+  if (["fixe_joker", "fixe_horizontal"].includes(config?.equilibrage)) methodeEquilibrage = config.equilibrage;
+  if (Number(config?.seuil_horizontal) > 0) seuilHorizontal = Number(config.seuil_horizontal);
   limitesEquilibrage = config?.limites_equilibrage || null;
 }
 
 // Limites des bans calculés par palier (cf. getLimitesEquilibrage,
 // api/_lib/personnages.js).
 let limitesEquilibrage = null;
+// Points d'écart par ban horizontal ("fixe_horizontal", cf.
+// getSeuilHorizontal, api/_lib/personnages.js).
+let seuilHorizontal = 200;
 const NOMS_PALIERS = { 1: "Sardine", 2: "Carpe", 3: "Dauphin", 4: "Baleine" };
 
 function htmlLimitesEquilibrage() {
@@ -145,7 +149,23 @@ const TEXTE_ECHANGE_JOKER = "<p><strong>Échange contre un joker</strong> : celu
 
 // Section "Bans d'équilibrage" selon la méthode en vigueur.
 function htmlBansEquilibrage(paliers) {
-  return htmlMethodeEquilibrage(paliers) + TEXTE_ECHANGE_JOKER;
+  return htmlMethodeEquilibrage(paliers) + TEXTE_ECHANGE_JOKER +
+    (methodeEquilibrage === "fixe_horizontal" ? htmlBansHorizontaux() : "");
+}
+
+// Bans horizontaux ("fixe_horizontal", cf. calculerBansHorizontaux,
+// api/_lib/draft.js).
+function htmlBansHorizontaux() {
+  return `
+    <h3>Bans horizontaux</h3>
+    <p class="formule-tc">
+      personnages horizontaux d'une box = ceux qui ne sont jamais entrés dans son top 12 pendant le calcul des bans d'équilibrage<br>
+      valeur = ses points + sa signature, ou une arme libre jamais entrée dans le top 12<br>
+      somme horizontale = valeur des personnages horizontaux encore disponibles après les bans d'équilibrage<br>
+      bans horizontaux = ⌊ | somme J1 − somme J2 | / ${seuilHorizontal} ⌋
+    </p>
+    <p>Après les bans d'équilibrage, le joueur dont la somme horizontale est la plus petite bannit ce nombre de personnages, seulement parmi les personnages horizontaux de son adversaire. Ce sont des bans normaux : un personnage que les 2 box ont est retiré des 2. Un personnage horizontal banni pendant les bans d'équilibrage ne compte plus dans la somme. Le nombre est figé ; il baisse seulement s'il ne reste plus assez de personnages horizontaux à bannir, ou si une box passerait sous le nombre de persos minimum.</p>
+    <p>Exemple : 2 joueurs à la même verticalité, mais 1000 points de personnages horizontaux d'un côté et 2000 de l'autre : le premier a ${Math.floor(1000 / seuilHorizontal)} bans horizontaux sur les personnages horizontaux du second. Ils sont gardés pour les revanches ; en mode carnage, il n'y en a jamais.</p>`;
 }
 
 function htmlMethodeEquilibrage(paliers) {

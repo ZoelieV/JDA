@@ -7,7 +7,8 @@
 // (une fois par draft, cf. echangerBansContreJoker dans api/_lib/draft.js).
 const METHODES_EQUILIBRAGE = [
   { valeur: "ancien", titre: "Ancienne méthode", description: "Nombre de bans imposé : 1 ban tous les 200 points d'écart entre les box." },
-  { valeur: "fixe_joker", titre: "Bans calculés + joker", description: "Verticalité = moyenne des 12 meilleurs persos (perso + signature). Le nombre de bans est calculé d'après les 2 box (sans plafond) : assez pour ramener l'écart d'équipe prévu (4 × écart de verticalité) à 25 pts ou moins. Si les bans n'y arrivent pas : 1 ban joker (interdit à l'adversaire seulement). Armes en double et signatures sans leur perso : attribuées à leur valeur alternative aux persos sans signature du même type (armes support : persos support ou sub-dps)." }
+  { valeur: "fixe_joker", titre: "Bans calculés + joker", description: "Verticalité = moyenne des 12 meilleurs persos (perso + signature). Le nombre de bans est calculé d'après les 2 box (sans plafond) : assez pour ramener l'écart d'équipe prévu (4 × écart de verticalité) à 25 pts ou moins. Si les bans n'y arrivent pas : 1 ban joker (interdit à l'adversaire seulement). Armes en double et signatures sans leur perso : attribuées à leur valeur alternative aux persos sans signature du même type (armes support : persos support ou sub-dps)." },
+  { valeur: "fixe_horizontal", titre: "Bans calculés + joker + bans horizontaux", description: "La méthode précédente, puis des bans horizontaux. Persos horizontaux d'une box : ceux qui ne sont jamais entrés dans son top 12 pendant le calcul des bans verticaux (valeur : perso + signature, ou une arme libre jamais entrée dans le top 12). Après les bans verticaux, on additionne les persos horizontaux encore disponibles de chaque box : celui qui a la plus petite somme a 1 ban horizontal par tranche de « Seuil horizontal » points d'écart, sur les persos horizontaux de l'adversaire seulement (ban normal, retiré des 2 box)." }
 ];
 
 // Limites par palier de draft (config.limites_equilibrage, cf.
@@ -22,7 +23,7 @@ const CHAMPS_LIMITES = [
   { cle: "points_max_box", titre: "Box max (hors full)" }
 ];
 
-function rendreLimites(limites) {
+function rendreLimites(limites, seuilHorizontal) {
   document.getElementById("limites-equilibrage").innerHTML = `
     <table class="tableau-boss tableau-limites">
       <thead><tr><th class="col-nom">Palier</th>${CHAMPS_LIMITES.map(c => `<th>${c.titre}</th>`).join("")}</tr></thead>
@@ -34,6 +35,9 @@ function rendreLimites(limites) {
           </tr>`).join("")}
       </tbody>
     </table>
+    <label class="seuil-horizontal">Seuil horizontal (points d'écart par ban horizontal) :
+      <input type="number" min="1" step="1" name="seuil_horizontal" value="${seuilHorizontal ?? ""}" required>
+    </label>
     <button type="submit" class="bouton-creer">Enregistrer les limites</button>`;
 }
 
@@ -65,6 +69,7 @@ function initialiserEquilibrage() {
   // réponse), puis suivie à chaque enregistrement.
   let actuelle = null;
   let limites = null;
+  let seuilHorizontal = null;
   const fermer = () => modal.classList.remove("active");
 
   document.getElementById("ouvrir-equilibrage").addEventListener("click", async () => {
@@ -75,13 +80,14 @@ function initialiserEquilibrage() {
         const config = await chargerPointsAdmin();
         actuelle = METHODES_EQUILIBRAGE.some(m => m.valeur === config?.equilibrage) ? config.equilibrage : "ancien";
         limites = config?.limites_equilibrage || null;
+        seuilHorizontal = config?.seuil_horizontal ?? null;
       } catch (erreur) {
         console.error(erreur);
         actuelle = "ancien";
       }
     }
     rendreEquilibrage(actuelle);
-    rendreLimites(limites);
+    rendreLimites(limites, seuilHorizontal);
   });
   document.getElementById("fermer-equilibrage").addEventListener("click", fermer);
   modal.addEventListener("click", event => {
@@ -98,14 +104,18 @@ function initialiserEquilibrage() {
     bouton.disabled = true;
     afficherMessageEquilibrage("Enregistrement…");
     try {
-      const config = await envoyerAjout({ limites_equilibrage: lireFormulaireLimites(formulaire) });
+      const config = await envoyerAjout({
+        limites_equilibrage: lireFormulaireLimites(formulaire),
+        seuil_horizontal: Number(formulaire.elements.seuil_horizontal.value)
+      });
       limites = config.limites_equilibrage;
+      seuilHorizontal = config.seuil_horizontal ?? seuilHorizontal;
       afficherMessageEquilibrage("Limites enregistrées : elles s'appliquent aux prochaines drafts.", "succes");
     } catch (erreur) {
       console.error(erreur);
       afficherMessageEquilibrage(erreur.message, "erreur");
     }
-    rendreLimites(limites);
+    rendreLimites(limites, seuilHorizontal);
   });
 
   liste.addEventListener("change", async event => {

@@ -58,11 +58,14 @@ function estWorldBossPublic() {
 //   ancien     : ⌊ écart / SEUIL_EQUILIBRAGE ⌋ bans, nombre imposé ;
 //   fixe_joker : nombre de bans calculé d'après les 2 box (verticalité),
 //                plus un ban joker si les bans ne suffisent pas (cf.
-//                calculerEquilibrageFixe, _lib/draft.js).
+//                calculerEquilibrageFixe, _lib/draft.js) ;
+//   fixe_horizontal : fixe_joker, puis des bans horizontaux sur les persos
+//                jamais entrés dans le top 12 (cf. calculerBansHorizontaux,
+//                _lib/draft.js ; seuil : getSeuilHorizontal).
 // Dans les 2 cas, celui qui bannit peut échanger 5 bans contre un joker
 // (cf. echangerBansContreJoker, _lib/draft.js). Ancienne méthode
 // enregistrée qui n'existe plus : "ancien".
-const MODES_EQUILIBRAGE = ["ancien", "fixe_joker"];
+const MODES_EQUILIBRAGE = ["ancien", "fixe_joker", "fixe_horizontal"];
 // Valeurs alternatives permises pour les armes (% des points, cf.
 // api/points.js) ; 100 = aucune réduction.
 const ALTERNATIVES_ARMES = [0, 25, 50, 75, 100];
@@ -70,6 +73,20 @@ let modeEquilibrage = "ancien";
 
 function getModeEquilibrage() {
   return modeEquilibrage;
+}
+
+// Points d'écart entre les sommes horizontales par ban horizontal
+// ("fixe_horizontal"), réglable sur la page admin (config.seuil_horizontal).
+const SEUIL_HORIZONTAL_DEFAUT = 200;
+let seuilHorizontal = SEUIL_HORIZONTAL_DEFAUT;
+
+function lireSeuilHorizontal(brut) {
+  const valeur = Math.round(Number(brut));
+  return Number.isFinite(valeur) && valeur >= 1 ? valeur : SEUIL_HORIZONTAL_DEFAUT;
+}
+
+function getSeuilHorizontal() {
+  return seuilHorizontal;
 }
 
 // Limites de l'équilibrage calculé ("fixe_joker", cf. calculerEquilibrageFixe
@@ -210,6 +227,7 @@ async function actualiserPoints() {
     worldBossPublic = config.world_boss_public === true;
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
+    seuilHorizontal = lireSeuilHorizontal(config.seuil_horizontal);
     modesBonus = config.modes || {};
     configKoyns = {
       exclusifs: new Set(Array.isArray(config.cosmetiques_exclusifs) ? config.cosmetiques_exclusifs : []),
@@ -390,6 +408,8 @@ module.exports = {
   ALTERNATIVES_ARMES,
   MODES_POINTS,
   getModeEquilibrage,
+  lireSeuilHorizontal,
+  getSeuilHorizontal,
   codeTheatre,
   costBox,
   palierTheatre,

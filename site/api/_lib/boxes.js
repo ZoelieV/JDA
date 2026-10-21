@@ -6,7 +6,7 @@
 // joueur, sans dévoiler ses box opti), ou une box fictive (cf.
 // _lib/boxes_fictives.js).
 const { lireDonneesProprietaire } = require("./boxes_fictives");
-const { getPersonnages, getArmes, actualiserPoints, getModeEquilibrage, getLimitesEquilibrage, getPointsMaxBox } = require("./personnages");
+const { getPersonnages, getArmes, actualiserPoints, getModeEquilibrage, getLimitesEquilibrage, getPointsMaxBox, getSeuilHorizontal } = require("./personnages");
 const {
   calculerPointsBox,
   calculerPointsArmesBox,
@@ -16,6 +16,8 @@ const {
   calculerBansBonus,
   modeleEquilibrage,
   estEquilibrageFixe,
+  estEquilibrageHorizontal,
+  valeursHorizontales,
   verticalite,
   horizontalite,
   calculerEquilibrageFixe,
@@ -179,6 +181,14 @@ async function calculerEquilibrage(draft) {
   draft.echange_joker = false;
   draft.equilibrable = true;
   draft.ecart_prevu = null;
+  draft.etape_bonus = null;
+  draft.horizontaux_j1 = null;
+  draft.horizontaux_j2 = null;
+  draft.horizontal_calcule = false;
+  draft.bans_horizontaux_total = 0;
+  draft.bans_horizontaux_faits = 0;
+  draft.bans_horizontaux_joueur = null;
+  draft.bans_horizontaux_choix = [];
 
   // Bans calculés (cf. calculerEquilibrageFixe, _lib/draft.js) : la box à la
   // verticalité la plus faible bannit (nombre imposé, jokers compris).
@@ -186,7 +196,15 @@ async function calculerEquilibrage(draft) {
     // Armes libres attribuées aux persos sans signature (cf.
     // modeleEquilibrage, _lib/draft.js) ; limites du palier de la draft.
     const palier = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
-    const { faible, modeles, resultat } = evaluerEquilibrageFixe(boxes, palier);
+    const { faible, fort, modeles, resultat } = evaluerEquilibrageFixe(boxes, palier);
+    draft.min_persos_equilibrage = getLimitesEquilibrage(palier).min_persos;
+    // Bans horizontaux : persos jamais entrés dans le top 12 pendant le
+    // calcul, figés ici (cf. calculerBansHorizontaux, _lib/draft.js).
+    if (estEquilibrageHorizontal(draft)) {
+      draft[`horizontaux_${faible}`] = valeursHorizontales(modeles[faible], resultat.verticaux.faible);
+      draft[`horizontaux_${fort}`] = valeursHorizontales(modeles[fort], resultat.verticaux.fort);
+      draft.seuil_horizontal = getSeuilHorizontal();
+    }
     ["j1", "j2"].forEach(role => {
       draft[`verticalite_${role}`] = Math.round(verticalite(modeles[role]) * 10) / 10;
       draft[`horizontalite_${role}`] = horizontalite(modeles[role]);

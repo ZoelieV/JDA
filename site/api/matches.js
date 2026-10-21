@@ -398,7 +398,8 @@ function resumerJoueur(match, role, profils) {
         : infosPersoJoueur(profil?.data, pick.id, pick.element))
     })),
     bans: bans.filter(a => !a.bonus).map(a => resumerBan(a, profils)),
-    bans_equilibrage: bans.filter(a => a.bonus).map(a => resumerBan(a, profils))
+    bans_equilibrage: bans.filter(a => a.bonus && !a.horizontal).map(a => resumerBan(a, profils)),
+    bans_horizontaux: bans.filter(a => a.horizontal).map(a => resumerBan(a, profils))
   };
 }
 
@@ -437,7 +438,8 @@ async function chargerMatchsStats() {
   return lignes.filter(match => !match.entrainement && !["ouvert", "traite", "invalide"].includes(match.litige));
 }
 
-// Personnages pick / bannis / bannis à l'équilibrage dans un match (chacun
+// Personnages pick / bannis / bannis à l'équilibrage (verticaux, puis
+// horizontaux) dans un match (chacun
 // compté une fois par match), ou bans null si non enregistrés (anciens
 // matchs, cf. bans_connus).
 function persosDuMatch(match) {
@@ -446,7 +448,8 @@ function persosDuMatch(match) {
     return {
       picks: ids(a => a.type === "pick"),
       bans: ids(a => a.type === "ban" && !a.bonus),
-      bans_equilibrage: ids(a => a.type === "ban" && a.bonus)
+      bans_equilibrage: ids(a => a.type === "ban" && a.bonus && !a.horizontal),
+      bans_horizontaux: ids(a => a.type === "ban" && a.horizontal)
     };
   }
   const colonne = nom => ["j1", "j2"].flatMap(role => Array.isArray(match[`${nom}_${role}`]) ? match[`${nom}_${role}`] : []);
@@ -454,7 +457,8 @@ function persosDuMatch(match) {
   return {
     picks: new Set(colonne("team")),
     bans: bans.length ? new Set(bans.filter(b => !b.bonus).map(b => b.perso_id)) : null,
-    bans_equilibrage: bans.length ? new Set(bans.filter(b => b.bonus).map(b => b.perso_id)) : null
+    bans_equilibrage: bans.length ? new Set(bans.filter(b => b.bonus && !b.horizontal).map(b => b.perso_id)) : null,
+    bans_horizontaux: bans.length ? new Set(bans.filter(b => b.horizontal).map(b => b.perso_id)) : null
   };
 }
 
@@ -463,7 +467,7 @@ function persosDuMatch(match) {
 async function statistiques(res, saison = null, equipe = false) {
   const matchs = (await chargerMatchsStats()).filter(match =>
     (saison === null || saisonDuMatch(match) === saison) && !!match.mode_equipe === equipe);
-  const nouvelleCategorie = () => ({ matchs: 0, matchs_bans: 0, picks: {}, bans: {}, bans_equilibrage: {} });
+  const nouvelleCategorie = () => ({ matchs: 0, matchs_bans: 0, picks: {}, bans: {}, bans_equilibrage: {}, bans_horizontaux: {} });
   const categories = { classe: nouvelleCategorie(), non_classe: nouvelleCategorie() };
   // Records : { boss_id: { classe: { match, role }, non_classe: ... } }.
   const records = {};
@@ -478,6 +482,7 @@ async function statistiques(res, saison = null, equipe = false) {
       categorie.matchs_bans += 1;
       persos.bans.forEach(id => { categorie.bans[id] = (categorie.bans[id] || 0) + 1; });
       persos.bans_equilibrage.forEach(id => { categorie.bans_equilibrage[id] = (categorie.bans_equilibrage[id] || 0) + 1; });
+      persos.bans_horizontaux.forEach(id => { categorie.bans_horizontaux[id] = (categorie.bans_horizontaux[id] || 0) + 1; });
     }
 
     if (!match.boss_id) return;

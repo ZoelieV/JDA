@@ -54,8 +54,10 @@ function dureeBansBonus(nbBans) {
   return Math.max(BANS_BONUS_MIN_MS, nbBans * BANS_BONUS_PAR_BAN_MS);
 }
 
+// Bans verticaux, puis bans horizontaux (draft.etape_bonus), chacun son temps.
 function demarrerBansBonus(draft, maintenant = Date.now()) {
-  if (estChronometre(draft)) draft.fin_bans_bonus = maintenant + dureeBansBonus(draft.bans_bonus_total || 0);
+  const nbBans = draft.etape_bonus === "horizontal" ? draft.bans_horizontaux_total : draft.bans_bonus_total;
+  if (estChronometre(draft)) draft.fin_bans_bonus = maintenant + dureeBansBonus(nbBans || 0);
 }
 
 // Temps de draft d'un joueur : 30 s par pick / ban de sa séquence (fixée au

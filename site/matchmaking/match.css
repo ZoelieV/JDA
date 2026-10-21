@@ -1042,6 +1042,28 @@ h1 {
   text-shadow: 0 0 2px #000;
 }
 
+/* Ban horizontal (fixe_horizontal) : persos jamais entrés dans le top 12. */
+.slot-bonus.horizontal {
+  border-color: #6fb7e8;
+}
+
+.ban-mini.horizontal {
+  outline: 2px solid #6fb7e8;
+  outline-offset: -2px;
+}
+
+.slot-bonus.horizontal::after,
+.ban-mini.horizontal::after {
+  content: "H";
+  position: absolute;
+  top: 0.125rem;
+  left: 0.25rem;
+  color: #6fb7e8;
+  font-weight: bold;
+  font-size: 0.75rem;
+  text-shadow: 0 0 2px #000;
+}
+
 /* ---- Phase : temps ---- */
 
 /* Fin de match : le tableau du gagnant s'illumine. */

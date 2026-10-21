@@ -25,7 +25,8 @@
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
 //          world_boss_public: bool,  (Random world boss ouvert à tous,
 //                       sinon réservé aux administrateurs)
-//          equilibrage: "ancien" | "fixe_joker",
+//          equilibrage: "ancien" | "fixe_joker" | "fixe_horizontal",
+//          seuil_horizontal: points d'écart par ban horizontal,
 //          limites_equilibrage: { palier: { min_persos, seuil_bas,
 //                       seuil_haut, plancher, points_max_box } } }  (cf.
 //                       _lib/personnages.js ; points_max_box : box jouable
@@ -46,9 +47,10 @@
 //   { world_boss_public: true|false }  ouvre le mode Random world boss à
 //                                    tous / le réserve aux administrateurs
 //                                    (cf. _lib/world_boss.js)
-//   { limites_equilibrage: {...} }   limites par palier : équilibrage
-//                                    calculé, points max d'une box
-//                                    jouable hors full box
+//   { limites_equilibrage: {...}, seuil_horizontal }  limites par
+//                                    palier : équilibrage calculé, points
+//                                    max d'une box jouable hors full box ;
+//                                    seuil des bans horizontaux
 //   { cosmetiques_exclusifs: [id...] }  Koyns : cosmétiques pas en vente
 //                                    (gagnés aux classements, événements)
 //   { bonus_connexion: { debut, fin, koyns, cosmetique } | null }  bonus
@@ -66,7 +68,7 @@ const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
 const { COSMETIQUES_GRATUITS } = require("../commun/koyns.js");
 const { estCosmetique, donner, MAX_KOYNS_DON } = require("./_lib/koyns");
-const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage } = require("./_lib/personnages");
+const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -266,7 +268,8 @@ module.exports = async (req, res) => {
       return res.status(200).json({
         ...donnees,
         seuil_equilibrage: SEUIL_EQUILIBRAGE,
-        limites_equilibrage: lireLimitesEquilibrage(config.limites_equilibrage)
+        limites_equilibrage: lireLimitesEquilibrage(config.limites_equilibrage),
+        seuil_horizontal: lireSeuilHorizontal(config.seuil_horizontal)
       });
     }
 
@@ -340,6 +343,7 @@ module.exports = async (req, res) => {
         // chaque palier.
         const { points_max_box: _ancienPlafond, ...reste } = ancienne;
         config = { ...reste, limites_equilibrage: lireLimitesEquilibrage(corps.limites_equilibrage) };
+        if ("seuil_horizontal" in corps) config.seuil_horizontal = lireSeuilHorizontal(corps.seuil_horizontal);
       } else if (typeof corps.equilibrage === "string") {
         if (!MODES_EQUILIBRAGE.includes(corps.equilibrage)) return res.status(400).json({ error: "Méthode d'équilibrage inconnue" });
         config = { ...ancienne, equilibrage: corps.equilibrage };

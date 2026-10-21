@@ -455,7 +455,7 @@ function estEntrainementSolo() {
 function roleActifSolo() {
   switch (draft.phase) {
     case "draft": return getProchaineActionLocale()?.joueur || "j1";
-    case "bans_bonus": return draft.bans_bonus_joueur || "j1";
+    case "bans_bonus": return acteurBansBonus() || "j1";
     case "temps": return !draft.temps_j1 ? "j1" : !draft.temps_j2 ? "j2" : "j1";
     case "verification": return !draft.temps_confirme_j1 ? "j1" : !draft.temps_confirme_j2 ? "j2" : "j1";
     default: return "j1";
@@ -1218,8 +1218,34 @@ function placerBoutonPret(bouton) {
 
 // Bans calculés (cf. calculerEquilibrageFixe, api/_lib/draft.js) : nombre
 // imposé comme l'ancienne méthode, jokers compris (bans_joker_total).
+// "fixe_horizontal" : les mêmes, puis les bans horizontaux.
 function estEquilibrageFixe() {
-  return draft.equilibrage === "fixe_joker";
+  return draft.equilibrage === "fixe_joker" || draft.equilibrage === "fixe_horizontal";
+}
+
+// Phase bans_bonus : bans verticaux, puis bans horizontaux
+// (draft.etape_bonus, cf. acteurBansBonus dans api/_lib/draft.js).
+function estEtapeHorizontale() {
+  return draft.phase === "bans_bonus" && draft.etape_bonus === "horizontal";
+}
+
+function acteurBansBonus() {
+  return estEtapeHorizontale() ? draft.bans_horizontaux_joueur : draft.bans_bonus_joueur;
+}
+
+// Mêmes règles que ciblesHorizontales (api/_lib/draft.js) : persos
+// horizontaux de l'adversaire encore jouables, sans faire passer une box
+// sous le nombre de persos minimum (ban global).
+function ciblesHorizontales(choix) {
+  const banneur = draft.bans_horizontaux_joueur;
+  if (!banneur) return [];
+  const adverse = getAutreRole(banneur);
+  const disponibles = new Set(draft.pool_disponible || []);
+  const minimum = draft.min_persos_equilibrage || 0;
+  const restants = (role, bannis) => (draft[`pool_${role}`] || []).filter(id => disponibles.has(id) && !bannis.includes(id)).length;
+  return Object.keys(draft[`horizontaux_${adverse}`] || {}).filter(id =>
+    disponibles.has(id) && (draft[`pool_${adverse}`] || []).includes(id) && !choix.includes(id) &&
+    ["j1", "j2"].every(role => !(draft[`pool_${role}`] || []).includes(id) || restants(role, [...choix, id]) >= minimum));
 }
 
 // Échange de BANS_PAR_JOKER bans contre un joker (cf.
@@ -1253,7 +1279,88 @@ function rendreEchangeJoker(cEstMonTour, nbNormaux) {
   bouton.onclick = () => postBonusEchanger(!!draft.echange_joker).catch(err => alert(err.message));
 }
 
+// Étape des bans horizontaux : persos horizontaux de l'adversaire
+// seulement (jamais entrés dans le top 12 du calcul des bans verticaux),
+// bans globaux, nombre figé (moins si plus aucune cible possible).
+function rendreBansHorizontaux() {
+  const choix = draft.bans_horizontaux_choix || [];
+  const total = draft.bans_horizontaux_total || 0;
+  const banneur = draft.bans_horizontaux_joueur;
+  const adverse = getAutreRole(banneur);
+  const cibles = ciblesHorizontales(choix);
+  const restant = total - choix.length;
+  const termine = restant === 0 || cibles.length === 0;
+  const cEstMonTour = banneur === monRole;
+  rendreEchangeJoker(false, 0);
+
+  const somme = role => draft[`somme_horizontale_${role}`] ?? 0;
+  const constat = `Persos horizontaux (jamais entrés dans le top 12 des bans verticaux), après les bans verticaux : ` +
+    `${pseudoColore(banneur)} ${somme(banneur)} pts — ${pseudoColore(adverse)} ${somme(adverse)} pts. ` +
+    `Écart de ${Math.abs(somme("j1") - somme("j2"))} pts : ${total} ban(s) horizontal(aux) pour ${pseudoColore(banneur)} ` +
+    `(1 tous les ${draft.seuil_horizontal} pts), sur les persos horizontaux de ${pseudoColore(adverse)}.<br>`;
+  const message = document.getElementById("message-equilibrage");
+  if (cEstMonTour) {
+    message.innerHTML = !termine
+      ? `${constat}${draft.entrainement ? `à ${pseudoColore(banneur)} de choisir` : "choisis"} encore ${restant} personnage(s) à bannir, puis confirme.`
+      : `${constat}${restant > 0 ? "Plus aucun personnage ne peut être banni. " : ""}Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
+  } else {
+    message.innerHTML = `${constat}${pseudoColore(banneur)} choisit ses bans horizontaux. En attente…`;
+  }
+
+  const slots = document.getElementById("bans-bonus-slots");
+  slots.innerHTML = "";
+  Array.from({ length: total }, (_, i) => choix[i]).forEach(persoId => {
+    const slot = document.createElement("div");
+    const personnage = persoId && getPersonnageParId(persoId);
+    slot.className = `slot-bonus horizontal${personnage ? " rempli" : ""}`;
+    slot.title = "Ban horizontal";
+    if (personnage) {
+      slot.innerHTML = `
+        <img src="../DB/${personnage.image}" alt="${personnage.nom}">
+        <span class="retirer">✕</span>
+      `;
+      if (cEstMonTour) {
+        slot.title = "Ban horizontal — cliquer pour retirer";
+        slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alert(err.message)));
+      }
+    }
+    slots.appendChild(slot);
+  });
+
+  const btnConfirmer = document.getElementById("btn-confirmer-bonus");
+  btnConfirmer.classList.toggle("cache", !monRole);
+  btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
+  btnConfirmer.classList.toggle("pret", cEstMonTour && termine);
+  btnConfirmer.disabled = !cEstMonTour || !termine || monTempsEcoule();
+  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
+
+  const grille = document.getElementById("grille-bans-bonus");
+  const cleGrille = JSON.stringify([
+    "horizontal", choix, total, banneur, draft.pool_disponible,
+    draft.pool_j1, draft.pool_j2, draft.discord_j1, draft.discord_j2, monRole,
+    ...cleFiltres()
+  ]);
+  if (!grilleAChange(grille, cleGrille)) return;
+
+  const personnages = draft.pool_disponible
+    .map(id => getPersonnageParId(id))
+    .filter(p => p && personnageCorrespondFiltres(p));
+
+  remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
+    const id = personnage.id;
+    const dejaChoisi = choix.includes(id);
+    const peutCliquer = cEstMonTour && (dejaChoisi || (restant > 0 && cibles.includes(id)));
+    return obtenirCarteItem(grille, personnage, {
+      selectionnable: peutCliquer,
+      indisponible: dejaChoisi,
+      onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
+      ...getInfosCarte(id)
+    });
+  }));
+}
+
 function rendreBansBonus() {
+  if (estEtapeHorizontale()) return rendreBansHorizontaux();
   const choix = draft.bans_bonus_choix || [];
   const jokers = draft.bans_joker_choix || [];
   const nbJokers = draft.bans_joker_total || 0;
@@ -1261,7 +1368,10 @@ function rendreBansBonus() {
   const restant = draft.bans_bonus_total - choix.length - jokers.length;
   const nomJoueurConcerne = pseudoColore(draft.bans_bonus_joueur); // couleur de son rôle
   const ecart = Math.abs((draft.points_j1 ?? 0) - (draft.points_j2 ?? 0));
-  const constat = estEquilibrageFixe() ? `${texteEquilibrageFixe()}.<br>` : `Écart de ${ecart} pts entre les 2 box : `;
+  const suiteHorizontale = draft.equilibrage === "fixe_horizontal"
+    ? " Ensuite : bans horizontaux (persos jamais entrés dans le top 12), pour celui dont ces persos valent le moins ; un perso horizontal banni ici n'y compte plus."
+    : "";
+  const constat = estEquilibrageFixe() ? `${texteEquilibrageFixe()}.${suiteHorizontale}<br>` : `Écart de ${ecart} pts entre les 2 box : `;
   const consigneJoker = nbJokers ? " Les premiers vont dans les bans d'équilibrage, les suivants dans les jokers (personnages de la box adverse)." : "";
   const echange = draft.echange_joker ? ` (dont 1 joker obtenu contre ${BANS_PAR_JOKER} bans)` : "";
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
@@ -1605,26 +1715,36 @@ function rendreTableaux() {
 // Petit rappel persistant, pendant la draft, des bans d'équilibrage joués
 // avant le tirage du boss (utile puisque la phase bans_bonus elle-même est
 // passée à ce stade).
-// Bans d'équilibrage : bloc au-dessus du tableau du joueur qui les a faits.
+// Bans d'équilibrage : bloc au-dessus du tableau du joueur qui les a faits,
+// bans horizontaux à part.
 function rendreBansEquilibrage() {
   ["j1", "j2"].forEach(role => {
     const bans = draft.actions.filter(a => a.bonus && a.joueur === role);
-    const bloc = document.getElementById(`bans-eq-${role}`);
-    bloc.classList.toggle("cache", bans.length === 0);
+    const verticaux = bans.filter(a => !a.horizontal);
+    const horizontaux = bans.filter(a => a.horizontal);
+    document.getElementById(`bans-eq-${role}`).classList.toggle("cache", bans.length === 0);
+    document.getElementById(`titre-bans-eq-${role}`).classList.toggle("cache", verticaux.length === 0);
+    document.getElementById(`titre-bans-h-${role}`).classList.toggle("cache", horizontaux.length === 0);
 
-    const grille = document.getElementById(`bans-eq-grille-${role}`);
-    if (!grilleAChange(grille, JSON.stringify(bans.map(a => [a.perso_id, !!a.aleatoire, !!a.joker])))) return;
-    grille.replaceChildren(...bans
-      .filter(a => getPersonnageParId(a.perso_id))
-      .map(a => {
-        const carte = creerBanMini(getPersonnageParId(a.perso_id));
-        if (a.joker) {
-          carte.classList.add("joker");
-          carte.title += " — joker : interdit à l'adversaire seulement";
-        }
-        marquerAleatoire(carte, a);
-        return carte;
-      }));
+    [[`bans-eq-grille-${role}`, verticaux], [`bans-h-grille-${role}`, horizontaux]].forEach(([idGrille, liste]) => {
+      const grille = document.getElementById(idGrille);
+      if (!grilleAChange(grille, JSON.stringify(liste.map(a => [a.perso_id, !!a.aleatoire, !!a.joker])))) return;
+      grille.replaceChildren(...liste
+        .filter(a => getPersonnageParId(a.perso_id))
+        .map(a => {
+          const carte = creerBanMini(getPersonnageParId(a.perso_id));
+          if (a.joker) {
+            carte.classList.add("joker");
+            carte.title += " — joker : interdit à l'adversaire seulement";
+          }
+          if (a.horizontal) {
+            carte.classList.add("horizontal");
+            carte.title += " — ban horizontal";
+          }
+          marquerAleatoire(carte, a);
+          return carte;
+        }));
+    });
   });
 }
 
@@ -3003,7 +3123,7 @@ function etatChronos() {
     return { phase: "analyse", acteur: null, reste: draft.fin_analyse - maintenant };
   }
   if (draft.phase === "bans_bonus" && draft.fin_bans_bonus) {
-    return { phase: "bans_bonus", acteur: draft.bans_bonus_joueur, reste: draft.fin_bans_bonus - maintenant };
+    return { phase: "bans_bonus", acteur: acteurBansBonus(), reste: draft.fin_bans_bonus - maintenant };
   }
   if (draft.phase === "draft" && draft.chrono) {
     const acteur = getProchaineActionLocale()?.joueur || null;
