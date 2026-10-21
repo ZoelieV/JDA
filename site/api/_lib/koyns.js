@@ -15,7 +15,8 @@
 //   que reçoivent aussi ceux qui avaient déjà les 30).
 // - Bonus de connexion pendant un événement (config.bonus_connexion) et
 //   dons des administrateurs (Rikoyns, cosmétiques exclusifs).
-// Les administrateurs possèdent tous les cosmétiques.
+// - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
+//   ils passent par l'achat comme tout le monde, cf. acheterCosmetique).
 const { supabase } = require("./supabase");
 const { estAdmin, estMiniAdmin } = require("./admin");
 const { debutJournee } = require("./journee");
@@ -27,6 +28,9 @@ const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES } = require("../../commun/varia
 const KOYNS_PAR_MATCH = 5;
 const MAX_GAMES_PAR_ADVERSAIRE = 3;
 const DEPART_MINI_ADMIN = 100;
+// Catalogue complet : ~6000 Rikoyns (429 cosmétiques au 2026-10-21), plus
+// des imports de Mon image.
+const DEPART_ADMIN = 10000;
 const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100", montant: DEPART_MINI_ADMIN - 30 }];
 const MAX_KOYNS_DON = 1000;
 
@@ -48,10 +52,13 @@ const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 
 // ---- Lecture ----
 
-// Solde d'un joueur (somme de ses mouvements). Mini admin : Rikoyns de départ
-// ajoutés à la première lecture (une seule fois, ref "depart").
+// Solde d'un joueur (somme de ses mouvements). Administrateur, mini admin :
+// Rikoyns de départ ajoutés à la première lecture (une seule fois, refs
+// "depart_admin", "depart"...).
 async function lireSolde(discordId) {
-  if (await estMiniAdmin(discordId)) {
+  if (estAdmin(discordId)) {
+    await ajouterMouvement({ discord_id: discordId, montant: DEPART_ADMIN, raison: "depart", ref: "depart_admin" });
+  } else if (await estMiniAdmin(discordId)) {
     for (const { ref, montant } of DEPARTS_MINI_ADMIN) {
       await ajouterMouvement({ discord_id: discordId, montant, raison: "depart", ref });
     }
@@ -64,9 +71,9 @@ async function lireSolde(discordId) {
   return (data || []).reduce((total, ligne) => total + ligne.montant, 0);
 }
 
-// Cosmétiques possédés (Set d'ids) ; administrateurs : null (= tout).
+// Cosmétiques possédés (Set d'ids ; null = tout, plus utilisé : les
+// administrateurs achètent aussi, cf. DEPART_ADMIN).
 async function lirePossedes(discordId) {
-  if (estAdmin(discordId)) return null;
   const { data, error } = await supabase.from("cosmetiques_possedes").select("cosmetique").eq("discord_id", discordId);
   if (error) {
     console.error("Erreur lecture cosmetiques_possedes :", error);
@@ -125,9 +132,8 @@ async function ajouterMouvement(ligne) {
 // { erreur, status }.
 async function acheterCosmetique(discordId, id) {
   if (!estCosmetique(id) || COSMETIQUES_GRATUITS.has(id)) return { status: 400, erreur: "Cosmétique inconnu." };
-  if (estAdmin(discordId)) return { ok: true };
+  await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant l'achat.
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
-  await lireSolde(discordId); // Rikoyns de départ d'un mini admin, avant l'achat.
   // Mon image : payée à chaque import, enregistrée comme un achat à part
   // (même verrou du solde que les autres achats, cf. sql/koyns.sql).
   const achete = id === FOND_IMPORTE ? `${id}#${Date.now()}` : id;
