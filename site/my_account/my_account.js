@@ -1120,15 +1120,20 @@ function calculerTotalArmes(armes, personnages, boxActive, profil) {
 
 // ---- Box stuff : recommandations (cf. commun/recommandations_stuff.js) ----
 // Règles des admins (config.recommandations_stuff), lues au chargement.
+// Calculées sur la version enregistrée du profil (cf. collectionsEnregistrees) :
+// mises à jour au chargement et à l'enregistrement seulement, pas à chaque
+// perso coché (la liste changerait de taille sous la souris).
 let reglesStuff = [];
 const NB_RECOMMANDATIONS = 5;
+let etatRecommandations = null;
 
 function rendreRecommandationsStuff(personnages, boxActive, profil) {
   const zone = document.getElementById("recommandations-stuff");
   zone.classList.toggle("cache", boxActive !== "stuff");
-  if (boxActive !== "stuff") return;
+  if (boxActive !== "stuff" || (etatRecommandations !== null && etatRecommandations === etatEnregistre)) return;
+  etatRecommandations = etatEnregistre;
 
-  const collection = profil.characters;
+  const collection = collectionsEnregistrees()?.characters || profil.characters;
   const parId = new Map(personnages.map(p => [p.id, p]));
   const presents = idsDraftCollection(collection, personnages, "full");
   // Poids d'un DPS : ses points dans la full box.
@@ -1166,7 +1171,7 @@ function rendreRecommandationsStuff(personnages, boxActive, profil) {
       <h3>DPS à monter</h3>
       ${listeDps ? `<ul class="reco-liste">${listeDps}</ul>` : `<p class="reco-vide">Aucun DPS possédé non monté n'a encore de support monté.</p>`}
     </div>
-    <p class="reco-aide">Supports possédés pas encore montés qui complètent le plus les 5 meilleurs supports de tes DPS montés (les plus versatiles d'abord, les DPS qui valent le plus de points comptent plus).</p>`;
+    <p class="reco-aide">Supports possédés pas encore montés qui complètent le plus les 5 meilleurs supports de tes DPS montés (les plus versatiles d'abord, les DPS qui valent le plus de points comptent plus). Mises à jour quand tu enregistres.</p>`;
 }
 
 async function initialiserPage() {
@@ -1450,6 +1455,8 @@ async function initialiserPage() {
       );
       if (succes) {
         marquerEnregistre(profil);
+        // Recommandations de la box stuff recalculées sur ce qui est enregistré.
+        mettreAJourTotalBox(personnages, armes, profil);
         if (!ID_BOX_FICTIVE) window.FondEcran?.memoriserTheatre(profil.theatre);
       }
     });
