@@ -6,6 +6,7 @@ const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
 
+const { fetchAvecReessai } = require("../_lib/supabase");
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -189,7 +190,7 @@ module.exports = async (req, res) => {
 
     // ---- LECTURE DU PROFIL ----
     if (req.method === "GET") {
-      const r = await fetch(
+      const r = await fetchAvecReessai(
         `${SUPABASE_URL}/rest/v1/profiles?discord_id=eq.${discordId}&select=data`,
         {
           headers: {
@@ -261,7 +262,7 @@ module.exports = async (req, res) => {
         return res.status(429).json({ error: `Un enregistrement toutes les 10 s au maximum : réessaie dans ${Math.ceil(attente / 1000)} s.` });
       }
 
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+      const r = await fetchAvecReessai(`${SUPABASE_URL}/rest/v1/profiles`, {
         method: "POST",
         headers: {
           apikey: SUPABASE_KEY,

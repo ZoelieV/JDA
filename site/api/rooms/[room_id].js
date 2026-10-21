@@ -1,12 +1,8 @@
-const { createClient } = require("@supabase/supabase-js");
+const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE } = require("../_lib/matchmaking");
 const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("../_lib/room");
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 const COLONNES = "room_id, player1_discord_id, player2_discord_id, type";
 

@@ -22,7 +22,10 @@
     flex-direction: column;
   }
 
+  /* En colonne, flex: 1 1 0 donnerait une hauteur de base nulle (cartes
+     écrasées, overflow caché) : hauteur de leur contenu. */
   .cartes-regles .carte-section {
+    flex: none;
     max-width: none;
   }
 }

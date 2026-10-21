@@ -1,13 +1,9 @@
-const { createClient } = require("@supabase/supabase-js");
+const { supabase } = require("../_lib/supabase");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre, costBox } = require("../_lib/personnages");
 const { CLASSEMENT_AFFICHE, rejouerClasse, seriePrime } = require("../_lib/trophees");
 const { lireSaisons, saisonActuelle } = require("../_lib/saisons");
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 const CHAMPS = "discord_id, discord_username, discord_global_name, discord_avatar_url, updated_at, data";
 

@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { createClient } = require("@supabase/supabase-js");
+const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
 const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("../_lib/room");
@@ -225,10 +225,6 @@ const MODES_MATCHMAKING = { matchmaking: ["auto", MODE_MELEE, "carnage"], classe
 // Match privé : une création par minute et par adresse IP au plus.
 const DELAI_ROOM_PRIVEE_MS = 60 * 1000;
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 function genererRoomId() {
   return crypto.randomBytes(4).toString("hex"); // ex: "a1b2c3d4"

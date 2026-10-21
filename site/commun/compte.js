@@ -32,7 +32,7 @@
   function chargerPersonnalisation() {
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=13";
+      script.src = "/commun/personnalisation.js?v=14";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;

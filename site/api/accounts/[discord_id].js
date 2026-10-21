@@ -1,4 +1,4 @@
-const { createClient } = require("@supabase/supabase-js");
+const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { estModerateur } = require("../_lib/admin");
 const { getPersonnages, getArmes, actualiserPoints, migrerCollectionPersos, codeTheatre } = require("../_lib/personnages");
@@ -13,10 +13,6 @@ const {
   ecrireBoxesFictives
 } = require("../_lib/boxes_fictives");
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 // Box opti (persos et armes) : privées. Envoyées entières à leur
 // propriétaire seulement ; aux autres, uniquement une box jouée dans la

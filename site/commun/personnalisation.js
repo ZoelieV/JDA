@@ -135,14 +135,15 @@
     return nomsPersos;
   }
 
-  // Profil enregistré ; Rikoyns (solde, cosmétiques possédés) mis à jour au
-  // passage.
+  // Profil enregistré et Rikoyns (solde, cosmétiques possédés) -> { profil,
+  // koyns }. Rikoyns appliqués par l'appelant une fois commun/koyns.js
+  // chargé (ICONE_KOYN) : le profil arrive souvent avant le script sur
+  // téléphone.
   async function lireProfil() {
     const reponse = await fetch("/api/auth/profile", { credentials: "include" });
     if (!reponse.ok) throw new Error("Impossible de charger le profil.");
     const donnees = await reponse.json();
-    if (donnees.koyns) lireEtatKoyns(donnees.koyns);
-    return donnees.profil || {};
+    return { profil: donnees.profil || {}, koyns: donnees.koyns || null };
   }
 
   // ---- Rikoyns ----
@@ -662,9 +663,10 @@
     afficherEtat("Chargement…");
     mettreAJourPied();
     try {
-      const [profil, image] = await Promise.all([
+      const [{ profil, koyns: etatKoyns }, image] = await Promise.all([
         lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerFiltresDraft(), chargerNomsPersos(), chargerKoyns()
       ]);
+      if (etatKoyns) lireEtatKoyns(etatKoyns);
       imageEnregistree = imageBrouillon = image;
       // Cosmétiques plus possédés (lancement des Rikoyns) : choix par défaut.
       enregistres = avecDefauts(sansNonPossedes(profil.parametres));
@@ -703,7 +705,8 @@
         }
         imageEnregistree = imageBrouillon;
       }
-      const profil = await lireProfil();
+      const { profil, koyns: etatKoyns } = await lireProfil();
+      if (etatKoyns) lireEtatKoyns(etatKoyns);
       profil.parametres = { ...(profil.parametres || {}), ...brouillon };
       const reponse = await fetch("/api/auth/profile", {
         method: "POST",

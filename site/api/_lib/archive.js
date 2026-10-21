@@ -22,6 +22,8 @@ const COLONNES_INEXISTANTES = new Set(["42703", "PGRST204"]);
 // suspicion : temps sous les meilleurs temps connus (cf.
 // detecterTempsSuspects, _lib/sanctions.js).
 async function archiverMatch(draft, { litige = false, classe = false, triche = null, suspicion = null } = {}) {
+  // Abandon d'un classé avant toute action de draft : pas d'actions.
+  draft = { ...draft, actions: draft.actions || [] };
   // Liste du bonus de saison à jour (cache 30 s).
   await require("./personnages").actualiserPoints();
   // Picks figés avec les infos du joueur à la fin du match (constellation,

@@ -1,4 +1,4 @@
-const { createClient } = require("@supabase/supabase-js");
+const { supabase } = require("../../_lib/supabase");
 const {
   SESSION_TTL_SECONDS,
   parseCookies,
@@ -7,10 +7,6 @@ const {
 } = require("../../_lib/session");
 const { retourValide } = require("./login");
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 module.exports = async (req, res) => {
   try {
