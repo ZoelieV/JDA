@@ -109,7 +109,7 @@
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=5",
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=6",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=2",
@@ -166,6 +166,31 @@
       else delete propres[choix];
     });
     return propres;
+  }
+
+  // Import de Mon image : PRIX_IMPORT_FOND à chaque image (confirmation
+  // d'abord ; administrateurs : gratuit). -> true si payé.
+  async function payerImport() {
+    if (koyns?.tout) return true;
+    if (!confirm(`Importer cette image pour ${PRIX_IMPORT_FOND} Rikoyns ? (solde : ${koyns?.solde ?? "?"})`)) return false;
+    afficherEtat("Achat…");
+    try {
+      const reponse = await fetch("/api/auth/profile?action=acheter", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cosmetique: idCosmetique("fond", FOND_PERSO) })
+      });
+      const donnees = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(donnees.error || "Achat impossible.");
+      lireEtatKoyns(donnees.koyns);
+      afficherEtat("");
+      return true;
+    } catch (erreur) {
+      console.error(erreur);
+      afficherEtat(erreur.message);
+      return false;
+    }
   }
 
   // Achat d'un cosmétique (confirmation d'abord). -> true si possédé ensuite.
@@ -334,9 +359,10 @@
     modal.querySelector(".perso-recherche").addEventListener("input", rendreChoix);
     modal.querySelector(".perso-enregistrer").addEventListener("click", enregistrer);
     const champImage = modal.querySelector(".perso-fichier-image");
-    champImage.addEventListener("change", () => {
-      importerImagePerso(champImage.files[0]);
+    champImage.addEventListener("change", async () => {
+      const fichier = champImage.files[0];
       champImage.value = "";
+      if (fichier && await payerImport()) importerImagePerso(fichier);
     });
 
     // Téléphone : en faisant défiler les choix, seuls l'aperçu actif et la
@@ -571,10 +597,15 @@
         if (imageBrouillon) {
           grille.appendChild(creerChoix(urlBlob(imageBrouillon), "Mon image", brouillon.fond === FOND_PERSO, choisir(FOND_PERSO), "", idCosmetique("fond", FOND_PERSO)));
         }
-        // Mon image : cosmétique payant (acheté avant d'ouvrir le sélecteur).
-        const importer = creerChoix(null, imageBrouillon ? "Changer d'image" : "＋ Importer une image", false, () => {}, "perso-choix-action");
-        importer.addEventListener("click", async () => {
-          if (await acheter(idCosmetique("fond", FOND_PERSO), "Mon image")) modal.querySelector(".perso-fichier-image").click();
+        // Mon image : PRIX_IMPORT_FOND à chaque image importée, payés une
+        // fois l'image choisie (cf. payerImport).
+        const importer = creerChoix(null, `${imageBrouillon ? "Changer d'image" : "＋ Importer une image"} (${PRIX_IMPORT_FOND} Rikoyns)`, false, () => {}, "perso-choix-action");
+        importer.addEventListener("click", () => {
+          if (koyns && !koyns.tout && koyns.solde < PRIX_IMPORT_FOND) {
+            afficherEtat(`Importer une image coûte ${PRIX_IMPORT_FOND} Rikoyns : joue des matchs pour en gagner (5 par match).`);
+            return;
+          }
+          modal.querySelector(".perso-fichier-image").click();
         });
         grille.appendChild(importer);
         if (imageBrouillon) {

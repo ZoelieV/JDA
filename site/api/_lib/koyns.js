@@ -20,7 +20,7 @@ const { supabase } = require("./supabase");
 const { estAdmin, estMiniAdmin } = require("./admin");
 const { debutJournee } = require("./journee");
 const { getConfigKoyns } = require("./personnages");
-const { prixCosmetique, COSMETIQUES_GRATUITS, idCosmetique, cosmetiquesParametres } = require("../../commun/koyns.js");
+const { prixCosmetique, FOND_IMPORTE, COSMETIQUES_GRATUITS, idCosmetique, cosmetiquesParametres } = require("../../commun/koyns.js");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
@@ -31,7 +31,8 @@ const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100",
 const MAX_KOYNS_DON = 1000;
 
 // Tous les cosmétiques existants (ids), gratuits compris. "fond:perso" :
-// image importée par le joueur (gardée dans son navigateur), payante aussi.
+// image importée par le joueur (gardée dans son navigateur), payée à chaque
+// import (cf. acheterCosmetique).
 const CATALOGUE = new Set([
   ...cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id)),
   idCosmetique("fond", "perso"),
@@ -71,7 +72,9 @@ async function lirePossedes(discordId) {
     console.error("Erreur lecture cosmetiques_possedes :", error);
     return new Set();
   }
-  return new Set((data || []).map(ligne => ligne.cosmetique));
+  // Imports de Mon image ("fond:perso#<date>", cf. acheterCosmetique) : le
+  // fond "perso" est possédé.
+  return new Set((data || []).map(ligne => ligne.cosmetique.split("#")[0]));
 }
 
 const possede = (possedes, id) => possedes === null || COSMETIQUES_GRATUITS.has(id) || possedes.has(id);
@@ -125,7 +128,10 @@ async function acheterCosmetique(discordId, id) {
   if (estAdmin(discordId)) return { ok: true };
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
   await lireSolde(discordId); // Rikoyns de départ d'un mini admin, avant l'achat.
-  const { data, error } = await supabase.rpc("acheter_cosmetique", { p_discord_id: discordId, p_cosmetique: id, p_prix: prixCosmetique(id) });
+  // Mon image : payée à chaque import, enregistrée comme un achat à part
+  // (même verrou du solde que les autres achats, cf. sql/koyns.sql).
+  const achete = id === FOND_IMPORTE ? `${id}#${Date.now()}` : id;
+  const { data, error } = await supabase.rpc("acheter_cosmetique", { p_discord_id: discordId, p_cosmetique: achete, p_prix: prixCosmetique(id) });
   if (error) {
     console.error("Erreur achat de cosmétique :", error);
     return { status: 500, erreur: "Boutique indisponible pour l'instant." };

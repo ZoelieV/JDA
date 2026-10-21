@@ -30,7 +30,13 @@ function estPrixDouble(id) {
   return (choix === "banniere" || choix === "banniere2") && NAMECARDS_PRIX_DOUBLE.test(valeur);
 }
 
+// Mon image (fond "perso") : PRIX_IMPORT_FOND à chaque image importée (cf.
+// acheterCosmetique, api/_lib/koyns.js).
+const FOND_IMPORTE = "fond:perso";
+const PRIX_IMPORT_FOND = 50;
+
 function prixCosmetique(id) {
+  if (String(id).split("#")[0] === FOND_IMPORTE) return PRIX_IMPORT_FOND;
   const prix = PRIX_PAR_CHOIX[String(id).split(":")[0]] ?? PRIX_COSMETIQUE;
   return estPrixDouble(id) ? prix * 2 : prix;
 }
@@ -77,5 +83,5 @@ function htmlGainKoyns(gain) {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { PRIX_COSMETIQUE, prixCosmetique, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, idCosmetique, cosmetiquesParametres };
+  module.exports = { PRIX_COSMETIQUE, prixCosmetique, FOND_IMPORTE, PRIX_IMPORT_FOND, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, idCosmetique, cosmetiquesParametres };
 }
