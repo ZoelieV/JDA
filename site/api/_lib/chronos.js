@@ -1,8 +1,9 @@
 // Chronos de la draft classée (draft.chronometre, rooms de type "classe") :
 //   - analyse des box : ANALYSE_MS, écourtée si les 2 joueurs sont prêts ;
-//   - bans d'équilibrage : BANS_BONUS_PAR_BAN_MS par ban à faire,
-//     BANS_BONUS_MIN_MS au minimum (1 à 3 bans : 20 s, 4 : 24 s, 5 : 30 s…),
-//     pour le joueur qui les choisit ;
+//   - bans d'équilibrage (verticaux, puis horizontaux : chaque phase son
+//     temps) : BANS_BONUS_PAR_BAN_MS par ban à faire, entre
+//     BANS_BONUS_MIN_MS et BANS_BONUS_MAX_MS (1 à 3 bans : 30 s, 4 : 40 s…,
+//     18 et plus : 3 min), pour le joueur qui les choisit ;
 //   - picks / bans : DRAFT_PAR_ACTION_MS par action de la séquence de ce
 //     joueur (sardine : 7 actions = 3 min 30 ; baleine : 10 actions =
 //     5 min), au total par joueur, en pendule d'échecs (son chrono tourne
@@ -25,8 +26,9 @@
 const { getSequence } = require("./draft");
 
 const ANALYSE_MS = 2 * 60 * 1000;
-const BANS_BONUS_MIN_MS = 20 * 1000;
-const BANS_BONUS_PAR_BAN_MS = 6 * 1000;
+const BANS_BONUS_MIN_MS = 30 * 1000;
+const BANS_BONUS_MAX_MS = 3 * 60 * 1000;
+const BANS_BONUS_PAR_BAN_MS = 10 * 1000;
 const DRAFT_PAR_ACTION_MS = 30 * 1000;
 const GRACE_ACTION_MS = 2000;
 const TOLERANCE_ACTEUR_MS = 1500;
@@ -49,9 +51,10 @@ function demarrerAnalyse(draft, maintenant = Date.now()) {
   if (estChronometre(draft)) draft.fin_analyse = maintenant + ANALYSE_MS;
 }
 
-// Temps des bans d'équilibrage : 6 s par ban, 20 s au minimum.
+// Temps d'une phase de bans d'équilibrage : 10 s par ban, 30 s au minimum,
+// 3 min au maximum.
 function dureeBansBonus(nbBans) {
-  return Math.max(BANS_BONUS_MIN_MS, nbBans * BANS_BONUS_PAR_BAN_MS);
+  return Math.min(BANS_BONUS_MAX_MS, Math.max(BANS_BONUS_MIN_MS, nbBans * BANS_BONUS_PAR_BAN_MS));
 }
 
 // Bans verticaux, puis bans horizontaux (draft.etape_bonus), chacun son temps.
