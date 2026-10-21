@@ -1349,10 +1349,13 @@ function rendreBansHorizontaux() {
   remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
     const id = personnage.id;
     const dejaChoisi = choix.includes(id);
-    const peutCliquer = cEstMonTour && (dejaChoisi || (restant > 0 && cibles.includes(id)));
+    const ciblable = cibles.includes(id);
+    const peutCliquer = cEstMonTour && (dejaChoisi || (restant > 0 && ciblable));
+    // Comme au pick : grisé s'il ne peut pas être banni (pas un perso
+    // horizontal de l'adversaire), ou déjà sélectionné.
     return obtenirCarteItem(grille, personnage, {
       selectionnable: peutCliquer,
-      indisponible: dejaChoisi,
+      indisponible: dejaChoisi || !ciblable,
       onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
       ...getInfosCarte(id)
     });

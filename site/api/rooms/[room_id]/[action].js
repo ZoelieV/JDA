@@ -1035,10 +1035,13 @@ async function handleExpirer(req, res, roomId, user) {
         aleatoires.add(persoId);
       }
     };
-    const pris = id => !choix.includes(id) && !jokers.includes(id);
-    tirer(draft.pool_disponible.filter(pris), choix, draft.bans_bonus_total - nbJokers);
+    // Au hasard : persos de la box adverse seulement (un perso que seul le
+    // banneur a ne lui retirerait que le sien ; le joueur, lui, peut
+    // choisir de le bannir).
     const adverse = acteur === "j1" ? "j2" : "j1";
-    tirer(draft.pool_disponible.filter(id => pris(id) && draft[`pool_${adverse}`]?.includes(id)), jokers, nbJokers);
+    const pris = id => !choix.includes(id) && !jokers.includes(id) && draft[`pool_${adverse}`]?.includes(id);
+    tirer(draft.pool_disponible.filter(pris), choix, draft.bans_bonus_total - nbJokers);
+    tirer(draft.pool_disponible.filter(pris), jokers, nbJokers);
     appliquerBansBonus(draft, acteur, choix, jokers, aleatoires);
     await suiteEquilibrage(draft, room);
   } else if (draft.phase === "draft" && draft.chrono) {
