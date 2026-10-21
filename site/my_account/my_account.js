@@ -499,11 +499,45 @@ function getPPC(item, valeur, vueActive, niveau = null) {
   return item[config.pointsField]?.[valeur] ?? "";
 }
 
-function creerBadgePPC(valeur) {
+// alternative : valeur alternative dans la box (synergie absente pour un
+// perso, copie en double ou signature sans son perso pour une arme), en
+// rouge -> { normale, raison }.
+function creerBadgePPC(valeur, alternative = null) {
   const badge = document.createElement("div");
-  badge.className = "ppc-badge";
+  badge.className = alternative ? "ppc-badge alternative" : "ppc-badge";
   badge.textContent = valeur;
+  if (alternative) badge.title = `Valeur alternative : ${valeur} au lieu de ${alternative.normale} (${alternative.raison})`;
   return badge;
+}
+
+// Valeurs des cartes dans la box active : persos (malus de synergie, cf.
+// commun/synergies.js) et copies d'armes (valeur alternative, cf.
+// pointsCopiesArmes dans commun/cartes.js) -> { persos: Set des ids de la
+// draft présents, armes: Map instance -> copie }.
+function contexteBox(personnages, armes, boxActive, profil) {
+  return {
+    persos: idsDraftCollection(profil.characters, personnages, boxActive),
+    armes: new Map(pointsCopiesArmes(
+      copiesArmesBox(profil.weapons, armes, boxActive),
+      clesPersosBox(profil.characters, personnages, boxActive),
+      armes,
+      personnages
+    ).map(copie => [copie.instance, copie]))
+  };
+}
+
+// Points affichés d'une carte possédée -> { points, alternative } (cf.
+// creerBadgePPC).
+function pointsCarte(item, valeur, vueActive, niveau, instanceId, contexte) {
+  const normale = Number(getPPC(item, valeur, vueActive, niveau) || 0);
+  if (vueActive === "characters") {
+    const points = pointsPersonnageBox(item, valeur, niveau, contexte.persos);
+    return { points, alternative: points < normale ? { normale, raison: "persos en synergie absents de la box" } : null };
+  }
+  const copie = contexte.armes.get(instanceId);
+  if (!copie || copie.points >= normale) return { points: normale, alternative: null };
+  const raison = copie.double ? "copie en double" : "perso de la signature absent de la box";
+  return { points: copie.points, alternative: { normale, raison } };
 }
 
 function getTypeValeur(item, vueActive) {
@@ -553,7 +587,7 @@ function creerCoinBasDroite(item, vueActive, personnages, armes, profil) {
 // droite), le réglage de constellation et le niveau. Nom au survol.
 // favori : true / false pour afficher le cœur des favoris (persos et armes
 // d'origine possédés, Full Box), null sinon.
-function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null, coinBasDroite = "", favori = null) {
+function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = false, vueActive = "characters", instanceId = null, peutDupliquer = false, estDuplicata = false, niveau = null, coinBasDroite = "", favori = null, affichage = null) {
   const config = getConfigCollection(vueActive);
   const idInstance = instanceId || item.id;
   const conteneur = document.createElement("div");
@@ -634,9 +668,9 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
   `;
 
   if (valeur >= 0) {
-    conteneur.querySelector(".visuel-personnage").appendChild(
-      creerBadgePPC(getPPC(item, valeur, vueActive, niveau))
-    );
+    conteneur.querySelector(".visuel-personnage").appendChild(affichage
+      ? creerBadgePPC(affichage.points, affichage.alternative)
+      : creerBadgePPC(getPPC(item, valeur, vueActive, niveau)));
   }
 
   return conteneur;
@@ -824,6 +858,7 @@ function rendreCollection(personnages, armes, profil) {
       .map(groupe => ({ ...groupe, section: "autre-vue" }))
     : [];
 
+  const contexte = contexteBox(personnages, armes, boxActive, profil);
   remplirGrilleGroupee(liste, [...groupes, ...groupesAutres], item => {
     const vueItem = autres.has(item) ? autreVue : vueActive;
     return cartesItem(item, vueItem, getCollectionProfil(profil, vueItem));
@@ -850,7 +885,8 @@ function rendreCollection(personnages, armes, profil) {
         // toutes ses copies).
         const favori = !estDuplicata && valeur >= 0 ? !!collectionProfil.favoris?.[item.id] : null;
 
-        return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite, favori);
+        const affichage = valeur >= 0 ? pointsCarte(item, valeur, vueActive, null, instanceId, contexte) : null;
+        return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, instanceId, peutDupliquer, estDuplicata, null, coinBasDroite, favori, affichage);
       });
     }
 
@@ -863,7 +899,8 @@ function rendreCollection(personnages, armes, profil) {
     const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
     // Cœur des favoris : persos possédés uniquement.
     const favori = valeur >= 0 ? !!collectionProfil.favoris?.[item.id] : null;
-    return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite, favori);
+    const affichage = valeur >= 0 ? pointsCarte(item, valeur, vueActive, niveau, item.id, contexte) : null;
+    return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite, favori, affichage);
   }
 }
 
@@ -1033,6 +1070,7 @@ function calculerTotalCollection(items, vueActive, boxActive, profil) {
   let total = 0;
   // Groupe (Voyageur) : seul l'élément qui vaut le plus de points compte.
   const meilleurParGroupe = {};
+  const presents = idsDraftCollection(profil.characters, items, boxActive);
 
   items.forEach(item => {
     const instances = vueActive === "weapons"
@@ -1053,8 +1091,9 @@ function calculerTotalCollection(items, vueActive, boxActive, profil) {
 
       if (!inclus) return;
 
+      // Persos : malus de synergie compris (cf. commun/synergies.js).
       const points = vueActive === "characters"
-        ? pointsPersonnage(item, valeur, collectionProfil.niveaux?.[cleNiveau(item)])
+        ? pointsPersonnageBox(item, valeur, collectionProfil.niveaux?.[cleNiveau(item)], presents)
         : Number(item[config.pointsField]?.[valeur] ?? 0);
       if (item.groupe) {
         meilleurParGroupe[item.groupe] = Math.max(meilleurParGroupe[item.groupe] ?? 0, points);

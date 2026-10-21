@@ -67,6 +67,7 @@ let masques = { characters: [], weapons: [] };  // ids masqués (triés)
 let buffs = [];                                  // personnages buffés par le théâtre du mois (triés)
 let bonusSaison = [];                            // personnages au bonus de saison (triés) : trophées en classé
 let alternatives = {};                           // arme -> valeur alternative en % (absente = 100)
+let synergies = {};                              // perso -> { persos, malus } (cf. commun/synergies.js, admin_synergies.js)
 let etatEnregistre = "";
 
 // Buff théâtre : le bonus théâtre du personnage s'applique à ses points de
@@ -296,7 +297,7 @@ function initialiserFiltres() {
 }
 
 function etatActuel() {
-  return JSON.stringify([valeurs, modes, masques, buffs, bonusSaison, alternatives]);
+  return JSON.stringify([valeurs, modes, masques, buffs, bonusSaison, alternatives, synergies]);
 }
 
 // ---- Chargement ----
@@ -334,6 +335,7 @@ async function chargerDonnees() {
   buffs = Array.isArray(config?.theatre) ? [...config.theatre].sort() : [];
   bonusSaison = Array.isArray(config?.bonus_saison) ? [...config.bonus_saison].sort() : [];
   alternatives = { ...(config?.alternatives_armes || {}) };
+  synergies = lireSynergies(config?.synergies);
   etatEnregistre = etatActuel();
 }
 
@@ -351,6 +353,7 @@ function rendreEntete() {
       <th class="col-nom triable" data-tri="nom" title="Trier par nom">${vue === "characters" ? "Personnage" : "Arme"}${fleche("nom")}</th>
       ${libelles.map((libelle, index) => `<th class="triable" data-tri="${index}" title="Trier par ${libelle}">${libelle}${fleche(index)}</th>`).join("")}
       ${vue === "characters" ? `<th class="col-bonus-saison" title="En match classé : +3 trophées par perso coché dans l'équipe (gain augmenté, perte réduite)">Bonus de saison</th>` : ""}
+      ${vue === "characters" ? `<th class="col-synergie" title="Nombre de persos en synergie : sans eux dans la box, le perso perd des points (bouton Synergie)">Synergie</th>` : ""}
       ${vue === "weapons" ? `<th class="col-alternative" title="Part des points comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box (arrondi à l'entier)">Valeur alt.</th>` : ""}
     </tr>
     ${vue === "characters" ? `
@@ -369,6 +372,7 @@ function rendreEntete() {
         <th class="col-bonus-saison">
           <button type="button" class="retirer-bonus-saison" ${bonusSaison.length ? "" : "disabled"} title="Décocher tous les personnages (nouvelle saison)">Tout décocher (${bonusSaison.length})</button>
         </th>
+        <th class="col-synergie"></th>
       </tr>` : ""}
   `;
 }
@@ -390,6 +394,7 @@ function rendreCorps() {
           ${item.ajout ? `<span class="tag-ajout" title="Ajouté depuis cette page (pas dans le JSON)">Ajouté</span>` : ""}
           ${estMasque(item.id) ? `<span class="tag-masque" title="Invisible sur le reste du site">Masqué</span>` : ""}
           ${vue === "characters" ? `<button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points">Aperçu</button>` : ""}
+          ${vue === "characters" ? `<button type="button" class="btn-apercu btn-synergie" data-id="${item.id}" title="Persos en synergie et malus sans eux">Synergie</button>` : ""}
           <button type="button" class="btn-masquer" data-id="${item.id}" title="${estMasque(item.id)
             ? "Rendre visible sur tout le site"
             : "Cacher partout sauf ici (pas encore sorti dans le jeu)"}">${estMasque(item.id) ? "Afficher" : "Masquer"}</button>
@@ -417,7 +422,8 @@ function rendreCorps() {
             <label class="bonus-saison" title="Bonus de saison : +3 trophées en classé s'il est dans l'équipe">
               <input type="checkbox" class="case-bonus-saison" data-id="${item.id}" ${aBonusSaison(item.id) ? "checked" : ""}> +3 ${ICONE_TROPHEE}
             </label>
-          </td>` : ""}
+          </td>
+          <td class="col-synergie${synergies[item.id] ? " avec-synergie" : ""}" title="${synergies[item.id] ? `Malus ${synergies[item.id].malus} sans ses persos en synergie` : "Pas de synergie"}">${synergies[item.id]?.persos.length || "—"}</td>` : ""}
         ${vue === "weapons" ? `
           <td class="col-alternative${alternativeArme(item.id) !== 100 ? " avec-alternative" : ""}">
             <select class="choix-alternative" data-id="${item.id}" title="Copie en double ou signature sans son perso : ${alternativeArme(item.id)} % des points">
@@ -650,6 +656,8 @@ function initialiserSaisie() {
   });
 
   document.getElementById("corps-admin").addEventListener("click", event => {
+    const synergie = event.target.closest(".btn-synergie");
+    if (synergie) return ouvrirSynergie(synergie.dataset.id);
     const bouton = event.target.closest(".btn-apercu");
     if (bouton) ouvrirApercu(bouton.dataset.id);
 
@@ -878,7 +886,7 @@ async function enregistrer() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison, alternatives_armes: alternatives })
+      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison, alternatives_armes: alternatives, synergies })
     });
     if (!reponse.ok) throw new Error((await reponse.json().catch(() => ({}))).error || "Erreur d'enregistrement.");
     etatEnregistre = etatActuel();
@@ -891,7 +899,7 @@ async function enregistrer() {
 }
 
 function annuler() {
-  [valeurs, modes, masques, buffs, bonusSaison, alternatives] = JSON.parse(etatEnregistre);
+  [valeurs, modes, masques, buffs, bonusSaison, alternatives, synergies] = JSON.parse(etatEnregistre);
   rendre();
 }
 
@@ -944,6 +952,7 @@ async function demarrer() {
   initialiserSaisie();
   initialiserFiltres();
   initialiserApercu();
+  initialiserSynergie();
   initialiserAjout();
   initialiserBoss();
   initialiserCategories();
@@ -956,8 +965,8 @@ async function demarrer() {
 // boutons qui modifient désactivés (y compris dans ce qui est redessiné plus
 // tard), ajouts et enregistrements cachés. Le serveur refuse de toute façon
 // les enregistrements (api/points.js, administrateurs seulement).
-const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage"];
-const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button";
+const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage", "contenu-synergie"];
+const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button, .action-synergie";
 
 function passerEnLectureSeule() {
   document.body.classList.add("lecture-seule");

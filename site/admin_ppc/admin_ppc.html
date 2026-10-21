@@ -6,7 +6,7 @@
 <title>Administration</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=34">
+<link rel="stylesheet" href="admin_ppc.css?v=35">
 <link rel="stylesheet" href="../commun/entete.css?v=rem29">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -81,6 +81,24 @@
       <p id="apercu-signa" class="aide-apercu" hidden></p>
       <div id="apercu-modificateurs" class="apercu-modificateurs"></div>
       <table id="apercu-tableau" class="apercu-tableau"></table>
+    </div>
+  </div>
+
+  <!-- Synergie d'un personnage (cf. admin_synergies.js, commun/synergies.js) :
+       persos en synergie et malus sans eux, enregistrés avec le reste. -->
+  <div id="modal-synergie" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <span id="synergie-miniature" class="apercu-miniature"><img id="synergie-image" src="" alt=""></span>
+        <h2 id="synergie-titre">Personnage</h2>
+        <button type="button" id="fermer-synergie" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Dans une box qui contient ce perso, chaque perso en synergie absent de la box lui retire
+        <strong>malus / nombre de persos en synergie</strong> (arrondi) : sans aucun, il perd tout le malus.
+        Pris en compte partout (points des box, équilibrage), après les bonus niveau et théâtre.
+      </p>
+      <div id="contenu-synergie"></div>
     </div>
   </div>
 
@@ -343,7 +361,8 @@
   </div>
 
   <script src="/commun/variantes.js?v=4"></script>
-  <script src="/commun/cartes.js?v=24"></script>
+  <script src="/commun/synergies.js?v=1"></script>
+  <script src="/commun/cartes.js?v=25"></script>
   <script src="/commun/tri.js?v=17"></script>
   <script src="admin_ajout.js?v=7"></script>
   <script src="/commun/recommandations_boss.js?v=1"></script>
@@ -357,6 +376,7 @@
   <script src="admin_feedback.js?v=1"></script>
   <script src="/commun/koyns.js?v=2"></script>
   <script src="admin_koyns.js?v=2"></script>
-  <script src="admin_ppc.js?v=31"></script>
+  <script src="admin_synergies.js?v=1"></script>
+  <script src="admin_ppc.js?v=32"></script>
 </body>
 </html>

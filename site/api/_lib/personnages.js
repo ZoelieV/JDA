@@ -8,6 +8,7 @@
 const personnages = require("../../DB/characters.json");
 const armes = require("../../DB/weapons.json");
 const bossList = require("../../DB/boss.json"); // même tableau que _lib/boss.js
+const { lireSynergies, appliquerSynergie } = require("../../commun/synergies.js");
 
 // ---- Groupes (Voyageur) ----
 // Un personnage par élément dans les comptes ("traveler_pyro"...,
@@ -147,6 +148,20 @@ function pointsPersonnage(perso, constellation, niveau = null) {
   return Math.round(points);
 }
 
+// Synergies réglées par les admins (config.synergies, cf.
+// commun/synergies.js).
+let synergies = {};
+
+function getSynergies() {
+  return synergies;
+}
+
+// Points d'un perso dans une box : malus de synergie compris (presents :
+// Set des ids de la draft des persos de cette box).
+function pointsPersonnageBox(perso, constellation, niveau, presents) {
+  return appliquerSynergie(pointsPersonnage(perso, constellation, niveau), synergies, perso, presents);
+}
+
 // Personnages visibles (sans les masqués) : ce que voient les calculs de
 // points et la draft.
 function getPersonnages() {
@@ -228,6 +243,7 @@ async function actualiserPoints() {
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     seuilHorizontal = lireSeuilHorizontal(config.seuil_horizontal);
+    synergies = lireSynergies(config.synergies);
     modesBonus = config.modes || {};
     configKoyns = {
       exclusifs: new Set(Array.isArray(config.cosmetiques_exclusifs) ? config.cosmetiques_exclusifs : []),
@@ -422,6 +438,8 @@ module.exports = {
   getCatalogueComplet,
   infosPersoJoueur,
   pointsPersonnage,
+  pointsPersonnageBox,
+  getSynergies,
   ELEMENTS,
   ELEMENTS_LIBRES,
   getPersonnages,

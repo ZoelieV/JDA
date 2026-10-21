@@ -307,6 +307,18 @@
   white-space: nowrap;
 }
 
+/* Valeurs alternatives : malus de synergie, valeur alternative des armes. */
+.col-alternative-tc {
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.valeur-alternative-tc {
+  color: #ff5a5a;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 /* Perso + signa : arme signature avec ses points R1. */
 .tableau-theorycraft .col-signa-tc {
   text-align: left;

@@ -153,6 +153,29 @@ function pointsPersonnage(perso, constellation, niveau = null) {
   return Math.round(points);
 }
 
+// ---- Synergies : valeur alternative d'un perso dans une box (cf.
+// commun/synergies.js, config.synergies) ----
+let synergiesPersos = {};
+
+// Ids de la draft (Voyageur : "traveler") des persos possédés d'une box.
+function idsDraftCollection(collectionPersos, personnages, box) {
+  const ids = new Set();
+  personnages.forEach(p => {
+    const constellation = collectionPersos?.full?.[p.id];
+    if (typeof constellation !== "number" || constellation < 0) return;
+    if (box !== "full" && !collectionPersos.selections?.[box]?.[p.id]) return;
+    ids.add(p.groupe || p.id);
+  });
+  return ids;
+}
+
+// Points d'un perso dans une box (presents : cf. idsDraftCollection), malus
+// de synergie compris. Même calcul côté serveur (pointsPersonnageBox,
+// api/_lib/personnages.js).
+function pointsPersonnageBox(perso, constellation, niveau, presents) {
+  return appliquerSynergie(pointsPersonnage(perso, constellation, niveau), synergiesPersos, perso, presents);
+}
+
 // Personnages buffés par le théâtre du mois : copie marquée buffTheatre (la
 // liste en mémoire reste celle des JSON).
 function marquerBuffTheatre(liste, buffes) {
@@ -176,6 +199,7 @@ const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("ch
   .then(([liste, points]) => {
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC");
     modesBonus = points.modes || {};
+    synergiesPersos = lireSynergies(points.synergies);
     if (avecMasques) return liste;
     catalogueTheatre = retirerMasques(liste, points.masques?.characters);
     return marquerBonusSaison(marquerBuffTheatre(catalogueTheatre, points.theatre), points.bonus_saison);
@@ -412,13 +436,13 @@ function clesPersosBox(collectionPersos, personnages, box) {
   return cles;
 }
 
-// Copies d'armes d'une box -> [{ arme, raffinement }].
+// Copies d'armes d'une box -> [{ arme, raffinement, instance }].
 function copiesArmesBox(collectionArmes, armes, box) {
   const parId = new Map(armes.map(arme => [arme.id, arme]));
   return Object.entries(collectionArmes?.full || {})
     .filter(([instance, raffinement]) => Number.isInteger(raffinement) && raffinement >= 0 &&
       (box === "full" || !!collectionArmes.selections?.[box]?.[instance]))
-    .map(([instance, raffinement]) => ({ arme: parId.get(instance.split("#")[0]), raffinement }))
+    .map(([instance, raffinement]) => ({ arme: parId.get(instance.split("#")[0]), raffinement, instance }))
     .filter(copie => copie.arme);
 }
 
@@ -426,6 +450,12 @@ function copiesArmesBox(collectionArmes, armes, box) {
 // cf. clesPersosBox), valeur alternative comprise. personnages : catalogue
 // (une arme n'est une signature que si un perso a sa clé).
 function pointsArmesBox(copies, clesPersos, armes, personnages) {
+  return pointsCopiesArmes(copies, clesPersos, armes, personnages).reduce((total, c) => total + c.points, 0);
+}
+
+// Points de chaque copie -> [{ ...copie, points, reduite (valeur
+// alternative), double (pas la meilleure copie) }].
+function pointsCopiesArmes(copies, clesPersos, armes, personnages) {
   const { cleParArme } = getIndexSignatures(armes);
   const clesCatalogue = new Set(personnages.map(getCleSignature));
   const parId = new Map();
@@ -433,16 +463,16 @@ function pointsArmesBox(copies, clesPersos, armes, personnages) {
     if (!parId.has(copie.arme.id)) parId.set(copie.arme.id, []);
     parId.get(copie.arme.id).push(copie);
   });
-  let total = 0;
+  const resultat = [];
   parId.forEach(liste => {
-    liste.sort((a, b) => b.raffinement - a.raffinement).forEach(({ arme, raffinement }, index) => {
-      const points = Number(arme.PPW?.[raffinement] ?? 0);
-      const cle = cleParArme.get(arme.id);
+    liste.sort((a, b) => b.raffinement - a.raffinement).forEach((copie, index) => {
+      const points = Number(copie.arme.PPW?.[copie.raffinement] ?? 0);
+      const cle = cleParArme.get(copie.arme.id);
       const reduite = index > 0 || (clesCatalogue.has(cle) && !clesPersos.has(cle));
-      total += reduite ? Math.round(points * (arme.alternatif ?? 100) / 100) : points;
+      resultat.push({ ...copie, reduite, double: index > 0, points: reduite ? Math.round(points * (copie.arme.alternatif ?? 100) / 100) : points });
     });
   });
-  return total;
+  return resultat;
 }
 
 // Meilleur raffinement (0 = R1 ... 4 = R5) d'une arme parmi ses copies

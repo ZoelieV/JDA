@@ -76,8 +76,13 @@ function getNiveauPersonnage(personnageId) {
 
 // Points d'un item possédé du profil ouvert ; personnages : bonus du niveau
 // (95 / 100) et du théâtre compris (cf. pointsPersonnage, commun/cartes.js).
-function getPointsItem(item, valeur, vue) {
-  if (vue === "characters") return pointsPersonnage(item, valeur, getNiveauPersonnage(cleNiveau(item)));
+// presents (Set des ids de la draft des persos de la box, cf.
+// idsDraftCollection) : malus de synergie compris (cf. commun/synergies.js).
+function getPointsItem(item, valeur, vue, presents = null) {
+  if (vue === "characters") {
+    const niveau = getNiveauPersonnage(cleNiveau(item));
+    return presents ? pointsPersonnageBox(item, valeur, niveau, presents) : pointsPersonnage(item, valeur, niveau);
+  }
   return Number(item[configCollections[vue].pointsField]?.[valeur] ?? 0);
 }
 
@@ -279,12 +284,23 @@ function construireListeAffichee() {
     }));
 }
 
+// Points d'une carte, en rouge si c'est la valeur alternative dans la box
+// (persos en synergie absents).
+function htmlPointsCarte(item, valeur, presents) {
+  if (valeur < 0) return `<span class="character-points"></span>`;
+  const points = getPointsItem(item, valeur, vueActive, presents);
+  const normale = getPointsItem(item, valeur, vueActive);
+  return points < normale
+    ? `<span class="character-points alternative" title="Valeur alternative : ${points} au lieu de ${normale} (persos en synergie absents de la box)">${points}</span>`
+    : `<span class="character-points">${points}</span>`;
+}
+
 // ---- Cartes (même disposition que la draft) ----
 // Haut gauche : constellation (raffinement pour une arme) ; haut droite :
 // points ; bas gauche : niveau ; bas droite : arme signature (détourée de la
 // couleur du raffinement) ou, pour une arme, le perso dont c'est l'arme.
 
-function creerCarteProfil({ item, valeur }) {
+function creerCarteProfil({ item, valeur }, presents) {
   const card = document.createElement("div");
   card.className = "character-card";
   card.title = item.nom;
@@ -316,7 +332,7 @@ function creerCarteProfil({ item, valeur }) {
     <div class="character-visuel ${classeFondRarete(item.rarete)}">
       <img src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       <span class="character-constellation">${getLabelConstellation(valeur, vueActive)}</span>
-      <span class="character-points">${valeur >= 0 ? getPointsItem(item, valeur, vueActive) : ""}</span>
+      ${htmlPointsCarte(item, valeur, presents)}
       ${basGaucheHtml}
       ${basDroiteHtml}
     </div>
@@ -330,11 +346,12 @@ function rendreProfilBox() {
 
   const entrees = construireListeAffichee();
   const parItem = new Map(entrees.map(entree => [entree.item, entree]));
+  const presents = idsDraftCollection(profilCourant.data?.characters, personnagesData, boxActive);
 
   const groupes = trierEtGrouper(entrees.map(entree => entree.item), etatTri, {
     vue: vueActive,
     valeurs: {
-      points: item => parItem.get(item).valeur >= 0 ? getPointsItem(item, parItem.get(item).valeur, vueActive) : 0,
+      points: item => parItem.get(item).valeur >= 0 ? getPointsItem(item, parItem.get(item).valeur, vueActive, presents) : 0,
       constellation: item => parItem.get(item).valeur,
       // 100 > 95 > non renseigné (persos uniquement).
       niveau: item => vueActive === "characters" ? Number(getNiveauPersonnage(cleNiveau(item))) || 0 : 0,
@@ -349,8 +366,8 @@ function rendreProfilBox() {
   // d'un autre profil.
   remplirGrilleGroupee(container, groupes, item => obtenirCarte(
     container,
-    JSON.stringify([vueActive, item.id, item.nom, item.image, parItem.get(item).valeur]),
-    () => creerCarteProfil(parItem.get(item))
+    JSON.stringify([vueActive, boxActive, item.id, item.nom, item.image, parItem.get(item).valeur]),
+    () => creerCarteProfil(parItem.get(item), presents)
   ));
 }
 
@@ -368,6 +385,7 @@ function initialiserGrille() {
 // Mon compte ; Voyageur : seul l'élément qui vaut le plus de points compte.
 function calculerPointsBox(box) {
   const data = profilCourant.data || {};
+  const presents = idsDraftCollection(data.characters, personnagesData, box);
   let total = pointsArmesBox(copiesArmesBox(data.weapons, armesData, box), clesPersosBox(data.characters, personnagesBase, box), armesData, personnagesBase);
   const meilleurParGroupe = {};
 
@@ -380,7 +398,7 @@ function calculerPointsBox(box) {
       if (box !== "full" && !collection.selections?.[box]?.[instanceId]) return;
       const item = parId.get(instanceId.split("#")[0]);
       if (!item) return;
-      const points = getPointsItem(item, valeur, vue);
+      const points = getPointsItem(item, valeur, vue, presents);
       if (item.groupe) meilleurParGroupe[item.groupe] = Math.max(meilleurParGroupe[item.groupe] ?? 0, points);
       else total += points;
     });

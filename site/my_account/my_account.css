@@ -369,6 +369,12 @@ h2 {
   right: 2px;
 }
 
+/* Valeur alternative dans la box (synergie absente, copie d'arme en double,
+   signature sans son perso). */
+.ppc-badge.alternative {
+  color: #ff5a5a;
+}
+
 .badge-niveau {
   bottom: 2px;
   left: 2px;

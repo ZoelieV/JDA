@@ -19,6 +19,8 @@
 //                       reco : { elements, reactions, mecaniques } | null,
 //                       cf. commun/recommandations_boss.js)
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
+//          synergies: { id: { persos: [id de la draft], malus } },  (valeur
+//                       alternative des persos, cf. commun/synergies.js)
 //          alternatives_armes: { id: 0|25|50|75 },  (valeur alternative des
 //                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
@@ -35,7 +37,7 @@
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
 //   { characters, weapons, modes, masques, theatre, bonus_saison,
-//     alternatives_armes }           remplace les points, les masqués, les
+//     alternatives_armes, synergies }  remplace les points, les masqués, les
 //                                    buffs théâtre, le bonus de saison et
 //                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
@@ -66,6 +68,7 @@ const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
+const { lireSynergies } = require("../commun/synergies.js");
 const { COSMETIQUES_GRATUITS } = require("../commun/koyns.js");
 const { estCosmetique, donner, MAX_KOYNS_DON } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
@@ -203,6 +206,9 @@ function versionPublique(config) {
     if (genre === "characters" && Array.isArray(config.bonus_saison)) {
       publique.bonus_saison = config.bonus_saison.filter(id => !caches.has(id));
     }
+    if (genre === "characters" && config.synergies) {
+      publique.synergies = Object.fromEntries(Object.entries(config.synergies).filter(([id]) => !caches.has(id)));
+    }
     if (genre === "weapons" && config.alternatives_armes) {
       publique.alternatives_armes = { ...config.alternatives_armes };
       caches.forEach(id => { delete publique.alternatives_armes[id]; });
@@ -238,6 +244,17 @@ async function lireConfig() {
 function nettoyerAlternatives(valeurs, ids) {
   return Object.fromEntries(Object.entries(valeurs || {})
     .filter(([id, pourcentage]) => ids.has(id) && pourcentage !== 100 && ALTERNATIVES_ARMES.includes(pourcentage)));
+}
+
+// Synergies de persos connus, avec des persos en synergie connus (ids de la
+// draft : Voyageur = "traveler").
+function nettoyerSynergies(brutes, persos) {
+  const ids = new Set(persos.map(p => p.id));
+  const idsDraft = new Set(persos.map(p => p.groupe || p.id));
+  return Object.fromEntries(Object.entries(lireSynergies(brutes))
+    .filter(([id]) => ids.has(id))
+    .map(([id, s]) => [id, { ...s, persos: s.persos.filter(p => idsDraft.has(p)) }])
+    .filter(([, s]) => s.persos.length));
 }
 
 // Garde seulement des nombres, pour des ids connus, à la bonne taille.
@@ -414,7 +431,9 @@ module.exports = async (req, res) => {
           theatre: nettoyerMasques(corps.theatre ?? ancienne.theatre, ids("characters")),
           // Bonus de saison : trophées en classé (cf. _lib/trophees.js).
           bonus_saison: nettoyerMasques(corps.bonus_saison ?? ancienne.bonus_saison, ids("characters")),
-          alternatives_armes: nettoyerAlternatives(corps.alternatives_armes ?? ancienne.alternatives_armes, ids("weapons"))
+          alternatives_armes: nettoyerAlternatives(corps.alternatives_armes ?? ancienne.alternatives_armes, ids("weapons")),
+          // Synergies (valeur alternative des persos, cf. commun/synergies.js).
+          synergies: nettoyerSynergies(corps.synergies ?? ancienne.synergies, [...listeJSON("characters"), ...ajouts.characters])
         };
       }
 

@@ -549,8 +549,8 @@ function getPoolMatch(role) {
 }
 
 // Constellation et points d'un perso chez un joueur (bonus du niveau 95 /
-// 100 et du théâtre compris, cf. pointsPersonnage), ou null s'il ne l'a
-// pas. Voyageur : un par élément dans les comptes, un seul en draft ; on
+// 100 et du théâtre compris, cf. pointsPersonnage ; malus de synergie dans
+// sa box, cf. pointsPersonnageBox), ou null s'il ne l'a pas. Voyageur : un par élément dans les comptes, un seul en draft ; on
 // garde l'élément qui vaut le plus de points parmi ceux de sa box (ou
 // l'élément donné, une fois pické).
 function getPossession(role, persoId, element = null) {
@@ -561,17 +561,19 @@ function getPossession(role, persoId, element = null) {
   const membres = membresGroupe(personnagesBase, persoId);
   // Niveau commun au groupe (Voyageur) : clé = id de la draft.
   const niveau = collection?.niveaux?.[persoId] ?? null;
+  const box = draft?.[`box_${role}`];
+  // Persos de sa box (synergies) : pool du match, sinon box choisie.
+  const presents = pool || idsDraftCollection(collection, personnagesBase, box || "full");
 
   if (membres.length === 0) {
     const c = collection?.full?.[persoId];
     if (typeof c !== "number" || c < 0) return null;
     const personnage = getPersonnageParId(persoId);
-    return { valeur: c, points: personnage ? pointsPersonnage(personnage, c, niveau) : 0 };
+    return { valeur: c, points: personnage ? pointsPersonnageBox(personnage, c, niveau, presents) : 0 };
   }
 
   // Éléments permis : celui pické, sinon ceux de la box du match (calculés
   // par le serveur), sinon ceux de la box choisie (choix de box en cours).
-  const box = draft?.[`box_${role}`];
   const permis = element ? [element] : pool ? draft?.[`elements_${role}`]?.[persoId] || [] : null;
 
   let meilleur = null;
@@ -581,7 +583,7 @@ function getPossession(role, persoId, element = null) {
     if (permis && !permis.includes(membre.element)) return;
     if (!permis && box && box !== "full" && !collection.selections?.[box]?.[membre.id]) return;
 
-    const points = pointsPersonnage(membre, c, niveau);
+    const points = pointsPersonnageBox(membre, c, niveau, presents);
     if (!meilleur || points > meilleur.points || (points === meilleur.points && c > meilleur.valeur)) {
       meilleur = { valeur: c, points, element: membre.element };
     }
@@ -1086,11 +1088,12 @@ function pointsBoxJoueur(role, box) {
   const niveaux = collection.niveaux || {};
   let total = 0;
   const meilleurParGroupe = {};
+  const presents = idsDraftCollection(collection, personnagesBase, box);
   personnagesBase.forEach(perso => {
     const c = collection.full?.[perso.id];
     if (typeof c !== "number" || c < 0) return;
     if (box !== "full" && !collection.selections?.[box]?.[perso.id]) return;
-    const points = pointsPersonnage(perso, c, niveaux[perso.groupe || perso.id] ?? null);
+    const points = pointsPersonnageBox(perso, c, niveaux[perso.groupe || perso.id] ?? null, presents);
     if (perso.groupe) meilleurParGroupe[perso.groupe] = Math.max(meilleurParGroupe[perso.groupe] ?? 0, points);
     else total += points;
   });

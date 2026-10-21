@@ -1810,3 +1810,86 @@ body {
   font-size: 1rem;
   cursor: pointer;
 }
+
+/* ---- Synergie d'un perso (fenêtre, colonne du tableau) ---- */
+.col-synergie {
+  text-align: center;
+}
+
+.col-synergie.avec-synergie {
+  color: #ff5a5a;
+  font-weight: bold;
+}
+
+.tableau-synergie .ligne-alternative td {
+  color: #ff5a5a;
+}
+
+.malus-synergie {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.malus-synergie input,
+.ajout-synergie select {
+  padding: 0.25rem 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: inherit;
+  font: inherit;
+}
+
+.malus-synergie input {
+  width: 5rem;
+  text-align: center;
+}
+
+.liste-synergie {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liste-synergie li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.liste-synergie .miniature {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-size: cover;
+}
+
+.liste-synergie .miniature img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nom-synergie {
+  flex: 1;
+}
+
+.aucune-synergie {
+  color: var(--texte-doux);
+}
+
+.ajout-synergie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.ajout-synergie select {
+  flex: 1;
+  min-width: 10rem;
+}

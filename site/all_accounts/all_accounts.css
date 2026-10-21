@@ -403,6 +403,11 @@ h1, h2 {
   right: 2px;
 }
 
+/* Valeur alternative dans la box (persos en synergie absents). */
+.character-points.alternative {
+  color: #ff5a5a;
+}
+
 .character-niveau {
   bottom: 2px;
   left: 2px;

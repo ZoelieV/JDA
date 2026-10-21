@@ -336,6 +336,32 @@ function rendreFiltres() {
   `;
 }
 
+// ---- Valeurs alternatives (en rouge) ----
+// Perso : malus sans ses persos en synergie (cf. commun/synergies.js,
+// synergiesPersos chargé par commun/cartes.js) ; arme : valeur alternative
+// (arme.alternatif %, copie en double ou signature sans son perso).
+
+// Nom d'un id de la draft (Voyageur : "traveler").
+function nomPersoDraft(id) {
+  const perso = personnages.find(p => (p.groupe || p.id) === id);
+  if (!perso) return id;
+  return perso.groupe ? perso.nom.replace(/\s+\S+$/, "") : perso.nom;
+}
+
+function htmlSynergieTc(perso) {
+  const synergie = synergiesPersos[perso.id];
+  if (!synergie) return "";
+  const parAbsent = Math.round(synergie.malus / synergie.persos.length);
+  return `<span class="valeur-alternative-tc" title="Sans aucun de ces persos dans la box : −${synergie.malus} pts (−${parAbsent} par perso absent)">−${synergie.malus}</span> sans ${synergie.persos.map(id => echapper(nomPersoDraft(id))).join(", ")}`;
+}
+
+function htmlAlternativeArmeTc(arme) {
+  const pourcentage = arme.alternatif ?? 100;
+  if (pourcentage === 100) return "";
+  const valeurs = points(arme, "weapons").map(p => Math.round(p * pourcentage / 100));
+  return `<span class="valeur-alternative-tc" title="Copie en double, ou arme signature sans son perso dans la box">${pourcentage} % : ${valeurs.join(" / ")}</span>`;
+}
+
 function rendreEntete() {
   const { libelles } = COLONNES[onglet];
   const persos = onglet === "characters";
@@ -355,6 +381,7 @@ function rendreEntete() {
       <th class="col-nom triable" data-tri="nom" title="Trier par nom">${persos ? "Personnage" : "Arme"}${fleche("nom")}</th>
       ${libelles.map((libelle, index) => `<th class="triable" data-tri="${index}" title="Trier par ${libelle}">${libelle}${fleche(index)}</th>`).join("")}
       ${persos ? `<th class="col-bonus-saison" title="En match classé : +3 trophées par perso de l'équipe ayant le bonus (gain augmenté, perte réduite)">Bonus de saison</th>` : ""}
+      ${persos ? `<th class="col-alternative-tc" title="Points perdus dans une box sans ses persos en synergie">Synergie</th>` : `<th class="col-alternative-tc" title="Points d'une copie en double, ou d'une arme signature sans son perso dans la box">Valeur alt.</th>`}
     </tr>
     ${persos ? `
       <tr class="ligne-modes">
@@ -363,6 +390,7 @@ function rendreEntete() {
           const bonus = BONUS.find(b => b.index === index);
           return bonus ? `<th class="mode-tc ${modes[bonus.cle]}">${LIBELLES_MODES[modes[bonus.cle]]}</th>` : "<th></th>";
         }).join("")}
+        <th></th>
         <th></th>
       </tr>` : ""}
   `;
@@ -405,6 +433,7 @@ function rendreCorps() {
       ${points(item, vue).map((valeur, index) => `
         <td class="${persos && index === 9 && buffs.has(item.id) ? "avec-buff" : ""}"${persos && index === 9 && buffs.has(item.id) ? ` title="Buffé par le théâtre du mois"` : ""}>${valeur}</td>`).join("")}
       ${persos ? `<td class="col-bonus-saison">${bonusSaison.has(item.id) ? `+3 ${ICONE_TROPHEE}` : ""}</td>` : ""}
+      <td class="col-alternative-tc">${persos ? htmlSynergieTc(item) : htmlAlternativeArmeTc(item)}</td>
     </tr>`).join("");
 }
 
@@ -492,7 +521,8 @@ function ouvrirApercu(id) {
   document.getElementById("apercu-tc-miniature").className = `miniature-tc ${classeFondRarete(perso.rarete)}`;
   document.getElementById("apercu-tc-modes").innerHTML = BONUS.map(({ cle, index, libelle }) =>
     `${libelle} : <strong>${modes[cle] === "multiplication" ? "×" : "+"}${liste[index]}</strong>`).join(" · ") +
-    (buffs.has(id) ? " · <span class=\"texte-buff\">buffé par le théâtre du mois</span>" : "");
+    (buffs.has(id) ? " · <span class=\"texte-buff\">buffé par le théâtre du mois</span>" : "") +
+    (synergiesPersos[id] ? `<br>Synergie : ${htmlSynergieTc(perso)}` : "");
 
   const colonnes = [[90, false], [90, true], [95, false], [95, true], [100, false], [100, true]];
   document.getElementById("apercu-tc-tableau").innerHTML = `
@@ -625,6 +655,12 @@ function rendreEquilibrage() {
     </p>
     <p>Modes actuels : ${BONUS.map(({ cle, libelle }) => `${libelle} en <strong>${modes[cle]}</strong>`).join(", ")}. Le niveau des personnages est celui renseigné par le joueur dans Mon compte (90 sans bonus par défaut).</p>
     <p>Voyageur : un seul élément compte, celui qui rapporte le plus de points.</p>
+    <p><strong>Synergies</strong> (valeur alternative, en rouge dans Mon compte et la colonne Synergie) : certains personnages perdent des points dans une box qui ne contient pas les personnages avec lesquels ils fonctionnent.</p>
+    <p class="formule-tc">
+      points = points − malus × (persos en synergie absents de la box / persos en synergie)<br>
+      arrondi, après les bonus de niveau et de théâtre, jamais sous 0
+    </p>
+    <p>Exemple : Lauma en synergie avec Nefer et Columbina, malus 20 : sans Columbina, elle perd 10 points ; sans les 2, 20 points. Ces points comptent partout : points des box, plafond des box opti, équilibrage.</p>
 
     <h2>2. Points d'une arme</h2>
     <p class="formule-tc">points = R<sub>raffinement</sub></p>

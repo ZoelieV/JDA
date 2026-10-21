@@ -1,4 +1,4 @@
-const { migrerCollectionPersos, pointsPersonnage, palierTheatre, getPersonnages } = require("./personnages");
+const { migrerCollectionPersos, pointsPersonnageBox, palierTheatre, getPersonnages } = require("./personnages");
 
 // ---- Équilibrage ----
 //
@@ -105,9 +105,11 @@ const CATEGORIES_ARME_ATTAQUE = ["subdps", "dps"];
 
 function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
   const persos = {};
-  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
+  const liste = getPersonnagesBox(profilData, personnages, boxChoisie);
+  const presents = idsDraftBox(liste);
+  liste.forEach(({ personnage, valeur, niveau }) => {
     const id = personnage.groupe || personnage.id;
-    const points = pointsPersonnage(personnage, valeur, niveau);
+    const points = pointsPersonnageBox(personnage, valeur, niveau, presents);
     if (persos[id] && persos[id].valeur >= points) return;
     persos[id] = {
       valeur: points,
@@ -674,15 +676,24 @@ function getPersonnagesBox(profilData, personnages, boxChoisie = "full") {
     .map(p => ({ personnage: p, valeur: collection.full[p.id], niveau: collection.niveaux?.[p.groupe || p.id] ?? null }));
 }
 
+// Ids de la draft (Voyageur : "traveler") des persos d'une box (liste de
+// getPersonnagesBox) : synergies présentes (cf. commun/synergies.js).
+function idsDraftBox(liste) {
+  return new Set(liste.map(({ personnage }) => personnage.groupe || personnage.id));
+}
+
 // ---- Points des personnages d'une box (PPC, bonus niveau 95 / 100 et
-// théâtre compris, cf. pointsPersonnage) ----
+// théâtre compris, cf. pointsPersonnage ; malus de synergie compris, cf.
+// pointsPersonnageBox) ----
 // Groupe (Voyageur) : seul l'élément qui vaut le plus de points compte.
 function calculerPointsBox(profilData, boxChoisie, personnages) {
   let total = 0;
   const meilleurParGroupe = {};
 
-  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
-    const points = pointsPersonnage(personnage, valeur, niveau);
+  const liste = getPersonnagesBox(profilData, personnages, boxChoisie);
+  const presents = idsDraftBox(liste);
+  liste.forEach(({ personnage, valeur, niveau }) => {
+    const points = pointsPersonnageBox(personnage, valeur, niveau, presents);
     if (personnage.groupe) {
       meilleurParGroupe[personnage.groupe] = Math.max(meilleurParGroupe[personnage.groupe] ?? 0, points);
     } else {
@@ -699,9 +710,11 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
 // sa meilleure copie d'arme signature présente dans la box.
 function valeursBansBox(profilData, boxChoisie, personnages, armes, avecSignature = false) {
   const valeurs = {};
-  getPersonnagesBox(profilData, personnages, boxChoisie).forEach(({ personnage, valeur, niveau }) => {
+  const liste = getPersonnagesBox(profilData, personnages, boxChoisie);
+  const presents = idsDraftBox(liste);
+  liste.forEach(({ personnage, valeur, niveau }) => {
     const id = personnage.groupe || personnage.id;
-    valeurs[id] = Math.max(valeurs[id] ?? 0, pointsPersonnage(personnage, valeur, niveau));
+    valeurs[id] = Math.max(valeurs[id] ?? 0, pointsPersonnageBox(personnage, valeur, niveau, presents));
   });
   if (avecSignature) {
     Object.keys(valeurs).forEach(id => { valeurs[id] += pointsSignatureBox(profilData, boxChoisie, armes, id); });
