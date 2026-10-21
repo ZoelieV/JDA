@@ -22,8 +22,11 @@ body {
   color: #3ecf6a;
 }
 
+/* Largeur du tableau (au moins 90rem si la page le permet), centrée ; plus
+   large que la page : collée à gauche, la page défile. */
 .zone-admin {
-  max-width: 90rem;
+  width: fit-content;
+  min-width: min(90rem, 100%);
   margin: 0 auto;
 }
 

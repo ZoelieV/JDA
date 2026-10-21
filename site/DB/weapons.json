@@ -320,6 +320,16 @@
     "PPW": [0, 0, 0, 0, 0]
   },
   {
+    "id": "makhaira_w",
+    "nom": "Aigue-marine de Makhaira",
+    "element": "all",
+    "type": "claymore",
+    "image": "images/weapons/makhaira_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
     "id": "lohen_w",
     "nom": "Désastre et remords",
     "element": "cryo",
@@ -466,6 +476,16 @@
     "type": "polearm",
     "image": "images/weapons/hutao_w.webp",
     "rarete": "5",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "sacstaff_w",
+    "nom": "Bâton de sacrificateur",
+    "element": "all",
+    "type": "polearm",
+    "image": "images/weapons/sacstaff_w.webp",
+    "rarete": "4",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
   },
@@ -814,6 +834,26 @@
     "element": "all",
     "type": "catalyst",
     "image": "images/weapons/sacjade_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "frimas_w",
+    "nom": "Frimas d'aube",
+    "element": "all",
+    "type": "catalyst",
+    "image": "images/weapons/frimas_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "coeurhiver_w",
+    "nom": "Le cœur lourd de l'hiver",
+    "element": "all",
+    "type": "catalyst",
+    "image": "images/weapons/coeurhiver_w.webp",
     "rarete": "4",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
