@@ -9,6 +9,26 @@
 // Placé dans #zone-compte si la page en a un (accueil), sinon dans une zone
 // ajoutée en haut à droite de la page. À inclure avec defer, après fond.js.
 (function () {
+  // Source des visiteurs (statistiques d'inscription, cf.
+  // api/_lib/statistiques.js) : à la première arrivée, ?src=... ou
+  // ?utm_source=... du lien de pub, sinon le site d'où vient le visiteur ;
+  // gardée 30 jours dans le cookie source_pub, enregistrée sur le profil à
+  // sa création (cf. api/auth/discord/callback.js).
+  try {
+    if (!/(?:^|;\s*)source_pub=/.test(document.cookie)) {
+      const parametres = new URLSearchParams(location.search);
+      let source = parametres.get("src") || parametres.get("utm_source");
+      if (!source && document.referrer) {
+        const origine = new URL(document.referrer).hostname.replace(/^www\./, "");
+        if (origine && origine !== location.hostname) source = origine;
+      }
+      source = (source || "").toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 40);
+      if (source) document.cookie = `source_pub=${source}; Max-Age=${30 * 24 * 3600}; Path=/; SameSite=Lax; Secure`;
+    }
+  } catch {
+    // Cookie ou URL illisible : pas de source.
+  }
+
   const PAGE_COMPTE = "/my_account/my_account.html";
   const ICONES = "/DB/images/others/";
   // Champs du menu enregistrés dans le profil (mêmes que sur Mon compte).
@@ -32,7 +52,7 @@
   function chargerPersonnalisation() {
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=14";
+      script.src = "/commun/personnalisation.js?v=15";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;

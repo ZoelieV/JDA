@@ -11,6 +11,8 @@
 // modifiables (config.boss). Armes : catégories (support, standard)
 // modifiables (config.categoriesArmes).
 //
+// GET ?stats_site=1 : statistiques du site (administrateurs et mini admins,
+//          cf. _lib/statistiques.js).
 // GET  : { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
@@ -75,6 +77,7 @@ const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
 const { lireSynergies } = require("../commun/synergies.js");
 const { lireRecommandationsStuff } = require("../commun/recommandations_stuff.js");
+const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
 // modifiées, cf. commun/recommandations_stuff.js).
 const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
@@ -282,6 +285,14 @@ function nettoyer(valeurs, ids, taille) {
 module.exports = async (req, res) => {
   try {
     const user = await verifySessionToken(parseCookies(req).session);
+
+    // Statistiques du site (inscriptions, connexions, activité ; cf.
+    // _lib/statistiques.js) : administrateurs et mini admins.
+    if (req.method === "GET" && req.query?.stats_site === "1") {
+      res.setHeader("Cache-Control", "no-store");
+      if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+      return res.status(200).json(await lireStatistiques());
+    }
 
     if (req.method === "GET") {
       res.setHeader("Cache-Control", "no-store");

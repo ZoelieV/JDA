@@ -2,6 +2,7 @@ const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { estAdmin, estMiniAdmin, estShadowban } = require("../_lib/admin");
 const { actualiserPoints } = require("../_lib/personnages");
 const { reclamerBonusConnexion } = require("../_lib/koyns");
+const { noterConnexion } = require("../_lib/statistiques");
 module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
@@ -16,7 +17,9 @@ module.exports = async (req, res) => {
     // 30 s) : gagné à la première visite de la journée, annoncé par la page
     // (cf. commun/compte.js).
     await actualiserPoints();
-    const bonus = await reclamerBonusConnexion(user.id);
+    // Connexion du jour (statistiques, une écriture par jour au plus) et
+    // bonus de l'événement.
+    const [bonus] = await Promise.all([reclamerBonusConnexion(user.id), noterConnexion(user.id)]);
 
     return res.status(200).json({
       authenticated: true,

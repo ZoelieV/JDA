@@ -1,13 +1,13 @@
 // Rikoyns : monnaie du site, gagnée en jouant (jamais achetable avec de
 // l'argent réel), qui sert à obtenir les cosmétiques de la personnalisation
-// (fonds, namecards, bannières, Voyageur / Manekin, skins). Les filtres et
+// (fonds, namecards, bannières, skins ; Voyageur / Manekin gratuits). Les filtres et
 // tris de la draft restent libres. Règles et gains : api/_lib/koyns.js.
 // Partagé avec le serveur.
 
 // Prix d'un cosmétique selon son choix (début de l'id, cf. idCosmetique) :
 // fonds d'écran (image importée comprise) et skins 10, namecards
-// ("banniere") et bannières ("banniere2") 15 ; Voyageur / Manekin :
-// PRIX_COSMETIQUE. Double pour les persos de PERSOS_PRIX_DOUBLE.
+// ("banniere") et bannières ("banniere2") 15 ; autre choix payant :
+// PRIX_COSMETIQUE (Voyageur et Manekin : gratuits, cf. COSMETIQUES_GRATUITS). Double pour les persos de PERSOS_PRIX_DOUBLE.
 const PRIX_COSMETIQUE = 1;
 const PRIX_PAR_CHOIX = { fond: 10, skin: 10, banniere: 15, banniere2: 15 };
 
@@ -51,13 +51,16 @@ function idCosmetique(choix, valeur) {
   return `${choix}:${valeur}`;
 }
 
-// Choix par défaut : gratuits pour tout le monde.
+// Choix par défaut, et les 2 variantes du Voyageur et du Manekin : gratuits
+// pour tout le monde.
 const COSMETIQUES_GRATUITS = new Set([
   "banniere:namecards/Namecard_Background_Default.webp",
   "banniere2:namecards/banners/Namecard_Banner_Default.webp",
   "fond:bg/autres/default_bg.webp",
   "voyageur:aether",
-  "manekin:manekin"
+  "voyageur:lumine",
+  "manekin:manekin",
+  "manekin:manekina"
 ]);
 
 const CHOIX_COSMETIQUES = ["fond", "banniere", "banniere2", "voyageur", "manekin"];

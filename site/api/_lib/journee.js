@@ -30,4 +30,12 @@ function debutJournee(maintenant = Date.now()) {
   return instant;
 }
 
-module.exports = { debutJournee };
+// Date (AAAA-MM-JJ, Paris) de la journée du site d'un instant : celle du
+// dernier passage à 4 h (statistiques, cf. _lib/statistiques.js).
+const FORMAT_DATE_PARIS = new Intl.DateTimeFormat("en-CA", { timeZone: FUSEAU, year: "numeric", month: "2-digit", day: "2-digit" });
+
+function jourJournee(instant = Date.now()) {
+  return FORMAT_DATE_PARIS.format(new Date(debutJournee(new Date(instant).getTime())));
+}
+
+module.exports = { debutJournee, jourJournee };

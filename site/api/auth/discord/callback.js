@@ -84,6 +84,19 @@ module.exports = async (req, res) => {
       console.error("Erreur upsert profile:", upsertError);
     }
 
+    // Source de l'inscription (cookie source_pub, cf. commun/compte.js) :
+    // seulement sur un profil créé à l'instant (jamais un compte existant).
+    const source = String(cookies.source_pub || "").toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 40);
+    if (source && !upsertError) {
+      const { error: sourceError } = await supabase
+        .from("profiles")
+        .update({ source })
+        .eq("discord_id", user.id)
+        .is("source", null)
+        .gte("inscrit_le", new Date(Date.now() - 2 * 60 * 1000).toISOString());
+      if (sourceError) console.error("Erreur source d'inscription :", sourceError);
+    }
+
     setCookie(res, "discord_oauth_state", "", {
       httpOnly: true,
       secure: true,
