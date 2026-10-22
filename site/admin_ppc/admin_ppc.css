@@ -1784,6 +1784,30 @@ body {
   width: 5rem;
 }
 
+/* Comptes (admin_comptes.js) : libellé à côté de son champ. */
+.champ-compte {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.champ-uid-compte {
+  width: 7rem;
+}
+
+.select-niveau-compte {
+  width: auto;
+}
+
+.champ-stream-compte {
+  flex: 1 1 18rem;
+}
+
+.champ-stream-compte input {
+  flex: 1;
+  min-width: 0;
+}
+
 .champ-cosmetique-koyns {
   flex: 1 1 18rem;
   min-width: 0;

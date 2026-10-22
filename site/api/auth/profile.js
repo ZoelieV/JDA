@@ -329,3 +329,6 @@ module.exports = async (req, res) => {
 
 // Box fictives (api/accounts/[discord_id].js) : même nettoyage des données.
 module.exports.nettoyerProfil = nettoyerProfil;
+// Modification par un admin (UID, stream, niveau du monde, cf.
+// api/accounts/[discord_id].js) : mêmes formats.
+Object.assign(module.exports, { uidValide, lienStreamAutorise, NIVEAUX_MONDE, ERREUR_UID, ERREUR_LIEN_STREAM });

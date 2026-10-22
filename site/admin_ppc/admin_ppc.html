@@ -6,7 +6,7 @@
 <title>Administration</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=39">
+<link rel="stylesheet" href="admin_ppc.css?v=40">
 <link rel="stylesheet" href="../commun/entete.css?v=rem30">
 <link rel="stylesheet" href="../commun/cartes.css?v=4">
 <link rel="stylesheet" href="../commun/tri.css?v=6">
@@ -43,6 +43,7 @@
         <button type="button" id="ouvrir-koyns" class="btn-ouvrir-ajout" title="Rikoyns : dons aux joueurs, cosmétiques exclusifs, bonus de connexion">Rikoyns</button>
         <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
         <button type="button" id="ouvrir-recommandations" class="btn-ouvrir-ajout" title="Recommandations de la box stuff : supports de chaque DPS, par priorité">Recommandations</button>
+        <button type="button" id="ouvrir-comptes" class="btn-ouvrir-ajout" title="UID, lien de stream et niveau du monde d'un joueur (les joueurs ne peuvent plus les changer eux-mêmes)">Comptes</button>
         <button type="button" id="ouvrir-statistiques" class="btn-ouvrir-ajout" title="Inscriptions, connexions, matchs par jour et sources des inscriptions">Statistiques</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
@@ -337,6 +338,38 @@
        entraînement par les administrateurs et mini admins seulement. -->
   <!-- Recommandations de la box stuff (cf. admin_recommandations.js,
        commun/recommandations_stuff.js). -->
+  <!-- Comptes des joueurs (cf. admin_comptes.js) : UID, stream, niveau du
+       monde. Administrateurs et mini admins. -->
+  <div id="modal-comptes" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Comptes</h2>
+        <button type="button" id="fermer-comptes" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Les joueurs ne renseignent leur UID et leur lien de stream qu'une fois, et ne peuvent baisser leur niveau du monde que d'un cran sous le plus haut enregistré.
+        Ici, tout se corrige (champ vide : effacé) ; le plus haut niveau du monde repart du niveau choisi.
+      </p>
+      <div class="ligne-koyns-admin">
+        <select id="compte-joueur" class="texte-ajout"></select>
+      </div>
+      <div id="champs-compte" class="ligne-koyns-admin cache">
+        <label class="champ-compte">UID <input type="text" id="compte-uid" class="texte-ajout champ-uid-compte" inputmode="numeric" maxlength="9" placeholder="744102007" autocomplete="off"></label>
+        <label class="champ-compte">Niveau du monde
+          <select id="compte-niveau" class="texte-ajout select-niveau-compte">
+            <option value="">—</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+          </select>
+        </label>
+        <label class="champ-compte champ-stream-compte">Stream <input type="url" id="compte-stream" class="texte-ajout" placeholder="https://twitch.tv/…" autocomplete="off"></label>
+        <button type="button" id="enregistrer-compte-joueur" class="bouton-creer">Enregistrer</button>
+      </div>
+      <span id="message-compte" class="message-ajout"></span>
+    </div>
+  </div>
+
   <!-- Statistiques du site (cf. admin_statistiques.js, api/_lib/statistiques.js). -->
   <div id="modal-statistiques" class="modal-apercu">
     <div class="modal-apercu-contenu">
@@ -423,6 +456,7 @@
   <script src="/commun/recommandations_stuff.js?v=1"></script>
   <script src="admin_recommandations.js?v=1"></script>
   <script src="admin_statistiques.js?v=1"></script>
+  <script src="admin_comptes.js?v=1"></script>
   <script src="admin_ppc.js?v=36"></script>
 </body>
 </html>

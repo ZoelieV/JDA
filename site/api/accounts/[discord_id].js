@@ -3,7 +3,7 @@ const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { estModerateur } = require("../_lib/admin");
 const { getPersonnages, getArmes, actualiserPoints, migrerCollectionPersos, codeTheatre } = require("../_lib/personnages");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
-const { nettoyerProfil } = require("../auth/profile");
+const { nettoyerProfil, uidValide, lienStreamAutorise, NIVEAUX_MONDE, ERREUR_UID, ERREUR_LIEN_STREAM } = require("../auth/profile");
 const {
   MAX_BOXES_FICTIVES,
   estIdFictif,
@@ -178,6 +178,36 @@ async function gererBoxesFictives(req, res, url, cible, user) {
   return res.status(405).json({ error: "Méthode non autorisée" });
 }
 
+// ---- Modification d'un compte par un administrateur ou un mini admin ----
+// PUT /api/accounts/<discord_id> { uid, stream, niveau_monde } : valeurs
+// que le joueur ne peut plus changer lui-même (cf. erreurChampsDefinitifs,
+// api/auth/profile.js). Le plus haut niveau du monde repart du niveau
+// choisi ; "" efface le champ.
+async function modifierCompte(req, res, discordId, user) {
+  if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+  const corps = req.body || {};
+  const uid = typeof corps.uid === "string" ? corps.uid.trim() : "";
+  const stream = lienStreamAutorise(typeof corps.stream === "string" ? corps.stream : "");
+  const niveau = String(corps.niveau_monde ?? "");
+  if (!uidValide(uid)) return res.status(400).json({ error: ERREUR_UID });
+  if (stream === null) return res.status(400).json({ error: ERREUR_LIEN_STREAM });
+  if (!NIVEAUX_MONDE.has(niveau)) return res.status(400).json({ error: "Niveau du monde : 1 à 9, ou vide." });
+
+  const { data: profil, error } = await supabase.from("profiles").select("data").eq("discord_id", discordId).maybeSingle();
+  if (error) throw error;
+  if (!profil) return res.status(404).json({ error: "Profil introuvable" });
+  const data = { ...(profil.data || {}), uid, niveau_monde: niveau };
+  if (stream) data.stream = stream;
+  else delete data.stream;
+  if (niveau) data.niveau_monde_max = Number(niveau);
+  else delete data.niveau_monde_max;
+
+  const { error: erreurEcriture } = await supabase.from("profiles").update({ data }).eq("discord_id", discordId);
+  if (erreurEcriture) throw erreurEcriture;
+  console.log(`Compte ${discordId} modifié par ${user.id} : uid "${uid}", stream "${stream}", niveau du monde "${niveau}"`);
+  return res.status(200).json({ ok: true, uid, stream, niveau_monde: niveau });
+}
+
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, `https://${req.headers.host}`);
@@ -187,6 +217,11 @@ module.exports = async (req, res) => {
     if (discordId === LISTE_FICTIVES || estIdFictif(discordId)) {
       res.setHeader("Cache-Control", "no-store");
       return await gererBoxesFictives(req, res, url, discordId, await verifySessionToken(parseCookies(req).session));
+    }
+
+    if (req.method === "PUT") {
+      res.setHeader("Cache-Control", "no-store");
+      return await modifierCompte(req, res, discordId, await verifySessionToken(parseCookies(req).session));
     }
 
     const { data, error } = await supabase
