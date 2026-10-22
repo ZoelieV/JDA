@@ -178,11 +178,15 @@ function trierEtGrouper(items, etat, options = {}) {
   const favorisSeulement = !!getSensTri(etat, "favoris") && typeof valeurs.favoris === "function";
   if (favorisSeulement) items = items.filter(item => valeurs.favoris(item));
 
-  const sensRarete = getSensTri(etat, "rarete") ||
-    (groupes.length || options.rareteParDefaut || favorisSeulement || getSensTri(etat, "constellation") ? 1 : 0);
-
   const trisValeurs = etat.tris.filter(t => valeurs[t.cle] && t.cle !== "favoris");
-  const separerPossedes = typeof options.possede === "function" && trisValeurs.some(t => t.cle === "points");
+
+  // Rareté : tri choisi, sinon par défaut (filtres, groupes, favoris,
+  // constellation) sauf avec le tri par points, qui trie seulement par
+  // points.
+  const triPoints = trisValeurs.some(t => t.cle === "points");
+  const sensRarete = getSensTri(etat, "rarete") ||
+    (!triPoints && (groupes.length || options.rareteParDefaut || favorisSeulement || getSensTri(etat, "constellation")) ? 1 : 0);
+  const separerPossedes = typeof options.possede === "function" && triPoints;
 
   if (!groupes.length && !sensRarete && !trisValeurs.length) {
     return items.length ? [{ cles: {}, items }] : [];
