@@ -575,6 +575,11 @@ img.arme-mini {
   width: 1.375rem;
   height: 1.375rem;
   object-fit: contain;
+  /* Icône noire du palier sur un rond clair (comme .medaille-theatre). */
+  box-sizing: border-box;
+  padding: 0.125rem;
+  border-radius: 50%;
+  background-color: rgba(235, 235, 235, 0.92);
 }
 
 .etiquette-resultat.trophees.gain {

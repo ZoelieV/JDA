@@ -155,7 +155,7 @@
       if (pseudo) pseudo.after(medaille);
       else element.appendChild(medaille);
     }
-    medaille.src = `/DB/images/others/Imaginarium_Theater_Medal_${infos.medaille}.webp`;
+    medaille.src = urlMedailleTheatre(infos.medaille);
     medaille.alt = infos.nom;
     medaille.title = infos.nom;
   }

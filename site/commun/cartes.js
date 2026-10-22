@@ -271,8 +271,8 @@ function estDefiEnnemis(boss) {
 // ("1".."4"), utilisé sans catalogue chargé. Hauteur de la médaille : 1,3 x
 // le texte (cf. cartes.css).
 // PALIERS_THEATRE : nom, mode de room (cf. MODES_THEATRE, api/_lib/draft.js),
-// bans par joueur avant / après les 2 premiers picks et médaille (image
-// provisoire de l'ancien théâtre). Anciens matchs de l'historique : théâtre
+// bans par joueur avant / après les 2 premiers picks et médaille (numéro de
+// l'ancien théâtre, icône du palier : cf. urlMedailleTheatre). Anciens matchs de l'historique : théâtre
 // 6, 8, 10 ou 12 (cf. infosTheatreJoue).
 const PALIERS_THEATRE = {
   1: { nom: "Sardine", mode: "sardine", bans: [2, 1], medaille: 6 },
@@ -285,8 +285,12 @@ const SEUIL_COST = 40;
 // Draft de la mêlée générale (mode "12"), du carnage et du mode en équipe.
 const THEATRE_CARPE = 2;
 
+// Icône d'un palier (sardine, carpe, dauphin, baleine) depuis le numéro de
+// médaille (ancien théâtre 6, 8, 10, 12).
+const ICONES_PALIERS_THEATRE = { 6: "sardine", 8: "carpe", 10: "dauphin", 12: "baleine" };
+
 function urlMedailleTheatre(numero) {
-  return `/DB/images/others/Imaginarium_Theater_Medal_${numero}.webp`;
+  return `/DB/images/others/theatre_${ICONES_PALIERS_THEATRE[numero]}.webp`;
 }
 
 // Théâtre joué d'un match ou d'une draft : palier actuel (1..4) ou ancien

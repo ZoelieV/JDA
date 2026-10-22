@@ -551,7 +551,8 @@ body::before {
   height: 1.3em;
   padding: 0.1em;
   border-radius: 50%;
-  background-color: rgba(60, 60, 60, 0.8);
+  /* Icônes des paliers noires (cf. urlMedailleTheatre) : rond clair. */
+  background-color: rgba(235, 235, 235, 0.92);
   object-fit: contain;
   vertical-align: middle;
 }
