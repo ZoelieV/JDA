@@ -7,24 +7,11 @@ const { lireSaisons, saisonActuelle } = require("../_lib/saisons");
 
 const CHAMPS = "discord_id, discord_username, discord_global_name, discord_avatar_url, updated_at, data";
 
-// Code Postgres "colonne inexistante".
-const COLONNE_INEXISTANTE = "42703";
-
 async function chargerProfils() {
-  // created_at (date d'arrivée, tri "Arrivée") : si la colonne n'existe pas
-  // encore dans la table profiles, on s'en passe (tri masqué côté page).
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
-    .select(`${CHAMPS}, created_at`)
+    .select(CHAMPS)
     .order("updated_at", { ascending: false });
-
-  if (error && error.code === COLONNE_INEXISTANTE) {
-    ({ data, error } = await supabase
-      .from("profiles")
-      .select(CHAMPS)
-      .order("updated_at", { ascending: false }));
-  }
-
   if (error) throw error;
   return data;
 }
@@ -157,7 +144,6 @@ function resumerProfil(profil, resultats) {
     discord_global_name: profil.discord_global_name,
     discord_avatar_url: profil.discord_avatar_url,
     updated_at: profil.updated_at,
-    created_at: profil.created_at ?? null,
     banniere2: data.parametres?.banniere2 || null,
     // Full Box : persos + armes (même total que Mon compte).
     points: calculerPointsBox(data, "full", getPersonnages()) + calculerPointsArmesBox(data, "full", getArmes()),
