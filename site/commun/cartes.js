@@ -290,7 +290,8 @@ const THEATRE_CARPE = 2;
 const ICONES_PALIERS_THEATRE = { 6: "sardine", 8: "carpe", 10: "dauphin", 12: "baleine" };
 
 function urlMedailleTheatre(numero) {
-  return `/DB/images/others/theatre_${ICONES_PALIERS_THEATRE[numero]}.webp`;
+  // ?v= : à augmenter quand une icône change (images en cache 1 jour).
+  return `/DB/images/others/theatre_${ICONES_PALIERS_THEATRE[numero]}.webp?v=2`;
 }
 
 // Théâtre joué d'un match ou d'une draft : palier actuel (1..4) ou ancien
