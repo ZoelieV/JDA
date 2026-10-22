@@ -232,10 +232,14 @@
       document.body.prepend(zone);
     }
 
+    // Connecté : jamais le bouton de connexion, même si l'affichage du compte
+    // échoue ensuite (bannière, médaille...).
+    let connecte = false;
     try {
       const reponse = await fetch("/api/auth/me", { credentials: "include" });
 
       if (reponse.ok) {
+        connecte = true;
         const { user, bonus_connexion: bonus } = await reponse.json();
         const nom = user.global_name || user.username || "Mon compte";
         if (bonus) annoncerBonusConnexion(bonus);
@@ -305,6 +309,7 @@
     } catch (erreur) {
       console.error(erreur);
     }
+    if (connecte) return;
 
     const connexion = document.createElement("a");
     connexion.className = "compte-connexion";

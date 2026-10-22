@@ -23,13 +23,14 @@
   // médaille dans le bouton du compte (cf. appliquerMedaille). Nouvelle clé
   // depuis les paliers sardine..baleine (l'ancienne gardait "6".."12").
   const CLE_THEATRE = "theatre-palier-2";
-  // Palier -> nom et médaille (même table que PALIERS_THEATRE,
-  // commun/cartes.js, pas chargé sur toutes les pages).
+  // Palier -> nom et icône (mêmes que PALIERS_THEATRE et urlMedailleTheatre,
+  // commun/cartes.js, pas chargé sur toutes les pages : rien n'en est utilisé
+  // ici).
   const PALIERS_THEATRE = {
-    1: { nom: "Sardine", medaille: 6 },
-    2: { nom: "Carpe", medaille: 8 },
-    3: { nom: "Dauphin", medaille: 10 },
-    4: { nom: "Baleine", medaille: 12 }
+    1: { nom: "Sardine", icone: "sardine" },
+    2: { nom: "Carpe", icone: "carpe" },
+    3: { nom: "Dauphin", icone: "dauphin" },
+    4: { nom: "Baleine", icone: "baleine" }
   };
 
   // Choix par défaut (profil sans choix, ou visiteur non connecté pour le fond).
@@ -155,7 +156,7 @@
       if (pseudo) pseudo.after(medaille);
       else element.appendChild(medaille);
     }
-    medaille.src = urlMedailleTheatre(infos.medaille);
+    medaille.src = `/DB/images/others/theatre_${infos.icone}.webp?v=3`;
     medaille.alt = infos.nom;
     medaille.title = infos.nom;
   }
