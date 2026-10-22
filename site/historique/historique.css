@@ -104,6 +104,13 @@
   backdrop-filter: blur(0.5rem);
 }
 
+/* Téléphone : pas figée (elle prendrait trop de hauteur à l'écran). */
+@media (max-width: 700px) {
+  .barre-historique {
+    position: static;
+  }
+}
+
 .barre-historique .tris {
   flex-wrap: wrap;
   justify-content: center;
@@ -262,6 +269,11 @@
      retrait de 0,875rem côté texte ; --avatar-min au minimum (bannière
      étroite : elle grandit alors avec la photo, cf. min-height). */
   container-type: inline-size;
+  /* Largeur de la colonne, imposée : sinon, avec aspect-ratio, la largeur
+     est déduite de la hauteur (contenu passé à la ligne sur téléphone) et
+     la bannière déborde de sa colonne. */
+  width: 100%;
+  min-width: 0;
   --avatar-min: 4rem;
   --taille-avatar: max(var(--avatar-min), calc((100cqw + 0.875rem) * 0.137 - 2px));
   min-height: calc(var(--avatar-min) + 2px);
@@ -814,7 +826,10 @@ img.arme-mini {
     padding: 0.25rem;
   }
 
+  /* Colonne étroite : hauteur selon le contenu (pseudo, temps, résultat
+     passent à la ligne), pas selon les proportions de l'image. */
   .match-banniere {
+    aspect-ratio: auto;
     --avatar-min: 2.25rem;
     flex-wrap: wrap;
     gap: 0.25rem 0.375rem;
@@ -838,6 +853,58 @@ img.arme-mini {
 
   .match-label {
     flex: none;
+  }
+
+  /* Bans d'équilibrage : sous les 2 joueurs (cf. htmlEquilibrageTelephone)
+     au lieu d'une demi-largeur chacun. */
+  .match-joueur .ligne-equilibrage {
+    display: none;
+  }
+
+  .match-equilibrage-tel {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .titre-equilibrage-tel {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.8125rem;
+    opacity: 0.85;
+  }
+
+  .nom-equilibrage-tel {
+    font-weight: bold;
+  }
+
+  .nom-equilibrage-tel.nom-j1 {
+    color: var(--couleur-j1);
+  }
+
+  .nom-equilibrage-tel.nom-j2 {
+    color: var(--couleur-j2);
+  }
+
+  /* 6 bans par ligne, à la largeur de la carte. */
+  .bans-equilibrage-tel {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+
+  .bans-equilibrage-tel .perso-mini.perso-mini {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
+/* Ordinateur : bans d'équilibrage dans la colonne de chaque joueur. */
+@media (min-width: 701px) {
+  .match-equilibrage-tel {
+    display: none;
   }
 }
 

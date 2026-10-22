@@ -314,6 +314,23 @@ function htmlPerso(id, parametres, { element = null, banni = false, infos = null
     `<img src="../DB/${personnage.image}" alt="${nom}" loading="lazy" decoding="async">${coins}</div>`;
 }
 
+// Téléphone : bans d'équilibrage (verticaux, horizontaux) sous les 2
+// joueurs, sur toute la largeur, 6 par ligne, avec le type de bans et le
+// pseudo du banneur (couleur de son rôle) ; à la place des lignes
+// .ligne-equilibrage de chaque joueur (cachées sur téléphone, cf.
+// historique.css). Pseudos remplis en texte (cf. creerLigneMatch).
+function htmlEquilibrageTelephone(match) {
+  const groupes = ["j1", "j2"].flatMap(role => [
+    ["Bans verticaux", match[role].bans_equilibrage || []],
+    ["Bans horizontaux", match[role].bans_horizontaux || []]
+  ].filter(([, bans]) => bans.length).map(([titre, bans]) => `
+    <div class="groupe-equilibrage-tel">
+      <span class="titre-equilibrage-tel">${titre} · <span class="nom-equilibrage-tel nom-${role}" data-role="${role}"></span></span>
+      <div class="bans-equilibrage-tel ligne-bans">${bans.map(ban => htmlPerso(ban.id, match[role].parametres, { banni: true, infosJoueurs: ban.infos, aleatoire: ban.aleatoire })).join("")}</div>
+    </div>`));
+  return groupes.length ? `<div class="match-equilibrage-tel">${groupes.join("")}</div>` : "";
+}
+
 function htmlLigne(titre, contenu, classe = "") {
   return contenu
     ? `<div class="match-ligne ${classe}"><span class="match-label">${titre}</span><div class="match-persos">${contenu}</div></div>`
@@ -374,8 +391,8 @@ function htmlJoueur(match, role, bansConnus) {
       ${bannieres}
       ${htmlLigne("Équipe", equipe)}
       ${bansConnus ? htmlLigne("Bans", bans, "ligne-bans") : ""}
-      ${htmlLigne("Équilibrage", equilibrage, "ligne-bans")}
-      ${htmlLigne("Bans horizontaux", horizontaux, "ligne-bans")}
+      ${htmlLigne("Équilibrage", equilibrage, "ligne-bans ligne-equilibrage")}
+      ${htmlLigne("Bans horizontaux", horizontaux, "ligne-bans ligne-equilibrage")}
     </div>
   `;
 }
@@ -433,7 +450,9 @@ function creerLigneMatch(match) {
       ${infos}
     </div>
     ${htmlJoueur(match, "j2", enCours || match.bans_connus)}
+    ${htmlEquilibrageTelephone(match)}
   `;
+  ligne.querySelectorAll(".nom-equilibrage-tel").forEach(nom => { nom.textContent = match[nom.dataset.role].nom || ""; });
   // Pseudos en texte (pas d'HTML venant des comptes).
   if (match.equipe) {
     ["j1", "j2"].forEach(role => {
