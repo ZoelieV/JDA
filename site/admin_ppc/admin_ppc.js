@@ -178,7 +178,8 @@ function itemsAffiches() {
     if (recherche && !item.nom.toLowerCase().includes(recherche)) return false;
     if (filtres.elements.size && !correspondElements(item)) return false;
     if (filtres.armes.size && !filtres.armes.has(item[champType])) return false;
-    if (persos && filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
+    // Étoiles : persos et armes.
+    if (filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
     if (persos && filtres.voeux.size && !filtres.voeux.has(getVoeu(item))) return false;
     if (persos && filtres.categories.size && !filtres.categories.has(item.categorie)) return false;
     if (!persos && !armeCorrespondCategories(item, [...filtres.categoriesArmes])) return false;
@@ -243,8 +244,8 @@ function rendreFiltres() {
   document.getElementById("filtres-admin").innerHTML = `
     <div class="groupe-admin">${icones(ICONES_ELEMENTS_TRI, filtres.elements, "elements")}</div>
     <div class="groupe-admin">${icones(ICONES_TYPES_ARMES_TRI, filtres.armes, "armes")}</div>
+    <div class="groupe-admin">${textes({ 5: "5★", 4: "4★", 3: "3★" }, filtres.etoiles, "etoiles")}</div>
     ${persos ? `
-      <div class="groupe-admin">${textes({ 5: "5★", 4: "4★", 3: "3★" }, filtres.etoiles, "etoiles")}</div>
       <div class="groupe-admin">${Object.entries(VOEUX).map(([valeur, voeu]) =>
         `<button type="button" class="filtre-admin filtre-icone${filtres.voeux.has(valeur) ? " active" : ""}" data-filtre="voeux" data-valeur="${valeur}" title="${voeu.nom}"><img src="${voeu.image}" alt="${voeu.nom}"></button>`).join("")}</div>
       <div class="groupe-admin">${textes(CATEGORIES, filtres.categories, "categories")}</div>` : `
