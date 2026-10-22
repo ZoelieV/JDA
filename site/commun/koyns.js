@@ -51,6 +51,18 @@ function idCosmetique(choix, valeur) {
   return `${choix}:${valeur}`;
 }
 
+// Nom affiché d'un fond (DB/images/cosmetiques.json) : celui de son image,
+// pas son id (ancien nom de fichier, gardé pour les achats et les fonds
+// choisis). "bg_web/autres/temple_de_l_espace3.webp" -> "Temple de l'espace 3".
+function nomFond(fond) {
+  const nom = fond.image.split("/").pop()
+    .replace(/\.[a-z]+$/i, "")
+    .replace(/(^|_)([dl])_/gi, "$1$2'")
+    .replace(/_/g, " ")
+    .replace(/(\D)(\d+)$/, "$1 $2");
+  return nom.charAt(0).toUpperCase() + nom.slice(1);
+}
+
 // Choix par défaut, et les 2 variantes du Voyageur et du Manekin : gratuits
 // pour tout le monde.
 const COSMETIQUES_GRATUITS = new Set([

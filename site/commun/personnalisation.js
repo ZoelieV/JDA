@@ -109,7 +109,7 @@
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=8",
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=9",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=3",
@@ -633,11 +633,11 @@
       // Fonds groupés par sous-dossier de DB/images/bg.
       [...new Set(cosmetiques.fonds.map(fond => fond.categorie))].forEach(categorie => {
         const fonds = cosmetiques.fonds.filter(fond =>
-          fond.categorie === categorie && (!recherche || fond.id.toLowerCase().includes(recherche)));
+          fond.categorie === categorie && (!recherche || nomFond(fond).toLowerCase().includes(recherche)));
         if (!fonds.length) return;
         const grille = nouvelleGrille();
         fonds.forEach(fond => grille.appendChild(creerChoix(
-          urlImage(fond.miniature), fond.id.split("/").pop(), brouillon.fond === fond.id, choisir(fond.id), "", idCosmetique("fond", fond.id))));
+          urlImage(fond.miniature), nomFond(fond), brouillon.fond === fond.id, choisir(fond.id), "", idCosmetique("fond", fond.id))));
         conteneur.append(titreSection((categorie || "Divers").replace(/_/g, " ")), grille);
       });
       return;

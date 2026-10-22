@@ -7,6 +7,7 @@
 // VARIANTES_PERSONNAGES et SKINS_PERSONNAGES (commun/variantes.js).
 
 let exclusifsKoyns = [];
+let nomsCosmetiquesKoyns = new Map(); // id -> nom affiché (fonds : cf. nomFond)
 
 function messageKoyns(id, texte, type = "") {
   const message = document.getElementById(id);
@@ -14,10 +15,12 @@ function messageKoyns(id, texte, type = "") {
   message.className = `message-ajout ${type}`;
 }
 
-// Tous les cosmétiques payants (ids), pour les listes de suggestions.
+// Tous les cosmétiques payants (ids), pour les listes de suggestions ;
+// noms des fonds dans nomsCosmetiquesKoyns.
 async function chargerCatalogueKoyns() {
   const reponse = await fetch("/DB/images/cosmetiques.json");
   const cosmetiques = await reponse.json();
+  nomsCosmetiquesKoyns = new Map(cosmetiques.fonds.map(fond => [idCosmetique("fond", fond.id), `Fond : ${nomFond(fond)}`]));
   return [
     ...cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id)),
     idCosmetique("fond", "perso"),
@@ -40,7 +43,7 @@ async function chargerJoueursKoyns() {
 
 function rendreExclusifs() {
   document.getElementById("liste-exclusifs").innerHTML = exclusifsKoyns.length
-    ? exclusifsKoyns.map(id => `<span class="exclusif-koyns"><code>${echapper(id)}</code><button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`).join("")
+    ? exclusifsKoyns.map(id => `<span class="exclusif-koyns" title="${echapper(id)}">${nomsCosmetiquesKoyns.has(id) ? echapper(nomsCosmetiquesKoyns.get(id)) : `<code>${echapper(id)}</code>`}<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`).join("")
     : `<span class="aide-apercu">Aucun cosmétique exclusif pour l'instant.</span>`;
 }
 
@@ -62,7 +65,7 @@ function remplirBonus(bonus) {
 async function ouvrirKoyns() {
   document.getElementById("modal-koyns").classList.add("active");
   const [config, catalogue] = await Promise.all([chargerPointsAdmin(), chargerCatalogueKoyns(), chargerJoueursKoyns()]);
-  document.getElementById("catalogue-koyns").innerHTML = catalogue.map(id => `<option value="${echapper(id)}"></option>`).join("");
+  document.getElementById("catalogue-koyns").innerHTML = catalogue.map(id => `<option value="${echapper(id)}"${nomsCosmetiquesKoyns.has(id) ? ` label="${echapper(nomsCosmetiquesKoyns.get(id))}"` : ""}></option>`).join("");
   exclusifsKoyns = Array.isArray(config?.cosmetiques_exclusifs) ? [...config.cosmetiques_exclusifs] : [];
   rendreExclusifs();
   remplirBonus(config?.bonus_connexion);
