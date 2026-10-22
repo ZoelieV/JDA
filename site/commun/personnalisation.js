@@ -84,7 +84,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=11";
+    lien.href = "/commun/personnalisation.css?v=12";
     document.head.appendChild(lien);
   }
 
@@ -330,7 +330,7 @@
             <span class="perso-apercu-image perso-apercu-skins" data-apercu="skins"></span>
           </button>
           <button type="button" class="perso-apercu-bloc" data-onglet="filtres">
-            <span class="perso-apercu-titre">Filtres et tris en Draft</span>
+            <span class="perso-apercu-titre">Filtres/Tris</span>
             <span class="perso-apercu-image perso-apercu-filtres" data-apercu="filtres"></span>
           </button>
         </div>

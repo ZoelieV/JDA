@@ -115,9 +115,16 @@
   width: 11.875rem;
 }
 
+/* Bannière : largeur tirée des proportions de l'image (1000x137), bordure
+   comprise (l'image couvre aussi la bordure) : rien de rogné. Forme des
+   bannières : demi-cercle à droite (rayon = moitié de la hauteur, 6,85 % de
+   la largeur). */
 .perso-apercu-banniere2 {
-  width: 25rem;
+  box-sizing: border-box;
+  width: auto;
   height: 3.4375rem;
+  aspect-ratio: 1000 / 137;
+  border-radius: 0.5rem 6.85% 6.85% 0.5rem / 0.5rem 50% 50% 0.5rem;
 }
 
 .perso-apercu-fond {
@@ -313,8 +320,11 @@
   aspect-ratio: 42 / 20;
 }
 
+/* Forme des bannières : demi-cercle à droite (rayon = moitié de la hauteur,
+   bordure comprise : ~7,4 % de la largeur). */
 .perso-grille-banniere2 .perso-choix-image {
   aspect-ratio: 1000 / 137;
+  border-radius: 0.5625rem 7.4% 7.4% 0.5625rem / 0.5625rem 50% 50% 0.5625rem;
 }
 
 .perso-choix-image img {
