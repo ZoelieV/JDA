@@ -954,6 +954,34 @@ function marquerEnregistre(profil, etat = etatFormulaire(profil)) {
   mettreAJourCopieBox();
 }
 
+// ---- UID, stream, niveau du monde (cf. erreurChampsDefinitifs, api/auth/profile.js) ----
+// UID et stream : plus modifiables une fois enregistrés. Niveau du monde :
+// seulement les niveaux permis (un cran sous le plus haut enregistré, ou
+// plus), plus "Choisir" une fois renseigné. Pas pour les box fictives.
+function verrouillerChampsDefinitifs(profil) {
+  if (ID_BOX_FICTIVE) {
+    document.querySelectorAll(".aide-champ").forEach(aide => aide.classList.add("cache"));
+    return;
+  }
+  [["uid", "UID"], ["stream", "Lien de stream"]].forEach(([id, nom]) => {
+    const champ = document.getElementById(id);
+    const verrouille = !!profil[id];
+    champ.readOnly = verrouille;
+    champ.title = verrouille ? `${nom} déjà renseigné : il ne peut plus être modifié.` : "";
+    document.getElementById(`aide-${id}`).textContent = verrouille
+      ? "Déjà renseigné : il ne peut plus être modifié."
+      : "Une fois enregistré, il ne peut plus être modifié.";
+  });
+  const max = Math.max(Number(profil.niveau_monde_max) || 0, Number(profil.niveau_monde) || 0);
+  document.querySelectorAll("#niveau-monde option").forEach(option => {
+    option.disabled = !!max && (option.value === "" || Number(option.value) < max - 1);
+  });
+  if (max) {
+    document.getElementById("aide-niveau-monde").textContent =
+      `Plus haut niveau enregistré : ${max}. Tu peux monter, ou redescendre jusqu'à ${Math.max(1, max - 1)}.`;
+  }
+}
+
 // ---- Copier une box optimisée dans une autre ----
 // Sur une box optimisée : bouton "Copier" -> liste des autres box
 // optimisées enregistrées (version enregistrée, pas les modifications en
@@ -1196,6 +1224,7 @@ async function initialiserPage() {
     document.getElementById("uid").value = profil.uid || "";
     document.getElementById("niveau-monde").value = profil.niveau_monde || "";
     document.getElementById("stream").value = profil.stream || "";
+    verrouillerChampsDefinitifs(profil);
 
     // Voyageur (Aether / Lumine), Manekin (Manekin / Manekina) et skins :
     // seule la variante choisie est affichée. Choisis dans Personnalisation
@@ -1466,6 +1495,12 @@ async function initialiserPage() {
         succes ? "succes" : "erreur"
       );
       if (succes) {
+        // Plus haut niveau du monde : comme le serveur (cf. verrouillerChampsDefinitifs).
+        profil.niveau_monde_max = Math.max(Number(profil.niveau_monde_max) || 0, Number(profil.niveau_monde) || 0) || undefined;
+        // Lien tel qu'enregistré (https:// ajouté, cf. lienStreamAutorise).
+        profil.stream = lienStreamAutorise(profil.stream) || "";
+        document.getElementById("stream").value = profil.stream;
+        verrouillerChampsDefinitifs(profil);
         marquerEnregistre(profil);
         // Recommandations de la box stuff recalculées sur ce qui est enregistré.
         mettreAJourTotalBox(personnages, armes, profil);

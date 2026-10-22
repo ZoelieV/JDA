@@ -77,6 +77,24 @@ const ERREUR_UID = "UID refusé : 9 chiffres attendus (ex. 744102007).";
 // Niveau du monde (1 à 9), ou "" si pas renseigné.
 const NIVEAUX_MONDE = new Set(["", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 
+// UID et lien de stream : renseignés une seule fois (plus modifiables
+// ensuite). Niveau du monde : plus haut niveau enregistré gardé
+// (niveau_monde_max, champ du serveur) ; on peut monter autant qu'on veut,
+// descendre d'un cran au plus sous ce maximum (comme dans le jeu), jamais
+// l'effacer. -> message d'erreur, ou null.
+function niveauMondeMax(ancien) {
+  return Math.max(Number(ancien?.niveau_monde_max) || 0, Number(ancien?.niveau_monde) || 0);
+}
+
+function erreurChampsDefinitifs(ancien, profil) {
+  if (ancien?.uid && profil.uid !== ancien.uid) return "UID déjà renseigné : il ne peut plus être modifié.";
+  if (ancien?.stream && (profil.stream || "") !== ancien.stream) return "Lien de stream déjà renseigné : il ne peut plus être modifié.";
+  const max = niveauMondeMax(ancien);
+  if (max && !profil.niveau_monde) return "Niveau du monde déjà renseigné : il ne peut plus être effacé.";
+  if (max && Number(profil.niveau_monde) < max - 1) return `Niveau du monde : ${max - 1} minimum (un cran sous ton plus haut niveau enregistré, ${max}).`;
+  return null;
+}
+
 function nettoyerParametres(parametres) {
   if (!parametres || typeof parametres !== "object") return {};
   const propres = {};
@@ -226,6 +244,10 @@ module.exports = async (req, res) => {
 
     // ---- SAUVEGARDE DU PROFIL ----
     if (req.method === "POST") {
+      const lireAncien = () => fetchAvecReessai(
+        `${SUPABASE_URL}/rest/v1/profiles?discord_id=eq.${discordId}&select=data`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+      );
       let body = "";
       for await (const chunk of req) {
         body += chunk;
@@ -252,6 +274,17 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: ERREUR_UID });
       }
       profil = nettoyerProfil(profil);
+      // UID, stream, niveau du monde : cf. erreurChampsDefinitifs.
+      const reponseAncien = await lireAncien();
+      if (!reponseAncien.ok) {
+        console.error(await reponseAncien.text());
+        return res.status(500).json({ error: "Erreur lecture profil." });
+      }
+      const ancien = (await reponseAncien.json())[0]?.data || null;
+      const erreurDefinitif = erreurChampsDefinitifs(ancien, profil);
+      if (erreurDefinitif) return res.status(400).json({ error: erreurDefinitif });
+      const max = Math.max(niveauMondeMax(ancien), Number(profil.niveau_monde) || 0);
+      if (max) profil.niveau_monde_max = max;
       // Cosmétiques pas possédés : retirés (retour au choix par défaut).
       profil.parametres = filtrerParametresPossedes(profil.parametres, await lirePossedes(discordId));
 
