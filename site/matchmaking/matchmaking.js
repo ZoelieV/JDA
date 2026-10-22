@@ -74,14 +74,16 @@ window.addEventListener("pageshow", event => {
   if (event.persisted) creationEnCours = false;
 });
 
-// Options d'un menu de choix du boss : légendes locales regroupées à part
-// (celles déjà tuées aujourd'hui sont refusées par le serveur).
+// Options d'un menu de choix du boss, par catégorie : boss hebdomadaires,
+// carnage chtonien, légendes locales (celles déjà tuées aujourd'hui sont
+// refusées par le serveur).
 // World boss et légendes "world_boss_seulement" : jamais dans les drafts
 // (mode Random world boss seulement, cf. estReserveWorldBoss, api/_lib/boss.js).
 function remplirSelectBoss(select, toutes) {
   const liste = toutes.filter(b => b.type !== "world_boss" && b.world_boss_seulement !== true);
   const groupes = [
-    ["Boss", liste.filter(b => !estLegendeLocale(b))],
+    ["Boss Hebdomadaires", liste.filter(b => !estLegendeLocale(b) && b.type !== "carnage_boss")],
+    ["Carnage Chtonien", liste.filter(b => b.type === "carnage_boss")],
     ["Légendes locales", liste.filter(estLegendeLocale)]
   ];
   groupes.filter(([, boss]) => boss.length).forEach(([titre, boss]) => {
