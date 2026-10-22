@@ -708,6 +708,15 @@ body {
   font-size: 0.9375rem;
 }
 
+/* Menus déroulants : texte blanc, donc options sur fond sombre (sinon
+   blanc sur blanc une fois le menu ouvert ; joueurs des Comptes et des
+   Rikoyns, niveau du monde...). */
+select.texte-ajout option,
+select.texte-ajout optgroup {
+  background-color: #1e1e1e;
+  color: white;
+}
+
 .texte-ajout:focus,
 .res-ajout:focus {
   outline: none;
