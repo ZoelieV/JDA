@@ -292,7 +292,10 @@
   filter: grayscale(0.5);
 }
 
+/* Proportions (aspect-ratio) sans la bordure : l'image entière tient dans
+   la tuile, sans être rognée en haut et en bas. */
 .perso-choix-image {
+  box-sizing: content-box;
   padding: 0;
   aspect-ratio: 16 / 9;
   overflow: hidden;
