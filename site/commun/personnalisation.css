@@ -511,6 +511,14 @@
   white-space: nowrap;
 }
 
+/* Bannières (bandeaux fins) : cadenas et prix à gauche, centrés en hauteur. */
+.perso-grille-banniere2 .perso-prix {
+  left: 0.375rem;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
 /* Icône du Rikoyn dans le prix : pas la taille ni l'assombrissement des
    images de cosmétiques (.perso-choix-image img). */
 .perso-choix-image .perso-prix .icone-koyn {
