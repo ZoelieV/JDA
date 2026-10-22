@@ -260,6 +260,11 @@
   --taille-avatar: 4rem;
   gap: 0.625rem;
   font-weight: bold;
+  /* Hauteur suivant la largeur (proportions des bannières, 1000x137) : image
+     entière en hauteur au lieu d'être rognée en haut et en bas. La photo
+     garde sa taille fixe (pas étirée, cf. .banniere-joueur) ; contenu plus
+     haut (passage à la ligne) : la bannière grandit. */
+  aspect-ratio: 1000 / 137;
 }
 
 /* Photo entourée de la couleur du joueur (5 px, 2 px sur téléphone),
