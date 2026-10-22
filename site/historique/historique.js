@@ -384,7 +384,8 @@ function htmlJoueur(match, role, bansConnus) {
         ${etiquette}
         ${trophees}
         <span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span>
-      </div>`;
+      </div>
+      <div class="resultat-joueur-tel">${etiquette}${trophees}<span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span></div>`;
 
   return `
     <div class="match-joueur match-${role}${gagnant ? " gagnant" : egalite ? " egalite" : ""}">
