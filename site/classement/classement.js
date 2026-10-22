@@ -124,7 +124,9 @@ function creerLigne(joueur) {
   if (joueur.discord_id === moiDiscordId) ligne.classList.add("moi");
   if (joueur.rang <= 3) ligne.classList.add(`podium-${joueur.rang}`);
 
-  const banniere = encodeURI(`DB/images/${joueur.banniere2 || BANNIERE2_DEFAUT}`);
+  // Adresse absolue : --banniere2 est utilisée par commun/entete.css, où une
+  // adresse relative pointerait vers /commun/DB/... (bannière absente).
+  const banniere = encodeURI(`/DB/images/${joueur.banniere2 || BANNIERE2_DEFAUT}`);
   // Téléphone : valeur du tri en cours sur la bannière (trophées par défaut).
   const cleTelephone = COLONNES.includes(tri.cle) ? tri.cle : "trophees";
   ligne.innerHTML = `

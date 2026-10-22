@@ -324,7 +324,7 @@ function htmlJoueur(match, role, bansConnus) {
   const joueur = match[role];
   const gagnant = match.vainqueur === role;
   const egalite = match.vainqueur === "egalite";
-  const banniere = encodeURI(`../DB/images/${joueur.banniere2}`);
+  const banniere = encodeURI(`/DB/images/${joueur.banniere2}`);
   const etiquette = gagnant ? `<span class="etiquette-resultat victoire">Victoire</span>`
     : egalite ? `<span class="etiquette-resultat egalite">Égalité</span>` : "";
   // Classé : trophées gagnés par le vainqueur (bonus de série compris),
@@ -353,7 +353,7 @@ function htmlJoueur(match, role, bansConnus) {
   // temps de l'équipe ; sinon la bannière du joueur avec son temps.
   const bannieres = match.equipe
     ? `<div class="bannieres-equipe">${membres.map(m => `
-        <div class="match-banniere banniere-joueur banniere-membre${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`../DB/images/${m.banniere2}`))}&quot;)">
+        <div class="match-banniere banniere-joueur banniere-membre${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`/DB/images/${m.banniere2}`))}&quot;)">
           ${m.avatar ? `<img class="match-avatar photo-joueur" src="${echapperHtml(m.avatar)}" alt="">` : ""}
           <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
           ${m.discord_id === match.equipe[role]?.chef ? `<span class="etiquette-resultat chef-equipe" title="Chef de l'équipe">★ Chef</span>` : ""}
@@ -508,7 +508,7 @@ function creerLigneWorldBoss(partie) {
   ligne.innerHTML = `
     <div class="match-joueur match-j1">
       <div class="bannieres-equipe">${partie.membres.map(m => `
-        <div class="match-banniere banniere-joueur banniere-membre cote-gauche" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`../DB/images/${m.banniere2}`))}&quot;)">
+        <div class="match-banniere banniere-joueur banniere-membre cote-gauche" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`/DB/images/${m.banniere2}`))}&quot;)">
           ${m.avatar ? `<img class="match-avatar photo-joueur" src="${echapperHtml(m.avatar)}" alt="">` : ""}
           <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
           ${htmlMedailleTheatre(m.theatre)}
@@ -1285,7 +1285,7 @@ function creerRecord(record, titre) {
     return carte;
   }
   const joueur = record.joueur;
-  const banniere = encodeURI(`../DB/images/${joueur.banniere2}`);
+  const banniere = encodeURI(`/DB/images/${joueur.banniere2}`);
   const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p, aleatoire: p.aleatoire })).join("");
   const melee = record.mode_theatre === "12" ? " · Mêlée générale" : "";
   carte.innerHTML = `

@@ -205,7 +205,7 @@ function creerCarteCompte(compte, estTriStat) {
 
   // Deuxième bannière choisie dans Mon compte (sinon celle par défaut).
   const banniere2 = compte.banniere2 || BANNIERE2_DEFAUT;
-  card.style.setProperty("--banniere2", `url("${encodeURI(`../DB/images/${banniere2}`)}")`);
+  card.style.setProperty("--banniere2", `url("${encodeURI(`/DB/images/${banniere2}`)}")`);
 
   card.innerHTML = `
     <img class="photo-joueur" src="${compte.discord_avatar_url || ""}" alt="">
