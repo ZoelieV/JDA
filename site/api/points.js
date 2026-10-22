@@ -26,6 +26,8 @@
 //          alternatives_armes: { id: 0|25|50|75 },  (valeur alternative des
 //                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
+//          factions: { id: "lunar" | "hexerei" | "stellar" },  (filtres des
+//                       persos, cf. FACTIONS dans commun/tri.js)
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
 //          world_boss_public: bool,  (Random world boss ouvert à tous,
 //                       sinon réservé aux administrateurs)
@@ -41,7 +43,7 @@
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
 //   { characters, weapons, modes, masques, theatre, bonus_saison,
-//     alternatives_armes, synergies }  remplace les points, les masqués, les
+//     alternatives_armes, synergies, factions }  remplace les points, les masqués, les
 //                                    buffs théâtre, le bonus de saison et
 //                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
@@ -97,6 +99,8 @@ const RARETES = ["3", "4", "5"];
 const TYPES_BOSS = ["weekly_boss", "legende_locale_jour", "legende_locale_infinie", "world_boss", "carnage_boss"];
 const NB_RESISTANCES = 7;
 const CATEGORIES_ARMES = ["support", "standard"];
+// Factions des personnages (libellés et logos : FACTIONS de commun/tri.js).
+const FACTIONS = ["lunar", "hexerei", "stellar"];
 
 // Catégories connues, sans doublon, dans l'ordre de CATEGORIES_ARMES ; null
 // si ce n'est pas une liste.
@@ -218,6 +222,9 @@ function versionPublique(config) {
     if (genre === "characters" && Array.isArray(config.bonus_saison)) {
       publique.bonus_saison = config.bonus_saison.filter(id => !caches.has(id));
     }
+    if (genre === "characters" && config.factions) {
+      publique.factions = Object.fromEntries(Object.entries(config.factions).filter(([id]) => !caches.has(id)));
+    }
     if (genre === "characters" && config.synergies) {
       publique.synergies = Object.fromEntries(Object.entries(config.synergies).filter(([id]) => !caches.has(id)));
     }
@@ -260,6 +267,12 @@ function nettoyerAlternatives(valeurs, ids) {
 
 // Synergies de persos connus, avec des persos en synergie connus (ids de la
 // draft : Voyageur = "traveler").
+// Factions : persos connus, une faction connue chacun (sans faction : absent).
+function nettoyerFactions(brutes, ids) {
+  return Object.fromEntries(Object.entries(brutes && typeof brutes === "object" ? brutes : {})
+    .filter(([id, faction]) => ids.has(id) && FACTIONS.includes(faction)));
+}
+
 function nettoyerSynergies(brutes, persos) {
   const ids = new Set(persos.map(p => p.id));
   const idsDraft = new Set(persos.map(p => p.groupe || p.id));
@@ -365,6 +378,10 @@ module.exports = async (req, res) => {
           if (genre === "characters" && Array.isArray(config.bonus_saison)) {
             config.bonus_saison = config.bonus_saison.filter(t => t !== id);
           }
+          if (genre === "characters" && config.factions?.[id]) {
+            config.factions = { ...config.factions };
+            delete config.factions[id];
+          }
           if (genre === "weapons" && config.categoriesArmes?.[id]) {
             config.categoriesArmes = { ...config.categoriesArmes };
             delete config.categoriesArmes[id];
@@ -464,6 +481,7 @@ module.exports = async (req, res) => {
           theatre: nettoyerMasques(corps.theatre ?? ancienne.theatre, ids("characters")),
           // Bonus de saison : trophées en classé (cf. _lib/trophees.js).
           bonus_saison: nettoyerMasques(corps.bonus_saison ?? ancienne.bonus_saison, ids("characters")),
+          factions: nettoyerFactions(corps.factions ?? ancienne.factions, ids("characters")),
           alternatives_armes: nettoyerAlternatives(corps.alternatives_armes ?? ancienne.alternatives_armes, ids("weapons")),
           // Synergies (valeur alternative des persos, cf. commun/synergies.js).
           synergies: nettoyerSynergies(corps.synergies ?? ancienne.synergies, [...listeJSON("characters"), ...ajouts.characters])

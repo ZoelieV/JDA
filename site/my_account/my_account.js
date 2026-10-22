@@ -725,9 +725,10 @@ function mettreAJourBoutonsTri() {
     majBoutonTri(btn, etatTri, vueActive);
   });
 
-  // Vœux : personnages uniquement ; catégories (support, perma) : armes
-  // uniquement.
+  // Vœux et factions : personnages uniquement ; catégories (support,
+  // perma) : armes uniquement.
   document.getElementById("filtres-voeux").hidden = vueActive === "weapons";
+  document.getElementById("filtres-factions").hidden = vueActive === "weapons";
   document.getElementById("filtres-categories-armes").hidden = vueActive !== "weapons";
 }
 
@@ -775,6 +776,10 @@ function rendreCollection(personnages, armes, profil) {
 
   const voeuxSelectionnes = vueActive === "characters"
     ? Array.from(document.querySelectorAll(".filtre-voeu-input:checked")).map(input => input.value)
+    : [];
+
+  const factionsSelectionnees = vueActive === "characters"
+    ? Array.from(document.querySelectorAll(".filtre-faction:checked")).map(input => input.value)
     : [];
 
   // Armes support / perma / temporaires (catégories des administrateurs,
@@ -827,9 +832,12 @@ function rendreCollection(personnages, armes, profil) {
     const filtreVoeuOK =
       voeuxSelectionnes.length === 0 || voeuxSelectionnes.includes(getVoeu(item));
 
+    const filtreFactionOK =
+      factionsSelectionnees.length === 0 || factionsSelectionnees.includes(item.faction);
+
     const filtreCategorieArmeOK = armeCorrespondCategories(item, categoriesArmesSelectionnees);
 
-    return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK && filtreCategorieArmeOK;
+    return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK && filtreFactionOK && filtreCategorieArmeOK;
   });
 
   // Possédés / sélectionnés, étoiles, vœux : regroupés par rareté par défaut.
@@ -840,7 +848,7 @@ function rendreCollection(personnages, armes, profil) {
     armes: selectionArmes,
     possede: item => itemPossede(item, vueActive, collectionProfil),
     rareteParDefaut: filtreCoche || rareteSelectionnees.length > 0 || voeuxSelectionnes.length > 0 ||
-      categoriesArmesSelectionnees.length > 0
+      factionsSelectionnees.length > 0 || categoriesArmesSelectionnees.length > 0
   });
 
   // Vitrine avec "Sélectionnés" : la sélection de l'autre vue à la suite
@@ -1215,7 +1223,7 @@ async function initialiserPage() {
     afficherCollection(personnages, armes, profil);
     mettreAJourTotalBox(personnages, armes, profil);
 
-    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-categorie-arme, #filtre-possedes").forEach(input => {
+    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-faction, .filtre-categorie-arme, #filtre-possedes").forEach(input => {
       input.addEventListener("change", () => {
         if (input.classList.contains("filtre-element")) basculerSelection(selectionElements, input.value);
         if (input.classList.contains("filtre-arme")) basculerSelection(selectionArmes, input.value);

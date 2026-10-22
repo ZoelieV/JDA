@@ -78,6 +78,7 @@ function creerFiltres() {
     armes: new Set(),
     etoiles: new Set(),
     voeux: new Set(),
+    factions: new Set(),
     categories: new Set(),
     categoriesArmes: new Set(),
     buffes: false,
@@ -274,6 +275,7 @@ function itemsAffiches() {
     if (filtres.armes.size && !filtres.armes.has(item[champType])) return false;
     if (persos && filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
     if (persos && filtres.voeux.size && !filtres.voeux.has(getVoeu(item))) return false;
+    if (persos && filtres.factions.size && !filtres.factions.has(item.faction)) return false;
     if (persos && filtres.categories.size && !filtres.categories.has(item.categorie)) return false;
     if (!persos && !armeCorrespondCategories(item, [...filtres.categoriesArmes])) return false;
     if (persos && filtres.buffes && !buffs.has(item.id)) return false;
@@ -327,6 +329,8 @@ function rendreFiltres() {
       <div class="groupe-tc">${textes({ 5: "5★", 4: "4★", 3: "3★" }, filtres.etoiles, "etoiles")}</div>
       <div class="groupe-tc">${Object.entries(VOEUX).map(([valeur, voeu]) =>
         `<button type="button" class="filtre-tc filtre-icone${filtres.voeux.has(valeur) ? " active" : ""}" data-filtre="voeux" data-valeur="${valeur}" title="${voeu.nom}"><img src="${voeu.image}" alt="${voeu.nom}"></button>`).join("")}</div>
+      <div class="groupe-tc">${Object.entries(FACTIONS).map(([valeur, faction]) =>
+        `<button type="button" class="filtre-tc filtre-icone${filtres.factions.has(valeur) ? " active" : ""}" data-filtre="factions" data-valeur="${valeur}" title="${faction.nom}"><img src="${faction.image}" alt="${faction.nom}"></button>`).join("")}</div>
       <div class="groupe-tc">${textes(CATEGORIES, filtres.categories, "categories")}</div>
       <div class="groupe-tc">
         <button type="button" class="filtre-tc filtre-texte${filtres.buffes ? " active" : ""}" data-bascule="buffes" title="Buffés par le théâtre du mois">Buffés théâtre</button>

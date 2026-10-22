@@ -200,6 +200,8 @@ const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("ch
     appliquerPointsAdmin(fusionnerAjouts(liste, points.ajouts?.characters), points.characters, "PPC");
     modesBonus = points.modes || {};
     synergiesPersos = lireSynergies(points.synergies);
+    // Faction (lunar, hexerei, stellar ; cf. FACTIONS, commun/tri.js).
+    liste.forEach(perso => { perso.faction = points.factions?.[perso.id] || null; });
     if (avecMasques) return liste;
     catalogueTheatre = retirerMasques(liste, points.masques?.characters);
     return marquerBonusSaison(marquerBuffTheatre(catalogueTheatre, points.theatre), points.bonus_saison);

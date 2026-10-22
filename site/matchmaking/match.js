@@ -75,6 +75,7 @@ let joueur2 = null;
 const filtreElement = new Set();
 const filtreEtoile = new Set();
 const filtreVoeux = new Set();
+const filtreFactions = new Set();
 const filtreArme = new Set();
 // Choix de box / analyse : personnages seulement, armes seulement, ou les
 // deux (null).
@@ -666,7 +667,7 @@ function trierPersonnages(personnages, roles = ["j1", "j2"]) {
     valeurs: getValeursTri(roles),
     elements: filtreElement,
     armes: filtreArme,
-    rareteParDefaut: filtreEtoile.size > 0 || filtreVoeux.size > 0 || (roles.length > 1 && (!!filtreProprietaire || !!filtrePossession))
+    rareteParDefaut: filtreEtoile.size > 0 || filtreVoeux.size > 0 || filtreFactions.size > 0 || (roles.length > 1 && (!!filtreProprietaire || !!filtrePossession))
   });
 }
 
@@ -676,6 +677,7 @@ function personnageCorrespondFiltres(personnage, { ignorerProprietaire = false }
   if (filtreElement.size > 0 && !filtreElement.has(personnage.element)) return false;
   if (filtreEtoile.size > 0 && !filtreEtoile.has(String(personnage.rarete))) return false;
   if (filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(personnage))) return false;
+  if (filtreFactions.size > 0 && !filtreFactions.has(personnage.faction)) return false;
   if (filtreArme.size > 0 && !filtreArme.has(personnage.arme)) return false;
 
   if (filtreProprietaire && !ignorerProprietaire) {
@@ -904,9 +906,9 @@ function getArmesBox(joueurData, box) {
 }
 
 // Filtres appliqués aux armes : élément, type, étoiles, recherche ; les
-// vœux ne concernent que les personnages.
+// vœux et les factions ne concernent que les personnages.
 function armeCorrespondFiltres(arme) {
-  if (filtreVoeux.size > 0) return false;
+  if (filtreVoeux.size > 0 || filtreFactions.size > 0) return false;
   if (filtreElement.size > 0 && !filtreElement.has(arme.element)) return false;
   if (filtreArme.size > 0 && !filtreArme.has(arme.type)) return false;
   if (filtreEtoile.size > 0 && !filtreEtoile.has(String(arme.rarete))) return false;
@@ -2047,7 +2049,7 @@ function rendreDraft(phasePrecedente) {
 
 // Part de la clé de grille qui dépend de la barre recherche/tri/filtres.
 function cleFiltres() {
-  return [filtreVue, [...filtreElement], [...filtreArme], [...filtreEtoile], [...filtreVoeux], filtreProprietaire, filtrePossession, rechercheTexte, etatTri.tris];
+  return [filtreVue, [...filtreElement], [...filtreArme], [...filtreEtoile], [...filtreVoeux], [...filtreFactions], filtreProprietaire, filtrePossession, rechercheTexte, etatTri.tris];
 }
 
 // Le contenu est ensuite remplacé en une fois (remplirGrilleGroupee), en
@@ -2172,6 +2174,24 @@ function initialiserFiltresTri() {
   zoneVoeux.dataset.filtre = "voeux";
   figeables.appendChild(zoneVoeux);
 
+  const zoneFactions = document.createElement("div");
+  zoneFactions.className = "filtres-icones filtre-voeu";
+  Object.entries(FACTIONS).forEach(([valeur, faction]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtre-icone-btn";
+    btn.title = faction.nom;
+    btn.innerHTML = `<img src="${faction.image}" alt="${faction.nom}">`;
+    btn.addEventListener("click", () => {
+      basculerSelection(filtreFactions, valeur);
+      btn.classList.toggle("active");
+      rendrePhase();
+    });
+    zoneFactions.appendChild(btn);
+  });
+  zoneFactions.dataset.filtre = "factions";
+  figeables.appendChild(zoneFactions);
+
   // Favoris du joueur connecté : filtre (seuls les favoris), activé /
   // désactivé, avec les autres filtres.
   const zoneFavoris = document.createElement("div");
@@ -2225,6 +2245,7 @@ function initialiserFiltresTri() {
     filtreArme.clear();
     filtreEtoile.clear();
     filtreVoeux.clear();
+    filtreFactions.clear();
     filtreProprietaire = null;
     filtrePossession = null;
     rechercheTexte = "";

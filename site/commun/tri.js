@@ -46,6 +46,15 @@ const VOEUX = {
 // comptés comme 4.5★ pour le tri par rareté (rien ne change à l'affichage).
 const HORS_VOEUX = new Set(["aloy", "manekin"]);
 
+// Factions des personnages (aucune ou une seule, choisie par les
+// administrateurs : config.factions, cf. api/points.js) : champ "faction"
+// des persos (cf. chargerPersonnages, commun/cartes.js), filtres des pages.
+const FACTIONS = {
+  lunar: { nom: "Lunaire", image: `${RACINE_LOGOS}lunar.webp` },
+  hexerei: { nom: "Hexerei", image: `${RACINE_LOGOS}hexerei.webp` },
+  stellar: { nom: "Stellaire", image: `${RACINE_LOGOS}stellar.webp` }
+};
+
 function rangRarete(item) {
   if (item.standard) return 4.5;
   return Number(item.rarete) || 0;

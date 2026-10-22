@@ -20,6 +20,8 @@ const FILTRES_DRAFT = [
     description: "N'affiche que les 5★, 4★ ou 3★ choisis.", fige: false },
   { id: "voeux", groupe: "filtres", logo: "/DB/images/others/Item_Intertwined_Fate.webp", nom: "Vœux",
     description: "Personnages limités (Intertwined Fate) ou standards (Acquaint Fate : les 4★ et les 5★ de la bannière standard).", fige: false },
+  { id: "factions", groupe: "filtres", logo: "/DB/images/others/lunar.webp", nom: "Factions",
+    description: "N'affiche que les persos des factions choisies (Lunaire, Hexerei, Stellaire).", fige: false },
   { id: "favoris", groupe: "filtres", logo: "/DB/images/others/favourite.webp", nom: "Favoris",
     description: "N'affiche que tes favoris (choisis dans Mon compte). Seulement quand tu joues le match.", fige: false },
   { id: "proprietaire", groupe: "filtres", texte: "J1", nom: "Joueurs",

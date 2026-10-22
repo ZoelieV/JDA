@@ -29,6 +29,7 @@ let boxActive = "full";         // "full" | "stuff" | "vitrine"
 let filtreType = { characters: new Set(), weapons: new Set() };
 const filtreEtoile = new Set();
 const filtreVoeux = new Set(); // personnages uniquement
+const filtreFactions = new Set(); // personnages uniquement
 const filtreArmePersos = new Set(); // personnages : type d'arme (ordre des clics)
 let rechercheTexte = "";
 const etatTri = creerEtatTri();
@@ -272,6 +273,7 @@ function construireListeAffichee() {
       if (filtresType.size > 0 && !filtresType.has(item[config.champType])) return false;
       if (filtreEtoile.size > 0 && !filtreEtoile.has(String(item.rarete))) return false;
       if (vueActive === "characters" && filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(item))) return false;
+      if (vueActive === "characters" && filtreFactions.size > 0 && !filtreFactions.has(item.faction)) return false;
       if (vueActive === "characters" && filtreArmePersos.size > 0 && !filtreArmePersos.has(item.arme)) return false;
       if (recherche && !String(item.nom || "").toLowerCase().includes(recherche)) return false;
 
@@ -359,7 +361,7 @@ function rendreProfilBox() {
     },
     elements: vueActive === "characters" ? filtreType.characters : [],
     armes: vueActive === "weapons" ? filtreType.weapons : filtreArmePersos,
-    rareteParDefaut: filtreEtoile.size > 0 || (vueActive === "characters" && filtreVoeux.size > 0)
+    rareteParDefaut: filtreEtoile.size > 0 || (vueActive === "characters" && (filtreVoeux.size > 0 || filtreFactions.size > 0))
   });
 
   // Cartes recyclées (cf. obtenirCarte) : le cache est vidé à l'ouverture
@@ -496,6 +498,10 @@ function mettreAJourBarreOutils() {
   document.querySelectorAll("[data-voeu]").forEach(btn => {
     btn.classList.toggle("active", filtreVoeux.has(btn.dataset.voeu));
   });
+  document.getElementById("filtres-factions").hidden = vueActive === "weapons";
+  document.querySelectorAll("[data-faction]").forEach(btn => {
+    btn.classList.toggle("active", filtreFactions.has(btn.dataset.faction));
+  });
 
   document.getElementById("recherche").value = rechercheTexte;
   genererFiltresIcones();
@@ -506,6 +512,7 @@ function reinitialiserFiltres() {
   filtreType = { characters: new Set(), weapons: new Set() };
   filtreEtoile.clear();
   filtreVoeux.clear();
+  filtreFactions.clear();
   filtreArmePersos.clear();
   rechercheTexte = "";
   viderTris(etatTri);
@@ -533,6 +540,14 @@ function initialiserBarreOutils() {
     btn.addEventListener("click", () => {
       basculerSelection(filtreVoeux, btn.dataset.voeu);
       btn.classList.toggle("active", filtreVoeux.has(btn.dataset.voeu));
+      rendreProfilBox();
+    });
+  });
+
+  document.querySelectorAll("[data-faction]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      basculerSelection(filtreFactions, btn.dataset.faction);
+      btn.classList.toggle("active", filtreFactions.has(btn.dataset.faction));
       rendreProfilBox();
     });
   });
