@@ -831,8 +831,8 @@ img.arme-mini {
   }
 
   /* Bannière à la hauteur exacte de la photo (proportions de l'image :
-     même calcul que --taille-avatar), sur une ligne ; temps et résultat
-     dessous (.resultat-joueur-tel). */
+     même calcul que --taille-avatar), sur une ligne avec le temps ;
+     résultat (victoire, trophées) dessous (.resultat-joueur-tel). */
   .match-banniere {
     --avatar-min: 2.25rem;
     flex-wrap: nowrap;
@@ -842,9 +842,16 @@ img.arme-mini {
     font-size: 0.875rem;
   }
 
-  .match-joueur .match-banniere > .match-temps,
   .match-joueur .match-banniere > .etiquette-resultat {
     display: none;
+  }
+
+  .match-joueur .match-banniere > .match-temps,
+  .match-j2 .match-banniere > .match-temps {
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: 0;
+    font-size: 0.9375rem;
   }
 
   /* J2 comme J1 : photo à gauche, image dans son sens. */
@@ -868,11 +875,6 @@ img.arme-mini {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.375rem;
-  }
-
-  .resultat-joueur-tel .match-temps {
-    margin: 0;
-    font-size: 0.9375rem;
   }
 
   .match-ligne,
