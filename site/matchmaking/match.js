@@ -439,6 +439,22 @@ function getJoueurDataParRole(role) {
   return role === "j1" ? joueur1?.data : joueur2?.data;
 }
 
+// Box de l'adversaire (et des 2 joueurs pour un spectateur) : ni les noms
+// donnés à ses box dans Mon compte, ni laquelle de ses box opti il a
+// choisie (seulement "Opti"). Entraînement : box fixées à la création, rien
+// de caché.
+const LIBELLE_OPTI_CACHEE = "Opti";
+const estBoxOpti = box => /^opti\d$/.test(box || "");
+
+function boxCachee(role) {
+  return !draft?.entrainement && role !== monRole;
+}
+
+// Première box opti proposée à ce joueur : celle qui porte le bouton "Opti".
+function premiereOpti(role, permises) {
+  return Object.keys(BOX_LABELS).find(box => estBoxOpti(box) && (!permises || permises.includes(box)));
+}
+
 // ---- Mode entraînement (cf. creerEntrainement, api/rooms/index.js) ----
 // Box choisies à la création (celles du lanceur, d'un autre joueur, ou
 // personnalisées). Seul, le lanceur tient les 2 rôles : monRole suit le
@@ -1131,8 +1147,9 @@ function rendreChoixBox() {
     conteneur.innerHTML = "";
     conteneur.classList.toggle("desactive", !peutChoisir);
 
-    // Box optimisées renommées par le joueur dans Mon compte (profil.nomsBoxes).
-    const nomsPerso = getJoueurDataParRole(role)?.nomsBoxes || {};
+    // Box optimisées renommées par le joueur dans Mon compte (profil.nomsBoxes) :
+    // seulement les siennes (cf. boxCachee).
+    const nomsPerso = boxCachee(role) ? {} : getJoueurDataParRole(role)?.nomsBoxes || {};
     // Entraînement : seulement la box choisie à la création ; matchmaking
     // classique : full seulement (BOX_MATCHMAKING_CLASSIQUE) ; sinon toutes
     // sauf "Personnalisée".
@@ -1141,10 +1158,16 @@ function rendreChoixBox() {
     const permises = draft.boxes_permises?.[role];
     Object.entries(BOX_LABELS).filter(([valeur]) => draft.entrainement ? draft[`box_${role}`] === valeur
       : permises ? permises.includes(valeur)
-        : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : !["custom", "stuff"].includes(valeur)).forEach(([valeur, label]) => {
+        : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : !["custom", "stuff"].includes(valeur))
+      // Adversaire : ses box opti en un seul bouton "Opti".
+      .filter(([valeur]) => !boxCachee(role) || !estBoxOpti(valeur) || valeur === premiereOpti(role, permises))
+      .forEach(([valeur, label]) => {
+      const groupeOpti = boxCachee(role) && estBoxOpti(valeur);
+      if (groupeOpti) label = LIBELLE_OPTI_CACHEE;
+      const choisie = groupeOpti ? estBoxOpti(draft[`box_${role}`]) : draft[`box_${role}`] === valeur;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "box-btn" + (draft[`box_${role}`] === valeur ? " active" : "");
+      btn.className = "box-btn" + (choisie ? " active" : "");
       btn.textContent = typeof nomsPerso[valeur] === "string" && nomsPerso[valeur] ? nomsPerso[valeur] : label;
       // Points de ses propres box seulement (celles de l'adversaire restent
       // cachées jusqu'à l'analyse).
@@ -3047,7 +3070,8 @@ function rendreAnnule() {
 // D'autres combinaisons de box s'équilibrent : chacun vote pour y revenir
 // (les 2 doivent accepter) ou annule le match.
 function libelleBox(role, box) {
-  const noms = getJoueurDataParRole(role)?.nomsBoxes || {};
+  if (boxCachee(role) && estBoxOpti(box)) return LIBELLE_OPTI_CACHEE;
+  const noms = boxCachee(role) ? {} : getJoueurDataParRole(role)?.nomsBoxes || {};
   return typeof noms[box] === "string" && noms[box] ? noms[box] : BOX_LABELS[box] || box;
 }
 
