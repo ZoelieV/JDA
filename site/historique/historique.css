@@ -1264,7 +1264,8 @@ img.arme-mini {
   font-size: 0.9375rem;
 }
 
-/* Records : une ligne par boss (boss | non classé | classé). */
+/* Records : une ligne par boss (boss à gauche ; non classé en haut, classé
+   en dessous). */
 .records-boss {
   display: flex;
   flex-direction: column;
@@ -1283,13 +1284,18 @@ img.arme-mini {
 
 .ligne-record {
   display: grid;
-  grid-template-columns: minmax(8rem, 0.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(8rem, 0.35fr) minmax(0, 1fr);
   align-items: stretch;
   gap: 0.75rem;
   padding: 0.75rem;
   border: 1px solid var(--bordure);
   border-radius: 0.875rem;
   background-color: rgba(20, 20, 20, 0.55);
+}
+
+/* Boss sur la hauteur des 2 records (un seul en équipe : pas de classé). */
+.ligne-record:has(> .record-boss + .record-boss) > .record-boss-infos {
+  grid-row: span 2;
 }
 
 .record-boss-infos {
@@ -1343,17 +1349,18 @@ img.arme-mini {
 }
 
 @media (max-width: 700px) {
+  /* Téléphone : boss, puis non classé, puis classé. */
   .ligne-record {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas:
-      "boss boss"
-      "non-classe classe";
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
     padding: 0.5rem;
   }
 
+  .ligne-record:has(> .record-boss + .record-boss) > .record-boss-infos {
+    grid-row: auto;
+  }
+
   .record-boss-infos {
-    grid-area: boss;
     flex-direction: row;
   }
 
