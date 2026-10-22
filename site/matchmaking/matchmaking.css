@@ -143,6 +143,25 @@
   color: var(--texte-doux);
 }
 
+/* Titre d'un mode (room, entraînement) : icône du palier (rond clair,
+   .medaille-theatre de commun/entete.css) ou crâne du carnage, puis le nom.
+   Pas le style des descriptions (span). */
+.mode-match .titre-mode,
+.choix-btn .titre-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: inherit;
+  font-weight: bold;
+  color: inherit;
+}
+
+.icone-carnage {
+  width: 1.3em;
+  height: 1.3em;
+  object-fit: contain;
+}
+
 .mode-match:hover {
   border-color: var(--accent-bordure);
   background-color: var(--accent-fond);
