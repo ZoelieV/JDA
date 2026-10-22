@@ -40,7 +40,9 @@ async function boxOptiRevelees(roomId, discordId) {
 
 function masquerBoxOpti(data, visibles) {
   if (!data || typeof data !== "object") return data;
-  const copie = { ...data };
+  // Noms donnés aux box dans Mon compte : jamais montrés aux autres (pas
+  // même pendant une draft, cf. boxCachee dans matchmaking/match.js).
+  const { nomsBoxes: _noms, ...copie } = data;
   ["characters", "weapons"].forEach(vue => {
     const selections = copie[vue]?.selections;
     if (!selections || typeof selections !== "object") return;
