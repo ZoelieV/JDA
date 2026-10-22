@@ -281,7 +281,8 @@ function initialiserFiltres() {
     } else {
       const set = filtres[bouton.dataset.filtre];
       const valeur = bouton.dataset.valeur;
-      if (set.has(valeur)) set.delete(valeur);
+      if (bouton.dataset.filtre === "factions") basculerFiltreFaction(set, valeur);
+      else if (set.has(valeur)) set.delete(valeur);
       else {
         // Omni et éléments individuels exclusifs (le Voyageur est dans les 2).
         if (bouton.dataset.filtre === "elements") {

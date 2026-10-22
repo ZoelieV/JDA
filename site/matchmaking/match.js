@@ -2205,9 +2205,10 @@ function initialiserFiltresTri() {
     btn.className = "filtre-icone-btn";
     btn.title = faction.nom;
     btn.innerHTML = `<img src="${faction.image}" alt="${faction.nom}">`;
+    btn.dataset.faction = valeur;
     btn.addEventListener("click", () => {
-      basculerSelection(filtreFactions, valeur);
-      btn.classList.toggle("active");
+      basculerFiltreFaction(filtreFactions, valeur);
+      zoneFactions.querySelectorAll(".filtre-icone-btn").forEach(b => b.classList.toggle("active", filtreFactions.has(b.dataset.faction)));
       rendrePhase();
     });
     zoneFactions.appendChild(btn);

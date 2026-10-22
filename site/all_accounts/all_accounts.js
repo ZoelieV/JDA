@@ -546,8 +546,8 @@ function initialiserBarreOutils() {
 
   document.querySelectorAll("[data-faction]").forEach(btn => {
     btn.addEventListener("click", () => {
-      basculerSelection(filtreFactions, btn.dataset.faction);
-      btn.classList.toggle("active", filtreFactions.has(btn.dataset.faction));
+      basculerFiltreFaction(filtreFactions, btn.dataset.faction);
+      document.querySelectorAll("[data-faction]").forEach(b => b.classList.toggle("active", filtreFactions.has(b.dataset.faction)));
       rendreProfilBox();
     });
   });

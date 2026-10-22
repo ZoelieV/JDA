@@ -113,6 +113,14 @@ function basculerSelection(set, valeur) {
   if (set.has(valeur)) set.delete(valeur); else set.add(valeur);
 }
 
+// Factions : exclusives (un perso n'en a qu'une), donc une seule à la fois
+// dans les filtres ; 2e clic sur la même : plus de filtre.
+function basculerFiltreFaction(set, valeur) {
+  const active = set.has(valeur);
+  set.clear();
+  if (!active) set.add(valeur);
+}
+
 // Contenu d'un bouton de tri : libellé (ou logo omni pour l'élément) + flèche.
 function majBoutonTri(btn, etat, vue = "characters") {
   const cle = btn.dataset.tri;

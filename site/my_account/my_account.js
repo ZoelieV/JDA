@@ -1227,6 +1227,10 @@ async function initialiserPage() {
       input.addEventListener("change", () => {
         if (input.classList.contains("filtre-element")) basculerSelection(selectionElements, input.value);
         if (input.classList.contains("filtre-arme")) basculerSelection(selectionArmes, input.value);
+        // Factions exclusives (cf. basculerFiltreFaction) : une seule cochée.
+        if (input.classList.contains("filtre-faction") && input.checked) {
+          document.querySelectorAll(".filtre-faction").forEach(autre => { if (autre !== input) autre.checked = false; });
+        }
         afficherCollection(personnages, armes, profil);
         mettreAJourTotalBox(personnages, armes, profil);
       });
