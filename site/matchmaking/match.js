@@ -1255,16 +1255,21 @@ function ciblesHorizontales(choix) {
 // echangerBansContreJoker, api/_lib/draft.js) : une fois par draft.
 const BANS_PAR_JOKER = 5;
 
-// Constat de l'équilibrage calculé : verticalité, horizontalité et ce qui en
-// découle (bans, joker).
-function texteEquilibrageFixe() {
-  const banneur = draft.bans_bonus_joueur;
-  const adverse = getAutreRole(banneur);
-  const box = role => `box de ${pseudoColore(role)} : verticalité ${draft[`verticalite_${role}`]} · horizontalité ${draft[`horizontalite_${role}`]}`;
-  const normaux = draft.bans_bonus_total - (draft.bans_joker_total || 0);
-  const leviers = [`${normaux} ban(s) d'équilibrage`];
-  if (draft.bans_joker_total) leviers.push(`${draft.bans_joker_total} ban(s) joker (interdit à l'adversaire seulement)`);
-  return `${box(banneur)} — ${box(adverse)}<br>Écart d'équipe prévu : ${draft.ecart_prevu?.avant ?? "?"} pts → ${leviers.join(", ")} pour ${pseudoColore(banneur)}`;
+// Message court des bans d'équilibrage (le détail du calcul est dans
+// Theorycraft) : "X a 3 bans verticaux (dont 1 joker) sur Y", puis la
+// consigne de celui qui bannit ou l'attente des autres.
+function pluriel(n, mot, motPluriel = `${mot}s`) {
+  return `${n} ${n > 1 ? motPluriel : mot}`;
+}
+
+function messageBansEquilibrage(banneur, constat, restant, termine) {
+  const cEstMonTour = banneur === monRole;
+  const consigne = !cEstMonTour
+    ? "En attente…"
+    : !termine
+      ? `${draft.entrainement ? `À ${pseudoColore(banneur)} de choisir` : "Choisis"} encore ${pluriel(restant, "perso")}, puis confirme.`
+      : `${restant > 0 ? "Plus aucun perso ne peut être banni. " : ""}Clique sur « Confirmer les bans ».`;
+  document.getElementById("message-equilibrage").innerHTML = `${constat} ${consigne}`;
 }
 
 // Bouton d'échange (ou d'annulation de l'échange), pour celui qui bannit.
@@ -1296,19 +1301,9 @@ function rendreBansHorizontaux() {
   const cEstMonTour = banneur === monRole;
   rendreEchangeJoker(false, 0);
 
-  const somme = role => draft[`somme_horizontale_${role}`] ?? 0;
-  const constat = `Persos horizontaux (jamais entrés dans le top 12 des bans verticaux), après les bans verticaux : ` +
-    `${pseudoColore(banneur)} ${somme(banneur)} pts — ${pseudoColore(adverse)} ${somme(adverse)} pts. ` +
-    `Écart de ${Math.abs(somme("j1") - somme("j2"))} pts : ${total} ban(s) horizontal(aux) pour ${pseudoColore(banneur)} ` +
-    `(1 tous les ${draft.seuil_horizontal} pts), sur les persos horizontaux de ${pseudoColore(adverse)}.<br>`;
-  const message = document.getElementById("message-equilibrage");
-  if (cEstMonTour) {
-    message.innerHTML = !termine
-      ? `${constat}${draft.entrainement ? `à ${pseudoColore(banneur)} de choisir` : "choisis"} encore ${restant} personnage(s) à bannir, puis confirme.`
-      : `${constat}${restant > 0 ? "Plus aucun personnage ne peut être banni. " : ""}Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
-  } else {
-    message.innerHTML = `${constat}${pseudoColore(banneur)} choisit ses bans horizontaux. En attente…`;
-  }
+  messageBansEquilibrage(banneur,
+    `${pseudoColore(banneur)} a ${pluriel(total, "ban horizontal", "bans horizontaux")} sur ${pseudoColore(adverse)}.`,
+    restant, termine);
 
   const slots = document.getElementById("bans-bonus-slots");
   slots.innerHTML = "";
@@ -1372,29 +1367,12 @@ function rendreBansBonus() {
   const nbJokers = draft.bans_joker_total || 0;
   const nbNormaux = draft.bans_bonus_total - nbJokers;
   const restant = draft.bans_bonus_total - choix.length - jokers.length;
-  const nomJoueurConcerne = pseudoColore(draft.bans_bonus_joueur); // couleur de son rôle
-  const ecart = Math.abs((draft.points_j1 ?? 0) - (draft.points_j2 ?? 0));
-  const suiteHorizontale = draft.equilibrage === "fixe_horizontal"
-    ? " Ensuite : bans horizontaux (persos jamais entrés dans le top 12), pour celui dont ces persos valent le moins ; un perso horizontal banni ici n'y compte plus."
-    : "";
-  const constat = estEquilibrageFixe() ? `${texteEquilibrageFixe()}.${suiteHorizontale}<br>` : `Écart de ${ecart} pts entre les 2 box : `;
-  const consigneJoker = nbJokers ? " Les premiers vont dans les bans d'équilibrage, les suivants dans les jokers (personnages de la box adverse)." : "";
-  const echange = draft.echange_joker ? ` (dont 1 joker obtenu contre ${BANS_PAR_JOKER} bans)` : "";
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
   rendreEchangeJoker(cEstMonTour, nbNormaux);
-
-  const message = document.getElementById("message-equilibrage");
-  if (draft.entrainement && cEstMonTour) {
-    message.innerHTML = restant > 0
-      ? `${constat}à ${pseudoColore(draft.bans_bonus_joueur)} de choisir encore ${restant} personnage(s) à bannir, puis confirme.${consigneJoker}`
-      : `${constat}les ${draft.bans_bonus_total} ban(s) bonus de ${pseudoColore(draft.bans_bonus_joueur)} sont sélectionnés. Clique sur "Confirmer les bans".`;
-  } else if (cEstMonTour) {
-    message.innerHTML = restant > 0
-      ? `${constat}choisis encore ${restant} personnage(s) à bannir avant le tirage J1/J2 et du boss (tu peux revenir sur ton choix avant de confirmer).${consigneJoker}`
-      : `${constat}tes ${draft.bans_bonus_total} ban(s) bonus sont sélectionnés. Clique sur "Confirmer les bans" pour lancer le tirage J1/J2 et du boss.`;
-  } else {
-    message.innerHTML = `${constat}${nomJoueurConcerne} choisit ${draft.bans_bonus_total} ban(s) bonus${echange}. En attente…`;
-  }
+  const joker = nbJokers ? ` (dont ${pluriel(nbJokers, "joker")})` : "";
+  messageBansEquilibrage(draft.bans_bonus_joueur,
+    `${pseudoColore(draft.bans_bonus_joueur)} a ${pluriel(draft.bans_bonus_total, "ban vertical", "bans verticaux")}${joker} sur ${pseudoColore(getAutreRole(draft.bans_bonus_joueur))}.`,
+    restant, restant === 0);
 
   const slots = document.getElementById("bans-bonus-slots");
   slots.innerHTML = "";
