@@ -1,5 +1,5 @@
 // Personnalisation (fond d'écran, namecard, bannière, skins, filtres et tris
-// affichés en draft) : fenêtre
+// affichés en draft, affichage de l'accueil) : fenêtre
 // commune à tout le site, ouverte sur place depuis le menu du compte
 // (commun/compte.js) et depuis Mon compte (my_account/my_account.js).
 // Styles : commun/personnalisation.css, chargé à la 1re ouverture. Fonds et
@@ -16,7 +16,8 @@
 //
 // Rikoyns (cf. commun/koyns.js) : les cosmétiques pas encore possédés sont
 // marqués d'un cadenas et s'achètent d'un clic (prix, solde affiché en
-// haut) ; exclusifs : pas en vente. Filtres et tris de la draft : libres.
+// haut) ; exclusifs : pas en vente. Filtres et tris de la draft, affichage
+// de l'accueil : libres.
 //
 // Fond "Mon image" (fond = "perso") : image importée par le joueur,
 // redimensionnée et ré-encodée ici (canvas : seuls les pixels sont gardés,
@@ -30,8 +31,15 @@
     banniere2: "namecards/banners/Namecard_Banner_Default.webp",
     fond: "bg/autres/default_bg.webp",
     voyageur: "aether",
-    manekin: "manekin"
+    manekin: "manekin",
+    // Accueil : panneau pliable à gauche, ou toutes les cartes au centre
+    // (cf. accueil.js).
+    accueil: "panneau"
   };
+  const AFFICHAGES_ACCUEIL = [
+    { id: "panneau", nom: "Panneau", description: "Créer un match et Mon compte au centre, les autres pages dans un panneau à gauche (bouton ☰ pour le plier)." },
+    { id: "classique", nom: "Classique", description: "Toutes les pages au centre, en grille." }
+  ];
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins"];
   // Fond personnel : formats acceptés (pas de SVG ni de GIF), poids du
@@ -84,7 +92,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=12";
+    lien.href = "/commun/personnalisation.css?v=13";
     document.head.appendChild(lien);
   }
 
@@ -333,6 +341,10 @@
             <span class="perso-apercu-titre">Filtres/Tris</span>
             <span class="perso-apercu-image perso-apercu-filtres" data-apercu="filtres"></span>
           </button>
+          <button type="button" class="perso-apercu-bloc" data-onglet="accueil">
+            <span class="perso-apercu-titre">Accueil</span>
+            <span class="perso-apercu-image perso-apercu-accueil" data-apercu="accueil"></span>
+          </button>
         </div>
         <input type="text" class="perso-recherche" placeholder="Rechercher…" autocomplete="off">
         <div class="perso-choix"></div>
@@ -421,7 +433,8 @@
     const affiches = FILTRES_DRAFT.length - brouillon.filtres_draft.masques.length;
     const textes = {
       skins: `${brouillon.skins.length} skin${brouillon.skins.length > 1 ? "s" : ""}`,
-      filtres: `${affiches} / ${FILTRES_DRAFT.length}`
+      filtres: `${affiches} / ${FILTRES_DRAFT.length}`,
+      accueil: AFFICHAGES_ACCUEIL.find(affichage => affichage.id === brouillon.accueil)?.nom || ""
     };
     modal.querySelectorAll("[data-apercu]").forEach(bloc => {
       const url = urls[bloc.dataset.apercu];
@@ -568,6 +581,29 @@
     });
   }
 
+  // Affichage de l'accueil : un schéma de chaque page (cartes en petits
+  // rectangles), gratuit.
+  function rendreAccueil(conteneur) {
+    const note = document.createElement("p");
+    note.className = "perso-note";
+    note.textContent = "Disposition des cartes de la page d'accueil. Gratuit.";
+    const grille = nouvelleGrille();
+    AFFICHAGES_ACCUEIL.forEach(affichage => {
+      const bouton = creerChoix(null, affichage.nom, brouillon.accueil === affichage.id,
+        () => { brouillon.accueil = affichage.id; }, `perso-choix-accueil perso-schema-${affichage.id}`);
+      bouton.title = affichage.description;
+      bouton.innerHTML = `<span class="perso-schema" aria-hidden="true">${"<span></span>".repeat(8)}</span>`;
+      const nom = document.createElement("strong");
+      nom.textContent = affichage.nom;
+      const description = document.createElement("span");
+      description.className = "perso-schema-description";
+      description.textContent = affichage.description;
+      bouton.append(nom, description);
+      grille.appendChild(bouton);
+    });
+    conteneur.append(note, grille);
+  }
+
   function rendreChoix() {
     const conteneur = modal.querySelector(".perso-choix");
     conteneur.innerHTML = "";
@@ -583,6 +619,10 @@
     }
     if (ongletActif === "filtres") {
       rendreFiltresDraft(conteneur, recherche);
+      return;
+    }
+    if (ongletActif === "accueil") {
+      rendreAccueil(conteneur);
       return;
     }
 
@@ -732,6 +772,7 @@
       if (window.FondEcran) window.FondEcran.appliquer(valeurFond);
       else document.documentElement.style.setProperty("--fond-ecran", valeurFond ? `url("${valeurFond}")` : "none");
       window.FondEcran?.memoriser(valeurFond, urlImage(brouillon.banniere2));
+      window.FondEcran?.memoriserAccueil(brouillon.accueil);
       fermer();
       document.dispatchEvent(new CustomEvent("personnalisation-enregistree", { detail: { ...profil.parametres } }));
       if (persosChanges && options.recharger !== false) window.location.reload();

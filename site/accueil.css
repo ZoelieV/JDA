@@ -184,3 +184,157 @@
 .carte-section[hidden] {
   display: none;
 }
+
+/* ---- Affichage "panneau" (par défaut, cf. accueil.js) : Créer un match et
+   Mon compte au centre (même taille que dans la grille classique), les
+   autres cartes dans le panneau de gauche (un tiers de l'écran), au format
+   téléphone, plié / déplié par le bouton ☰. Affichage "classique" : ni
+   bouton ni panneau. ---- */
+html[data-accueil="classique"] .accueil-menu,
+html[data-accueil="classique"] .accueil-panneau {
+  display: none;
+}
+
+/* Bouton ☰ : trois traits, même pilule que le lien Accueil des autres pages
+   (commun/entete.css), fixé en haut à gauche de l'écran. */
+.accueil-menu {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 160;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3125rem;
+  width: 2.875rem;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  background-color: rgba(30, 30, 30, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 62.4375rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.accueil-menu span {
+  display: block;
+  height: 0.1875rem;
+  border-radius: 0.125rem;
+  background-color: white;
+}
+
+.accueil-menu:hover,
+.accueil-menu:focus-visible,
+.accueil-menu[aria-expanded="true"] {
+  background-color: rgba(245, 197, 66, 0.15);
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.accueil-panneau {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 150;
+  box-sizing: border-box;
+  width: calc(100vw / 3);
+  padding: 4.75rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  display: grid;
+  grid-auto-rows: 1fr;
+  align-content: start;
+  gap: 0.75rem;
+  background-color: rgba(20, 20, 20, 0.55);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  transform: translateX(-100%);
+  visibility: hidden;
+}
+
+/* Animations seulement au clic sur ☰ (classe posée par accueil.js après le
+   premier affichage) : rien ne glisse au chargement de la page. */
+.accueil-anime .accueil-panneau {
+  transition: transform 0.25s ease, visibility 0.25s;
+}
+
+.panneau-ouvert .accueil-panneau {
+  transform: none;
+  visibility: visible;
+}
+
+/* Cartes du panneau : une seule colonne (les placements de la grille
+   classique ne s'appliquent pas ici), format téléphone (image à gauche,
+   texte à droite), comme commun/namecards.css sous 700 px. */
+.accueil-panneau .carte-section {
+  grid-column: 1 !important;
+  grid-row: auto !important;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.accueil-panneau .carte-section > img {
+  width: 42%;
+  height: auto;
+  aspect-ratio: auto;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.accueil-panneau .carte-section-texte {
+  align-self: center;
+  padding: 0.625rem 0.75rem;
+}
+
+.accueil-panneau .carte-section h2 {
+  font-size: 1.0625rem;
+}
+
+.accueil-panneau .carte-section p {
+  font-size: 0.8125rem;
+}
+
+@media (min-width: 701px) {
+  /* Panneau déplié : la page se décale à droite de sa largeur. */
+  html:not([data-accueil="classique"]) body.accueil-anime {
+    transition: margin-left 0.25s ease;
+  }
+
+  html:not([data-accueil="classique"]) body.panneau-ouvert {
+    margin-left: calc(100vw / 3 + 1.25rem);
+  }
+
+  /* Les 2 cartes du centre, côte à côte, à la largeur exacte d'une carte
+     de la grille classique (3 par ligne sur la largeur de la page, 68,75rem
+     au plus ; 2 par ligne entre 701 et 1000 px), panneau plié ou non. */
+  html:not([data-accueil="classique"]) .accueil-sections {
+    display: flex;
+    justify-content: center;
+    gap: 1.125rem;
+  }
+
+  html:not([data-accueil="classique"]) .accueil-sections .carte-section {
+    flex: 0 1 calc((min(68.75rem, 100vw - 2.5rem) - 2 * 1.125rem) / 3);
+    min-width: 0;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1000px) {
+  html:not([data-accueil="classique"]) .accueil-sections .carte-section {
+    flex-basis: calc((100vw - 2.5rem - 1.125rem) / 2);
+  }
+}
+
+@media (max-width: 700px) {
+  /* Téléphone : panneau par-dessus la page, plié par défaut. */
+  .accueil-menu {
+    top: 0.5rem;
+    left: 0.75rem;
+  }
+
+  .accueil-panneau {
+    width: min(85vw, 22rem);
+    padding: 3.75rem 0.75rem 0.75rem;
+    background-color: rgba(20, 20, 20, 0.85);
+  }
+}

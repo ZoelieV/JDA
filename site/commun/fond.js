@@ -23,6 +23,10 @@
   // médaille dans le bouton du compte (cf. appliquerMedaille). Nouvelle clé
   // depuis les paliers sardine..baleine (l'ancienne gardait "6".."12").
   const CLE_THEATRE = "theatre-palier-2";
+  // Affichage de l'accueil (profil.parametres.accueil) : "classique" gardé,
+  // rien pour "panneau" (par défaut, aussi pour les visiteurs). Posé sur
+  // <html data-accueil> dès le <head> (pas de clignotement, cf. accueil.js).
+  const CLE_ACCUEIL = "accueil-affichage";
   // Palier -> nom et icône (mêmes que PALIERS_THEATRE et urlMedailleTheatre,
   // commun/cartes.js, pas chargé sur toutes les pages : rien n'en est utilisé
   // ici).
@@ -162,6 +166,14 @@
   }
 
   // Pose (ou retire) la deuxième bannière dans un bouton de compte.
+  function memoriserAccueil(valeur) {
+    const affichage = valeur === "classique" ? "classique" : "panneau";
+    ecrire(CLE_ACCUEIL, affichage === "classique" ? affichage : null);
+    if (document.documentElement.dataset.accueil === affichage) return;
+    document.documentElement.dataset.accueil = affichage;
+    document.dispatchEvent(new CustomEvent("accueil-change"));
+  }
+
   function appliquerBanniere2(element, url) {
     element.classList.toggle("avec-banniere2", !!url);
     if (url) element.style.setProperty("--banniere2", `url("${url}")`);
@@ -177,6 +189,7 @@
           appliquer(FOND_DEFAUT_URL);
           memoriser(FOND_DEFAUT_URL, null);
           memoriserTheatre(null);
+          memoriserAccueil(null);
         }
         return;
       }
@@ -199,12 +212,14 @@
       appliquer(url);
       memoriser(url, banniere2);
       memoriserTheatre(profil?.theatre);
+      memoriserAccueil(profil?.parametres?.accueil);
     } catch (erreur) {
       console.error(erreur);
     }
   }
 
   appliquer(lire(CLE_URL) || FOND_DEFAUT_URL);
+  document.documentElement.dataset.accueil = lire(CLE_ACCUEIL) === "classique" ? "classique" : "panneau";
 
   // Revérifié si trop ancien, ou si le théâtre n'a jamais été gardé (cache
   // d'avant la médaille).
@@ -232,6 +247,9 @@
     appliquerBanniere2,
     banniere2: () => lire(CLE_BANNIERE2) || encodeURI(`/DB/images/${BANNIERE2_DEFAUT}`),
     memoriserTheatre,
+    // Affichage de l'accueil : après l'enregistrement de la personnalisation
+    // (événement "accueil-change" si l'affichage change).
+    memoriserAccueil,
     appliquerMedaille,
     theatre: () => lire(CLE_THEATRE) || ""
   };

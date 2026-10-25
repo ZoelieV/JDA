@@ -7,12 +7,12 @@
   <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/namecards.css?v=2">
-  <link rel="stylesheet" href="/accueil.css?v=rem20">
+  <link rel="stylesheet" href="/accueil.css?v=rem22">
   <link rel="stylesheet" href="/commun/entete.css?v=rem30">
   <link rel="stylesheet" href="/commun/feedback.css?v=3">
-<script src="/commun/fond.js?v=10"></script>
+<script src="/commun/fond.js?v=11"></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=34" defer></script>
+<script src="/commun/compte.js?v=35" defer></script>
 <script src="/commun/feedback.js?v=2" defer></script>
 </head>
 <body>
@@ -21,6 +21,14 @@
   <header class="accueil-barre">
     <div id="zone-compte" class="zone-compte"></div>
   </header>
+
+  <!-- Affichage "panneau" (cf. accueil.js) : bouton ☰ qui plie / déplie le
+       panneau de gauche, où sont rangées les cartes autres que Créer un
+       match et Mon compte. -->
+  <button type="button" class="accueil-menu" aria-controls="accueil-panneau" aria-expanded="true" aria-label="Plier le menu" title="Plier le menu">
+    <span></span><span></span><span></span>
+  </button>
+  <aside class="accueil-panneau" id="accueil-panneau" aria-label="Autres pages"></aside>
 
   <div class="accueil">
 
@@ -106,5 +114,6 @@
     </nav>
   </div>
 
+<script src="/accueil.js?v=1"></script>
 </body>
 </html>
