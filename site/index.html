@@ -7,9 +7,10 @@
   <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
-  <link rel="stylesheet" href="/accueil.css?v=rem37">
+  <link rel="stylesheet" href="/accueil.css?v=rem38">
   <link rel="stylesheet" href="/commun/entete.css?v=rem30">
   <link rel="stylesheet" href="/commun/feedback.css?v=4">
+  <link rel="stylesheet" href="/commun/site.css?v=1">
 <script src="/commun/fond.js?v=13"></script>
 <script src="/commun/zoom.js?v=3"></script>
 <script src="/commun/compte.js?v=38" defer></script>
@@ -17,52 +18,9 @@
 </head>
 <body>
   <!-- Hors du conteneur centré : bouton du compte calé tout à droite de
-       l'écran (cf. commun/compte.js). Affichage "classique" : barre d'en-tête
-       complète (logo, liens des pages, compte), cf. accueil.css. -->
+       l'écran (cf. commun/compte.js). Affichage "classique" : en-tête du
+       site (logo et liens ajoutés par commun/site.js). -->
   <header class="accueil-barre">
-    <a class="entete-marque" href="/">
-      <img src="/DB/images/others/logo_site.webp" alt="" width="32" height="32">
-      <span>Jugement des Archons</span>
-    </a>
-    <!-- Liens des pages ; Match, Historique et Règles : menu déroulant
-         (survol sur ordi, clic sur téléphone, cf. accueil.js). -->
-    <nav class="entete-nav" aria-label="Pages du site">
-      <div class="menu-deroulant">
-        <a class="menu-titre" href="/match" aria-haspopup="true" aria-expanded="false">Match</a>
-        <div class="sous-menu">
-          <a href="/match#room">Créer une room</a>
-          <a href="/match#matchmaking">Matchmaking</a>
-          <a href="/match#classe">Classé</a>
-          <a href="/match#entrainement">Entraînement</a>
-          <a href="/match#equipe">En équipe</a>
-        </div>
-      </div>
-      <a href="/comptes">Comptes</a>
-      <a href="/classement">Classement</a>
-      <div class="menu-deroulant">
-        <a class="menu-titre" href="/historique" aria-haspopup="true" aria-expanded="false">Historique</a>
-        <div class="sous-menu">
-          <a href="/historique?onglet=matchs">Matchs</a>
-          <a href="/historique?onglet=equipe">Matchs en équipe</a>
-          <a href="/historique?onglet=world_boss">Random world boss</a>
-          <a href="/historique?onglet=entrainements">Entraînements</a>
-        </div>
-      </div>
-      <a href="/statistiques">Statistiques</a>
-      <div class="menu-deroulant">
-        <a class="menu-titre" href="/regles" aria-haspopup="true" aria-expanded="false">Règles</a>
-        <div class="sous-menu">
-          <a href="/regles/simplifiees">Règles simplifiées</a>
-          <a href="/regles/completes">Règles complètes</a>
-          <!-- Connectés seulement, sauf shadowbans (affiché par commun/compte.js). -->
-          <a class="carte-theorycraft" href="/theorycraft" hidden>Theorycraft</a>
-          <a href="/tutoriel">Tutoriel</a>
-        </div>
-      </div>
-      <a href="/evenements">Événements</a>
-      <!-- Administrateurs uniquement (affiché par commun/compte.js). -->
-      <a class="carte-admin" href="/admin" hidden>Admin</a>
-    </nav>
     <div id="zone-compte" class="zone-compte"></div>
   </header>
 
@@ -175,28 +133,8 @@
     </nav>
   </div>
 
-  <!-- Affichage "classique" : bas de page (feedback, réseaux, Ko-fi ; liens
-       vers les sites officiels en attendant ceux du site). Le bouton
-       Feedback ouvre la fenêtre de commun/feedback.js. -->
-  <footer class="accueil-pied">
-    <div class="pied-contenu">
-      <div class="pied-marque">
-        <strong>Jugement des Archons</strong>
-        <span>Site de fans, non affilié à HoYoverse.</span>
-      </div>
-      <nav class="pied-liens" aria-label="Liens utiles">
-        <button type="button" class="pied-feedback">Envoyer un feedback<img src="/DB/images/others/Icon_Mail.webp" alt=""></button>
-      </nav>
-      <div class="pied-reseaux">
-        <a href="https://discord.com" target="_blank" rel="noopener noreferrer" aria-label="Discord" title="Discord"><img src="/DB/images/others/reseaux/discord.svg" alt=""></a>
-        <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"><img src="/DB/images/others/reseaux/tiktok.svg" alt=""></a>
-        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"><img src="/DB/images/others/reseaux/instagram.svg" alt=""></a>
-        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube"><img src="/DB/images/others/reseaux/youtube.svg" alt=""></a>
-        <a href="https://ko-fi.com" target="_blank" rel="noopener noreferrer" aria-label="Ko-fi" title="Ko-fi"><img src="/DB/images/others/reseaux/kofi.svg" alt=""></a>
-      </div>
-    </div>
-  </footer>
 
-<script src="/accueil.js?v=5"></script>
+<script src="/commun/site.js?v=1"></script>
+<script src="/accueil.js?v=6"></script>
 </body>
 </html>

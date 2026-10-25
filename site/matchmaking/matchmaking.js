@@ -389,7 +389,13 @@ document.querySelectorAll(".carte-match").forEach(carte => {
   carte.addEventListener("click", () => choisirCarte(carte));
 });
 
-// matchmaking.html#entrainement (ex. "Changer de box" d'un entraînement non
-// équilibrable, cf. match.js) : panneau de l'entraînement ouvert.
-const carteAncre = location.hash && document.querySelector(`.carte-match[data-detail="${CSS.escape(location.hash.slice(1))}"]`);
-if (carteAncre) choisirCarte(carteAncre);
+// /match#entrainement (ex. "Changer de box" d'un entraînement non
+// équilibrable, cf. match.js ; menu Match de l'en-tête, cf.
+// commun/site.js) : détail du mode ouvert, aussi quand l'ancre change sur
+// la page (pas refermé s'il l'est déjà).
+function ouvrirAncre() {
+  const carte = location.hash && document.querySelector(`.carte-match[data-detail="${CSS.escape(location.hash.slice(1))}"]`);
+  if (carte && carte.getAttribute("aria-expanded") !== "true") choisirCarte(carte);
+}
+ouvrirAncre();
+window.addEventListener("hashchange", ouvrirAncre);
