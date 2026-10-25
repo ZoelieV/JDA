@@ -16,9 +16,11 @@ html.site-classique {
   --barre-flou: blur(1rem) saturate(140%);
   --barre-bordure: rgba(255, 255, 255, 0.12);
   --verre-fond: rgba(20, 20, 26, 0.28);
-  /* Marge des pages (commun/theme.css), compensée par les barres pour
-     aller d'un bord à l'autre de l'écran. */
+  /* Marge des pages (commun/theme.css), compensée par l'en-tête pour aller
+     d'un bord à l'autre de l'écran ; zoom des barres (décalages à diviser
+     par ce zoom, qui les réduit aussi). */
   --marge-page: 1.25rem;
+  --zoom-barres: 0.85;
 }
 
 /* Bouton Feedback flottant remplacé par celui du pied de page ; lien
@@ -28,14 +30,17 @@ html.avec-entete-site .lien-accueil {
   display: none;
 }
 
-/* Pages autres que l'accueil : pied de page collé en bas de l'écran si la
-   page est courte (sous le contenu sinon). */
+/* Pages autres que l'accueil : marge de la page en marge intérieure (pas
+   de fusion avec la marge négative de l'en-tête, qui ferait remonter le bas
+   de la page) ; pied de page collé en bas de l'écran si la page est courte
+   (sous le contenu sinon). */
 html.avec-entete-site body {
   position: relative;
   box-sizing: border-box;
-  min-height: calc(100vh - 2 * var(--marge-page));
-  min-height: calc(100dvh - 2 * var(--marge-page));
-  padding-bottom: 6rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0 var(--marge-page) 6rem;
 }
 
 /* ---- En-tête ---- */
@@ -54,12 +59,12 @@ html.site-classique .site-entete {
   border-bottom: 1px solid var(--barre-bordure);
   text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
   pointer-events: auto;
-  zoom: 0.85;
+  zoom: var(--zoom-barres);
 }
 
 /* Autres pages : d'un bord à l'autre de l'écran, au-dessus du contenu. */
 html.avec-entete-site .site-entete {
-  margin: calc(-1 * var(--marge-page)) calc(-1 * var(--marge-page)) var(--marge-page);
+  margin: 0 calc(-1 * var(--marge-page) / var(--zoom-barres)) calc(var(--marge-page) / var(--zoom-barres));
 }
 
 html.site-classique .site-entete .zone-compte,
@@ -205,15 +210,15 @@ html.site-classique .site-pied {
   backdrop-filter: var(--barre-flou);
   border-top: 1px solid var(--barre-bordure);
   text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
-  zoom: 0.85;
+  zoom: var(--zoom-barres);
 }
 
-/* Autres pages : en bas de la page, d'un bord à l'autre de l'écran. */
+/* Autres pages : tout en bas de la page, d'un bord à l'autre de l'écran. */
 html.avec-entete-site .site-pied {
   position: absolute;
-  right: calc(-1 * var(--marge-page));
-  bottom: calc(-1 * var(--marge-page));
-  left: calc(-1 * var(--marge-page));
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
 /* Mon compte : total de la box figé en bas de l'écran (cf.
@@ -223,7 +228,7 @@ html.avec-entete-site body:has(.box-total) {
 }
 
 html.avec-entete-site body:has(.box-total) .site-pied {
-  bottom: calc(5rem - var(--marge-page));
+  bottom: calc(5rem / var(--zoom-barres));
 }
 
 .pied-contenu {
