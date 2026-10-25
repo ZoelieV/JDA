@@ -728,6 +728,18 @@ html[data-accueil="classique"] .accueil-pied {
   }
 }
 
+/* En-tête et pied de page à 85 % de leur taille (contenu compris : liens,
+   menus, bouton du compte, icônes) ; pied de page moins haut (marges
+   réduites : 2/3 de sa hauteur d'avant). */
+html[data-accueil="classique"] .accueil-barre,
+html[data-accueil="classique"] .accueil-pied {
+  zoom: 0.85;
+}
+
+html[data-accueil="classique"] .pied-contenu {
+  padding: 1rem 0;
+}
+
 /* Barres en verre : texte lisible même sur un fond d'écran clair. */
 html[data-accueil="classique"] .accueil-barre,
 html[data-accueil="classique"] .accueil-pied {
