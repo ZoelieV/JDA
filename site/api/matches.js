@@ -12,6 +12,7 @@
 // _lib/feedbacks.js). Tout dans ce fichier pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel.
 const { supabase } = require("./_lib/supabase");
+const { memoriser } = require("./_lib/memo");
 const { infosPersoJoueur, palierTheatre, actualiserPoints, estWorldBossPublic } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
@@ -36,7 +37,9 @@ const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 // _lib/signalements.js).
 const LITIGES_PUBLICS = "litige.is.null,litige.not.in.(ouvert,invalide)";
 
-async function chargerMatchs() {
+const chargerMatchs = () => memoriser("matchs", 5000, () => lireMatchs());
+
+async function lireMatchs() {
   // Colonnes optionnelles (id, created_at, actions, litige, entrainement) :
   // "*" les renvoie si elles existent. Litiges ouverts et entraînements
   // exclus, tri par date si possible ; sans ces colonnes, pas de litige ni
@@ -310,7 +313,9 @@ async function republierLitige(req, res, user) {
 
 // Rooms à 2 joueurs dont la manche n'est pas terminée (ni invalidée par un
 // litige).
-async function chargerRoomsEnCours() {
+const chargerRoomsEnCours = () => memoriser("rooms_en_cours", 3000, () => lireRoomsEnCours());
+
+async function lireRoomsEnCours() {
   const { data, error } = await supabase
     .from("rooms")
     .select("*")
@@ -335,7 +340,9 @@ async function chargerRoomsEnCours() {
 // Box fictives (entraînements des administrateurs, cf. _lib/boxes_fictives.js) :
 // leur nom à la place du pseudo.
 // Points à jour : palier de théâtre (cf. palierTheatre).
-async function chargerJoueurs(ids) {
+const chargerJoueurs = (ids) => memoriser(`joueurs:${[...ids].sort().join(",")}`, 5000, () => lireJoueurs(ids));
+
+async function lireJoueurs(ids) {
   if (ids.length === 0) return new Map();
   const [{ data, error }] = await Promise.all([supabase
     .from("profiles")
@@ -422,7 +429,9 @@ function resumerBan(action, profils) {
 // pas seulement les NB_MATCHS_MAX derniers. ----
 const TAILLE_PAGE_STATS = 1000;
 
-async function chargerMatchsStats() {
+const chargerMatchsStats = () => memoriser("matchs_stats", 30000, () => lireMatchsStats());
+
+async function lireMatchsStats() {
   const lignes = [];
   // Supabase renvoie au plus 1000 lignes par requête : lecture par pages.
   for (let debut = 0; ; debut += TAILLE_PAGE_STATS) {
@@ -533,7 +542,9 @@ async function statistiques(res, saison = null, equipe = false) {
 // ---- Random world boss (table world_boss_history, cf. _lib/world_boss.js) ----
 
 // Parties terminées, plus récentes d'abord (table absente : aucune).
-async function chargerPartiesWorldBoss(saison = null) {
+const chargerPartiesWorldBoss = (saison = null) => memoriser(`parties_wb:${saison}`, 10000, () => lirePartiesWorldBoss(saison));
+
+async function lirePartiesWorldBoss(saison = null) {
   let requete = supabase.from("world_boss_history").select("*").order("created_at", { ascending: false }).limit(NB_MATCHS_MAX);
   if (saison !== null) requete = requete.eq("saison", saison);
   const { data, error } = await requete;
@@ -747,7 +758,7 @@ module.exports = async (req, res) => {
     // Trophées réellement gagnés / perdus par match classé (bonus de série
     // et plancher à 0 compris) : tous les matchs classés rejoués.
     const deltasClasse = [...matchs, ...litiges, ...signalements.matchs].some(m => m.classe)
-      ? rejouerClasse(await chargerMatchsClasses(supabase)).deltas
+      ? rejouerClasse(await memoriser("matchs_classes", 5000, () => chargerMatchsClasses(supabase))).deltas
       : new Map();
 
     const ids = [...new Set([

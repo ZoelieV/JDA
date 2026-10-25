@@ -1,4 +1,5 @@
 const { supabase } = require("../_lib/supabase");
+const { memoriser } = require("../_lib/memo");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre, costBox } = require("../_lib/personnages");
 const { CLASSEMENT_AFFICHE, rejouerClasse, seriePrime } = require("../_lib/trophees");
@@ -179,7 +180,13 @@ module.exports = async (req, res) => {
       return res.status(200).json({ actuelle: saisons[saisons.length - 1].numero, saisons });
     }
 
-    const [profils, resultats] = await Promise.all([chargerProfils(), chargerResultats(), actualiserPoints()]);
+    // Gardés aussi 30 s en mémoire (cf. _lib/memo.js) : une adresse
+    // modifiée (?x=...) passe à côté du cache du CDN, pas de celui-ci.
+    const [profils, resultats] = await Promise.all([
+      memoriser("profils_comptes", 30 * 1000, chargerProfils),
+      memoriser("resultats_comptes", 30 * 1000, chargerResultats),
+      actualiserPoints()
+    ]);
     // Même liste pour tout le monde : gardée 30 s par le CDN de Vercel
     // (tous les profils et tout l'historique relus au plus une fois par
     // tranche de 30 s, quel que soit le nombre de visites).
