@@ -90,6 +90,10 @@ for e in contenu:
     elif e.tag == T + "p" and (t := nettoie(texte(e))):
         sections[-1][1] += f"        <p>{t}</p>\n"
 
+# "En résumé" : pas dans la page Règles (il est seul, écrit à la main, dans
+# regles_simplifiees.html).
+sections = [s for s in sections if slug(s[0]) != "en-resume"]
+
 sommaire = "".join(f'      <li><a href="#{slug(t)}">{t}</a></li>\n' for t, _ in sections)
 corps = "".join(
     f'    <details class="section-regles" id="{slug(t)}" open>\n'
