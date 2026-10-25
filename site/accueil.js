@@ -70,32 +70,81 @@
     document.querySelector(".bouton-feedback")?.click();
   });
 
-  // Menus déroulants de l'en-tête (affichage "classique") : au survol sur
-  // ordi (accueil.css) ; écran tactile : 1er appui sur le titre = ouvre le
-  // menu, 2e = va sur la page ; appui à côté = referme.
+  // Menus déroulants de l'en-tête (affichage "classique") : sortis de la
+  // barre des liens (qui défile de gauche à droite si elle est trop longue
+  // et les couperait) et placés dans l'en-tête, sous leur titre, à
+  // l'ouverture. Souris : ouverts au survol du titre ou du menu (fermés peu
+  // après en le quittant) ; clavier : au focus ; écran tactile : 1er appui
+  // sur le titre = ouvre le menu, 2e = va sur la page ; appui à côté ou
+  // défilement des liens = referme.
+  const barre = document.querySelector(".accueil-barre");
+  const nav = document.querySelector(".entete-nav");
   const tactile = window.matchMedia("(hover: none)");
-  const menus = [...document.querySelectorAll(".menu-deroulant")];
-  const fermerMenus = sauf => menus.forEach(menu => {
-    if (menu === sauf) return;
-    menu.classList.remove("ouvert");
-    menu.querySelector(".menu-titre").setAttribute("aria-expanded", "false");
+  const menus = [...document.querySelectorAll(".menu-deroulant")].map(menu => {
+    const sousMenu = menu.querySelector(".sous-menu");
+    barre.appendChild(sousMenu);
+    return { menu, titre: menu.querySelector(".menu-titre"), sousMenu, minuteur: null };
   });
-  menus.forEach(menu => {
-    const titre = menu.querySelector(".menu-titre");
+
+  function ouvrirMenu(entree) {
+    clearTimeout(entree.minuteur);
+    menus.forEach(autre => { if (autre !== entree) fermerMenu(autre); });
+    // Position dans l'en-tête (zoom de l'en-tête compris, cf. accueil.css).
+    const zoom = parseFloat(getComputedStyle(barre).zoom) || 1;
+    const cadreBarre = barre.getBoundingClientRect();
+    const cadreTitre = entree.titre.getBoundingClientRect();
+    entree.sousMenu.style.left = `${(cadreTitre.left - cadreBarre.left) / zoom}px`;
+    entree.sousMenu.style.top = `${(cadreTitre.bottom - cadreBarre.top) / zoom}px`;
+    entree.menu.classList.add("ouvert");
+    entree.sousMenu.classList.add("ouvert");
+    entree.titre.setAttribute("aria-expanded", "true");
+  }
+
+  function fermerMenu(entree) {
+    clearTimeout(entree.minuteur);
+    entree.menu.classList.remove("ouvert");
+    entree.sousMenu.classList.remove("ouvert");
+    entree.titre.setAttribute("aria-expanded", "false");
+  }
+
+  menus.forEach(entree => {
+    const { titre, sousMenu } = entree;
+    [titre, sousMenu].forEach(element => {
+      element.addEventListener("mouseenter", () => { if (!tactile.matches) ouvrirMenu(entree); });
+      element.addEventListener("mouseleave", () => {
+        if (tactile.matches) return;
+        entree.minuteur = setTimeout(() => fermerMenu(entree), 150);
+      });
+    });
+    titre.addEventListener("focus", () => { if (!tactile.matches) ouvrirMenu(entree); });
+    sousMenu.addEventListener("focusout", event => {
+      if (!sousMenu.contains(event.relatedTarget) && event.relatedTarget !== titre) fermerMenu(entree);
+    });
+    titre.addEventListener("blur", event => {
+      if (!sousMenu.contains(event.relatedTarget)) fermerMenu(entree);
+    });
     titre.addEventListener("click", event => {
-      if (!tactile.matches || menu.classList.contains("ouvert")) return;
+      if (!tactile.matches || entree.menu.classList.contains("ouvert")) return;
       event.preventDefault();
-      fermerMenus(menu);
-      menu.classList.add("ouvert");
-      titre.setAttribute("aria-expanded", "true");
+      ouvrirMenu(entree);
     });
   });
+  const fermerTout = () => menus.forEach(fermerMenu);
   document.addEventListener("click", event => {
-    if (!event.target.closest(".menu-deroulant")) fermerMenus(null);
+    if (!event.target.closest(".menu-deroulant, .sous-menu")) fermerTout();
   });
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape") fermerMenus(null);
+    if (event.key === "Escape") fermerTout();
   });
+  nav.addEventListener("scroll", fermerTout, { passive: true });
+  window.addEventListener("resize", fermerTout);
+  // Molette verticale sur les liens : défilement de gauche à droite (s'ils
+  // ne tiennent pas).
+  nav.addEventListener("wheel", event => {
+    if (nav.scrollWidth <= nav.clientWidth || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+    event.preventDefault();
+    nav.scrollLeft += event.deltaY;
+  }, { passive: false });
 
   telephone.addEventListener("change", ranger);
   document.addEventListener("accueil-change", ranger);

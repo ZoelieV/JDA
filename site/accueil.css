@@ -348,6 +348,7 @@ html[data-accueil="classique"] .accueil-panneau {
    dans les deux autres affichages. ---- */
 .entete-marque,
 .entete-nav,
+.sous-menu,
 .bouton-evenements,
 .accueil-modes,
 .accueil-pied {
@@ -417,15 +418,32 @@ html[data-accueil="classique"] .entete-marque img {
   object-fit: contain;
 }
 
+/* Liens : toute la place entre le logo et le bouton du compte ; trop longs
+   (zoom du site, petit écran) : défilement de gauche à droite (barre fine,
+   molette, cf. accueil.js) au lieu de passer sous le bouton du compte. */
 html[data-accueil="classique"] .entete-nav {
   display: flex;
   align-items: center;
   gap: 0.25rem;
   flex: 1;
   min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
 
-html[data-accueil="classique"] .entete-nav a {
+html[data-accueil="classique"] .entete-nav > * {
+  flex-shrink: 0;
+}
+
+html[data-accueil="classique"] .accueil-barre .entete-marque,
+html[data-accueil="classique"] .accueil-barre .zone-compte {
+  flex-shrink: 0;
+}
+
+html[data-accueil="classique"] .entete-nav a,
+html[data-accueil="classique"] .sous-menu a {
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   color: rgba(255, 255, 255, 0.78);
@@ -436,21 +454,23 @@ html[data-accueil="classique"] .entete-nav a {
 }
 
 html[data-accueil="classique"] .entete-nav a:hover,
-html[data-accueil="classique"] .entete-nav a:focus-visible {
+html[data-accueil="classique"] .entete-nav a:focus-visible,
+html[data-accueil="classique"] .sous-menu a:hover,
+html[data-accueil="classique"] .sous-menu a:focus-visible {
   background-color: rgba(255, 255, 255, 0.08);
   color: white;
 }
 
-html[data-accueil="classique"] .entete-nav a[hidden] {
+html[data-accueil="classique"] .entete-nav a[hidden],
+html[data-accueil="classique"] .sous-menu a[hidden] {
   display: none;
 }
 
 /* Menus déroulants (Match, Historique, Règles) : ouverts au survol sur
-   ordi, au clic sur téléphone (classe .ouvert, cf. accueil.js). Fond
-   presque opaque (le flou ne marche pas dans une barre déjà floutée). */
-html[data-accueil="classique"] .menu-deroulant {
-  position: relative;
-}
+   ordi, au clic sur téléphone (classe .ouvert). Sortis de la barre des
+   liens et placés sous leur titre par accueil.js (sinon le défilement des
+   liens les couperait). Fond presque opaque (le flou ne marche pas dans une
+   barre déjà floutée). */
 
 html[data-accueil="classique"] .menu-titre::after {
   content: "";
@@ -465,8 +485,6 @@ html[data-accueil="classique"] .menu-titre::after {
 
 html[data-accueil="classique"] .sous-menu {
   position: absolute;
-  top: 100%;
-  left: 0;
   z-index: 120;
   display: none;
   flex-direction: column;
@@ -482,15 +500,8 @@ html[data-accueil="classique"] .sous-menu a {
   display: block;
 }
 
-html[data-accueil="classique"] .menu-deroulant:focus-within .sous-menu,
-html[data-accueil="classique"] .menu-deroulant.ouvert .sous-menu {
+html[data-accueil="classique"] .sous-menu.ouvert {
   display: flex;
-}
-
-@media (hover: hover) {
-  html[data-accueil="classique"] .menu-deroulant:hover .sous-menu {
-    display: flex;
-  }
 }
 
 html[data-accueil="classique"] .accueil-barre .zone-compte {
@@ -688,8 +699,8 @@ html[data-accueil="classique"] .accueil-pied {
   }
 }
 
-/* Écran étroit : liens de l'en-tête sur une 2e ligne (défilement
-   horizontal si besoin), avant qu'ils passent sous le bouton du compte. */
+/* Écran étroit : liens de l'en-tête sur une 2e ligne, sur toute la largeur
+   (défilement de gauche à droite s'ils ne tiennent pas). */
 @media (max-width: 1350px) {
   html[data-accueil="classique"] .accueil-barre {
     flex-wrap: wrap;
@@ -697,12 +708,9 @@ html[data-accueil="classique"] .accueil-pied {
     padding: 0.5rem 1.25rem 0.25rem;
   }
 
-  /* Liens à la ligne si besoin (pas de défilement : il couperait les
-     menus déroulants). */
   html[data-accueil="classique"] .entete-nav {
     order: 3;
     flex-basis: 100%;
-    flex-wrap: wrap;
   }
 }
 
@@ -713,7 +721,8 @@ html[data-accueil="classique"] .accueil-pied {
     padding: 0.5rem 0.75rem 0.25rem;
   }
 
-  html[data-accueil="classique"] .entete-nav a {
+  html[data-accueil="classique"] .entete-nav a,
+  html[data-accueil="classique"] .sous-menu a {
     padding: 0.375rem 0.625rem;
     font-size: 0.875rem;
   }
