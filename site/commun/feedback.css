@@ -1,11 +1,22 @@
 /* ---- Feedback (accueil, cf. commun/feedback.js) : bouton tout en bas à
-   gauche de la page (dernier élément de la page, il défile avec elle),
-   fenêtre d'envoi ---- */
+   gauche de la page : en bas de l'écran si la page est courte, sous les
+   dernières cartes sinon (il défile avec la page), fenêtre d'envoi ---- */
+
+/* La page fait au moins la hauteur de l'écran (marges du body comprises),
+   avec en bas la place du bouton. */
+body:has(> .bouton-feedback) {
+  position: relative;
+  box-sizing: border-box;
+  min-height: calc(100vh - 2.5rem);
+  min-height: calc(100dvh - 2.5rem);
+  padding-bottom: 4.5rem;
+}
 
 .bouton-feedback {
+  position: absolute;
+  left: 0;
+  bottom: 0;
   display: flex;
-  width: fit-content;
-  margin: 1.5rem 0 0;
   flex-direction: column;
   align-items: center;
   gap: 0.125rem;
@@ -43,10 +54,6 @@
 }
 
 @media (max-width: 700px) {
-  .bouton-feedback {
-    margin-top: 1rem;
-  }
-
   .bouton-feedback img {
     width: 1.875rem;
     height: 1.875rem;
