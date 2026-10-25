@@ -693,3 +693,48 @@ html[data-accueil="test"] .accueil-barre,
 html[data-accueil="test"] .accueil-pied {
   text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
 }
+
+/* Affichage "test", ordi : mise en page décentrée, logo, titre et boutons
+   à gauche, modes de jeu empilés à droite (format compact : image à
+   gauche, titre à droite), le tout centré dans la hauteur de l'écran. */
+@media (min-width: 1001px) {
+  html[data-accueil="test"] .accueil {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+    align-content: center;
+    gap: 3.5rem;
+  }
+
+  html[data-accueil="test"] .accueil-hero {
+    --logo-largeur: min(22vw, 24rem);
+    margin: 0;
+  }
+
+  html[data-accueil="test"] .accueil-modes {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 0;
+  }
+
+  html[data-accueil="test"] .accueil-modes .carte-section {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  html[data-accueil="test"] .accueil-modes .carte-section > img {
+    width: 45%;
+    height: auto;
+    aspect-ratio: 42 / 20;
+    flex-shrink: 0;
+  }
+
+  html[data-accueil="test"] .accueil-modes .carte-section-texte {
+    align-self: center;
+    padding: 0.75rem 1.25rem;
+  }
+
+  html[data-accueil="test"] .accueil-modes .carte-section h2 {
+    font-size: 1.375rem;
+  }
+}
