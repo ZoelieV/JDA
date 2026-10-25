@@ -943,6 +943,21 @@ function afficherEtat(message, type = "") {
 
 // ---- Démarrage ----
 
+// Page en 2 : Équilibrage (/admin/equilibrage : tableau des points, ajouts,
+// boss, catégories d'armes, comparateur, équilibrage, box fictives,
+// recommandations) et Administration (/admin : le reste, en tuiles).
+const PAGE_ADMIN = window.location.pathname.replace(/\/$/, "") === "/admin/equilibrage" ? "equilibrage" : "administration";
+document.body.classList.add(`page-${PAGE_ADMIN}`);
+document.querySelectorAll(".onglet-admin").forEach(onglet => {
+  const actif = onglet.dataset.page === PAGE_ADMIN;
+  onglet.classList.toggle("active", actif);
+  if (actif) onglet.setAttribute("aria-current", "page");
+});
+if (PAGE_ADMIN === "equilibrage") {
+  document.title = "Équilibrage";
+  document.querySelector(".titre-page").textContent = "Équilibrage";
+}
+
 async function demarrer() {
   const utilisateur = await chargerSession();
   if (!utilisateur?.admin && !utilisateur?.mini_admin) {
@@ -950,6 +965,7 @@ async function demarrer() {
     return;
   }
   const lectureSeule = !utilisateur.admin;
+  document.getElementById("tuiles-admin").classList.remove("cache");
 
   try {
     await chargerDonnees();

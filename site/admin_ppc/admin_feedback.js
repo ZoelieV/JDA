@@ -26,7 +26,8 @@ function formaterDateFeedback(date) {
 // Nombre de feedbacks nouveaux sur le bouton de la barre.
 function majBoutonFeedback() {
   const nouveaux = feedbacks.filter(f => f.statut === "nouveau").length;
-  document.getElementById("ouvrir-feedback").textContent = nouveaux ? `Feedback (${nouveaux})` : "Feedback";
+  // Titre de la tuile Feedback (page Administration).
+  document.querySelector("#ouvrir-feedback .tuile-admin-titre").textContent = nouveaux ? `Feedback (${nouveaux})` : "Feedback";
 }
 
 function rendreFeedbacks() {

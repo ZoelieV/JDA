@@ -43,6 +43,25 @@ html.avec-entete-site body {
   padding: 0 var(--marge-page) 6rem;
 }
 
+/* Éléments figés en haut des pages (cf. leurs feuilles) : sous l'en-tête,
+   figé lui aussi (hauteur mesurée par commun/site.js). */
+html.avec-entete-site .barre-classement,
+html.avec-entete-site .barre-historique,
+html.avec-entete-site .barre-comptes,
+html.avec-entete-site .barre-admin,
+html.avec-entete-site .barre-figee,
+html.avec-entete-site .panneau-theorycraft .tableau-theorycraft thead {
+  top: var(--hauteur-entete, 0px);
+}
+
+html.avec-entete-site .tableau-admin thead {
+  top: calc(var(--hauteur-entete, 0px) + var(--hauteur-barre-admin, 0px));
+}
+
+html.avec-entete-site .sommaire-regles {
+  top: calc(var(--hauteur-entete, 0px) + 1rem);
+}
+
 /* ---- En-tête ---- */
 html.site-classique .site-entete {
   position: sticky;

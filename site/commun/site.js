@@ -52,7 +52,10 @@
     ] },
     { titre: "Événements", href: "/evenements" },
     // Administrateurs et mini admins (affiché par commun/compte.js).
-    { titre: "Admin", href: "/admin", classe: "carte-admin" }
+    { titre: "Admin", href: "/admin", classe: "carte-admin", menu: [
+      ["Équilibrage", "/admin/equilibrage"],
+      ["Administration", "/admin"]
+    ] }
   ];
   // Réseaux : sites officiels en attendant les liens du site.
   const RESEAUX = [
@@ -95,7 +98,8 @@
         nav.appendChild(lien(titre, href, classe));
         return;
       }
-      const bloc = element("div", { class: "menu-deroulant" });
+      const bloc = element("div", { class: classe ? `menu-deroulant ${classe}` : "menu-deroulant" });
+      if (classe) bloc.hidden = true;
       const titreMenu = element("a", { class: "menu-titre", href, "aria-haspopup": "true", "aria-expanded": "false" }, titre);
       const sousMenu = element("div", { class: "sous-menu" });
       menu.forEach(([texte, cible, classeLien]) => sousMenu.appendChild(lien(texte, cible, classeLien)));
@@ -164,6 +168,13 @@
   }
   entete.classList.add("site-entete");
   document.body.appendChild(creerPied());
+
+  // Hauteur de l'en-tête (zoom compris) : éléments figés en haut des pages
+  // (barres de filtres, en-têtes de tableaux) placés juste en dessous (cf.
+  // site.css).
+  const majHauteurEntete = () => document.documentElement.style.setProperty("--hauteur-entete", `${entete.getBoundingClientRect().height}px`);
+  majHauteurEntete();
+  new ResizeObserver(majHauteurEntete).observe(entete);
 
   // ---- Menus déroulants : sortis de la barre des liens (qui défile de
   // gauche à droite si elle est trop longue et les couperait) et placés

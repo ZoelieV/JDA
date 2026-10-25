@@ -239,6 +239,10 @@
       "destination": "/tutorial"
     },
     {
+      "source": "/admin/equilibrage",
+      "destination": "/admin_ppc/admin_ppc"
+    },
+    {
       "source": "/admin",
       "destination": "/admin_ppc/admin_ppc"
     }
