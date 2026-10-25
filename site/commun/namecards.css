@@ -38,6 +38,11 @@
   font-size: 1.25rem;
 }
 
+/* Titre seul (sans description) : pas de marge dessous. */
+.carte-section h2:last-child {
+  margin-bottom: 0;
+}
+
 .carte-section p {
   margin: 0;
   color: var(--texte-doux);
