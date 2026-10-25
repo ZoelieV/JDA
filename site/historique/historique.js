@@ -1077,6 +1077,19 @@ const CLE_ONGLET = "historique-onglet";
 const PAGE_STATISTIQUES = window.location.pathname.replace(/\/$/, "") === "/statistiques";
 let onglet = PAGE_STATISTIQUES ? "stats" : "matchs";
 
+// Page Statistiques : titre, onglets et barre des matchs masqués, panneau
+// des statistiques affiché dès l'ouverture (pas l'historique le temps du
+// chargement).
+if (PAGE_STATISTIQUES) {
+  document.title = "Statistiques";
+  document.querySelector(".titre-page").textContent = "Statistiques";
+  document.querySelector(".onglets-historique").classList.add("cache");
+  document.querySelector(".barre-historique").classList.add("cache");
+  document.querySelectorAll(".panneau-historique").forEach(panneau => {
+    panneau.classList.toggle("cache", panneau.dataset.panneau !== "stats");
+  });
+}
+
 function ongletDisponible(nom) {
   if (PAGE_STATISTIQUES) return nom === "stats";
   // Random world boss : comme le mode (cf. api/_lib/world_boss.js).
@@ -1112,11 +1125,6 @@ function choisirOnglet(nouveau) {
 }
 
 function initialiserOnglets() {
-  if (PAGE_STATISTIQUES) {
-    document.title = "Statistiques";
-    document.querySelector(".titre-page").textContent = "Statistiques";
-    document.querySelector(".onglets-historique").classList.add("cache");
-  }
   document.querySelectorAll(".onglet-historique").forEach(bouton => {
     bouton.classList.toggle("cache", !ongletDisponible(bouton.dataset.onglet));
     bouton.addEventListener("click", () => choisirOnglet(bouton.dataset.onglet));
