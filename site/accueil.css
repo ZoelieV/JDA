@@ -188,10 +188,12 @@
 /* ---- Affichage "panneau" (par défaut, cf. accueil.js) : Créer un match et
    Mon compte au centre (même taille que dans la grille classique), les
    autres cartes dans le panneau de gauche (un tiers de l'écran), au format
-   téléphone, plié / déplié par le bouton ☰. Affichage "classique" : ni
-   bouton ni panneau. ---- */
+   téléphone, plié / déplié par le bouton ☰. Affichages "classique" et
+   "test" : ni bouton ni panneau. ---- */
 html[data-accueil="classique"] .accueil-menu,
-html[data-accueil="classique"] .accueil-panneau {
+html[data-accueil="classique"] .accueil-panneau,
+html[data-accueil="test"] .accueil-menu,
+html[data-accueil="test"] .accueil-panneau {
   display: none;
 }
 
@@ -296,31 +298,31 @@ html[data-accueil="classique"] .accueil-panneau {
 
 @media (min-width: 701px) {
   /* Panneau déplié : la page se décale à droite de sa largeur. */
-  html:not([data-accueil="classique"]) body.accueil-anime {
+  html:not([data-accueil="classique"]):not([data-accueil="test"]) body.accueil-anime {
     transition: margin-left 0.25s ease;
   }
 
-  html:not([data-accueil="classique"]) body.panneau-ouvert {
+  html:not([data-accueil="classique"]):not([data-accueil="test"]) body.panneau-ouvert {
     margin-left: calc(100vw / 3 + 1.25rem);
   }
 
   /* Les 2 cartes du centre, côte à côte, à la largeur exacte d'une carte
      de la grille classique (3 par ligne sur la largeur de la page, 68,75rem
      au plus ; 2 par ligne entre 701 et 1000 px), panneau plié ou non. */
-  html:not([data-accueil="classique"]) .accueil-sections {
+  html:not([data-accueil="classique"]):not([data-accueil="test"]) .accueil-sections {
     display: flex;
     justify-content: center;
     gap: 1.125rem;
   }
 
-  html:not([data-accueil="classique"]) .accueil-sections .carte-section {
+  html:not([data-accueil="classique"]):not([data-accueil="test"]) .accueil-sections .carte-section {
     flex: 0 1 calc((min(68.75rem, 100vw - 2.5rem) - 2 * 1.125rem) / 3);
     min-width: 0;
   }
 }
 
 @media (min-width: 701px) and (max-width: 1000px) {
-  html:not([data-accueil="classique"]) .accueil-sections .carte-section {
+  html:not([data-accueil="classique"]):not([data-accueil="test"]) .accueil-sections .carte-section {
     flex-basis: calc((100vw - 2.5rem - 1.125rem) / 2);
   }
 }
@@ -339,27 +341,366 @@ html[data-accueil="classique"] .accueil-panneau {
   }
 }
 
-/* ---- Affichage "test" : copie du panneau (toutes les règles
-   html:not([data-accueil="classique"]) ci-dessus), où sont essayés les
-   prochains changements avant d'être reportés sur "panneau" ----
-   Panneau juste assez large pour "Tous les comptes" sur une ligne (titre le
-   plus long : 9,775rem dans la police Titre à 1,0625rem), à côté de l'image
-   (42 % de la carte) : (texte + marges du texte) / 0,58 + bordures de la
-   carte + marges et bordure du panneau. */
-@media (min-width: 701px) {
-  html[data-accueil="test"] {
-    --largeur-panneau: calc((9.8rem + 2 * 0.75rem) / 0.58 + 2px + 2 * 1.25rem + 1px);
+/* ---- Affichage "test" (cf. accueil.js) : site classique, sobre. Barre
+   d'en-tête (logo, liens des pages, compte), logo du JDA et deux boutons
+   au centre, principe en 3 étapes, bas de page (feedback, réseaux). Fond
+   d'écran personnalisé gardé (commun/fond.js). Ces éléments sont masqués
+   dans les deux autres affichages. ---- */
+.entete-marque,
+.entete-nav,
+.accueil-actions,
+.accueil-etapes,
+.accueil-pied {
+  display: none;
+}
+
+html[data-accueil="test"] {
+  --barre-fond: rgba(14, 14, 18, 0.78);
+  --barre-bordure: rgba(255, 255, 255, 0.1);
+}
+
+/* Page en colonne : en-tête, contenu, bas de page collé en bas de l'écran
+   si la page est courte. Le bouton Feedback flottant est remplacé par
+   celui du bas de page. */
+html[data-accueil="test"] body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+}
+
+html[data-accueil="test"] .bouton-feedback {
+  display: none;
+}
+
+/* En-tête */
+html[data-accueil="test"] .accueil-barre {
+  position: sticky;
+  top: 0;
+  right: auto;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.625rem 2rem;
+  background-color: var(--barre-fond);
+  -webkit-backdrop-filter: blur(0.75rem);
+  backdrop-filter: blur(0.75rem);
+  border-bottom: 1px solid var(--barre-bordure);
+  pointer-events: auto;
+}
+
+html[data-accueil="test"] .accueil-barre .zone-compte,
+html[data-accueil="test"] .accueil-barre .zone-compte > * {
+  pointer-events: auto;
+}
+
+html[data-accueil="test"] .entete-marque {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+  color: white;
+  font-family: "Titre site", var(--police-titre);
+  font-size: 1.125rem;
+  text-decoration: none;
+}
+
+html[data-accueil="test"] .entete-marque img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+html[data-accueil="test"] .entete-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+html[data-accueil="test"] .entete-nav a {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.9375rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+html[data-accueil="test"] .entete-nav a:hover,
+html[data-accueil="test"] .entete-nav a:focus-visible {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+html[data-accueil="test"] .entete-nav a[hidden] {
+  display: none;
+}
+
+html[data-accueil="test"] .accueil-barre .zone-compte {
+  margin-left: auto;
+}
+
+/* Contenu */
+html[data-accueil="test"] .accueil {
+  flex: 1;
+  box-sizing: border-box;
+  width: min(68.75rem, 100% - 2.5rem);
+  margin: 0 auto;
+  padding: 2.5rem 0 3.5rem;
+}
+
+html[data-accueil="test"] .accueil-sections {
+  display: none;
+}
+
+html[data-accueil="test"] .accueil-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+}
+
+.bouton-action {
+  padding: 0.75rem 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 0.625rem;
+  background-color: rgba(14, 14, 18, 0.55);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.bouton-action:hover,
+.bouton-action:focus-visible {
+  border-color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-0.0625rem);
+}
+
+.bouton-action.principal {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: #1a1a1a;
+}
+
+.bouton-action.principal:hover,
+.bouton-action.principal:focus-visible {
+  border-color: #ffd866;
+  background-color: #ffd866;
+}
+
+/* Comment ça marche : 3 étapes */
+html[data-accueil="test"] .accueil-etapes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 3rem;
+}
+
+.etape {
+  padding: 1.5rem;
+  background-color: rgba(14, 14, 18, 0.62);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
+  border: 1px solid var(--barre-bordure);
+  border-radius: 0.75rem;
+}
+
+.etape-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--accent-bordure);
+  border-radius: 50%;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.etape h2 {
+  margin: 0.875rem 0 0.375rem;
+  font-family: var(--police-titre);
+  font-size: 1.125rem;
+}
+
+.etape p {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+/* Bas de page */
+html[data-accueil="test"] .accueil-pied {
+  display: block;
+  background-color: var(--barre-fond);
+  -webkit-backdrop-filter: blur(0.75rem);
+  backdrop-filter: blur(0.75rem);
+  border-top: 1px solid var(--barre-bordure);
+}
+
+.pied-contenu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  box-sizing: border-box;
+  width: min(68.75rem, 100% - 2.5rem);
+  margin: 0 auto;
+  padding: 1.75rem 0;
+}
+
+.pied-marque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pied-marque strong {
+  font-family: "Titre site", var(--police-titre);
+  font-size: 1.0625rem;
+  font-weight: normal;
+}
+
+.pied-marque span,
+.pied-copyright {
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+}
+
+.pied-liens {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+
+.pied-liens a,
+.pied-feedback {
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pied-liens a:hover,
+.pied-feedback:hover,
+.pied-liens a:focus-visible,
+.pied-feedback:focus-visible {
+  color: white;
+  text-decoration: underline;
+}
+
+.pied-reseaux {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pied-reseaux a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.375rem;
+  height: 2.375rem;
+  border: 1px solid var(--barre-bordure);
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.04);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pied-reseaux a:hover,
+.pied-reseaux a:focus-visible {
+  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pied-reseaux img {
+  width: 1.125rem;
+  height: 1.125rem;
+  opacity: 0.85;
+}
+
+.pied-copyright {
+  margin: 0;
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid var(--barre-bordure);
+  text-align: center;
+}
+
+/* Écran moyen : nom du site masqué dans l'en-tête (petit logo seul, le nom
+   est en grand juste dessous), pour que tous les liens tiennent. */
+@media (max-width: 1400px) {
+  html[data-accueil="test"] .entete-marque span {
+    display: none;
+  }
+}
+
+/* Écran étroit : liens de l'en-tête sur une 2e ligne (défilement
+   horizontal si besoin). */
+@media (max-width: 1150px) {
+  html[data-accueil="test"] .accueil-barre {
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    padding: 0.5rem 1.25rem 0.25rem;
   }
 
-  html[data-accueil="test"] .accueil-panneau {
-    width: var(--largeur-panneau);
+  html[data-accueil="test"] .entete-nav {
+    order: 3;
+    flex-basis: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+/* Téléphone : en-tête plus serré, étapes l'une sous l'autre, bas de page
+   centré. */
+@media (max-width: 700px) {
+  html[data-accueil="test"] .accueil-barre {
+    padding: 0.5rem 0.75rem 0.25rem;
   }
 
-  html[data-accueil="test"] .accueil-panneau .carte-section h2 {
-    white-space: nowrap;
+  html[data-accueil="test"] .entete-nav a {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.875rem;
   }
 
-  html[data-accueil="test"] body.panneau-ouvert {
-    margin-left: calc(var(--largeur-panneau) + 1.25rem);
+  html[data-accueil="test"] .accueil {
+    padding: 1rem 0 2.5rem;
+  }
+
+  html[data-accueil="test"] .accueil-etapes {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .etape {
+    padding: 1rem 1.125rem;
+  }
+
+  .pied-contenu {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pied-marque {
+    align-items: center;
+  }
+
+  .pied-liens {
+    justify-content: center;
   }
 }

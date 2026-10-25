@@ -7,18 +7,34 @@
   <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
-  <link rel="stylesheet" href="/accueil.css?v=rem23">
+  <link rel="stylesheet" href="/accueil.css?v=rem26">
   <link rel="stylesheet" href="/commun/entete.css?v=rem30">
   <link rel="stylesheet" href="/commun/feedback.css?v=4">
 <script src="/commun/fond.js?v=12"></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=36" defer></script>
+<script src="/commun/compte.js?v=37" defer></script>
 <script src="/commun/feedback.js?v=2" defer></script>
 </head>
 <body>
   <!-- Hors du conteneur centré : bouton du compte calé tout à droite de
-       l'écran (cf. commun/compte.js). -->
+       l'écran (cf. commun/compte.js). Affichage "test" : barre d'en-tête
+       complète (logo, liens des pages, compte), cf. accueil.css. -->
   <header class="accueil-barre">
+    <a class="entete-marque" href="/">
+      <img src="/DB/images/others/logo_site.webp" alt="" width="32" height="32">
+      <span>Jugement des Archons</span>
+    </a>
+    <nav class="entete-nav" aria-label="Pages du site">
+      <a href="/jouer">Jouer</a>
+      <a href="/comptes">Comptes</a>
+      <a href="/classement">Classement</a>
+      <a href="/historique">Historique</a>
+      <a href="/regles">Règles</a>
+      <a href="/tutoriel">Tutoriel</a>
+      <a href="/evenements">Événements</a>
+      <!-- Administrateurs uniquement (affiché par commun/compte.js). -->
+      <a class="carte-admin" href="/admin" hidden>Admin</a>
+    </nav>
     <div id="zone-compte" class="zone-compte"></div>
   </header>
 
@@ -36,6 +52,31 @@
       <img class="logo-accueil" src="/DB/images/others/logo_detaille_jda_v2.webp" alt="" width="1593" height="1725">
       <h1 class="titre-page">Jugement des<br>Archons</h1>
       <p>Choisis ta box, bannis et pioche tes personnages en draft face à ton adversaire, puis affrontez le même boss : le meilleur temps l'emporte.</p>
+      <!-- Affichage "test" : les deux actions principales en boutons (à la
+           place des cartes). -->
+      <div class="accueil-actions">
+        <a class="bouton-action principal" href="/jouer">Créer un match</a>
+        <a class="bouton-action" href="/compte">Mon compte</a>
+      </div>
+    </section>
+
+    <!-- Affichage "test" : principe du jeu en 3 étapes. -->
+    <section class="accueil-etapes" aria-label="Comment ça marche">
+      <div class="etape">
+        <span class="etape-numero">1</span>
+        <h2>Renseigne ta box</h2>
+        <p>Tes personnages, armes et constellations, dans Mon compte.</p>
+      </div>
+      <div class="etape">
+        <span class="etape-numero">2</span>
+        <h2>Fais ta draft</h2>
+        <p>Bannis et choisis tes 4 personnages face à ton adversaire.</p>
+      </div>
+      <div class="etape">
+        <span class="etape-numero">3</span>
+        <h2>Bats le boss</h2>
+        <p>Le même boss pour les deux : le meilleur temps gagne.</p>
+      </div>
     </section>
 
     <nav class="accueil-sections">
@@ -105,6 +146,29 @@
     </nav>
   </div>
 
-<script src="/accueil.js?v=2"></script>
+  <!-- Affichage "test" : bas de page (feedback, réseaux). Le bouton
+       Feedback ouvre la fenêtre de commun/feedback.js. -->
+  <footer class="accueil-pied">
+    <div class="pied-contenu">
+      <div class="pied-marque">
+        <strong>Jugement des Archons</strong>
+        <span>Site de fans, non affilié à HoYoverse.</span>
+      </div>
+      <nav class="pied-liens" aria-label="Liens utiles">
+        <a href="/regles">Règles</a>
+        <a href="/tutoriel">Tutoriel</a>
+        <button type="button" class="pied-feedback">Envoyer un feedback</button>
+      </nav>
+      <div class="pied-reseaux">
+        <a href="https://discord.com" target="_blank" rel="noopener noreferrer" aria-label="Discord" title="Discord"><img src="/DB/images/others/reseaux/discord.svg" alt=""></a>
+        <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"><img src="/DB/images/others/reseaux/tiktok.svg" alt=""></a>
+        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"><img src="/DB/images/others/reseaux/instagram.svg" alt=""></a>
+        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube"><img src="/DB/images/others/reseaux/youtube.svg" alt=""></a>
+      </div>
+    </div>
+    <p class="pied-copyright">© 2026 Jugement des Archons</p>
+  </footer>
+
+<script src="/accueil.js?v=3"></script>
 </body>
 </html>

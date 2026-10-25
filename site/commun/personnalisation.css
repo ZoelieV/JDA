@@ -633,26 +633,41 @@
   font-weight: bold;
 }
 
-/* Test : même schéma que le panneau, panneau plus étroit. */
+/* Test : en-tête, logo, 2 boutons, 3 étapes, bas de page. */
 .perso-schema-test .perso-schema {
-  grid-template-columns: 0.75fr 0.25fr 1fr 1fr 0.5fr;
-  grid-template-rows: repeat(6, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: 0.5fr 1.6fr 0.5fr 1fr 0.5fr;
 }
 
-.perso-schema-test .perso-schema span {
-  grid-column: 1;
-}
-
-.perso-schema-test .perso-schema span:nth-child(7),
+.perso-schema-test .perso-schema span:nth-child(1),
 .perso-schema-test .perso-schema span:nth-child(8) {
-  grid-row: 3 / span 2;
+  grid-column: 1 / -1;
+  border-radius: 0.125rem;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.perso-schema-test .perso-schema span:nth-child(2) {
+  grid-column: 3 / span 2;
+  border-radius: 50%;
+}
+
+.perso-schema-test .perso-schema span:nth-child(3),
+.perso-schema-test .perso-schema span:nth-child(4) {
+  grid-row: 3;
   background-color: rgba(245, 197, 66, 0.6);
 }
 
-.perso-schema-test .perso-schema span:nth-child(7) {
-  grid-column: 3;
+.perso-schema-test .perso-schema span:nth-child(3) {
+  grid-column: 2 / span 2;
 }
 
-.perso-schema-test .perso-schema span:nth-child(8) {
-  grid-column: 4;
+.perso-schema-test .perso-schema span:nth-child(4) {
+  grid-column: 4 / span 2;
+}
+
+.perso-schema-test .perso-schema span:nth-child(5),
+.perso-schema-test .perso-schema span:nth-child(6),
+.perso-schema-test .perso-schema span:nth-child(7) {
+  grid-row: 4;
+  grid-column: span 2;
 }

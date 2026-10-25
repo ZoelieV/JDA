@@ -7,7 +7,9 @@
 //   par défaut sur ordi (choix gardé dans ce navigateur), plié sur
 //   téléphone (il passe alors par-dessus la page).
 // - "classique" : toutes les cartes au centre (accueil.css).
-// - "test" : copie du panneau, où sont essayés les prochains changements
+// - "test" : où sont essayés les prochains changements : site classique,
+//   avec barre d'en-tête (liens des pages, compte), deux boutons au centre,
+//   principe en 3 étapes et bas de page (feedback, réseaux), sans cartes
 //   (accueil.css).
 // Chargé en fin de <body>, sans defer : les cartes sont rangées avant le
 // premier affichage.
@@ -41,7 +43,7 @@
   }
 
   function ranger() {
-    const avecPanneau = document.documentElement.dataset.accueil !== "classique";
+    const avecPanneau = !["classique", "test"].includes(document.documentElement.dataset.accueil);
     cartes.forEach(carte => (avecPanneau && !resteAuCentre(carte) ? panneau : grille).appendChild(carte));
     deplier(avecPanneau && !telephone.matches && lire(CLE_PLIE) !== "1");
   }
@@ -60,6 +62,12 @@
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && telephone.matches) deplier(false);
+  });
+
+  // Bas de page (affichage "test") : ouvre la fenêtre du bouton Feedback
+  // (commun/feedback.js, masqué dans cet affichage).
+  document.querySelector(".pied-feedback")?.addEventListener("click", () => {
+    document.querySelector(".bouton-feedback")?.click();
   });
 
   telephone.addEventListener("change", ranger);

@@ -41,7 +41,7 @@
     { id: "classique", nom: "Classique", description: "Toutes les pages au centre, en grille." },
     // Copie du panneau où sont essayés les prochains changements (cf.
     // accueil.css) avant de les reporter sur "panneau".
-    { id: "test", nom: "Test", description: "Copie du panneau pour essayer les prochains changements : panneau de gauche plus étroit." }
+    { id: "test", nom: "Test", description: "Essai : site classique, avec en-tête, boutons au centre et bas de page, sans cartes." }
   ];
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins"];
@@ -95,7 +95,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=14";
+    lien.href = "/commun/personnalisation.css?v=15";
     document.head.appendChild(lien);
   }
 
