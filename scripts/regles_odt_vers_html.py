@@ -1,5 +1,5 @@
 # Usage : décompresser le .odt dans un dossier, puis
-#   python3 scripts/regles_odt_vers_html.py <dossier_odt> site/regles_simplifiees.html
+#   python3 scripts/regles_odt_vers_html.py <dossier_odt> site/regles_completes.html
 # .odt décompressé (argv[1]) -> sommaire + sections repliables, insérés
 # entre les marqueurs de la page HTML (argv[2]).
 # Titres de 2e niveau = sections ; listes -> <ul> imbriquées ; gras -> <strong>.
