@@ -419,7 +419,7 @@ function creerLigneMatch(match) {
   const boss = bossParId.get(match.boss_id);
   // Match en cours : toute la ligne mène au match, en spectateur (un joueur
   // du match y retrouve sa place, cf. api/rooms/[room_id].js).
-  const lienSpectateur = enCours ? `/matchmaking/match.html?room=${encodeURIComponent(match.room_id)}&spectateur=1` : "";
+  const lienSpectateur = enCours ? `/match?room=${encodeURIComponent(match.room_id)}&spectateur=1` : "";
   if (enCours) {
     ligne.title = "Regarder ce match en spectateur";
     ligne.addEventListener("click", event => {

@@ -37,7 +37,7 @@ async function creerMatch(corps) {
       // retour à ce match.
       if (matchEnCours) {
         ouverture = true;
-        window.location.href = `match.html?room=${encodeURIComponent(matchEnCours)}`;
+        window.location.href = `/match?room=${encodeURIComponent(matchEnCours)}`;
       }
       return;
     }
@@ -59,7 +59,7 @@ async function creerMatch(corps) {
 
     // Mode en équipe / Random world boss : page de leur lobby.
     ouverture = true;
-    window.location.href = `${data.equipe ? "equipe" : data.world_boss ? "world_boss" : "match"}.html?room=${data.room_id}`;
+    window.location.href = `/${data.equipe ? "equipe" : data.world_boss ? "world-boss" : "match"}?room=${data.room_id}`;
   } catch (error) {
     console.error(error);
     alert("Erreur lors de la création du match.");

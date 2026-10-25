@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Créer un match</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
-<link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="../commun/entete.css?v=rem30">
-<link rel="stylesheet" href="../commun/cartes.css?v=4">
-<link rel="stylesheet" href="../commun/namecards.css?v=2">
-<link rel="stylesheet" href="matchmaking.css?v=14">
+<link rel="stylesheet" href="/commun/theme.css?v=rem5">
+<link rel="stylesheet" href="/commun/entete.css?v=rem30">
+<link rel="stylesheet" href="/commun/cartes.css?v=4">
+<link rel="stylesheet" href="/commun/namecards.css?v=2">
+<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=14">
 <script src="/commun/fond.js?v=10"></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=33" defer></script>
+<script src="/commun/compte.js?v=34" defer></script>
 </head>
 <body>
-<a href="../index.html" class="lien-accueil">Accueil</a>
+<a href="/" class="lien-accueil">Accueil</a>
 <h1 class="titre-page">Créer un match</h1>
 
   <!-- À mettre dans les règles plus tard :
@@ -27,35 +27,35 @@
        seul ouvert à la fois (cf. matchmaking.js). -->
   <div class="cartes-match">
     <button type="button" class="carte-section carte-match" data-detail="room" aria-expanded="false" aria-controls="detail-room">
-      <img src="../DB/images/others/Namecard_Background_room.webp" alt="" loading="lazy">
+      <img src="/DB/images/others/Namecard_Background_room.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>Créer une room</h2>
         <p>Envoie un lien à ton adversaire.</p>
       </div>
     </button>
     <button type="button" class="carte-section carte-match" data-detail="matchmaking" aria-expanded="false" aria-controls="detail-matchmaking">
-      <img src="../DB/images/others/Namecard_Background_matchmaking.webp" alt="" loading="lazy">
+      <img src="/DB/images/others/Namecard_Background_matchmaking.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>Matchmaking</h2>
         <p>Affronte le prochain joueur en recherche.</p>
       </div>
     </button>
     <button type="button" class="carte-section carte-match principale" data-detail="classe" aria-expanded="false" aria-controls="detail-classe">
-      <img src="../DB/images/others/Namecard_Background_competitif.webp" alt="" loading="lazy">
+      <img src="/DB/images/others/Namecard_Background_competitif.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></h2>
         <p>Gagne des trophées et grimpe au classement.</p>
       </div>
     </button>
     <button type="button" class="carte-section carte-match" data-detail="entrainement" aria-expanded="false" aria-controls="detail-entrainement">
-      <img src="../DB/images/others/Namecard_Background_entrainement.webp" alt="" loading="lazy">
+      <img src="/DB/images/others/Namecard_Background_entrainement.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>Entraînement <img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt=""></h2>
         <p>Prépare tes drafts, seul ou accompagné.</p>
       </div>
     </button>
     <button type="button" class="carte-section carte-match" data-detail="equipe" aria-expanded="false" aria-controls="detail-equipe">
-      <img src="../DB/images/others/Namecard_Background_Achievement_Resplendence.webp" alt="" loading="lazy">
+      <img src="/DB/images/others/Namecard_Background_Achievement_Resplendence.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>En équipe</h2>
         <p>2v2, 3v3 ou 4v4 avec vos vitrines.</p>
@@ -108,7 +108,7 @@
 
   <section id="detail-classe" class="panneau detail-match detail-classe cache" data-detail="classe">
     <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></h2>
-    <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Voir le <a href="../leaderboard.html">classement</a>.</p>
+    <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Voir le <a href="/classement">classement</a>.</p>
     <ul class="regles-classe">
       <li>Le gagnant remporte un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.</li>
       <li>Victoires d'affilée : +1 trophée bonus à la 2e, +2 à la 3e, puis +3.</li>
@@ -127,7 +127,7 @@
     <p>Chaque équipe joue le boss dans un seul monde, en co-op, avec 4 persos. Envoie le lien aux autres joueurs :
       tu lances le match quand le lobby est complet.</p>
     <ul class="regles-classe">
-      <li>Chacun joue avec sa <a href="../my_account/my_account.html">vitrine</a> : 12 persos, 1400 points au maximum (persos et armes), 6 constellations de 5★ limités au maximum, dont 2 persos C2 ou plus au maximum.</li>
+      <li>Chacun joue avec sa <a href="/compte">vitrine</a> : 12 persos, 1400 points au maximum (persos et armes), 6 constellations de 5★ limités au maximum, dont 2 persos C2 ou plus au maximum.</li>
       <li>Chaque équipe élit son chef (30 s) : il fait les picks, les bans et saisit le temps. Pas élu à temps ou égalité : tiré au hasard.</li>
       <li>Draft de la carpe (2 bans, 2 picks, 2 bans, 2 picks par équipe). Bannir un perso le retire pour tout le monde ; le picker aussi.</li>
       <li>Après la draft, chaque équipe déclare qui joue quel perso : 1 C6 et 2 C3+ de 5★ limités au maximum par équipe.</li>
@@ -199,6 +199,6 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/synergies.js?v=1"></script>
   <script src="/commun/cartes.js?v=29"></script>
-  <script src="matchmaking.js?v=27"></script>
+  <script src="/matchmaking/matchmaking.js?v=28"></script>
 </body>
 </html>

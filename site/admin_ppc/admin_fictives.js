@@ -9,7 +9,7 @@ const API_FICTIVES = "/api/accounts/boxes_fictives";
 
 let boxesFictives = [];
 
-const lienEditionFictive = id => `/my_account?box_fictive=${encodeURIComponent(id)}`;
+const lienEditionFictive = id => `/compte?box_fictive=${encodeURIComponent(id)}`;
 
 function afficherMessageFictives(texte, type = "") {
   const message = document.getElementById("message-fictives");

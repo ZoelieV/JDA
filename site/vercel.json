@@ -1,10 +1,231 @@
 {
   "cleanUrls": true,
-  "regions": ["dub1"],
-  "rewrites": [
+  "regions": [
+    "dub1"
+  ],
+  "redirects": [
+    {
+      "source": "/matchmaking/matchmaking",
+      "destination": "/jouer",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking/matchmaking.html",
+      "destination": "/jouer",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking",
+      "destination": "/jouer",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking/match",
+      "destination": "/match",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking/match.html",
+      "destination": "/match",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking/equipe",
+      "destination": "/equipe",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking/equipe.html",
+      "destination": "/equipe",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking/world_boss",
+      "destination": "/world-boss",
+      "permanent": true
+    },
+    {
+      "source": "/matchmaking/world_boss.html",
+      "destination": "/world-boss",
+      "permanent": true
+    },
+    {
+      "source": "/my_account/my_account",
+      "destination": "/compte",
+      "permanent": true
+    },
+    {
+      "source": "/my_account/my_account.html",
+      "destination": "/compte",
+      "permanent": true
+    },
     {
       "source": "/my_account",
+      "destination": "/compte",
+      "permanent": true
+    },
+    {
+      "source": "/all_accounts/all_accounts",
+      "destination": "/comptes",
+      "permanent": true
+    },
+    {
+      "source": "/all_accounts/all_accounts.html",
+      "destination": "/comptes",
+      "permanent": true
+    },
+    {
+      "source": "/all_accounts",
+      "destination": "/comptes",
+      "permanent": true
+    },
+    {
+      "source": "/leaderboard",
+      "destination": "/classement",
+      "permanent": true
+    },
+    {
+      "source": "/leaderboard.html",
+      "destination": "/classement",
+      "permanent": true
+    },
+    {
+      "source": "/historique/historique",
+      "destination": "/historique",
+      "permanent": true
+    },
+    {
+      "source": "/historique/historique.html",
+      "destination": "/historique",
+      "permanent": true
+    },
+    {
+      "source": "/rules",
+      "destination": "/regles",
+      "permanent": true
+    },
+    {
+      "source": "/rules.html",
+      "destination": "/regles",
+      "permanent": true
+    },
+    {
+      "source": "/regles_simplifiees",
+      "destination": "/regles/simplifiees",
+      "permanent": true
+    },
+    {
+      "source": "/regles_simplifiees.html",
+      "destination": "/regles/simplifiees",
+      "permanent": true
+    },
+    {
+      "source": "/regles_completes",
+      "destination": "/regles/completes",
+      "permanent": true
+    },
+    {
+      "source": "/regles_completes.html",
+      "destination": "/regles/completes",
+      "permanent": true
+    },
+    {
+      "source": "/theorycraft/theorycraft",
+      "destination": "/theorycraft",
+      "permanent": true
+    },
+    {
+      "source": "/theorycraft/theorycraft.html",
+      "destination": "/theorycraft",
+      "permanent": true
+    },
+    {
+      "source": "/tutorial",
+      "destination": "/tutoriel",
+      "permanent": true
+    },
+    {
+      "source": "/tutorial.html",
+      "destination": "/tutoriel",
+      "permanent": true
+    },
+    {
+      "source": "/admin_ppc/admin_ppc",
+      "destination": "/admin",
+      "permanent": true
+    },
+    {
+      "source": "/admin_ppc/admin_ppc.html",
+      "destination": "/admin",
+      "permanent": true
+    },
+    {
+      "source": "/admin_ppc",
+      "destination": "/admin",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/jouer",
+      "destination": "/matchmaking/matchmaking"
+    },
+    {
+      "source": "/match",
+      "destination": "/matchmaking/match"
+    },
+    {
+      "source": "/equipe",
+      "destination": "/matchmaking/equipe"
+    },
+    {
+      "source": "/world-boss",
+      "destination": "/matchmaking/world_boss"
+    },
+    {
+      "source": "/compte",
       "destination": "/my_account/my_account"
+    },
+    {
+      "source": "/comptes",
+      "destination": "/all_accounts/all_accounts"
+    },
+    {
+      "source": "/classement",
+      "destination": "/leaderboard"
+    },
+    {
+      "source": "/historique",
+      "destination": "/historique/historique"
+    },
+    {
+      "source": "/regles",
+      "destination": "/rules"
+    },
+    {
+      "source": "/regles/simplifiees",
+      "destination": "/regles_simplifiees"
+    },
+    {
+      "source": "/regles/completes",
+      "destination": "/regles_completes"
+    },
+    {
+      "source": "/theorycraft",
+      "destination": "/theorycraft/theorycraft"
+    },
+    {
+      "source": "/tutoriel",
+      "destination": "/tutorial"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin_ppc/admin_ppc"
     }
   ],
   "headers": [

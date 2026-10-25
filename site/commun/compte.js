@@ -29,7 +29,7 @@
     // Cookie ou URL illisible : pas de source.
   }
 
-  const PAGE_COMPTE = "/my_account/my_account.html";
+  const PAGE_COMPTE = "/compte";
   const ICONES = "/DB/images/others/";
   // Champs du menu enregistrés dans le profil (mêmes que sur Mon compte).
   const CHAMPS = [

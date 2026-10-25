@@ -36,7 +36,7 @@ async function creerWorldBoss(bouton) {
       alert(data.error || "Échec de la création de la room.");
       return;
     }
-    window.location.href = `matchmaking/world_boss.html?room=${data.room_id}`;
+    window.location.href = `/world-boss?room=${data.room_id}`;
   } catch (erreur) {
     console.error(erreur);
     alert("Erreur lors de la création de la room.");

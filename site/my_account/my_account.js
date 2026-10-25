@@ -261,7 +261,7 @@ function preparerModeFictif(nom) {
   bandeau.className = "bandeau-fictif";
   bandeau.innerHTML = `
     <p>Tu remplis une <strong>box fictive</strong> (entraînement, administrateurs seulement) : sa full box et sa box opti. Ton propre compte n'est pas modifié.</p>
-    <a class="lien-admin-fictif" href="/admin_ppc/admin_ppc.html">Retour à l'Administration</a>
+    <a class="lien-admin-fictif" href="/admin">Retour à l'Administration</a>
   `;
   bandeau.prepend(document.getElementById("theatre-auto").closest(".menu-champ"));
   document.querySelector('.box-btn[data-box="opti1"] .nom-box').textContent = "Box opti";

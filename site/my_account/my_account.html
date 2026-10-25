@@ -6,9 +6,9 @@
 <title>Mon compte</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="/my_account/my_account.css?v=rem37">
-<link rel="stylesheet" href="../commun/entete.css?v=rem30">
-<link rel="stylesheet" href="../commun/tri.css?v=6">
-<link rel="stylesheet" href="../commun/cartes.css?v=4">
+<link rel="stylesheet" href="/commun/entete.css?v=rem30">
+<link rel="stylesheet" href="/commun/tri.css?v=6">
+<link rel="stylesheet" href="/commun/cartes.css?v=4">
 <script src="/commun/fond.js?v=10" data-sans-requete></script>
 <script src="/commun/zoom.js?v=3"></script>
 </head>
@@ -25,7 +25,7 @@
   <div id="account-content">
 
     <div class="barre-haut">
-      <a href="../index.html" class="lien-accueil">Accueil</a>
+      <a href="/" class="lien-accueil">Accueil</a>
 
       <!-- Compte Discord : photo + nom cliquables, ouvrent un menu déroulant
            (UID, théâtre, paramètres, déconnexion). -->
@@ -35,7 +35,7 @@
         <button id="compte-btn" class="compte-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Paramètres du compte">
           <img id="discord-avatar" alt="Avatar Discord">
           <span id="discord-name"></span>
-          <img class="icone-parametres" src="../DB/images/others/Icon_Settings.webp" alt="">
+          <img class="icone-parametres" src="/DB/images/others/Icon_Settings.webp" alt="">
         </button>
 
         <div id="menu-compte" class="menu-compte cache">
@@ -82,8 +82,8 @@
 
           <div class="menu-separateur"></div>
 
-          <button type="button" id="btn-parametres" class="menu-btn"><img class="menu-icone" src="../DB/images/others/Icon_Photo_Mode.webp" alt="">Personnalisation</button>
-          <button type="button" id="discord-logout-btn" class="menu-btn"><img class="menu-icone" src="../DB/images/others/Icon_Quit_Game.webp" alt="">Déconnexion</button>
+          <button type="button" id="btn-parametres" class="menu-btn"><img class="menu-icone" src="/DB/images/others/Icon_Photo_Mode.webp" alt="">Personnalisation</button>
+          <button type="button" id="discord-logout-btn" class="menu-btn"><img class="menu-icone" src="/DB/images/others/Icon_Quit_Game.webp" alt="">Déconnexion</button>
         </div>
       </div>
     </div>
@@ -119,8 +119,8 @@
            droite. -->
       <div class="ligne-vues">
         <div class="view-selector">
-          <button type="button" class="view-btn active" data-view="characters" title="Personnages"><img class="logo-vue-personnages" src="../DB/images/others/Aether_Icon_Character.webp" alt="Personnages"></button>
-          <button type="button" class="view-btn" data-view="weapons" title="Armes"><img class="logo-vue-armes" src="../DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
+          <button type="button" class="view-btn active" data-view="characters" title="Personnages"><img class="logo-vue-personnages" src="/DB/images/others/Aether_Icon_Character.webp" alt="Personnages"></button>
+          <button type="button" class="view-btn" data-view="weapons" title="Armes"><img class="logo-vue-armes" src="/DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
         </div>
         <!-- Recherche, tri et filtres sur une seule ligne (mêmes styles que la
              draft et la liste des comptes). -->
@@ -128,27 +128,27 @@
           <input type="text" id="recherche" class="recherche-personnage" placeholder="Rechercher…">
           <div class="tris">
             <span class="tris-label">Trier :</span>
-            <button type="button" class="tri-btn" data-tri="points"><img class="tri-logo" src="../DB/images/others/scale.webp" alt="Points"></button>
-            <button type="button" class="tri-btn" data-tri="constellation"><img class="tri-logo tri-logo-constellation" src="../DB/images/others/stella_fortuna_5.webp" alt="Constellation"></button>
-            <button type="button" class="tri-btn" data-tri="niveau"><img class="tri-logo tri-logo-niveau" src="../DB/images/others/stella.webp" alt="Niveau"></button>
+            <button type="button" class="tri-btn" data-tri="points"><img class="tri-logo" src="/DB/images/others/scale.webp" alt="Points"></button>
+            <button type="button" class="tri-btn" data-tri="constellation"><img class="tri-logo tri-logo-constellation" src="/DB/images/others/stella_fortuna_5.webp" alt="Constellation"></button>
+            <button type="button" class="tri-btn" data-tri="niveau"><img class="tri-logo tri-logo-niveau" src="/DB/images/others/stella.webp" alt="Niveau"></button>
             <button type="button" class="tri-btn" data-tri="rarete" title="Trier par rareté"><span class="tri-etoile">★</span></button>
-            <button type="button" class="tri-btn" data-tri="element"><img class="tri-logo" src="../DB/images/others/omni_element.webp" alt="Élément"></button>
+            <button type="button" class="tri-btn" data-tri="element"><img class="tri-logo" src="/DB/images/others/omni_element.webp" alt="Élément"></button>
           </div>
           <div class="groupe-filtres">
-            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="pyro"><img src="../DB/images/others/pyro.webp" alt="Pyro"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="hydro"><img src="../DB/images/others/hydro.webp" alt="Hydro"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="electro"><img src="../DB/images/others/electro.webp" alt="Electro"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="cryo"><img src="../DB/images/others/cryo.webp" alt="Cryo"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="anemo"><img src="../DB/images/others/anemo.webp" alt="Anemo"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="geo"><img src="../DB/images/others/geo.webp" alt="Geo"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="dendro"><img src="../DB/images/others/dendro.webp" alt="Dendro"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="pyro"><img src="/DB/images/others/pyro.webp" alt="Pyro"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="hydro"><img src="/DB/images/others/hydro.webp" alt="Hydro"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="electro"><img src="/DB/images/others/electro.webp" alt="Electro"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="cryo"><img src="/DB/images/others/cryo.webp" alt="Cryo"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="anemo"><img src="/DB/images/others/anemo.webp" alt="Anemo"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="geo"><img src="/DB/images/others/geo.webp" alt="Geo"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-element" value="dendro"><img src="/DB/images/others/dendro.webp" alt="Dendro"></label>
           </div>
           <div class="groupe-filtres">
-            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="sword"><img src="../DB/images/others/sword.webp" alt="Sword"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="claymore"><img src="../DB/images/others/claymore.webp" alt="Claymore"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="polearm"><img src="../DB/images/others/polearm.webp" alt="Polearm"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="bow"><img src="../DB/images/others/bow.webp" alt="Bow"></label>
-            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="catalyst"><img src="../DB/images/others/catalyst.webp" alt="Catalyst"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="sword"><img src="/DB/images/others/sword.webp" alt="Sword"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="claymore"><img src="/DB/images/others/claymore.webp" alt="Claymore"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="polearm"><img src="/DB/images/others/polearm.webp" alt="Polearm"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="bow"><img src="/DB/images/others/bow.webp" alt="Bow"></label>
+            <label class="filtre-icone"><input type="checkbox" class="filtre-arme" value="catalyst"><img src="/DB/images/others/catalyst.webp" alt="Catalyst"></label>
           </div>
           <div class="groupe-filtres">
             <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="5"><span>5★</span></label>
@@ -156,18 +156,18 @@
             <label class="filtre-texte"><input type="checkbox" class="filtre-rarete" value="3"><span>3★</span></label>
           </div>
           <div class="groupe-filtres filtre-voeu" id="filtres-voeux">
-            <label class="filtre-icone" title="Personnages limités"><input type="checkbox" class="filtre-voeu-input" value="intertwined"><img src="../DB/images/others/Item_Intertwined_Fate.webp" alt="Intertwined Fate"></label>
-            <label class="filtre-icone" title="Personnages Standards"><input type="checkbox" class="filtre-voeu-input" value="acquaint"><img src="../DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></label>
+            <label class="filtre-icone" title="Personnages limités"><input type="checkbox" class="filtre-voeu-input" value="intertwined"><img src="/DB/images/others/Item_Intertwined_Fate.webp" alt="Intertwined Fate"></label>
+            <label class="filtre-icone" title="Personnages Standards"><input type="checkbox" class="filtre-voeu-input" value="acquaint"><img src="/DB/images/others/Item_Acquaint_Fate.webp" alt="Acquaint Fate"></label>
           </div>
           <!-- Factions (personnages) : FACTIONS de commun/tri.js. -->
           <div class="groupe-filtres filtre-voeu" id="filtres-factions">
-            <label class="filtre-icone" title="Lunaire"><input type="checkbox" class="filtre-faction" value="lunar"><img src="../DB/images/others/lunar.webp" alt="Lunaire"></label>
-            <label class="filtre-icone" title="Hexerei"><input type="checkbox" class="filtre-faction" value="hexerei"><img src="../DB/images/others/hexerei.webp" alt="Hexerei"></label>
-            <label class="filtre-icone" title="Stellaire"><input type="checkbox" class="filtre-faction" value="stellar"><img src="../DB/images/others/stellar.webp" alt="Stellaire"></label>
+            <label class="filtre-icone" title="Lunaire"><input type="checkbox" class="filtre-faction" value="lunar"><img src="/DB/images/others/lunar.webp" alt="Lunaire"></label>
+            <label class="filtre-icone" title="Hexerei"><input type="checkbox" class="filtre-faction" value="hexerei"><img src="/DB/images/others/hexerei.webp" alt="Hexerei"></label>
+            <label class="filtre-icone" title="Stellaire"><input type="checkbox" class="filtre-faction" value="stellar"><img src="/DB/images/others/stellar.webp" alt="Stellaire"></label>
           </div>
           <!-- Favoris : filtre (seuls les favoris), activé / désactivé. -->
           <div class="groupe-filtres">
-            <button type="button" class="tri-btn filtre-favoris" data-tri="favoris" title="N'afficher que les favoris"><img class="tri-logo" src="../DB/images/others/favourite.webp" alt="Favoris"></button>
+            <button type="button" class="tri-btn filtre-favoris" data-tri="favoris" title="N'afficher que les favoris"><img class="tri-logo" src="/DB/images/others/favourite.webp" alt="Favoris"></button>
           </div>
           <!-- Armes : catégories réglées par les administrateurs (support,
                standard = arme perma ; temporaire = pas perma). -->
@@ -177,7 +177,7 @@
             <label class="filtre-texte" title="Armes temporaires (jamais perma)"><input type="checkbox" class="filtre-categorie-arme" value="temporaire"><span>Temporaire</span></label>
           </div>
           <label class="filtre-texte" title="N'afficher que ce que je possède"><input type="checkbox" id="filtre-possedes"><span>Possédés</span></label>
-          <button type="button" id="btn-clear-filtres" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
+          <button type="button" id="btn-clear-filtres" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="/DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
         </div>
       </div>
       </div>
@@ -262,6 +262,6 @@
   <script src="/commun/tri.js?v=20"></script>
   <script src="/commun/personnalisation.js?v=20"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
-  <script src="/my_account/my_account.js?v=67"></script>
+  <script src="/my_account/my_account.js?v=68"></script>
 </body>
 </html>

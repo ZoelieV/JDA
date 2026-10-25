@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
-<link rel="stylesheet" href="../commun/theme.css?v=rem5">
-<link rel="stylesheet" href="admin_ppc.css?v=41">
-<link rel="stylesheet" href="../commun/entete.css?v=rem30">
-<link rel="stylesheet" href="../commun/cartes.css?v=4">
-<link rel="stylesheet" href="../commun/tri.css?v=6">
+<link rel="stylesheet" href="/commun/theme.css?v=rem5">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=41">
+<link rel="stylesheet" href="/commun/entete.css?v=rem30">
+<link rel="stylesheet" href="/commun/cartes.css?v=4">
+<link rel="stylesheet" href="/commun/tri.css?v=6">
 <script src="/commun/fond.js?v=10"></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=33" defer></script>
+<script src="/commun/compte.js?v=34" defer></script>
 </head>
 <body>
-<a href="../index.html" class="lien-accueil">Accueil</a>
+<a href="/" class="lien-accueil">Accueil</a>
 <h1 class="titre-page">Administration</h1>
 
   <p id="etat-admin" class="etat-admin">Chargement…</p>
@@ -26,9 +26,9 @@
     <div class="barre-admin">
       <div class="ligne-admin">
         <div class="vues-admin">
-          <button type="button" class="vue-admin active" data-vue="characters" title="Personnages"><img id="logo-vue-personnages" src="../DB/images/others/Aether_Icon_Character.webp" alt="Personnages"></button>
-          <button type="button" class="vue-admin" data-vue="weapons" title="Armes"><img src="../DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
-          <button type="button" class="vue-admin vue-sommes" data-vue="sommes" title="Perso + arme signature R1 (lecture seule)"><img src="../DB/images/others/Aether_Icon_Character.webp" alt="">+<img src="../DB/images/others/Icon_Inventory_Weapons.webp" alt="Perso + signa"></button>
+          <button type="button" class="vue-admin active" data-vue="characters" title="Personnages"><img id="logo-vue-personnages" src="/DB/images/others/Aether_Icon_Character.webp" alt="Personnages"></button>
+          <button type="button" class="vue-admin" data-vue="weapons" title="Armes"><img src="/DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
+          <button type="button" class="vue-admin vue-sommes" data-vue="sommes" title="Perso + arme signature R1 (lecture seule)"><img src="/DB/images/others/Aether_Icon_Character.webp" alt="">+<img src="/DB/images/others/Icon_Inventory_Weapons.webp" alt="Perso + signa"></button>
         </div>
         <input type="text" id="recherche-admin" class="recherche-admin" placeholder="Rechercher…">
         <span id="compte-admin" class="compte-admin"></span>
@@ -45,7 +45,7 @@
         <button type="button" id="ouvrir-recommandations" class="btn-ouvrir-ajout" title="Recommandations de la box stuff : supports de chaque DPS, par priorité">Recommandations</button>
         <button type="button" id="ouvrir-comptes" class="btn-ouvrir-ajout" title="UID, lien de stream et niveau du monde d'un joueur (les joueurs ne peuvent plus les changer eux-mêmes)">Comptes</button>
         <button type="button" id="ouvrir-statistiques" class="btn-ouvrir-ajout" title="Inscriptions, connexions, matchs par jour et sources des inscriptions">Statistiques</button>
-        <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
+        <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="/DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
       <div id="filtres-admin" class="filtres-admin"></div>
     </div>
@@ -220,7 +220,7 @@
   <div id="modal-koyns" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
-        <h2>Rikoyns <img class="icone-koyn" src="../DB/images/others/rikoyn.webp" alt=""></h2>
+        <h2>Rikoyns <img class="icone-koyn" src="/DB/images/others/rikoyn.webp" alt=""></h2>
         <button type="button" id="fermer-koyns" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
       <p class="aide-apercu">
@@ -440,23 +440,23 @@
   <script src="/commun/synergies.js?v=1"></script>
   <script src="/commun/cartes.js?v=29"></script>
   <script src="/commun/tri.js?v=20"></script>
-  <script src="admin_ajout.js?v=7"></script>
+  <script src="/admin_ppc/admin_ajout.js?v=7"></script>
   <script src="/commun/recommandations_boss.js?v=1"></script>
-  <script src="admin_boss.js?v=6"></script>
-  <script src="admin_categories.js?v=1"></script>
-  <script src="admin_bans.js?v=1"></script>
-  <script src="admin_equilibrage.js?v=8"></script>
-  <script src="admin_comparateur.js?v=2"></script>
-  <script src="admin_fictives.js?v=4"></script>
-  <script src="admin_evenements.js?v=2"></script>
-  <script src="admin_feedback.js?v=1"></script>
+  <script src="/admin_ppc/admin_boss.js?v=6"></script>
+  <script src="/admin_ppc/admin_categories.js?v=1"></script>
+  <script src="/admin_ppc/admin_bans.js?v=1"></script>
+  <script src="/admin_ppc/admin_equilibrage.js?v=8"></script>
+  <script src="/admin_ppc/admin_comparateur.js?v=2"></script>
+  <script src="/admin_ppc/admin_fictives.js?v=5"></script>
+  <script src="/admin_ppc/admin_evenements.js?v=2"></script>
+  <script src="/admin_ppc/admin_feedback.js?v=1"></script>
   <script src="/commun/koyns.js?v=9"></script>
-  <script src="admin_koyns.js?v=4"></script>
-  <script src="admin_synergies.js?v=1"></script>
+  <script src="/admin_ppc/admin_koyns.js?v=4"></script>
+  <script src="/admin_ppc/admin_synergies.js?v=1"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
-  <script src="admin_recommandations.js?v=1"></script>
-  <script src="admin_statistiques.js?v=1"></script>
-  <script src="admin_comptes.js?v=1"></script>
-  <script src="admin_ppc.js?v=36"></script>
+  <script src="/admin_ppc/admin_recommandations.js?v=1"></script>
+  <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
+  <script src="/admin_ppc/admin_comptes.js?v=1"></script>
+  <script src="/admin_ppc/admin_ppc.js?v=36"></script>
 </body>
 </html>

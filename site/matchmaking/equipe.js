@@ -744,7 +744,7 @@ function initialiserBoutons() {
     if (!confirm("Quitter le lobby ?")) return;
     try {
       await appel("equipe_quitter", {});
-      window.location.href = "matchmaking.html";
+      window.location.href = "/jouer";
     } catch (erreur) {
       alert(erreur.message);
     }

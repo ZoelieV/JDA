@@ -136,7 +136,7 @@ async function rejoindreOuConsulterRoom(id) {
     const { error, room_id: matchEnCours } = await reponse.json().catch(() => ({}));
     arreterPolling();
     alert(error || "Impossible de rejoindre cette room.");
-    window.location.href = matchEnCours ? `match.html?room=${encodeURIComponent(matchEnCours)}` : "/my_account/my_account.html";
+    window.location.href = matchEnCours ? `/match?room=${encodeURIComponent(matchEnCours)}` : "/compte";
     throw new Error(error || "Impossible de rejoindre cette room.");
   }
 
@@ -3116,7 +3116,7 @@ function afficherAlerteEquilibrage() {
   const message = document.getElementById("message-choix-box");
   message.innerHTML = `⚠ Ces box ne s'équilibrent pas : en match normal ou classé, ce match aurait été annulé. ` +
     `<button type="button" class="btn-alerte-equilibrage" id="btn-continuer-equilibrage">Continuer quand même</button> ` +
-    `<a class="btn-alerte-equilibrage" href="matchmaking.html#entrainement">Changer de box</a>`;
+    `<a class="btn-alerte-equilibrage" href="/jouer#entrainement">Changer de box</a>`;
   document.getElementById("btn-continuer-equilibrage").onclick = () => {
     try { sessionStorage.setItem(cle, "1"); } catch {}
     rendreChoixBox();
@@ -3442,7 +3442,7 @@ async function rafraichirEtatRoomEtJoueurs() {
 
   // Room d'un mode en équipe : sa propre page.
   if (room.type === "equipe") {
-    window.location.replace(`equipe.html?room=${encodeURIComponent(roomId)}`);
+    window.location.replace(`/equipe?room=${encodeURIComponent(roomId)}`);
     return;
   }
 
@@ -3555,7 +3555,7 @@ async function relancerMatchmaking() {
     const { room_id: nouvelleRoom } = await reponse.json();
     if (nouvelleRoom && nouvelleRoom !== roomId) {
       arreterMatchmaking();
-      window.location.replace(`match.html?room=${encodeURIComponent(nouvelleRoom)}`);
+      window.location.replace(`/match?room=${encodeURIComponent(nouvelleRoom)}`);
     }
   } catch (error) {
     console.error(error);
@@ -3570,7 +3570,7 @@ function initialiserAnnulationMatchmaking() {
     } catch (error) {
       console.error(error);
     }
-    window.location.href = "matchmaking.html";
+    window.location.href = "/jouer";
   });
 }
 
