@@ -7,7 +7,7 @@
   <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
-  <link rel="stylesheet" href="/accueil.css?v=rem26">
+  <link rel="stylesheet" href="/accueil.css?v=rem28">
   <link rel="stylesheet" href="/commun/entete.css?v=rem30">
   <link rel="stylesheet" href="/commun/feedback.css?v=4">
 <script src="/commun/fond.js?v=12"></script>
@@ -60,24 +60,29 @@
       </div>
     </section>
 
-    <!-- Affichage "test" : principe du jeu en 3 étapes. -->
-    <section class="accueil-etapes" aria-label="Comment ça marche">
-      <div class="etape">
-        <span class="etape-numero">1</span>
-        <h2>Renseigne ta box</h2>
-        <p>Tes personnages, armes et constellations, dans Mon compte.</p>
-      </div>
-      <div class="etape">
-        <span class="etape-numero">2</span>
-        <h2>Fais ta draft</h2>
-        <p>Bannis et choisis tes 4 personnages face à ton adversaire.</p>
-      </div>
-      <div class="etape">
-        <span class="etape-numero">3</span>
-        <h2>Bats le boss</h2>
-        <p>Le même boss pour les deux : le meilleur temps gagne.</p>
-      </div>
-    </section>
+    <!-- Affichage "test" : accès direct aux modes de jeu (détail du mode
+         ouvert sur la page Jouer, cf. matchmaking.js), mêmes namecards que
+         la page Jouer. -->
+    <nav class="accueil-modes" aria-label="Modes de jeu">
+      <a class="carte-section" href="/jouer#matchmaking">
+        <img src="/DB/images/others/Namecard_Background_matchmaking.webp" alt="">
+        <div class="carte-section-texte">
+          <h2>Matchmaking</h2>
+        </div>
+      </a>
+      <a class="carte-section" href="/jouer#room">
+        <img src="/DB/images/others/Namecard_Background_room.webp" alt="">
+        <div class="carte-section-texte">
+          <h2>Créer une room</h2>
+        </div>
+      </a>
+      <a class="carte-section" href="/jouer#entrainement">
+        <img src="/DB/images/others/Namecard_Background_entrainement.webp" alt="">
+        <div class="carte-section-texte">
+          <h2>Entraînement <img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt=""></h2>
+        </div>
+      </a>
+    </nav>
 
     <nav class="accueil-sections">
       <a class="carte-section principale" href="/jouer">

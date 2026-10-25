@@ -343,20 +343,23 @@ html[data-accueil="test"] .accueil-panneau {
 
 /* ---- Affichage "test" (cf. accueil.js) : site classique, sobre. Barre
    d'en-tête (logo, liens des pages, compte), logo du JDA et deux boutons
-   au centre, principe en 3 étapes, bas de page (feedback, réseaux). Fond
+   au centre, accès aux modes de jeu, bas de page (feedback, réseaux). Fond
    d'écran personnalisé gardé (commun/fond.js). Ces éléments sont masqués
    dans les deux autres affichages. ---- */
 .entete-marque,
 .entete-nav,
 .accueil-actions,
-.accueil-etapes,
+.accueil-modes,
 .accueil-pied {
   display: none;
 }
 
+/* En-tête et bas de page en verre : à peine teintés, fond flouté derrière. */
 html[data-accueil="test"] {
-  --barre-fond: rgba(14, 14, 18, 0.78);
-  --barre-bordure: rgba(255, 255, 255, 0.1);
+  --barre-fond: rgba(255, 255, 255, 0.05);
+  --barre-flou: blur(1rem) saturate(140%);
+  --barre-bordure: rgba(255, 255, 255, 0.12);
+  --verre-fond: rgba(20, 20, 26, 0.28);
 }
 
 /* Page en colonne : en-tête, contenu, bas de page collé en bas de l'écran
@@ -386,8 +389,8 @@ html[data-accueil="test"] .accueil-barre {
   gap: 1.5rem;
   padding: 0.625rem 2rem;
   background-color: var(--barre-fond);
-  -webkit-backdrop-filter: blur(0.75rem);
-  backdrop-filter: blur(0.75rem);
+  -webkit-backdrop-filter: var(--barre-flou);
+  backdrop-filter: var(--barre-flou);
   border-bottom: 1px solid var(--barre-bordure);
   pointer-events: auto;
 }
@@ -470,7 +473,9 @@ html[data-accueil="test"] .accueil-actions {
   padding: 0.75rem 1.75rem;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 0.625rem;
-  background-color: rgba(14, 14, 18, 0.55);
+  background-color: var(--verre-fond);
+  -webkit-backdrop-filter: var(--barre-flou);
+  backdrop-filter: var(--barre-flou);
   color: white;
   font-size: 1rem;
   font-weight: bold;
@@ -497,53 +502,35 @@ html[data-accueil="test"] .accueil-actions {
   background-color: #ffd866;
 }
 
-/* Comment ça marche : 3 étapes */
-html[data-accueil="test"] .accueil-etapes {
+/* Modes de jeu : 3 namecards en verre (fond flouté), comme la page Jouer. */
+html[data-accueil="test"] .accueil-modes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
   margin-top: 3rem;
 }
 
-.etape {
-  padding: 1.5rem;
-  background-color: rgba(14, 14, 18, 0.62);
-  -webkit-backdrop-filter: blur(0.5rem);
-  backdrop-filter: blur(0.5rem);
-  border: 1px solid var(--barre-bordure);
-  border-radius: 0.75rem;
+/* Placements de la grille classique (cartes sur 2 colonnes) ignorés. */
+html[data-accueil="test"] .accueil-modes .carte-section {
+  grid-column: auto;
+  grid-row: auto;
+  background-color: var(--verre-fond);
+  -webkit-backdrop-filter: var(--barre-flou);
+  backdrop-filter: var(--barre-flou);
+  border-color: var(--barre-bordure);
 }
 
-.etape-numero {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--accent-bordure);
-  border-radius: 50%;
-  color: var(--accent);
-  font-weight: bold;
-}
-
-.etape h2 {
-  margin: 0.875rem 0 0.375rem;
-  font-family: var(--police-titre);
-  font-size: 1.125rem;
-}
-
-.etape p {
-  margin: 0;
-  color: var(--texte-doux);
-  font-size: 0.9375rem;
+html[data-accueil="test"] .accueil-modes .carte-section:hover,
+html[data-accueil="test"] .accueil-modes .carte-section:focus-visible {
+  border-color: var(--accent-bordure);
 }
 
 /* Bas de page */
 html[data-accueil="test"] .accueil-pied {
   display: block;
   background-color: var(--barre-fond);
-  -webkit-backdrop-filter: blur(0.75rem);
-  backdrop-filter: blur(0.75rem);
+  -webkit-backdrop-filter: var(--barre-flou);
+  backdrop-filter: var(--barre-flou);
   border-top: 1px solid var(--barre-bordure);
 }
 
@@ -681,14 +668,10 @@ html[data-accueil="test"] .accueil-pied {
     padding: 1rem 0 2.5rem;
   }
 
-  html[data-accueil="test"] .accueil-etapes {
+  html[data-accueil="test"] .accueil-modes {
     grid-template-columns: 1fr;
     gap: 0.75rem;
     margin-top: 2rem;
-  }
-
-  .etape {
-    padding: 1rem 1.125rem;
   }
 
   .pied-contenu {
@@ -703,4 +686,10 @@ html[data-accueil="test"] .accueil-pied {
   .pied-liens {
     justify-content: center;
   }
+}
+
+/* Barres en verre : texte lisible même sur un fond d'écran clair. */
+html[data-accueil="test"] .accueil-barre,
+html[data-accueil="test"] .accueil-pied {
+  text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
 }
