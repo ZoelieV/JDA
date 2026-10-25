@@ -1072,18 +1072,22 @@ function appliquerHistorique(historique) {
 // connecté), Matchs (en cours et terminés), Statistiques. Onglet ouvert
 // gardé sur cet appareil. ----
 const CLE_ONGLET = "historique-onglet";
-let onglet = "matchs";
+// Page Statistiques (/statistiques, même page que l'historique) : onglet
+// Statistiques seul, sans les autres ; Historique : tous sauf celui-là.
+const PAGE_STATISTIQUES = window.location.pathname.replace(/\/$/, "") === "/statistiques";
+let onglet = PAGE_STATISTIQUES ? "stats" : "matchs";
 
 function ongletDisponible(nom) {
+  if (PAGE_STATISTIQUES) return nom === "stats";
   // Random world boss : comme le mode (cf. api/_lib/world_boss.js).
-  return nom === "matchs" || nom === "equipe" || nom === "stats" ||
+  return nom === "matchs" || nom === "equipe" ||
     (nom === "litiges" && estAdmin) || (nom === "world_boss" && worldBossVisible) || (nom === "entrainements" && !!moiDiscordId);
 }
 
 function choisirOnglet(nouveau) {
-  onglet = ongletDisponible(nouveau) ? nouveau : "matchs";
+  onglet = ongletDisponible(nouveau) ? nouveau : PAGE_STATISTIQUES ? "stats" : "matchs";
   try {
-    localStorage.setItem(CLE_ONGLET, onglet);
+    if (!PAGE_STATISTIQUES) localStorage.setItem(CLE_ONGLET, onglet);
   } catch {
     // Stockage indisponible : onglet gardé jusqu'au rechargement.
   }
@@ -1108,6 +1112,11 @@ function choisirOnglet(nouveau) {
 }
 
 function initialiserOnglets() {
+  if (PAGE_STATISTIQUES) {
+    document.title = "Statistiques";
+    document.querySelector(".titre-page").textContent = "Statistiques";
+    document.querySelector(".onglets-historique").classList.add("cache");
+  }
   document.querySelectorAll(".onglet-historique").forEach(bouton => {
     bouton.classList.toggle("cache", !ongletDisponible(bouton.dataset.onglet));
     bouton.addEventListener("click", () => choisirOnglet(bouton.dataset.onglet));

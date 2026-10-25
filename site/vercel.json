@@ -6,17 +6,17 @@
   "redirects": [
     {
       "source": "/matchmaking/matchmaking",
-      "destination": "/jouer",
+      "destination": "/match",
       "permanent": true
     },
     {
       "source": "/matchmaking/matchmaking.html",
-      "destination": "/jouer",
+      "destination": "/match",
       "permanent": true
     },
     {
       "source": "/matchmaking",
-      "destination": "/jouer",
+      "destination": "/match",
       "permanent": true
     },
     {
@@ -168,16 +168,27 @@
       "source": "/index.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/jouer",
+      "destination": "/match",
+      "permanent": true
     }
   ],
   "rewrites": [
     {
-      "source": "/jouer",
-      "destination": "/matchmaking/matchmaking"
+      "source": "/match",
+      "has": [
+        {
+          "type": "query",
+          "key": "room"
+        }
+      ],
+      "destination": "/matchmaking/match"
     },
     {
       "source": "/match",
-      "destination": "/matchmaking/match"
+      "destination": "/matchmaking/matchmaking"
     },
     {
       "source": "/equipe",
@@ -201,6 +212,10 @@
     },
     {
       "source": "/historique",
+      "destination": "/historique/historique"
+    },
+    {
+      "source": "/statistiques",
       "destination": "/historique/historique"
     },
     {

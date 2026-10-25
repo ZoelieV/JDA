@@ -185,15 +185,15 @@
   display: none;
 }
 
-/* ---- Affichage "panneau" (par défaut, cf. accueil.js) : Créer un match et
+/* ---- Affichage "panneau" (cf. accueil.js) : Créer un match et
    Mon compte au centre (même taille que dans la grille classique), les
    autres cartes dans le panneau de gauche (un tiers de l'écran), au format
-   téléphone, plié / déplié par le bouton ☰. Affichages "classique" et
-   "test" : ni bouton ni panneau. ---- */
+   téléphone, plié / déplié par le bouton ☰. Affichages "cartes" et
+   "classique" : ni bouton ni panneau. ---- */
+html[data-accueil="cartes"] .accueil-menu,
+html[data-accueil="cartes"] .accueil-panneau,
 html[data-accueil="classique"] .accueil-menu,
-html[data-accueil="classique"] .accueil-panneau,
-html[data-accueil="test"] .accueil-menu,
-html[data-accueil="test"] .accueil-panneau {
+html[data-accueil="classique"] .accueil-panneau {
   display: none;
 }
 
@@ -298,31 +298,31 @@ html[data-accueil="test"] .accueil-panneau {
 
 @media (min-width: 701px) {
   /* Panneau déplié : la page se décale à droite de sa largeur. */
-  html:not([data-accueil="classique"]):not([data-accueil="test"]) body.accueil-anime {
+  html[data-accueil="panneau"] body.accueil-anime {
     transition: margin-left 0.25s ease;
   }
 
-  html:not([data-accueil="classique"]):not([data-accueil="test"]) body.panneau-ouvert {
+  html[data-accueil="panneau"] body.panneau-ouvert {
     margin-left: calc(100vw / 3 + 1.25rem);
   }
 
   /* Les 2 cartes du centre, côte à côte, à la largeur exacte d'une carte
      de la grille classique (3 par ligne sur la largeur de la page, 68,75rem
      au plus ; 2 par ligne entre 701 et 1000 px), panneau plié ou non. */
-  html:not([data-accueil="classique"]):not([data-accueil="test"]) .accueil-sections {
+  html[data-accueil="panneau"] .accueil-sections {
     display: flex;
     justify-content: center;
     gap: 1.125rem;
   }
 
-  html:not([data-accueil="classique"]):not([data-accueil="test"]) .accueil-sections .carte-section {
+  html[data-accueil="panneau"] .accueil-sections .carte-section {
     flex: 0 1 calc((min(68.75rem, 100vw - 2.5rem) - 2 * 1.125rem) / 3);
     min-width: 0;
   }
 }
 
 @media (min-width: 701px) and (max-width: 1000px) {
-  html:not([data-accueil="classique"]):not([data-accueil="test"]) .accueil-sections .carte-section {
+  html[data-accueil="panneau"] .accueil-sections .carte-section {
     flex-basis: calc((100vw - 2.5rem - 1.125rem) / 2);
   }
 }
@@ -341,20 +341,21 @@ html[data-accueil="test"] .accueil-panneau {
   }
 }
 
-/* ---- Affichage "test" (cf. accueil.js) : site classique, sobre. Barre
+/* ---- Affichage "classique" (par défaut, cf. accueil.js) : site sobre. Barre
    d'en-tête (logo, liens des pages, compte), logo du JDA, accès aux modes
    de jeu, bas de page (feedback, réseaux). Fond
    d'écran personnalisé gardé (commun/fond.js). Ces éléments sont masqués
    dans les deux autres affichages. ---- */
 .entete-marque,
 .entete-nav,
+.bouton-evenements,
 .accueil-modes,
 .accueil-pied {
   display: none;
 }
 
 /* En-tête et bas de page en verre : à peine teintés, fond flouté derrière. */
-html[data-accueil="test"] {
+html[data-accueil="classique"] {
   --barre-fond: rgba(255, 255, 255, 0.05);
   --barre-flou: blur(1rem) saturate(140%);
   --barre-bordure: rgba(255, 255, 255, 0.12);
@@ -364,7 +365,7 @@ html[data-accueil="test"] {
 /* Page en colonne : en-tête, contenu, bas de page collé en bas de l'écran
    si la page est courte. Le bouton Feedback flottant est remplacé par
    celui du bas de page. */
-html[data-accueil="test"] body {
+html[data-accueil="classique"] body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -373,12 +374,12 @@ html[data-accueil="test"] body {
   padding: 0;
 }
 
-html[data-accueil="test"] .bouton-feedback {
+html[data-accueil="classique"] .bouton-feedback {
   display: none;
 }
 
 /* En-tête */
-html[data-accueil="test"] .accueil-barre {
+html[data-accueil="classique"] .accueil-barre {
   position: sticky;
   top: 0;
   right: auto;
@@ -394,12 +395,12 @@ html[data-accueil="test"] .accueil-barre {
   pointer-events: auto;
 }
 
-html[data-accueil="test"] .accueil-barre .zone-compte,
-html[data-accueil="test"] .accueil-barre .zone-compte > * {
+html[data-accueil="classique"] .accueil-barre .zone-compte,
+html[data-accueil="classique"] .accueil-barre .zone-compte > * {
   pointer-events: auto;
 }
 
-html[data-accueil="test"] .entete-marque {
+html[data-accueil="classique"] .entete-marque {
   display: flex;
   align-items: center;
   gap: 0.625rem;
@@ -410,13 +411,13 @@ html[data-accueil="test"] .entete-marque {
   text-decoration: none;
 }
 
-html[data-accueil="test"] .entete-marque img {
+html[data-accueil="classique"] .entete-marque img {
   width: 2rem;
   height: 2rem;
   object-fit: contain;
 }
 
-html[data-accueil="test"] .entete-nav {
+html[data-accueil="classique"] .entete-nav {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -424,7 +425,7 @@ html[data-accueil="test"] .entete-nav {
   min-width: 0;
 }
 
-html[data-accueil="test"] .entete-nav a {
+html[data-accueil="classique"] .entete-nav a {
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   color: rgba(255, 255, 255, 0.78);
@@ -434,39 +435,87 @@ html[data-accueil="test"] .entete-nav a {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-html[data-accueil="test"] .entete-nav a:hover,
-html[data-accueil="test"] .entete-nav a:focus-visible {
+html[data-accueil="classique"] .entete-nav a:hover,
+html[data-accueil="classique"] .entete-nav a:focus-visible {
   background-color: rgba(255, 255, 255, 0.08);
   color: white;
 }
 
-html[data-accueil="test"] .entete-nav a[hidden] {
+html[data-accueil="classique"] .entete-nav a[hidden] {
   display: none;
 }
 
-html[data-accueil="test"] .accueil-barre .zone-compte {
+/* Menus déroulants (Match, Historique, Règles) : ouverts au survol sur
+   ordi, au clic sur téléphone (classe .ouvert, cf. accueil.js). Fond
+   presque opaque (le flou ne marche pas dans une barre déjà floutée). */
+html[data-accueil="classique"] .menu-deroulant {
+  position: relative;
+}
+
+html[data-accueil="classique"] .menu-titre::after {
+  content: "";
+  display: inline-block;
+  margin-left: 0.375rem;
+  border: 0.25rem solid transparent;
+  border-top-color: currentColor;
+  border-bottom-width: 0;
+  vertical-align: 0.15em;
+  opacity: 0.7;
+}
+
+html[data-accueil="classique"] .sous-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 120;
+  display: none;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: 0.375rem;
+  background-color: rgba(18, 18, 24, 0.94);
+  border: 1px solid var(--barre-bordure);
+  border-radius: 0.625rem;
+  box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.45);
+}
+
+html[data-accueil="classique"] .sous-menu a {
+  display: block;
+}
+
+html[data-accueil="classique"] .menu-deroulant:focus-within .sous-menu,
+html[data-accueil="classique"] .menu-deroulant.ouvert .sous-menu {
+  display: flex;
+}
+
+@media (hover: hover) {
+  html[data-accueil="classique"] .menu-deroulant:hover .sous-menu {
+    display: flex;
+  }
+}
+
+html[data-accueil="classique"] .accueil-barre .zone-compte {
   margin-left: auto;
 }
 
 /* Bouton du compte : "Mon compte" à la place du pseudo (bannière, photo et
    médaille gardées). */
-html[data-accueil="test"] .accueil-barre .compte-lien > span {
+html[data-accueil="classique"] .accueil-barre .compte-lien > span {
   font-size: 0;
 }
 
-html[data-accueil="test"] .accueil-barre .compte-lien > span::before {
+html[data-accueil="classique"] .accueil-barre .compte-lien > span::before {
   content: "Mon compte";
   font-size: 1rem;
 }
 
 /* Bannière du bouton du compte plus courte dans l'en-tête (place pour les
    liens). */
-html[data-accueil="test"] .accueil-barre .avec-banniere2 {
+html[data-accueil="classique"] .accueil-barre .avec-banniere2 {
   --largeur-banniere: min(19rem, 100vw - 6.875rem);
 }
 
 /* Contenu */
-html[data-accueil="test"] .accueil {
+html[data-accueil="classique"] .accueil {
   flex: 1;
   box-sizing: border-box;
   width: min(68.75rem, 100% - 2.5rem);
@@ -474,12 +523,33 @@ html[data-accueil="test"] .accueil {
   padding: 2.5rem 0 3.5rem;
 }
 
-html[data-accueil="test"] .accueil-sections {
+html[data-accueil="classique"] .accueil-sections {
   display: none;
 }
 
+/* Bouton Événements sous le logo, couleur du logo. */
+html[data-accueil="classique"] .bouton-evenements {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.6875rem 1.75rem;
+  border-radius: 0.625rem;
+  background-color: #e2d29a;
+  color: #2a2418;
+  font-family: var(--police-titre);
+  font-size: 1.0625rem;
+  text-decoration: none;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.35);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+html[data-accueil="classique"] .bouton-evenements:hover,
+html[data-accueil="classique"] .bouton-evenements:focus-visible {
+  background-color: #ede1b4;
+  transform: translateY(-0.0625rem);
+}
+
 /* Modes de jeu : 3 namecards en verre (fond flouté), comme la page Jouer. */
-html[data-accueil="test"] .accueil-modes {
+html[data-accueil="classique"] .accueil-modes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
@@ -487,7 +557,7 @@ html[data-accueil="test"] .accueil-modes {
 }
 
 /* Placements de la grille classique (cartes sur 2 colonnes) ignorés. */
-html[data-accueil="test"] .accueil-modes .carte-section {
+html[data-accueil="classique"] .accueil-modes .carte-section {
   grid-column: auto;
   grid-row: auto;
   background-color: var(--verre-fond);
@@ -496,13 +566,13 @@ html[data-accueil="test"] .accueil-modes .carte-section {
   border-color: var(--barre-bordure);
 }
 
-html[data-accueil="test"] .accueil-modes .carte-section:hover,
-html[data-accueil="test"] .accueil-modes .carte-section:focus-visible {
+html[data-accueil="classique"] .accueil-modes .carte-section:hover,
+html[data-accueil="classique"] .accueil-modes .carte-section:focus-visible {
   border-color: var(--accent-bordure);
 }
 
 /* Bas de page */
-html[data-accueil="test"] .accueil-pied {
+html[data-accueil="classique"] .accueil-pied {
   display: block;
   background-color: var(--barre-fond);
   -webkit-backdrop-filter: var(--barre-flou);
@@ -599,7 +669,7 @@ html[data-accueil="test"] .accueil-pied {
 /* Écran moyen : nom du site masqué dans l'en-tête (petit logo seul, le nom
    est en grand juste dessous), pour que tous les liens tiennent. */
 @media (max-width: 1400px) {
-  html[data-accueil="test"] .entete-marque span {
+  html[data-accueil="classique"] .entete-marque span {
     display: none;
   }
 }
@@ -607,37 +677,38 @@ html[data-accueil="test"] .accueil-pied {
 /* Écran étroit : liens de l'en-tête sur une 2e ligne (défilement
    horizontal si besoin), avant qu'ils passent sous le bouton du compte. */
 @media (max-width: 1350px) {
-  html[data-accueil="test"] .accueil-barre {
+  html[data-accueil="classique"] .accueil-barre {
     flex-wrap: wrap;
     gap: 0.25rem 1rem;
     padding: 0.5rem 1.25rem 0.25rem;
   }
 
-  html[data-accueil="test"] .entete-nav {
+  /* Liens à la ligne si besoin (pas de défilement : il couperait les
+     menus déroulants). */
+  html[data-accueil="classique"] .entete-nav {
     order: 3;
     flex-basis: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-wrap: wrap;
   }
 }
 
 /* Téléphone : en-tête plus serré, étapes l'une sous l'autre, bas de page
    centré. */
 @media (max-width: 700px) {
-  html[data-accueil="test"] .accueil-barre {
+  html[data-accueil="classique"] .accueil-barre {
     padding: 0.5rem 0.75rem 0.25rem;
   }
 
-  html[data-accueil="test"] .entete-nav a {
+  html[data-accueil="classique"] .entete-nav a {
     padding: 0.375rem 0.625rem;
     font-size: 0.875rem;
   }
 
-  html[data-accueil="test"] .accueil {
+  html[data-accueil="classique"] .accueil {
     padding: 1rem 0 2.5rem;
   }
 
-  html[data-accueil="test"] .accueil-modes {
+  html[data-accueil="classique"] .accueil-modes {
     grid-template-columns: 1fr;
     gap: 0.75rem;
     margin-top: 2rem;
@@ -658,16 +729,16 @@ html[data-accueil="test"] .accueil-pied {
 }
 
 /* Barres en verre : texte lisible même sur un fond d'écran clair. */
-html[data-accueil="test"] .accueil-barre,
-html[data-accueil="test"] .accueil-pied {
+html[data-accueil="classique"] .accueil-barre,
+html[data-accueil="classique"] .accueil-pied {
   text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
 }
 
-/* Affichage "test", ordi : mise en page décentrée, logo et titre à
+/* Affichage "classique", ordi : mise en page décentrée, logo et titre à
    gauche, modes de jeu empilés à droite (format compact : image à
    gauche, titre à droite), le tout centré dans la hauteur de l'écran. */
 @media (min-width: 1001px) {
-  html[data-accueil="test"] .accueil {
+  html[data-accueil="classique"] .accueil {
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
     align-items: center;
@@ -675,35 +746,35 @@ html[data-accueil="test"] .accueil-pied {
     gap: 3.5rem;
   }
 
-  html[data-accueil="test"] .accueil-hero {
+  html[data-accueil="classique"] .accueil-hero {
     --logo-largeur: min(22vw, 24rem);
     margin: 0;
   }
 
-  html[data-accueil="test"] .accueil-modes {
+  html[data-accueil="classique"] .accueil-modes {
     grid-template-columns: 1fr;
     gap: 1rem;
     margin-top: 0;
   }
 
-  html[data-accueil="test"] .accueil-modes .carte-section {
+  html[data-accueil="classique"] .accueil-modes .carte-section {
     flex-direction: row;
     align-items: stretch;
   }
 
-  html[data-accueil="test"] .accueil-modes .carte-section > img {
+  html[data-accueil="classique"] .accueil-modes .carte-section > img {
     width: 45%;
     height: auto;
     aspect-ratio: 42 / 20;
     flex-shrink: 0;
   }
 
-  html[data-accueil="test"] .accueil-modes .carte-section-texte {
+  html[data-accueil="classique"] .accueil-modes .carte-section-texte {
     align-self: center;
     padding: 0.75rem 1.25rem;
   }
 
-  html[data-accueil="test"] .accueil-modes .carte-section h2 {
+  html[data-accueil="classique"] .accueil-modes .carte-section h2 {
     font-size: 1.375rem;
   }
 }

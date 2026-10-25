@@ -77,7 +77,7 @@ async function demarrer() {
   }
 
   const visibles = document.querySelectorAll(".carte-match:not(.cache)").length;
-  etat.textContent = visibles ? "" : "Aucun événement en cours pour le moment.";
+  etat.textContent = visibles ? "" : "Contenu à venir...";
   etat.classList.toggle("cache", visibles > 0);
 
   document.querySelectorAll(".carte-match").forEach(carte => {

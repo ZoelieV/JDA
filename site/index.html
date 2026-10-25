@@ -7,30 +7,58 @@
   <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
-  <link rel="stylesheet" href="/accueil.css?v=rem32">
+  <link rel="stylesheet" href="/accueil.css?v=rem33">
   <link rel="stylesheet" href="/commun/entete.css?v=rem30">
   <link rel="stylesheet" href="/commun/feedback.css?v=4">
-<script src="/commun/fond.js?v=12"></script>
+<script src="/commun/fond.js?v=13"></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=37" defer></script>
+<script src="/commun/compte.js?v=38" defer></script>
 <script src="/commun/feedback.js?v=2" defer></script>
 </head>
 <body>
   <!-- Hors du conteneur centré : bouton du compte calé tout à droite de
-       l'écran (cf. commun/compte.js). Affichage "test" : barre d'en-tête
+       l'écran (cf. commun/compte.js). Affichage "classique" : barre d'en-tête
        complète (logo, liens des pages, compte), cf. accueil.css. -->
   <header class="accueil-barre">
     <a class="entete-marque" href="/">
       <img src="/DB/images/others/logo_site.webp" alt="" width="32" height="32">
       <span>Jugement des Archons</span>
     </a>
+    <!-- Liens des pages ; Match, Historique et Règles : menu déroulant
+         (survol sur ordi, clic sur téléphone, cf. accueil.js). -->
     <nav class="entete-nav" aria-label="Pages du site">
-      <a href="/jouer">Match</a>
+      <div class="menu-deroulant">
+        <a class="menu-titre" href="/match" aria-haspopup="true" aria-expanded="false">Match</a>
+        <div class="sous-menu">
+          <a href="/match#room">Créer une room</a>
+          <a href="/match#matchmaking">Matchmaking</a>
+          <a href="/match#classe">Classé</a>
+          <a href="/match#entrainement">Entraînement</a>
+          <a href="/match#equipe">En équipe</a>
+        </div>
+      </div>
       <a href="/comptes">Comptes</a>
       <a href="/classement">Classement</a>
-      <a href="/historique">Historique</a>
-      <a href="/regles">Règles</a>
-      <a href="/tutoriel">Tutoriel</a>
+      <div class="menu-deroulant">
+        <a class="menu-titre" href="/historique" aria-haspopup="true" aria-expanded="false">Historique</a>
+        <div class="sous-menu">
+          <a href="/historique?onglet=matchs">Matchs</a>
+          <a href="/historique?onglet=equipe">Matchs en équipe</a>
+          <a href="/historique?onglet=world_boss">Random world boss</a>
+          <a href="/historique?onglet=entrainements">Entraînements</a>
+        </div>
+      </div>
+      <a href="/statistiques">Statistiques</a>
+      <div class="menu-deroulant">
+        <a class="menu-titre" href="/regles" aria-haspopup="true" aria-expanded="false">Règles</a>
+        <div class="sous-menu">
+          <a href="/regles/simplifiees">Règles simplifiées</a>
+          <a href="/regles/completes">Règles complètes</a>
+          <!-- Connectés seulement, sauf shadowbans (affiché par commun/compte.js). -->
+          <a class="carte-theorycraft" href="/theorycraft" hidden>Theorycraft</a>
+          <a href="/tutoriel">Tutoriel</a>
+        </div>
+      </div>
       <a href="/evenements">Événements</a>
       <!-- Administrateurs uniquement (affiché par commun/compte.js). -->
       <a class="carte-admin" href="/admin" hidden>Admin</a>
@@ -52,25 +80,27 @@
       <img class="logo-accueil" src="/DB/images/others/logo_detaille_jda_v2.webp" alt="" width="1593" height="1725">
       <h1 class="titre-page">Jugement des<br>Archons</h1>
       <p>Choisis ta box, bannis et pioche tes personnages en draft face à ton adversaire, puis affrontez le même boss : le meilleur temps l'emporte.</p>
+      <!-- Affichage "classique" : événements en cours (couleur du logo). -->
+      <a class="bouton-evenements" href="/evenements">Événements</a>
     </section>
 
-    <!-- Affichage "test" : accès direct aux modes de jeu (détail du mode
+    <!-- Affichage "classique" : accès direct aux modes de jeu (détail du mode
          ouvert sur la page Jouer, cf. matchmaking.js), mêmes namecards que
          la page Jouer. -->
     <nav class="accueil-modes" aria-label="Modes de jeu">
-      <a class="carte-section" href="/jouer#matchmaking">
+      <a class="carte-section" href="/match#matchmaking">
         <img src="/DB/images/others/Namecard_Background_matchmaking.webp" alt="">
         <div class="carte-section-texte">
           <h2>Matchmaking</h2>
         </div>
       </a>
-      <a class="carte-section" href="/jouer#room">
+      <a class="carte-section" href="/match#room">
         <img src="/DB/images/others/Namecard_Background_room.webp" alt="">
         <div class="carte-section-texte">
           <h2>Créer une room</h2>
         </div>
       </a>
-      <a class="carte-section" href="/jouer#entrainement">
+      <a class="carte-section" href="/match#entrainement">
         <img src="/DB/images/others/Namecard_Background_entrainement.webp" alt="">
         <div class="carte-section-texte">
           <h2>Entraînement <img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt=""></h2>
@@ -79,7 +109,7 @@
     </nav>
 
     <nav class="accueil-sections">
-      <a class="carte-section principale" href="/jouer">
+      <a class="carte-section principale" href="/match">
         <img src="/DB/images/namecards/Namecard_Background_Raiden_Shogun_Enlightenment.webp" alt="" loading="lazy">
         <div class="carte-section-texte">
           <h2>Créer un match</h2>
@@ -145,7 +175,7 @@
     </nav>
   </div>
 
-  <!-- Affichage "test" : bas de page (feedback, réseaux). Le bouton
+  <!-- Affichage "classique" : bas de page (feedback, réseaux). Le bouton
        Feedback ouvre la fenêtre de commun/feedback.js. -->
   <footer class="accueil-pied">
     <div class="pied-contenu">
@@ -167,6 +197,6 @@
     </div>
   </footer>
 
-<script src="/accueil.js?v=3"></script>
+<script src="/accueil.js?v=4"></script>
 </body>
 </html>

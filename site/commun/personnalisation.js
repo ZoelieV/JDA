@@ -32,16 +32,14 @@
     fond: "bg/autres/default_bg.webp",
     voyageur: "aether",
     manekin: "manekin",
-    // Accueil : panneau pliable à gauche, ou toutes les cartes au centre
-    // (cf. accueil.js).
-    accueil: "panneau"
+    // Accueil : site classique (en-tête, bas de page), panneau pliable à
+    // gauche, ou toutes les cartes au centre (cf. accueil.js).
+    accueil: "classique"
   };
   const AFFICHAGES_ACCUEIL = [
+    { id: "classique", nom: "Classique", description: "En-tête avec les pages et leurs menus, logo et modes de jeu au centre, bas de page." },
     { id: "panneau", nom: "Panneau", description: "Créer un match et Mon compte au centre, les autres pages dans un panneau à gauche (bouton ☰ pour le plier)." },
-    { id: "classique", nom: "Classique", description: "Toutes les pages au centre, en grille." },
-    // Copie du panneau où sont essayés les prochains changements (cf.
-    // accueil.css) avant de les reporter sur "panneau".
-    { id: "test", nom: "Test", description: "Essai : site classique, avec en-tête, boutons au centre et bas de page, sans cartes." }
+    { id: "cartes", nom: "Cartes", description: "Toutes les pages au centre, en grille de cartes." }
   ];
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins"];
@@ -95,7 +93,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=15";
+    lien.href = "/commun/personnalisation.css?v=16";
     document.head.appendChild(lien);
   }
 

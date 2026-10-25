@@ -1,16 +1,16 @@
 // Page d'accueil : affichage choisi dans Personnalisation
 // (profil.parametres.accueil, posé sur <html data-accueil> par
 // commun/fond.js dès le <head>).
-// - "panneau" (par défaut, aussi pour les visiteurs) : Créer un match et Mon
-//   compte restent au centre, les autres cartes sont rangées dans le panneau
-//   de gauche (un tiers de l'écran), plié / déplié par le bouton ☰. Déplié
-//   par défaut sur ordi (choix gardé dans ce navigateur), plié sur
-//   téléphone (il passe alors par-dessus la page).
-// - "classique" : toutes les cartes au centre (accueil.css).
-// - "test" : où sont essayés les prochains changements : site classique,
-//   avec barre d'en-tête (liens des pages, compte), deux boutons au centre,
-//   principe en 3 étapes et bas de page (feedback, réseaux), sans cartes
-//   (accueil.css).
+// - "classique" (par défaut, aussi pour les visiteurs) : site sobre, barre
+//   d'en-tête (liens des pages et leurs menus déroulants, compte), logo,
+//   bouton Événements et modes de jeu au centre, bas de page (feedback,
+//   réseaux), sans la grille de cartes (accueil.css).
+// - "panneau" : Créer un match et Mon compte restent au centre, les autres
+//   cartes sont rangées dans le panneau de gauche (un tiers de l'écran),
+//   plié / déplié par le bouton ☰. Déplié par défaut sur ordi (choix gardé
+//   dans ce navigateur), plié sur téléphone (il passe alors par-dessus la
+//   page).
+// - "cartes" : toutes les cartes au centre, en grille (accueil.css).
 // Chargé en fin de <body>, sans defer : les cartes sont rangées avant le
 // premier affichage.
 (function () {
@@ -43,7 +43,7 @@
   }
 
   function ranger() {
-    const avecPanneau = !["classique", "test"].includes(document.documentElement.dataset.accueil);
+    const avecPanneau = document.documentElement.dataset.accueil === "panneau";
     cartes.forEach(carte => (avecPanneau && !resteAuCentre(carte) ? panneau : grille).appendChild(carte));
     deplier(avecPanneau && !telephone.matches && lire(CLE_PLIE) !== "1");
   }
@@ -64,10 +64,37 @@
     if (event.key === "Escape" && telephone.matches) deplier(false);
   });
 
-  // Bas de page (affichage "test") : ouvre la fenêtre du bouton Feedback
+  // Bas de page (affichage "classique") : ouvre la fenêtre du bouton Feedback
   // (commun/feedback.js, masqué dans cet affichage).
   document.querySelector(".pied-feedback")?.addEventListener("click", () => {
     document.querySelector(".bouton-feedback")?.click();
+  });
+
+  // Menus déroulants de l'en-tête (affichage "classique") : au survol sur
+  // ordi (accueil.css) ; écran tactile : 1er appui sur le titre = ouvre le
+  // menu, 2e = va sur la page ; appui à côté = referme.
+  const tactile = window.matchMedia("(hover: none)");
+  const menus = [...document.querySelectorAll(".menu-deroulant")];
+  const fermerMenus = sauf => menus.forEach(menu => {
+    if (menu === sauf) return;
+    menu.classList.remove("ouvert");
+    menu.querySelector(".menu-titre").setAttribute("aria-expanded", "false");
+  });
+  menus.forEach(menu => {
+    const titre = menu.querySelector(".menu-titre");
+    titre.addEventListener("click", event => {
+      if (!tactile.matches || menu.classList.contains("ouvert")) return;
+      event.preventDefault();
+      fermerMenus(menu);
+      menu.classList.add("ouvert");
+      titre.setAttribute("aria-expanded", "true");
+    });
+  });
+  document.addEventListener("click", event => {
+    if (!event.target.closest(".menu-deroulant")) fermerMenus(null);
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") fermerMenus(null);
   });
 
   telephone.addEventListener("change", ranger);

@@ -23,13 +23,14 @@
   // médaille dans le bouton du compte (cf. appliquerMedaille). Nouvelle clé
   // depuis les paliers sardine..baleine (l'ancienne gardait "6".."12").
   const CLE_THEATRE = "theatre-palier-2";
-  // Affichage de l'accueil (profil.parametres.accueil) : "classique" ou
-  // "test" gardé, rien pour "panneau" (par défaut, aussi pour les
+  // Affichage de l'accueil (profil.parametres.accueil) : "panneau" ou
+  // "cartes" gardé, rien pour "classique" (par défaut, aussi pour les
   // visiteurs). Posé sur <html data-accueil> dès le <head> (pas de
-  // clignotement, cf. accueil.js).
-  const CLE_ACCUEIL = "accueil-affichage";
-  const AFFICHAGES_ACCUEIL = ["panneau", "classique", "test"];
-  const affichageAccueil = valeur => AFFICHAGES_ACCUEIL.includes(valeur) ? valeur : "panneau";
+  // clignotement, cf. accueil.js). Nouvelle clé depuis le renommage des
+  // affichages (l'ancienne gardait "test", "classique" pour la grille).
+  const CLE_ACCUEIL = "accueil-affichage-2";
+  const AFFICHAGES_ACCUEIL = ["classique", "panneau", "cartes"];
+  const affichageAccueil = valeur => AFFICHAGES_ACCUEIL.includes(valeur) ? valeur : "classique";
   // Palier -> nom et icône (mêmes que PALIERS_THEATRE et urlMedailleTheatre,
   // commun/cartes.js, pas chargé sur toutes les pages : rien n'en est utilisé
   // ici).
@@ -171,7 +172,7 @@
   // Pose (ou retire) la deuxième bannière dans un bouton de compte.
   function memoriserAccueil(valeur) {
     const affichage = affichageAccueil(valeur);
-    ecrire(CLE_ACCUEIL, affichage === "panneau" ? null : affichage);
+    ecrire(CLE_ACCUEIL, affichage === "classique" ? null : affichage);
     if (document.documentElement.dataset.accueil === affichage) return;
     document.documentElement.dataset.accueil = affichage;
     document.dispatchEvent(new CustomEvent("accueil-change"));

@@ -3116,7 +3116,7 @@ function afficherAlerteEquilibrage() {
   const message = document.getElementById("message-choix-box");
   message.innerHTML = `⚠ Ces box ne s'équilibrent pas : en match normal ou classé, ce match aurait été annulé. ` +
     `<button type="button" class="btn-alerte-equilibrage" id="btn-continuer-equilibrage">Continuer quand même</button> ` +
-    `<a class="btn-alerte-equilibrage" href="/jouer#entrainement">Changer de box</a>`;
+    `<a class="btn-alerte-equilibrage" href="/match#entrainement">Changer de box</a>`;
   document.getElementById("btn-continuer-equilibrage").onclick = () => {
     try { sessionStorage.setItem(cle, "1"); } catch {}
     rendreChoixBox();
@@ -3570,7 +3570,7 @@ function initialiserAnnulationMatchmaking() {
     } catch (error) {
       console.error(error);
     }
-    window.location.href = "/jouer";
+    window.location.href = "/match";
   });
 }
 
