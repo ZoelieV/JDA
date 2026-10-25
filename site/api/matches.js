@@ -473,12 +473,16 @@ function persosDuMatch(match) {
 
 // equipe : matchs en équipe seulement (sinon matchs 1v1 seulement : temps
 // d'équipe pas comparables aux records 1v1).
+// Records par boss : nombre de meilleurs temps renvoyés.
+const NB_RECORDS_BOSS = 5;
+
 async function statistiques(res, saison = null, equipe = false) {
   const matchs = (await chargerMatchsStats()).filter(match =>
     (saison === null || saisonDuMatch(match) === saison) && !!match.mode_equipe === equipe);
   const nouvelleCategorie = () => ({ matchs: 0, matchs_bans: 0, picks: {}, bans: {}, bans_equilibrage: {}, bans_horizontaux: {} });
   const categories = { classe: nouvelleCategorie(), non_classe: nouvelleCategorie() };
-  // Records : { boss_id: { classe: { match, role }, non_classe: ... } }.
+  // Records : { boss_id: [{ match, role }, ...] }, les NB_RECORDS_BOSS
+  // meilleurs temps de chaque boss, tous matchs confondus (classés ou non).
   const records = {};
 
   matchs.forEach(match => {
@@ -495,47 +499,39 @@ async function statistiques(res, saison = null, equipe = false) {
     }
 
     if (!match.boss_id) return;
-    // Défi : record = le plus d'ennemis tués (même colonne que les temps).
-    const defi = estDefiEnnemis(match.boss_id);
     ["j1", "j2"].forEach(role => {
-      const secondes = match[`temps_${role}_secondes`];
-      if (typeof secondes !== "number") return; // abandon ou pas de temps
-      const actuel = records[match.boss_id]?.[cle];
-      const record = actuel?.match[`temps_${actuel.role}_secondes`];
-      // Égalité : le plus ancien garde le record (matchs lus du plus ancien).
-      if (!actuel || (defi ? secondes > record : secondes < record)) {
-        (records[match.boss_id] ??= {})[cle] = { match, role };
-      }
+      if (typeof match[`temps_${role}_secondes`] !== "number") return; // abandon ou pas de temps
+      (records[match.boss_id] ??= []).push({ match, role });
     });
   });
 
-  const tenants = Object.values(records).flatMap(r => Object.values(r));
+  // Défi : meilleur = le plus d'ennemis tués (même colonne que les temps).
+  // Égalité : le plus ancien d'abord (matchs lus du plus ancien, tri stable).
+  Object.entries(records).forEach(([bossId, liste]) => {
+    const defi = estDefiEnnemis(bossId);
+    const secondes = ({ match, role }) => match[`temps_${role}_secondes`];
+    liste.sort((a, b) => defi ? secondes(b) - secondes(a) : secondes(a) - secondes(b));
+    liste.splice(NB_RECORDS_BOSS);
+  });
+
+  const tenants = Object.values(records).flat();
   const joueurs = await chargerJoueurs([...new Set(tenants.flatMap(({ match }) =>
     [match.player1_discord_id, match.player2_discord_id]).filter(Boolean))]);
-  const resumerRecord = record => {
-    if (!record) return null;
-    const { match, role } = record;
+  // Un temps : joueur (pseudo, palier de sa box, temps, équipe jouée) ;
+  // match en équipe : joueurs de l'équipe.
+  const resumerRecord = ({ match, role }) => {
     const profils = { j1: joueurs.get(match.player1_discord_id), j2: joueurs.get(match.player2_discord_id) };
-    const { discord_id, nom, avatar, banniere2, theatre, parametres, temps, equipe } = resumerJoueur(match, role, profils);
-    const adversaire = profils[role === "j1" ? "j2" : "j1"];
+    const { discord_id, nom, theatre, parametres, temps, equipe } = resumerJoueur(match, role, profils);
     return {
       match_id: match.id ?? null,
-      // Match en équipe : joueurs de l'équipe du record.
       ...(match.mode_equipe ? { membres: (match.equipes?.[role]?.membres || []).map(m => m.nom) } : {}),
-      date: match.created_at || null,
-      mode_theatre: match.mode_theatre ?? null,
-      joueur: { discord_id, nom, avatar, banniere2, theatre, parametres, temps, equipe },
-      adversaire: adversaire?.discord_global_name || adversaire?.discord_username || null
+      joueur: { discord_id, nom, theatre, parametres, temps, equipe }
     };
   };
 
   return res.status(200).json({
     categories,
-    records: Object.entries(records).map(([bossId, r]) => ({
-      boss_id: bossId,
-      classe: resumerRecord(r.classe),
-      non_classe: resumerRecord(r.non_classe)
-    }))
+    records: Object.entries(records).map(([bossId, liste]) => ({ boss_id: bossId, meilleurs: liste.map(resumerRecord) }))
   });
 }
 

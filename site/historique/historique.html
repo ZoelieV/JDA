@@ -6,7 +6,7 @@
 <title>Historique des matchs</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/historique/historique.css?v=47">
+<link rel="stylesheet" href="/historique/historique.css?v=48">
 <link rel="stylesheet" href="/commun/entete.css?v=rem30">
 <link rel="stylesheet" href="/commun/tri.css?v=6">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
@@ -175,25 +175,41 @@
         </div>
         <div class="classements-persos">
           <div class="classement-persos" data-liste="picks">
+            <div class="entete-classement">
             <h3 class="sous-titre-section">Les plus pick</h3>
+            <!-- Liste dépliée : la réduire sans descendre jusqu'en bas. -->
+            <button type="button" class="bouton-historique reduire-liste cache">Réduire</button>
+          </div>
             <p class="note-stats"></p>
             <ol class="liste-classement-persos"></ol>
             <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
           </div>
           <div class="classement-persos" data-liste="bans">
+            <div class="entete-classement">
             <h3 class="sous-titre-section">Les plus bannis</h3>
+            <!-- Liste dépliée : la réduire sans descendre jusqu'en bas. -->
+            <button type="button" class="bouton-historique reduire-liste cache">Réduire</button>
+          </div>
             <p class="note-stats"></p>
             <ol class="liste-classement-persos"></ol>
             <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
           </div>
           <div class="classement-persos" data-liste="bans_equilibrage">
+            <div class="entete-classement">
             <h3 class="sous-titre-section">Bans d'équilibrage</h3>
+            <!-- Liste dépliée : la réduire sans descendre jusqu'en bas. -->
+            <button type="button" class="bouton-historique reduire-liste cache">Réduire</button>
+          </div>
             <p class="note-stats"></p>
             <ol class="liste-classement-persos"></ol>
             <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
           </div>
           <div class="classement-persos" data-liste="bans_horizontaux">
+            <div class="entete-classement">
             <h3 class="sous-titre-section">Bans horizontaux</h3>
+            <!-- Liste dépliée : la réduire sans descendre jusqu'en bas. -->
+            <button type="button" class="bouton-historique reduire-liste cache">Réduire</button>
+          </div>
             <p class="note-stats"></p>
             <ol class="liste-classement-persos"></ol>
             <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
@@ -203,7 +219,7 @@
 
       <section class="section-matchs">
         <h2 class="titre-section">Records par boss</h2>
-        <p class="note-stats">Meilleur temps sur chaque boss, hors classé et en classé (Classique et Mêlée générale).</p>
+        <p class="note-stats">Les 5 meilleurs temps sur chaque boss.</p>
         <div id="records-boss" class="records-boss"></div>
       </section>
     </div>
@@ -215,12 +231,18 @@
         <p id="note-stats-wb" class="note-stats"></p>
         <div class="classements-persos">
           <div class="classement-persos" data-liste="reussites">
+            <div class="entete-classement">
             <h3 class="sous-titre-section">Les plus de réussites</h3>
+            <button type="button" class="bouton-historique reduire-liste cache">Réduire</button>
+          </div>
             <ol class="liste-classement-persos"></ol>
             <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
           </div>
           <div class="classement-persos" data-liste="echecs">
+            <div class="entete-classement">
             <h3 class="sous-titre-section">Les plus d'échecs</h3>
+            <button type="button" class="bouton-historique reduire-liste cache">Réduire</button>
+          </div>
             <ol class="liste-classement-persos"></ol>
             <button type="button" class="bouton-historique voir-tout cache">Tout afficher</button>
           </div>
@@ -249,7 +271,7 @@
   <script src="/commun/synergies.js?v=1"></script>
   <script src="/commun/cartes.js?v=29"></script>
   <script src="/commun/tri.js?v=20"></script>
-  <script src="/historique/historique.js?v=66"></script>
+  <script src="/historique/historique.js?v=67"></script>
   <script src="/commun/site.js?v=1"></script>
 </body>
 </html>

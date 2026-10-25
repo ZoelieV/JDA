@@ -1141,7 +1141,8 @@ function initialiserOnglets() {
 
 // ---- Statistiques : persos les plus pick / bannis et records par boss
 // (cf. GET /api/matches?stats=1) ----
-const NB_PERSOS_RESUME = 10;
+// Persos affichés par liste tant qu'elle n'est pas dépliée.
+const NB_PERSOS_RESUME = 5;
 let statistiques = null; // réponse de l'API pour la saison affichée
 let chargementStats = null;
 // Saison des statistiques ("" : toutes ; par défaut, la saison en cours) et
@@ -1245,10 +1246,17 @@ function afficherStatsWorldBoss() {
           <span class="jauge-stats"><span style="width: ${stats[cle] / max * 100}%"></span></span>
         </li>`;
       }).join("");
-    const voirTout = bloc.querySelector(".voir-tout");
-    voirTout.classList.toggle("cache", tries.length <= NB_PERSOS_RESUME);
-    voirTout.textContent = deplie ? "Réduire" : `Tout afficher (${tries.length})`;
+    majBoutonsListe(bloc, deplie, tries.length);
   });
+}
+
+// Boutons d'une liste de persos : "Tout afficher (n)" / "Réduire" en bas,
+// et "Réduire" à droite du titre quand elle est dépliée.
+function majBoutonsListe(bloc, deplie, total) {
+  const voirTout = bloc.querySelector(".voir-tout");
+  voirTout.classList.toggle("cache", total <= NB_PERSOS_RESUME);
+  voirTout.textContent = deplie ? "Réduire" : `Tout afficher (${total})`;
+  bloc.querySelector(".reduire-liste").classList.toggle("cache", !deplie || total <= NB_PERSOS_RESUME);
 }
 
 // Catégorie choisie ("tous" : classés et non classés additionnés), comptes
@@ -1307,45 +1315,31 @@ function afficherClassementsPersos() {
       </li>`;
     }).join("");
 
-    const voirTout = bloc.querySelector(".voir-tout");
-    voirTout.classList.toggle("cache", tries.length <= NB_PERSOS_RESUME);
-    voirTout.textContent = deplie ? "Réduire" : `Tout afficher (${tries.length})`;
+    majBoutonsListe(bloc, deplie, tries.length);
   });
 }
 
-// Carte d'un record : temps, bannière du joueur, son équipe et la date.
-function creerRecord(record, titre) {
-  const carte = document.createElement("div");
-  carte.className = `record-boss${record ? "" : " vide"}`;
-  if (!record) {
-    carte.innerHTML = `<span class="record-titre">${titre}</span><span class="record-aucun">Aucun record</span>`;
-    return carte;
-  }
+// Un des meilleurs temps d'un boss : rang, palier de la box du joueur,
+// pseudo (match en équipe : joueurs de l'équipe), temps, puis l'équipe
+// jouée (constellations, armes, niveaux).
+function creerRecord(record, rang) {
+  const ligne = document.createElement("li");
+  ligne.className = "record-boss";
   const joueur = record.joueur;
-  const banniere = encodeURI(`/DB/images/${joueur.banniere2}`);
   const equipe = joueur.equipe.map(p => htmlPerso(p.id, joueur.parametres, { element: p.element, infos: p, aleatoire: p.aleatoire })).join("");
-  const melee = record.mode_theatre === "12" ? " · Mêlée générale" : "";
-  carte.innerHTML = `
-    <span class="record-titre">${titre}${melee}</span>
-    <div class="match-banniere banniere-joueur cote-gauche" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
-      ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
-      <span class="match-nom"></span>
+  ligne.innerHTML = `
+    <div class="record-entete">
+      <span class="record-rang">${rang}</span>
       ${htmlMedailleTheatre(joueur.theatre)}
-      <span class="match-temps record-temps">${joueur.temps.affiche}</span>
+      <span class="record-nom"></span>
+      <span class="record-temps">${joueur.temps.affiche}</span>
     </div>
-    ${record.membres ? `<p class="record-membres"></p>` : ""}
-    <div class="match-persos">${equipe}</div>
-    <span class="match-date">${formaterDate(record.date)}${record.adversaire ? ` · contre ${record.membres ? "l'équipe de " : ""}${htmlPseudo(record.adversaire)}` : ""}</span>
-  `;
-  // Pseudo en texte (pas d'HTML venant des comptes) ; match en équipe :
-  // bannière du chef, puis tous les joueurs de l'équipe.
-  carte.querySelector(".match-nom").textContent = joueur.nom;
-  if (record.membres) carte.querySelector(".record-membres").textContent = record.membres.join(" · ");
-  return carte;
+    <div class="match-persos record-persos">${equipe}</div>`;
+  // Pseudo en texte (pas d'HTML venant des comptes).
+  ligne.querySelector(".record-nom").textContent = record.membres ? record.membres.join(" · ") : joueur.nom;
+  return ligne;
 }
 
-// Une ligne par boss : record hors classé puis en classé ; boss ayant un
-// record d'abord, puis A -> Z.
 // Boss regroupés par catégorie (records, filtre des matchs) : boss
 // hebdomadaires, légendes locales (une fois par jour ou à l'infini), puis
 // les autres types s'il y en a.
@@ -1377,32 +1371,32 @@ function bossParCategorie(trier) {
 
 const ordreNomBoss = (a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" });
 
-// Par catégorie : boss ayant un record d'abord, puis A -> Z.
+// Par catégorie (grille, 3 boss par ligne sur un écran 1080p) : boss ayant
+// des temps d'abord, puis A -> Z ; chaque boss avec ses meilleurs temps
+// (tous matchs confondus, classés ou non).
 function afficherRecords() {
-  const parBoss = new Map(statistiques.records.map(r => [r.boss_id, r]));
+  const parBoss = new Map(statistiques.records.map(r => [r.boss_id, r.meilleurs || []]));
   const categories = bossParCategorie((a, b) => parBoss.has(b.id) - parBoss.has(a.id) || ordreNomBoss(a, b));
   const elements = categories.flatMap(({ titre, boss: liste }) => {
     const sousTitre = document.createElement("h3");
     sousTitre.className = "sous-titre-section";
     sousTitre.textContent = titre;
-    return [sousTitre, ...liste.map(boss => {
-      const records = parBoss.get(boss.id) || {};
-      const ligne = document.createElement("article");
-      ligne.className = "ligne-record";
-      ligne.innerHTML = `
+    const grille = document.createElement("div");
+    grille.className = "grille-records";
+    grille.append(...liste.map(boss => {
+      const meilleurs = parBoss.get(boss.id) || [];
+      const carte = document.createElement("article");
+      carte.className = "ligne-record";
+      carte.innerHTML = `
         <div class="record-boss-infos">
           ${htmlImagesBoss(boss, `class="match-boss" loading="lazy"`)}
           <span class="match-boss-nom">${echapperHtml(boss.nom)}</span>
-        </div>`;
-      // En équipe : pas de classé, un seul record par boss.
-      if (modeStats === "equipe") {
-        ligne.append(creerRecord(records.non_classe, "Meilleure équipe"));
-        return ligne;
-      }
-      ligne.append(creerRecord(records.non_classe, "Non classé"), creerRecord(records.classe, `Classé ${ICONE_TROPHEE}`));
-      ligne.querySelector(".record-boss:last-child").classList.add("classe");
-      return ligne;
-    })];
+        </div>
+        ${meilleurs.length ? `<ol class="liste-records"></ol>` : `<p class="record-aucun">Aucun temps</p>`}`;
+      carte.querySelector(".liste-records")?.append(...meilleurs.map((record, i) => creerRecord(record, i + 1)));
+      return carte;
+    }));
+    return [sousTitre, grille];
   });
   document.getElementById("records-boss").replaceChildren(...elements);
 }
@@ -1447,16 +1441,24 @@ function initialiserStatistiques() {
     });
   });
   document.querySelectorAll("#contenu-stats .classement-persos").forEach(bloc => {
+    const cle = bloc.dataset.liste;
     bloc.querySelector(".voir-tout").addEventListener("click", () => {
-      const cle = bloc.dataset.liste;
       if (!listesDepliees.delete(cle)) listesDepliees.add(cle);
+      afficherClassementsPersos();
+    });
+    bloc.querySelector(".reduire-liste").addEventListener("click", () => {
+      listesDepliees.delete(cle);
       afficherClassementsPersos();
     });
   });
   document.querySelectorAll("#contenu-stats-wb .classement-persos").forEach(bloc => {
+    const cle = `wb_${bloc.dataset.liste}`;
     bloc.querySelector(".voir-tout").addEventListener("click", () => {
-      const cle = `wb_${bloc.dataset.liste}`;
       if (!listesDepliees.delete(cle)) listesDepliees.add(cle);
+      afficherStatsWorldBoss();
+    });
+    bloc.querySelector(".reduire-liste").addEventListener("click", () => {
+      listesDepliees.delete(cle);
       afficherStatsWorldBoss();
     });
   });
