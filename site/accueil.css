@@ -449,6 +449,23 @@ html[data-accueil="test"] .accueil-barre .zone-compte {
   margin-left: auto;
 }
 
+/* Bouton du compte : "Mon compte" à la place du pseudo (bannière, photo et
+   médaille gardées). */
+html[data-accueil="test"] .accueil-barre .compte-lien > span {
+  font-size: 0;
+}
+
+html[data-accueil="test"] .accueil-barre .compte-lien > span::before {
+  content: "Mon compte";
+  font-size: 1rem;
+}
+
+/* Bannière du bouton du compte plus courte dans l'en-tête (place pour les
+   liens). */
+html[data-accueil="test"] .accueil-barre .avec-banniere2 {
+  --largeur-banniere: min(19rem, 100vw - 6.875rem);
+}
+
 /* Contenu */
 html[data-accueil="test"] .accueil {
   flex: 1;
@@ -558,8 +575,7 @@ html[data-accueil="test"] .accueil-pied {
   font-weight: normal;
 }
 
-.pied-marque span,
-.pied-copyright {
+.pied-marque span {
   color: var(--texte-doux);
   font-size: 0.8125rem;
 }
@@ -620,12 +636,6 @@ html[data-accueil="test"] .accueil-pied {
   opacity: 0.85;
 }
 
-.pied-copyright {
-  margin: 0;
-  padding: 0.875rem 1.25rem;
-  border-top: 1px solid var(--barre-bordure);
-  text-align: center;
-}
 
 /* Écran moyen : nom du site masqué dans l'en-tête (petit logo seul, le nom
    est en grand juste dessous), pour que tous les liens tiennent. */
@@ -636,8 +646,8 @@ html[data-accueil="test"] .accueil-pied {
 }
 
 /* Écran étroit : liens de l'en-tête sur une 2e ligne (défilement
-   horizontal si besoin). */
-@media (max-width: 1150px) {
+   horizontal si besoin), avant qu'ils passent sous le bouton du compte. */
+@media (max-width: 1350px) {
   html[data-accueil="test"] .accueil-barre {
     flex-wrap: wrap;
     gap: 0.25rem 1rem;
