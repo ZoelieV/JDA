@@ -342,13 +342,12 @@ html[data-accueil="test"] .accueil-panneau {
 }
 
 /* ---- Affichage "test" (cf. accueil.js) : site classique, sobre. Barre
-   d'en-tête (logo, liens des pages, compte), logo du JDA et deux boutons
-   au centre, accès aux modes de jeu, bas de page (feedback, réseaux). Fond
+   d'en-tête (logo, liens des pages, compte), logo du JDA, accès aux modes
+   de jeu, bas de page (feedback, réseaux). Fond
    d'écran personnalisé gardé (commun/fond.js). Ces éléments sont masqués
    dans les deux autres affichages. ---- */
 .entete-marque,
 .entete-nav,
-.accueil-actions,
 .accueil-modes,
 .accueil-pied {
   display: none;
@@ -477,46 +476,6 @@ html[data-accueil="test"] .accueil {
 
 html[data-accueil="test"] .accueil-sections {
   display: none;
-}
-
-html[data-accueil="test"] .accueil-actions {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.875rem;
-}
-
-.bouton-action {
-  padding: 0.75rem 1.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 0.625rem;
-  background-color: var(--verre-fond);
-  -webkit-backdrop-filter: var(--barre-flou);
-  backdrop-filter: var(--barre-flou);
-  color: white;
-  font-size: 1rem;
-  font-weight: bold;
-  text-decoration: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-}
-
-.bouton-action:hover,
-.bouton-action:focus-visible {
-  border-color: white;
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-0.0625rem);
-}
-
-.bouton-action.principal {
-  border-color: var(--accent);
-  background-color: var(--accent);
-  color: #1a1a1a;
-}
-
-.bouton-action.principal:hover,
-.bouton-action.principal:focus-visible {
-  border-color: #ffd866;
-  background-color: #ffd866;
 }
 
 /* Modes de jeu : 3 namecards en verre (fond flouté), comme la page Jouer. */
@@ -704,8 +663,8 @@ html[data-accueil="test"] .accueil-pied {
   text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
 }
 
-/* Affichage "test", ordi : mise en page décentrée, logo, titre et boutons
-   à gauche, modes de jeu empilés à droite (format compact : image à
+/* Affichage "test", ordi : mise en page décentrée, logo et titre à
+   gauche, modes de jeu empilés à droite (format compact : image à
    gauche, titre à droite), le tout centré dans la hauteur de l'écran. */
 @media (min-width: 1001px) {
   html[data-accueil="test"] .accueil {
