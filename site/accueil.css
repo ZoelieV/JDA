@@ -338,3 +338,28 @@ html[data-accueil="classique"] .accueil-panneau {
     background-color: rgba(20, 20, 20, 0.85);
   }
 }
+
+/* ---- Affichage "test" : copie du panneau (toutes les règles
+   html:not([data-accueil="classique"]) ci-dessus), où sont essayés les
+   prochains changements avant d'être reportés sur "panneau" ----
+   Panneau juste assez large pour "Tous les comptes" sur une ligne (titre le
+   plus long : 9,775rem dans la police Titre à 1,0625rem), à côté de l'image
+   (42 % de la carte) : (texte + marges du texte) / 0,58 + bordures de la
+   carte + marges et bordure du panneau. */
+@media (min-width: 701px) {
+  html[data-accueil="test"] {
+    --largeur-panneau: calc((9.8rem + 2 * 0.75rem) / 0.58 + 2px + 2 * 1.25rem + 1px);
+  }
+
+  html[data-accueil="test"] .accueil-panneau {
+    width: var(--largeur-panneau);
+  }
+
+  html[data-accueil="test"] .accueil-panneau .carte-section h2 {
+    white-space: nowrap;
+  }
+
+  html[data-accueil="test"] body.panneau-ouvert {
+    margin-left: calc(var(--largeur-panneau) + 1.25rem);
+  }
+}

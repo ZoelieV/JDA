@@ -69,9 +69,10 @@ const PARAMETRES_AUTORISES = {
   fond: new Set([...cosmetiques.fonds.map(f => f.id), "bg/autres/default_bg.webp", "perso"]),
   voyageur: new Set(["aether", "lumine"]),
   manekin: new Set(["manekin", "manekina"]),
-  // Affichage de la page d'accueil (gratuit) : "panneau" (par défaut) ou
-  // "classique" (cf. accueil.js).
-  accueil: new Set(["panneau", "classique"])
+  // Affichage de la page d'accueil (gratuit) : "panneau" (par défaut),
+  // "classique" ou "test" (copie du panneau pour essayer des changements,
+  // cf. accueil.js).
+  accueil: new Set(["panneau", "classique", "test"])
 };
 // UID Genshin : 9 chiffres (ex. 744102007), ou "" si pas renseigné.
 const FORMAT_UID = /^\d{9}$/;

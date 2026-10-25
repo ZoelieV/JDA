@@ -38,7 +38,10 @@
   };
   const AFFICHAGES_ACCUEIL = [
     { id: "panneau", nom: "Panneau", description: "Créer un match et Mon compte au centre, les autres pages dans un panneau à gauche (bouton ☰ pour le plier)." },
-    { id: "classique", nom: "Classique", description: "Toutes les pages au centre, en grille." }
+    { id: "classique", nom: "Classique", description: "Toutes les pages au centre, en grille." },
+    // Copie du panneau où sont essayés les prochains changements (cf.
+    // accueil.css) avant de les reporter sur "panneau".
+    { id: "test", nom: "Test", description: "Copie du panneau pour essayer les prochains changements : panneau de gauche plus étroit." }
   ];
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins"];
@@ -92,7 +95,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=13";
+    lien.href = "/commun/personnalisation.css?v=14";
     document.head.appendChild(lien);
   }
 

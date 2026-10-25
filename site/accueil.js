@@ -7,6 +7,8 @@
 //   par défaut sur ordi (choix gardé dans ce navigateur), plié sur
 //   téléphone (il passe alors par-dessus la page).
 // - "classique" : toutes les cartes au centre (accueil.css).
+// - "test" : copie du panneau, où sont essayés les prochains changements
+//   (accueil.css).
 // Chargé en fin de <body>, sans defer : les cartes sont rangées avant le
 // premier affichage.
 (function () {

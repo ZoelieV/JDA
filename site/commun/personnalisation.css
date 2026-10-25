@@ -632,3 +632,27 @@
   width: 5.625rem;
   font-weight: bold;
 }
+
+/* Test : même schéma que le panneau, panneau plus étroit. */
+.perso-schema-test .perso-schema {
+  grid-template-columns: 0.75fr 0.25fr 1fr 1fr 0.5fr;
+  grid-template-rows: repeat(6, 1fr);
+}
+
+.perso-schema-test .perso-schema span {
+  grid-column: 1;
+}
+
+.perso-schema-test .perso-schema span:nth-child(7),
+.perso-schema-test .perso-schema span:nth-child(8) {
+  grid-row: 3 / span 2;
+  background-color: rgba(245, 197, 66, 0.6);
+}
+
+.perso-schema-test .perso-schema span:nth-child(7) {
+  grid-column: 3;
+}
+
+.perso-schema-test .perso-schema span:nth-child(8) {
+  grid-column: 4;
+}
