@@ -171,6 +171,16 @@
   font-family: var(--police-texte);
 }
 
+/* Bloc fixe (Règles simplifiées) : pas de titre repliable, bordure dorée
+   comme une section dépliée. */
+.section-regles-fixe {
+  border-color: var(--accent-bordure);
+}
+
+.section-regles-fixe > .section-regles-corps {
+  padding-top: 0.625rem;
+}
+
 .section-regles-corps ul {
   margin: 0;
   padding-left: 1.25rem;
