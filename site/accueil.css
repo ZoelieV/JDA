@@ -628,6 +628,20 @@ html[data-accueil="classique"] .accueil-pied {
   cursor: pointer;
 }
 
+/* Icône du bouton Feedback (même que commun/feedback.js), à droite du texte. */
+.pied-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pied-feedback img {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0.0625rem 0.25rem rgba(0, 0, 0, 0.6));
+}
+
 .pied-liens a:hover,
 .pied-feedback:hover,
 .pied-liens a:focus-visible,
