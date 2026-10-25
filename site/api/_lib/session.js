@@ -1,9 +1,29 @@
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+// Requête qui modifie quelque chose (POST, PUT, PATCH, DELETE) envoyée
+// depuis un autre site (CSRF) : en-tête Sec-Fetch-Site "cross-site" ou
+// Origin d'un autre hôte. En plus du SameSite=Lax du cookie.
+function estRequeteAutreSite(req) {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return false;
+  if (req.headers["sec-fetch-site"] === "cross-site") return true;
+  const origine = req.headers.origin;
+  if (!origine || origine === "null") return !!origine;
+  try {
+    const hote = new URL(origine).host;
+    return hote !== req.headers.host && hote !== req.headers["x-forwarded-host"];
+  } catch {
+    return true;
+  }
+}
+
+// Cookies de la requête ; pour une requête d'un autre site (cf.
+// estRequeteAutreSite), sans le cookie "session" : elle est traitée comme
+// venant d'un visiteur non connecté.
 function parseCookies(req) {
   const header = req.headers.cookie || "";
   const cookies = {};
+  const autreSite = estRequeteAutreSite(req);
 
   header.split(";").forEach(part => {
     const trimmed = part.trim();
@@ -14,6 +34,7 @@ function parseCookies(req) {
 
     const key = trimmed.slice(0, index);
     const value = trimmed.slice(index + 1);
+    if (autreSite && key === "session") return;
 
     // Valeur mal encodée : cookie ignoré (pas d'erreur 500).
     try {
