@@ -515,16 +515,27 @@ async function statistiques(res, saison = null, equipe = false) {
   });
 
   const tenants = Object.values(records).flat();
-  const joueurs = await chargerJoueurs([...new Set(tenants.flatMap(({ match }) =>
-    [match.player1_discord_id, match.player2_discord_id]).filter(Boolean))]);
+  // Match en équipe : aussi les joueurs de l'équipe (palier de chacun).
+  const joueurs = await chargerJoueurs([...new Set(tenants.flatMap(({ match, role }) => [
+    match.player1_discord_id, match.player2_discord_id,
+    ...(match.equipes?.[role]?.membres || []).map(m => m.discord_id)
+  ]).filter(Boolean))]);
   // Un temps : joueur (pseudo, palier de sa box, temps, équipe jouée) ;
-  // match en équipe : joueurs de l'équipe.
+  // match en équipe : joueurs de l'équipe (pseudo, palier de sa box).
   const resumerRecord = ({ match, role }) => {
     const profils = { j1: joueurs.get(match.player1_discord_id), j2: joueurs.get(match.player2_discord_id) };
     const { discord_id, nom, theatre, parametres, temps, equipe } = resumerJoueur(match, role, profils);
     return {
       match_id: match.id ?? null,
-      ...(match.mode_equipe ? { membres: (match.equipes?.[role]?.membres || []).map(m => m.nom) } : {}),
+      ...(match.mode_equipe ? {
+        membres: (match.equipes?.[role]?.membres || []).map(m => {
+          const profil = joueurs.get(m.discord_id);
+          return {
+            nom: profil?.discord_global_name || profil?.discord_username || m.nom || "Joueur",
+            theatre: profil?.data ? palierTheatre(profil.data) : null
+          };
+        })
+      } : {}),
       joueur: { discord_id, nom, theatre, parametres, temps, equipe }
     };
   };

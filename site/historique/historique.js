@@ -1288,6 +1288,10 @@ function afficherClassementsPersos() {
 
   document.querySelectorAll("#contenu-stats .classement-persos").forEach(bloc => {
     const cle = bloc.dataset.liste;
+    // En équipe : pas de bans d'équilibrage (verticaux ni horizontaux).
+    const sansEquilibrage = modeStats === "equipe" && (cle === "bans_equilibrage" || cle === "bans_horizontaux");
+    bloc.classList.toggle("cache", sansEquilibrage);
+    if (sansEquilibrage) return;
     // Pourcentage : part des matchs où le perso a été pick (bans : parmi
     // les matchs dont les bans sont enregistrés).
     const nbMatchs = cle === "picks" ? categorie.matchs : categorie.matchs_bans;
@@ -1320,8 +1324,8 @@ function afficherClassementsPersos() {
 }
 
 // Un des meilleurs temps d'un boss : rang, palier de la box du joueur,
-// pseudo (match en équipe : joueurs de l'équipe), temps, puis l'équipe
-// jouée (constellations, armes, niveaux).
+// pseudo (match en équipe : chaque joueur de l'équipe avec le palier de sa
+// box), temps, puis l'équipe jouée (constellations, armes, niveaux).
 function creerRecord(record, rang) {
   const ligne = document.createElement("li");
   ligne.className = "record-boss";
@@ -1330,13 +1334,22 @@ function creerRecord(record, rang) {
   ligne.innerHTML = `
     <div class="record-entete">
       <span class="record-rang">${rang}</span>
-      ${htmlMedailleTheatre(joueur.theatre)}
+      ${record.membres ? "" : htmlMedailleTheatre(joueur.theatre)}
       <span class="record-nom"></span>
       <span class="record-temps">${joueur.temps.affiche}</span>
     </div>
     <div class="match-persos record-persos">${equipe}</div>`;
-  // Pseudo en texte (pas d'HTML venant des comptes).
-  ligne.querySelector(".record-nom").textContent = record.membres ? record.membres.join(" · ") : joueur.nom;
+  // Pseudos en texte (pas d'HTML venant des comptes).
+  const nom = ligne.querySelector(".record-nom");
+  if (!record.membres) {
+    nom.textContent = joueur.nom;
+    return ligne;
+  }
+  record.membres.forEach((membre, i) => {
+    if (i > 0) nom.append(" · ");
+    nom.insertAdjacentHTML("beforeend", htmlMedailleTheatre(membre.theatre));
+    nom.append(` ${membre.nom}`);
+  });
   return ligne;
 }
 
