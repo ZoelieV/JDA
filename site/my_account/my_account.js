@@ -683,6 +683,16 @@ const etatTri = creerEtatTri();
 const selectionElements = new Set();
 const selectionArmes = new Set();
 
+// Aligne une sélection sur les cases cochées (nouvelles cases à la fin : ordre
+// des clics). Les cases peuvent changer sans événement "change" (état du
+// formulaire restauré par le navigateur au rechargement) : basculer le Set à
+// chaque clic l'inversait alors (cases décochées mais éléments encore
+// groupés, une ligne par changement d'élément).
+function synchroniserSelection(set, valeurs) {
+  set.forEach(valeur => { if (!valeurs.includes(valeur)) set.delete(valeur); });
+  valeurs.forEach(valeur => set.add(valeur));
+}
+
 // Valeur de possession d'un item : constellation (persos) ou meilleur
 // raffinement parmi les copies (armes) ; -1 si non possédé.
 function getValeurItem(item, vueActive, collectionProfil) {
@@ -770,6 +780,9 @@ function rendreCollection(personnages, armes, profil) {
 
   const armesSelectionnees = Array.from(document.querySelectorAll(".filtre-arme:checked"))
     .map(input => input.value);
+
+  synchroniserSelection(selectionElements, elementsSelectionnes);
+  synchroniserSelection(selectionArmes, armesSelectionnees);
 
   const rareteSelectionnees = Array.from(document.querySelectorAll(".filtre-rarete:checked"))
     .map(input => input.value);
@@ -1254,8 +1267,6 @@ async function initialiserPage() {
 
     document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-faction, .filtre-categorie-arme, #filtre-possedes").forEach(input => {
       input.addEventListener("change", () => {
-        if (input.classList.contains("filtre-element")) basculerSelection(selectionElements, input.value);
-        if (input.classList.contains("filtre-arme")) basculerSelection(selectionArmes, input.value);
         // Factions exclusives (cf. basculerFiltreFaction) : une seule cochée.
         if (input.classList.contains("filtre-faction") && input.checked) {
           document.querySelectorAll(".filtre-faction").forEach(autre => { if (autre !== input) autre.checked = false; });
