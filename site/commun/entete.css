@@ -593,8 +593,13 @@ body::before {
   position: relative;
   display: inline-flex;
   flex-shrink: 0;
-  width: 1.6em;
-  height: 1.6em;
+  box-sizing: border-box;
+  width: 1.3em;
+  height: 1.3em;
+  padding: 0.1em;
+  /* Rond clair, comme la médaille du théâtre (cf. .medaille-theatre). */
+  border-radius: 50%;
+  background-color: rgba(235, 235, 235, 0.92);
   vertical-align: middle;
 }
 
@@ -623,17 +628,17 @@ body::before {
 }
 
 /* Bannières (bouton du compte, Tous les comptes, classement) : même
-   hauteur que la médaille (2em), un peu plus large (ailes). */
+   taille que la médaille. */
 .compte-lien .rang-trophees,
 .account-infos .rang-trophees,
 .joueur-infos .rang-trophees {
-  width: 2.4em;
-  height: 2.4em;
+  width: 2em;
+  height: 2em;
 }
 
 .compte-btn .rang-trophees {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 /* Rang puis médaille au bord opposé à la photo : l'espace libre passe
