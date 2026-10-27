@@ -40,7 +40,7 @@ html.avec-entete-site body {
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0;
-  padding: 0 var(--marge-page) 6rem;
+  padding: 0 var(--marge-page) 8rem;
 }
 
 /* Éléments figés en haut des pages (cf. leurs feuilles) : sous l'en-tête,
@@ -265,7 +265,7 @@ html.avec-entete-site .site-pied {
 /* Mon compte : total de la box figé en bas de l'écran (cf.
    my_account.css) ; pied de page au-dessus, pour ne pas être caché. */
 html.avec-entete-site body:has(.box-total) {
-  padding-bottom: 11rem;
+  padding-bottom: 13rem;
 }
 
 html.avec-entete-site body:has(.box-total) .site-pied {
@@ -299,6 +299,27 @@ html.avec-entete-site body:has(.box-total) .site-pied {
 .pied-marque span {
   color: var(--texte-doux);
   font-size: 0.8125rem;
+}
+
+/* Crédits : une ligne sous le reste (plusieurs sur téléphone). */
+.pied-credits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.5rem;
+  box-sizing: border-box;
+  width: min(68.75rem, 100% - 2.5rem);
+  margin: 0 auto;
+  padding: 0.5rem 0 0.75rem;
+  border-top: 1px solid var(--barre-bordure);
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.pied-credit strong {
+  color: white;
+  font-weight: normal;
 }
 
 .pied-liens {
@@ -405,7 +426,7 @@ html.avec-entete-site body:has(.box-total) .site-pied {
   }
 
   html.avec-entete-site body {
-    padding-bottom: 11rem;
+    padding-bottom: 15rem;
   }
 
   .pied-contenu {

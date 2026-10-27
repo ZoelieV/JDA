@@ -69,6 +69,12 @@
     ["YouTube", "https://www.youtube.com", "youtube"],
     ["Ko-fi", "https://ko-fi.com", "kofi"]
   ];
+  // Crédits, en bas du pied de page.
+  const CREDITS = [
+    ["Développeurs", "Strike, Koy"],
+    ["Équilibrage", "Lightningstorm, Matrere, Gogetox"],
+    ["Autre", "Zekroy, Laïna"]
+  ];
 
   function element(balise, attributs = {}, texte = "") {
     const el = document.createElement(balise);
@@ -130,7 +136,13 @@
       reseaux.appendChild(a);
     });
     contenu.append(marque, liens, reseaux);
-    pied.appendChild(contenu);
+    const credits = element("p", { class: "pied-credits" });
+    CREDITS.forEach(([role, noms]) => {
+      const bloc = element("span", { class: "pied-credit" });
+      bloc.append(element("strong", {}, `${role} :`), ` ${noms}`);
+      credits.appendChild(bloc);
+    });
+    pied.append(contenu, credits);
     return pied;
   }
 
