@@ -40,8 +40,8 @@ async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}
 // Box d'un côté de l'entraînement -> { source } ou { erreur }.
 // Box du lanceur : full, opti ou personnalisée ; d'un autre joueur : full
 // ou personnalisée (ses box opti restent privées ; la box "stuff" n'est plus
-// jouable) ; personnalisée ("custom") : persos cochés parmi ceux de la full
-// box du joueur. NB_PERSOS_MIN_BOX persos minimum. Plafond de points hors
+// jouable) ; personnalisée ("custom") : persos et armes (copies,
+// "idArme#2"...) cochés parmi ceux de la full box du joueur. NB_PERSOS_MIN_BOX persos minimum. Plafond de points hors
 // full box : vérifié ensuite, une fois le palier de la draft connu (cf.
 // creerEntrainement). -> { source, data } (data : données de la box jouée).
 // Box fictive (cf. _lib/boxes_fictives.js) : administrateurs et mini admins
@@ -73,6 +73,9 @@ async function validerBoxEntrainement(brut, lanceurId, libelle) {
     const full = migrerCollectionPersos(profil.data?.characters)?.full || {};
     const persos = Array.isArray(brut.persos) ? [...new Set(brut.persos.filter(id => typeof id === "string"))] : [];
     source.persos = persos.filter(id => (full[id] ?? -1) >= 0).slice(0, 300);
+    const armesFull = profil.data?.weapons?.full || {};
+    const armes = Array.isArray(brut.armes) ? [...new Set(brut.armes.filter(id => typeof id === "string"))] : [];
+    source.armes = armes.filter(instance => Number.isInteger(armesFull[instance]) && armesFull[instance] >= 0).slice(0, 300);
   }
   const nbPersos = calculerPoolJoueur(donneesBoxRole(profil.data, source), getPersonnages(), box).length;
   if (nbPersos < NB_PERSOS_MIN_BOX) {

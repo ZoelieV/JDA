@@ -740,7 +740,7 @@ function pointsSignatureBox(profilData, boxChoisie, armes, persoId) {
 
 // ---- Points des armes d'une box (PPW du raffinement), copies comprises
 // ("idArme#2"...) : même sélection que Mon compte et l'aperçu des box du
-// match. Box personnalisée (entraînement, persos seulement) : aucune arme.
+// match. Box personnalisée (entraînement) : armes cochées (cf. donneesBoxRole).
 // Valeur alternative (arme.alternatif, % réglé sur la page admin, 100 par
 // défaut) : chaque copie en double (toutes sauf la meilleure) et une arme
 // signature dont le perso n'est pas dans la box (une seule fois si les 2),

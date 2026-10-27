@@ -146,7 +146,8 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
 // ---- Mode entraînement ----
 // Configuration : draft (classée ou non, mode de théâtre), ta box et la box
 // adverse (une des tiennes ; full d'un autre joueur ; ou une box
-// personnalisée cochée dans la full box d'un joueur), boss et J1.
+// personnalisée : persos et armes cochés dans la full box d'un joueur),
+// boss et J1.
 // Administrateurs et mini admins : box fictives en plus des joueurs (full,
 // opti ou personnalisée, cf. api/_lib/boxes_fictives.js).
 const MIN_PERSOS_BOX = 16; // cf. NB_PERSOS_MIN_BOX, api/_lib/draft.js
@@ -159,9 +160,11 @@ const entrainement = {
   fictives: [], // box fictives (administrateurs) { id, nom }
   profils: new Map(), // discord_id -> données du profil (box)
   personnages: [],
+  armes: [],
   cotes: {
-    moi: { proprietaire: null, box: "full", persos: new Set() },
-    adverse: { proprietaire: null, box: "full", persos: new Set() }
+    // armes : copies cochées ("idArme", "idArme#2"... comme weapons.full).
+    moi: { proprietaire: null, box: "full", persos: new Set(), armes: new Set() },
+    adverse: { proprietaire: null, box: "full", persos: new Set(), armes: new Set() }
   }
 };
 
@@ -183,6 +186,18 @@ async function profilJoueur(discordId) {
 function personnagesPossedes(profil) {
   const full = profil?.characters?.full || {};
   return entrainement.personnages.filter(p => (full[p.id] ?? -1) >= 0);
+}
+
+// Copies d'armes de la full box -> [{ instance, arme, raffinement }], dans
+// l'ordre du catalogue.
+function armesPossedees(profil) {
+  const full = profil?.weapons?.full || {};
+  const rang = new Map(entrainement.armes.map((arme, i) => [arme.id, i]));
+  return Object.entries(full)
+    .filter(([, raffinement]) => Number.isInteger(raffinement) && raffinement >= 0)
+    .map(([instance, raffinement]) => ({ instance, raffinement, arme: entrainement.armes.find(a => a.id === instance.split("#")[0]) }))
+    .filter(copie => copie.arme)
+    .sort((a, b) => rang.get(a.arme.id) - rang.get(b.arme.id) || a.instance.localeCompare(b.instance));
 }
 
 // Sélecteur d'un côté : joueur, box, et persos cochés si personnalisée.
@@ -207,12 +222,20 @@ async function rendreSelecteurBox(cote) {
       ${boxes.map(box => `<button type="button" class="choix-btn${etat.box === box ? " active" : ""}" data-valeur="${box}"></button>`).join("")}
     </div>
     <div class="ent-perso-zone${etat.box === "custom" ? "" : " cache"}">
+      <h4 class="ent-sous-titre">Personnages</h4>
       <div class="ligne-entrainement">
         <span class="ent-compteur"></span>
         <button type="button" class="choix-btn ent-tout">Tout cocher</button>
         <button type="button" class="choix-btn ent-rien">Tout décocher</button>
       </div>
       <div class="ent-persos"></div>
+      <h4 class="ent-sous-titre">Armes</h4>
+      <div class="ligne-entrainement">
+        <span class="ent-compteur-armes"></span>
+        <button type="button" class="choix-btn ent-toutes-armes">Tout cocher</button>
+        <button type="button" class="choix-btn ent-aucune-arme">Tout décocher</button>
+      </div>
+      <div class="ent-persos ent-armes"></div>
     </div>
   `;
 
@@ -256,6 +279,7 @@ async function rendreSelecteurBox(cote) {
     }
     etat.proprietaire = trouve.id;
     etat.persos = new Set();
+    etat.armes = new Set();
     rendreSelecteurBox(cote);
   });
 
@@ -300,6 +324,40 @@ async function rendreSelecteurBox(cote) {
     rendreSelecteurBox(cote);
   });
   majCompteur();
+
+  // Armes : chaque copie de la full box, raffinement en bas à droite.
+  const copies = armesPossedees(profil);
+  const grilleArmes = zone.querySelector(".ent-armes");
+  const compteurArmes = zone.querySelector(".ent-compteur-armes");
+  const majCompteurArmes = () => {
+    const nb = copies.filter(c => etat.armes.has(c.instance)).length;
+    compteurArmes.textContent = copies.length
+      ? `${nb} arme${nb > 1 ? "s" : ""} sur ${copies.length}`
+      : "Aucune arme dans la full box de ce joueur.";
+  };
+  grilleArmes.replaceChildren(...copies.map(({ instance, arme, raffinement }) => {
+    const carte = document.createElement("button");
+    carte.type = "button";
+    carte.className = `ent-perso ${classeFondRarete(arme.rarete)}${etat.armes.has(instance) ? " coche" : ""}`;
+    carte.title = `${arme.nom} R${raffinement + 1}`;
+    carte.innerHTML = `<img src="../DB/${arme.image}" alt="" loading="lazy"><span class="ent-raffinement">R${raffinement + 1}</span>`;
+    carte.addEventListener("click", () => {
+      if (etat.armes.has(instance)) etat.armes.delete(instance);
+      else etat.armes.add(instance);
+      carte.classList.toggle("coche");
+      majCompteurArmes();
+    });
+    return carte;
+  }));
+  zone.querySelector(".ent-toutes-armes").addEventListener("click", () => {
+    copies.forEach(c => etat.armes.add(c.instance));
+    rendreSelecteurBox(cote);
+  });
+  zone.querySelector(".ent-aucune-arme").addEventListener("click", () => {
+    etat.armes.clear();
+    rendreSelecteurBox(cote);
+  });
+  majCompteurArmes();
 }
 
 async function initialiserEntrainement() {
@@ -309,12 +367,13 @@ async function initialiserEntrainement() {
     return false;
   }
   entrainement.moi = (await reponseMoi.json()).user;
-  const [comptes, personnages, boss] = await Promise.all([chargerJSONApi("/api/accounts"), chargerPersonnages(), chargerBoss()]);
+  const [comptes, personnages, boss, armes] = await Promise.all([chargerJSONApi("/api/accounts"), chargerPersonnages(), chargerBoss(), chargerArmes()]);
   const nom = c => c.discord_global_name || c.discord_username || "Joueur";
   entrainement.comptes = comptes
     .map(c => ({ discord_id: c.discord_id, nom: nom(c) }))
     .sort((a, b) => (b.discord_id === entrainement.moi.id) - (a.discord_id === entrainement.moi.id) || a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }));
   entrainement.personnages = personnages;
+  entrainement.armes = armes;
   if (entrainement.moi.admin || entrainement.moi.mini_admin) {
     entrainement.fictives = await chargerJSONApi("/api/accounts/boxes_fictives").catch(erreur => {
       console.error(erreur);
@@ -339,7 +398,7 @@ async function initialiserEntrainement() {
 function lancerEntrainement() {
   const cote = c => {
     const etat = entrainement.cotes[c];
-    return { proprietaire: etat.proprietaire, box: etat.box, ...(etat.box === "custom" ? { persos: [...etat.persos] } : {}) };
+    return { proprietaire: etat.proprietaire, box: etat.box, ...(etat.box === "custom" ? { persos: [...etat.persos], armes: [...etat.armes] } : {}) };
   };
   creerMatch({
     type: "entrainement",

@@ -493,14 +493,16 @@ function roleActifSolo() {
   }
 }
 
-// Box personnalisée : persos cochés ajoutés comme sélection "custom" (même
-// règle que donneesBoxRole, api/_lib/boxes.js).
+// Box personnalisée : persos et armes cochés ajoutés comme sélection
+// "custom" (même règle que donneesBoxRole, api/_lib/boxes.js).
 function donneesBox(profilData, source) {
   if (source.box !== "custom") return profilData;
   const characters = profilData?.characters || {};
+  const weapons = profilData?.weapons || {};
   return {
     ...profilData,
-    characters: { ...characters, selections: { ...(characters.selections || {}), custom: Object.fromEntries((source.persos || []).map(id => [id, true])) } }
+    characters: { ...characters, selections: { ...(characters.selections || {}), custom: Object.fromEntries((source.persos || []).map(id => [id, true])) } },
+    weapons: { ...weapons, selections: { ...(weapons.selections || {}), custom: Object.fromEntries((source.armes || []).map(instance => [instance, true])) } }
   };
 }
 

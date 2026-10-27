@@ -285,6 +285,26 @@
   object-fit: cover;
 }
 
+/* Box personnalisée : sous-titres Personnages / Armes. */
+.ent-sous-titre {
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+}
+
+/* Raffinement d'une arme, en bas à droite de la case. */
+.ent-raffinement {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
 /* Élément du Voyageur, en bas à gauche de la case. */
 .ent-perso img.ent-element {
   position: absolute;

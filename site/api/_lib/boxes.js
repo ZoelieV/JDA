@@ -118,10 +118,11 @@ function sourceBoxRole(draft, role) {
 }
 
 // Données du profil avec la box personnalisée ajoutée comme sélection
-// "custom" (copie : le profil n'est pas modifié).
+// "custom" des persos et des armes (copie : le profil n'est pas modifié).
 function donneesBoxRole(profilData, source) {
   if (source?.box !== "custom") return profilData;
   const characters = profilData?.characters || {};
+  const weapons = profilData?.weapons || {};
   return {
     ...profilData,
     characters: {
@@ -129,6 +130,13 @@ function donneesBoxRole(profilData, source) {
       selections: {
         ...(characters.selections || {}),
         custom: Object.fromEntries((source.persos || []).map(id => [id, true]))
+      }
+    },
+    weapons: {
+      ...weapons,
+      selections: {
+        ...(weapons.selections || {}),
+        custom: Object.fromEntries((source.armes || []).map(instance => [instance, true]))
       }
     }
   };
