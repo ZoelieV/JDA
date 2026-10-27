@@ -275,14 +275,21 @@
   filter: grayscale(70%);
 }
 
+/* Case carrée, bordure comprise ; image en bloc (pas d'espace de ligne
+   sous elle, qui la décalait vers le haut et la rognait en bas), entière
+   et centrée. */
 .ent-perso {
   position: relative;
+  display: block;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .ent-perso img {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 /* Box personnalisée : sous-titres Personnages / Armes. */
