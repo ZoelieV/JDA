@@ -34,7 +34,7 @@ function estPrixDouble(id) {
 // Mon image (fond "perso") : PRIX_IMPORT_FOND à chaque image importée (cf.
 // acheterCosmetique, api/_lib/koyns.js).
 const FOND_IMPORTE = "fond:perso";
-const PRIX_IMPORT_FOND = 50;
+const PRIX_IMPORT_FOND = 100;
 
 // Fonds des personnages (DB/images/bg_web/autres/personnage_<n>.webp) :
 // PRIX_FOND_PERSONNAGE au lieu du prix d'un fond.
