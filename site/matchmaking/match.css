@@ -1868,6 +1868,30 @@ h1 {
   filter: brightness(1.12);
 }
 
+/* Entraînement : retour au coup précédent, à côté de "Confirmer". */
+.btn-annuler-coup {
+  pointer-events: auto;
+  padding: 0.5rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 0.625rem;
+  background-color: rgba(40, 40, 46, 0.95);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
+}
+
+.btn-annuler-coup:hover:not(:disabled) {
+  border-color: var(--accent-bordure, rgba(245, 197, 66, 0.8));
+}
+
+.btn-annuler-coup:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .lien-accueil:hover {
   border-color: rgba(245, 197, 66, 0.8);
 }

@@ -276,6 +276,13 @@ async function postActionDraft(persoId, element = null) {
   await definirDraft(data.draft);
 }
 
+// Entraînement : retour au coup précédent (dernier ban / pick annulé).
+async function postAnnulerCoup() {
+  const data = await envoyerAction(`/api/rooms/${roomId}/annuler_action`, {});
+  selectionDraft = null;
+  await definirDraft(data.draft);
+}
+
 async function postBonusToggle(persoId) {
   const data = await envoyerAction(`/api/rooms/${roomId}/bonus_toggle`, { perso_id: persoId });
   await definirDraft(data.draft);
@@ -2026,6 +2033,16 @@ function rendreDraft(phasePrecedente) {
       });
   };
 
+  // Entraînement : retour au coup précédent, dès le 1er ban / pick fait.
+  const btnAnnuler = document.getElementById("btn-annuler-coup");
+  btnAnnuler.classList.toggle("cache", !draft.entrainement || !monRole || !(draft.actions || []).some(action => !action.bonus));
+  btnAnnuler.onclick = () => {
+    btnAnnuler.disabled = true;
+    postAnnulerCoup()
+      .catch(err => alert(err.message))
+      .finally(() => { btnAnnuler.disabled = false; });
+  };
+
   const grille = document.getElementById("grille-pool-draft");
   const cleGrille = JSON.stringify([
     draft.actions, draft.sequence_index, draft.pool_disponible, draft.pool_j1, draft.pool_j2,
@@ -3318,6 +3335,7 @@ const BULLES_PAR_PHASE = {
   "btn-confirmer-bonus": ["bans_bonus"],
   "message-equilibrage": ["bans_bonus"],
   "btn-confirmer-action": ["draft"],
+  "btn-annuler-coup": ["draft"],
   "tour-actuel": ["draft"],
   "etat-temps": ["temps", "verification"],
   "choix-boss": ["boss"],

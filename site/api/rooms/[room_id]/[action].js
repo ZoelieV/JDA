@@ -1,6 +1,6 @@
-// Fusion de 17 routes (box, ready, equilibrage_vote, action, bonus_toggle,
+// Fusion de 18 routes (box, ready, equilibrage_vote, action, bonus_toggle,
 // bonus_echanger, bonus_confirmer, temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
-// boss_vote, crash, abandonner_classe, draft) en un seul fichier, pour rester sous la limite de
+// boss_vote, crash, abandonner_classe, annuler_action, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
 // ce soit} qui ne correspondent à aucun autre fichier plus spécifique dans
@@ -462,6 +462,42 @@ async function handleAction(req, res, roomId, user) {
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur, tropTard ? { trop_tard: true } : {});
+}
+
+// ---- annuler_action : entraînement, retour au coup précédent ----
+// Dernier ban / pick de la séquence annulé (pas les bans d'équilibrage) :
+// perso remis dans le pool, même tour qu'avant ce coup. Pendant la draft
+// seulement (le dernier coup termine et archive l'entraînement). Draft
+// chronométrée : le temps déjà passé n'est pas rendu.
+async function handleAnnulerAction(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
+  const draft = room.draft;
+  if (!draft.entrainement) {
+    return res.status(403).json({ error: "Retour au coup précédent : en entraînement seulement" });
+  }
+  if (draft.phase !== "draft") {
+    return res.status(409).json({ error: "Ce n'est pas le moment de la draft" });
+  }
+  if (refuserSiPause(res, draft)) return;
+
+  const index = draft.actions.map(action => !action.bonus).lastIndexOf(true);
+  if (index < 0 || !(draft.sequence_index > 0)) {
+    return res.status(409).json({ error: "Aucun coup à annuler" });
+  }
+  const [action] = draft.actions.splice(index, 1);
+  if (action.perso_id && !draft.pool_disponible.includes(action.perso_id)) {
+    draft.pool_disponible = [...draft.pool_disponible, action.perso_id];
+  }
+  draft.sequence_index -= 1;
+  if (draft.chrono) draft.chrono.tour_debut = Date.now();
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
 }
 
 // Ban / pick de la séquence : personnage retiré du pool, action suivante.
@@ -1268,6 +1304,8 @@ function executerAction(action, req, res, roomId, user) {
       return handleCrash(req, res, roomId, user);
     case "abandonner_classe":
       return handleAbandonnerClasse(req, res, roomId, user);
+    case "annuler_action":
+      return handleAnnulerAction(req, res, roomId, user);
     case "draft":
       return handleDraftGet(req, res, roomId, user);
     default:

@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/matchmaking/match.css?v=rem61">
+<link rel="stylesheet" href="/matchmaking/match.css?v=rem62">
 <link rel="stylesheet" href="/commun/entete.css?v=rem39">
 <script src="/commun/zoom.js?v=3"></script>
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -67,6 +67,8 @@
       <div id="etat-spectateur" class="bandeau-info etat-spectateur cache">👁 Tu regardes ce match en spectateur.</div>
       <!-- Draft : valide le personnage sélectionné dans la grille. -->
       <button id="btn-confirmer-action" type="button" class="btn-confirmer-action cache" disabled>Confirmer</button>
+      <!-- Entraînement : annule le dernier ban / pick (cf. annuler_action). -->
+      <button id="btn-annuler-coup" type="button" class="btn-annuler-coup cache" title="Annule le dernier ban ou pick de la draft">↶ Coup précédent</button>
       <div id="tour-actuel" class="bandeau-info tour-actuel"></div>
       <!-- Choix du boss (hors classé) : confirmer ou relancer, relancé si
            les 2 joueurs le veulent. -->
@@ -276,6 +278,6 @@
   <script src="/commun/filtres_draft.js?v=4"></script>
   <script src="/commun/recommandations_boss.js?v=1"></script>
   <script src="/commun/koyns.js?v=11"></script>
-  <script src="/matchmaking/match.js?v=117"></script>
+  <script src="/matchmaking/match.js?v=118"></script>
 </body>
 </html>
