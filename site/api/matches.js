@@ -306,8 +306,15 @@ async function republierLitige(req, res, user) {
   if (!data || data.length === 0) {
     return res.status(404).json({ error: "Litige introuvable ou déjà republié" });
   }
-  // Litige vérifié : Rikoyns de fin de match donnés (cf. _lib/koyns.js).
-  await crediterMatchArchive(litige);
+  // Litige vérifié : Rikoyns de fin de match donnés (cf. _lib/koyns.js),
+  // avec les temps corrigés (abandon : 1 seul Rikoyn).
+  await crediterMatchArchive({
+    ...litige,
+    temps_j1_affiche: tempsJ1.affiche,
+    temps_j1_secondes: tempsJ1.secondes,
+    temps_j2_affiche: tempsJ2.affiche,
+    temps_j2_secondes: tempsJ2.secondes
+  });
   return res.status(200).json({ ok: true });
 }
 

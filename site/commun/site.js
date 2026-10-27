@@ -54,7 +54,8 @@
     // Administrateurs et mini admins (affiché par commun/compte.js).
     { titre: "Admin", href: "/admin", classe: "carte-admin", menu: [
       ["Équilibrage", "/admin/equilibrage"],
-      ["Administration", "/admin"]
+      ["Administration", "/admin"],
+      ["Litiges", "/admin/litiges"]
     ] }
   ];
   // Réseaux : sites officiels en attendant les liens du site.

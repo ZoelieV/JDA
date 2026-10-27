@@ -750,7 +750,7 @@ img.arme-mini {
   align-items: stretch;
   gap: 0.375rem;
   width: 100%;
-  max-width: 14rem;
+  max-width: 19rem;
 }
 
 .champ-temps-litige {
@@ -773,6 +773,33 @@ img.arme-mini {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Temps, puis case Abandon (cf. htmlChampTemps). */
+.saisie-temps-litige {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.case-abandon-litige {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.champ-temps-litige .case-abandon-litige input {
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.champ-temps-litige input:disabled {
+  opacity: 0.4;
 }
 
 .champ-temps-litige input {
@@ -1751,4 +1778,16 @@ img.arme-mini {
 
 .repartition-wb .nom-repartition {
   font-weight: bold;
+}
+
+/* Page Litiges (/admin/litiges) : litiges ouverts et matchs signalés, sous
+   les pages de l'administration. */
+.sous-titre-litiges {
+  margin: -0.5rem 0 1rem;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.sous-titre-litiges.cache {
+  display: none;
 }

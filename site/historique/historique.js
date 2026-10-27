@@ -619,19 +619,35 @@ function nomLitigePar(match) {
 // estDefiEnnemis) : nombre d'ennemis tués seul (affiché "42 ennemis").
 function htmlChampTemps(match, role) {
   const temps = match[role].temps;
-  if (estDefiEnnemis(bossParId.get(match.boss_id))) {
-    const valeur = temps?.abandon || temps?.secondes == null ? temps?.affiche || "" : temps.secondes;
-    return `
-    <label class="champ-temps-litige champ-${role}">
-      <span class="nom-temps-litige"></span>
-      <input type="text" inputmode="numeric" name="temps_${role}" value="${valeur}" placeholder="ennemis tués" title="Nombre d'ennemis tués ou abandon">
-    </label>`;
-  }
+  const abandon = !!temps?.abandon || temps?.affiche === "Abandon";
+  const defi = estDefiEnnemis(bossParId.get(match.boss_id));
+  const valeur = abandon ? "" : defi ? (temps?.secondes ?? "") : temps?.affiche || "";
+  const saisie = defi
+    ? `<input type="text" inputmode="numeric" name="temps_${role}" value="${valeur}" placeholder="ennemis"${abandon ? " disabled" : ""} title="Nombre d'ennemis tués">`
+    : `<input type="text" inputmode="decimal" name="temps_${role}" value="${valeur}" placeholder="mm:ss"${abandon ? " disabled" : ""} title="Temps (mm:ss)">`;
+  // Case Abandon : le joueur a abandonné (temps "Abandon", cf. lireTempsCorrige).
   return `
-    <label class="champ-temps-litige champ-${role}">
+    <div class="champ-temps-litige champ-${role}">
       <span class="nom-temps-litige"></span>
-      <input type="text" inputmode="decimal" name="temps_${role}" value="${temps?.affiche || ""}" placeholder="mm:ss" title="Temps (mm:ss) ou abandon">
-    </label>`;
+      <span class="saisie-temps-litige">
+        ${saisie}
+        <label class="case-abandon-litige" title="Ce joueur a abandonné"><input type="checkbox" name="abandon_${role}"${abandon ? " checked" : ""}> Abandon</label>
+      </span>
+    </div>`;
+}
+
+// Temps saisi pour un joueur ("abandon" si la case est cochée : compris
+// par le serveur, cf. parserTempsOuAbandon dans api/_lib/temps.js).
+function lireTempsCorrige(formulaire, role) {
+  return formulaire.elements[`abandon_${role}`].checked ? "abandon" : formulaire.elements[`temps_${role}`].value.trim();
+}
+
+// Case Abandon cochée : champ du temps grisé.
+function brancherCasesAbandon(formulaire) {
+  formulaire.addEventListener("change", event => {
+    const role = event.target.name?.match(/^abandon_(j[12])$/)?.[1];
+    if (role) formulaire.elements[`temps_${role}`].disabled = event.target.checked;
+  });
 }
 
 // Sanction d'un joueur (ban du mode classé), litige ou signalement.
@@ -766,9 +782,10 @@ function brancherCorrectionLitige(ligne, match) {
   ligne.querySelector(".champ-j2 .nom-temps-litige").textContent = match.j2.nom;
 
   const formulaire = ligne.querySelector(".correction-litige");
+  brancherCasesAbandon(formulaire);
   formulaire.addEventListener("submit", async event => {
     event.preventDefault();
-    const temps = role => formulaire.elements[`temps_${role}`].value.trim();
+    const temps = role => lireTempsCorrige(formulaire, role);
     if (!confirm(`Republier ce match avec les temps ${temps("j1")} (${match.j1.nom}) et ${temps("j2")} (${match.j2.nom}) ?`)) return;
 
     const bouton = formulaire.querySelector(".bouton-republier");
@@ -930,6 +947,7 @@ function brancherTraitementSignalement(ligne, match) {
     element.querySelector(".commentaire-signalement").textContent = `« ${signalement.commentaire} »`;
   });
   const formulaire = ligne.querySelector(".traitement-signalement");
+  brancherCasesAbandon(formulaire);
   formulaire.querySelectorAll(".champ-j1 .nom-temps-litige").forEach(e => { e.textContent = match.j1.nom; });
   formulaire.querySelectorAll(".champ-j2 .nom-temps-litige").forEach(e => { e.textContent = match.j2.nom; });
 
@@ -943,7 +961,7 @@ function brancherTraitementSignalement(ligne, match) {
   formulaire.addEventListener("submit", async event => {
     event.preventDefault();
     const decision = valeur("decision");
-    const temps = role => formulaire.elements[`temps_${role}`].value.trim();
+    const temps = role => lireTempsCorrige(formulaire, role);
     const details = decision === "corrige" ? `\nTemps : ${temps("j1")} (${match.j1.nom}) et ${temps("j2")} (${match.j2.nom})` : "";
     if (!confirm(`Clore ce signalement ?\n${libelle("decision")}${details}\n${match.j1.nom} : ${libelle("sanction_j1")}\n${match.j2.nom} : ${libelle("sanction_j2")}`)) return;
     const bouton = formulaire.querySelector(".bouton-traiter-signalement");
@@ -1022,7 +1040,8 @@ function afficherStatsLitiges() {
 
 function afficherLitiges() {
   if (!estAdmin) return;
-  // Nombre de litiges ouverts et de matchs signalés sous le titre de l'onglet.
+  // Nombre de litiges ouverts et de matchs signalés sous le titre de la page.
+  document.getElementById("sous-titre-litiges").classList.remove("cache");
   document.getElementById("sous-titre-litiges").textContent =
     `${litiges.length} ouvert${litiges.length > 1 ? "s" : ""} · ${signalements.length} signalé${signalements.length > 1 ? "s" : ""}`;
   afficherStatsLitiges();
@@ -1075,7 +1094,11 @@ const CLE_ONGLET = "historique-onglet";
 // Page Statistiques (/statistiques, même page que l'historique) : onglet
 // Statistiques seul, sans les autres ; Historique : tous sauf celui-là.
 const PAGE_STATISTIQUES = window.location.pathname.replace(/\/$/, "") === "/statistiques";
-let onglet = PAGE_STATISTIQUES ? "stats" : "matchs";
+// Page Litiges de l'administration (/admin/litiges, même page aussi) :
+// litiges et signalements seuls, administrateurs et mini admins (les
+// autres sont renvoyés à l'accueil, cf. demarrer).
+const PAGE_LITIGES = window.location.pathname.replace(/\/$/, "") === "/admin/litiges";
+let onglet = PAGE_STATISTIQUES ? "stats" : PAGE_LITIGES ? "litiges" : "matchs";
 
 // Page Statistiques : titre, onglets et barre des matchs masqués, panneau
 // des statistiques affiché dès l'ouverture (pas l'historique le temps du
@@ -1090,17 +1113,29 @@ if (PAGE_STATISTIQUES) {
   });
 }
 
+// Page Litiges : titre, pages de l'administration ; onglets et panneaux
+// des matchs masqués (rien d'affiché avant la vérification des droits).
+if (PAGE_LITIGES) {
+  document.title = "Litiges";
+  document.querySelector(".titre-page").textContent = "Litiges";
+  document.querySelector(".onglets-admin").classList.remove("cache");
+  document.querySelector(".onglets-historique").classList.add("cache");
+  document.querySelector(".barre-historique").classList.add("cache");
+  document.querySelectorAll(".panneau-historique").forEach(panneau => panneau.classList.add("cache"));
+}
+
 function ongletDisponible(nom) {
   if (PAGE_STATISTIQUES) return nom === "stats";
+  if (PAGE_LITIGES) return nom === "litiges" && estAdmin;
   // Random world boss : comme le mode (cf. api/_lib/world_boss.js).
   return nom === "matchs" || nom === "equipe" ||
-    (nom === "litiges" && estAdmin) || (nom === "world_boss" && worldBossVisible) || (nom === "entrainements" && !!moiDiscordId);
+    (nom === "world_boss" && worldBossVisible) || (nom === "entrainements" && !!moiDiscordId);
 }
 
 function choisirOnglet(nouveau) {
-  onglet = ongletDisponible(nouveau) ? nouveau : PAGE_STATISTIQUES ? "stats" : "matchs";
+  onglet = ongletDisponible(nouveau) ? nouveau : PAGE_STATISTIQUES ? "stats" : PAGE_LITIGES ? "litiges" : "matchs";
   try {
-    if (!PAGE_STATISTIQUES) localStorage.setItem(CLE_ONGLET, onglet);
+    if (!PAGE_STATISTIQUES && !PAGE_LITIGES) localStorage.setItem(CLE_ONGLET, onglet);
   } catch {
     // Stockage indisponible : onglet gardé jusqu'au rechargement.
   }
@@ -1583,6 +1618,12 @@ async function demarrer() {
     moiDiscordId = utilisateur?.id || null;
     // Mini admins : litiges et sanctions comme les administrateurs.
     estAdmin = !!(utilisateur?.admin || utilisateur?.mini_admin);
+    // Page Litiges sans les droits : retour silencieux à l'accueil, comme
+    // pour l'administration (cf. admin_ppc.js).
+    if (PAGE_LITIGES && !estAdmin) {
+      window.location.replace("/");
+      return;
+    }
     const config = await chargerPointsAdmin().catch(() => ({}));
     worldBossVisible = estAdmin || config?.world_boss_public === true;
     // Mode ouvert à tous : plus de mention "administrateurs".

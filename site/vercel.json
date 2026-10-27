@@ -239,6 +239,10 @@
       "destination": "/tutorial"
     },
     {
+      "source": "/admin/litiges",
+      "destination": "/historique/historique"
+    },
+    {
       "source": "/admin/equilibrage",
       "destination": "/admin_ppc/admin_ppc"
     },
