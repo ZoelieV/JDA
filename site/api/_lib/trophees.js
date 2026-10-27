@@ -85,8 +85,9 @@ function compteEnClasse(match) {
 // trophées, séries et primes.
 // -> {
 //   parSaison : Map numéro de saison -> { classique: Map, melee: Map },
-//             chaque Map discord_id -> { trophees, matchs, victoires, serie }
+//             chaque Map discord_id -> { trophees, record, matchs, victoires, serie }
 //             (joueurs ayant au moins un match dans ce classement cette
+//             saison ; record = plus haut total de trophées atteint dans la
 //             saison ; serie = victoires d'affilée en cours),
 //   deltas  : Map id du match -> { j1, j2, bonus, saison: { j1, j2 }, prime, ecart }
 //             (trophées réellement gagnés / perdus, plancher à 0 compris ;
@@ -110,7 +111,7 @@ function rejouerClasse(matchs) {
     if (!parSaison.has(numero)) parSaison.set(numero, Object.fromEntries(CLASSEMENTS.map(c => [c, new Map()])));
     const table = parSaison.get(numero)[classementDuMatch(match)];
     const joueur = discordId => {
-      if (!table.has(discordId)) table.set(discordId, { trophees: 0, matchs: 0, victoires: 0, serie: 0 });
+      if (!table.has(discordId)) table.set(discordId, { trophees: 0, record: 0, matchs: 0, victoires: 0, serie: 0 });
       return table.get(discordId);
     };
     const enJeu = Number(match.trophees) || 0;
@@ -140,6 +141,7 @@ function rejouerClasse(matchs) {
         delta.bonus = bonusSerie(j.serie);
         delta[role] = enJeu + delta.bonus + saison[role] + delta.prime + delta.ecart;
         j.trophees += delta[role];
+        j.record = Math.max(j.record, j.trophees);
       } else {
         // Défaite ou égalité : fin de la série.
         j.serie = 0;

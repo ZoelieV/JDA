@@ -149,7 +149,7 @@
 
 .ligne-classement {
   display: grid;
-  grid-template-columns: 3rem minmax(16rem, 26rem) repeat(8, minmax(3.5rem, 1fr));
+  grid-template-columns: 3rem minmax(16rem, 26rem) repeat(9, minmax(3.5rem, 1fr));
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.5rem;
@@ -207,6 +207,11 @@
 .entete-classement .col-stat {
   min-height: 2rem;
   font-size: 1.125rem;
+}
+
+/* Titre en texte (Record) : plus petit que les icônes. */
+.entete-classement .col-stat.col-texte {
+  font-size: 0.75rem;
 }
 
 .entete-classement .col-joueur {
@@ -278,7 +283,7 @@
 
 @media (max-width: 1200px) {
   .ligne-classement {
-    grid-template-columns: 2.5rem minmax(14rem, 20rem) repeat(8, minmax(2.75rem, 1fr));
+    grid-template-columns: 2.5rem minmax(14rem, 20rem) repeat(9, minmax(2.75rem, 1fr));
     gap: 0.25rem;
     font-size: 0.875rem;
   }

@@ -9,7 +9,7 @@ const TRI_DEFAUT = { cle: "trophees", sens: -1 };
 
 // Sens du 1er clic : plus grande valeur d'abord, A -> Z, plus récents d'abord.
 const SENS_INITIAL = {
-  trophees: -1, matchs_classes: -1, ratio: -1, points: -1, nb_persos: -1,
+  trophees: -1, record: -1, matchs_classes: -1, ratio: -1, points: -1, nb_persos: -1,
   nb_c6: -1, constellations_5: -1, theatre: -1, alpha: 1, activite: -1
 };
 
@@ -79,6 +79,7 @@ function texteStat(joueur, cle, long = false) {
     long ? `${valeur} ${valeur > 1 ? pluriel : singulier}` : String(valeur);
   switch (cle) {
     case "trophees": return long ? `${joueur.trophees} ${ICONE_TROPHEE}` : String(joueur.trophees);
+    case "record": return long ? `Record ${joueur.record} ${ICONE_TROPHEE}` : String(joueur.record);
     case "matchs_classes": return unite(joueur.matchs_classes, "match", "matchs");
     case "ratio": return `${Math.round(getRatio(joueur) * 100)} %`;
     case "points": return long ? `${joueur.points ?? 0} pts` : String(joueur.points ?? 0);
@@ -90,7 +91,7 @@ function texteStat(joueur, cle, long = false) {
   }
 }
 
-const COLONNES = ["trophees", "matchs_classes", "ratio", "points", "nb_persos", "nb_c6", "constellations_5", "theatre"];
+const COLONNES = ["trophees", "record", "matchs_classes", "ratio", "points", "nb_persos", "nb_c6", "constellations_5", "theatre"];
 
 // Rang sur les trophées (ex aequo : même rang).
 function calculerRangs() {
@@ -196,6 +197,8 @@ function choisirSaison() {
       return {
         ...compte,
         trophees: stats.trophees,
+        // Plus haut total de trophées atteint dans la saison.
+        record: stats.record ?? stats.trophees,
         matchs_classes: stats.matchs,
         victoires_classees: stats.victoires,
         serie: stats.serie ?? 0,

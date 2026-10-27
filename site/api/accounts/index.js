@@ -117,7 +117,7 @@ async function chargerResultats() {
           (resultats[discordId].classements ??= {})[classement] = { ...stats, prime: !!prime && stats.serie === prime };
         } else {
           const passee = ((resultats[discordId].saisons_passees ??= {})[saison] ??= {});
-          passee[classement] = { trophees: stats.trophees, matchs: stats.matchs, victoires: stats.victoires };
+          passee[classement] = { trophees: stats.trophees, record: stats.record, matchs: stats.matchs, victoires: stats.victoires };
         }
       });
     });
@@ -161,11 +161,12 @@ function resumerProfil(profil, resultats) {
     cost: costBox(data),
     matchs,
     victoires,
-    // Classé, par classement ("melee" seulement) : { trophees, matchs,
-    // victoires, serie (victoires d'affilée en cours) }, absent si aucun
+    // Classé, par classement ("melee" seulement) : { trophees, record (plus
+    // haut total de la saison), matchs, victoires, serie (victoires
+    // d'affilée en cours) }, absent si aucun
     // match classé dans ce classement. Saison en cours seulement.
     classements,
-    // Saisons passées : { numéro: { melee? } } ({ trophees,
+    // Saisons passées : { numéro: { melee? } } ({ trophees, record,
     // matchs, victoires }).
     saisons_passees: saisonsPassees
   };
