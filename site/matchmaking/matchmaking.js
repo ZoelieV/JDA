@@ -32,13 +32,16 @@ async function creerMatch(corps) {
     // d'entraînement trop petite...).
     if (reponse.status === 409 || reponse.status === 400) {
       const { error, room_id: matchEnCours } = await reponse.json().catch(() => ({}));
-      alert(error || "Impossible de lancer ce mode.");
       // Match classé en cours (cf. matchClasseEnCours, api/_lib/room.js) :
-      // retour à ce match.
+      // retour à ce match, ou abandon puis cette demande relancée
+      // (proposerAbandonClasse ne revient qu'après un abandon).
       if (matchEnCours) {
-        ouverture = true;
-        window.location.href = `/match?room=${encodeURIComponent(matchEnCours)}`;
+        await proposerAbandonClasse(matchEnCours);
+        creationEnCours = false;
+        ouverture = true; // creationEnCours tenu par la nouvelle demande
+        return creerMatch(corps);
       }
+      alert(error || "Impossible de lancer ce mode.");
       return;
     }
 

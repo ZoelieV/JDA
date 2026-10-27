@@ -7,7 +7,10 @@
 //   privée, matchmaking, classé), en équipe, Random world boss. Jamais en
 //   entraînement, ni en litige, ni quand l'anti-triche a un soupçon (cf.
 //   _lib/sanctions.js) ; repris si un administrateur invalide le match
-//   ensuite (signalement) ; donnés si un litige est republié.
+//   ensuite (signalement) ; donnés si un litige est republié. Joueur (ou
+//   équipe) qui a déclaré « Abandon » au boss : KOYNS_ABANDON seulement.
+//   Match classé quitté pendant la draft (cf. abandonnerMatchClasse,
+//   _lib/room.js) : rien, pour personne (pas de match joué).
 // - Au plus MAX_GAMES_PAR_ADVERSAIRE games récompensées par journée (reset
 //   à 4 h, cf. _lib/journee.js) contre les mêmes adversaires (anti-farm).
 // - DEPART_MINI_ADMIN une fois pour les mini admins (en 2 mouvements :
@@ -26,6 +29,7 @@ const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
 const KOYNS_PAR_MATCH = 5;
+const KOYNS_ABANDON = 1;
 const MAX_GAMES_PAR_ADVERSAIRE = 3;
 const DEPART_MINI_ADMIN = 100;
 // Catalogue complet : ~6000 Rikoyns (429 cosmétiques au 2026-10-21), plus
@@ -151,10 +155,12 @@ async function acheterCosmetique(discordId, id) {
 // raison de ne rien donner ("suspicion"), ou null.
 // -> { discordId: { montant, raison } } (raison : null, "plafond",
 // "suspicion"), pour l'écran de fin.
+// participants : [{ discordId, adversaires, abandon }] (abandon : a
+// déclaré « Abandon » au boss -> KOYNS_ABANDON au lieu de KOYNS_PAR_MATCH).
 async function crediterPartie(participants, ref, refus = null) {
   const resultat = {};
   const debut = new Date(debutJournee()).toISOString();
-  for (const { discordId, adversaires } of participants) {
+  for (const { discordId, adversaires, abandon } of participants) {
     if (!discordId) continue;
     if (refus) {
       resultat[discordId] = { montant: 0, raison: refus };
@@ -177,8 +183,9 @@ async function crediterPartie(participants, ref, refus = null) {
       resultat[discordId] = { montant: 0, raison: "plafond" };
       continue;
     }
-    const ajoute = await ajouterMouvement({ discord_id: discordId, montant: KOYNS_PAR_MATCH, raison: "match", ref, adversaires: cle });
-    resultat[discordId] = { montant: ajoute ? KOYNS_PAR_MATCH : 0, raison: null };
+    const montant = abandon ? KOYNS_ABANDON : KOYNS_PAR_MATCH;
+    const ajoute = await ajouterMouvement({ discord_id: discordId, montant, raison: "match", ref, adversaires: cle });
+    resultat[discordId] = { montant: ajoute ? montant : 0, raison: null };
   }
   return resultat;
 }
@@ -187,8 +194,8 @@ async function crediterPartie(participants, ref, refus = null) {
 function crediterMatch(draft, idMatch, refus = null) {
   if (!idMatch || draft.entrainement) return Promise.resolve({});
   return crediterPartie([
-    { discordId: draft.discord_j1, adversaires: [draft.discord_j2] },
-    { discordId: draft.discord_j2, adversaires: [draft.discord_j1] }
+    { discordId: draft.discord_j1, adversaires: [draft.discord_j2], abandon: !!draft.temps_j1?.abandon },
+    { discordId: draft.discord_j2, adversaires: [draft.discord_j1], abandon: !!draft.temps_j2?.abandon }
   ], `match:${idMatch}`, refus);
 }
 
@@ -199,7 +206,9 @@ function crediterMatchArchive(match) {
   const camps = match.equipes
     ? ["j1", "j2"].map(role => (match.equipes[role]?.membres || []).map(m => m.discord_id))
     : [[match.player1_discord_id], [match.player2_discord_id]];
-  return crediterPartie(camps.flatMap((camp, i) => camp.map(id => ({ discordId: id, adversaires: camps[1 - i] }))), `match:${match.id}`);
+  // Abandon : temps affiché "Abandon", sans secondes (cf. TEMPS_ABANDON).
+  const abandon = ["j1", "j2"].map(role => match[`temps_${role}_affiche`] === "Abandon" && match[`temps_${role}_secondes`] == null);
+  return crediterPartie(camps.flatMap((camp, i) => camp.map(id => ({ discordId: id, adversaires: camps[1 - i], abandon: abandon[i] }))), `match:${match.id}`);
 }
 
 // Gains d'une partie repris (match invalidé par un administrateur).
@@ -265,6 +274,7 @@ async function reclamerBonusConnexion(discordId) {
 
 module.exports = {
   KOYNS_PAR_MATCH,
+  KOYNS_ABANDON,
   MAX_GAMES_PAR_ADVERSAIRE,
   MAX_KOYNS_DON,
   estCosmetique,

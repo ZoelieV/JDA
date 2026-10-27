@@ -1,13 +1,13 @@
-// Fusion de 16 routes (box, ready, equilibrage_vote, action, bonus_toggle,
+// Fusion de 17 routes (box, ready, equilibrage_vote, action, bonus_toggle,
 // bonus_echanger, bonus_confirmer, temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
-// boss_vote, crash, draft) en un seul fichier, pour rester sous la limite de
+// boss_vote, crash, abandonner_classe, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
 // ce soit} qui ne correspondent à aucun autre fichier plus spécifique dans
 // ce dossier — les URLs appelées côté front ne changent donc pas.
 const { supabase } = require("../../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../../_lib/session");
-const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft } = require("../../_lib/room");
+const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft, quitterRoom } = require("../../_lib/room");
 const { estRouteEquipe, executerRouteEquipe } = require("../../_lib/equipe");
 const { estRouteWorldBoss, executerRouteWorldBoss } = require("../../_lib/world_boss");
 const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
@@ -1090,6 +1090,34 @@ async function handleCrash(req, res, roomId, user) {
   return repondreDraft(res, draft, joueur);
 }
 
+// ---- abandonner_classe : match classé en cours abandonné depuis la
+// fenêtre « match classé en cours » (cf. proposerAbandonClasse,
+// commun/cartes.js), pour faire autre chose ----
+// Comme un match classé quitté (cf. abandonnerMatchClasse, _lib/room.js) :
+// défaite, trophées au maximum pour l'adversaire, aucun Rikoyn.
+async function handleAbandonnerClasse(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { data: room, error } = await supabase
+    .from("rooms")
+    .select("room_id, player1_discord_id, player2_discord_id, type, draft")
+    .eq("room_id", roomId)
+    .maybeSingle();
+  if (error) {
+    console.error("Erreur lecture de la room :", error);
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+  if (!room) return res.status(404).json({ error: "Room introuvable" });
+  if (room.type !== "classe" || ![room.player1_discord_id, room.player2_discord_id].includes(user.id)) {
+    return res.status(403).json({ error: "Ce n'est pas un de tes matchs classés" });
+  }
+  await quitterRoom(supabase, room, user.id);
+  return res.status(200).json({ ok: true });
+}
+
 // ---- Présence des joueurs (dans la colonne rooms.spectateurs, à côté des
 // spectateurs : { discord_id: dernière lecture de la draft en ms }) ----
 // La page du match relit la draft toutes les 2,5 s, et plus du tout quand
@@ -1236,6 +1264,8 @@ function executerAction(action, req, res, roomId, user) {
       return handleBossVote(req, res, roomId, user);
     case "crash":
       return handleCrash(req, res, roomId, user);
+    case "abandonner_classe":
+      return handleAbandonnerClasse(req, res, roomId, user);
     case "draft":
       return handleDraftGet(req, res, roomId, user);
     default:

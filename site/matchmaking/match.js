@@ -131,12 +131,17 @@ async function rejoindreOuConsulterRoom(id) {
 
   // Room en mode classique / auto sans théâtre renseigné : direction Mon
   // compte pour le renseigner. Match classé en cours (room_id) : retour à
-  // ce match.
+  // ce match, ou abandon puis nouvel essai (cf. proposerAbandonClasse,
+  // commun/cartes.js, qui ne revient qu'après un abandon).
   if (reponse.status === 409) {
     const { error, room_id: matchEnCours } = await reponse.json().catch(() => ({}));
     arreterPolling();
+    if (matchEnCours) {
+      await proposerAbandonClasse(matchEnCours);
+      return rejoindreOuConsulterRoom(id);
+    }
     alert(error || "Impossible de rejoindre cette room.");
-    window.location.href = matchEnCours ? `/match?room=${encodeURIComponent(matchEnCours)}` : "/compte";
+    window.location.href = "/compte";
     throw new Error(error || "Impossible de rejoindre cette room.");
   }
 

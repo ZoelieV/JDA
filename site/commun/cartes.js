@@ -587,3 +587,56 @@ function terminerRendu(grille) {
 function viderCacheCartes(grille) {
   grille.cacheCartes = null;
 }
+
+// Match classé en cours (cf. matchClasseEnCours, api/_lib/room.js), qui
+// bloque tout autre match : fenêtre pour y retourner, ou l'abandonner sans
+// finir la draft (défaite, trophées au maximum pour l'adversaire, aucun
+// Rikoyn ; cf. abandonner_classe, api/rooms/[room_id]/[action].js) pour
+// faire autre chose.
+// -> true si le match a été abandonné (l'appelant relance sa demande) ;
+// sinon, retour à ce match.
+function proposerAbandonClasse(roomEnCours) {
+  const allerAuMatch = () => { window.location.href = `/match?room=${encodeURIComponent(roomEnCours)}`; };
+  // Styles en ligne : page du match sans commun/theme.css.
+  const STYLE_BOUTON = "padding: 0.5rem 1rem; border: 2px solid; border-radius: 0.625rem; color: white; font: inherit; font-weight: bold; cursor: pointer;";
+  return new Promise(resoudre => {
+    const fenetre = document.createElement("dialog");
+    fenetre.style.cssText = "max-width: min(26rem, calc(100vw - 2rem)); padding: 1.25rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 0.75rem; background: #2a2a2a; color: white; text-align: center;";
+    fenetre.innerHTML = `
+      <p style="margin: 0 0 0.5rem; font-weight: bold;">Tu as un match classé en cours.</p>
+      <p style="margin: 0 0 1rem; font-size: 0.875rem; opacity: 0.85;">L'abandonner compte comme une défaite : ton adversaire gagne 30 trophées et tu ne gagnes aucun Rikoyn.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
+        <button type="button" data-choix="retour" style="${STYLE_BOUTON} border-color: #f5c542; background-color: rgba(245, 197, 66, 0.18);">Retourner au match</button>
+        <button type="button" data-choix="abandon" style="${STYLE_BOUTON} border-color: #e74c3c; background-color: rgba(231, 76, 60, 0.25);">Abandonner le match</button>
+      </div>
+      <p class="etat-abandon" style="margin: 0.75rem 0 0; font-size: 0.875rem;" hidden></p>`;
+    document.body.appendChild(fenetre);
+    // Échap : comme "Retourner au match".
+    fenetre.addEventListener("cancel", event => {
+      event.preventDefault();
+      allerAuMatch();
+    });
+    fenetre.addEventListener("click", async event => {
+      const choix = event.target.closest("[data-choix]")?.dataset.choix;
+      if (choix === "retour") return allerAuMatch();
+      if (choix !== "abandon") return;
+      fenetre.querySelectorAll("button").forEach(bouton => { bouton.disabled = true; });
+      const etat = fenetre.querySelector(".etat-abandon");
+      try {
+        const reponse = await fetch(`/api/rooms/${encodeURIComponent(roomEnCours)}/abandonner_classe`, { method: "POST", credentials: "include" });
+        if (!reponse.ok) {
+          const { error } = await reponse.json().catch(() => ({}));
+          throw new Error(error || "Abandon impossible.");
+        }
+        fenetre.close();
+        fenetre.remove();
+        resoudre(true);
+      } catch (erreur) {
+        etat.textContent = `${erreur.message} Retour au match…`;
+        etat.hidden = false;
+        setTimeout(allerAuMatch, 1500);
+      }
+    });
+    fenetre.showModal();
+  });
+}

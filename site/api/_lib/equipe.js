@@ -839,7 +839,8 @@ async function routeConfirmer(req, res, roomId, user) {
   if (draft.id_match) {
     draft.koyns = await crediterPartie(ROLES.flatMap(role => draft.equipes[role].map(id => ({
       discordId: id,
-      adversaires: draft.equipes[role === "j1" ? "j2" : "j1"]
+      adversaires: draft.equipes[role === "j1" ? "j2" : "j1"],
+      abandon: !!draft[`temps_${role}`]?.abandon
     }))), `match:${draft.id_match}`, suspect ? "suspicion" : null);
   }
   try {

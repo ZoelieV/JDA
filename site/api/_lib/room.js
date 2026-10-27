@@ -258,6 +258,7 @@ module.exports = {
   ERREUR_MATCH_CLASSE,
   matchClasseEnCours,
   annulerAutresMatchs,
+  quitterRoom,
   determinerRole,
   getAutreJoueur,
   getDiscordIdJoueur,
