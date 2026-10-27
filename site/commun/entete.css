@@ -636,12 +636,13 @@ body::before {
   height: 2.4rem;
 }
 
-/* Sans médaille, le rang prend sa place au bord opposé à la photo. */
+/* Rang puis médaille au bord opposé à la photo : l'espace libre passe
+   avant le rang (la médaille reste la plus loin de la photo). */
 .avec-banniere2 > .rang-trophees {
   margin-right: auto;
 }
 
-.avec-banniere2 > .medaille-theatre + .rang-trophees {
+.avec-banniere2 > .rang-trophees + .medaille-theatre {
   margin-right: 0;
 }
 

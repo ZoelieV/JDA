@@ -259,9 +259,13 @@
   opacity: 0.85;
 }
 
-/* Rang seul (sans médaille) : à droite lui aussi. */
-.joueur-infos .joueur-textes + .rang-trophees {
+/* Rang puis médaille, à droite : l'espace libre passe avant le rang. */
+.joueur-infos .rang-trophees {
   margin-left: auto;
+}
+
+.joueur-infos .rang-trophees + .medaille-theatre {
+  margin-left: 0;
 }
 
 .joueur-infos .medaille-theatre {

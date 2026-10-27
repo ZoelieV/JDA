@@ -210,21 +210,21 @@
     document.dispatchEvent(new CustomEvent("trophees-change", { detail: valeur }));
   }
 
-  // Pose (ou retire) le rang dans un bouton de compte, à côté de la médaille
-  // du théâtre (après elle : du côté opposé à la photo).
+  // Pose (ou retire) le rang dans un bouton de compte, entre le pseudo et
+  // la médaille du théâtre (la médaille reste la plus loin de la photo).
   function appliquerRang(element, trophees) {
     element.querySelector(".rang-trophees")?.remove();
     const rang = creerRang(trophees);
     if (!rang) return;
     const medaille = element.querySelector(".medaille-theatre");
     const pseudo = element.querySelector("span");
-    if (medaille) medaille.after(rang);
+    if (medaille) medaille.before(rang);
     else if (pseudo) pseudo.after(rang);
     else element.appendChild(rang);
   }
 
   // Pose (ou retire) la médaille du théâtre dans un bouton de compte, après
-  // le pseudo (même rendu que htmlMedailleTheatre, commun/cartes.js ; style
+  // le pseudo et le rang (même rendu que htmlMedailleTheatre, commun/cartes.js ; style
   // .medaille-theatre dans commun/entete.css).
   function appliquerMedaille(element, palier) {
     let medaille = element.querySelector(".medaille-theatre");
@@ -236,8 +236,8 @@
     if (!medaille) {
       medaille = document.createElement("img");
       medaille.className = "medaille-theatre";
-      const pseudo = element.querySelector("span");
-      if (pseudo) pseudo.after(medaille);
+      const avant = element.querySelector(".rang-trophees") || element.querySelector("span");
+      if (avant) avant.after(medaille);
       else element.appendChild(medaille);
     }
     medaille.src = `/DB/images/others/theatre_${infos.icone}.webp?v=3`;

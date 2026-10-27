@@ -133,9 +133,13 @@ h1, h2 {
   min-width: 0;
 }
 
-/* Rang seul (sans médaille) : à droite lui aussi. */
-.account-infos .account-textes + .rang-trophees {
+/* Rang puis médaille, à droite : l'espace libre passe avant le rang. */
+.account-infos .rang-trophees {
   margin-left: auto;
+}
+
+.account-infos .rang-trophees + .medaille-theatre {
+  margin-left: 0;
 }
 
 .account-infos .medaille-theatre {

@@ -324,13 +324,21 @@
   margin-left: auto;
 }
 
-.match-banniere > .match-nom + .rang-trophees {
+/* Rang puis médaille : l'espace libre passe avant le rang (la médaille
+   reste la plus loin de la photo). */
+.match-banniere > .rang-trophees {
   margin-left: auto;
 }
 
-.match-j2 .match-banniere > .match-nom + .rang-trophees {
+.match-j2 .match-banniere > .rang-trophees {
   margin-left: 0;
   margin-right: auto;
+}
+
+.match-banniere > .rang-trophees + .medaille-theatre,
+.match-j2 .match-banniere > .rang-trophees + .medaille-theatre {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .match-j2 .match-banniere > .medaille-theatre {

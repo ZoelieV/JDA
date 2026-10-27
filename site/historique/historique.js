@@ -380,8 +380,8 @@ function htmlJoueur(match, role, bansConnus) {
     : `<div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
         ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
         <span class="match-nom"></span>
-        ${htmlMedailleTheatre(joueur.theatre)}
         ${htmlRangTrophees(joueur.trophees)}
+        ${htmlMedailleTheatre(joueur.theatre)}
         ${etiquette}
         ${trophees}
         <span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span>

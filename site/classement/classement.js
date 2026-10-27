@@ -140,8 +140,8 @@ function creerLigne(joueur) {
           ${joueur.prime ? `<span class="badge-prime" title="Plus longue série de victoires en cours (${joueur.serie}) : le battre rapporte +5 trophées">${ICONE_ENTRAINEMENT} Prime +5 · ${joueur.serie} victoires d'affilée</span>` : ""}
           <div class="joueur-sub"></div>
         </div>
-        ${htmlMedailleTheatre(joueur.theatre)}
         ${htmlRangTrophees(joueur.trophees)}
+        ${htmlMedailleTheatre(joueur.theatre)}
       </div>
       <span class="stat-telephone"></span>
     </div>
