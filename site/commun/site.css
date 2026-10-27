@@ -224,7 +224,7 @@ html.site-classique .site-entete #discord-name::before {
 /* Bouton du compte de l'en-tête plus court (place pour les liens) ;
    téléphone : tel quel. */
 html.site-classique .site-entete .avec-banniere2 {
-  --largeur-banniere: min(19rem, 100vw - 6.875rem);
+  --largeur-banniere: min(20.5rem, 100vw - 5.375rem);
 }
 
 /* Ordinateur : à la taille d'une carte de Tous les comptes
