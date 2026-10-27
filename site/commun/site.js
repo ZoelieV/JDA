@@ -202,9 +202,22 @@
     const cadreEntete = entete.getBoundingClientRect();
     const cadreTitre = entree.titre.getBoundingClientRect();
     entree.sousMenu.style.left = `${(cadreTitre.left - cadreEntete.left) / zoom}px`;
+    entree.sousMenu.style.right = "";
     entree.sousMenu.style.top = `${(cadreTitre.bottom - cadreEntete.top) / zoom}px`;
     entree.menu.classList.add("ouvert");
     entree.sousMenu.classList.add("ouvert");
+    // Menu qui dépasserait de l'écran (titre près du bord, téléphone) :
+    // calé contre le bord de l'écran (par son côté droit : sa largeur change
+    // avec sa position).
+    const marge = 8;
+    const largeurEcran = document.documentElement.clientWidth;
+    const cadreMenu = entree.sousMenu.getBoundingClientRect();
+    if (cadreMenu.right > largeurEcran - marge) {
+      entree.sousMenu.style.left = "auto";
+      entree.sousMenu.style.right = `${(cadreEntete.right - (largeurEcran - marge)) / zoom}px`;
+    } else if (cadreMenu.left < marge) {
+      entree.sousMenu.style.left = `${(marge - cadreEntete.left) / zoom}px`;
+    }
     entree.titre.setAttribute("aria-expanded", "true");
   }
 
