@@ -43,38 +43,37 @@
     3: { nom: "Dauphin", icone: "dauphin" },
     4: { nom: "Baleine", icone: "baleine" }
   };
-  // Rangs du classé selon les trophées de la saison : chaque rang a 3
-  // niveaux (3, puis 2, puis 1) d'une même largeur (bronze 50 trophées,
-  // argent 60, or 70, platine 80, diamant 100), à partir de 0 ; Archon à
-  // 1000 trophées, sans niveaux. Icônes : DB/images/others/<icone>.webp.
+  // Rangs du classé selon les trophées de la saison : 3 niveaux par rang
+  // (3, puis 2, puis 1), de plus en plus larges (bronze 45 trophées,
+  // argent 55, or 65, platine 75, diamant 90 ; Bronze 3 a 10 de plus pour
+  // tomber pile à 1000), puis Archon à 1000, sans niveaux. Trophées à partir
+  // desquels chaque niveau commence. Icônes : DB/images/others/<icone>.webp.
   // Utilisé aussi par commun/cartes.js (htmlRangTrophees).
   const RANGS_TROPHEES = [
-    { nom: "Bronze", icone: "bronze", largeur: 50 },
-    { nom: "Argent", icone: "argent", largeur: 60 },
-    { nom: "Or", icone: "or", largeur: 70 },
-    { nom: "Platine", icone: "platine", largeur: 80 },
-    { nom: "Diamant", icone: "diamand", largeur: 100 }
+    { nom: "Bronze", icone: "bronze", debuts: [0, 55, 100] },
+    { nom: "Argent", icone: "argent", debuts: [145, 200, 255] },
+    { nom: "Or", icone: "or", debuts: [310, 375, 440] },
+    { nom: "Platine", icone: "platine", debuts: [505, 580, 655] },
+    { nom: "Diamant", icone: "diamand", debuts: [730, 820, 910] }
   ];
   const SEUIL_ARCHON = 1000;
 
-  // Trophées -> { nom ("Or 2", "Archon"), icone, niveau (1..3, null pour
+  // Trophées -> { nom ("Or 2", "Archon"), icone, niveau (3..1, null pour
   // Archon) }, ou null (pas de trophées : aucun match classé).
   function rangTrophees(trophees) {
     if (trophees === null || trophees === undefined || trophees === "" || !Number.isFinite(Number(trophees))) return null;
     const total = Math.max(0, Number(trophees));
     if (total >= SEUIL_ARCHON) return { nom: "Archon", icone: "archon", niveau: null };
-    let debut = 0;
-    for (const rang of RANGS_TROPHEES) {
-      const fin = debut + 3 * rang.largeur;
-      if (total < fin) {
-        const niveau = 3 - Math.floor((total - debut) / rang.largeur);
-        return { nom: `${rang.nom} ${niveau}`, icone: rang.icone, niveau };
+    for (let r = RANGS_TROPHEES.length - 1; r >= 0; r--) {
+      const rang = RANGS_TROPHEES[r];
+      for (let n = rang.debuts.length - 1; n >= 0; n--) {
+        if (total >= rang.debuts[n]) {
+          const niveau = 3 - n;
+          return { nom: `${rang.nom} ${niveau}`, icone: rang.icone, niveau };
+        }
       }
-      debut = fin;
     }
-    // Entre la fin du diamant 1 et l'Archon : diamant 1.
-    const diamant = RANGS_TROPHEES[RANGS_TROPHEES.length - 1];
-    return { nom: `${diamant.nom} 1`, icone: diamant.icone, niveau: 1 };
+    return null;
   }
 
   // Icône du rang (image + niveau en pastille), ou null.
