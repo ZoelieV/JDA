@@ -6,7 +6,9 @@
 const LIBELLES_BANS = {
   semaine: "1 semaine",
   saison: "Jusqu'à la fin de la saison",
-  definitif: "Définitif"
+  definitif: "Définitif",
+  // Ban de tout le site (connexion refusée, cf. estBanniSite, api/_lib/session.js).
+  site: "Banni du site"
 };
 
 let bansEnCours = [];
@@ -37,7 +39,7 @@ function rendreBans() {
       </thead>
       <tbody>
         ${liste.map(ban => `
-          <tr class="${ban.type === "definitif" ? "ban-definitif" : ""}">
+          <tr class="${ban.type === "definitif" || ban.type === "site" ? "ban-definitif" : ""}">
             <td class="col-nom">
               <div class="entete-boss">
                 ${ban.avatar ? `<img class="photo-ban" src="${echapper(ban.avatar)}" alt="">` : ""}

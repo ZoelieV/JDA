@@ -1,5 +1,5 @@
 // Limites de fréquence par adresse IP ou par compte (table
-// limites_frequence, cf. sql/abandons_limites.sql). L'IP ou l'ID Discord
+// limites_frequence). L'IP ou l'ID Discord
 // n'est jamais stocké en clair : seulement une empreinte HMAC (clé
 // SESSION_SECRET), impossible à inverser sans la clé.
 const crypto = require("crypto");

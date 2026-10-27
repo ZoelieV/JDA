@@ -1,4 +1,4 @@
-// Feedbacks des joueurs (table feedbacks, cf. sql/feedbacks.sql), routes de
+// Feedbacks des joueurs (table feedbacks), routes de
 // api/matches.js (?feedback=..., pour rester sous la limite de fonctions de
 // Vercel).
 //
@@ -23,7 +23,7 @@ const BRUT_MAX = 5000;
 const ACTION_LIMITE = "feedback";
 const STATUTS = ["nouveau", "pris_en_compte", "termine"];
 const NB_FEEDBACKS_MAX = 200;
-const ERREUR_TABLE = "Table des feedbacks absente : lancer sql/feedbacks.sql dans Supabase.";
+const ERREUR_TABLE = "Table des feedbacks absente de la base.";
 
 // ---- Texte ----
 

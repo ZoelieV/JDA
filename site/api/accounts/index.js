@@ -20,15 +20,15 @@ async function chargerProfils() {
 // Matchs joués et victoires par joueur, d'après l'historique des matchs,
 // plus trophées, matchs et victoires en classé (page Classement).
 // Litiges ouverts (matchs invalidés) non comptés ; sans colonnes litige /
-// classe (sql/litiges.sql, sql/classe.sql pas lancés), tous les matchs et
+// classe (base pas à jour), tous les matchs et
 // pas de classé.
 async function chargerResultats() {
   const champs = "player1_discord_id, player2_discord_id, vainqueur";
   // Ni les matchs invalidés après un signalement (cf. _lib/signalements.js).
   const litigeOuvert = "litige.is.null,litige.not.in.(ouvert,invalide)";
   // Entraînements jamais comptés (filtrés plus bas) ; sans la colonne
-  // entrainement (sql/entrainement.sql pas lancé), il n'y en a pas.
-  // Matchs d'équipe (colonne mode_equipe, sql/equipes.sql) : pas comptés
+  // entrainement (base pas à jour), il n'y en a pas.
+  // Matchs d'équipe (colonne mode_equipe) : pas comptés
   // ici (stats des matchs 1v1).
   let { data, error } = await supabase
     .from("match_history")
@@ -42,7 +42,7 @@ async function chargerResultats() {
       .or(litigeOuvert));
   }
 
-  // Sans colonne saison (sql/saisons.sql pas lancé) : tout en saison 0.
+  // Sans colonne saison (base pas à jour) : tout en saison 0.
   if (error) {
     ({ data, error } = await supabase
       .from("match_history")
@@ -50,7 +50,7 @@ async function chargerResultats() {
       .or(litigeOuvert));
   }
 
-  // Sans colonnes du bonus de saison (sql/bonus_saison.sql pas lancé).
+  // Sans colonnes du bonus de saison (base pas à jour).
   if (error) {
     ({ data, error } = await supabase
       .from("match_history")
@@ -65,13 +65,13 @@ async function chargerResultats() {
       .or(litigeOuvert));
   }
 
-  // Sans colonne mode_theatre (sql/theatre.sql pas lancé) : tout en
+  // Sans colonne mode_theatre (base pas à jour) : tout en
   // classement Classique.
   if (error) {
     ({ data, error } = await supabase.from("match_history").select(`${champs}, id, created_at, litige, classe, trophees`).or(litigeOuvert));
   }
 
-  // Sans colonne litige (sql/litiges.sql pas lancé) : classé quand même.
+  // Sans colonne litige (base pas à jour) : classé quand même.
   if (error) {
     ({ data, error } = await supabase.from("match_history").select(`${champs}, id, created_at, classe, trophees`));
   }

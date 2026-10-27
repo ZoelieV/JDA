@@ -1,8 +1,8 @@
 // Administrateurs du site : IDs Discord listés dans la variable
 // d'environnement Vercel ADMIN_DISCORD_IDS (séparés par des virgules).
-// Mini admins : table mini_admins de Supabase (cf. sql/mini_admins.sql),
+// Mini admins : table mini_admins de Supabase,
 // page Administration en lecture seule, litiges et bans du classé.
-// Shadowbans : table shadowbans (cf. sql/shadowbans.sql), pas d'accès à la
+// Shadowbans : table shadowbans, pas d'accès à la
 // page Theorycraft.
 const { supabase } = require("./supabase");
 

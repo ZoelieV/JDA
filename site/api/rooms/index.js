@@ -178,7 +178,7 @@ async function creerEquipe(req, res, user) {
   if (error) {
     console.error(error);
     const sqlManquant = ["42703", "PGRST204"].includes(error.code);
-    return res.status(500).json({ error: sqlManquant ? "Modes en équipe pas encore activés (sql/equipes.sql à lancer dans Supabase)." : "Erreur création de la room" });
+    return res.status(500).json({ error: sqlManquant ? "Modes en équipe indisponibles (colonnes absentes de la base)." : "Erreur création de la room" });
   }
   return res.status(200).json({ room_id: roomId, equipe: true });
 }
@@ -212,7 +212,7 @@ async function creerWorldBoss(req, res, user) {
   if (error) {
     console.error(error);
     const sqlManquant = ["42703", "PGRST204"].includes(error.code);
-    return res.status(500).json({ error: sqlManquant ? "Mode pas encore activé (sql/equipes.sql à lancer dans Supabase)." : "Erreur création de la room" });
+    return res.status(500).json({ error: sqlManquant ? "Mode indisponible (colonnes absentes de la base)." : "Erreur création de la room" });
   }
   return res.status(200).json({ room_id: roomId, world_boss: true });
 }

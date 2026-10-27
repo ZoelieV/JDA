@@ -141,10 +141,9 @@ function lireSessionToken(token) {
   return payload;
 }
 
-// Sessions révoquées (déconnexion) : table sessions_revoquees (cf.
-// sql/sessions_revoquees.sql), relue au plus toutes les 30 s ; une session
-// déconnectée peut donc encore servir jusqu'à 30 s. Table absente (SQL pas
-// lancé) : aucune révocation (erreur journalisée).
+// Sessions révoquées (déconnexion) : table sessions_revoquees, relue
+// au plus toutes les 30 s ; une session déconnectée peut donc encore servir
+// jusqu'à 30 s. Table absente : aucune révocation (erreur journalisée).
 const CACHE_REVOCATIONS_MS = 30 * 1000;
 let cacheRevocations = null;
 
@@ -160,12 +159,35 @@ async function estRevoquee(jti) {
   return cacheRevocations.jtis.has(jti);
 }
 
+// Joueurs bannis du site (sanction de type "site", en cours : fin nulle =
+// définitive) : plus de connexion (cf. api/auth/discord/callback.js) et
+// leurs sessions ne valent plus rien, donc aucun match possible. Relus au
+// plus toutes les 30 s, comme les révocations.
+let cacheBannis = null;
+
+async function estBanniSite(discordId) {
+  if (!cacheBannis || Date.now() - cacheBannis.lu > CACHE_REVOCATIONS_MS) {
+    const { data, error } = await supabase
+      .from("sanctions")
+      .select("discord_id, fin")
+      .eq("type", "site");
+    if (error) console.error("Erreur lecture des bans du site :", error);
+    const maintenant = Date.now();
+    cacheBannis = {
+      ids: new Set((data || []).filter(s => s.fin === null || Date.parse(s.fin) > maintenant).map(s => String(s.discord_id))),
+      lu: Date.now()
+    };
+  }
+  return cacheBannis.ids.has(String(discordId));
+}
+
 // Utilisateur de la session (cookie "session"), ou null si absente,
-// invalide, expirée ou révoquée.
+// invalide, expirée, révoquée ou d'un joueur banni du site.
 async function verifySessionToken(token) {
   const session = lireSessionToken(token);
   if (!session) return null;
   if (session.jti && await estRevoquee(session.jti)) return null;
+  if (session.user?.id && await estBanniSite(session.user.id)) return null;
   return session.user;
 }
 
@@ -191,5 +213,6 @@ module.exports = {
   setCookie,
   createSessionToken,
   verifySessionToken,
-  revoquerSession
+  revoquerSession,
+  estBanniSite
 };

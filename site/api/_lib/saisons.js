@@ -1,4 +1,4 @@
-// Saisons du classé (table saisons, cf. sql/saisons.sql) : la saison en
+// Saisons du classé (table saisons) : la saison en
 // cours est celle au plus grand numéro. Chaque match archivé garde le
 // numéro de la saison où il a été joué (match_history.saison) : trophées,
 // séries et primes repartent de 0 à chaque saison (cf. rejouerClasse).

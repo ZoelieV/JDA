@@ -157,14 +157,14 @@ function rejouerClasse(matchs) {
 }
 
 // Tous les matchs classés (colonnes utiles au calcul), ou [] sans la
-// colonne classe (sql/classe.sql pas lancé). Sans colonne litige
-// (sql/litiges.sql pas lancé), aucun litige possible : lecture sans elle.
+// colonne classe (base pas à jour). Sans colonne litige
+// (base pas à jour), aucun litige possible : lecture sans elle.
 async function chargerMatchsClasses(supabase) {
   // Colonnes facultatives (litige, mode_theatre) : lecture sans elles si
   // elles n'existent pas encore.
   const champs = "id, created_at, player1_discord_id, player2_discord_id, vainqueur, classe, trophees";
   const lire = select => supabase.from("match_history").select(select).eq("classe", true);
-  // Sans colonne saison (sql/saisons.sql pas lancé) : tout en saison 0.
+  // Sans colonne saison (base pas à jour) : tout en saison 0.
   let { data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2, saison`);
   if (error) ({ data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2`));
   if (error) ({ data, error } = await lire(`${champs}, litige, mode_theatre`));

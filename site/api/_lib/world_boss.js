@@ -1,9 +1,9 @@
 // Mode Random world boss : seul ou de 2 à 4 joueurs en co-op contre un boss
 // tiré au hasard, avec 4 persos tirés au hasard dans leurs full box. Rooms de type
-// "world_boss" (colonne membres, cf. sql/equipes.sql), page
+// "world_boss" (colonne membres), page
 // matchmaking/world_boss.html, routes /api/rooms/{room_id}/wb_* (cf.
 // api/rooms/[room_id]/[action].js). Parties archivées dans la table
-// world_boss_history (cf. sql/world_boss.sql).
+// world_boss_history.
 //
 // Déroulé (draft.phase) :
 //   lobby   : les joueurs rejoignent par le lien (TAILLE_MIN à TAILLE_MAX) ;

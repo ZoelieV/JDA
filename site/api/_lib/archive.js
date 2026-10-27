@@ -46,7 +46,7 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
   const match = {
     boss_id: draft.boss_id,
     // Entraînement : propriétaires des box jouées ; visible du lanceur
-    // seulement (entrainement, lanceur_discord_id, cf. sql/entrainement.sql).
+    // seulement (entrainement, lanceur_discord_id).
     player1_discord_id: draft.entrainement ? boxes.j1.proprietaire : draft.discord_j1,
     player2_discord_id: draft.entrainement ? boxes.j2.proprietaire : draft.discord_j2,
     ...(draft.entrainement ? { entrainement: true, lanceur_discord_id: draft.entrainement.lanceur } : {}),
@@ -69,14 +69,14 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     theatre: draft.theatre ?? null,
     mode_theatre: draft.mode_theatre || "auto",
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par } : {}),
-    // Raison donnée par le joueur qui a signalé le litige (sql/litiges_commentaire.sql).
+    // Raison donnée par le joueur qui a signalé le litige.
     ...(litige && draft.litige_commentaire ? { litige_commentaire: draft.litige_commentaire } : {}),
     ...(triche ? { triche: true, duree_saisie: triche.duree_saisie, somme_temps: triche.somme_temps } : {}),
     ...(suspicion ? { triche: true, suspicion } : {}),
     ...(classe ? {
       classe: true,
       // Persos de l'équipe avec le bonus de saison au moment du match (la
-      // liste change d'une saison à l'autre ; cf. sql/bonus_saison.sql).
+      // liste change d'une saison à l'autre).
       bonus_saison_j1: draft.actions.filter(a => a.type === "pick" && a.joueur === "j1" && aBonusSaison(a.perso_id, a.element)).length,
       bonus_saison_j2: draft.actions.filter(a => a.type === "pick" && a.joueur === "j2" && aBonusSaison(a.perso_id, a.element)).length,
       trophees: litige ? null : calculerTrophees(draft.temps_j1, draft.temps_j2, draft.vainqueur, draft.boss_id)
@@ -84,7 +84,7 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     // Toutes les actions (bans, bans d'équilibrage, picks avec l'élément du
     // Voyageur / Manekin) : affichées dans l'historique des matchs.
     actions,
-    // Saison en cours (cf. _lib/saisons.js, sql/saisons.sql).
+    // Saison en cours (cf. _lib/saisons.js).
     saison: await saisonActuelle()
   };
 
@@ -93,13 +93,13 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
 
   // Colonnes facultatives (actions, theatre, mode_theatre) pas encore
   // créées dans la table : archivage sans elles (les bans restent
-  // enregistrés dans bans_j1 / bans_j2 ; cf. sql/theatre.sql). Colonnes litige
-  // absentes (sql/litiges.sql pas lancé) : nouvelle erreur, le litige n'est
+  // enregistrés dans bans_j1 / bans_j2). Colonnes litige
+  // absentes (base pas à jour) : nouvelle erreur, le litige n'est
   // pas archivé (jamais publié comme un match normal) ; idem pour un match
-  // classé sans les colonnes classe / trophees (sql/classe.sql).
+  // classé sans les colonnes classe / trophees.
   // Colonnes récentes absentes (SQL pas lancé) : archivage sans elles
-  // seulement, une à une (suspicion : sql/temps_suspects.sql ; saison :
-  // sql/saisons.sql, match compté en saison 0).
+  // seulement, une à une (suspicion ; saison : match
+  // compté en saison 0).
   let reduit = match;
   for (const colonne of ["suspicion", "saison"]) {
     if (!error || !COLONNES_INEXISTANTES.has(error.code)) break;

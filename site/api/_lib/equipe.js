@@ -1,5 +1,5 @@
 // Modes 2v2, 3v3 et 4v4 : deux équipes, chacune dans un monde (co-op) avec
-// 4 persos. Rooms de type "equipe" (cf. sql/equipes.sql), page
+// 4 persos. Rooms de type "equipe", page
 // matchmaking/equipe.html, routes /api/rooms/{room_id}/equipe_* (cf.
 // api/rooms/[room_id]/[action].js).
 //
@@ -504,7 +504,7 @@ async function quitterEquipes(discordId, { sauf = null } = {}) {
   if (sauf) requete = requete.neq("room_id", sauf);
   const { data, error } = await requete;
   if (error) {
-    // Colonne membres absente (sql/equipes.sql pas lancé) : aucune room d'équipe.
+    // Colonne membres absente (base pas à jour) : aucune room d'équipe.
     if (!["42703", "PGRST204", "42P01"].includes(error.code)) console.error("Erreur lecture rooms d'équipe :", error);
     return;
   }

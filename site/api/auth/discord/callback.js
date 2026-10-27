@@ -3,7 +3,8 @@ const {
   SESSION_TTL_SECONDS,
   parseCookies,
   setCookie,
-  createSessionToken
+  createSessionToken,
+  estBanniSite
 } = require("../../_lib/session");
 const { retourValide } = require("./login");
 
@@ -56,6 +57,11 @@ module.exports = async (req, res) => {
     }
 
     const discordUser = await userResponse.json();
+    // Banni du site (cf. estBanniSite) : ni profil ni session.
+    if (await estBanniSite(discordUser.id)) {
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      return res.status(403).send("Ce compte Discord est banni du Jugement des Archons.");
+    }
 
     const avatarUrl = discordUser.avatar
       ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png?size=128`

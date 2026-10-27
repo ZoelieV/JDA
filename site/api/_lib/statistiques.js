@@ -1,5 +1,4 @@
-// Statistiques du site (page Administration, bouton Statistiques ; tables :
-// cf. sql/statistiques.sql) :
+// Statistiques du site (page Administration, bouton Statistiques) :
 // - inscriptions : profiles.inscrit_le (première connexion Discord) et
 //   profiles.source (lien de pub ?src=..., cf. api/auth/discord/callback.js) ;
 // - connexions : connexions_jour, une ligne par joueur et par journée du
@@ -66,7 +65,7 @@ async function lireStatistiques() {
     ]);
   } catch (erreur) {
     console.error("Erreur lecture des statistiques :", erreur);
-    return { erreur: "Statistiques indisponibles : lance sql/statistiques.sql dans Supabase." };
+    return { erreur: "Statistiques indisponibles : tables absentes de la base." };
   }
 
   // Journées de la fenêtre, de la plus ancienne à aujourd'hui.

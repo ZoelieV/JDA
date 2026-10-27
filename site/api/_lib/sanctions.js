@@ -8,7 +8,7 @@
 // d'ennemis tués, cf. estDefiEnnemis) : chaque joueur qui n'a pas abandonné
 // compte pour la durée du défi (2 min).
 //
-// Sanctions (table sanctions, cf. sql/anti_triche.sql), choisies par un
+// Sanctions (table sanctions), choisies par un
 // administrateur pour chaque joueur du dossier : ban du classé d'une
 // semaine, jusqu'à la fin de la saison (date donnée par l'administrateur)
 // ou définitif ; ou aucune conséquence (explication valable).
@@ -82,7 +82,7 @@ async function banClasse(discordId, maintenant = Date.now()) {
     .eq("discord_id", discordId)
     .neq("type", "aucune");
   if (error) {
-    // Table absente (sql/anti_triche.sql pas lancé) : aucun ban.
+    // Table absente (base pas à jour) : aucun ban.
     console.error("Erreur lecture sanctions :", error);
     return null;
   }
@@ -93,6 +93,7 @@ async function banClasse(discordId, maintenant = Date.now()) {
 }
 
 function messageBan(ban) {
+  if (ban.type === "site") return "Tu es banni du site.";
   if (ban.fin === null) return "Tu es banni définitivement du mode classé.";
   return `Tu es banni du mode classé jusqu'au ${new Date(ban.fin).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}.`;
 }

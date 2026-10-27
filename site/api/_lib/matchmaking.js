@@ -4,7 +4,7 @@
 // Files séparées (un joueur en matchmaking normal ne tombe jamais sur un
 // joueur en classé, ni un joueur en mode classique sur un joueur en mêlée
 // générale) : rooms de type "matchmaking" ou "classe" sans player2
-// (colonnes type et created_at, cf. sql/rooms_matchmaking.sql), mode de
+// (colonnes type et created_at), mode de
 // théâtre dans draft.mode_theatre ("auto" = classique, "12" = mêlée,
 // "carnage" ; classé : mêlée seulement, cf. MODES_MATCHMAKING dans
 // api/rooms/index.js). Une

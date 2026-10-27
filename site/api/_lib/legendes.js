@@ -1,4 +1,4 @@
-// Légendes locales tuées (table legendes_tuees, cf. sql/legendes_locales.sql).
+// Légendes locales tuées (table legendes_tuees).
 //
 // En jeu, une légende locale "une fois par jour" (TYPE_LEGENDE_JOUR) ne se
 // tue qu'une fois par jour, avec un reset à 4 h (heure de Paris). Chaque

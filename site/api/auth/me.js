@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
       // admin : accès à la page d'administration des points (carte de l'accueil).
       // mini_admin : même page en lecture seule, litiges et bans du classé.
       // theorycraft : accès à la page Theorycraft (tout connecté sauf les
-      // shadowbans, cf. sql/shadowbans.sql).
+      // shadowbans).
       user: {
         ...user,
         admin: estAdmin(user.id),

@@ -1,5 +1,5 @@
 // Rikoyns : monnaie du site (cf. commun/koyns.js), tables koyns_mouvements et
-// cosmetiques_possedes (cf. sql/koyns.sql). Tables absentes (SQL pas lancé) :
+// cosmetiques_possedes. Tables absentes (base pas à jour) :
 // aucun gain, rien de possédé (erreurs journalisées).
 //
 // Gains :
@@ -139,7 +139,7 @@ async function acheterCosmetique(discordId, id) {
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant l'achat.
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
   // Mon image : payée à chaque import, enregistrée comme un achat à part
-  // (même verrou du solde que les autres achats, cf. sql/koyns.sql).
+  // (même verrou du solde que les autres achats).
   const achete = id === FOND_IMPORTE ? `${id}#${Date.now()}` : id;
   const { data, error } = await supabase.rpc("acheter_cosmetique", { p_discord_id: discordId, p_cosmetique: achete, p_prix: prixCosmetique(id) });
   if (error) {

@@ -78,7 +78,7 @@ async function chargerEntrainements(discordId) {
     .order("created_at", { ascending: false })
     .limit(NB_MATCHS_MAX);
   if (error) {
-    // Colonnes de sql/entrainement.sql absentes : aucun entraînement.
+    // Colonnes de la base absentes : aucun entraînement.
     console.error("Erreur lecture entraînements :", error);
     return [];
   }
@@ -86,7 +86,7 @@ async function chargerEntrainements(discordId) {
 }
 
 // Administrateurs : litiges ouverts (plus récents d'abord) -> { lignes,
-// erreur }. Erreur de lecture (ex. colonnes de sql/litiges.sql absentes) :
+// erreur }. Erreur de lecture (ex. colonnes de la base absentes) :
 // renvoyée à la page pour que les administrateurs la voient.
 async function chargerLitigesOuverts() {
   const { data, error } = await supabase
@@ -99,7 +99,7 @@ async function chargerLitigesOuverts() {
     return {
       lignes: [],
       erreur: ["42703", "PGRST204"].includes(error.code)
-        ? "Colonnes des litiges absentes de la base : lancer sql/litiges.sql dans Supabase."
+        ? "Colonnes des litiges absentes de la base."
         : `Erreur de lecture des litiges (${error.code || "inconnue"}) : ${error.message || ""}`
     };
   }
@@ -199,7 +199,7 @@ async function sanctionnerLitige(req, res, user) {
   const { error: erreurSanctions } = await supabase.from("sanctions").insert(lignes);
   if (erreurSanctions) {
     console.error("Erreur enregistrement sanctions :", erreurSanctions);
-    return res.status(500).json({ error: "Table des sanctions absente : lancer sql/anti_triche.sql dans Supabase." });
+    return res.status(500).json({ error: "Table des sanctions absente de la base." });
   }
   const { error: erreurMaj } = await supabase
     .from("match_history")
@@ -220,7 +220,7 @@ async function listerBans(res) {
     .order("created_at", { ascending: false });
   if (error) {
     console.error("Erreur lecture sanctions :", error);
-    return res.status(200).json({ bans: [], erreur: "Table des sanctions absente : lancer sql/anti_triche.sql dans Supabase." });
+    return res.status(200).json({ bans: [], erreur: "Table des sanctions absente de la base." });
   }
   const maintenant = Date.now();
   const actifs = (data || []).filter(s => s.fin === null || Date.parse(s.fin) > maintenant);
@@ -814,7 +814,7 @@ module.exports = async (req, res) => {
       boss_id: match.boss_id,
       vainqueur: match.vainqueur,
       entrainement: !!match.entrainement,
-      // Théâtre joué (palier 1 à 4 ; anciens matchs : 6 à 12) et mode de la room (cf. sql/theatre.sql).
+      // Théâtre joué (palier 1 à 4 ; anciens matchs : 6 à 12) et mode de la room.
       theatre: match.theatre ?? null,
       mode_theatre: match.mode_theatre ?? null,
       // Match classé : trophées gagnés par le vainqueur (perdus par l'autre).

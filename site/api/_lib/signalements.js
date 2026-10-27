@@ -1,4 +1,4 @@
-// Signalements de matchs (table signalements, cf. sql/signalements.sql).
+// Signalements de matchs (table signalements).
 //
 // Tout joueur connecté peut signaler un match terminé depuis la page
 // Historique (raison obligatoire), sauf pendant un ban du classé : une fois
@@ -21,7 +21,7 @@ const COMMENTAIRE_SIGNALEMENT_MAX = 500;
 const DECISIONS = ["sans_suite", "corrige", "invalide"];
 // Matchs déjà hors de l'historique public ou invalidés : pas signalables.
 const LITIGES_NON_SIGNALABLES = ["ouvert", "traite", "invalide"];
-const ERREUR_TABLE = "Table des signalements absente : lancer sql/signalements.sql dans Supabase.";
+const ERREUR_TABLE = "Table des signalements absente de la base.";
 
 function estSignalable(match) {
   return !!match && !match.entrainement && !LITIGES_NON_SIGNALABLES.includes(match.litige);
@@ -181,7 +181,7 @@ async function traiterSignalement(req, res, user) {
     const { error: erreurBans } = await supabase.from("sanctions").insert(bans);
     if (erreurBans) {
       console.error("Erreur enregistrement sanctions :", erreurBans);
-      return res.status(500).json({ error: "Table des sanctions absente : lancer sql/anti_triche.sql dans Supabase." });
+      return res.status(500).json({ error: "Table des sanctions absente de la base." });
     }
   }
   const { error: erreurStatut } = await supabase
