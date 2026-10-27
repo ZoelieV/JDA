@@ -133,6 +133,11 @@ h1, h2 {
   min-width: 0;
 }
 
+/* Rang seul (sans médaille) : à droite lui aussi. */
+.account-infos .account-textes + .rang-trophees {
+  margin-left: auto;
+}
+
 .account-infos .medaille-theatre {
   width: 2em;
   height: 2em;

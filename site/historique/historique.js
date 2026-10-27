@@ -381,6 +381,7 @@ function htmlJoueur(match, role, bansConnus) {
         ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
         <span class="match-nom"></span>
         ${htmlMedailleTheatre(joueur.theatre)}
+        ${htmlRangTrophees(joueur.trophees)}
         ${etiquette}
         ${trophees}
         <span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span>

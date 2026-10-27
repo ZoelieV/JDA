@@ -259,6 +259,11 @@
   opacity: 0.85;
 }
 
+/* Rang seul (sans médaille) : à droite lui aussi. */
+.joueur-infos .joueur-textes + .rang-trophees {
+  margin-left: auto;
+}
+
 .joueur-infos .medaille-theatre {
   width: 2em;
   height: 2em;

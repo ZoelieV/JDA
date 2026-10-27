@@ -82,6 +82,7 @@ async function chargerSessionDiscord() {
     // Plus de fond personnalisé une fois déconnecté.
     window.FondEcran?.memoriser(null, null);
     window.FondEcran?.memoriserTheatre(null);
+    window.FondEcran?.memoriserTrophees(null);
     // Déconnexion en POST (cf. api/auth/logout.js).
     try {
       const reponse = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
@@ -147,6 +148,11 @@ function initialiserMenuCompte() {
   window.FondEcran?.appliquerMedaille(bouton, window.FondEcran.theatre());
   document.addEventListener("theatre-change", event => {
     window.FondEcran.appliquerMedaille(bouton, event.detail);
+  });
+  // Rang du classé (trophées de la saison), à côté de la médaille.
+  window.FondEcran?.appliquerRang(bouton, window.FondEcran.trophees());
+  document.addEventListener("trophees-change", event => {
+    window.FondEcran.appliquerRang(bouton, event.detail);
   });
 
   bouton.addEventListener("click", () => {
@@ -1547,8 +1553,11 @@ async function initialiserPage() {
 
     // Rien à enregistrer tant que rien n'a changé.
     marquerEnregistre(profil);
-    // Médaille du bouton du compte (ici et sur les autres pages).
-    if (!ID_BOX_FICTIVE) window.FondEcran?.memoriserTheatre(profil.theatre);
+    // Médaille et rang du bouton du compte (ici et sur les autres pages).
+    if (!ID_BOX_FICTIVE) {
+      window.FondEcran?.memoriserTheatre(profil.theatre);
+      window.FondEcran?.memoriserTrophees(profil.trophees);
+    }
   } catch (erreur) {
     console.error(erreur);
     alert(ID_BOX_FICTIVE ? `Box fictive : ${erreur.message}` : "Erreur lors du chargement de la page.");

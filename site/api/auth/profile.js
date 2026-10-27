@@ -6,7 +6,10 @@ const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
 
-const { fetchAvecReessai } = require("../_lib/supabase");
+const { fetchAvecReessai, supabase } = require("../_lib/supabase");
+const { memoriser } = require("../_lib/memo");
+const { rejouerClasse, chargerMatchsClasses, tropheesSaison } = require("../_lib/trophees");
+const { saisonActuelle } = require("../_lib/saisons");
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -232,8 +235,13 @@ module.exports = async (req, res) => {
       // Palier de théâtre recalculé (profil enregistré avant le calcul
       // automatique, ou catalogue changé depuis). Rikoyns : solde et
       // cosmétiques possédés (personnalisation, cf. _lib/koyns.js).
+      // Trophées de la saison en cours (rang sur le bouton du compte, cf.
+      // commun/fond.js), null sans match classé ; matchs classés gardés
+      // 30 s en mémoire (lu à chaque page).
+      const matchsClasses = await memoriser("matchs_classes", 30 * 1000, () => chargerMatchsClasses(supabase));
+      const trophees = tropheesSaison(rejouerClasse(matchsClasses).parSaison, await saisonActuelle()).get(discordId) ?? null;
       return res.status(200).json({
-        profil: data ? { ...data, theatre: codeTheatre(data) } : null,
+        profil: data ? { ...data, theatre: codeTheatre(data), trophees } : null,
         koyns: await etatKoyns(discordId)
       });
     }

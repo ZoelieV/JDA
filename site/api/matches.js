@@ -18,8 +18,8 @@ const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { crediterMatchArchive } = require("./_lib/koyns");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
-const { calculerTrophees, rejouerClasse, chargerMatchsClasses } = require("./_lib/trophees");
-const { lireSaisons, saisonDuMatch } = require("./_lib/saisons");
+const { calculerTrophees, rejouerClasse, chargerMatchsClasses, tropheesSaison } = require("./_lib/trophees");
+const { lireSaisons, saisonDuMatch, saisonActuelle } = require("./_lib/saisons");
 const { SANCTIONS, finSanction } = require("./_lib/sanctions");
 const { estSignalable, etatSignalementsJoueur, signalerMatch, chargerSignalementsOuverts, traiterSignalement } = require("./_lib/signalements");
 const { estIdFictif, lireBoxesFictives } = require("./_lib/boxes_fictives");
@@ -770,10 +770,11 @@ module.exports = async (req, res) => {
     }));
 
     // Trophées réellement gagnés / perdus par match classé (bonus de série
-    // et plancher à 0 compris) : tous les matchs classés rejoués.
-    const deltasClasse = [...matchs, ...litiges, ...signalements.matchs].some(m => m.classe)
-      ? rejouerClasse(await memoriser("matchs_classes", 5000, () => chargerMatchsClasses(supabase))).deltas
-      : new Map();
+    // et plancher à 0 compris) et trophées de la saison en cours de chaque
+    // joueur (rang sur sa bannière) : tous les matchs classés rejoués.
+    const rejoue = rejouerClasse(await memoriser("matchs_classes", 5000, () => chargerMatchsClasses(supabase)));
+    const deltasClasse = rejoue.deltas;
+    const tropheesActuels = tropheesSaison(rejoue.parSaison, await saisonActuelle());
 
     const ids = [...new Set([
       ...[...matchs, ...enCours, ...litiges, ...entrainements, ...signalements.matchs].flatMap(m => [m.player1_discord_id, m.player2_discord_id]),
@@ -785,7 +786,13 @@ module.exports = async (req, res) => {
     const joueurs = await chargerJoueurs(ids);
     const deuxJoueurs = match => {
       const profils = { j1: joueurs.get(match.player1_discord_id), j2: joueurs.get(match.player2_discord_id) };
-      return { j1: resumerJoueur(match, "j1", profils), j2: resumerJoueur(match, "j2", profils) };
+      const joueur = role => {
+        const resume = resumerJoueur(match, role, profils);
+        // Trophées de la saison en cours (rang), null sans match classé.
+        resume.trophees = tropheesActuels.get(resume.discord_id) ?? null;
+        return resume;
+      };
+      return { j1: joueur("j1"), j2: joueur("j2") };
     };
 
     // Équipe d'un match en équipe : chaque joueur avec sa bannière actuelle

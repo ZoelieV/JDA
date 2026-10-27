@@ -363,6 +363,13 @@ function htmlPseudo(nom) {
   return `<span class="pseudo">${echapperHtml(nom)}</span>`;
 }
 
+// Rang du classé selon les trophées de la saison (Bronze 3 ... Archon, cf.
+// rangTrophees dans commun/fond.js), à côté de la médaille du théâtre ; ""
+// sans trophées (aucun match classé) ou sans commun/fond.js.
+function htmlRangTrophees(trophees) {
+  return window.FondEcran?.creerRang?.(trophees)?.outerHTML || "";
+}
+
 function htmlMedailleTheatre(palier) {
   const infos = PALIERS_THEATRE[palier];
   if (!infos) return "";

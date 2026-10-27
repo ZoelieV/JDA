@@ -141,6 +141,7 @@ function creerLigne(joueur) {
           <div class="joueur-sub"></div>
         </div>
         ${htmlMedailleTheatre(joueur.theatre)}
+        ${htmlRangTrophees(joueur.trophees)}
       </div>
       <span class="stat-telephone"></span>
     </div>

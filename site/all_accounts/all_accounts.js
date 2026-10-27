@@ -215,6 +215,7 @@ function creerCarteCompte(compte, estTriStat) {
         <div class="account-sub"></div>
       </div>
       ${htmlMedailleTheatre(compte.theatre)}
+      ${htmlRangTrophees(compte.classements?.melee?.trophees)}
     </div>
     ${estTriStat ? `<span class="account-stat"></span>` : ""}
   `;

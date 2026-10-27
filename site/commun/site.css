@@ -210,12 +210,12 @@ html.site-classique .site-entete .auth-zone {
 
 /* Bouton du compte : "Mon compte" à la place du pseudo (bannière, photo et
    médaille gardées) ; Mon compte : bouton de la page (#discord-name). */
-html.site-classique .site-entete .compte-lien > span,
+html.site-classique .site-entete .compte-lien > span:not(.rang-trophees),
 html.site-classique .site-entete #discord-name {
   font-size: 0;
 }
 
-html.site-classique .site-entete .compte-lien > span::before,
+html.site-classique .site-entete .compte-lien > span:not(.rang-trophees)::before,
 html.site-classique .site-entete #discord-name::before {
   content: "Mon compte";
   font-size: 1rem;

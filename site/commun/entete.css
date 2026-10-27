@@ -42,7 +42,7 @@ textarea {
 /* Pseudos des joueurs (nom Discord affiché) : police des titres, partout.
    .pseudo : pseudo dans une phrase (cf. htmlPseudo, commun/cartes.js). */
 .pseudo,
-.compte-lien > span,
+.compte-lien > span:not(.rang-trophees),
 #discord-name,
 .account-pseudo,
 .match-nom,
@@ -199,7 +199,7 @@ body::before {
 
 /* Pseudo trop long : coupé avec "…" (comme #discord-name sur Mon compte),
    pour ne pas faire déborder la bannière (téléphone). */
-.compte-lien > span {
+.compte-lien > span:not(.rang-trophees) {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -584,6 +584,65 @@ body::before {
    opposé à la photo. */
 .avec-banniere2 > .medaille-theatre {
   margin-right: auto;
+}
+
+/* ---- Rang du classé (trophées de la saison, cf. rangTrophees dans
+   commun/fond.js) : icône à côté de la médaille du théâtre, niveau (3, 2,
+   1) en pastille ; Archon sans niveau. ---- */
+.rang-trophees {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 1.6em;
+  height: 1.6em;
+  vertical-align: middle;
+}
+
+.rang-trophees img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.niveau-rang {
+  position: absolute;
+  right: -0.2em;
+  bottom: -0.15em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15em;
+  height: 1.15em;
+  border-radius: 50%;
+  background-color: rgba(10, 10, 14, 0.85);
+  color: white;
+  font-size: 0.55em;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: none;
+}
+
+/* Bannières (bouton du compte, Tous les comptes, classement) : même
+   hauteur que la médaille (2em), un peu plus large (ailes). */
+.compte-lien .rang-trophees,
+.account-infos .rang-trophees,
+.joueur-infos .rang-trophees {
+  width: 2.4em;
+  height: 2.4em;
+}
+
+.compte-btn .rang-trophees {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+/* Sans médaille, le rang prend sa place au bord opposé à la photo. */
+.avec-banniere2 > .rang-trophees {
+  margin-right: auto;
+}
+
+.avec-banniere2 > .medaille-theatre + .rang-trophees {
+  margin-right: 0;
 }
 
 /* Icône dans le texte, à la place d'un emoji (ICONE_TROPHEE,

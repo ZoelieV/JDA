@@ -218,6 +218,7 @@
       // Plus de fond personnalisé une fois déconnecté (comme sur Mon compte).
       window.FondEcran?.memoriser(null, null);
       window.FondEcran?.memoriserTheatre(null);
+      window.FondEcran?.memoriserTrophees(null);
       deconnecter();
     });
 
@@ -325,6 +326,11 @@
         window.FondEcran?.appliquerMedaille(bouton, window.FondEcran.theatre());
         document.addEventListener("theatre-change", event => {
           window.FondEcran.appliquerMedaille(bouton, event.detail);
+        });
+        // Rang du classé (trophées de la saison), à côté de la médaille.
+        window.FondEcran?.appliquerRang(bouton, window.FondEcran.trophees());
+        document.addEventListener("trophees-change", event => {
+          window.FondEcran.appliquerRang(bouton, event.detail);
         });
         return;
       }

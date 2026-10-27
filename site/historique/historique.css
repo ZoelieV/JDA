@@ -324,13 +324,24 @@
   margin-left: auto;
 }
 
+.match-banniere > .match-nom + .rang-trophees {
+  margin-left: auto;
+}
+
+.match-j2 .match-banniere > .match-nom + .rang-trophees {
+  margin-left: 0;
+  margin-right: auto;
+}
+
 .match-j2 .match-banniere > .medaille-theatre {
   margin-left: 0;
   margin-right: auto;
 }
 
 .match-joueur .match-banniere > .medaille-theatre ~ .match-temps,
-.match-j2 .match-banniere > .medaille-theatre ~ .match-temps {
+.match-j2 .match-banniere > .medaille-theatre ~ .match-temps,
+.match-joueur .match-banniere > .rang-trophees ~ .match-temps,
+.match-j2 .match-banniere > .rang-trophees ~ .match-temps {
   margin-left: 0;
   margin-right: 0;
 }

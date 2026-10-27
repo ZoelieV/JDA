@@ -179,4 +179,13 @@ async function chargerMatchsClasses(supabase) {
   return data || [];
 }
 
-module.exports = { TROPHEES_MAX, CLASSEMENTS, CLASSEMENT_AFFICHE, calculerTrophees, bonusSerie, seriePrime, bonusEcart, rejouerClasse, chargerMatchsClasses };
+// Trophées de chaque joueur dans le classement affiché pour une saison
+// (parSaison de rejouerClasse) -> Map discord_id -> trophées (joueurs ayant
+// joué en classé cette saison). Rang affiché sur les bannières, cf.
+// RANGS_TROPHEES dans commun/fond.js.
+function tropheesSaison(parSaison, saison) {
+  const table = parSaison.get(saison)?.[CLASSEMENT_AFFICHE] || new Map();
+  return new Map([...table].map(([discordId, stats]) => [discordId, stats.trophees]));
+}
+
+module.exports = { TROPHEES_MAX, CLASSEMENTS, CLASSEMENT_AFFICHE, calculerTrophees, bonusSerie, seriePrime, bonusEcart, rejouerClasse, chargerMatchsClasses, tropheesSaison };

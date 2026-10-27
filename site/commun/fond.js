@@ -23,6 +23,9 @@
   // médaille dans le bouton du compte (cf. appliquerMedaille). Nouvelle clé
   // depuis les paliers sardine..baleine (l'ancienne gardait "6".."12").
   const CLE_THEATRE = "theatre-palier-2";
+  // Trophées de la saison en cours du joueur connecté ("" sans match
+  // classé) : rang dans le bouton du compte (cf. appliquerRang).
+  const CLE_TROPHEES = "trophees-saison";
   // Affichage de l'accueil (profil.parametres.accueil) : "panneau" ou
   // "cartes" gardé, rien pour "classique" (par défaut, aussi pour les
   // visiteurs). Posé sur <html data-accueil> dès le <head> (pas de
@@ -40,6 +43,59 @@
     3: { nom: "Dauphin", icone: "dauphin" },
     4: { nom: "Baleine", icone: "baleine" }
   };
+  // Rangs du classé selon les trophées de la saison : chaque rang a 3
+  // niveaux (3, puis 2, puis 1) d'une même largeur (bronze 50 trophées,
+  // argent 60, or 70, platine 80, diamant 100), à partir de 0 ; Archon à
+  // 1000 trophées, sans niveaux. Icônes : DB/images/others/<icone>.webp.
+  // Utilisé aussi par commun/cartes.js (htmlRangTrophees).
+  const RANGS_TROPHEES = [
+    { nom: "Bronze", icone: "bronze", largeur: 50 },
+    { nom: "Argent", icone: "argent", largeur: 60 },
+    { nom: "Or", icone: "or", largeur: 70 },
+    { nom: "Platine", icone: "platine", largeur: 80 },
+    { nom: "Diamant", icone: "diamand", largeur: 100 }
+  ];
+  const SEUIL_ARCHON = 1000;
+
+  // Trophées -> { nom ("Or 2", "Archon"), icone, niveau (1..3, null pour
+  // Archon) }, ou null (pas de trophées : aucun match classé).
+  function rangTrophees(trophees) {
+    if (trophees === null || trophees === undefined || trophees === "" || !Number.isFinite(Number(trophees))) return null;
+    const total = Math.max(0, Number(trophees));
+    if (total >= SEUIL_ARCHON) return { nom: "Archon", icone: "archon", niveau: null };
+    let debut = 0;
+    for (const rang of RANGS_TROPHEES) {
+      const fin = debut + 3 * rang.largeur;
+      if (total < fin) {
+        const niveau = 3 - Math.floor((total - debut) / rang.largeur);
+        return { nom: `${rang.nom} ${niveau}`, icone: rang.icone, niveau };
+      }
+      debut = fin;
+    }
+    // Entre la fin du diamant 1 et l'Archon : diamant 1.
+    const diamant = RANGS_TROPHEES[RANGS_TROPHEES.length - 1];
+    return { nom: `${diamant.nom} 1`, icone: diamant.icone, niveau: 1 };
+  }
+
+  // Icône du rang (image + niveau en pastille), ou null.
+  function creerRang(trophees) {
+    const rang = rangTrophees(trophees);
+    if (!rang) return null;
+    const bloc = document.createElement("span");
+    bloc.className = "rang-trophees";
+    bloc.title = `${rang.nom} (${Math.max(0, Number(trophees))} trophées)`;
+    const image = document.createElement("img");
+    image.src = `/DB/images/others/${rang.icone}.webp`;
+    image.alt = rang.nom;
+    bloc.appendChild(image);
+    if (rang.niveau) {
+      const niveau = document.createElement("span");
+      niveau.className = "niveau-rang";
+      niveau.textContent = String(rang.niveau);
+      bloc.appendChild(niveau);
+    }
+    return bloc;
+  }
 
   // Choix par défaut (profil sans choix, ou visiteur non connecté pour le fond).
   const FOND_DEFAUT_ID = "bg/autres/default_bg.webp";
@@ -147,6 +203,26 @@
     document.dispatchEvent(new CustomEvent("theatre-change", { detail: palier }));
   }
 
+  // Trophées de la saison du profil (nombre, ou null sans match classé).
+  function memoriserTrophees(trophees) {
+    const valeur = trophees === null || trophees === undefined ? "" : String(trophees);
+    ecrire(CLE_TROPHEES, valeur);
+    document.dispatchEvent(new CustomEvent("trophees-change", { detail: valeur }));
+  }
+
+  // Pose (ou retire) le rang dans un bouton de compte, à côté de la médaille
+  // du théâtre (après elle : du côté opposé à la photo).
+  function appliquerRang(element, trophees) {
+    element.querySelector(".rang-trophees")?.remove();
+    const rang = creerRang(trophees);
+    if (!rang) return;
+    const medaille = element.querySelector(".medaille-theatre");
+    const pseudo = element.querySelector("span");
+    if (medaille) medaille.after(rang);
+    else if (pseudo) pseudo.after(rang);
+    else element.appendChild(rang);
+  }
+
   // Pose (ou retire) la médaille du théâtre dans un bouton de compte, après
   // le pseudo (même rendu que htmlMedailleTheatre, commun/cartes.js ; style
   // .medaille-theatre dans commun/entete.css).
@@ -216,6 +292,7 @@
       appliquer(url);
       memoriser(url, banniere2);
       memoriserTheatre(profil?.theatre);
+      memoriserTrophees(profil?.trophees);
       memoriserAccueil(profil?.parametres?.accueil);
     } catch (erreur) {
       console.error(erreur);
@@ -255,6 +332,14 @@
     // (événement "accueil-change" si l'affichage change).
     memoriserAccueil,
     appliquerMedaille,
-    theatre: () => lire(CLE_THEATRE) || ""
+    theatre: () => lire(CLE_THEATRE) || "",
+    // Rang : FondEcran.appliquerRang(bouton, FondEcran.trophees()) puis
+    // écoute de "trophees-change" ; rangTrophees et creerRang aussi pour
+    // les bannières des autres joueurs (cf. htmlRangTrophees, cartes.js).
+    memoriserTrophees,
+    appliquerRang,
+    trophees: () => lire(CLE_TROPHEES) || "",
+    rangTrophees,
+    creerRang
   };
 })();
