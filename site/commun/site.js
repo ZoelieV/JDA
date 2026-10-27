@@ -37,7 +37,7 @@
       ["Entraînement", "/match#entrainement"],
       ["En équipe", "/match#equipe"]
     ] },
-    { titre: "Comptes", href: "/comptes" },
+    { titre: "Autres comptes", href: "/comptes" },
     { titre: "Classement", href: "/classement" },
     { titre: "Historique", href: "/historique", menu: [
       ["Matchs", "/historique?onglet=matchs"],
