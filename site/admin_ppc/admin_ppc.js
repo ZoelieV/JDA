@@ -953,17 +953,18 @@ document.querySelectorAll(".onglet-admin").forEach(onglet => {
   onglet.classList.toggle("active", actif);
   if (actif) onglet.setAttribute("aria-current", "page");
 });
-if (PAGE_ADMIN === "equilibrage") {
-  document.title = "Équilibrage";
-  document.querySelector(".titre-page").textContent = "Équilibrage";
-}
+if (PAGE_ADMIN === "equilibrage") document.querySelector(".titre-page").textContent = "Équilibrage";
 
 async function demarrer() {
   const utilisateur = await chargerSession();
+  // Sans les droits : retour silencieux à l'accueil, comme si la page
+  // n'existait pas (replace : pas d'entrée dans l'historique).
   if (!utilisateur?.admin && !utilisateur?.mini_admin) {
-    afficherEtat("Cette page est réservée aux administrateurs.", "erreur");
+    window.location.replace("/");
     return;
   }
+  document.title = PAGE_ADMIN === "equilibrage" ? "Équilibrage" : "Administration";
+  document.documentElement.classList.remove("verification-admin");
   const lectureSeule = !utilisateur.admin;
   document.getElementById("tuiles-admin").classList.remove("cache");
 

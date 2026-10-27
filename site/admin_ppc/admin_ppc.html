@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Administration</title>
+<title>Jugement des Archons</title>
+<!-- Rien n'est affiché (ni titre d'onglet) avant la vérification des droits :
+     sans les droits, admin_ppc.js renvoie vers l'accueil comme si la page
+     n'existait pas. -->
+<style>html.verification-admin body { visibility: hidden; }</style>
+<script>document.documentElement.classList.add("verification-admin");</script>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
 <link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=42">
@@ -495,7 +500,7 @@
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
-  <script src="/admin_ppc/admin_ppc.js?v=37"></script>
+  <script src="/admin_ppc/admin_ppc.js?v=38"></script>
   <script src="/commun/site.js?v=2"></script>
 </body>
 </html>
