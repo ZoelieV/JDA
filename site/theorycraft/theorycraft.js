@@ -79,6 +79,7 @@ function creerFiltres() {
     etoiles: new Set(),
     voeux: new Set(),
     factions: new Set(),
+    soutiens: new Set(),
     categories: new Set(),
     categoriesArmes: new Set(),
     buffes: false,
@@ -276,6 +277,7 @@ function itemsAffiches() {
     if (persos && filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
     if (persos && filtres.voeux.size && !filtres.voeux.has(getVoeu(item))) return false;
     if (persos && filtres.factions.size && !filtres.factions.has(item.faction)) return false;
+    if (persos && !correspondSoutiens(item, filtres.soutiens)) return false;
     if (persos && filtres.categories.size && !filtres.categories.has(item.categorie)) return false;
     if (!persos && !armeCorrespondCategories(item, [...filtres.categoriesArmes])) return false;
     if (persos && filtres.buffes && !buffs.has(item.id)) return false;
@@ -283,7 +285,7 @@ function itemsAffiches() {
     return true;
   });
 
-  if (!tri) return filtres.elements.size || filtres.armes.size ? trierParFiltres(items, champType) : items;
+  if (!tri) return filtres.elements.size || filtres.armes.size || (persos && filtres.soutiens.size) ? trierParFiltres(items, champType) : items;
   return items
     .map((item, index) => ({ item, index, points: points(item, vue) }))
     .sort((a, b) => {
@@ -295,17 +297,19 @@ function itemsAffiches() {
     .map(e => e.item);
 }
 
-// Éléments et / ou armes filtrés, sans tri de colonne : groupés dans l'ordre
-// des filtres choisis, puis par rareté, puis dans l'ordre de sortie (comme
-// la page Administration).
+// Rôles, éléments et / ou armes filtrés, sans tri de colonne : groupés dans
+// l'ordre des filtres choisis, puis par rareté, puis dans l'ordre de sortie
+// (comme la page Administration).
 function trierParFiltres(items, champType) {
   const ordreElements = [...filtres.elements];
   const ordreArmes = [...filtres.armes];
   const rangElement = item => ordreElements.indexOf(filtres.elements.has(item.element) ? item.element : "all");
   const rangArme = item => ordreArmes.indexOf(item[champType]);
+  const rangRole = item => champType === "type" ? 0 : rangSoutien(item.soutiens, filtres.soutiens);
   return items
     .map((item, index) => ({ item, index }))
     .sort((a, b) =>
+      (rangRole(a.item) - rangRole(b.item)) ||
       (rangElement(a.item) - rangElement(b.item)) ||
       (rangArme(a.item) - rangArme(b.item)) ||
       (rangRarete(b.item) - rangRarete(a.item)) ||
@@ -331,6 +335,8 @@ function rendreFiltres() {
         `<button type="button" class="filtre-tc filtre-icone${filtres.voeux.has(valeur) ? " active" : ""}" data-filtre="voeux" data-valeur="${valeur}" title="${voeu.nom}"><img src="${voeu.image}" alt="${voeu.nom}"></button>`).join("")}</div>
       <div class="groupe-tc">${Object.entries(FACTIONS).map(([valeur, faction]) =>
         `<button type="button" class="filtre-tc filtre-icone${filtres.factions.has(valeur) ? " active" : ""}" data-filtre="factions" data-valeur="${valeur}" title="${faction.nom}"><img src="${faction.image}" alt="${faction.nom}"></button>`).join("")}</div>
+      <div class="groupe-tc">${Object.entries(SOUTIENS).map(([valeur, soutien]) =>
+        `<button type="button" class="filtre-tc filtre-icone${filtres.soutiens.has(valeur) ? " active" : ""}" data-filtre="soutiens" data-valeur="${valeur}" title="${soutien.nom}"><img src="${soutien.image}" alt="${soutien.nom}"></button>`).join("")}</div>
       <div class="groupe-tc">${textes(CATEGORIES, filtres.categories, "categories")}</div>
       <div class="groupe-tc">
         <button type="button" class="filtre-tc filtre-texte${filtres.buffes ? " active" : ""}" data-bascule="buffes" title="Buffés par le théâtre du mois">Buffés théâtre</button>

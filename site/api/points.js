@@ -28,6 +28,8 @@
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
 //          factions: { id: "lunar" | "hexerei" | "stellar" },  (filtres des
 //                       persos, cf. FACTIONS dans commun/tri.js)
+//          soutiens: { id: ["shield", "heal"] },  (rôles des persos, un ou
+//                       les deux : filtres, cf. SOUTIENS dans commun/tri.js)
 //          carnage_desactive: bool,  (boss du carnage plus disponibles)
 //          world_boss_public: bool,  (Random world boss ouvert à tous,
 //                       sinon réservé aux administrateurs)
@@ -43,7 +45,7 @@
 //        Hors administrateurs : ajouts masqués et leurs données retirés.
 // POST : administrateurs uniquement (cf. _lib/admin.js) :
 //   { characters, weapons, modes, masques, theatre, bonus_saison,
-//     alternatives_armes, synergies, factions }  remplace les points, les masqués, les
+//     alternatives_armes, synergies, factions, soutiens }  remplace les points, les masqués, les
 //                                    buffs théâtre, le bonus de saison et
 //                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
@@ -101,6 +103,8 @@ const NB_RESISTANCES = 7;
 const CATEGORIES_ARMES = ["support", "standard"];
 // Factions des personnages (libellés et logos : FACTIONS de commun/tri.js).
 const FACTIONS = ["lunar", "hexerei", "stellar"];
+// Rôles des personnages (bouclier, soin ; un perso peut avoir les deux).
+const SOUTIENS = ["shield", "heal"];
 
 // Catégories connues, sans doublon, dans l'ordre de CATEGORIES_ARMES ; null
 // si ce n'est pas une liste.
@@ -225,6 +229,9 @@ function versionPublique(config) {
     if (genre === "characters" && config.factions) {
       publique.factions = Object.fromEntries(Object.entries(config.factions).filter(([id]) => !caches.has(id)));
     }
+    if (genre === "characters" && config.soutiens) {
+      publique.soutiens = Object.fromEntries(Object.entries(config.soutiens).filter(([id]) => !caches.has(id)));
+    }
     if (genre === "characters" && config.synergies) {
       publique.synergies = Object.fromEntries(Object.entries(config.synergies).filter(([id]) => !caches.has(id)));
     }
@@ -271,6 +278,15 @@ function nettoyerAlternatives(valeurs, ids) {
 function nettoyerFactions(brutes, ids) {
   return Object.fromEntries(Object.entries(brutes && typeof brutes === "object" ? brutes : {})
     .filter(([id, faction]) => ids.has(id) && FACTIONS.includes(faction)));
+}
+
+// Rôles : persos connus, liste de rôles connus (sans doublon, dans l'ordre
+// de SOUTIENS) ; sans rôle : absent.
+function nettoyerSoutiens(bruts, ids) {
+  return Object.fromEntries(Object.entries(bruts && typeof bruts === "object" ? bruts : {})
+    .filter(([id, roles]) => ids.has(id) && Array.isArray(roles))
+    .map(([id, roles]) => [id, SOUTIENS.filter(r => roles.includes(r))])
+    .filter(([, roles]) => roles.length));
 }
 
 function nettoyerSynergies(brutes, persos) {
@@ -382,6 +398,10 @@ module.exports = async (req, res) => {
             config.factions = { ...config.factions };
             delete config.factions[id];
           }
+          if (genre === "characters" && config.soutiens?.[id]) {
+            config.soutiens = { ...config.soutiens };
+            delete config.soutiens[id];
+          }
           if (genre === "weapons" && config.categoriesArmes?.[id]) {
             config.categoriesArmes = { ...config.categoriesArmes };
             delete config.categoriesArmes[id];
@@ -482,6 +502,7 @@ module.exports = async (req, res) => {
           // Bonus de saison : trophées en classé (cf. _lib/trophees.js).
           bonus_saison: nettoyerMasques(corps.bonus_saison ?? ancienne.bonus_saison, ids("characters")),
           factions: nettoyerFactions(corps.factions ?? ancienne.factions, ids("characters")),
+          soutiens: nettoyerSoutiens(corps.soutiens ?? ancienne.soutiens, ids("characters")),
           alternatives_armes: nettoyerAlternatives(corps.alternatives_armes ?? ancienne.alternatives_armes, ids("weapons")),
           // Synergies (valeur alternative des persos, cf. commun/synergies.js).
           synergies: nettoyerSynergies(corps.synergies ?? ancienne.synergies, [...listeJSON("characters"), ...ajouts.characters])

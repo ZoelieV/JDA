@@ -30,6 +30,7 @@ let filtreType = { characters: new Set(), weapons: new Set() };
 const filtreEtoile = new Set();
 const filtreVoeux = new Set(); // personnages uniquement
 const filtreFactions = new Set(); // personnages uniquement
+const filtreSoutiens = new Set(); // personnages uniquement (rôles, cumulables)
 const filtreArmePersos = new Set(); // personnages : type d'arme (ordre des clics)
 let rechercheTexte = "";
 const etatTri = creerEtatTri();
@@ -275,6 +276,7 @@ function construireListeAffichee() {
       if (filtreEtoile.size > 0 && !filtreEtoile.has(String(item.rarete))) return false;
       if (vueActive === "characters" && filtreVoeux.size > 0 && !filtreVoeux.has(getVoeu(item))) return false;
       if (vueActive === "characters" && filtreFactions.size > 0 && !filtreFactions.has(item.faction)) return false;
+      if (vueActive === "characters" && !correspondSoutiens(item, filtreSoutiens)) return false;
       if (vueActive === "characters" && filtreArmePersos.size > 0 && !filtreArmePersos.has(item.arme)) return false;
       if (recherche && !String(item.nom || "").toLowerCase().includes(recherche)) return false;
 
@@ -362,6 +364,7 @@ function rendreProfilBox() {
     },
     elements: vueActive === "characters" ? filtreType.characters : [],
     armes: vueActive === "weapons" ? filtreType.weapons : filtreArmePersos,
+    soutiens: vueActive === "characters" ? filtreSoutiens : [],
     rareteParDefaut: filtreEtoile.size > 0 || (vueActive === "characters" && (filtreVoeux.size > 0 || filtreFactions.size > 0))
   });
 
@@ -503,6 +506,10 @@ function mettreAJourBarreOutils() {
   document.querySelectorAll("[data-faction]").forEach(btn => {
     btn.classList.toggle("active", filtreFactions.has(btn.dataset.faction));
   });
+  document.getElementById("filtres-soutiens").hidden = vueActive === "weapons";
+  document.querySelectorAll("[data-soutien]").forEach(btn => {
+    btn.classList.toggle("active", filtreSoutiens.has(btn.dataset.soutien));
+  });
 
   document.getElementById("recherche").value = rechercheTexte;
   genererFiltresIcones();
@@ -514,6 +521,7 @@ function reinitialiserFiltres() {
   filtreEtoile.clear();
   filtreVoeux.clear();
   filtreFactions.clear();
+  filtreSoutiens.clear();
   filtreArmePersos.clear();
   rechercheTexte = "";
   viderTris(etatTri);
@@ -549,6 +557,14 @@ function initialiserBarreOutils() {
     btn.addEventListener("click", () => {
       basculerFiltreFaction(filtreFactions, btn.dataset.faction);
       document.querySelectorAll("[data-faction]").forEach(b => b.classList.toggle("active", filtreFactions.has(b.dataset.faction)));
+      rendreProfilBox();
+    });
+  });
+
+  document.querySelectorAll("[data-soutien]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      basculerSelection(filtreSoutiens, btn.dataset.soutien);
+      btn.classList.toggle("active", filtreSoutiens.has(btn.dataset.soutien));
       rendreProfilBox();
     });
   });

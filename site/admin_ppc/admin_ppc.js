@@ -69,6 +69,7 @@ let bonusSaison = [];                            // personnages au bonus de sais
 let alternatives = {};                           // arme -> valeur alternative en % (absente = 100)
 let synergies = {};                              // perso -> { persos, malus } (cf. commun/synergies.js, admin_synergies.js)
 let factions = {};                               // perso -> faction (cf. FACTIONS, commun/tri.js) ; sans faction : absent
+let soutiens = {};                               // perso -> rôles ["shield", "heal"] (cf. SOUTIENS, commun/tri.js) ; sans rôle : absent
 let etatEnregistre = "";
 
 // Buff théâtre : le bonus théâtre du personnage s'applique à ses points de
@@ -98,6 +99,15 @@ function basculerBonusSaison(id, actif) {
 function basculerFaction(id, faction) {
   const { [id]: actuelle, ...autres } = factions;
   factions = actuelle === faction ? autres : { ...autres, [id]: faction };
+}
+
+// Rôles d'un perso (bouclier, soin) : chaque clic ajoute ou retire ce rôle
+// (un perso peut avoir les deux), dans l'ordre de SOUTIENS.
+function basculerSoutien(id, role) {
+  const actuels = soutiens[id] || [];
+  const nouveaux = Object.keys(SOUTIENS).filter(r => r === role ? !actuels.includes(r) : actuels.includes(r));
+  const { [id]: _, ...autres } = soutiens;
+  soutiens = nouveaux.length ? { ...autres, [id]: nouveaux } : autres;
 }
 
 // Valeur alternative d'une arme (% de ses points, cf. ALTERNATIVES_ARMES
@@ -150,6 +160,7 @@ function creerFiltres() {
     etoiles: new Set(),
     voeux: new Set(),
     factions: new Set(),
+    soutiens: new Set(),
     categories: new Set(),
     categoriesArmes: new Set(),
     aRenseigner: false,
@@ -191,6 +202,7 @@ function itemsAffiches() {
     if (filtres.etoiles.size && !filtres.etoiles.has(String(item.rarete))) return false;
     if (persos && filtres.voeux.size && !filtres.voeux.has(getVoeu(item))) return false;
     if (persos && filtres.factions.size && !filtres.factions.has(factions[item.id])) return false;
+    if (persos && !correspondSoutiens({ soutiens: soutiens[item.id] }, filtres.soutiens)) return false;
     if (persos && filtres.categories.size && !filtres.categories.has(item.categorie)) return false;
     if (!persos && !armeCorrespondCategories(item, [...filtres.categoriesArmes])) return false;
     if (filtres.aRenseigner && points.slice(0, nbConstellations).some(p => p !== 0)) return false;
@@ -201,7 +213,7 @@ function itemsAffiches() {
     return true;
   });
 
-  if (!tri) return filtres.elements.size || filtres.armes.size ? trierParFiltres(items, champType) : items;
+  if (!tri) return filtres.elements.size || filtres.armes.size || (persos && filtres.soutiens.size) ? trierParFiltres(items, champType) : items;
   return items
     .map((item, index) => ({ item, index }))
     .sort((a, b) => {
@@ -213,7 +225,8 @@ function itemsAffiches() {
     .map(e => e.item);
 }
 
-// Éléments et / ou armes filtrés, sans tri de colonne : un élément après
+// Rôles (persos), éléments et / ou armes filtrés, sans tri de colonne : un
+// rôle après l'autre, puis un élément après
 // l'autre, puis un type d'arme après l'autre (dans l'ordre où ils ont été
 // sélectionnés), chaque groupe trié par rareté (5★ limités, puis 5★
 // standards et Voyageur comptés 4.5★, puis 4★ ; cf. rangRarete) puis dans
@@ -224,9 +237,11 @@ function trierParFiltres(items, champType) {
   const ordreArmes = [...filtres.armes];
   const rangElement = item => ordreElements.indexOf(filtres.elements.has(item.element) ? item.element : "all");
   const rangArme = item => ordreArmes.indexOf(item[champType]);
+  const rangRole = item => champType === "type" ? 0 : rangSoutien(soutiens[item.id], filtres.soutiens);
   return items
     .map((item, index) => ({ item, index }))
     .sort((a, b) =>
+      (rangRole(a.item) - rangRole(b.item)) ||
       (rangElement(a.item) - rangElement(b.item)) ||
       (rangArme(a.item) - rangArme(b.item)) ||
       (rangRarete(b.item) - rangRarete(a.item)) ||
@@ -260,6 +275,8 @@ function rendreFiltres() {
         `<button type="button" class="filtre-admin filtre-icone${filtres.voeux.has(valeur) ? " active" : ""}" data-filtre="voeux" data-valeur="${valeur}" title="${voeu.nom}"><img src="${voeu.image}" alt="${voeu.nom}"></button>`).join("")}</div>
       <div class="groupe-admin">${Object.entries(FACTIONS).map(([valeur, faction]) =>
         `<button type="button" class="filtre-admin filtre-icone${filtres.factions.has(valeur) ? " active" : ""}" data-filtre="factions" data-valeur="${valeur}" title="${faction.nom}"><img src="${faction.image}" alt="${faction.nom}"></button>`).join("")}</div>
+      <div class="groupe-admin">${Object.entries(SOUTIENS).map(([valeur, soutien]) =>
+        `<button type="button" class="filtre-admin filtre-icone${filtres.soutiens.has(valeur) ? " active" : ""}" data-filtre="soutiens" data-valeur="${valeur}" title="${soutien.nom}"><img src="${soutien.image}" alt="${soutien.nom}"></button>`).join("")}</div>
       <div class="groupe-admin">${textes(CATEGORIES, filtres.categories, "categories")}</div>` : `
       <div class="groupe-admin">${textes(CATEGORIES_ARMES_FILTRE, filtres.categoriesArmes, "categoriesArmes")}</div>`}
     <div class="groupe-admin">
@@ -311,7 +328,7 @@ function initialiserFiltres() {
 }
 
 function etatActuel() {
-  return JSON.stringify([valeurs, modes, masques, buffs, bonusSaison, alternatives, synergies, factions]);
+  return JSON.stringify([valeurs, modes, masques, buffs, bonusSaison, alternatives, synergies, factions, soutiens]);
 }
 
 // ---- Chargement ----
@@ -351,6 +368,7 @@ async function chargerDonnees() {
   alternatives = { ...(config?.alternatives_armes || {}) };
   synergies = lireSynergies(config?.synergies);
   factions = { ...(config?.factions || {}) };
+  soutiens = { ...(config?.soutiens || {}) };
   etatEnregistre = etatActuel();
 }
 
@@ -370,6 +388,7 @@ function rendreEntete() {
       ${vue === "characters" ? `<th class="col-bonus-saison" title="En match classé : +3 trophées par perso coché dans l'équipe (gain augmenté, perte réduite)">Bonus de saison</th>` : ""}
       ${vue === "characters" ? `<th class="col-synergie" title="Nombre de persos en synergie : sans eux dans la box, le perso perd des points (bouton Synergie)">Synergie</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Faction du perso (aucune ou une seule) : filtres des persos sur tout le site">Faction</th>` : ""}
+      ${vue === "characters" ? `<th class="col-faction" title="Rôles du perso (bouclier, soin ; aucun, un ou les deux) : filtres des persos sur tout le site">Rôles</th>` : ""}
       ${vue === "weapons" ? `<th class="col-alternative" title="Part des points comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box (arrondi à l'entier)">Valeur alt.</th>` : ""}
     </tr>
     ${vue === "characters" ? `
@@ -389,6 +408,7 @@ function rendreEntete() {
           <button type="button" class="retirer-bonus-saison" ${bonusSaison.length ? "" : "disabled"} title="Décocher tous les personnages (nouvelle saison)">Tout décocher (${bonusSaison.length})</button>
         </th>
         <th class="col-synergie"></th>
+        <th class="col-faction"></th>
         <th class="col-faction"></th>
       </tr>` : ""}
   `;
@@ -441,7 +461,8 @@ function rendreCorps() {
             </label>
           </td>
           <td class="col-synergie${synergies[item.id] ? " avec-synergie" : ""}" title="${synergies[item.id] ? `Malus ${synergies[item.id].malus} sans ses persos en synergie` : "Pas de synergie"}">${synergies[item.id]?.persos.length || "—"}</td>
-          <td class="col-faction">${htmlChoixFaction(item.id)}</td>` : ""}
+          <td class="col-faction">${htmlChoixFaction(item.id)}</td>
+          <td class="col-faction">${htmlChoixSoutiens(item.id)}</td>` : ""}
         ${vue === "weapons" ? `
           <td class="col-alternative${alternativeArme(item.id) !== 100 ? " avec-alternative" : ""}">
             <select class="choix-alternative" data-id="${item.id}" title="Copie en double ou signature sans son perso : ${alternativeArme(item.id)} % des points">
@@ -460,6 +481,12 @@ function rendreCorps() {
 function htmlChoixFaction(id) {
   return Object.entries(FACTIONS).map(([valeur, faction]) =>
     `<button type="button" class="choix-faction${factions[id] === valeur ? " active" : ""}" data-id="${id}" data-faction="${valeur}" title="${faction.nom}"><img src="${faction.image}" alt="${faction.nom}"></button>`).join("");
+}
+
+// Boutons des rôles d'un perso (aucun, un ou les deux actifs).
+function htmlChoixSoutiens(id) {
+  return Object.entries(SOUTIENS).map(([valeur, soutien]) =>
+    `<button type="button" class="choix-faction choix-soutien${soutiens[id]?.includes(valeur) ? " active" : ""}" data-id="${id}" data-soutien="${valeur}" title="${soutien.nom}"><img src="${soutien.image}" alt="${soutien.nom}"></button>`).join("");
 }
 
 // ---- Vue "Perso + signa" (lecture seule) ----
@@ -680,6 +707,13 @@ function initialiserSaisie() {
   });
 
   document.getElementById("corps-admin").addEventListener("click", event => {
+    const soutien = event.target.closest(".choix-soutien");
+    if (soutien) {
+      basculerSoutien(soutien.dataset.id, soutien.dataset.soutien);
+      soutien.parentElement.innerHTML = htmlChoixSoutiens(soutien.dataset.id);
+      mettreAJourPied();
+      return;
+    }
     const faction = event.target.closest(".choix-faction");
     if (faction) {
       basculerFaction(faction.dataset.id, faction.dataset.faction);
@@ -917,7 +951,7 @@ async function enregistrer() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison, alternatives_armes: alternatives, synergies, factions })
+      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison, alternatives_armes: alternatives, synergies, factions, soutiens })
     });
     if (!reponse.ok) throw new Error((await reponse.json().catch(() => ({}))).error || "Erreur d'enregistrement.");
     etatEnregistre = etatActuel();
@@ -930,7 +964,7 @@ async function enregistrer() {
 }
 
 function annuler() {
-  [valeurs, modes, masques, buffs, bonusSaison, alternatives, synergies, factions] = JSON.parse(etatEnregistre);
+  [valeurs, modes, masques, buffs, bonusSaison, alternatives, synergies, factions, soutiens] = JSON.parse(etatEnregistre);
   rendre();
 }
 

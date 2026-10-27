@@ -55,6 +55,28 @@ const FACTIONS = {
   stellar: { nom: "Stellaire", image: `${RACINE_LOGOS}stellar.webp` }
 };
 
+// Rôles des personnages (aucun, un ou les deux, choisis par les
+// administrateurs : config.soutiens, cf. api/points.js) : champ "soutiens"
+// des persos (liste). Filtres cumulables : persos du 1er rôle cliqué, puis
+// ceux du 2e (cf. trierEtGrouper, option soutiens).
+const SOUTIENS = {
+  shield: { nom: "Bouclier", image: `${RACINE_LOGOS}shield.webp` },
+  heal: { nom: "Soin", image: `${RACINE_LOGOS}heal.webp` }
+};
+
+// Rang d'un perso dans les rôles choisis (ordre des clics) : index du 1er
+// rôle choisi qu'il a (tableaux de l'administration et du theorycraft).
+function rangSoutien(roles, selection) {
+  const i = [...selection].findIndex(role => (roles || []).includes(role));
+  return i < 0 ? selection.size : i;
+}
+
+// Le perso a-t-il un des rôles choisis (Set vide : pas de filtre) ?
+function correspondSoutiens(item, selection) {
+  if (!selection || selection.size === 0) return true;
+  return (item.soutiens || []).some(role => selection.has(role));
+}
+
 function rangRarete(item) {
   if (item.standard) return 4.5;
   return Number(item.rarete) || 0;
@@ -158,6 +180,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
 //   valeurs          : { points, constellation, niveau } -> fonction(item) => nombre
 //   elements         : Set des éléments filtrés (ordre des clics)
 //   armes            : Set des types d'arme filtrés (ordre des clics)
+//   soutiens         : Set des rôles filtrés (ordre des clics) : persos du
+//                      1er rôle, puis du 2e (un perso aux 2 rôles : avec le 1er)
 //   rareteParDefaut  : un filtre est actif (possédés, sélectionnés, étoiles…)
 //   possede          : fonction(item) => bool ; avec un tri par points, les
 //                      possédés d'abord puis les autres, chacun dans l'ordre
@@ -173,6 +197,16 @@ function trierEtGrouper(items, etat, options = {}) {
   // Groupes : élément puis type d'arme, par les filtres (dans l'ordre des
   // clics) ou par le tri élément (= type d'arme dans la vue armes).
   const groupes = [];
+  // Rôles filtrés (persos) : d'abord, dans l'ordre des clics.
+  const soutiens = vue === "weapons" ? [] : [...(options.soutiens || [])];
+  if (soutiens.length) {
+    groupes.push({
+      cle: "soutien",
+      valeur: item => soutiens.find(role => (item.soutiens || []).includes(role)),
+      ordre: soutiens,
+      sens: 1
+    });
+  }
   // Type d'arme : tri "élément" dans la vue armes, tri "arme" pour les persos.
   const triSurElement = vue !== "weapons" && sensElement;
   const triSurType = vue === "weapons" ? sensElement : getSensTri(etat, "arme");
@@ -218,7 +252,7 @@ function trierEtGrouper(items, etat, options = {}) {
   const entrees = items.map((item, index) => ({
     item,
     index,
-    g: groupes.map(g => indexOrdre(g.ordre, item[g.champ])),
+    g: groupes.map(g => indexOrdre(g.ordre, g.valeur ? g.valeur(item) : item[g.champ])),
     r: rangRarete(item),
     v: trisValeurs.map(t => Number(valeurs[t.cle](item)) || 0),
     p: separerPossedes && options.possede(item) ? 0 : 1
@@ -239,7 +273,7 @@ function trierEtGrouper(items, etat, options = {}) {
   const resultat = [];
   entrees.forEach(({ item, r }) => {
     const cles = {};
-    groupes.forEach(g => { cles[g.cle] = item[g.champ]; });
+    groupes.forEach(g => { cles[g.cle] = g.valeur ? g.valeur(item) : item[g.champ]; });
     if (sensRarete) cles.rarete = r;
 
     const dernier = resultat[resultat.length - 1];
@@ -252,7 +286,7 @@ function trierEtGrouper(items, etat, options = {}) {
   return resultat;
 }
 
-// Remplit une grille. Chaque changement d'élément / de type d'arme commence
+// Remplit une grille. Chaque changement de rôle, d'élément ou de type d'arme commence
 // une nouvelle ligne (pas les changements de rareté).
 // creerCartes(item) renvoie une carte ou une liste de cartes (idéalement
 // recyclées via obtenirCarte, cf. commun/cartes.js). Le contenu de la
@@ -264,7 +298,7 @@ function remplirGrilleGroupee(container, groupes, creerCartes) {
   groupes.forEach(groupe => {
     // section : liste différente dans la même grille (ex. armes après les
     // personnages), toujours sur une nouvelle ligne.
-    const cle = JSON.stringify([groupe.section, groupe.cles.element, groupe.cles.arme]);
+    const cle = JSON.stringify([groupe.section, groupe.cles.soutien, groupe.cles.element, groupe.cles.arme]);
     const nouvelleLigne = cleLigne !== null && cle !== cleLigne;
     cleLigne = cle;
 

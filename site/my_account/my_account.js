@@ -688,6 +688,8 @@ const etatTri = creerEtatTri();
 // Filtres élément / type d'arme, dans l'ordre des clics (ordre des groupes).
 const selectionElements = new Set();
 const selectionArmes = new Set();
+// Rôles (bouclier, soin), cumulables, dans l'ordre des clics.
+const selectionSoutiens = new Set();
 
 // Aligne une sélection sur les cases cochées (nouvelles cases à la fin : ordre
 // des clics). Les cases peuvent changer sans événement "change" (état du
@@ -745,6 +747,7 @@ function mettreAJourBoutonsTri() {
   // perma) : armes uniquement.
   document.getElementById("filtres-voeux").hidden = vueActive === "weapons";
   document.getElementById("filtres-factions").hidden = vueActive === "weapons";
+  document.getElementById("filtres-soutiens").hidden = vueActive === "weapons";
   document.getElementById("filtres-categories-armes").hidden = vueActive !== "weapons";
 }
 
@@ -801,6 +804,9 @@ function rendreCollection(personnages, armes, profil) {
     ? Array.from(document.querySelectorAll(".filtre-faction:checked")).map(input => input.value)
     : [];
 
+  synchroniserSelection(selectionSoutiens, Array.from(document.querySelectorAll(".filtre-soutien:checked")).map(input => input.value));
+  const soutiensActifs = vueActive === "characters" ? selectionSoutiens : new Set();
+
   // Armes support / perma / temporaires (catégories des administrateurs,
   // cf. armeCorrespondCategories dans commun/tri.js).
   const categoriesArmesSelectionnees = vueActive === "weapons"
@@ -856,7 +862,8 @@ function rendreCollection(personnages, armes, profil) {
 
     const filtreCategorieArmeOK = armeCorrespondCategories(item, categoriesArmesSelectionnees);
 
-    return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK && filtreFactionOK && filtreCategorieArmeOK;
+    return filtreElementOK && filtreArmeOK && filtreRareteOK && filtreVoeuOK && filtreFactionOK && filtreCategorieArmeOK &&
+      correspondSoutiens(item, soutiensActifs);
   });
 
   // Possédés / sélectionnés, étoiles, vœux : regroupés par rareté par défaut.
@@ -865,6 +872,7 @@ function rendreCollection(personnages, armes, profil) {
     valeurs: getValeursTri(vueActive, collectionProfil),
     elements: selectionElements,
     armes: selectionArmes,
+    soutiens: soutiensActifs,
     possede: item => itemPossede(item, vueActive, collectionProfil),
     rareteParDefaut: filtreCoche || rareteSelectionnees.length > 0 || voeuxSelectionnes.length > 0 ||
       factionsSelectionnees.length > 0 || categoriesArmesSelectionnees.length > 0
@@ -1262,7 +1270,7 @@ async function initialiserPage() {
     afficherCollection(personnages, armes, profil);
     mettreAJourTotalBox(personnages, armes, profil);
 
-    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-faction, .filtre-categorie-arme, #filtre-possedes").forEach(input => {
+    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-faction, .filtre-soutien, .filtre-categorie-arme, #filtre-possedes").forEach(input => {
       input.addEventListener("change", () => {
         // Factions exclusives (cf. basculerFiltreFaction) : une seule cochée.
         if (input.classList.contains("filtre-faction") && input.checked) {
@@ -1297,6 +1305,7 @@ async function initialiserPage() {
       viderTris(etatTri);
       selectionElements.clear();
       selectionArmes.clear();
+      selectionSoutiens.clear();
       afficherCollection(personnages, armes, profil);
       mettreAJourTotalBox(personnages, armes, profil);
     });

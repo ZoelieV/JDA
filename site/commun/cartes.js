@@ -202,6 +202,8 @@ const chargerPersonnages = (avecMasques = false) => Promise.all([chargerJSON("ch
     synergiesPersos = lireSynergies(points.synergies);
     // Faction (lunar, hexerei, stellar ; cf. FACTIONS, commun/tri.js).
     liste.forEach(perso => { perso.faction = points.factions?.[perso.id] || null; });
+    // Rôles : bouclier et / ou soin (cf. SOUTIENS, commun/tri.js).
+    liste.forEach(perso => { perso.soutiens = Array.isArray(points.soutiens?.[perso.id]) ? points.soutiens[perso.id] : []; });
     if (avecMasques) return liste;
     catalogueTheatre = retirerMasques(liste, points.masques?.characters);
     return marquerBonusSaison(marquerBuffTheatre(catalogueTheatre, points.theatre), points.bonus_saison);
