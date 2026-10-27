@@ -38,7 +38,12 @@ async function appel(action, corps = null) {
     ? { credentials: "include" }
     : { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
   const data = await reponse.json().catch(() => ({}));
-  if (!reponse.ok) throw new Error(data.error || "Erreur");
+  if (!reponse.ok) {
+    const erreur = new Error(data.error || "Erreur");
+    // Match classé en cours (cf. rejoindre).
+    erreur.roomEnCours = data.room_id || null;
+    throw erreur;
+  }
   return data;
 }
 
@@ -542,10 +547,34 @@ function rendreBulles() {
   $("actions-fin").classList.toggle("cache", !visible);
 }
 
+// Rejoindre la room (bouton, ou arrivée par le lien). Match classé en
+// cours : fenêtre pour y retourner ou l'abandonner, puis nouvel essai (cf.
+// proposerAbandonClasse, commun/cartes.js, qui ne revient qu'après un
+// abandon).
+async function rejoindre() {
+  if (envoiEnCours) return;
+  envoiEnCours = true;
+  let roomEnCours = null;
+  try {
+    const data = await appel("wb_rejoindre", {});
+    noterHorloge(data);
+    if (data.draft) definirDraft(data.draft);
+  } catch (erreur) {
+    if (erreur.roomEnCours) roomEnCours = erreur.roomEnCours;
+    else alert(erreur.message);
+  } finally {
+    envoiEnCours = false;
+  }
+  if (roomEnCours) {
+    await proposerAbandonClasse(roomEnCours);
+    return rejoindre();
+  }
+}
+
 // ---- Démarrage ----
 
 function initialiserBoutons() {
-  $("btn-rejoindre").addEventListener("click", () => agir("wb_rejoindre", {}));
+  $("btn-rejoindre").addEventListener("click", rejoindre);
   $("btn-quitter").addEventListener("click", async () => {
     if (!confirm("Quitter la room ?")) return;
     try {
@@ -625,12 +654,7 @@ async function demarrer() {
   // Arrivée par le lien : on rejoint la room s'il reste de la place.
   await rafraichir();
   if (draft?.phase === "lobby" && !suisMembre() && (draft.membres || []).length < TAILLE_MAX) {
-    try {
-      const data = await appel("wb_rejoindre", {});
-      definirDraft(data.draft);
-    } catch (erreur) {
-      alert(erreur.message);
-    }
+    await rejoindre();
   }
 
   let intervalle = setInterval(rafraichir, POLL_MS);

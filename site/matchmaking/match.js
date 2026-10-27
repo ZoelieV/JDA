@@ -3129,7 +3129,7 @@ function afficherAlerteEquilibrage() {
 }
 
 // ---- Chronos de la draft classée (cf. api/_lib/chronos.js) ----
-// Analyse 2 min, bans d'équilibrage 10 s par ban (entre 30 s et 3 min par
+// Analyse 2 min, bans d'équilibrage 15 s par ban (entre 1 min et 5 min par
 // phase), picks /
 // bans 30 s par action du joueur (sardine : 3 min 30 ; baleine : 5 min) en
 // pendule. C'est la page du joueur dont c'est le tour qui

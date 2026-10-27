@@ -372,8 +372,10 @@ async function routeRejoindre(req, res, roomId, user) {
   if (draft.membres.includes(user.id)) return repondre(res, draft);
   if (draft.phase !== "lobby") throw erreur(409, "La partie a déjà commencé.");
   if (draft.membres.length >= TAILLE_MAX) throw erreur(409, `La room est complète (${TAILLE_MAX} joueurs au maximum).`);
-  // Match classé en cours : pas d'autre match (ce serait un abandon).
-  if (await matchClasseEnCours(supabase, user.id)) throw erreur(409, ERREUR_MATCH_CLASSE);
+  // Match classé en cours : pas d'autre match (ce serait un abandon) ;
+  // room_id pour la fenêtre d'abandon de la page (proposerAbandonClasse).
+  const classeEnCours = await matchClasseEnCours(supabase, user.id);
+  if (classeEnCours) throw { ...erreur(409, ERREUR_MATCH_CLASSE), room_id: classeEnCours };
 
   const profil = (await lireProfils([user.id])).get(user.id);
   const membres = [...draft.membres, user.id];

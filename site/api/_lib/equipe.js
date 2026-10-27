@@ -606,8 +606,10 @@ async function routeRejoindre(req, res, roomId, user) {
   if (draft.membres.includes(user.id)) return repondre(res, draft, user.id);
   if (draft.phase !== "lobby") throw erreur(409, "Le match a déjà commencé : tu peux le regarder en spectateur.");
   if (draft.membres.length >= draft.taille * 2) throw erreur(409, "Le lobby est complet : tu peux regarder en spectateur.");
-  // Match classé en cours : pas d'autre match (ce serait un abandon).
-  if (await matchClasseEnCours(supabase, user.id)) throw erreur(409, ERREUR_MATCH_CLASSE);
+  // Match classé en cours : pas d'autre match (ce serait un abandon) ;
+  // room_id pour la fenêtre d'abandon de la page (proposerAbandonClasse).
+  const classeEnCours = await matchClasseEnCours(supabase, user.id);
+  if (classeEnCours) throw { ...erreur(409, ERREUR_MATCH_CLASSE), room_id: classeEnCours };
 
   await actualiserPoints();
   const profil = (await lireProfils([user.id])).get(user.id);

@@ -1221,7 +1221,9 @@ module.exports = async (req, res) => {
     }
   } catch (error) {
     if (error && error.status) {
-      return res.status(error.status).json({ error: error.message });
+      // room_id : match classé en cours (cf. matchClasseEnCours), pour la
+      // fenêtre d'abandon de la page.
+      return res.status(error.status).json({ error: error.message, ...(error.room_id ? { room_id: error.room_id } : {}) });
     }
     console.error(error);
     return res.status(500).json({ error: "Erreur serveur" });
