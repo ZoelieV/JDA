@@ -841,6 +841,186 @@
    "miniature": "bg_miniatures/autres/theatre.webp"
   },
   {
+   "id": "bg/autres/personnage_1.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_1.webp",
+   "miniature": "bg_miniatures/autres/personnage_1.webp"
+  },
+  {
+   "id": "bg/autres/personnage_2.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_2.webp",
+   "miniature": "bg_miniatures/autres/personnage_2.webp"
+  },
+  {
+   "id": "bg/autres/personnage_3.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_3.webp",
+   "miniature": "bg_miniatures/autres/personnage_3.webp"
+  },
+  {
+   "id": "bg/autres/personnage_4.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_4.webp",
+   "miniature": "bg_miniatures/autres/personnage_4.webp"
+  },
+  {
+   "id": "bg/autres/personnage_5.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_5.webp",
+   "miniature": "bg_miniatures/autres/personnage_5.webp"
+  },
+  {
+   "id": "bg/autres/personnage_6.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_6.webp",
+   "miniature": "bg_miniatures/autres/personnage_6.webp"
+  },
+  {
+   "id": "bg/autres/personnage_7.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_7.webp",
+   "miniature": "bg_miniatures/autres/personnage_7.webp"
+  },
+  {
+   "id": "bg/autres/personnage_8.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_8.webp",
+   "miniature": "bg_miniatures/autres/personnage_8.webp"
+  },
+  {
+   "id": "bg/autres/personnage_9.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_9.webp",
+   "miniature": "bg_miniatures/autres/personnage_9.webp"
+  },
+  {
+   "id": "bg/autres/personnage_10.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_10.webp",
+   "miniature": "bg_miniatures/autres/personnage_10.webp"
+  },
+  {
+   "id": "bg/autres/personnage_11.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_11.webp",
+   "miniature": "bg_miniatures/autres/personnage_11.webp"
+  },
+  {
+   "id": "bg/autres/personnage_12.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_12.webp",
+   "miniature": "bg_miniatures/autres/personnage_12.webp"
+  },
+  {
+   "id": "bg/autres/personnage_13.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_13.webp",
+   "miniature": "bg_miniatures/autres/personnage_13.webp"
+  },
+  {
+   "id": "bg/autres/personnage_14.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_14.webp",
+   "miniature": "bg_miniatures/autres/personnage_14.webp"
+  },
+  {
+   "id": "bg/autres/personnage_15.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_15.webp",
+   "miniature": "bg_miniatures/autres/personnage_15.webp"
+  },
+  {
+   "id": "bg/autres/personnage_16.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_16.webp",
+   "miniature": "bg_miniatures/autres/personnage_16.webp"
+  },
+  {
+   "id": "bg/autres/personnage_17.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_17.webp",
+   "miniature": "bg_miniatures/autres/personnage_17.webp"
+  },
+  {
+   "id": "bg/autres/personnage_18.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_18.webp",
+   "miniature": "bg_miniatures/autres/personnage_18.webp"
+  },
+  {
+   "id": "bg/autres/personnage_19.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_19.webp",
+   "miniature": "bg_miniatures/autres/personnage_19.webp"
+  },
+  {
+   "id": "bg/autres/personnage_20.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_20.webp",
+   "miniature": "bg_miniatures/autres/personnage_20.webp"
+  },
+  {
+   "id": "bg/autres/personnage_21.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_21.webp",
+   "miniature": "bg_miniatures/autres/personnage_21.webp"
+  },
+  {
+   "id": "bg/autres/personnage_22.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_22.webp",
+   "miniature": "bg_miniatures/autres/personnage_22.webp"
+  },
+  {
+   "id": "bg/autres/personnage_23.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_23.webp",
+   "miniature": "bg_miniatures/autres/personnage_23.webp"
+  },
+  {
+   "id": "bg/autres/personnage_24.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_24.webp",
+   "miniature": "bg_miniatures/autres/personnage_24.webp"
+  },
+  {
+   "id": "bg/autres/personnage_25.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_25.webp",
+   "miniature": "bg_miniatures/autres/personnage_25.webp"
+  },
+  {
+   "id": "bg/autres/personnage_26.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_26.webp",
+   "miniature": "bg_miniatures/autres/personnage_26.webp"
+  },
+  {
+   "id": "bg/autres/personnage_27.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_27.webp",
+   "miniature": "bg_miniatures/autres/personnage_27.webp"
+  },
+  {
+   "id": "bg/autres/personnage_28.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_28.webp",
+   "miniature": "bg_miniatures/autres/personnage_28.webp"
+  },
+  {
+   "id": "bg/autres/personnage_29.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_29.webp",
+   "miniature": "bg_miniatures/autres/personnage_29.webp"
+  },
+  {
+   "id": "bg/autres/personnage_30.webp",
+   "categorie": "autres",
+   "image": "bg_web/autres/personnage_30.webp",
+   "miniature": "bg_miniatures/autres/personnage_30.webp"
+  },
+  {
    "id": "bg/boss_hebdo/apep_1.png",
    "categorie": "boss_hebdo",
    "image": "bg_web/boss_hebdo/apep_1.webp",

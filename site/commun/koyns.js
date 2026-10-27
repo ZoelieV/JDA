@@ -5,7 +5,7 @@
 // Partagé avec le serveur.
 
 // Prix d'un cosmétique selon son choix (début de l'id, cf. idCosmetique) :
-// fonds d'écran (image importée comprise) et skins 10, namecards
+// fonds d'écran (image importée comprise, fonds des personnages : 8) et skins 10, namecards
 // ("banniere") et bannières ("banniere2") 15 ; autre choix payant :
 // PRIX_COSMETIQUE (Voyageur et Manekin : gratuits, cf. COSMETIQUES_GRATUITS). Double pour les persos de PERSOS_PRIX_DOUBLE.
 const PRIX_COSMETIQUE = 1;
@@ -36,8 +36,14 @@ function estPrixDouble(id) {
 const FOND_IMPORTE = "fond:perso";
 const PRIX_IMPORT_FOND = 50;
 
+// Fonds des personnages (DB/images/bg_web/autres/personnage_<n>.webp) :
+// PRIX_FOND_PERSONNAGE au lieu du prix d'un fond.
+const FOND_PERSONNAGE = /^fond:bg\/autres\/personnage_\d+\.webp$/;
+const PRIX_FOND_PERSONNAGE = 8;
+
 function prixCosmetique(id) {
   if (String(id).split("#")[0] === FOND_IMPORTE) return PRIX_IMPORT_FOND;
+  if (FOND_PERSONNAGE.test(String(id))) return PRIX_FOND_PERSONNAGE;
   const prix = PRIX_PAR_CHOIX[String(id).split(":")[0]] ?? PRIX_COSMETIQUE;
   return estPrixDouble(id) ? prix * 2 : prix;
 }
