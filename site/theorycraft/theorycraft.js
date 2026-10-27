@@ -358,11 +358,22 @@ function nomPersoDraft(id) {
   return perso.groupe ? perso.nom.replace(/\s+\S+$/, "") : perso.nom;
 }
 
+// Ex. Skirk (malus 10, 3 persos) : « −3 par perso absent parmi A, B et C
+// (−10 s'il n'y en a aucun) » ; détail exact au survol (arrondis, cf.
+// malusSynergie dans commun/synergies.js : 1 absent −3, 2 absents −7...).
 function htmlSynergieTc(perso) {
   const synergie = synergiesPersos[perso.id];
   if (!synergie) return "";
-  const parAbsent = Math.round(synergie.malus / synergie.persos.length);
-  return `<span class="valeur-alternative-tc" title="Sans aucun de ces persos dans la box : −${synergie.malus} pts (−${parAbsent} par perso absent)">−${synergie.malus}</span> sans ${synergie.persos.map(id => echapper(nomPersoDraft(id))).join(", ")}`;
+  const noms = synergie.persos.map(id => echapper(nomPersoDraft(id)));
+  const total = synergie.persos.length;
+  if (total === 1) {
+    return `<span class="valeur-alternative-tc" title="Sans ${noms[0]} dans la box : −${synergie.malus} pts">−${synergie.malus}</span> sans ${noms[0]}`;
+  }
+  const liste = `${noms.slice(0, -1).join(", ")} et ${noms[noms.length - 1]}`;
+  const parAbsent = Math.round(synergie.malus / total);
+  const detail = Array.from({ length: total }, (_, i) =>
+    `${i + 1} absent${i ? "s" : ""} : −${Math.round(synergie.malus * (i + 1) / total)}`).join(" · ");
+  return `<span class="valeur-alternative-tc" title="Points perdus selon le nombre de ces persos absents de la box : ${detail}">−${parAbsent}</span> par perso absent parmi ${liste} (−${synergie.malus} s'il n'y en a aucun)`;
 }
 
 function htmlAlternativeArmeTc(arme) {
