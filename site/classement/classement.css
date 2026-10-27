@@ -166,10 +166,17 @@
   border-color: var(--accent-bordure);
 }
 
+/* En-tête du tableau : bandeau flouté, comme la barre de recherche et de
+   tri. */
 .entete-classement {
   margin-bottom: 0.25rem;
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
   font-weight: bold;
   color: var(--texte-doux);
+  background-color: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .col-rang {
