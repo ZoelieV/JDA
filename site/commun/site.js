@@ -73,7 +73,8 @@
   const CREDITS = [
     ["Développeurs", "Strike, Koy"],
     ["Équilibrage", "Lightningstorm, Matrere, Gogetox"],
-    ["Autre", "Zekroy, Laïna"]
+    ["Streameuse", "Laïna"],
+    ["Paparazzi", "Zekroy"]
   ];
 
   function element(balise, attributs = {}, texte = "") {
