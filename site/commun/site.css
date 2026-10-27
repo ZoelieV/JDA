@@ -72,13 +72,24 @@ html.site-classique .site-entete {
   align-items: center;
   gap: 1.5rem;
   padding: 0.625rem 2rem;
-  background-color: var(--barre-fond);
-  -webkit-backdrop-filter: var(--barre-flou);
-  backdrop-filter: var(--barre-flou);
   border-bottom: 1px solid var(--barre-bordure);
   text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
   pointer-events: auto;
   zoom: var(--zoom-barres);
+}
+
+/* Verre de l'en-tête sur un pseudo-élément : un backdrop-filter sur
+   l'en-tête lui-même empêcherait le flou de ses menus (menu du compte) de
+   voir la page derrière (ils paraîtraient transparents). */
+html.site-classique .site-entete::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--barre-fond);
+  -webkit-backdrop-filter: var(--barre-flou);
+  backdrop-filter: var(--barre-flou);
+  pointer-events: none;
 }
 
 /* Autres pages : d'un bord à l'autre de l'écran, au-dessus du contenu. */

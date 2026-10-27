@@ -968,31 +968,22 @@ function marquerEnregistre(profil, etat = etatFormulaire(profil)) {
 }
 
 // ---- UID, stream, niveau du monde (cf. erreurChampsDefinitifs, api/auth/profile.js) ----
-// UID et stream : plus modifiables une fois enregistrés. Niveau du monde :
+// UID et stream : plus modifiables une fois enregistrés (grisés, cf.
+// .menu-champ input[readonly] dans commun/entete.css). Niveau du monde :
 // seulement les niveaux permis (un cran sous le plus haut enregistré, ou
 // plus), plus "Choisir" une fois renseigné. Pas pour les box fictives.
 function verrouillerChampsDefinitifs(profil) {
-  if (ID_BOX_FICTIVE) {
-    document.querySelectorAll(".aide-champ").forEach(aide => aide.classList.add("cache"));
-    return;
-  }
+  if (ID_BOX_FICTIVE) return;
   [["uid", "UID"], ["stream", "Lien de stream"]].forEach(([id, nom]) => {
     const champ = document.getElementById(id);
     const verrouille = !!profil[id];
     champ.readOnly = verrouille;
     champ.title = verrouille ? `${nom} déjà renseigné : il ne peut plus être modifié.` : "";
-    document.getElementById(`aide-${id}`).textContent = verrouille
-      ? "Déjà renseigné : il ne peut plus être modifié."
-      : "Une fois enregistré, il ne peut plus être modifié.";
   });
   const max = Math.max(Number(profil.niveau_monde_max) || 0, Number(profil.niveau_monde) || 0);
   document.querySelectorAll("#niveau-monde option").forEach(option => {
     option.disabled = !!max && (option.value === "" || Number(option.value) < max - 1);
   });
-  if (max) {
-    document.getElementById("aide-niveau-monde").textContent =
-      `Plus haut niveau enregistré : ${max}. Tu peux monter, ou redescendre jusqu'à ${Math.max(1, max - 1)}.`;
-  }
 }
 
 // ---- Copier une box optimisée dans une autre ----
