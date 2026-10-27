@@ -221,14 +221,21 @@ html.site-classique .site-entete #discord-name::before {
   font-size: 1rem;
 }
 
-/* Bouton du compte de l'en-tête : même taille à l'écran qu'une carte de
-   Tous les comptes (.banniere-joueur : photo 3,5rem, bannière haute de la
-   photo + 2 px, environ 20rem de large), le zoom de l'en-tête compensé ;
-   sur téléphone, limité à la largeur d'avant. */
+/* Bouton du compte de l'en-tête plus court (place pour les liens) ;
+   téléphone : tel quel. */
 html.site-classique .site-entete .avec-banniere2 {
-  --taille-avatar: calc(3.5rem / var(--zoom-barres));
-  --hauteur-banniere: calc((3.5rem + 2px) / var(--zoom-barres));
-  width: min(calc(20.25rem / var(--zoom-barres)), calc(100vw - 10.9375rem));
+  --largeur-banniere: min(19rem, 100vw - 6.875rem);
+}
+
+/* Ordinateur : à la taille d'une carte de Tous les comptes
+   (.banniere-joueur : photo 3,5rem, bannière haute de la photo + 2 px), un
+   peu plus large (22,25rem), le zoom de l'en-tête compensé. */
+@media (min-width: 701px) {
+  html.site-classique .site-entete .avec-banniere2 {
+    --taille-avatar: calc(3.5rem / var(--zoom-barres));
+    --hauteur-banniere: calc((3.5rem + 2px) / var(--zoom-barres));
+    width: calc(22.25rem / var(--zoom-barres));
+  }
 }
 
 /* Mon compte pas connecté : bouton vide, masqué. */
