@@ -691,8 +691,8 @@ body::before {
   object-fit: contain;
 }
 
-/* ---- Pages de l'administration (Équilibrage, Administration, Litiges ;
-   cf. admin_ppc.html, historique.html en page /admin/litiges) ---- */
+/* ---- Pages de l'administration (Équilibrage, Administration ; cf.
+   admin_ppc.html) ---- */
 .onglets-admin {
   display: flex;
   flex-wrap: wrap;

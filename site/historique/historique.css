@@ -1780,14 +1780,33 @@ img.arme-mini {
   font-weight: bold;
 }
 
-/* Page Litiges (/admin/litiges) : litiges ouverts et matchs signalés, sous
-   les pages de l'administration. */
+/* Litiges (/admin/litiges, dans la fenêtre Litiges de l'administration) :
+   litiges ouverts et matchs signalés en haut ; pas de titre, de compte, de
+   feedback ni de fond d'écran. */
 .sous-titre-litiges {
-  margin: -0.5rem 0 1rem;
+  margin: 0 0 1rem;
   text-align: center;
   opacity: 0.8;
 }
 
 .sous-titre-litiges.cache {
   display: none;
+}
+
+html.page-integree,
+html.page-integree body {
+  background: transparent !important;
+}
+
+html.page-integree body {
+  margin: 0;
+  padding: 0.5rem;
+}
+
+html.page-integree body::before,
+html.page-integree .titre-page,
+html.page-integree .lien-accueil,
+html.page-integree .zone-compte,
+html.page-integree .bouton-feedback {
+  display: none !important;
 }

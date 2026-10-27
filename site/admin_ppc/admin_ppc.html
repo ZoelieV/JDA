@@ -13,8 +13,8 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=43">
-<link rel="stylesheet" href="/commun/entete.css?v=rem34">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=45">
+<link rel="stylesheet" href="/commun/entete.css?v=rem35">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=6">
   <link rel="stylesheet" href="/commun/site.css?v=7">
@@ -33,7 +33,6 @@
   <nav class="onglets-admin" aria-label="Pages d'administration">
     <a class="onglet-admin" data-page="equilibrage" href="/admin/equilibrage">Équilibrage</a>
     <a class="onglet-admin" data-page="administration" href="/admin">Administration</a>
-    <a class="onglet-admin" data-page="litiges" href="/admin/litiges">Litiges</a>
   </nav>
 
   <p id="etat-admin" class="etat-admin">Chargement…</p>
@@ -46,13 +45,11 @@
       <span class="tuile-admin-titre">Bans en cours</span>
       <span class="tuile-admin-texte">Joueurs bannis du mode classé et levée des bans.</span>
     </button>
-    <!-- Litiges et signalements : page à part (historique.html en page
-         /admin/litiges). -->
-    <a href="/admin/litiges" class="tuile-admin" title="Matchs invalidés par un litige et matchs signalés">
+    <button type="button" id="ouvrir-litiges" class="tuile-admin" title="Matchs invalidés par un litige et matchs signalés">
       <img src="/DB/images/others/Icon_Archive.webp" alt="">
       <span class="tuile-admin-titre">Litiges</span>
       <span class="tuile-admin-texte">Temps à corriger (abandon compris), signalements et sanctions.</span>
-    </a>
+    </button>
     <button type="button" id="ouvrir-feedback" class="tuile-admin" title="Feedbacks envoyés par les joueurs">
       <img src="/DB/images/others/Icon_Feedback.webp" alt="">
       <span class="tuile-admin-titre">Feedback</span>
@@ -319,6 +316,19 @@
       </div>
     </div>
   </div>
+  <!-- Litiges et signalements (cf. admin_litiges.js) : page /admin/litiges
+       (historique.html) affichée dans la fenêtre, chargée à la 1re
+       ouverture. -->
+  <div id="modal-litiges" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Litiges</h2>
+        <button type="button" id="fermer-litiges" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <iframe id="cadre-litiges" class="cadre-litiges" title="Litiges et signalements"></iframe>
+    </div>
+  </div>
+
   <!-- Feedbacks des joueurs (cf. admin_feedback.js) : filtre par statut,
        statut et suppression (administrateurs). -->
   <div id="modal-feedback" class="modal-apercu">
@@ -504,6 +514,7 @@
   <script src="/admin_ppc/admin_fictives.js?v=5"></script>
   <script src="/admin_ppc/admin_evenements.js?v=2"></script>
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
+  <script src="/admin_ppc/admin_litiges.js?v=1"></script>
   <script src="/commun/koyns.js?v=10"></script>
   <script src="/admin_ppc/admin_koyns.js?v=4"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
@@ -512,6 +523,6 @@
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
   <script src="/admin_ppc/admin_ppc.js?v=38"></script>
-  <script src="/commun/site.js?v=3"></script>
+  <script src="/commun/site.js?v=4"></script>
 </body>
 </html>

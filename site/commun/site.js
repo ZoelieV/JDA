@@ -14,6 +14,9 @@
 // Mon compte : pas de commun/compte.js, son propre bouton du compte
 // (#auth-zone, menu des paramètres) est déplacé dans l'en-tête.
 (function () {
+  // Page affichée dans une fenêtre d'une autre page (Litiges dans
+  // l'administration, cf. admin_litiges.js) : ni en-tête ni pied de page.
+  if (window.self !== window.top) return;
   if (document.documentElement.dataset.accueil !== "classique") {
     // Affichage changé depuis la personnalisation : page rechargée pour
     // afficher (ou retirer) l'en-tête.
@@ -55,7 +58,7 @@
     { titre: "Admin", href: "/admin", classe: "carte-admin", menu: [
       ["Équilibrage", "/admin/equilibrage"],
       ["Administration", "/admin"],
-      ["Litiges", "/admin/litiges"]
+      ["Litiges", "/admin?litiges=1"]
     ] }
   ];
   // Réseaux : sites officiels en attendant les liens du site.

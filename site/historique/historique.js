@@ -1094,10 +1094,13 @@ const CLE_ONGLET = "historique-onglet";
 // Page Statistiques (/statistiques, même page que l'historique) : onglet
 // Statistiques seul, sans les autres ; Historique : tous sauf celui-là.
 const PAGE_STATISTIQUES = window.location.pathname.replace(/\/$/, "") === "/statistiques";
-// Page Litiges de l'administration (/admin/litiges, même page aussi) :
-// litiges et signalements seuls, administrateurs et mini admins (les
-// autres sont renvoyés à l'accueil, cf. demarrer).
+// Litiges de l'administration (/admin/litiges, même page aussi) : litiges
+// et signalements seuls, administrateurs et mini admins (les autres sont
+// renvoyés à l'accueil, cf. demarrer). Affichée dans la fenêtre Litiges de
+// /admin (cf. admin_ppc/admin_litiges.js) ; ouverte directement : renvoi
+// vers /admin, fenêtre ouverte.
 const PAGE_LITIGES = window.location.pathname.replace(/\/$/, "") === "/admin/litiges";
+if (PAGE_LITIGES && window.self === window.top) window.location.replace("/admin?litiges=1");
 let onglet = PAGE_STATISTIQUES ? "stats" : PAGE_LITIGES ? "litiges" : "matchs";
 
 // Page Statistiques : titre, onglets et barre des matchs masqués, panneau
@@ -1117,8 +1120,9 @@ if (PAGE_STATISTIQUES) {
 // des matchs masqués (rien d'affiché avant la vérification des droits).
 if (PAGE_LITIGES) {
   document.title = "Litiges";
-  document.querySelector(".titre-page").textContent = "Litiges";
-  document.querySelector(".onglets-admin").classList.remove("cache");
+  // Dans la fenêtre : sans titre, compte, feedback ni fond d'écran (cf.
+  // html.page-integree dans historique.css).
+  document.documentElement.classList.add("page-integree");
   document.querySelector(".onglets-historique").classList.add("cache");
   document.querySelector(".barre-historique").classList.add("cache");
   document.querySelectorAll(".panneau-historique").forEach(panneau => panneau.classList.add("cache"));
@@ -1621,7 +1625,7 @@ async function demarrer() {
     // Page Litiges sans les droits : retour silencieux à l'accueil, comme
     // pour l'administration (cf. admin_ppc.js).
     if (PAGE_LITIGES && !estAdmin) {
-      window.location.replace("/");
+      window.top.location.replace("/");
       return;
     }
     const config = await chargerPointsAdmin().catch(() => ({}));
