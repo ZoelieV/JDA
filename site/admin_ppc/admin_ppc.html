@@ -319,13 +319,15 @@
   <!-- Litiges et signalements (cf. admin_litiges.js) : page /admin/litiges
        (historique.html) affichée dans la fenêtre, chargée à la 1re
        ouverture. -->
+  <!-- Tailles aussi en ligne : la page HTML n'est jamais en cache, la
+       feuille de style si (fenêtre vue sans ses règles, cadre de 300 x 150). -->
   <div id="modal-litiges" class="modal-apercu">
-    <div class="modal-apercu-contenu">
+    <div class="modal-apercu-contenu" style="display: flex; flex-direction: column; width: min(90rem, calc(100% - 2rem)); height: 90vh; overflow: hidden; background-color: rgba(20, 20, 24, 0.94);">
       <div class="modal-apercu-entete">
         <h2>Litiges</h2>
         <button type="button" id="fermer-litiges" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
-      <iframe id="cadre-litiges" class="cadre-litiges" title="Litiges et signalements"></iframe>
+      <iframe id="cadre-litiges" class="cadre-litiges" title="Litiges et signalements" style="flex: 1; width: 100%; min-height: 0; margin-top: 0.75rem; border: none; border-radius: 0.5rem;"></iframe>
     </div>
   </div>
 
