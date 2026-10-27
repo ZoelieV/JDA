@@ -201,7 +201,8 @@ async function rendreSelecteurBox(cote) {
   if (!boxes.includes(etat.box)) etat.box = "full";
 
   zone.innerHTML = `
-    <label>Joueur <select class="ent-joueur"></select></label>
+    <label>Joueur <input type="text" class="ent-joueur" list="ent-joueurs-${cote}" autocomplete="off" placeholder="Rechercher un joueur…"></label>
+    <datalist id="ent-joueurs-${cote}"></datalist>
     <div class="choix-boutons ent-box">
       ${boxes.map(box => `<button type="button" class="choix-btn${etat.box === box ? " active" : ""}" data-valeur="${box}"></button>`).join("")}
     </div>
@@ -221,28 +222,39 @@ async function rendreSelecteurBox(cote) {
     btn.textContent = typeof nomsBoxes[box] === "string" && nomsBoxes[box] ? nomsBoxes[box] : fictive && box === "opti1" ? "Opti" : LIBELLES_BOX[box];
   });
 
-  const select = zone.querySelector(".ent-joueur");
-  entrainement.comptes.forEach(compte => {
-    const option = document.createElement("option");
-    option.value = compte.discord_id;
-    option.textContent = compte.discord_id === entrainement.moi.id ? `${compte.nom} (moi)` : compte.nom;
-    option.selected = compte.discord_id === etat.proprietaire;
-    select.appendChild(option);
+  // Joueur : champ de recherche avec suggestions (une liste déroulante de
+  // tous les joueurs, trop longue, s'ouvrait par-dessus le champ et le
+  // relâchement du clic choisissait le joueur sous la souris). Libellés
+  // uniques (homonymes numérotés).
+  const choix = [
+    ...entrainement.comptes.map(compte => ({ id: compte.discord_id, libelle: compte.discord_id === entrainement.moi.id ? `${compte.nom} (moi)` : compte.nom })),
+    ...entrainement.fictives.map(box => ({ id: box.id, libelle: `${box.nom} (box fictive)` }))
+  ];
+  const vus = new Map();
+  choix.forEach(c => {
+    const n = (vus.get(c.libelle) || 0) + 1;
+    vus.set(c.libelle, n);
+    if (n > 1) c.libelle = `${c.libelle} (${n})`;
   });
-  if (entrainement.fictives.length) {
-    const groupe = document.createElement("optgroup");
-    groupe.label = "Box fictives";
-    entrainement.fictives.forEach(box => {
-      const option = document.createElement("option");
-      option.value = box.id;
-      option.textContent = box.nom;
-      option.selected = box.id === etat.proprietaire;
-      groupe.appendChild(option);
-    });
-    select.appendChild(groupe);
-  }
-  select.addEventListener("change", () => {
-    etat.proprietaire = select.value;
+  const liste = zone.querySelector("datalist");
+  choix.forEach(c => {
+    const option = document.createElement("option");
+    option.value = c.libelle;
+    liste.appendChild(option);
+  });
+  const champ = zone.querySelector(".ent-joueur");
+  const libelleActuel = choix.find(c => c.id === etat.proprietaire)?.libelle || "";
+  champ.value = libelleActuel;
+  // Clic : tout le texte sélectionné, la saisie remplace le nom.
+  champ.addEventListener("focus", () => champ.select());
+  champ.addEventListener("change", () => {
+    const saisi = champ.value.trim().toLowerCase();
+    const trouve = choix.find(c => c.libelle.toLowerCase() === saisi);
+    if (!trouve || trouve.id === etat.proprietaire) {
+      champ.value = libelleActuel;
+      return;
+    }
+    etat.proprietaire = trouve.id;
     etat.persos = new Set();
     rendreSelecteurBox(cote);
   });

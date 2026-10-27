@@ -194,7 +194,8 @@
 }
 
 .ligne-entrainement select,
-.selecteur-box select {
+.selecteur-box select,
+.selecteur-box .ent-joueur {
   margin-left: 0.375rem;
   padding: 0.25rem 0.5rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -246,6 +247,12 @@
 
 .choix-btn.active {
   background-color: var(--accent-fond);
+}
+
+/* Joueur (entraînement) : champ de recherche avec suggestions. */
+.selecteur-box .ent-joueur {
+  width: min(18rem, 100%);
+  box-sizing: border-box;
 }
 
 /* Box personnalisée : persos de la full box du joueur, à cocher. */
@@ -445,7 +452,8 @@
 }
 
 .detail-match .ligne-entrainement select:focus,
-.detail-match .selecteur-box select:focus {
+.detail-match .selecteur-box select:focus,
+.detail-match .selecteur-box .ent-joueur:focus {
   outline: none;
   border-color: var(--couleur-detail);
 }
