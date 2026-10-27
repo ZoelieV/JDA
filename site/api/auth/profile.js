@@ -53,9 +53,9 @@ function lienStreamAutorise(texte) {
 
 const ERREUR_LIEN_STREAM = "Lien de stream refusé : seuls les liens Twitch (twitch.tv) et YouTube (youtube.com, youtu.be) sont acceptés.";
 
-// Enregistrements du profil : un toutes les 10 s au plus par compte (quota
+// Enregistrements du profil : un toutes les 5 s au plus par compte (quota
 // Supabase protégé d'un envoi en boucle).
-const DELAI_ENREGISTREMENT_MS = 10 * 1000;
+const DELAI_ENREGISTREMENT_MS = 5 * 1000;
 
 // Profil envoyé : taille maximale (une box complète pèse quelques dizaines
 // de Ko).
@@ -303,7 +303,7 @@ module.exports = async (req, res) => {
       const attente = await verifierFrequenceCompte(discordId, "profil", DELAI_ENREGISTREMENT_MS);
       if (attente > 0) {
         res.setHeader("Retry-After", String(Math.ceil(attente / 1000)));
-        return res.status(429).json({ error: `Un enregistrement toutes les 10 s au maximum : réessaie dans ${Math.ceil(attente / 1000)} s.` });
+        return res.status(429).json({ error: `Un enregistrement toutes les ${DELAI_ENREGISTREMENT_MS / 1000} s au maximum : réessaie dans ${Math.ceil(attente / 1000)} s.` });
       }
 
       const r = await fetchAvecReessai(`${SUPABASE_URL}/rest/v1/profiles`, {
