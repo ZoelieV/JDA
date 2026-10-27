@@ -330,6 +330,16 @@
     "PPW": [0, 0, 0, 0, 0]
   },
   {
+    "id": "fruitfulhook_w",
+    "nom": "Crochet fructueux",
+    "element": "all",
+    "type": "claymore",
+    "image": "images/weapons/fruitfulhook_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
     "id": "lohen_w",
     "nom": "Désastre et remords",
     "element": "cryo",
@@ -620,6 +630,26 @@
     "PPW": [0, 0, 0, 0, 0]
   },
   {
+    "id": "scion_w",
+    "nom": "Descendant du soleil flamboyant",
+    "element": "all",
+    "type": "bow",
+    "image": "images/weapons/scion_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "rangegauge_w",
+    "nom": "Jauge de portée",
+    "element": "all",
+    "type": "bow",
+    "image": "images/weapons/rangegauge_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
     "id": "vodyanitsa_w",
     "nom": "Hymne dans le maelström",
     "element": "hydro",
@@ -854,6 +884,16 @@
     "element": "all",
     "type": "catalyst",
     "image": "images/weapons/coeurhiver_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
+    "id": "widsith_w",
+    "nom": "Mouvement vagabond",
+    "element": "all",
+    "type": "catalyst",
+    "image": "images/weapons/widsith_w.webp",
     "rarete": "4",
     "categories": [],
     "PPW": [0, 0, 0, 0, 0]
