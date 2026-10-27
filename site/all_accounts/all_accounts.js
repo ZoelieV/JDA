@@ -289,7 +289,7 @@ function construireListeAffichee() {
     }));
 }
 
-// Points d'une carte, en rouge si c'est la valeur alternative dans la box
+// Points d'une carte, en vert si c'est la valeur alternative dans la box
 // (persos en synergie absents).
 function htmlPointsCarte(item, valeur, presents) {
   if (valeur < 0) return `<span class="character-points"></span>`;

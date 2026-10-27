@@ -346,7 +346,7 @@ function rendreFiltres() {
   `;
 }
 
-// ---- Valeurs alternatives (en rouge) ----
+// ---- Valeurs alternatives (en vert) ----
 // Perso : malus sans ses persos en synergie (cf. commun/synergies.js,
 // synergiesPersos chargé par commun/cartes.js) ; arme : valeur alternative
 // (arme.alternatif %, copie en double ou signature sans son perso).
@@ -677,7 +677,7 @@ function rendreEquilibrage() {
     </p>
     <p>Modes actuels : ${BONUS.map(({ cle, libelle }) => `${libelle} en <strong>${modes[cle]}</strong>`).join(", ")}. Le niveau des personnages est celui renseigné par le joueur dans Mon compte (90 sans bonus par défaut).</p>
     <p>Voyageur : un seul élément compte, celui qui rapporte le plus de points.</p>
-    <p><strong>Synergies</strong> (valeur alternative, en rouge dans Mon compte et la colonne Synergie) : certains personnages perdent des points dans une box qui ne contient pas les personnages avec lesquels ils fonctionnent.</p>
+    <p><strong>Synergies</strong> (valeur alternative, en vert dans Mon compte et la colonne Synergie) : certains personnages perdent des points dans une box qui ne contient pas les personnages avec lesquels ils fonctionnent.</p>
     <p class="formule-tc">
       points = points − malus × (persos en synergie absents de la box / persos en synergie)<br>
       arrondi, après les bonus de niveau et de théâtre, jamais sous 0
