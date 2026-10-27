@@ -257,6 +257,8 @@
 .joueur-infos .medaille-theatre {
   width: 2em;
   height: 2em;
+  /* Côté opposé à la photo : à droite. */
+  margin-left: auto;
 }
 
 /* Valeur du tri en cours sur la bannière : téléphone seulement. */

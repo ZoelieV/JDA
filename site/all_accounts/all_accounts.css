@@ -136,6 +136,8 @@ h1, h2 {
 .account-infos .medaille-theatre {
   width: 2em;
   height: 2em;
+  /* Côté opposé à la photo : à droite (avant la valeur du tri). */
+  margin-left: auto;
 }
 
 .account-sub {

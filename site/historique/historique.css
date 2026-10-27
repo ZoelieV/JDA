@@ -317,6 +317,24 @@
   margin-right: auto;
 }
 
+/* Médaille du palier : du côté opposé à la photo (à droite pour J1 et les
+   membres d'une équipe, à gauche pour J2), avec les étiquettes et le temps
+   qui la suivent. */
+.match-banniere > .medaille-theatre {
+  margin-left: auto;
+}
+
+.match-j2 .match-banniere > .medaille-theatre {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.match-joueur .match-banniere > .medaille-theatre ~ .match-temps,
+.match-j2 .match-banniere > .medaille-theatre ~ .match-temps {
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .gagnant .match-temps {
   color: var(--couleur-victoire);
 }

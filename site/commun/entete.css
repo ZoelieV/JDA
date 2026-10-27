@@ -580,6 +580,12 @@ body::before {
   height: 2rem;
 }
 
+/* Bouton du compte (photo à droite) : médaille au bord gauche, du côté
+   opposé à la photo. */
+.avec-banniere2 > .medaille-theatre {
+  margin-right: auto;
+}
+
 /* Icône dans le texte, à la place d'un emoji (ICONE_TROPHEE,
    ICONE_ENTRAINEMENT de commun/cartes.js) : à la hauteur du texte. */
 .icone-texte {
