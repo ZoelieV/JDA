@@ -69,7 +69,7 @@
     ["YouTube", "https://www.youtube.com", "youtube"],
     ["Ko-fi", "https://ko-fi.com", "kofi"]
   ];
-  // Crédits, en bas du pied de page.
+  // Crédits : fenêtre du bouton Crédits du pied de page.
   const CREDITS = [
     ["Développeurs", "Strike, Koy"],
     ["Équilibrage", "Lightningstorm, Matrere, Gogetox"],
@@ -128,7 +128,9 @@
     const feedback = element("button", { type: "button", class: "pied-feedback" }, "Envoyer un feedback");
     feedback.appendChild(element("img", { src: "/DB/images/others/Icon_Mail.webp", alt: "" }));
     feedback.addEventListener("click", ouvrirFeedback);
-    liens.appendChild(feedback);
+    const credits = element("button", { type: "button", class: "pied-feedback" }, "Crédits");
+    credits.addEventListener("click", ouvrirCredits);
+    liens.append(credits, feedback);
     const reseaux = element("div", { class: "pied-reseaux" });
     RESEAUX.forEach(([nom, href, icone]) => {
       const a = element("a", { href, target: "_blank", rel: "noopener noreferrer", "aria-label": nom, title: nom });
@@ -136,14 +138,30 @@
       reseaux.appendChild(a);
     });
     contenu.append(marque, liens, reseaux);
-    const credits = element("p", { class: "pied-credits" });
-    CREDITS.forEach(([role, noms]) => {
-      const bloc = element("span", { class: "pied-credit" });
-      bloc.append(element("strong", {}, `${role} :`), ` ${noms}`);
-      credits.appendChild(bloc);
-    });
-    pied.append(contenu, credits);
+    pied.appendChild(contenu);
     return pied;
+  }
+
+  // Fenêtre des crédits (créée au 1er clic) ; Échap, × ou clic à côté :
+  // fermée.
+  let fenetreCredits = null;
+  function ouvrirCredits() {
+    if (!fenetreCredits) {
+      fenetreCredits = element("dialog", { class: "fenetre-credits", "aria-label": "Crédits" });
+      const fermer = element("button", { type: "button", class: "fermer-credits", "aria-label": "Fermer" }, "×");
+      fermer.addEventListener("click", () => fenetreCredits.close());
+      fenetreCredits.append(fermer, element("h2", {}, "Crédits"));
+      CREDITS.forEach(([role, noms]) => {
+        const ligne = element("p", { class: "ligne-credits" });
+        ligne.append(element("strong", {}, role), element("span", {}, noms));
+        fenetreCredits.appendChild(ligne);
+      });
+      fenetreCredits.addEventListener("click", event => {
+        if (event.target === fenetreCredits) fenetreCredits.close();
+      });
+      document.body.appendChild(fenetreCredits);
+    }
+    fenetreCredits.showModal();
   }
 
   // Feedback : fenêtre de commun/feedback.js (bouton flottant masqué dans
