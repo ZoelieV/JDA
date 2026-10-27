@@ -298,8 +298,9 @@
   font-size: 0.9375rem;
 }
 
-/* Raffinement d'une arme, en bas à droite de la case. */
-.ent-raffinement {
+/* Pastilles d'une case : constellation / raffinement en bas à droite,
+   niveau en haut à gauche (élément du Voyageur en bas à gauche). */
+.ent-badge {
   position: absolute;
   right: 2px;
   bottom: 2px;
@@ -310,6 +311,25 @@
   font-size: 0.6875rem;
   font-weight: bold;
   line-height: 1.4;
+}
+
+.ent-badge-haut {
+  top: 2px;
+  right: auto;
+  bottom: auto;
+  left: 2px;
+}
+
+/* Pas dans la box stuff du joueur : pastille rouge en haut à droite. */
+.ent-hors-stuff {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  background-color: #ff4d4d;
 }
 
 /* Élément du Voyageur, en bas à gauche de la case. */

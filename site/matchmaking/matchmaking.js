@@ -298,15 +298,26 @@ async function rendreSelecteurBox(cote) {
     compteur.textContent = `${nb} personnage${nb > 1 ? "s" : ""} (${MIN_PERSOS_BOX} minimum)`;
     compteur.classList.toggle("insuffisant", nb < MIN_PERSOS_BOX);
   };
+  // Constellation (bas à droite), niveau 95 / 100 (haut à gauche),
+  // pastille rouge (haut à droite) : pas dans la box stuff (persos montés)
+  // du joueur.
+  const constellations = profil?.characters?.full || {};
+  const niveaux = profil?.characters?.niveaux || {};
+  const stuff = profil?.characters?.selections?.stuff || {};
   grille.replaceChildren(...possedes.map(perso => {
     const carte = document.createElement("button");
     carte.type = "button";
     carte.className = `ent-perso ${classeFondRarete(perso.rarete)}${etat.persos.has(perso.id) ? " coche" : ""}`;
     // Voyageur (un par élément) : élément en bas à gauche pour les distinguer.
     const element = perso.groupe ? perso.element : null;
-    carte.title = perso.nom; // déjà avec l'élément ("Voyageur Geo")
+    const niveau = Number(niveaux[cleNiveau(perso)]) || null;
+    const horsStuff = !stuff[perso.id];
+    carte.title = `${perso.nom} C${constellations[perso.id]}${niveau ? `, niveau ${niveau}` : ""}${horsStuff ? " (pas dans la box stuff)" : ""}`; // nom déjà avec l'élément ("Voyageur Geo")
     carte.innerHTML = `<img src="../DB/${perso.image}" alt="" loading="lazy">` +
-      (element ? `<img class="ent-element" src="../DB/images/others/${element}.webp" alt="${element}">` : "");
+      (element ? `<img class="ent-element" src="../DB/images/others/${element}.webp" alt="${element}">` : "") +
+      (niveau ? `<span class="ent-badge ent-badge-haut">${niveau}</span>` : "") +
+      `<span class="ent-badge">C${constellations[perso.id]}</span>` +
+      (horsStuff ? `<span class="ent-hors-stuff"></span>` : "");
     carte.addEventListener("click", () => {
       if (etat.persos.has(perso.id)) etat.persos.delete(perso.id);
       else etat.persos.add(perso.id);
@@ -340,7 +351,7 @@ async function rendreSelecteurBox(cote) {
     carte.type = "button";
     carte.className = `ent-perso ${classeFondRarete(arme.rarete)}${etat.armes.has(instance) ? " coche" : ""}`;
     carte.title = `${arme.nom} R${raffinement + 1}`;
-    carte.innerHTML = `<img src="../DB/${arme.image}" alt="" loading="lazy"><span class="ent-raffinement">R${raffinement + 1}</span>`;
+    carte.innerHTML = `<img src="../DB/${arme.image}" alt="" loading="lazy"><span class="ent-badge">R${raffinement + 1}</span>`;
     carte.addEventListener("click", () => {
       if (etat.armes.has(instance)) etat.armes.delete(instance);
       else etat.armes.add(instance);
