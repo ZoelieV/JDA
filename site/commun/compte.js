@@ -85,6 +85,7 @@
       <p class="menu-etat cache"></p>
       <div class="menu-separateur"></div>
       <button type="button" class="menu-btn" data-action="personnalisation"><img class="menu-icone" src="${ICONES}Icon_Photo_Mode.webp" alt="">Personnalisation</button>
+      <button type="button" class="menu-btn" data-installer-appli style="display: none"><img class="menu-icone" src="/DB/images/others/logo_site.webp" alt="">Installer l'appli</button>
       <button type="button" class="menu-btn" data-action="deconnexion"><img class="menu-icone" src="${ICONES}Icon_Quit_Game.webp" alt="">Déconnexion</button>
     `;
     return menu;
@@ -104,6 +105,23 @@
     };
     const modifie = () => valeursChargees && CHAMPS.some(c => champ(c.id).value !== valeursChargees[c.id]);
 
+    // Comme sur Mon compte (verrouillerChampsDefinitifs, cf.
+    // erreurChampsDefinitifs dans api/auth/profile.js) : UID et stream plus
+    // modifiables une fois enregistrés (corrections par les admins) ; niveau
+    // du monde : un cran sous le plus haut enregistré au minimum, plus
+    // "Choisir" une fois renseigné.
+    function verrouiller(profil) {
+      [["menu-uid", "uid", "UID"], ["menu-stream", "stream", "Lien de stream"]].forEach(([id, cle, nom]) => {
+        const verrouille = !!profil[cle];
+        champ(id).readOnly = verrouille;
+        champ(id).title = verrouille ? `${nom} déjà renseigné : il ne peut plus être modifié.` : "";
+      });
+      const max = Math.max(Number(profil.niveau_monde_max) || 0, Number(profil.niveau_monde) || 0);
+      champ("menu-niveau-monde").querySelectorAll("option").forEach(option => {
+        option.disabled = !!max && (option.value === "" || Number(option.value) < max - 1);
+      });
+    }
+
     async function charger() {
       afficherEtat("Chargement…");
       try {
@@ -113,6 +131,7 @@
           valeursChargees[c.id] = c.lire(profil);
           champ(c.id).value = valeursChargees[c.id];
         });
+        verrouiller(profil);
         afficherEtat("");
       } catch (erreur) {
         console.error(erreur);
@@ -126,6 +145,7 @@
       photo.setAttribute("aria-expanded", String(ouvert));
       bouton.classList.toggle("menu-ouvert", ouvert);
       if (ouvert && !valeursChargees) charger();
+      if (ouvert) window.Appli?.rafraichir();
     }
 
     photo.addEventListener("click", event => {
@@ -157,8 +177,10 @@
           const { error } = await reponse.json().catch(() => ({}));
           throw new Error(error || "Erreur lors de l'enregistrement.");
         }
-        CHAMPS.forEach(c => { valeursChargees[c.id] = champ(c.id).value; });
         window.FondEcran?.memoriserTheatre(profil.theatre);
+        // Relu tel qu'enregistré (lien de stream complété par le serveur,
+        // champs maintenant verrouillés).
+        await charger();
         afficherEtat("Enregistré ✓");
       } catch (erreur) {
         console.error(erreur);

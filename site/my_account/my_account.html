@@ -5,12 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon compte</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem37">
-<link rel="stylesheet" href="/commun/entete.css?v=rem30">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
+<meta name="theme-color" content="#1e1e1e">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem38">
+<link rel="stylesheet" href="/commun/entete.css?v=rem31">
 <link rel="stylesheet" href="/commun/tri.css?v=6">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
   <link rel="stylesheet" href="/commun/site.css?v=3">
 <script src="/commun/fond.js?v=13" data-sans-requete></script>
+<script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
 </head>
 <body>
@@ -84,6 +88,7 @@
           <div class="menu-separateur"></div>
 
           <button type="button" id="btn-parametres" class="menu-btn"><img class="menu-icone" src="/DB/images/others/Icon_Photo_Mode.webp" alt="">Personnalisation</button>
+          <button type="button" class="menu-btn" data-installer-appli style="display: none"><img class="menu-icone" src="/DB/images/others/logo_site.webp" alt="">Installer l'appli</button>
           <button type="button" id="discord-logout-btn" class="menu-btn"><img class="menu-icone" src="/DB/images/others/Icon_Quit_Game.webp" alt="">Déconnexion</button>
         </div>
       </div>

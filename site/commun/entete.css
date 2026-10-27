@@ -373,6 +373,13 @@ body::before {
   background-color: #2a2a2a;
 }
 
+/* UID et stream déjà renseignés : plus modifiables (cf. commun/compte.js,
+   my_account.js). */
+.menu-champ input[readonly] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .menu-separateur {
   height: 1px;
   background-color: rgba(255, 255, 255, 0.15);

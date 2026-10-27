@@ -1633,11 +1633,6 @@ body {
   color: var(--texte-doux, rgba(255, 255, 255, 0.65));
 }
 
-.menu-champ input[readonly] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 /* Vitrine : conformité aux modes 2v2, 3v3 et 4v4 (sous le total). */
 .statut-vitrine {
   display: block;

@@ -1,0 +1,17 @@
+{
+  "name": "Jugement des Archons",
+  "short_name": "JDA",
+  "description": "PvP Genshin Impact : draft de box, puis le meilleur temps sur le même boss gagne.",
+  "lang": "fr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1e1e1e",
+  "theme_color": "#1e1e1e",
+  "icons": [
+    { "src": "/DB/images/others/appli_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/DB/images/others/appli_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/DB/images/others/appli_maskable_512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
