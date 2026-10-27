@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem39">
   <link rel="stylesheet" href="/commun/tri.css?v=7">
-  <link rel="stylesheet" href="/classement/classement.css?v=12">
+  <link rel="stylesheet" href="/classement/classement.css?v=13">
   <link rel="stylesheet" href="/commun/site.css?v=10">
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -28,42 +28,28 @@
     <select id="saison-classement" class="select-saison" title="Saison affichée" aria-label="Saison affichée"></select>
   </div>
 
-  <!-- Recherche et tris (sens inversé par un 2e clic) ; rang toujours
-       calculé sur les trophées. -->
+  <!-- Recherche ; tris par l'en-tête du tableau (cf. initialiserTris). -->
   <div class="barre-classement">
     <input type="text" id="recherche-classement" class="recherche-classement" placeholder="Rechercher un joueur…">
-    <div class="tris">
-      <span class="tris-label">Trier :</span>
-      <button type="button" class="bouton-tri tri-classement" data-tri="trophees" title="Trophées"><img class="tri-logo" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="Trophées"> <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="record" title="Record de trophées de la saison">Record <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="matchs_classes" title="Matchs classés joués"><span class="tri-emoji" aria-label="Matchs classés">⚔️</span> <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="ratio" title="Winrate en classé">% <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="points" title="Points (Full box)"><img class="tri-logo" src="/DB/images/others/scale.webp" alt="Points"> <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="nb_persos" title="Nombre de personnages"><img class="tri-logo" src="/DB/images/others/Icon_Party_Setup.webp" alt="Nombre de personnages"> <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="nb_c6" title="C6 5★"><span class="tri-emoji" aria-label="C6 5★">🐋</span> <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="constellations_5" title="Somme des constellations des 5★ limités (sans les persos standards)"><img class="tri-logo" src="/DB/images/others/Item_Genesis_Crystal.webp" alt="Constellations 5★"> <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="theatre" title="Théâtre"><img class="tri-logo tri-logo-palier" src="/DB/images/others/theatre_carpe.webp?v=3" alt="Théâtre"> <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="alpha" title="Pseudo">A → Z <span class="fleche"></span></button>
-      <button type="button" class="bouton-tri tri-classement" data-tri="activite" title="Activité récente"><img class="tri-logo" src="/DB/images/others/Icon_Clock.webp" alt="Activité"> <span class="fleche"></span></button>
-    </div>
-    <button type="button" id="clear-classement" class="btn-clear-filtres" title="Réinitialiser les filtres"><img src="/DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
   </div>
 
   <!-- Ordi : rang, bannière du joueur puis ses stats en colonnes ;
        téléphone : rang et bannière (valeur du tri en cours dessus). -->
   <div class="tableau-classement">
-    <div class="ligne-classement entete-classement" aria-hidden="true">
-      <span class="col-rang">#</span>
-      <span class="col-joueur">Joueur</span>
-      <span class="col-stat" data-col="trophees" title="Trophées"><img class="tri-logo" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt=""></span>
-      <span class="col-stat col-texte" data-col="record" title="Record de trophées de la saison">Record</span>
-      <span class="col-stat" data-col="matchs_classes" title="Matchs classés joués">⚔️</span>
-      <span class="col-stat" data-col="ratio" title="Winrate en classé">%</span>
-      <span class="col-stat" data-col="points" title="Points (Full box)"><img class="tri-logo" src="/DB/images/others/scale.webp" alt=""></span>
-      <span class="col-stat" data-col="nb_persos" title="Nombre de personnages"><img class="tri-logo" src="/DB/images/others/Icon_Party_Setup.webp" alt=""></span>
-      <span class="col-stat" data-col="nb_c6" title="C6 5★">🐋</span>
-      <span class="col-stat" data-col="constellations_5" title="Constellations 5★ limités"><img class="tri-logo" src="/DB/images/others/Item_Genesis_Crystal.webp" alt=""></span>
-      <span class="col-stat" data-col="theatre" title="Théâtre"><img class="tri-logo tri-logo-palier" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""></span>
+    <!-- En-tête : un clic trie par la colonne (2e clic : sens inversé) ;
+         # = trophées, Joueur = ordre alphabétique. -->
+    <div class="ligne-classement entete-classement">
+      <span class="col-rang tri-entete" data-tri="trophees" title="Trier par rang (trophées)">#</span>
+      <span class="col-joueur tri-entete" data-tri="alpha" title="Trier par pseudo">Joueur <span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="trophees" data-tri="trophees" title="Trier par : Trophées"><img class="tri-logo" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt=""><span class="fleche"></span></span>
+      <span class="col-stat col-texte tri-entete" data-col="record" data-tri="record" title="Trier par : Record de trophées de la saison">Record<span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="matchs_classes" data-tri="matchs_classes" title="Trier par : Matchs classés joués">⚔️<span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="ratio" data-tri="ratio" title="Trier par : Winrate en classé">%<span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="points" data-tri="points" title="Trier par : Points (Full box)"><img class="tri-logo" src="/DB/images/others/scale.webp" alt=""><span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="nb_persos" data-tri="nb_persos" title="Trier par : Nombre de personnages"><img class="tri-logo" src="/DB/images/others/Icon_Party_Setup.webp" alt=""><span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="nb_c6" data-tri="nb_c6" title="Trier par : C6 5★">🐋<span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="constellations_5" data-tri="constellations_5" title="Trier par : Constellations 5★ limités"><img class="tri-logo" src="/DB/images/others/Item_Genesis_Crystal.webp" alt=""><span class="fleche"></span></span>
+      <span class="col-stat tri-entete" data-col="theatre" data-tri="theatre" title="Trier par : Théâtre"><img class="tri-logo tri-logo-palier" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""><span class="fleche"></span></span>
     </div>
     <p id="etat-classement" class="etat-classement">Chargement…</p>
     <div id="liste-classement"></div>
@@ -71,7 +57,7 @@
 
   <script src="/commun/synergies.js?v=1"></script>
   <script src="/commun/cartes.js?v=32"></script>
-  <script src="/classement/classement.js?v=12"></script>
+  <script src="/classement/classement.js?v=13"></script>
   <script src="/commun/site.js?v=8"></script>
 </body>
 </html>

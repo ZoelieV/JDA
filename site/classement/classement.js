@@ -157,14 +157,13 @@ function creerLigne(joueur) {
   return ligne;
 }
 
+// En-tête : colonne du tri en cours mise en avant, avec le sens.
 function mettreAJourBoutons() {
-  document.querySelectorAll(".tri-classement").forEach(btn => {
-    const actif = btn.dataset.tri === tri.cle;
-    btn.classList.toggle("active", actif);
-    btn.querySelector(".fleche").textContent = actif ? (tri.sens === 1 ? "▲" : "▼") : "";
-  });
-  document.querySelectorAll(".entete-classement .col-stat").forEach(col => {
-    col.classList.toggle("active", col.dataset.col === tri.cle);
+  document.querySelectorAll(".entete-classement .tri-entete").forEach(col => {
+    const actif = col.dataset.tri === tri.cle && !col.classList.contains("col-rang");
+    col.classList.toggle("active", actif);
+    const fleche = col.querySelector(".fleche");
+    if (fleche) fleche.textContent = actif ? (tri.sens === 1 ? "▲" : "▼") : "";
   });
 }
 
@@ -229,20 +228,26 @@ function initialiserSaisons() {
   });
 }
 
+// Tris : clic sur un titre de l'en-tête du tableau (# : trophées, Joueur :
+// ordre alphabétique, colonnes : leur stat) ; 2e clic : sens inversé.
 function initialiserBarre() {
-  document.querySelectorAll(".tri-classement").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const cle = btn.dataset.tri;
+  document.querySelectorAll(".entete-classement .tri-entete").forEach(col => {
+    col.setAttribute("role", "button");
+    col.tabIndex = 0;
+    const trier = () => {
+      const cle = col.dataset.tri;
       tri = tri.cle === cle ? { cle, sens: -tri.sens } : { cle, sens: SENS_INITIAL[cle] };
       afficher();
+    };
+    col.addEventListener("click", trier);
+    col.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        trier();
+      }
     });
   });
   document.getElementById("recherche-classement").addEventListener("input", afficher);
-  document.getElementById("clear-classement").addEventListener("click", () => {
-    document.getElementById("recherche-classement").value = "";
-    tri = { ...TRI_DEFAUT };
-    afficher();
-  });
 }
 
 async function demarrer() {
