@@ -221,10 +221,14 @@ html.site-classique .site-entete #discord-name::before {
   font-size: 1rem;
 }
 
-/* Bannière du bouton du compte plus courte dans l'en-tête (place pour les
-   liens). */
+/* Bouton du compte de l'en-tête : même taille à l'écran qu'une carte de
+   Tous les comptes (.banniere-joueur : photo 3,5rem, bannière haute de la
+   photo + 2 px, environ 20rem de large), le zoom de l'en-tête compensé ;
+   sur téléphone, limité à la largeur d'avant. */
 html.site-classique .site-entete .avec-banniere2 {
-  --largeur-banniere: min(19rem, 100vw - 6.875rem);
+  --taille-avatar: calc(3.5rem / var(--zoom-barres));
+  --hauteur-banniere: calc((3.5rem + 2px) / var(--zoom-barres));
+  width: min(calc(20.25rem / var(--zoom-barres)), calc(100vw - 10.9375rem));
 }
 
 /* Mon compte pas connecté : bouton vide, masqué. */
