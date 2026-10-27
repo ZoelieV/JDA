@@ -77,6 +77,17 @@
   height: 1.8125rem;
 }
 
+/* Théâtre : la carpe des paliers (noire), sur un rond clair comme les
+   médailles du théâtre (cf. .medaille-theatre, commun/entete.css). */
+.tri-logo-palier {
+  box-sizing: border-box;
+  width: 1.5rem;
+  padding: 0.125rem;
+  border-radius: 50%;
+  background-color: rgba(235, 235, 235, 0.92);
+  object-fit: contain;
+}
+
 /* Rareté : étoile seule, plus grande. */
 .tri-etoile {
   font-size: 1.5em;
