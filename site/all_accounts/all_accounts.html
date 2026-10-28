@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tous les comptes</title>
+<title>Joueurs</title>
 <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/all_accounts/all_accounts.css?v=rem31">
+<link rel="stylesheet" href="/all_accounts/all_accounts.css?v=rem32">
 <link rel="stylesheet" href="/commun/entete.css?v=rem41">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
@@ -16,12 +16,19 @@
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=50" defer></script>
+<script src="/commun/compte.js?v=51" defer></script>
 </head>
 <body>
 <a href="/" class="lien-accueil">Accueil</a>
-<h1 class="titre-page">Tous les comptes</h1>
+<h1 class="titre-page">Joueurs</h1>
 
+  <!-- Box des joueurs, ou leurs flex cosmétiques (?onglet=flex). -->
+  <div class="onglets-comptes" role="tablist">
+    <button type="button" class="onglet-comptes active" role="tab" aria-selected="true" data-onglet="box">Box<span>collections des joueurs</span></button>
+    <button type="button" class="onglet-comptes" role="tab" aria-selected="false" data-onglet="flex">Flex cosmétiques<span>12 cosmétiques choisis par chaque joueur</span></button>
+  </div>
+
+  <div data-panneau="box">
   <!-- Recherche et tris de la liste des comptes (sens inversé par un 2e clic). -->
   <div class="barre-comptes">
     <input type="text" id="recherche-comptes" class="recherche-personnage" placeholder="Rechercher un joueur…">
@@ -41,19 +48,29 @@
   </div>
 
   <div id="accounts-list"></div>
+  </div>
+
+  <!-- Flex cosmétiques : recherche, tris (valeur en Rikoyns, A → Z,
+       cosmétiques exclusifs), une carte par joueur avec sa grille 3 × 4. -->
+  <div data-panneau="flex" hidden>
+    <div class="barre-comptes">
+      <input type="text" id="recherche-flex" class="recherche-personnage" placeholder="Rechercher un joueur…">
+      <div class="tris">
+        <span class="tris-label">Trier :</span>
+        <button type="button" class="filtre-etoile-btn tri-flex-btn" data-tri="valeur" title="Valeur des cosmétiques flex, en Rikoyns"><img class="tri-logo" src="/DB/images/others/rikoyn.webp" alt="Rikoyns"> <span class="fleche"></span></button>
+        <button type="button" class="filtre-etoile-btn tri-flex-btn" data-tri="alpha">A → Z <span class="fleche"></span></button>
+        <button type="button" class="filtre-etoile-btn tri-flex-btn" data-tri="exclusifs" title="Cosmétiques exclusifs (pas en vente : exclusifs, cachés, focus du tirage)">✨ Exclusifs <span class="fleche"></span></button>
+      </div>
+      <button type="button" id="clear-flex" class="btn-clear-filtres" title="Réinitialiser"><img src="/DB/images/others/remove_filters.webp" alt="Réinitialiser"></button>
+    </div>
+    <div id="liste-flex"></div>
+  </div>
 
   <div id="modal">
     <div id="modal-content">
       <div id="modal-header">
         <h2 id="modal-title">Profil</h2>
         <button id="close-modal" type="button">×</button>
-      </div>
-
-      <!-- Box du joueur, ou ses flex cosmétiques (12 cosmétiques choisis
-           dans la personnalisation, grille de 3 × 4). -->
-      <div id="onglets-profil">
-        <button type="button" class="onglet-profil active" data-onglet="box">Box</button>
-        <button type="button" class="onglet-profil" data-onglet="flex">Flex cosmétiques</button>
       </div>
 
       <!-- Vue (personnages/armes) et box (full/stuff) sur une seule ligne,
@@ -117,11 +134,6 @@
       </div>
 
       <div id="profile-box" class="grille-pool"></div>
-
-      <div id="zone-flex">
-        <p id="flex-vide" class="flex-vide" hidden></p>
-        <div id="grille-flex" class="grille-flex"></div>
-      </div>
     </div>
   </div>
 
@@ -129,7 +141,7 @@
   <script src="/commun/synergies.js?v=2"></script>
   <script src="/commun/cartes.js?v=33"></script>
   <script src="/commun/tri.js?v=21"></script>
-  <script src="/all_accounts/all_accounts.js?v=39"></script>
-  <script src="/commun/site.js?v=12"></script>
+  <script src="/all_accounts/all_accounts.js?v=40"></script>
+  <script src="/commun/site.js?v=13"></script>
 </body>
 </html>

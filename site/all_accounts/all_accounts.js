@@ -602,16 +602,48 @@ function initialiserSelecteursVueEtBox() {
 
 // ---- Ouverture / fermeture popup ----
 
-// ---- Flex cosmétiques (parametres.flex, cf. commun/personnalisation.js) ----
+// ---- Onglets de la page : box, ou flex cosmétiques (?onglet=flex) ----
 
-let promesseCosmetiquesFlex = null; // DB/images/cosmetiques.json (fonds)
-let ongletProfil = "box";
+let ongletComptes = "box";
 
-function chargerCosmetiquesFlex() {
-  promesseCosmetiquesFlex ??= fetch("/DB/images/cosmetiques.json")
-    .then(reponse => reponse.json())
-    .catch(erreur => { promesseCosmetiquesFlex = null; throw erreur; });
-  return promesseCosmetiquesFlex;
+function choisirOngletComptes(onglet) {
+  ongletComptes = onglet === "flex" ? "flex" : "box";
+  document.querySelectorAll(".onglet-comptes").forEach(bouton => {
+    const actif = bouton.dataset.onglet === ongletComptes;
+    bouton.classList.toggle("active", actif);
+    bouton.setAttribute("aria-selected", String(actif));
+  });
+  document.querySelectorAll("[data-panneau]").forEach(panneau => { panneau.hidden = panneau.dataset.panneau !== ongletComptes; });
+  const url = new URL(location.href);
+  if (ongletComptes === "flex") url.searchParams.set("onglet", "flex");
+  else url.searchParams.delete("onglet");
+  history.replaceState(null, "", url);
+  if (ongletComptes === "flex") afficherFlex();
+}
+
+// ---- Flex cosmétiques (parametres.flex, choisis dans la personnalisation,
+// cf. commun/personnalisation.js ; flex_valeur et flex_exclusifs calculés
+// par api/accounts) ----
+
+const TRI_FLEX_DEFAUT = { cle: "valeur", sens: -1 };
+const SENS_INITIAL_FLEX = { valeur: -1, alpha: 1, exclusifs: -1 };
+let triFlex = { ...TRI_FLEX_DEFAUT };
+let cosmetiquesFlex = null; // DB/images/cosmetiques.json (fonds)
+let promesseDonneesFlex = null;
+
+// Images des fonds et noms des persos (skins), chargés au 1er affichage.
+function chargerDonneesFlex() {
+  promesseDonneesFlex ??= Promise.all([
+    fetch("/DB/images/cosmetiques.json").then(reponse => reponse.json()),
+    personnagesBase.length ? personnagesBase : chargerPersonnages()
+  ]).then(([cosmetiques, personnages]) => {
+    cosmetiquesFlex = cosmetiques;
+    if (!personnagesBase.length) personnagesBase = personnages;
+  }).catch(erreur => {
+    promesseDonneesFlex = null;
+    throw erreur;
+  });
+  return promesseDonneesFlex;
 }
 
 // "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
@@ -619,15 +651,17 @@ function nomNamecardFlex(chemin) {
   return chemin.split("/").pop().replace(/^Namecard_(Background|Banner)_/, "").replace(/\.[a-z]+$/i, "").replace(/_/g, " ");
 }
 
+const majuscule = texte => texte.charAt(0).toUpperCase() + texte.slice(1);
+
 // Id de cosmétique ("<choix>:<valeur>") -> { type, nom, image } (null :
 // inconnu).
-function infoCosmetiqueFlex(id, cosmetiques) {
+function infoCosmetiqueFlex(id) {
   const [choix, ...reste] = String(id).split(":");
   const valeur = reste.join(":");
   if (choix === "banniere") return { type: "Namecard", nom: nomNamecardFlex(valeur), image: `/DB/images/${valeur}` };
   if (choix === "banniere2") return { type: "Bannière", nom: nomNamecardFlex(valeur), image: `/DB/images/${valeur}` };
   if (choix === "fond") {
-    const fond = cosmetiques?.fonds.find(f => f.id === valeur);
+    const fond = cosmetiquesFlex?.fonds.find(f => f.id === valeur);
     return fond ? { type: "Fond d'écran", nom: majuscule(fond.image.split("/").pop().replace(/\.[a-z]+$/i, "").replace(/_/g, " ")), image: `/DB/images/${fond.miniature}` } : null;
   }
   if (choix === "skin" && SKINS_PERSONNAGES.includes(valeur)) {
@@ -637,40 +671,96 @@ function infoCosmetiqueFlex(id, cosmetiques) {
   return option ? { type: choix === "voyageur" ? "Voyageur" : "Manekin", nom: option.nom, image: `/DB/${option.image}` } : null;
 }
 
-async function rendreFlex(nom) {
-  const grille = document.getElementById("grille-flex");
-  const vide = document.getElementById("flex-vide");
-  const flex = Array.isArray(profilCourant?.data?.parametres?.flex) ? profilCourant.data.parametres.flex : [];
-  let cosmetiques = null;
-  try {
-    cosmetiques = await chargerCosmetiquesFlex();
-  } catch (erreur) {
-    console.error(erreur);
-  }
-  const cases = Array.from({ length: 12 }, (_, i) => {
-    const id = typeof flex[i] === "string" ? flex[i] : null;
-    return { id, info: id ? infoCosmetiqueFlex(id, cosmetiques) : null };
-  });
-  vide.hidden = cases.some(c => c.info);
-  vide.textContent = `${nom} n'a pas encore choisi de cosmétiques à flex.`;
-  grille.innerHTML = cases.map(({ id, info }) => info
-    ? `<figure class="case-flex flex-${echapperFlex(id.split(":")[0])}" title="${echapperFlex(`${info.nom} (${info.type})`)}">
-        <img src="${echapperFlex(encodeURI(info.image))}" alt="${echapperFlex(info.nom)}" loading="lazy">
-        <figcaption>${echapperFlex(info.nom)}</figcaption>
-      </figure>`
-    : `<div class="case-flex case-flex-vide"></div>`).join("");
-}
-
-const majuscule = texte => texte.charAt(0).toUpperCase() + texte.slice(1);
-
 function echapperFlex(texte) {
   return String(texte ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 }
 
-function choisirOngletProfil(onglet) {
-  ongletProfil = onglet;
-  document.getElementById("modal-content").classList.toggle("vue-flex", onglet === "flex");
-  document.querySelectorAll(".onglet-profil").forEach(bouton => bouton.classList.toggle("active", bouton.dataset.onglet === onglet));
+function htmlGrilleFlex(flex) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const id = typeof flex?.[i] === "string" ? flex[i] : null;
+    const info = id && infoCosmetiqueFlex(id);
+    return info
+      ? `<figure class="case-flex flex-${echapperFlex(id.split(":")[0])}" title="${echapperFlex(`${info.nom} (${info.type})`)}">
+          <img src="${echapperFlex(encodeURI(info.image))}" alt="${echapperFlex(info.nom)}" loading="lazy">
+          <figcaption>${echapperFlex(info.nom)}</figcaption>
+        </figure>`
+      : `<div class="case-flex case-flex-vide"></div>`;
+  }).join("");
+}
+
+function mettreAJourBoutonsTriFlex() {
+  document.querySelectorAll(".tri-flex-btn").forEach(btn => {
+    const actif = btn.dataset.tri === triFlex.cle;
+    btn.classList.toggle("active", actif);
+    btn.querySelector(".fleche").textContent = actif ? (triFlex.sens === 1 ? "▲" : "▼") : "";
+  });
+}
+
+async function afficherFlex() {
+  const liste = document.getElementById("liste-flex");
+  if (!cosmetiquesFlex) {
+    liste.innerHTML = `<p class="liste-vide">Chargement…</p>`;
+    try {
+      await chargerDonneesFlex();
+    } catch (erreur) {
+      console.error(erreur);
+      liste.innerHTML = `<p class="liste-vide">Impossible de charger les cosmétiques.</p>`;
+      return;
+    }
+  }
+  const recherche = document.getElementById("recherche-flex").value.trim().toLowerCase();
+  const alpha = (a, b) => getNomCompte(a).localeCompare(getNomCompte(b), "fr", { sensitivity: "base" });
+  const comptes = tousLesComptes
+    .filter(compte => compte.flex?.some(Boolean))
+    .filter(compte => !recherche ||
+      getNomCompte(compte).toLowerCase().includes(recherche) ||
+      String(compte.discord_username || "").toLowerCase().includes(recherche))
+    .sort((a, b) => {
+      if (triFlex.cle === "alpha") return alpha(a, b) * triFlex.sens;
+      const cle = triFlex.cle === "exclusifs" ? "flex_exclusifs" : "flex_valeur";
+      return ((a[cle] || 0) - (b[cle] || 0)) * triFlex.sens || alpha(a, b);
+    });
+  if (!comptes.length) {
+    liste.innerHTML = `<p class="liste-vide">${recherche ? "Aucun joueur trouvé." : "Personne n'a encore choisi de cosmétiques à flex (Personnalisation, onglet Flex)."}</p>`;
+    return;
+  }
+  liste.replaceChildren(...comptes.map(compte => {
+    const carte = document.createElement("article");
+    carte.className = "carte-flex";
+    const entete = creerCarteCompte(compte, false);
+    const stats = document.createElement("span");
+    stats.className = "account-stat";
+    stats.innerHTML = `${compte.flex_valeur || 0} <img class="icone-rikoyn" src="/DB/images/others/rikoyn.webp" alt="Rikoyns">${compte.flex_exclusifs ? ` · ✨ ${compte.flex_exclusifs}` : ""}`;
+    stats.title = `Valeur : ${compte.flex_valeur || 0} Rikoyns${compte.flex_exclusifs ? ` · ${compte.flex_exclusifs} exclusif${compte.flex_exclusifs > 1 ? "s" : ""}` : ""}`;
+    entete.appendChild(stats);
+    const grille = document.createElement("div");
+    grille.className = "grille-flex";
+    grille.innerHTML = htmlGrilleFlex(compte.flex);
+    carte.append(entete, grille);
+    return carte;
+  }));
+}
+
+function initialiserFlex() {
+  document.querySelectorAll(".onglet-comptes").forEach(bouton => {
+    bouton.addEventListener("click", () => choisirOngletComptes(bouton.dataset.onglet));
+  });
+  document.querySelectorAll(".tri-flex-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cle = btn.dataset.tri;
+      triFlex = triFlex.cle === cle ? { cle, sens: -triFlex.sens } : { cle, sens: SENS_INITIAL_FLEX[cle] };
+      mettreAJourBoutonsTriFlex();
+      afficherFlex();
+    });
+  });
+  document.getElementById("recherche-flex").addEventListener("input", afficherFlex);
+  document.getElementById("clear-flex").addEventListener("click", () => {
+    document.getElementById("recherche-flex").value = "";
+    triFlex = { ...TRI_FLEX_DEFAUT };
+    mettreAJourBoutonsTriFlex();
+    afficherFlex();
+  });
+  mettreAJourBoutonsTriFlex();
 }
 
 async function ouvrirProfil(discordId, nom) {
@@ -699,10 +789,8 @@ async function ouvrirProfil(discordId, nom) {
     mettreAJourBarreOutils();
     afficherPointsBox();
 
-    document.getElementById("modal-title").textContent = `Profil de ${nom}`;
+    document.getElementById("modal-title").textContent = `Box de ${nom}`;
     rendreProfilBox();
-    choisirOngletProfil(ongletProfil);
-    rendreFlex(nom);
     document.getElementById("modal").classList.add("active");
   } catch (error) {
     console.error(error);
@@ -713,10 +801,6 @@ async function ouvrirProfil(discordId, nom) {
 function initialiserModal() {
   const modal = document.getElementById("modal");
   const closeBtn = document.getElementById("close-modal");
-
-  document.querySelectorAll(".onglet-profil").forEach(bouton => {
-    bouton.addEventListener("click", () => choisirOngletProfil(bouton.dataset.onglet));
-  });
 
   closeBtn.addEventListener("click", () => {
     modal.classList.remove("active");
@@ -740,6 +824,8 @@ async function demarrer() {
     tousLesComptes = await chargerComptes();
     initialiserBarreComptes();
     afficherComptes();
+    initialiserFlex();
+    choisirOngletComptes(new URLSearchParams(location.search).get("onglet"));
     initialiserModal();
     initialiserBarreOutils();
     initialiserSelecteursVueEtBox();

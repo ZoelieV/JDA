@@ -29,7 +29,7 @@ const { supabase } = require("./supabase");
 const { estAdmin, estMiniAdmin } = require("./admin");
 const { debutJournee } = require("./journee");
 const { getConfigKoyns } = require("./personnages");
-const { prixCosmetique, FOND_IMPORTE, COSMETIQUES_GRATUITS, idCosmetique, cosmetiquesParametres } = require("../../commun/koyns.js");
+const { prixCosmetique, FOND_IMPORTE, COSMETIQUES_GRATUITS, TAILLE_FLEX, idCosmetique, cosmetiquesParametres } = require("../../commun/koyns.js");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 
@@ -76,6 +76,22 @@ function poolTirage() {
   ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id) && !CACHES.has(id));
 }
 const estExclusif = id => getConfigKoyns().exclusifs.has(id);
+
+// Flex cosmétiques d'un profil (page Joueurs, onglet Flex) -> { flex (cases,
+// ou null si aucune), flex_valeur (prix des cosmétiques, en Rikoyns),
+// flex_exclusifs (cosmétiques pas en vente : exclusifs, cachés, focus du
+// tirage) }.
+function resumeFlex(flex) {
+  const cases = Array.isArray(flex) ? flex.slice(0, TAILLE_FLEX).map(id => (typeof id === "string" ? id : null)) : [];
+  const ids = cases.filter(Boolean);
+  if (!ids.length) return { flex: null, flex_valeur: 0, flex_exclusifs: 0 };
+  const { exclusifs, tirage } = getConfigKoyns();
+  return {
+    flex: cases,
+    flex_valeur: ids.reduce((total, id) => total + (COSMETIQUES_GRATUITS.has(id) ? 0 : prixCosmetique(id)), 0),
+    flex_exclusifs: ids.filter(id => exclusifs.has(id) || CACHES.has(id) || tirage.includes(id)).length
+  };
+}
 
 // ---- Lecture ----
 
@@ -418,6 +434,7 @@ module.exports = {
   lirePossedes,
   etatKoyns,
   filtrerParametresPossedes,
+  resumeFlex,
   acheterCosmetique,
   crediterPartie,
   crediterMatch,

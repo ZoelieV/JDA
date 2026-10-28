@@ -4,6 +4,7 @@ const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre, costBox } = require("../_lib/personnages");
 const { CLASSEMENT_AFFICHE, rejouerClasse, seriePrime } = require("../_lib/trophees");
 const { lireSaisons, saisonActuelle } = require("../_lib/saisons");
+const { resumeFlex } = require("../_lib/koyns");
 
 
 const CHAMPS = "discord_id, discord_username, discord_global_name, discord_avatar_url, updated_at, data";
@@ -168,7 +169,9 @@ function resumerProfil(profil, resultats) {
     classements,
     // Saisons passées : { numéro: { melee? } } ({ trophees, record,
     // matchs, victoires }).
-    saisons_passees: saisonsPassees
+    saisons_passees: saisonsPassees,
+    // Flex cosmétiques (onglet Flex de la page) : cases, valeur, exclusifs.
+    ...resumeFlex(data.parametres?.flex)
   };
 }
 

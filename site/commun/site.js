@@ -28,7 +28,7 @@
   document.addEventListener("accueil-change", () => location.reload());
   document.documentElement.classList.add("site-classique");
 
-  // Liens des pages ; menus déroulants : Match, Historique, Règles.
+  // Liens des pages ; menus déroulants : Match, Joueurs, Historique, Règles.
   const LIENS = [
     { titre: "Match", href: "/match", menu: [
       ["Créer une room", "/match#room"],
@@ -38,7 +38,10 @@
       ["En équipe", "/match#equipe"],
       ["Tournois", "/tournois"]
     ] },
-    { titre: "Joueurs", href: "/comptes" },
+    { titre: "Joueurs", href: "/comptes", menu: [
+      ["Box", "/comptes"],
+      ["Flex cosmétiques", "/comptes?onglet=flex"]
+    ] },
     { titre: "Classement", href: "/classement" },
     { titre: "Historique", href: "/historique", menu: [
       ["Matchs", "/historique?onglet=matchs"],

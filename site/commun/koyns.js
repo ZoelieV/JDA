@@ -84,7 +84,7 @@ const COSMETIQUES_GRATUITS = new Set([
 const CHOIX_COSMETIQUES = ["fond", "banniere", "banniere2", "voyageur", "manekin"];
 
 // Flex cosmétiques (parametres.flex) : 12 emplacements (grille de 3 lignes
-// de 4) montrés sur le profil (Tous les comptes) ; id de cosmétique possédé
+// de 4) montrés sur la page Joueurs (onglet Flex) ; id de cosmétique possédé
 // ou null. Choisis dans la personnalisation.
 const TAILLE_FLEX = 12;
 

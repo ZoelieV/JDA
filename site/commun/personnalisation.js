@@ -25,7 +25,7 @@
 // de l'accueil : libres.
 //
 // Flex cosmétiques (onglet Flex, parametres.flex) : 12 cosmétiques possédés
-// placés sur une grille de 3 × 4, montrés sur le profil (Tous les comptes) ;
+// placés sur une grille de 3 × 4, montrés sur la page Joueurs (onglet Flex) ;
 // clic sur une case puis sur un cosmétique (cf. nettoyerParametres dans
 // api/auth/profile.js).
 //
@@ -764,7 +764,7 @@
     };
     const note = document.createElement("p");
     note.className = "perso-note";
-    note.textContent = `Jusqu'à ${TAILLE_FLEX} cosmétiques que tu possèdes, montrés sur ton profil (Tous les comptes). Clic sur une case, puis sur un cosmétique.`;
+    note.textContent = `Jusqu'à ${TAILLE_FLEX} cosmétiques que tu possèdes, montrés sur la page Joueurs (onglet Flex cosmétiques). Clic sur une case, puis sur un cosmétique.`;
     const grilleFlex = document.createElement("div");
     grilleFlex.className = "perso-flex-grille";
     flex.forEach((id, i) => {
