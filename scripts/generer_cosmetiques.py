@@ -76,6 +76,13 @@ def generer_version(source, destination, largeur, qualite):
 
 
 def generer_fonds():
+    # Sources des fonds absentes (dossier bg pas sur cette machine) : fonds
+    # du manifeste actuel gardés tels quels, rien de supprimé.
+    if not DOSSIER_FONDS.is_dir():
+        sortie = RACINE_IMAGES / "cosmetiques.json"
+        print(f"  {DOSSIER_FONDS} absent : fonds du manifeste actuel gardés.")
+        return json.loads(sortie.read_text(encoding="utf-8")).get("fonds", []) if sortie.exists() else []
+
     fonds = []
     attendus = set()
 
