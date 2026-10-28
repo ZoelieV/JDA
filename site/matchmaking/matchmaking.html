@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/commun/entete.css?v=rem41">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/namecards.css?v=3">
-<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=27">
+<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=28">
   <link rel="stylesheet" href="/commun/site.css?v=10">
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -86,13 +86,15 @@
         </select>
       </label>
     </div>
-    <div class="modes-match" data-type="prive">
+    <!-- Par défaut : Auto, Classique et « Plus d'options » (tous les modes). -->
+    <div class="modes-match modes-reduits" data-type="prive">
       <button type="button" class="mode-match" data-mode="auto">Auto<span>draft du plus petit palier</span></button>
-      <button type="button" class="mode-match" data-mode="sardine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_sardine.webp?v=3" alt=""> Sardine</span><span>2 bans, 2 picks, 1 ban, 2 picks</span></button>
+      <button type="button" class="mode-match mode-avance" data-mode="sardine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_sardine.webp?v=3" alt=""> Sardine</span><span>2 bans, 2 picks, 1 ban, 2 picks</span></button>
       <button type="button" class="mode-match" data-mode="carpe"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""> Classique</span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
-      <button type="button" class="mode-match" data-mode="dauphin"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_dauphin.webp?v=3" alt=""> Dauphin</span><span>3 bans, 2 picks, 2 bans, 2 picks</span></button>
-      <button type="button" class="mode-match" data-mode="baleine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_baleine.webp?v=3" alt=""> Baleine</span><span>3 bans, 2 picks, 3 bans, 2 picks</span></button>
-      <button type="button" class="mode-match" data-mode="carnage"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span><span>2 bans, 2 picks, 2 bans, 2 picks, sans équilibrage</span></button>
+      <button type="button" class="mode-match mode-avance" data-mode="dauphin"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_dauphin.webp?v=3" alt=""> Dauphin</span><span>3 bans, 2 picks, 2 bans, 2 picks</span></button>
+      <button type="button" class="mode-match mode-avance" data-mode="baleine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_baleine.webp?v=3" alt=""> Baleine</span><span>3 bans, 2 picks, 3 bans, 2 picks</span></button>
+      <button type="button" class="mode-match mode-avance" data-mode="carnage"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span><span>2 bans, 2 picks, 2 bans, 2 picks, sans équilibrage</span></button>
+      <button type="button" class="mode-match mode-plus">Plus d'options<span>Sardine, Dauphin, Baleine, Carnage</span></button>
     </div>
   </section>
 
@@ -217,7 +219,7 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/synergies.js?v=2"></script>
   <script src="/commun/cartes.js?v=34"></script>
-  <script src="/matchmaking/matchmaking.js?v=37"></script>
+  <script src="/matchmaking/matchmaking.js?v=38"></script>
   <script src="/commun/site.js?v=15"></script>
 </body>
 </html>

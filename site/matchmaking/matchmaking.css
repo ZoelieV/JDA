@@ -721,3 +721,20 @@
     margin-left: 0;
   }
 }
+
+/* Créer une room : Auto, Classique et « Plus d'options » ; tous les modes
+   une fois ouvert. */
+.modes-reduits .mode-avance,
+.modes-match:not(.modes-reduits) .mode-plus {
+  display: none;
+}
+
+.detail-match .mode-match.mode-plus {
+  border-style: dashed;
+}
+
+.detail-match .mode-match.mode-plus::after {
+  content: "+";
+  opacity: 1;
+  transform: translate(0, -50%);
+}

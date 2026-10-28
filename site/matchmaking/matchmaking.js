@@ -135,7 +135,7 @@ async function remplirBossRoom(idSelect = "room-boss") {
 // Mode choisi : room privée (mode de théâtre au choix) ou recherche
 // (matchmaking : classique, mêlée générale ou carnage ; classé : mêlée
 // générale).
-document.querySelectorAll(".mode-match").forEach(bouton => {
+document.querySelectorAll(".mode-match:not(.mode-plus)").forEach(bouton => {
   bouton.addEventListener("click", () => {
     // Classé : bouton de la file "classe" dans le détail Matchmaking.
     const type = bouton.dataset.type || bouton.closest(".modes-match").dataset.type;
@@ -153,6 +153,12 @@ document.querySelectorAll(".mode-match").forEach(bouton => {
       ? { mode, boss_id: document.getElementById("room-boss").value || null, premier: document.getElementById("room-premier").value }
       : { type, mode });
   });
+});
+
+// Créer une room : Auto et Classique, puis « Plus d'options » affiche tous
+// les modes (dans l'ordre des paliers).
+document.querySelectorAll(".mode-plus").forEach(bouton => {
+  bouton.addEventListener("click", () => bouton.closest(".modes-match").classList.remove("modes-reduits"));
 });
 
 // ---- Mode entraînement ----
