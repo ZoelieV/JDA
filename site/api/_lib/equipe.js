@@ -478,6 +478,7 @@ async function archiverEquipe(draft, { litige = false } = {}) {
     actions,
     mode_equipe: MODES[draft.taille],
     equipes: { j1: equipe("j1"), j2: equipe("j2") },
+    ...(draft.tournoi ? { tournoi: draft.tournoi.id } : {}),
     saison: await saisonActuelle(),
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par_role || null, litige_commentaire: draft.litige_commentaire || null } : {})
   };

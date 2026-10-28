@@ -50,6 +50,8 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     player1_discord_id: draft.entrainement ? boxes.j1.proprietaire : draft.discord_j1,
     player2_discord_id: draft.entrainement ? boxes.j2.proprietaire : draft.discord_j2,
     ...(draft.entrainement ? { entrainement: true, lanceur_discord_id: draft.entrainement.lanceur } : {}),
+    // Match de tournoi : id du tournoi (cf. _lib/tournois.js).
+    ...(draft.tournoi ? { tournoi: draft.tournoi.id } : {}),
     box_j1: draft.box_j1,
     box_j2: draft.box_j2,
     team_j1: getEquipeJoueur(draft, "j1"),

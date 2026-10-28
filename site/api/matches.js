@@ -826,6 +826,8 @@ module.exports = async (req, res) => {
       mode_theatre: match.mode_theatre ?? null,
       // Match classé : trophées gagnés par le vainqueur (perdus par l'autre).
       classe: !!match.classe,
+      // Match de tournoi : id du tournoi (lien vers sa page).
+      tournoi: match.tournoi || null,
       // Saison où le match a été joué (cf. _lib/saisons.js).
       saison: saisonDuMatch(match),
       // Match d'équipe (2v2, 3v3, 4v4) : joueurs de chaque équipe (chef,

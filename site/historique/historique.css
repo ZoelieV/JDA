@@ -1829,3 +1829,12 @@ html.page-integree .zone-compte,
 html.page-integree .bouton-feedback {
   display: none !important;
 }
+
+/* Match de tournoi : étiquette-lien vers la page du tournoi. */
+.match-tournoi {
+  text-decoration: none;
+}
+
+.match-tournoi:hover {
+  background-color: rgba(245, 197, 66, 0.3);
+}
