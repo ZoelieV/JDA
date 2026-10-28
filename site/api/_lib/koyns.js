@@ -82,7 +82,8 @@ const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 // flex_exclusifs (cosmétiques pas en vente : exclusifs, cachés, focus du
 // tirage) }.
 function resumeFlex(flex) {
-  const cases = Array.isArray(flex) ? flex.slice(0, TAILLE_FLEX).map(id => (typeof id === "string" ? id : null)) : [];
+  // Namecards et fonds seulement (anciens flex : le reste ignoré).
+  const cases = Array.isArray(flex) ? flex.slice(0, TAILLE_FLEX).map(id => (typeof id === "string" && /^(banniere|fond):/.test(id) && id !== "fond:perso" ? id : null)) : [];
   const ids = cases.filter(Boolean);
   if (!ids.length) return { flex: null, flex_valeur: 0, flex_exclusifs: 0 };
   const { exclusifs, tirage } = getConfigKoyns();

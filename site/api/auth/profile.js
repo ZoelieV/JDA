@@ -123,8 +123,8 @@ function nettoyerParametres(parametres) {
   if (parametres.filtres_draft && typeof parametres.filtres_draft === "object") {
     propres.filtres_draft = lireFiltresDraft(parametres.filtres_draft);
   }
-  // Flex cosmétiques : TAILLE_FLEX emplacements, cosmétiques connus (pas
-  // Mon image, gardée dans le navigateur), sans doublon, ou null. Possédés :
+  // Flex cosmétiques : TAILLE_FLEX emplacements, namecards et fonds connus
+  // (pas Mon image, gardée dans le navigateur), sans doublon, ou null. Possédés :
   // vérifié ensuite (filtrerParametresPossedes).
   if (Array.isArray(parametres.flex)) {
     const vus = new Set();
@@ -139,11 +139,12 @@ function nettoyerParametres(parametres) {
   return propres;
 }
 
+// Flex : namecards et fonds d'écran du site seulement (ni bannières, ni
+// skins, ni Mon image importée).
 function cosmetiqueFlexValide(id) {
   const [choix, ...reste] = id.split(":");
   const valeur = reste.join(":");
-  if (choix === "skin") return SKINS_PERSONNAGES.includes(valeur);
-  return ["fond", "banniere", "banniere2", "voyageur", "manekin"].includes(choix) && valeur !== "perso" && PARAMETRES_AUTORISES[choix].has(valeur);
+  return ["fond", "banniere"].includes(choix) && valeur !== "perso" && PARAMETRES_AUTORISES[choix].has(valeur);
 }
 
 // ---- Collections (personnages, armes) ----

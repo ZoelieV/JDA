@@ -763,6 +763,58 @@ function initialiserFlex() {
   mettreAJourBoutonsTriFlex();
 }
 
+// Couleur dominante d'une bannière (pixels vifs privilégiés), éclaircie et
+// saturée pour rester lisible en liseré -> [r, v, b], ou null.
+const couleursBannieres = new Map();
+
+function couleurBanniere(url) {
+  if (!couleursBannieres.has(url)) couleursBannieres.set(url, calculerCouleur(url).catch(() => null));
+  return couleursBannieres.get(url);
+}
+
+async function calculerCouleur(url) {
+  const image = new Image();
+  image.src = url;
+  await image.decode();
+  const toile = document.createElement("canvas");
+  toile.width = 48;
+  toile.height = 8;
+  const contexte = toile.getContext("2d", { willReadFrequently: true });
+  contexte.drawImage(image, 0, 0, toile.width, toile.height);
+  const pixels = contexte.getImageData(0, 0, toile.width, toile.height).data;
+  let [r, v, b, total] = [0, 0, 0, 0];
+  for (let i = 0; i < pixels.length; i += 4) {
+    const max = Math.max(pixels[i], pixels[i + 1], pixels[i + 2]);
+    const min = Math.min(pixels[i], pixels[i + 1], pixels[i + 2]);
+    const poids = (max ? (max - min) / max : 0) * max / 255 + 0.02;
+    r += pixels[i] * poids;
+    v += pixels[i + 1] * poids;
+    b += pixels[i + 2] * poids;
+    total += poids;
+  }
+  return ajusterCouleur(r / total, v / total, b / total);
+}
+
+// Teinte gardée ; saturation 45 % au moins, luminosité entre 55 et 72 %.
+function ajusterCouleur(r, v, b) {
+  [r, v, b] = [r / 255, v / 255, b / 255];
+  const max = Math.max(r, v, b);
+  const min = Math.min(r, v, b);
+  let teinte = 0;
+  if (max !== min) {
+    const d = max - min;
+    teinte = max === r ? ((v - b) / d) % 6 : max === v ? (b - r) / d + 2 : (r - v) / d + 4;
+  }
+  teinte = (teinte * 60 + 360) % 360;
+  const l = Math.min(0.72, Math.max(0.55, (max + min) / 2));
+  const s = Math.max(0.45, max === min ? 0 : (max - min) / (1 - Math.abs(max + min - 1)));
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((teinte / 60) % 2 - 1));
+  const m = l - c / 2;
+  const [r1, v1, b1] = teinte < 60 ? [c, x, 0] : teinte < 120 ? [x, c, 0] : teinte < 180 ? [0, c, x] : teinte < 240 ? [0, x, c] : teinte < 300 ? [x, 0, c] : [c, 0, x];
+  return [r1, v1, b1].map(valeur => Math.round((valeur + m) * 255));
+}
+
 async function ouvrirProfil(discordId, nom) {
   try {
     const dejaCharges = personnagesBase.length > 0 && armesData.length > 0;
@@ -790,9 +842,16 @@ async function ouvrirProfil(discordId, nom) {
     afficherPointsBox();
 
     document.getElementById("modal-title").textContent = `Box de ${nom}`;
-    // Bannière du joueur en fond de l'en-tête (chemin validé par le serveur).
+    // Bannière du joueur en fond de l'en-tête (chemin validé par le serveur),
+    // sa couleur en liseré (dorée en attendant le calcul).
     const banniere = profil.data?.parametres?.banniere2 || BANNIERE2_DEFAUT;
-    document.getElementById("modal-header").style.setProperty("--banniere-profil", `url("${encodeURI(`/DB/images/${banniere}`)}")`);
+    const urlBanniere = encodeURI(`/DB/images/${banniere}`);
+    document.getElementById("modal-header").style.setProperty("--banniere-profil", `url("${urlBanniere}")`);
+    const contenu = document.getElementById("modal-content");
+    contenu.style.removeProperty("--rvb-profil");
+    couleurBanniere(urlBanniere).then(rvb => {
+      if (rvb && profilCourant === profil) contenu.style.setProperty("--rvb-profil", rvb.join(" "));
+    });
     rendreProfilBox();
     document.getElementById("modal").classList.add("active");
   } catch (error) {

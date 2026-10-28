@@ -24,7 +24,7 @@
 // api/_lib/koyns.js). Filtres et tris de la draft, affichage
 // de l'accueil : libres.
 //
-// Flex cosmétiques (onglet Flex, parametres.flex) : 12 cosmétiques possédés
+// Flex cosmétiques (onglet Flex, parametres.flex) : 12 namecards et fonds d'écran possédés
 // placés sur une grille de 3 × 4, montrés sur la page Joueurs (onglet Flex) ;
 // clic sur une case puis sur un cosmétique (cf. nettoyerParametres dans
 // api/auth/profile.js).
@@ -391,7 +391,11 @@
       ...Object.fromEntries(Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, parametres[cle] || defaut])),
       skins: Array.isArray(parametres.skins) ? parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)) : [],
       filtres_draft: lireFiltresDraft(parametres.filtres_draft),
-      flex: Array.from({ length: TAILLE_FLEX }, (_, i) => (typeof parametres.flex?.[i] === "string" ? parametres.flex[i] : null))
+      // Namecards et fonds seulement (anciens flex : le reste retiré).
+      flex: Array.from({ length: TAILLE_FLEX }, (_, i) => {
+        const id = parametres.flex?.[i];
+        return typeof id === "string" && /^(banniere|fond):/.test(id) && id !== "fond:perso" ? id : null;
+      })
     };
   }
 
@@ -764,7 +768,7 @@
     };
     const note = document.createElement("p");
     note.className = "perso-note";
-    note.textContent = `Jusqu'à ${TAILLE_FLEX} cosmétiques que tu possèdes, montrés sur la page Joueurs (onglet Flex cosmétiques). Clic sur une case, puis sur un cosmétique.`;
+    note.textContent = `Jusqu'à ${TAILLE_FLEX} namecards et fonds d'écran que tu possèdes, montrés sur la page Joueurs (onglet Flex cosmétiques). Clic sur une case, puis sur un cosmétique.`;
     const grilleFlex = document.createElement("div");
     grilleFlex.className = "perso-flex-grille";
     flex.forEach((id, i) => {
@@ -812,13 +816,10 @@
       if (vide !== undefined) caseFlex = vide;
     };
     const correspond = info => !recherche || `${info.nom} ${info.type}`.toLowerCase().includes(recherche);
-    const variantes = Object.values(VARIANTES_PERSONNAGES).flatMap(variante => Object.keys(variante.options).map(valeur => idCosmetique(variante.parametre, valeur)));
+    // Namecards et fonds d'écran du site seulement (pas Mon image).
     [
       ["Namecards", "banniere", cosmetiques.bannieres.map(chemin => idCosmetique("banniere", chemin))],
-      ["Bannières", "banniere2", cosmetiques.bannieres2.map(chemin => idCosmetique("banniere2", chemin))],
-      ["Fonds d'écran", "fond", cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id))],
-      ["Skins", "skins", SKINS_PERSONNAGES.map(id => idCosmetique("skin", id))],
-      ["Voyageur et Manekin", "variantes", variantes]
+      ["Fonds d'écran", "fond", cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id))]
     ].forEach(([titre, type, ids]) => {
       const infos = ids.filter(id => possede(id) && !COSMETIQUES_GRATUITS.has(id)).map(infoCosmetique).filter(correspond);
       if (!infos.length) return;
@@ -832,7 +833,7 @@
     if (conteneur.querySelectorAll(".perso-grille").length === 0) {
       const vide = document.createElement("p");
       vide.className = "perso-note";
-      vide.textContent = recherche ? "Aucun cosmétique possédé ne correspond." : "Tu n'as pas encore de cosmétique : achète-en ou tente le tirage !";
+      vide.textContent = recherche ? "Aucune namecard ni aucun fond possédé ne correspond." : "Tu n'as pas encore de namecard ni de fond d'écran : achète-en ou tente le tirage !";
       conteneur.appendChild(vide);
     }
   }

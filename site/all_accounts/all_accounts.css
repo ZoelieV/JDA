@@ -693,7 +693,7 @@ h1, h2 {
 .box-btn .points-box {
   margin-left: 0.25rem;
   font-weight: bold;
-  color: #f5c542;
+  color: rgb(var(--rvb-profil, 245 197 66));
 }
 
 /* Tris en emoji (C6 5★ 🐋, Matchs ⚔️, Winrate 🏆), à la taille des logos. */
@@ -704,7 +704,7 @@ h1, h2 {
 
 /* ---- Habillage de la popup des box (même esprit que les détails de
    Créer un match, matchmaking/matchmaking.css) : verre sombre, liseré doré,
-   bannière du joueur en fond de l'en-tête, sélecteurs segmentés, barre
+   bannière du joueur en fond de l'en-tête et sa couleur en liseré, sélecteurs segmentés, barre
    d'outils en bloc. ---- */
 #modal {
   background: rgba(0, 0, 0, 0.6);
@@ -712,13 +712,16 @@ h1, h2 {
   backdrop-filter: blur(3px);
 }
 
+/* Couleur de la bannière du joueur (--rvb-profil, cf. couleurBanniere dans
+   all_accounts.js), dorée par défaut. */
 #modal-content {
+  --rvb-profil: 245 197 66;
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-top: 3px solid #f5c542;
+  border-top: 3px solid rgb(var(--rvb-profil));
   border-radius: 0.875rem;
   background:
-    linear-gradient(180deg, rgba(245, 197, 66, 0.1), transparent 10rem),
+    linear-gradient(180deg, rgb(var(--rvb-profil) / 0.1), transparent 10rem),
     rgba(18, 18, 24, 0.97);
   -webkit-backdrop-filter: blur(0.75rem);
   backdrop-filter: blur(0.75rem);
@@ -766,7 +769,7 @@ h1, h2 {
   width: 0.3125rem;
   height: 1.1em;
   border-radius: 1rem;
-  background-color: #f5c542;
+  background-color: rgb(var(--rvb-profil));
 }
 
 #close-modal {
@@ -785,8 +788,8 @@ h1, h2 {
 
 #close-modal:hover,
 #close-modal:focus-visible {
-  border-color: #f5c542;
-  color: #f5c542;
+  border-color: rgb(var(--rvb-profil));
+  color: rgb(var(--rvb-profil));
   transform: rotate(90deg);
   outline: none;
 }
@@ -819,9 +822,9 @@ h1, h2 {
 
 #modal .view-btn.active,
 #modal .box-btn.active {
-  border-color: rgba(245, 197, 66, 0.8);
-  background-color: rgba(245, 197, 66, 0.15);
-  box-shadow: 0 0 0.75rem rgba(245, 197, 66, 0.18);
+  border-color: rgb(var(--rvb-profil) / 0.8);
+  background-color: rgb(var(--rvb-profil) / 0.15);
+  box-shadow: 0 0 0.75rem rgb(var(--rvb-profil) / 0.18);
   color: white;
 }
 
@@ -843,19 +846,19 @@ h1, h2 {
 }
 
 #modal .recherche-personnage:focus {
-  border-color: rgba(245, 197, 66, 0.8);
+  border-color: rgb(var(--rvb-profil) / 0.8);
   outline: none;
 }
 
 #modal .filtre-icone-btn:hover,
 #modal .filtre-etoile-btn:hover {
-  border-color: rgba(245, 197, 66, 0.5);
+  border-color: rgb(var(--rvb-profil) / 0.5);
 }
 
 #modal .filtre-icone-btn.active,
 #modal .filtre-etoile-btn.active {
-  border-color: rgba(245, 197, 66, 0.8);
-  background-color: rgba(245, 197, 66, 0.15);
+  border-color: rgb(var(--rvb-profil) / 0.8);
+  background-color: rgb(var(--rvb-profil) / 0.15);
 }
 
 #modal .filtres-tri {
@@ -869,7 +872,7 @@ h1, h2 {
 
 #profile-box {
   scrollbar-width: thin;
-  scrollbar-color: rgba(245, 197, 66, 0.45) transparent;
+  scrollbar-color: rgb(var(--rvb-profil) / 0.45) transparent;
 }
 
 #profile-box::-webkit-scrollbar {
@@ -878,7 +881,7 @@ h1, h2 {
 
 #profile-box::-webkit-scrollbar-thumb {
   border-radius: 1rem;
-  background-color: rgba(245, 197, 66, 0.45);
+  background-color: rgb(var(--rvb-profil) / 0.45);
 }
 
 @media (max-width: 700px) {
