@@ -115,7 +115,10 @@ async function calculerModeSpecial(draft) {
   if (!estEquilibrageFixe(draft)) return;
   const boxes = await chargerDonneesBoxes(draft);
   const palier = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
-  const { faible, resultat } = evaluerEquilibrageFixe(boxes, palier, { special: true });
+  const trace = draft.entrainement?.detail_equilibrage && draft.mode_theatre !== "carnage" ? [] : null;
+  const { faible, fort, resultat } = evaluerEquilibrageFixe(boxes, palier, { special: true, trace });
+  // Horizontal : inchangé (persos horizontaux figés au 1er calcul).
+  if (trace) draft.detail_equilibrage = { ...detailEquilibrage(faible, fort, resultat, trace), horizontal: draft.detail_equilibrage?.horizontal || null };
   draft.bans_bonus_total = resultat.bans + resultat.jokers;
   draft.bans_joker_total = resultat.jokers;
   draft.bans_bonus_joueur = draft.bans_bonus_total > 0 ? faible : null;
@@ -190,6 +193,30 @@ async function chargerDonneesBoxes(draft) {
   }]));
 }
 
+// Mode Équilibrage de l'entraînement (administrateurs et mini admins) :
+// déroulé complet du calcul des bans verticaux (trace de
+// calculerEquilibrageFixe, _lib/draft.js), montré avant les bans (cf.
+// matchmaking/equilibrage.js). Rôles du calcul : places provisoires, les
+// mêmes pendant les bans (le tirage J1 / J2 vient après). id : nouveau à
+// chaque calcul (le déroulé est remontré).
+function detailEquilibrage(faible, fort, resultat, trace) {
+  return {
+    id: Date.now(),
+    faible,
+    fort,
+    ...resultat.contexte,
+    ecart_avant: resultat.ecart_avant,
+    ecart_apres: resultat.ecart_apres,
+    top_faible: resultat.top_faible,
+    top_fort: resultat.top_fort,
+    bans: resultat.bans,
+    jokers: resultat.jokers,
+    suggestion: resultat.suggestion,
+    equilibrable: resultat.equilibrable,
+    etapes: trace
+  };
+}
+
 // Fin du choix des box : points, pools, théâtres et bans d'équilibrage.
 // Les places j1/j2 sont encore provisoires ici (le tirage vient après).
 async function calculerEquilibrage(draft) {
@@ -237,14 +264,18 @@ async function calculerEquilibrage(draft) {
     // Armes libres attribuées aux persos sans signature (cf.
     // modeleEquilibrage, _lib/draft.js) ; limites du palier de la draft.
     const palier = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
-    const { faible, fort, modeles, resultat } = evaluerEquilibrageFixe(boxes, palier);
+    const trace = draft.entrainement?.detail_equilibrage && draft.mode_theatre !== "carnage" ? [] : null;
+    const { faible, fort, modeles, resultat } = evaluerEquilibrageFixe(boxes, palier, { trace });
     draft.min_persos_equilibrage = getLimitesEquilibrage(palier).min_persos;
+    if (trace) draft.detail_equilibrage = detailEquilibrage(faible, fort, resultat, trace);
     // Bans horizontaux : persos jamais entrés dans le top 12 pendant le
     // calcul, figés ici (cf. calculerBansHorizontaux, _lib/draft.js).
     if (estEquilibrageHorizontal(draft)) {
-      draft[`horizontaux_${faible}`] = valeursHorizontales(modeles[faible], resultat.verticaux.faible);
-      draft[`horizontaux_${fort}`] = valeursHorizontales(modeles[fort], resultat.verticaux.fort);
+      const details = { faible: trace ? [] : null, fort: trace ? [] : null };
+      draft[`horizontaux_${faible}`] = valeursHorizontales(modeles[faible], resultat.verticaux.faible, details.faible);
+      draft[`horizontaux_${fort}`] = valeursHorizontales(modeles[fort], resultat.verticaux.fort, details.fort);
       draft.seuil_horizontal = getSeuilHorizontal();
+      if (trace) draft.detail_equilibrage.horizontal = details;
     }
     ["j1", "j2"].forEach(role => {
       draft[`verticalite_${role}`] = Math.round(verticalite(modeles[role]) * 10) / 10;

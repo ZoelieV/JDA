@@ -170,6 +170,8 @@
     <div class="etape-entrainement ent-1v1">
       <h3>1. Draft</h3>
       <label class="case-entrainement"><input type="checkbox" id="ent-classe"> Draft classée (chronos : analyse 2 min, bans d'équilibrage 15 s par ban (1 min minimum, 5 min maximum par phase), 30 s par pick / ban de chaque joueur)</label>
+      <!-- Administrateurs et mini admins (cf. matchmaking/equilibrage.js). -->
+      <label class="case-entrainement cache" id="ligne-ent-equilibrage"><input type="checkbox" id="ent-equilibrage"> Mode Équilibrage (administrateurs) : après l'analyse, déroulé complet du calcul des bans d'équilibrage verticaux puis horizontaux (sans chronos)</label>
       <div class="choix-boutons" id="ent-mode">
         <button type="button" class="choix-btn active" data-valeur="auto">Full box<span>draft du plus petit palier</span></button>
         <button type="button" class="choix-btn" data-valeur="sardine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_sardine.webp?v=3" alt=""> Sardine</span><span>3 bans</span></button>
@@ -219,7 +221,7 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/synergies.js?v=2"></script>
   <script src="/commun/cartes.js?v=34"></script>
-  <script src="/matchmaking/matchmaking.js?v=39"></script>
+  <script src="/matchmaking/matchmaking.js?v=40"></script>
   <script src="/commun/site.js?v=15"></script>
 </body>
 </html>

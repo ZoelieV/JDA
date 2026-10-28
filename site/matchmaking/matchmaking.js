@@ -380,6 +380,7 @@ async function rendreSelecteurBox(cote) {
 
   // Armes : chaque copie de la full box, raffinement en bas à droite.
   const copies = armesPossedees(profil);
+  const stuffArmes = profil?.weapons?.selections?.stuff || {};
   const grilleArmes = zone.querySelector(".ent-armes");
   const compteurArmes = zone.querySelector(".ent-compteur-armes");
   const majCompteurArmes = () => {
@@ -393,8 +394,11 @@ async function rendreSelecteurBox(cote) {
     carte.type = "button";
     carte.className = `ent-perso ${classeFondRarete(arme.rarete)}${etat.armes.has(instance) ? " coche" : ""}`;
     const points = Number(arme.PPW?.[raffinement] ?? 0);
-    carte.title = `${arme.nom} R${raffinement + 1} · ${points} points`;
-    carte.innerHTML = `<img src="../DB/${arme.image}" alt="" loading="lazy"><span class="ent-badge">R${raffinement + 1}</span>`;
+    // Pastille rouge : pas dans la box stuff du joueur (comme les persos).
+    const horsStuff = !stuffArmes[instance];
+    carte.title = `${arme.nom} R${raffinement + 1} · ${points} points${horsStuff ? " (pas dans la box stuff)" : ""}`;
+    carte.innerHTML = `<img src="../DB/${arme.image}" alt="" loading="lazy"><span class="ent-badge">R${raffinement + 1}</span>` +
+      (horsStuff ? `<span class="ent-hors-stuff"></span>` : "");
     carte.addEventListener("click", () => {
       if (etat.armes.has(instance)) etat.armes.delete(instance);
       else etat.armes.add(instance);
@@ -780,6 +784,17 @@ async function initialiserEntrainement() {
   entrainement.cotes.moi.proprietaire = entrainement.moi.id;
   entrainement.cotes.adverse.proprietaire = entrainement.moi.id;
 
+  // Mode Équilibrage (administrateurs et mini admins) : sans chronos, donc
+  // pas en draft classée.
+  if (entrainement.moi.admin || entrainement.moi.mini_admin) {
+    document.getElementById("ligne-ent-equilibrage").classList.remove("cache");
+    const caseClasse = document.getElementById("ent-classe");
+    document.getElementById("ent-equilibrage").addEventListener("change", e => {
+      caseClasse.disabled = e.target.checked;
+      if (e.target.checked) caseClasse.checked = false;
+    });
+  }
+
   remplirSelectBoss(document.getElementById("ent-boss"), boss);
 
   document.querySelectorAll("#ent-mode .choix-btn").forEach(btn => btn.addEventListener("click", () => {
@@ -815,6 +830,7 @@ function lancerEntrainement() {
     type: "entrainement",
     config: {
       classe: document.getElementById("ent-classe").checked,
+      equilibrage_detail: document.getElementById("ent-equilibrage").checked,
       mode: document.querySelector("#ent-mode .choix-btn.active")?.dataset.valeur || "auto",
       boxes: { moi: cote("moi"), adverse: cote("adverse") },
       boss_id: document.getElementById("ent-boss").value || null,

@@ -1,0 +1,656 @@
+/* Mode Équilibrage de l'entraînement : déroulé du calcul des bans
+   d'équilibrage (cf. matchmaking/equilibrage.js). */
+:root {
+  --eq-perso: #6fa8ff;
+  --eq-sig: #f5c542;
+  --eq-libre: #6fdc9a;
+  --eq-gain: #ff8a6b;
+}
+
+body.eq-ouverte {
+  overflow: hidden;
+}
+
+.eq-fenetre {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.75);
+  animation: eq-apparition 0.25s ease-out;
+}
+
+.eq-fenetre.cache,
+.eq-rouvrir.cache {
+  display: none;
+}
+
+.eq-contenu {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  width: min(72rem, 100%);
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--accent-bordure);
+  border-radius: 0.875rem;
+  background-color: rgba(24, 24, 28, 0.97);
+  color: white;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.6);
+}
+
+.eq-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eq-titre {
+  margin: 0;
+  font-size: 1.375rem;
+}
+
+.eq-fermer {
+  border: none;
+  background: none;
+  color: var(--texte-doux);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.eq-entete,
+.eq-regles,
+.eq-frise,
+.eq-pied {
+  flex-shrink: 0;
+}
+
+.eq-regles summary {
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+/* Formules : chiffres de l'étape en cours. */
+.eq-formules {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+.eq-formule span {
+  color: var(--accent);
+}
+
+.eq-formule-chiffres b {
+  color: white;
+}
+
+.eq-contexte {
+  margin: 0.25rem 0 0;
+  color: var(--texte-doux);
+  font-family: var(--police-texte, inherit);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+/* Frise des étapes. */
+.eq-frise {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  display: flex;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0 0 0.25rem;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.eq-frise button {
+  padding: 0.25rem 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--texte-doux);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.eq-frise button.passee {
+  border-color: rgba(245, 197, 66, 0.35);
+  color: white;
+}
+
+.eq-frise button.active {
+  border-color: var(--accent);
+  background-color: var(--accent-fond);
+  color: white;
+  font-weight: bold;
+}
+
+.eq-etape {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.eq-pied {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.eq-btn {
+  padding: 0.375rem 0.875rem;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.5rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.eq-btn:hover:not(:disabled) {
+  border-color: var(--accent-bordure);
+}
+
+.eq-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.eq-continuer {
+  border-color: var(--accent-bordure);
+  background-color: var(--accent-fond);
+}
+
+/* Décision de l'étape. */
+.eq-decision {
+  margin-bottom: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-left: 4px solid var(--accent);
+  border-radius: 0.5rem;
+  background-color: rgba(245, 197, 66, 0.08);
+  line-height: 1.6;
+}
+
+.eq-decision p {
+  margin: 0.125rem 0;
+}
+
+.eq-decision.eq-joker {
+  border-left-color: #c58cff;
+  background-color: rgba(197, 140, 255, 0.1);
+}
+
+.eq-decision.eq-refus {
+  border-left-color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+.eq-gros {
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.eq-alerte {
+  color: #ff7a85;
+}
+
+.eq-banni {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem 0.125rem 0.125rem;
+  border-radius: 999px;
+  background-color: rgba(255, 90, 90, 0.18);
+}
+
+.eq-anime .eq-banni {
+  animation: eq-ban 0.9s ease-out;
+}
+
+.eq-anime .eq-banni .eq-portrait {
+  animation: eq-ban-image 0.9s ease-out;
+}
+
+.eq-portrait {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+.eq-suggestion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.eq-puce {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.625rem 0.125rem 0.125rem;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.eq-anime .eq-puce {
+  animation: eq-entree 0.45s ease-out backwards;
+  animation-delay: calc(var(--i) * 0.12s);
+}
+
+.eq-sous-titre {
+  margin: 1rem 0 0.25rem;
+  font-size: 0.9375rem;
+}
+
+/* Retraits essayés. */
+.eq-candidats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.eq-candidat {
+  display: grid;
+  grid-template-columns: auto minmax(6rem, 10rem) auto 1fr auto auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.eq-anime .eq-candidat {
+  animation: eq-entree 0.35s ease-out backwards;
+  animation-delay: calc(var(--i) * 0.05s);
+}
+
+.eq-candidat.eq-nul {
+  opacity: 0.45;
+}
+
+.eq-candidat.eq-choisi {
+  outline: 2px solid var(--accent);
+  background-color: var(--accent-fond);
+}
+
+.eq-anime .eq-candidat.eq-choisi {
+  animation: eq-entree 0.35s ease-out backwards, eq-pulse 1.2s ease-out 0.6s;
+}
+
+.eq-gain {
+  min-width: 2.5rem;
+  color: var(--eq-gain);
+  font-weight: bold;
+  text-align: right;
+}
+
+.eq-tag {
+  padding: 0 0.375rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--texte-doux);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.eq-tag-commun {
+  background-color: rgba(111, 168, 255, 0.2);
+  color: #b9d3ff;
+}
+
+.eq-tag-choix {
+  background-color: var(--accent);
+  color: #1e1e1e;
+  font-weight: bold;
+}
+
+/* Jauge de l'écart prévu (objectif et tolérance marqués). */
+.eq-jauge {
+  position: relative;
+  height: 0.75rem;
+  margin: 1.25rem 0 1.25rem;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.eq-jauge-valeur {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--w);
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6fdc9a, #f5c542 50%, #ff6b6b);
+  transition: width 0.7s ease-out;
+}
+
+.eq-anime .eq-jauge-valeur {
+  animation: eq-remplir 0.8s ease-out;
+}
+
+.eq-jauge-marque {
+  position: absolute;
+  top: -0.25rem;
+  bottom: -0.25rem;
+  left: var(--x);
+  width: 2px;
+  background-color: white;
+}
+
+.eq-jauge-marque::after {
+  content: attr(data-libelle);
+  position: absolute;
+  top: 1.125rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--texte-doux);
+  font-size: 0.6875rem;
+}
+
+.eq-jauge-marque.eq-tolerance {
+  background-color: #ff7a85;
+}
+
+/* Tolérance : libellé au-dessus (sinon collé à celui de l'objectif). */
+.eq-jauge-marque.eq-tolerance::after {
+  top: auto;
+  bottom: 1.125rem;
+}
+
+.eq-legende {
+  margin: 0 0 0.5rem;
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+}
+
+.eq-legende i {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: 0 0.25rem 0 0.5rem;
+  border-radius: 0.1875rem;
+  vertical-align: -0.0625rem;
+}
+
+/* Tops des 2 box. */
+.eq-colonnes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.eq-colonnes h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.eq-colonnes h3 small {
+  color: var(--texte-doux);
+  font-weight: normal;
+}
+
+.eq-verticalite {
+  margin-bottom: 0.375rem;
+  font-size: 0.9375rem;
+}
+
+.eq-verticalite b {
+  font-size: 1.125rem;
+  color: var(--accent);
+}
+
+.eq-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eq-ligne {
+  display: grid;
+  grid-template-columns: auto auto minmax(4.5rem, 8rem) 1fr auto;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+.eq-anime .eq-ligne {
+  animation: eq-entree 0.35s ease-out backwards;
+  animation-delay: calc(var(--i) * 0.04s);
+}
+
+.eq-ligne.eq-nouveau {
+  background-color: rgba(111, 220, 154, 0.14);
+}
+
+.eq-anime .eq-ligne.eq-nouveau {
+  animation: eq-entree-droite 0.6s ease-out backwards, eq-pulse-vert 1.4s ease-out 0.6s;
+}
+
+.eq-ligne.eq-retire {
+  opacity: 0.4;
+}
+
+.eq-ligne.eq-retire .eq-nom {
+  text-decoration: line-through;
+}
+
+.eq-ligne em,
+.eq-decision em,
+.eq-puce em {
+  color: var(--eq-libre);
+  font-size: 0.75rem;
+  font-style: normal;
+}
+
+.eq-ligne.eq-retire em {
+  color: #ff7a85;
+}
+
+.eq-rang {
+  min-width: 1.25rem;
+  color: var(--texte-doux);
+  text-align: right;
+}
+
+.eq-ligne .eq-portrait {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.eq-nom {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eq-barre {
+  display: flex;
+  height: 0.625rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.eq-seg {
+  display: block;
+  width: var(--w);
+  height: 100%;
+  transition: width 0.6s ease-out;
+}
+
+.eq-anime .eq-seg {
+  animation: eq-remplir 0.7s ease-out backwards;
+  animation-delay: calc(var(--i, 0) * 0.04s + 0.1s);
+}
+
+.eq-seg-perso,
+.eq-legende .eq-seg-perso {
+  background-color: var(--eq-perso);
+}
+
+.eq-seg-sig,
+.eq-legende .eq-seg-sig {
+  background-color: var(--eq-sig);
+}
+
+.eq-seg-libre,
+.eq-legende .eq-seg-libre {
+  background-color: var(--eq-libre);
+}
+
+.eq-seg-gain {
+  background-color: var(--eq-gain);
+}
+
+.eq-calcul {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.eq-calcul small {
+  color: var(--texte-doux);
+}
+
+.eq-c-sig {
+  color: var(--eq-sig);
+}
+
+.eq-c-libre {
+  color: var(--eq-libre);
+}
+
+.eq-somme {
+  margin-top: 0.375rem;
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+  text-align: right;
+}
+
+.eq-somme b {
+  color: white;
+}
+
+/* Rouvrir le déroulé. */
+.eq-rouvrir {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 900;
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--accent-bordure);
+  border-radius: 999px;
+  background-color: rgba(24, 24, 28, 0.92);
+  color: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+@keyframes eq-apparition {
+  from { opacity: 0; }
+}
+
+@keyframes eq-entree {
+  from { opacity: 0; transform: translateY(0.375rem); }
+}
+
+@keyframes eq-entree-droite {
+  from { opacity: 0; transform: translateX(2rem); }
+}
+
+@keyframes eq-remplir {
+  from { width: 0; }
+}
+
+@keyframes eq-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(245, 197, 66, 0.7); }
+  100% { box-shadow: 0 0 0 0.75rem rgba(245, 197, 66, 0); }
+}
+
+@keyframes eq-pulse-vert {
+  0% { box-shadow: 0 0 0 0 rgba(111, 220, 154, 0.7); }
+  100% { box-shadow: 0 0 0 0.625rem rgba(111, 220, 154, 0); }
+}
+
+@keyframes eq-ban {
+  0% { transform: scale(1); background-color: rgba(255, 90, 90, 0.6); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@keyframes eq-ban-image {
+  0%, 30% { filter: none; }
+  100% { filter: grayscale(1) brightness(0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-fenetre *,
+  .eq-fenetre {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .eq-contenu {
+    padding: 0.75rem;
+  }
+
+  .eq-colonnes {
+    grid-template-columns: 1fr;
+  }
+
+  .eq-candidat {
+    grid-template-columns: auto minmax(5rem, 1fr) auto auto;
+  }
+
+  .eq-candidat .eq-barre,
+  .eq-candidat .eq-tag:not(.eq-tag-choix) {
+    display: none;
+  }
+
+  .eq-ligne {
+    grid-template-columns: auto auto minmax(4rem, 1fr) auto;
+  }
+
+  .eq-ligne .eq-barre {
+    display: none;
+  }
+}

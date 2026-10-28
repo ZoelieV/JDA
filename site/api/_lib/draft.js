@@ -142,9 +142,9 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
     raffinements.sort((a, b) => b - a).forEach((raffinement, index) => {
       const pleine = Number(arme.PPW?.[raffinement] ?? 0);
       const alternative = Math.round(pleine * (arme.alternatif ?? 100) / 100);
-      const libre = { cle: `l${libres.length}`, type: arme.type, support };
+      const libre = { cle: `l${libres.length}`, arme: arme.id, type: arme.type, support };
       if (!signature) libres.push({ ...libre, valeur: index === 0 ? pleine : alternative });
-      else if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support };
+      else if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support, arme: arme.id };
       else libres.push({ ...libre, valeur: alternative });
     });
   });
@@ -154,16 +154,18 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
 // Verticalité d'un modèle sans les persos bannis -> { verticalite, top (ids
 // des VERTICALITE_PERSOS meilleurs), armes (cles des armes libres données
 // à un perso du top) }. garderArmes : la signature d'un perso banni reste
-// dans la box comme arme libre (sinon elle part avec lui).
+// dans la box comme arme libre (sinon elle part avec lui). detail (mode
+// Équilibrage de l'entraînement, cf. calculerEquilibrageFixe) : [id, points
+// du perso, arme signature, arme libre, id de l'arme libre] du top.
 function mesurerVerticalite(modele, bannis = new Set(), garderArmes = true) {
   const libres = [...modele.libres];
   const persos = [];
   Object.entries(modele.persos).forEach(([id, p]) => {
     if (bannis.has(id)) {
-      if (garderArmes && p.signature) libres.push({ cle: `s:${id}`, valeur: p.signature.alternative, type: p.signature.type, support: p.signature.support });
+      if (garderArmes && p.signature) libres.push({ cle: `s:${id}`, arme: p.signature.arme, valeur: p.signature.alternative, type: p.signature.type, support: p.signature.support });
       return;
     }
-    persos.push({ id, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support, attaque: p.attaque });
+    persos.push({ id, base: p.valeur, sig: p.signature?.pleine || 0, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support, attaque: p.attaque });
   });
   attribuerArmesLibres(persos, libres);
   persos.sort((a, b) => b.valeur - a.valeur);
@@ -171,7 +173,8 @@ function mesurerVerticalite(modele, bannis = new Set(), garderArmes = true) {
   return {
     verticalite: top.reduce((somme, p) => somme + p.valeur, 0) / VERTICALITE_PERSOS,
     top: top.map(p => p.id),
-    armes: top.filter(p => p.arme).map(p => p.arme)
+    armes: top.filter(p => p.arme).map(p => p.arme),
+    detail: top.map(p => [p.id, p.base, p.sig, p.armeValeur || 0, p.armeId || null])
   };
 }
 
@@ -194,6 +197,8 @@ function attribuerArmesLibres(persos, libres) {
     meilleur.p.valeur += arme.valeur;
     meilleur.p.receveur = false;
     meilleur.p.arme = arme.cle;
+    meilleur.p.armeValeur = arme.valeur;
+    meilleur.p.armeId = arme.arme || null;
   });
 }
 
@@ -248,7 +253,9 @@ function casEquilibrage(topFaible, topFort, limites) {
 // special (mode spécial de l'entraînement, cf. handleModeSpecial) : autant
 // de jokers que nécessaire, dans tous les cas (même les 2 box sous les
 // seuils) ; un joker n'est limité que par min_persos de la box forte.
-function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false } = {}) {
+// trace (tableau, mode Équilibrage de l'entraînement) : chaque étape du
+// calcul y est ajoutée (cf. etapeTrace), pour la montrer aux joueurs.
+function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false, trace = null } = {}) {
   const garderArmes = Math.abs(ecartPoints) < SEUIL_ARMES_BANNIES;
   const bannisFort = new Set();
   const bannisFaible = new Set();
@@ -299,31 +306,61 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
     return { id, gain, commun, persosOk, valide: persosOk && limitesOk };
   };
   const valeur = id => modeleFort.persos[id].valeur + (modeleFort.persos[id].signature?.pleine || 0);
-  const meilleur = joker => mesure().fort.top
+  // candidats (trace) : tous les retraits essayés, gain nul compris.
+  const meilleur = (joker, candidats = null) => mesure().fort.top
     .map(id => essayer(id, joker))
+    .map(r => { candidats?.push(r); return r; })
     .filter(r => r.gain > 0)
     .reduce((m, r) => (!m || r.gain > m.gain || (r.gain === m.gain && valeur(r.id) > valeur(m.id)) ? r : m), null);
+  // Étape de la trace : tops et verticalités des 2 box, écart prévu.
+  const etapeTrace = (type, infos = {}) => {
+    if (!trace) return;
+    const m = mesure();
+    const candidats = infos.candidats?.map(r => [r.id, r.gain, r.commun ? 1 : 0, r.valide ? 1 : 0, r.persosOk ? 1 : 0]);
+    trace.push({
+      type, ...infos, ...(candidats ? { candidats } : {}),
+      tops: { faible: m.faible.detail, fort: m.fort.detail },
+      verticalite: { faible: Math.round(m.faible.verticalite * 100) / 100, fort: Math.round(m.fort.verticalite * 100) / 100 },
+      ecart: prevu()
+    });
+  };
+  etapeTrace("depart");
+  // Raison de l'arrêt du calcul (trace).
+  let raisonFin = "marge";
 
   while (prevu() > marge) {
-    const ban = meilleur(false);
-    if (!ban) break;
+    const candidatsBan = trace ? [] : null;
+    const ban = meilleur(false, candidatsBan);
+    if (!ban) { raisonFin = "aucun_gain"; break; }
     if (ban.valide && !(resultat.jokers && ban.commun)) {
       bannisFort.add(ban.id);
       if (ban.commun) bannisFaible.add(ban.id);
       resultat.bans++;
       resultat.suggestion.push(ban.id);
       noterVerticaux(mesure());
+      etapeTrace("ban", { choix: ban.id, gain: ban.gain, commun: ban.commun, candidats: candidatsBan });
       continue;
     }
     // Ban impossible : joker (une fois, si le cas le permet ; mode spécial :
     // autant que nécessaire), sinon fin.
-    if (!jokerPermis || (resultat.jokers && !special)) break;
-    const joker = meilleur(true);
-    if (!joker || !(special ? joker.persosOk : joker.valide)) break;
+    const refus = { id: ban.id, gain: ban.gain, raison: !ban.persosOk ? "min_persos" : resultat.jokers && ban.commun ? "apres_joker" : "limites" };
+    if (!jokerPermis || (resultat.jokers && !special)) {
+      raisonFin = jokerPermis ? "joker_deja_pris" : "joker_interdit";
+      if (trace) etapeTrace("refus", { refus, candidats: candidatsBan });
+      break;
+    }
+    const candidatsJoker = trace ? [] : null;
+    const joker = meilleur(true, candidatsJoker);
+    if (!joker || !(special ? joker.persosOk : joker.valide)) {
+      raisonFin = "joker_impossible";
+      if (trace) etapeTrace("refus", { refus, candidats: candidatsBan });
+      break;
+    }
     bannisFort.add(joker.id);
     resultat.jokers++;
     resultat.suggestion.push(joker.id);
     noterVerticaux(mesure());
+    etapeTrace("joker", { choix: joker.id, gain: joker.gain, refus, candidats: candidatsJoker });
   }
   const fin = mesure();
   resultat.ecart_apres = prevu();
@@ -331,6 +368,13 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
   resultat.top_fort_apres = top(fin.fort);
   resultat.equilibrable = resultat.ecart_apres <= TOLERANCE_FIXE;
   resultat.verticaux = verticaux;
+  if (trace) {
+    trace.push({ type: "fin", raison: raisonFin, ecart: resultat.ecart_apres, equilibrable: resultat.equilibrable });
+    resultat.contexte = {
+      cas, limites, marge, tolerance: TOLERANCE_FIXE, taille_equipe: TAILLE_EQUIPE, nb_top: VERTICALITE_PERSOS,
+      garder_armes: garderArmes, ecart_points: ecartPoints, seuil_armes_bannies: SEUIL_ARMES_BANNIES, joker_permis: jokerPermis, special
+    };
+  }
   return resultat;
 }
 
@@ -342,11 +386,13 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
 // signature, plus une arme libre jamais entrée dans le top 12 pour les
 // persos sans signature (même type d'arme et mêmes rôles que pour la
 // verticalité, la plus forte arme au perso compatible qui vaut le plus).
+// detail (tableau, mode Équilibrage de l'entraînement) : [id, points du
+// perso, arme signature, arme libre, id de l'arme libre] de chaque perso.
 // -> { id: valeur }
-function valeursHorizontales(modele, verticaux) {
+function valeursHorizontales(modele, verticaux, detail = null) {
   const persos = Object.entries(modele.persos)
     .filter(([id]) => !verticaux.persos.has(id))
-    .map(([id, p]) => ({ id, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support, attaque: p.attaque }));
+    .map(([id, p]) => ({ id, base: p.valeur, sig: p.signature?.pleine || 0, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support, attaque: p.attaque }));
   modele.libres
     .filter(arme => !verticaux.armes.has(arme.cle) && arme.valeur > 0)
     .sort((a, b) => b.valeur - a.valeur)
@@ -357,7 +403,10 @@ function valeursHorizontales(modele, verticaux) {
       if (!receveur) return;
       receveur.valeur += arme.valeur;
       receveur.receveur = false;
+      receveur.armeValeur = arme.valeur;
+      receveur.armeId = arme.arme || null;
     });
+  detail?.push(...persos.map(p => [p.id, p.base, p.sig, p.armeValeur || 0, p.armeId || null]));
   return Object.fromEntries(persos.map(p => [p.id, p.valeur]));
 }
 
@@ -618,6 +667,7 @@ function etatInitialDraft() {
     ecart_prevu: null, // équilibrage fixe : { avant, apres, cas, top, top_apres } écart d'équipe prévu et top 12 des box
     etape_bonus: null, // phase bans_bonus : "vertical" | "horizontal" (cf. acteurBansBonus)
     min_persos_equilibrage: null, // équilibrage fixe : persos min d'une box (limites du palier de la draft)
+    detail_equilibrage: null, // mode Équilibrage de l'entraînement : déroulé du calcul (cf. detailEquilibrage, _lib/boxes.js)
     horizontaux_j1: null, // "fixe_horizontal" : { id: valeur } persos horizontaux de la box de j1 (cf. valeursHorizontales)
     horizontaux_j2: null,
     seuil_horizontal: null, // "fixe_horizontal" : points d'écart par ban horizontal (figé au calcul)
@@ -867,6 +917,9 @@ function echangerRoles(draft) {
   draft.bans_bonus_joueur = inverser(draft.bans_bonus_joueur);
   draft.bans_horizontaux_joueur = inverser(draft.bans_horizontaux_joueur);
   draft.vainqueur = inverser(draft.vainqueur);
+  if (draft.detail_equilibrage) {
+    draft.detail_equilibrage = { ...draft.detail_equilibrage, faible: inverser(draft.detail_equilibrage.faible), fort: inverser(draft.detail_equilibrage.fort) };
+  }
   // Entraînement : la box du lanceur suit son rôle.
   if (draft.entrainement) draft.entrainement = { ...draft.entrainement, cote_moi: inverser(draft.entrainement.cote_moi) };
   draft.actions = (draft.actions || []).map(a => ({ ...a, joueur: inverser(a.joueur) }));

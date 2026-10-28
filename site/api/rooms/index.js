@@ -112,6 +112,14 @@ async function creerEntrainement(req, res, user) {
   const erreurBoss = await erreurBossImpose(bossId, user.id, { entrainement: true });
   if (erreurBoss) return res.status(400).json({ error: erreurBoss });
 
+  // Mode Équilibrage (administrateurs et mini admins) : déroulé du calcul
+  // des bans d'équilibrage montré avant les bans (cf. detailEquilibrage,
+  // _lib/boxes.js) ; sans chronos (ils tourneraient pendant le déroulé).
+  const detailEquilibrage = config.equilibrage_detail === true;
+  if (detailEquilibrage && !await estModerateur(user.id)) {
+    return res.status(403).json({ error: "Mode Équilibrage réservé aux administrateurs et mini admins." });
+  }
+
   const attente = await verifierFrequence(req, "entrainement", DELAI_ENTRAINEMENT_MS);
   if (attente > 0) {
     return res.status(429).json({ error: `Un entraînement toutes les 10 s au maximum : réessaie dans ${Math.ceil(attente / 1000)} s.` });
@@ -123,9 +131,10 @@ async function creerEntrainement(req, res, user) {
     discord_j2: user.id,
     roles_tires: false,
     mode_theatre: mode,
-    chronometre: config.classe === true,
+    chronometre: config.classe === true && !detailEquilibrage,
     entrainement: {
       lanceur: user.id,
+      ...(detailEquilibrage ? { detail_equilibrage: true } : {}),
       aide: null,
       cote_moi: "j1",
       boxes: { moi: moi.source, adverse: adverse.source },

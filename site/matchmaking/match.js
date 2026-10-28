@@ -3601,6 +3601,8 @@ function rendrePhase() {
   else if (draft.phase === "annule") rendreAnnule();
   else if (draft.phase === "non_equilibrable") rendreNonEquilibrable();
   else if (draft.phase === "boss") rendreChoixBoss();
+  // Mode Équilibrage de l'entraînement (cf. matchmaking/equilibrage.js).
+  window.DetailEquilibrage?.verifier();
 }
 
 // ---- Polling ----
