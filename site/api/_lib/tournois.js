@@ -42,6 +42,7 @@ const { estEquilibrableFullBox } = require("./boxes");
 const { calculerTrophees } = require("./trophees");
 const { actualiserPoints } = require("./personnages");
 const { lireDonneesProprietaire } = require("./boxes_fictives");
+const { verifierFrequenceCompte } = require("./limites");
 
 const PREFIXE = "tournoi:";
 const LIGNE_TOURNOITATEURS = "tournoitateurs";
@@ -58,6 +59,11 @@ const LONGUEUR_DESCRIPTION = 1000;
 const LONGUEUR_RECOMPENSE = 300;
 const LONGUEUR_NOM_EQUIPE = 30;
 const MAX_ARBITRES = 20;
+// Tournois pas terminés (ni annulés) par créateur, administrateurs à part.
+const MAX_TOURNOIS_EN_COURS = 10;
+// Actions des joueurs et du gestionnaire (écritures) : une par seconde au
+// plus par compte (quota Supabase protégé d'un envoi en boucle).
+const DELAI_ACTION_MS = 1000;
 const MAX_QUALIF_MATCHS = 10;
 // Qualifications : rondes (adversaires au hasard, qualif_matchs chacun) ou
 // poules (tous contre tous dans chaque poule, les meilleurs de chaque poule
@@ -244,6 +250,10 @@ function nouvelId() {
 
 async function creerTournoi(brut, user) {
   if (!await peutCreerTournoi(user.id)) throw erreur(403, "Seuls les tournoitateurs (et les administrateurs) créent des tournois.");
+  if (!estAdmin(user.id)) {
+    const enCours = (await listerTournois()).filter(t => t.createur === user.id && !["termine", "annule"].includes(t.statut));
+    if (enCours.length >= MAX_TOURNOIS_EN_COURS) throw erreur(409, `${MAX_TOURNOIS_EN_COURS} tournois en cours au plus : termine ou annule d'abord un des tiens.`);
+  }
   const { config, erreur: message } = lireConfig(brut);
   if (message) throw erreur(400, message);
   const incoherence = erreurCoherence(config);
@@ -790,8 +800,7 @@ function infosDraft(tournoi, match, phase) {
 
 // Création de la room d'un match (1v1 : room "tournoi", équipe : lobby
 // "equipe" déjà rempli, cf. creerRoomEquipeTournoi).
-async function creerRoomMatch(tournoi, match, phase) {
-  const roomId = crypto.randomBytes(4).toString("hex");
+async function creerRoomMatch(roomId, tournoi, match, phase) {
   if (tournoi.format === "equipe") {
     const { creerRoomEquipeTournoi } = require("./equipe");
     await creerRoomEquipeTournoi(roomId, tournoi, match, infosDraft(tournoi, match, phase));
@@ -831,20 +840,37 @@ async function lancerMatch(id, user, matchId = null) {
   } else {
     throw erreur(409, "Aucun match à lancer à ce stade.");
   }
-  const roomId = await creerRoomMatch(tournoi, trouve.match, trouve.phase);
+  // Match réservé d'abord (écriture conditionnelle) : 2 lancements en même
+  // temps ne créent pas 2 rooms ; room pas créée : match remis à jouer.
+  const roomId = crypto.randomBytes(4).toString("hex");
   await modifierTournoi(id, t => {
     const { match } = trouverMatch(t, trouve.match.id);
     if (match.statut !== "pret") throw erreur(409, "Ce match vient d'être lancé.");
     match.statut = "en_cours";
     match.room_id = roomId;
   });
+  try {
+    await creerRoomMatch(roomId, tournoi, trouve.match, trouve.phase);
+  } catch (e) {
+    await modifierTournoi(id, t => {
+      const { match } = trouverMatch(t, trouve.match.id);
+      if (match.room_id === roomId) {
+        match.statut = "pret";
+        match.room_id = null;
+      }
+    }).catch(() => {});
+    throw e;
+  }
   return roomId;
 }
 
-// Résultat d'une manche (appelé à l'archivage d'un match de tournoi, cf.
-// tempsArbitre et equipe.js) : vainqueur (participant), trophées (qualifs),
-// id du match archivé. Bo3 : match terminé à 2 manches gagnées.
-// -> { termine, score } pour la room.
+// Arbitre du tournoi à cet instant (liste à jour, pas celle recopiée dans
+// la room à son lancement : un arbitre retiré ne saisit plus rien).
+async function estArbitreActuel(infos, discordId) {
+  const lecture = infos?.id ? await lireTournoi(infos.id) : null;
+  return !!lecture && estArbitre(lecture.tournoi, discordId);
+}
+
 // Finale jouée : tournoi terminé. -> joueurs vainqueurs (discord ids), ou
 // null.
 function verifierFin(tournoi) {
@@ -863,6 +889,10 @@ async function annoncerVictoire(id, gagnants) {
   await noterVictoireTournoi(gagnants, id).catch(e => console.error("Erreur annonce du vainqueur :", e));
 }
 
+// Résultat d'une manche (appelé à l'archivage d'un match de tournoi, cf.
+// handleTempsArbitre et equipe.js) : vainqueur (participant), trophées
+// (qualifs), id du match archivé. Bo3 / bo5 : match terminé aux manches
+// gagnées. -> { termine, score } pour la room.
 async function enregistrerManche(infos, { vainqueur, trophees = 0, idMatch = null }) {
   let gagnants = null;
   const resultat = await modifierTournoi(infos.id, tournoi => {
@@ -1014,6 +1044,8 @@ async function routeTournoi(action, req, res, user) {
 
   if (req.method !== "POST") throw erreur(405, "Méthode non autorisée");
   if (!user) throw erreur(401, "Non connecté");
+  const attente = await verifierFrequenceCompte(user.id, "tournoi", DELAI_ACTION_MS);
+  if (attente > 0) throw erreur(429, "Doucement : une action par seconde au plus.");
 
   switch (action) {
     case "creer": {
@@ -1062,6 +1094,7 @@ async function routeTournoi(action, req, res, user) {
 module.exports = {
   BORNES_CHRONOS,
   estArbitre,
+  estArbitreActuel,
   estTournoitateur,
   peutCreerTournoi,
   enregistrerManche,

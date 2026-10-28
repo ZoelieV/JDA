@@ -3019,13 +3019,15 @@ function envoyerTempsArbitre() {
     const brut = document.getElementById(`arbitre-temps-${role}`).value.trim();
     const valeur = defiEnCours() ? brut : brut.replace(/[.,]/, ":");
     if (!abandon && !(defiEnCours() ? /^[0-9]{1,4}$/ : /^[0-9]{1,3}:[0-5][0-9]$/).test(valeur)) {
-      alert(`${role === "j1" ? joueur1.pseudo : joueur2.pseudo} : ${defiEnCours() ? "nombre d'ennemis invalide (ex : 42)" : "temps invalide (ex : 7:32)"}.`);
+      alert(`${role === "j1" ? "J1" : "J2"} : ${defiEnCours() ? "nombre d'ennemis invalide (ex : 42)" : "temps invalide (ex : 7:32)"}.`);
       return;
     }
     corps[`abandon_${role}`] = abandon;
     corps[`temps_${role}`] = abandon ? null : valeur;
   }
-  if (!confirm(`Valider ${joueur1.pseudo} : ${corps.abandon_j1 ? "abandon" : corps.temps_j1} et ${joueur2.pseudo} : ${corps.abandon_j2 ? "abandon" : corps.temps_j2} ?`)) return;
+  // Pseudos en texte (joueurX.pseudo est du HTML).
+  const texte = html => { const el = document.createElement("span"); el.innerHTML = html; return el.textContent; };
+  if (!confirm(`Valider ${texte(joueur1.pseudo)} : ${corps.abandon_j1 ? "abandon" : corps.temps_j1} et ${texte(joueur2.pseudo)} : ${corps.abandon_j2 ? "abandon" : corps.temps_j2} ?`)) return;
   envoyerAction(`/api/rooms/${roomId}/temps_arbitre`, corps)
     .then(data => definirDraft(data.draft))
     .catch(err => alert(err.message));

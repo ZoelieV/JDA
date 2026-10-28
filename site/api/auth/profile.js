@@ -24,6 +24,7 @@ const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5", ...BOX_VIT
 const LONGUEUR_NOM_BOX = 20;
 // Panier de la personnalisation : cosmétiques achetés en une fois au plus.
 const MAX_PANIER = 50;
+const DELAI_BOUTIQUE_MS = 1000;
 
 // Affiché aux adversaires pendant la saisie des temps (cf. matchmaking/
 // match.js) ; même règle que lienStreamAutorise dans commun/cartes.js.
@@ -254,6 +255,14 @@ module.exports = async (req, res) => {
     // Tirages un par un (garantie comptée à chacun) ; arrêt au premier refus
     // (solde, plus rien à gagner) : tirages déjà faits gardés, avec le
     // message (arret).
+    // Tirages et achats : une requête par seconde au plus par compte (chaque
+    // requête fait jusqu'à 10 tirages ou MAX_PANIER achats).
+    const actionBoutique = new URL(req.url, "http://x").searchParams.get("action");
+    if (req.method === "POST" && ["tirer", "acheter"].includes(actionBoutique)) {
+      const attente = await verifierFrequenceCompte(discordId, "boutique", DELAI_BOUTIQUE_MS);
+      if (attente > 0) return res.status(429).json({ error: "Doucement : une action par seconde au plus." });
+    }
+
     if (req.method === "POST" && new URL(req.url, "http://x").searchParams.get("action") === "tirer") {
       const nombre = req.body?.nombre === 10 ? 10 : 1;
       const tirages = [];

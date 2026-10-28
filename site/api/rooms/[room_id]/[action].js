@@ -19,7 +19,7 @@ const { calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH, erreurPointsB
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
 const { crediterMatch } = require("../../_lib/koyns");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
-const { routeTournoi, enregistrerManche, tropheesManche } = require("../../_lib/tournois");
+const { routeTournoi, enregistrerManche, tropheesManche, estArbitreActuel } = require("../../_lib/tournois");
 const {
   PHASES_PAUSABLES,
   estChronometre,
@@ -884,8 +884,9 @@ async function handleConfirmerTemps(req, res, roomId, user) {
 // des joueurs ; manche archivée comme un match normal (Rikoyns), résultat
 // reporté au tournoi. Bo3 : l'arbitre lance la manche suivante. ----
 
-function estArbitreRoom(draft, discordId) {
-  return !!draft.tournoi && (draft.tournoi.arbitres || []).includes(discordId);
+// Liste des arbitres à jour (cf. estArbitreActuel), pas celle de la room.
+async function estArbitreRoom(draft, discordId) {
+  return !!draft.tournoi && await estArbitreActuel(draft.tournoi, discordId);
 }
 
 // temps_arbitre { temps_j1, temps_j2, abandon_j1?, abandon_j2? }
@@ -896,7 +897,7 @@ async function handleTempsArbitre(req, res, roomId, user) {
   }
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
   const draft = room.draft;
-  if (!estArbitreRoom(draft, user.id)) return res.status(403).json({ error: "Seul un arbitre du tournoi saisit les temps." });
+  if (!await estArbitreRoom(draft, user.id)) return res.status(403).json({ error: "Seul un arbitre du tournoi saisit les temps." });
   // Un arbitre qui joue ce match ne saisit pas ses propres temps.
   if ([draft.discord_j1, draft.discord_j2].includes(user.id)) {
     return res.status(403).json({ error: "Tu joues ce match : un autre arbitre doit saisir les temps." });
@@ -941,7 +942,7 @@ async function handleMancheTournoi(req, res, roomId, user) {
   }
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
   const draft = room.draft;
-  if (!estArbitreRoom(draft, user.id)) return res.status(403).json({ error: "Seul un arbitre du tournoi lance la manche suivante." });
+  if (!await estArbitreRoom(draft, user.id)) return res.status(403).json({ error: "Seul un arbitre du tournoi lance la manche suivante." });
   if (draft.phase !== "termine") return res.status(409).json({ error: "La manche en cours n'est pas terminée." });
   if (draft.tournoi.termine) return res.status(409).json({ error: "Le match est terminé." });
   const nouveau = etatRevanche(draft);

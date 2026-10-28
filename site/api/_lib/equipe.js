@@ -684,7 +684,7 @@ async function routeVitrine(req, res, roomId, user) {
 async function routeLancer(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
-  const arbitreTournoi = (draft.tournoi?.arbitres || []).includes(user.id);
+  const arbitreTournoi = await estArbitreTournoi(draft, user.id);
   if (draft.createur !== user.id && !arbitreTournoi) throw erreur(403, "Seul le créateur de la room peut lancer le match.");
   if (draft.phase !== "lobby") throw erreur(409, "Le match a déjà commencé.");
   if (draft.membres.length !== draft.taille * 2) throw erreur(409, `Il faut ${draft.taille * 2} joueurs (${draft.membres.length} actuellement).`);
@@ -1012,7 +1012,8 @@ async function creerRoomEquipeTournoi(roomId, tournoi, match, infos) {
   if (error) throw error;
 }
 
-const estArbitreTournoi = (draft, discordId) => (draft.tournoi?.arbitres || []).includes(discordId);
+// Liste des arbitres à jour (cf. estArbitreActuel dans _lib/tournois.js).
+const estArbitreTournoi = (draft, discordId) => !!draft.tournoi && require("./tournois").estArbitreActuel(draft.tournoi, discordId);
 
 // Équipe du tournoi (participant) qui joue dans un camp : celle dont le
 // capitaine est dans ce camp.
@@ -1026,7 +1027,7 @@ async function routeTempsArbitre(req, res, roomId, user) {
   const corps = await lireCorps(req);
   const room = await chargerRoom(roomId);
   const draft = room.draft;
-  if (!estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi saisit les temps.");
+  if (!await estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi saisit les temps.");
   // Un arbitre qui joue ce match ne saisit pas les temps.
   if (draft.membres.includes(user.id)) throw erreur(403, "Tu joues ce match : un autre arbitre doit saisir les temps.");
   if (draft.phase !== "temps" && draft.phase !== "verification") throw erreur(409, "La saisie des temps n'est pas ouverte.");
@@ -1071,7 +1072,7 @@ async function routeTempsArbitre(req, res, roomId, user) {
 async function routeMancheTournoi(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
-  if (!estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi lance la manche suivante.");
+  if (!await estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi lance la manche suivante.");
   if (draft.phase !== "termine") throw erreur(409, "La manche en cours n'est pas terminée.");
   if (draft.tournoi.termine) throw erreur(409, "Le match est terminé.");
   draft.tournoi = { ...draft.tournoi, egalite: false };
