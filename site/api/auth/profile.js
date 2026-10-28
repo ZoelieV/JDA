@@ -22,6 +22,8 @@ const BOX_VITRINES = ["vitrine", "vitrine2"];
 // en draft pour les box optimisées).
 const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5", ...BOX_VITRINES];
 const LONGUEUR_NOM_BOX = 20;
+// Panier de la personnalisation : cosmétiques achetés en une fois au plus.
+const MAX_PANIER = 50;
 
 // Affiché aux adversaires pendant la saisie des temps (cf. matchmaking/
 // match.js) ; même règle que lienStreamAutorise dans commun/cartes.js.
@@ -248,11 +250,21 @@ module.exports = async (req, res) => {
       });
     }
 
-    // ---- ACHAT D'UN COSMÉTIQUE (?action=acheter, { cosmetique }) ----
+    // ---- ACHAT DE COSMÉTIQUES (?action=acheter, { cosmetique } ou panier
+    // { cosmetiques: [ids] }, MAX_PANIER au plus, achetés dans l'ordre ;
+    // arrêt au premier refus : achetes = ceux déjà payés) ----
     if (req.method === "POST" && new URL(req.url, "http://x").searchParams.get("action") === "acheter") {
-      const resultat = await acheterCosmetique(discordId, req.body?.cosmetique);
-      if (!resultat.ok) return res.status(resultat.status).json({ error: resultat.erreur });
-      return res.status(200).json({ koyns: await etatKoyns(discordId) });
+      const panier = Array.isArray(req.body?.cosmetiques) ? [...new Set(req.body.cosmetiques)] : [req.body?.cosmetique];
+      if (!panier.length || panier.length > MAX_PANIER) return res.status(400).json({ error: `Panier : ${MAX_PANIER} cosmétiques au plus.` });
+      const achetes = [];
+      for (const id of panier) {
+        const resultat = await acheterCosmetique(discordId, id);
+        if (!resultat.ok) {
+          return res.status(resultat.status).json({ error: resultat.erreur, achetes, koyns: await etatKoyns(discordId) });
+        }
+        achetes.push(id);
+      }
+      return res.status(200).json({ achetes, koyns: await etatKoyns(discordId) });
     }
 
     // ---- SAUVEGARDE DU PROFIL ----

@@ -417,6 +417,43 @@
 }
 
 @media (max-width: 700px) {
+  /* En-tête : titre, panier, solde et × sur une ligne (plus petits). */
+  .perso-entete {
+    gap: 0.375rem;
+  }
+
+  .perso-entete h2 {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 1.125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .perso-panier,
+  .perso-solde {
+    flex: none;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .perso-solde {
+    margin-right: 0;
+  }
+
+  /* Panier : nombre seulement (total dans la fenêtre du panier). */
+  .perso-panier-montant {
+    display: none;
+  }
+
+  .perso-panier:not([hidden]) + .perso-solde {
+    margin-left: 0;
+  }
+
+  .perso-fermer {
+    flex: none;
+  }
+
   .perso-contenu {
     width: 100%;
     height: 100%;
@@ -541,6 +578,248 @@
   vertical-align: -0.3em;
   object-fit: contain;
   filter: none;
+}
+
+/* Solde qui vient de changer (achat) : petit rebond. */
+.perso-solde.achat {
+  animation: perso-solde-achat 0.6s ease;
+}
+
+@keyframes perso-solde-achat {
+  40% { transform: scale(1.18); box-shadow: 0 0 1rem rgba(245, 197, 66, 0.7); }
+}
+
+/* Bouton du panier (en-tête, à gauche du solde), caché s'il est vide. */
+.perso-panier {
+  margin-left: auto;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #3ecf6a;
+  border-radius: 1rem;
+  background-color: rgba(62, 207, 106, 0.2);
+  color: white;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: perso-panier-entree 0.3s ease;
+}
+
+.perso-panier:hover {
+  background-color: rgba(62, 207, 106, 0.35);
+}
+
+.perso-panier[hidden] {
+  display: none;
+}
+
+.perso-panier:not([hidden]) + .perso-solde {
+  margin-left: 0.5rem;
+}
+
+@keyframes perso-panier-entree {
+  from { transform: scale(0.7); opacity: 0; }
+}
+
+/* Cosmétique dans le panier : liseré vert, image moins sombre. */
+.perso-choix-image.dans-panier {
+  outline: 3px solid #3ecf6a;
+  outline-offset: -3px;
+}
+
+.perso-choix-image.dans-panier img {
+  filter: brightness(0.8);
+}
+
+.perso-choix-image.dans-panier .perso-prix {
+  background-color: rgba(20, 90, 45, 0.92);
+  color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perso-solde.achat,
+  .perso-panier {
+    animation: none;
+  }
+}
+
+/* ---- Fenêtre de confirmation (achats, panier) : au centre, par-dessus la
+   personnalisation ---- */
+.perso-fenetre {
+  box-sizing: border-box;
+  width: min(26rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 1.25rem 1.25rem 1rem;
+  border: 2px solid rgba(245, 197, 66, 0.85);
+  border-radius: 1rem;
+  background: radial-gradient(circle at 50% 0%, rgba(245, 197, 66, 0.16), transparent 60%), rgba(18, 18, 24, 0.97);
+  color: white;
+  text-align: center;
+  box-shadow: 0 0 2rem rgba(245, 197, 66, 0.35);
+  animation: perso-fenetre-entree 0.3s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.perso-fenetre[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.perso-fenetre::backdrop {
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+@keyframes perso-fenetre-entree {
+  from { opacity: 0; transform: scale(0.88); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perso-fenetre {
+    animation: none;
+  }
+}
+
+.perso-fenetre-titre {
+  margin: 0 0 0.75rem;
+  color: #f5c542;
+  font-size: 1.375rem;
+}
+
+.perso-fenetre-contenu {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.perso-fenetre-contenu p {
+  margin: 0 0 0.625rem;
+}
+
+.perso-fenetre .icone-koyn {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.3em;
+  object-fit: contain;
+}
+
+.perso-fenetre-solde {
+  opacity: 0.9;
+}
+
+.perso-fenetre-solde.insuffisant strong,
+.perso-fenetre-alerte {
+  color: #ff6b76;
+}
+
+.perso-fenetre-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.perso-fenetre-actions button {
+  padding: 0.5rem 1.125rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5625rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.perso-fenetre-actions .perso-fenetre-ok {
+  border-color: #f5c542;
+  background-color: rgba(245, 197, 66, 0.25);
+  font-weight: bold;
+}
+
+.perso-fenetre-actions button:hover:not(:disabled) {
+  background-color: rgba(245, 197, 66, 0.4);
+}
+
+.perso-fenetre-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Panier : une ligne par cosmétique (aperçu, nom et type, prix, retirer). */
+.perso-panier-lignes {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.perso-panier-lignes li {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.perso-panier-lignes li + li {
+  margin-top: 0.3125rem;
+}
+
+.perso-panier-lignes img,
+.perso-panier-sans-image {
+  flex: none;
+  width: 4.5rem;
+  height: 2.75rem;
+  border-radius: 0.375rem;
+  background-color: rgba(0, 0, 0, 0.35);
+  object-fit: cover;
+}
+
+.perso-panier-nom {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.perso-panier-nom strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perso-panier-nom small {
+  opacity: 0.7;
+}
+
+.perso-panier-prix {
+  color: #f5c542;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.perso-panier-retirer {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background-color: transparent;
+  color: white;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.perso-panier-retirer:hover {
+  border-color: #ff6b76;
+  color: #ff6b76;
+}
+
+.perso-panier-total {
+  font-size: 1.25rem;
 }
 
 /* ---- Affichage de l'accueil : schéma de chaque page (cartes en petits

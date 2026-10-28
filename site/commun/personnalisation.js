@@ -15,8 +15,9 @@
 // met à jour elle-même).
 //
 // Rikoyns (cf. commun/koyns.js) : les cosmétiques pas encore possédés sont
-// marqués d'un cadenas et s'achètent d'un clic (prix, solde affiché en
-// haut) ; exclusifs : pas en vente. Filtres et tris de la draft, affichage
+// marqués d'un cadenas (prix, solde affiché en haut) ; un clic les met dans
+// le panier (ou les en retire), achetés ensemble depuis la fenêtre du
+// panier (confirmation au centre de l'écran) ; exclusifs : pas en vente. Filtres et tris de la draft, affichage
 // de l'accueil : libres.
 //
 // Fond "Mon image" (fond = "perso") : image importée par le joueur,
@@ -60,6 +61,9 @@
   let ongletActif = "fond";
   let options = {};
   let koyns = null;       // { solde, prix, tout, possedes: Set, exclusifs: Set } (api/auth/profile.js)
+  // Panier : id -> { id, nom, image, type, choisir } (choisir : appliqué si
+  // c'est le seul cosmétique acheté).
+  const panier = new Map();
   let imageEnregistree = null; // fond personnel gardé dans ce navigateur (Blob)
   let imageBrouillon = null;   // fond personnel en cours (importé ou retiré)
   const urlsImages = new WeakMap(); // Blob -> URL blob:
@@ -93,7 +97,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=16";
+    lien.href = "/commun/personnalisation.css?v=17";
     document.head.appendChild(lien);
   }
 
@@ -178,22 +182,82 @@
     return propres;
   }
 
+  // ---- Fenêtre de confirmation (au centre, à la place de confirm()) ----
+  // contenu : nœud ou HTML ; -> Promise<boolean>. avantOk(dialog) : appelé à
+  // chaque mise à jour (ex. panier modifié) pour activer ou non le bouton.
+  function confirmer({ titre, contenu, ok = "Confirmer", annuler = "Annuler", classe = "" }) {
+    return new Promise(resoudre => {
+      const fenetre = document.createElement("dialog");
+      fenetre.className = `perso-fenetre ${classe}`.trim();
+      fenetre.innerHTML = `
+        <h3 class="perso-fenetre-titre"></h3>
+        <div class="perso-fenetre-contenu"></div>
+        <div class="perso-fenetre-actions">
+          <button type="button" class="perso-fenetre-annuler"></button>
+          <button type="button" class="perso-fenetre-ok"></button>
+        </div>`;
+      fenetre.querySelector(".perso-fenetre-titre").textContent = titre;
+      const zone = fenetre.querySelector(".perso-fenetre-contenu");
+      if (typeof contenu === "string") zone.innerHTML = contenu;
+      else zone.appendChild(contenu);
+      fenetre.querySelector(".perso-fenetre-annuler").textContent = annuler;
+      fenetre.querySelector(".perso-fenetre-ok").innerHTML = ok;
+      let reponse = false;
+      fenetre.querySelector(".perso-fenetre-annuler").addEventListener("click", () => fenetre.close());
+      fenetre.querySelector(".perso-fenetre-ok").addEventListener("click", () => { reponse = true; fenetre.close(); });
+      fenetre.addEventListener("click", event => { if (event.target === fenetre) fenetre.close(); });
+      // Échap : ferme cette fenêtre seulement (pas la personnalisation).
+      fenetre.addEventListener("keydown", event => { if (event.key === "Escape") event.stopPropagation(); });
+      fenetre.addEventListener("close", () => {
+        fenetre.remove();
+        resoudre(reponse);
+      });
+      document.body.appendChild(fenetre);
+      fenetre.showModal();
+      fenetre.querySelector(".perso-fenetre-ok").focus();
+    });
+  }
+
+  const texteRikoyns = montant => `${montant} ${ICONE_KOYN}`;
+
+  // Solde avant / après un achat (rouge s'il ne suffit pas).
+  function htmlSolde(total) {
+    const apres = koyns.solde - total;
+    return `<p class="perso-fenetre-solde${apres < 0 ? " insuffisant" : ""}">Solde : ${texteRikoyns(koyns.solde)} → <strong>${texteRikoyns(apres)}</strong></p>` +
+      (apres < 0 ? `<p class="perso-fenetre-alerte">Il manque ${texteRikoyns(-apres)} : joue des matchs pour en gagner (5 par match).</p>` : "");
+  }
+
+  // Envoi d'un achat (un ou plusieurs cosmétiques). -> ids achetés.
+  async function envoyerAchat(ids) {
+    const reponse = await fetch("/api/auth/profile?action=acheter", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ids.length === 1 ? { cosmetique: ids[0] } : { cosmetiques: ids })
+    });
+    const donnees = await reponse.json().catch(() => ({}));
+    if (donnees.koyns) lireEtatKoyns(donnees.koyns);
+    if (!reponse.ok) {
+      const erreur = new Error(donnees.error || "Achat impossible.");
+      erreur.achetes = donnees.achetes || [];
+      throw erreur;
+    }
+    return donnees.achetes || ids;
+  }
+
   // Import de Mon image : PRIX_IMPORT_FOND à chaque image (confirmation
   // d'abord ; administrateurs : gratuit). -> true si payé.
   async function payerImport() {
     if (koyns?.tout) return true;
-    if (!confirm(`Importer cette image pour ${PRIX_IMPORT_FOND} Rikoyns ? (solde : ${koyns?.solde ?? "?"})`)) return false;
+    const ok = await confirmer({
+      titre: "Importer une image",
+      contenu: `<p>Mon image comme fond d'écran, pour <strong>${texteRikoyns(PRIX_IMPORT_FOND)}</strong> à chaque image importée.</p>${htmlSolde(PRIX_IMPORT_FOND)}`,
+      ok: `Payer ${texteRikoyns(PRIX_IMPORT_FOND)}`
+    });
+    if (!ok) return false;
     afficherEtat("Achat…");
     try {
-      const reponse = await fetch("/api/auth/profile?action=acheter", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cosmetique: idCosmetique("fond", FOND_PERSO) })
-      });
-      const donnees = await reponse.json().catch(() => ({}));
-      if (!reponse.ok) throw new Error(donnees.error || "Achat impossible.");
-      lireEtatKoyns(donnees.koyns);
+      await envoyerAchat([idCosmetique("fond", FOND_PERSO)]);
       afficherEtat("");
       return true;
     } catch (erreur) {
@@ -203,39 +267,102 @@
     }
   }
 
-  // Achat d'un cosmétique (confirmation d'abord). -> true si possédé ensuite.
-  async function acheter(id, nom) {
-    if (possede(id)) return true;
+  // ---- Panier ----
+
+  const totalPanier = () => [...panier.keys()].reduce((total, id) => total + prixCosmetique(id), 0);
+
+  // Bouton du panier (en-tête) : nombre et total, caché si vide.
+  function majBoutonPanier() {
+    const bouton = modal.querySelector(".perso-panier");
+    bouton.hidden = panier.size === 0;
+    // Vide (ouverture) : commun/koyns.js (ICONE_KOYN) pas forcément chargé.
+    if (!panier.size) return;
+    bouton.innerHTML = `🛒 ${panier.size}<span class="perso-panier-montant"> · ${texteRikoyns(totalPanier())}</span>`;
+    bouton.title = `Panier : ${panier.size} cosmétique${panier.size > 1 ? "s" : ""}, clic pour acheter`;
+  }
+
+  // Clic sur un cosmétique pas possédé : ajouté au panier, ou retiré.
+  function basculerPanier(id, article) {
     if (estExclusif(id)) {
       afficherEtat("Cosmétique exclusif : il se gagne aux classements et aux événements.");
-      return false;
+      return;
     }
-    const montant = prixCosmetique(id);
-    const prix = `${montant} Rikoyn${montant > 1 ? "s" : ""}`;
-    if (koyns.solde < montant) {
-      afficherEtat(`Il faut ${prix} : joue des matchs pour en gagner (5 par match).`);
-      return false;
-    }
-    if (!confirm(`Obtenir « ${nom} » pour ${prix} ? (solde : ${koyns.solde})`)) return false;
-    afficherEtat("Achat…");
-    try {
-      const reponse = await fetch("/api/auth/profile?action=acheter", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cosmetique: id })
+    if (panier.has(id)) panier.delete(id);
+    else panier.set(id, article);
+    afficherEtat(panier.has(id) ? `« ${article.nom} » ajouté au panier.` : `« ${article.nom} » retiré du panier.`);
+    majBoutonPanier();
+    rendreChoix();
+  }
+
+  // Contenu de la fenêtre du panier (lignes, total, solde), refait à chaque
+  // retrait.
+  function rendrePanier(zone, fenetre) {
+    const total = totalPanier();
+    zone.innerHTML = `
+      <ul class="perso-panier-lignes">${[...panier.values()].map(article => `
+        <li data-id="${encodeURIComponent(article.id)}">
+          ${article.image ? `<img src="${article.image}" alt="" loading="lazy">` : `<span class="perso-panier-sans-image"></span>`}
+          <span class="perso-panier-nom"><strong></strong><small>${article.type}</small></span>
+          <span class="perso-panier-prix">${texteRikoyns(prixCosmetique(article.id))}</span>
+          <button type="button" class="perso-panier-retirer" title="Retirer du panier" aria-label="Retirer du panier">×</button>
+        </li>`).join("")}
+      </ul>
+      <p class="perso-panier-total">Total : <strong>${texteRikoyns(total)}</strong></p>
+      ${htmlSolde(total)}`;
+    zone.querySelectorAll("li").forEach(ligne => {
+      const id = decodeURIComponent(ligne.dataset.id);
+      ligne.querySelector("strong").textContent = panier.get(id).nom;
+      ligne.querySelector(".perso-panier-retirer").addEventListener("click", () => {
+        panier.delete(id);
+        majBoutonPanier();
+        rendreChoix();
+        if (!panier.size) fenetre.close();
+        else rendrePanier(zone, fenetre);
       });
-      const donnees = await reponse.json().catch(() => ({}));
-      if (!reponse.ok) throw new Error(donnees.error || "Achat impossible.");
-      lireEtatKoyns(donnees.koyns);
-      afficherEtat(`« ${nom} » obtenu !`);
-      return true;
+    });
+    const ok = fenetre.querySelector(".perso-fenetre-ok");
+    ok.disabled = !panier.size || koyns.solde < total;
+    ok.innerHTML = `Acheter${panier.size > 1 ? ` les ${panier.size}` : ""} · ${texteRikoyns(total)}`;
+  }
+
+  async function ouvrirPanier() {
+    if (!panier.size) return;
+    const zone = document.createElement("div");
+    const promesse = confirmer({ titre: "Panier", contenu: zone, ok: "Acheter", annuler: "Continuer mes achats", classe: "perso-fenetre-panier" });
+    rendrePanier(zone, zone.closest("dialog"));
+    if (!await promesse || !panier.size) return;
+    const articles = [...panier.values()];
+    afficherEtat("Achat…");
+    let achetes = [];
+    try {
+      achetes = await envoyerAchat(articles.map(article => article.id));
     } catch (erreur) {
       console.error(erreur);
+      achetes = erreur.achetes || [];
       afficherEtat(erreur.message);
-      return false;
     }
+    achetes.forEach(id => panier.delete(id));
+    // Un seul cosmétique acheté : choisi tout de suite (comme avant le panier).
+    if (achetes.length === 1) articles.find(article => article.id === achetes[0])?.choisir?.();
+    if (achetes.length) {
+      afficherEtat(achetes.length === 1 ? `« ${articles.find(a => a.id === achetes[0]).nom} » obtenu !` : `${achetes.length} cosmétiques obtenus !`);
+      celebrerAchat(achetes.length);
+    }
+    majBoutonPanier();
+    rendreApercus();
+    rendreChoix();
+    mettreAJourPied();
   }
+
+  // Petite animation sur le solde après un achat.
+  function celebrerAchat() {
+    const solde = modal.querySelector(".perso-solde");
+    solde.classList.remove("achat");
+    void solde.offsetWidth;
+    solde.classList.add("achat");
+  }
+
+  const TYPES_COSMETIQUES = { fond: "Fond d'écran", banniere: "Namecard", banniere2: "Bannière", skin: "Skin", voyageur: "Voyageur", manekin: "Manekin" };
 
   // Choix manquant (ou ancien "aucun") : valeur par défaut.
   function avecDefauts(parametres = {}) {
@@ -318,6 +445,7 @@
       <div class="perso-contenu" role="dialog" aria-modal="true" aria-label="Personnalisation">
         <div class="perso-entete">
           <h2>Personnalisation</h2>
+          <button type="button" class="perso-panier" hidden></button>
           <span class="perso-solde" title="Rikoyns : gagnés en jouant (5 par match), ils servent à obtenir les cosmétiques"></span>
           <button type="button" class="perso-fermer" aria-label="Fermer">×</button>
         </div>
@@ -371,6 +499,7 @@
       bloc.addEventListener("click", () => choisirOnglet(bloc.dataset.onglet));
     });
     modal.querySelector(".perso-recherche").addEventListener("input", rendreChoix);
+    modal.querySelector(".perso-panier").addEventListener("click", ouvrirPanier);
     modal.querySelector(".perso-enregistrer").addEventListener("click", enregistrer);
     const champImage = modal.querySelector(".perso-fichier-image");
     champImage.addEventListener("change", async () => {
@@ -447,7 +576,7 @@
   // Une image cliquable ; choisir() applique le choix au brouillon.
   // image null : bouton texte (titre affiché), ex. "Importer une image".
   // cosmetique : id du cosmétique (commun/koyns.js) ; pas possédé : cadenas
-  // et prix, acheté au clic avant d'être choisi.
+  // et prix, mis au panier (ou retiré) au clic.
   function creerChoix(image, titre, actif, choisir, classe = "", cosmetique = null) {
     const bouton = document.createElement("button");
     bouton.type = "button";
@@ -466,17 +595,22 @@
     }
     if (verrouille) {
       bouton.classList.add("verrouille");
+      const dansPanier = panier.has(cosmetique);
+      bouton.classList.toggle("dans-panier", dansPanier);
       const badge = document.createElement("span");
       badge.className = "perso-prix";
       const exclusif = estExclusif(cosmetique);
       const montant = prixCosmetique(cosmetique);
-      badge.innerHTML = exclusif ? "🔒 Exclusif" : `🔒 ${montant} ${ICONE_KOYN}`;
+      badge.innerHTML = exclusif ? "🔒 Exclusif" : `${dansPanier ? "🛒" : "🔒"} ${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
-      bouton.title = `${titre} — ${exclusif ? "exclusif" : `${montant} Rikoyn${montant > 1 ? "s" : ""}`}`;
+      bouton.title = `${titre} — ${exclusif ? "exclusif" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
     }
-    bouton.addEventListener("click", async () => {
+    bouton.addEventListener("click", () => {
       if (!brouillon) return;
-      if (verrouille && !await acheter(cosmetique, titre)) return;
+      if (verrouille) {
+        basculerPanier(cosmetique, { id: cosmetique, nom: titre.replace(/ : clic pour activer le skin$/, ""), image, type: TYPES_COSMETIQUES[cosmetique.split(":")[0]] || "Cosmétique", choisir });
+        return;
+      }
       choisir();
       rendreApercus();
       rendreChoix();
@@ -703,6 +837,8 @@
     if (!modal) creerModal();
     // Choix de l'ouverture précédente retirés pendant le chargement.
     brouillon = null;
+    panier.clear();
+    majBoutonPanier();
     modal.querySelector(".perso-choix").innerHTML = "";
     modal.querySelectorAll("[data-apercu]").forEach(bloc => { bloc.style.backgroundImage = ""; bloc.textContent = ""; });
     modal.classList.add("active");
