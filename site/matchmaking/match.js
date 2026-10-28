@@ -1829,7 +1829,7 @@ function htmlModeTheatre(theatre) {
   // création de la room, ou mêlée générale (matchmaking / classé).
   const mode = draft.mode_theatre === "auto" ? "plus petit palier"
     : draft.mode_theatre === "carnage" ? "carnage, sans équilibrage"
-      : draft.mode_theatre === "12" ? "mêlée générale" : "choisi pour la room";
+      : draft.mode_theatre === "12" ? "classé" : "choisi pour la room";
   return `<span class="mode-theatre" title="Draft ${infos.nom} : 4 picks et ${infos.bans} bans par joueur (${mode})">` +
     `<img src="${urlMedailleTheatre(infos.medaille)}" alt="">${infos.nom} · ${mode}</span>`;
 }

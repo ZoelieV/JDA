@@ -137,7 +137,8 @@ async function remplirBossRoom(idSelect = "room-boss") {
 // générale).
 document.querySelectorAll(".mode-match").forEach(bouton => {
   bouton.addEventListener("click", () => {
-    const type = bouton.closest(".modes-match").dataset.type;
+    // Classé : bouton de la file "classe" dans le détail Matchmaking.
+    const type = bouton.dataset.type || bouton.closest(".modes-match").dataset.type;
     const mode = bouton.dataset.mode;
     if (type === "equipe") {
       creerMatch({
@@ -651,7 +652,9 @@ document.querySelectorAll(".carte-match[data-detail]").forEach(carte => {
 // commun/site.js) : détail du mode ouvert, aussi quand l'ancre change sur
 // la page (pas refermé s'il l'est déjà).
 function ouvrirAncre() {
-  const carte = location.hash && document.querySelector(`.carte-match[data-detail="${CSS.escape(location.hash.slice(1))}"]`);
+  // Ancien lien /match#classe : le classé est dans Matchmaking.
+  const ancre = location.hash.slice(1) === "classe" ? "matchmaking" : location.hash.slice(1);
+  const carte = ancre && document.querySelector(`.carte-match[data-detail="${CSS.escape(ancre)}"]`);
   if (carte && carte.getAttribute("aria-expanded") !== "true") choisirCarte(carte);
 }
 ouvrirAncre();

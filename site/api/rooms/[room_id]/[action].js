@@ -278,7 +278,7 @@ async function handleBox(req, res, roomId, user) {
     return res.status(400).json({ error: "Dans ce tournoi, seule la full box est autorisée." });
   }
   if (estMatchmakingClassique(draft, room) && !BOX_MATCHMAKING_CLASSIQUE.has(box)) {
-    return res.status(400).json({ error: "En matchmaking classique, seule la full box est autorisée." });
+    return res.status(400).json({ error: "En matchmaking Full box, seule la full box est autorisée." });
   }
   // Retour au choix des box après des box non équilibrables : seulement
   // celles des combinaisons qui s'équilibrent.

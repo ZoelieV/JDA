@@ -33,7 +33,6 @@
     { titre: "Match", href: "/match", menu: [
       ["Créer une room", "/match#room"],
       ["Matchmaking", "/match#matchmaking"],
-      ["Classé", "/match#classe"],
       ["Entraînement", "/match#entrainement"],
       ["En équipe", "/match#equipe"],
       ["Tournois", "/tournois"]

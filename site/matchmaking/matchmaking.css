@@ -396,16 +396,12 @@
 }
 
 .detail-match[data-detail="room"] {
-  --couleur-detail: #5cc9c0;
-  --couleur-detail-fond: rgba(92, 201, 192, 0.14);
+  --couleur-detail: #f0875a;
+  --couleur-detail-fond: rgba(240, 135, 90, 0.14);
 }
 
+/* Matchmaking (namecard du classé, classé compris) : doré. */
 .detail-match[data-detail="matchmaking"] {
-  --couleur-detail: #e8777a;
-  --couleur-detail-fond: rgba(232, 119, 122, 0.14);
-}
-
-.detail-match[data-detail="classe"] {
   --couleur-detail: var(--accent);
   --couleur-detail-fond: rgba(245, 197, 66, 0.14);
   border-color: rgba(245, 197, 66, 0.35);
@@ -679,4 +675,10 @@
   .ent-vitrines {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Classé : 1er mode du matchmaking, en doré (trophées en jeu). */
+.detail-match .mode-match.mode-classe {
+  border-color: rgba(245, 197, 66, 0.55);
+  background: linear-gradient(135deg, rgba(245, 197, 66, 0.16), rgba(245, 197, 66, 0.04));
 }

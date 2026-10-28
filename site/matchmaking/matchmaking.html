@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/commun/entete.css?v=rem41">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/namecards.css?v=3">
-<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=24">
+<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=25">
   <link rel="stylesheet" href="/commun/site.css?v=10">
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -32,21 +32,16 @@
        seul ouvert à la fois (cf. matchmaking.js). -->
   <div class="cartes-match">
     <button type="button" class="carte-section carte-match" data-detail="room" aria-expanded="false" aria-controls="detail-room">
-      <img src="/DB/images/others/Namecard_Background_room.webp" alt="" loading="lazy">
+      <img src="/DB/images/namecards/Namecard_Background_Achievement_Fighting_Spirit.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
         <h2>Créer une room</h2>
       </div>
     </button>
-    <button type="button" class="carte-section carte-match" data-detail="matchmaking" aria-expanded="false" aria-controls="detail-matchmaking">
-      <img src="/DB/images/others/Namecard_Background_matchmaking.webp" alt="" loading="lazy">
-      <div class="carte-section-texte">
-        <h2>Matchmaking</h2>
-      </div>
-    </button>
-    <button type="button" class="carte-section carte-match principale" data-detail="classe" aria-expanded="false" aria-controls="detail-classe">
+    <!-- Matchmaking : classé (1er mode), full box, carnage. -->
+    <button type="button" class="carte-section carte-match principale" data-detail="matchmaking" aria-expanded="false" aria-controls="detail-matchmaking">
       <img src="/DB/images/others/Namecard_Background_competitif.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
-        <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></h2>
+        <h2>Matchmaking</h2>
       </div>
     </button>
     <button type="button" class="carte-section carte-match" data-detail="entrainement" aria-expanded="false" aria-controls="detail-entrainement">
@@ -94,34 +89,30 @@
     <div class="modes-match" data-type="prive">
       <button type="button" class="mode-match" data-mode="auto">Auto<span>draft du plus petit palier</span></button>
       <button type="button" class="mode-match" data-mode="sardine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_sardine.webp?v=3" alt=""> Sardine</span><span>2 bans, 2 picks, 1 ban, 2 picks</span></button>
-      <button type="button" class="mode-match" data-mode="carpe"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""> Carpe</span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
+      <button type="button" class="mode-match" data-mode="carpe"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""> Classique</span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
       <button type="button" class="mode-match" data-mode="dauphin"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_dauphin.webp?v=3" alt=""> Dauphin</span><span>3 bans, 2 picks, 2 bans, 2 picks</span></button>
       <button type="button" class="mode-match" data-mode="baleine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_baleine.webp?v=3" alt=""> Baleine</span><span>3 bans, 2 picks, 3 bans, 2 picks</span></button>
       <button type="button" class="mode-match" data-mode="carnage"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span><span>2 bans, 2 picks, 2 bans, 2 picks, sans équilibrage</span></button>
     </div>
   </section>
 
+  <!-- Classé : file "classe" (mêlée générale, mode "12") ; Full box : file
+       "matchmaking" mode "auto" ; Carnage : file "matchmaking" (cf.
+       api/_lib/matchmaking.js). -->
   <section id="detail-matchmaking" class="panneau detail-match cache" data-detail="matchmaking">
     <h2>Matchmaking</h2>
-    <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.</p>
-    <div class="modes-match" data-type="matchmaking">
-      <button type="button" class="mode-match" data-mode="auto">Classique<span>draft du plus petit palier, full box seulement</span></button>
-      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
-      <button type="button" class="mode-match" data-mode="carnage"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span><span>2 bans, 2 picks, 2 bans, 2 picks, sans équilibrage</span></button>
-    </div>
-  </section>
-
-  <section id="detail-classe" class="panneau detail-match detail-classe cache" data-detail="classe">
-    <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></h2>
-    <p>Comme le matchmaking, mais seulement contre des joueurs en classé. Voir le <a href="/classement">classement</a>.</p>
+    <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.
+      Classé : trophées en jeu, voir le <a href="/classement">classement</a>.</p>
     <ul class="regles-classe">
       <li>Le gagnant remporte un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.</li>
       <li>Victoires d'affilée : +1 trophée bonus à la 2e, +2 à la 3e, puis +3.</li>
       <li>Bonus de saison : +3 trophées par perso de la saison dans ton équipe (gagnés en plus, ou retirés de ta perte).</li>
       <li>Prime : battre le joueur à la plus longue série de victoires en cours rapporte +5 trophées.</li>
     </ul>
-    <div class="modes-match" data-type="classe">
-      <button type="button" class="mode-match" data-mode="12">Mêlée générale<span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
+    <div class="modes-match" data-type="matchmaking">
+      <button type="button" class="mode-match mode-classe" data-type="classe" data-mode="12"><span class="titre-mode">Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
+      <button type="button" class="mode-match" data-mode="auto">Full box<span>draft du plus petit palier, full box seulement</span></button>
+      <button type="button" class="mode-match" data-mode="carnage"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span><span>2 bans, 2 picks, 2 bans, 2 picks, sans équilibrage</span></button>
     </div>
   </section>
 
@@ -178,9 +169,9 @@
       <h3>1. Draft</h3>
       <label class="case-entrainement"><input type="checkbox" id="ent-classe"> Draft classée (chronos : analyse 2 min, bans d'équilibrage 15 s par ban (1 min minimum, 5 min maximum par phase), 30 s par pick / ban de chaque joueur)</label>
       <div class="choix-boutons" id="ent-mode">
-        <button type="button" class="choix-btn active" data-valeur="auto">Classique<span>draft du plus petit palier</span></button>
+        <button type="button" class="choix-btn active" data-valeur="auto">Full box<span>draft du plus petit palier</span></button>
         <button type="button" class="choix-btn" data-valeur="sardine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_sardine.webp?v=3" alt=""> Sardine</span><span>3 bans</span></button>
-        <button type="button" class="choix-btn" data-valeur="carpe"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""> Carpe</span><span>4 bans (mêlée générale)</span></button>
+        <button type="button" class="choix-btn" data-valeur="carpe"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""> Classique</span><span>4 bans (comme le classé)</span></button>
         <button type="button" class="choix-btn" data-valeur="dauphin"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_dauphin.webp?v=3" alt=""> Dauphin</span><span>5 bans</span></button>
         <button type="button" class="choix-btn" data-valeur="baleine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_baleine.webp?v=3" alt=""> Baleine</span><span>6 bans</span></button>
         <button type="button" class="choix-btn" data-valeur="carnage"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span><span>4 bans, sans équilibrage</span></button>
@@ -225,8 +216,8 @@
 
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/synergies.js?v=2"></script>
-  <script src="/commun/cartes.js?v=33"></script>
-  <script src="/matchmaking/matchmaking.js?v=36"></script>
-  <script src="/commun/site.js?v=13"></script>
+  <script src="/commun/cartes.js?v=34"></script>
+  <script src="/matchmaking/matchmaking.js?v=37"></script>
+  <script src="/commun/site.js?v=14"></script>
 </body>
 </html>

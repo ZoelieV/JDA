@@ -3,9 +3,9 @@
 // tournois.js (liste) et tournoi.js (page d'un tournoi).
 
 const MODES_TOURNOI = {
-  auto: "Classique (draft du plus petit palier)",
+  auto: "Full box (draft du plus petit palier)",
   sardine: "Sardine",
-  carpe: "Carpe",
+  carpe: "Classique",
   dauphin: "Dauphin",
   baleine: "Baleine",
   12: "Mêlée générale",

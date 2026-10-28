@@ -280,7 +280,9 @@ function estDefiEnnemis(boss) {
 // 6, 8, 10 ou 12 (cf. infosTheatreJoue).
 const PALIERS_THEATRE = {
   1: { nom: "Sardine", mode: "sardine", bans: [2, 1], medaille: 6 },
-  2: { nom: "Carpe", mode: "carpe", bans: [2, 2], medaille: 8 },
+  // nomMode : nom de la draft jouée (rooms, historique) ; nom : palier
+  // des box des joueurs.
+  2: { nom: "Carpe", nomMode: "Classique", mode: "carpe", bans: [2, 2], medaille: 8 },
   3: { nom: "Dauphin", mode: "dauphin", bans: [3, 2], medaille: 10 },
   4: { nom: "Baleine", mode: "baleine", bans: [3, 3], medaille: 12 }
 };
@@ -303,7 +305,7 @@ function urlMedailleTheatre(numero) {
 // (bans : total par joueur), ou null.
 function infosTheatreJoue(theatre) {
   const palier = PALIERS_THEATRE[theatre];
-  if (palier) return { nom: palier.nom, bans: palier.bans[0] + palier.bans[1], medaille: palier.medaille };
+  if (palier) return { nom: palier.nomMode || palier.nom, bans: palier.bans[0] + palier.bans[1], medaille: palier.medaille };
   const ancien = Number(theatre);
   return [6, 8, 10, 12].includes(ancien) ? { nom: `Théâtre ${ancien}`, bans: ancien / 2 - 2, medaille: ancien } : null;
 }
