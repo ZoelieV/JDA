@@ -950,3 +950,207 @@
   grid-row: 4;
   grid-column: span 2;
 }
+
+/* ---- Tirage (cf. rendreTirage, revelerGain dans personnalisation.js) ---- */
+.perso-apercu-tirage {
+  width: 5.625rem;
+  background-size: 60%;
+  background-repeat: no-repeat;
+  font-size: 0;
+}
+
+.perso-tirage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.perso-tirage .perso-categorie {
+  align-self: stretch;
+  text-align: left;
+}
+
+.perso-tirage-focus {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.perso-tirage-carte {
+  width: 11rem;
+  margin: 0;
+  padding: 0.375rem;
+  border: 2px solid rgba(245, 197, 66, 0.85);
+  border-radius: 0.75rem;
+  background-color: rgba(245, 197, 66, 0.1);
+  box-shadow: 0 0 1rem rgba(245, 197, 66, 0.3);
+}
+
+.perso-tirage-carte img {
+  display: block;
+  width: 100%;
+  height: 5.5rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+
+.perso-tirage-carte figcaption {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.25rem;
+}
+
+.perso-tirage-carte small {
+  opacity: 0.75;
+}
+
+.perso-tirage-carte.possede {
+  border-color: #3ecf6a;
+  background-color: rgba(62, 207, 106, 0.1);
+  box-shadow: none;
+}
+
+.perso-tirage-garantie {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  width: min(22rem, 100%);
+}
+
+.perso-tirage-jauge {
+  width: 100%;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.perso-tirage-jauge span {
+  display: block;
+  height: 100%;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #f5c542, #ff9f1c);
+}
+
+.perso-tirer {
+  margin-top: 0.5rem;
+  padding: 0.75rem 2rem;
+  border: 2px solid #f5c542;
+  border-radius: 0.875rem;
+  background: linear-gradient(180deg, rgba(245, 197, 66, 0.45), rgba(245, 197, 66, 0.2));
+  color: white;
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 1.25rem rgba(245, 197, 66, 0.35);
+}
+
+.perso-tirer:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(245, 197, 66, 0.6), rgba(245, 197, 66, 0.3));
+}
+
+.perso-tirer:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.perso-tirer .icone-koyn {
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.3em;
+  object-fit: contain;
+}
+
+/* Gain : carte qui se retourne (dos 🎲, puis le cosmétique). */
+.perso-gain-carte {
+  position: relative;
+  width: min(18rem, 100%);
+  height: 9rem;
+  margin: 0.25rem auto 0.75rem;
+  perspective: 50rem;
+}
+
+.perso-gain-dos,
+.perso-gain-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 0.75rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.perso-gain-dos {
+  background: radial-gradient(circle, rgba(245, 197, 66, 0.35), rgba(30, 30, 40, 0.95));
+  font-size: 3rem;
+  animation: perso-gain-dos 0.9s ease forwards;
+}
+
+.perso-gain-face {
+  background-color: rgba(0, 0, 0, 0.4);
+  transform: rotateY(180deg);
+  animation: perso-gain-face 0.9s ease forwards;
+}
+
+.perso-gain-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes perso-gain-dos {
+  0%, 35% { transform: rotateY(0); }
+  100% { transform: rotateY(-180deg); }
+}
+
+@keyframes perso-gain-face {
+  0%, 35% { transform: rotateY(180deg); }
+  100% { transform: rotateY(0); }
+}
+
+.perso-gain-nom {
+  display: flex;
+  flex-direction: column;
+  font-size: 1.125rem;
+}
+
+.perso-gain-nom small {
+  opacity: 0.75;
+  font-size: 0.875rem;
+}
+
+/* Focus : liseré et lueur dorés qui pulsent. */
+.perso-fenetre-gain.focus {
+  border-color: #ffd34d;
+  box-shadow: 0 0 3rem rgba(255, 211, 77, 0.7);
+}
+
+.perso-fenetre-gain.focus .perso-gain-face {
+  border-color: #ffd34d;
+  animation: perso-gain-face 0.9s ease forwards, perso-gain-focus 1.6s 0.9s ease-in-out infinite;
+}
+
+@keyframes perso-gain-focus {
+  50% { box-shadow: 0 0 1.75rem rgba(255, 211, 77, 0.9); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perso-gain-dos {
+    display: none;
+  }
+
+  .perso-gain-face,
+  .perso-fenetre-gain.focus .perso-gain-face {
+    transform: none;
+    animation: none;
+  }
+}

@@ -1,7 +1,7 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { codeTheatre, actualiserPoints } = require("../_lib/personnages");
 const { verifierFrequenceCompte } = require("../_lib/limites");
-const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique } = require("../_lib/koyns");
+const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, tirerCosmetique } = require("../_lib/koyns");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
@@ -248,6 +248,13 @@ module.exports = async (req, res) => {
         profil: data ? { ...data, theatre: codeTheatre(data), trophees } : null,
         koyns: await etatKoyns(discordId)
       });
+    }
+
+    // ---- TIRAGE D'UN COSMÉTIQUE (?action=tirer) ----
+    if (req.method === "POST" && new URL(req.url, "http://x").searchParams.get("action") === "tirer") {
+      const resultat = await tirerCosmetique(discordId);
+      if (resultat.erreur) return res.status(resultat.status).json({ error: resultat.erreur });
+      return res.status(200).json({ tirage: resultat, koyns: await etatKoyns(discordId) });
     }
 
     // ---- ACHAT DE COSMÉTIQUES (?action=acheter, { cosmetique } ou panier

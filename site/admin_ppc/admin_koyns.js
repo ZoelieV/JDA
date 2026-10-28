@@ -1,12 +1,14 @@
 // Rikoyns (cf. api/_lib/koyns.js) : fenêtre des administrateurs pour donner
 // des Rikoyns ou un cosmétique à un joueur, choisir les cosmétiques exclusifs
-// (pas en vente : récompenses de classements et d'événements) et régler le
+// (pas en vente : récompenses de classements et d'événements) et les
+// cosmétiques focus du tirage (config.cosmetiques_tirage), et régler le
 // bonus de connexion d'un événement (config.cosmetiques_exclusifs,
 // config.bonus_connexion, api/points.js). Utilise envoyerAjout
 // (admin_ajout.js), idCosmetique et COSMETIQUES_GRATUITS (commun/koyns.js),
 // VARIANTES_PERSONNAGES et SKINS_PERSONNAGES (commun/variantes.js).
 
 let exclusifsKoyns = [];
+let tirageKoyns = []; // cosmétiques focus du tirage (config.cosmetiques_tirage)
 let nomsCosmetiquesKoyns = new Map(); // id -> nom affiché (fonds : cf. nomFond)
 
 function messageKoyns(id, texte, type = "") {
@@ -41,10 +43,18 @@ async function chargerJoueursKoyns() {
     .map(c => `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`).join("");
 }
 
+function htmlListeCosmetiques(liste, vide) {
+  return liste.length
+    ? liste.map(id => `<span class="exclusif-koyns" title="${echapper(id)}">${nomsCosmetiquesKoyns.has(id) ? echapper(nomsCosmetiquesKoyns.get(id)) : `<code>${echapper(id)}</code>`}<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`).join("")
+    : `<span class="aide-apercu">${vide}</span>`;
+}
+
 function rendreExclusifs() {
-  document.getElementById("liste-exclusifs").innerHTML = exclusifsKoyns.length
-    ? exclusifsKoyns.map(id => `<span class="exclusif-koyns" title="${echapper(id)}">${nomsCosmetiquesKoyns.has(id) ? echapper(nomsCosmetiquesKoyns.get(id)) : `<code>${echapper(id)}</code>`}<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`).join("")
-    : `<span class="aide-apercu">Aucun cosmétique exclusif pour l'instant.</span>`;
+  document.getElementById("liste-exclusifs").innerHTML = htmlListeCosmetiques(exclusifsKoyns, "Aucun cosmétique exclusif pour l'instant.");
+}
+
+function rendreTirage() {
+  document.getElementById("liste-tirage").innerHTML = htmlListeCosmetiques(tirageKoyns, "Aucun cosmétique focus : les tirages ne donnent que des cosmétiques normaux.");
 }
 
 // "2026-10-18T20:00:00.000Z" -> valeur d'un champ datetime-local (heure locale).
@@ -68,6 +78,8 @@ async function ouvrirKoyns() {
   document.getElementById("catalogue-koyns").innerHTML = catalogue.map(id => `<option value="${echapper(id)}"${nomsCosmetiquesKoyns.has(id) ? ` label="${echapper(nomsCosmetiquesKoyns.get(id))}"` : ""}></option>`).join("");
   exclusifsKoyns = Array.isArray(config?.cosmetiques_exclusifs) ? [...config.cosmetiques_exclusifs] : [];
   rendreExclusifs();
+  tirageKoyns = Array.isArray(config?.cosmetiques_tirage) ? [...config.cosmetiques_tirage] : [];
+  rendreTirage();
   remplirBonus(config?.bonus_connexion);
 }
 
@@ -104,6 +116,18 @@ async function enregistrerExclusifs(liste) {
   } catch (erreur) {
     console.error(erreur);
     messageKoyns("message-exclusifs", erreur.message, "erreur");
+  }
+}
+
+async function enregistrerTirage(liste) {
+  try {
+    const config = await envoyerAjout({ cosmetiques_tirage: liste });
+    tirageKoyns = config.cosmetiques_tirage || [];
+    rendreTirage();
+    messageKoyns("message-tirage", "Enregistré.", "succes");
+  } catch (erreur) {
+    console.error(erreur);
+    messageKoyns("message-tirage", erreur.message, "erreur");
   }
 }
 
@@ -148,6 +172,17 @@ function initialiserKoyns() {
   document.getElementById("liste-exclusifs").addEventListener("click", event => {
     const bouton = event.target.closest(".retirer-exclusif");
     if (bouton) enregistrerExclusifs(exclusifsKoyns.filter(id => id !== bouton.dataset.id));
+  });
+  document.getElementById("ajouter-tirage").addEventListener("click", () => {
+    const champ = document.getElementById("nouveau-tirage");
+    const id = champ.value.trim();
+    if (!id) return;
+    champ.value = "";
+    enregistrerTirage([...tirageKoyns, id]);
+  });
+  document.getElementById("liste-tirage").addEventListener("click", event => {
+    const bouton = event.target.closest(".retirer-exclusif");
+    if (bouton) enregistrerTirage(tirageKoyns.filter(id => id !== bouton.dataset.id));
   });
   document.getElementById("enregistrer-bonus").addEventListener("click", () => enregistrerBonus());
   document.getElementById("supprimer-bonus").addEventListener("click", () => enregistrerBonus(true));

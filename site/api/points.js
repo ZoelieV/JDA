@@ -63,6 +63,9 @@
 //                                    seuil des bans horizontaux
 //   { cosmetiques_exclusifs: [id...] }  Rikoyns : cosmétiques pas en vente
 //                                    (gagnés aux classements, événements)
+//   { cosmetiques_tirage: [id...] }     Rikoyns : cosmétiques focus du
+//                                       tirage (obtenables seulement par
+//                                       tirage, cf. tirerCosmetique)
 //   { bonus_connexion: { debut, fin, koyns, cosmetique } | null }  bonus
 //                                    quotidien de connexion d'un événement
 //   { don: { discord_id, koyns, cosmetique } }  donne des Rikoyns (négatif :
@@ -444,6 +447,10 @@ module.exports = async (req, res) => {
         const inconnus = corps.cosmetiques_exclusifs.filter(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id));
         if (inconnus.length) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnus[0]}` });
         config = { ...ancienne, cosmetiques_exclusifs: [...new Set(corps.cosmetiques_exclusifs)].sort() };
+      } else if (Array.isArray(corps.cosmetiques_tirage)) {
+        const inconnus = corps.cosmetiques_tirage.filter(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
+        if (inconnus.length) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnus[0]}` });
+        config = { ...ancienne, cosmetiques_tirage: [...new Set(corps.cosmetiques_tirage)].sort() };
       } else if ("bonus_connexion" in corps) {
         const bonus = corps.bonus_connexion;
         if (bonus === null) {

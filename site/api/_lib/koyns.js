@@ -18,6 +18,11 @@
 //   que reçoivent aussi ceux qui avaient déjà les 30).
 // - Bonus de connexion pendant un événement (config.bonus_connexion) et
 //   dons des administrateurs (Rikoyns, cosmétiques exclusifs).
+// - Tirage (TIRAGE_PRIX par tirage, cf. tirerCosmetique) : une namecard,
+//   une bannière ou un fond d'écran pas encore possédé, au hasard ; ou, 1
+//   fois sur TIRAGE_CHANCE_FOCUS (garanti au TIRAGE_GARANTIE-ième tirage
+//   sans focus), un cosmétique focus (config.cosmetiques_tirage : obtenables
+//   seulement par tirage, pas en vente).
 // - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
 //   ils passent par l'achat comme tout le monde, cf. acheterCosmetique).
 const { supabase } = require("./supabase");
@@ -37,6 +42,9 @@ const DEPART_MINI_ADMIN = 100;
 const DEPART_ADMIN = 10000;
 const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100", montant: DEPART_MINI_ADMIN - 30 }];
 const MAX_KOYNS_DON = 1000;
+const TIRAGE_PRIX = 10;
+const TIRAGE_CHANCE_FOCUS = 0.1;
+const TIRAGE_GARANTIE = 10;
 
 // Tous les cosmétiques existants (ids), gratuits compris. "fond:perso" :
 // image importée par le joueur (gardée dans son navigateur), payée à chaque
@@ -52,6 +60,18 @@ const CATALOGUE = new Set([
 ]);
 
 const estCosmetique = id => typeof id === "string" && CATALOGUE.has(id);
+const estTirage = id => getConfigKoyns().tirage.includes(id);
+
+// Gains possibles d'un tirage hors focus : namecards, bannières et fonds
+// payants (ni gratuits, ni exclusifs, ni focus, ni Mon image).
+function poolTirage() {
+  const { exclusifs, tirage } = getConfigKoyns();
+  return [
+    ...cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id)),
+    ...cosmetiques.bannieres.map(chemin => idCosmetique("banniere", chemin)),
+    ...cosmetiques.bannieres2.map(chemin => idCosmetique("banniere2", chemin))
+  ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id));
+}
 const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 
 // ---- Lecture ----
@@ -90,15 +110,55 @@ async function lirePossedes(discordId) {
 
 const possede = (possedes, id) => possedes === null || COSMETIQUES_GRATUITS.has(id) || possedes.has(id);
 
+// Tirages faits depuis le dernier focus gagné (garantie ; même calcul que
+// tirer_cosmetique).
+async function lireCompteurTirage(discordId) {
+  const { data: focus } = await supabase.from("cosmetiques_possedes").select("obtenu_le")
+    .eq("discord_id", discordId).eq("source", "tirage_focus").order("obtenu_le", { ascending: false }).limit(1);
+  let requete = supabase.from("koyns_mouvements").select("id", { count: "exact", head: true })
+    .eq("discord_id", discordId).eq("raison", "tirage");
+  if (focus?.[0]) requete = requete.gt("cree_le", focus[0].obtenu_le);
+  const { count, error } = await requete;
+  if (error) console.error("Erreur lecture koyns_mouvements :", error);
+  return count || 0;
+}
+
 // État envoyé à la page de personnalisation.
 async function etatKoyns(discordId) {
-  const [solde, possedes] = await Promise.all([lireSolde(discordId), lirePossedes(discordId)]);
+  const [solde, possedes, compteur] = await Promise.all([lireSolde(discordId), lirePossedes(discordId), lireCompteurTirage(discordId)]);
   return {
     solde,
     tout: possedes === null,
     possedes: possedes ? [...possedes] : [],
-    exclusifs: [...getConfigKoyns().exclusifs]
+    exclusifs: [...getConfigKoyns().exclusifs],
+    tirage: {
+      prix: TIRAGE_PRIX,
+      chance: TIRAGE_CHANCE_FOCUS,
+      garantie: TIRAGE_GARANTIE,
+      focus: getConfigKoyns().tirage,
+      compteur
+    }
   };
+}
+
+// Un tirage. -> { cosmetique, focus, compteur } ou { erreur, status }.
+async function tirerCosmetique(discordId) {
+  await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant le tirage.
+  const { data, error } = await supabase.rpc("tirer_cosmetique", {
+    p_discord_id: discordId,
+    p_prix: TIRAGE_PRIX,
+    p_normaux: poolTirage(),
+    p_focus: getConfigKoyns().tirage.filter(estCosmetique),
+    p_chance: TIRAGE_CHANCE_FOCUS,
+    p_garantie: TIRAGE_GARANTIE
+  });
+  if (error) {
+    console.error("Erreur tirage de cosmétique :", error);
+    return { status: 500, erreur: "Tirage indisponible pour l'instant." };
+  }
+  if (data?.statut === "solde") return { status: 409, erreur: `Il faut ${TIRAGE_PRIX} Rikoyns pour un tirage : joue des matchs pour en gagner.` };
+  if (data?.statut === "vide") return { status: 409, erreur: "Tu as déjà tous les cosmétiques du tirage !" };
+  return { cosmetique: data.cosmetique, focus: !!data.focus, compteur: data.compteur };
 }
 
 // Paramètres de personnalisation réduits aux cosmétiques possédés : les
@@ -138,6 +198,7 @@ async function acheterCosmetique(discordId, id) {
   if (!estCosmetique(id) || COSMETIQUES_GRATUITS.has(id)) return { status: 400, erreur: "Cosmétique inconnu." };
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant l'achat.
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
+  if (estTirage(id)) return { status: 403, erreur: "Cosmétique focus du tirage : il ne s'obtient que par tirage." };
   // Mon image : payée à chaque import, enregistrée comme un achat à part
   // (même verrou du solde que les autres achats).
   const achete = id === FOND_IMPORTE ? `${id}#${Date.now()}` : id;
@@ -302,7 +363,7 @@ async function lireNouveautes(discordId, depuis) {
     supabase.from("koyns_mouvements").select("montant, raison")
       .eq("discord_id", discordId).gt("cree_le", debut).gt("montant", 0).in("raison", RAISONS_NOTIFIEES),
     supabase.from("cosmetiques_possedes").select("cosmetique")
-      .eq("discord_id", discordId).gt("obtenu_le", debut).neq("source", "achat")
+      .eq("discord_id", discordId).gt("obtenu_le", debut).not("source", "in", "(achat,tirage,tirage_focus)")
   ]);
   if (mouvements.error) console.error("Erreur lecture koyns_mouvements :", mouvements.error);
   if (recus.error) console.error("Erreur lecture cosmetiques_possedes :", recus.error);
@@ -333,5 +394,6 @@ module.exports = {
   reprendrePartie,
   donner,
   reclamerBonusConnexion,
-  lireNouveautes
+  lireNouveautes,
+  tirerCosmetique
 };

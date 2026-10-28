@@ -21,7 +21,7 @@
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=45" defer></script>
+<script src="/commun/compte.js?v=46" defer></script>
 </head>
 <body>
 <a href="/" class="lien-accueil">Accueil</a>
@@ -301,6 +301,15 @@
         <span id="message-exclusifs" class="message-ajout"></span>
       </div>
 
+      <h3 class="titre-koyns">Tirage : cosmétiques focus</h3>
+      <p class="aide-apercu">Obtenables seulement par tirage (10 Rikoyns le tirage), pas en vente. À chaque tirage, 1 chance sur 10 d'en gagner un (au hasard parmi ceux que le joueur n'a pas), garanti au 10e tirage sans focus ; sinon une namecard, une bannière ou un fond d'écran que le joueur n'a pas.</p>
+      <div id="liste-tirage" class="liste-exclusifs"></div>
+      <div class="ligne-koyns-admin">
+        <input type="text" id="nouveau-tirage" class="texte-ajout champ-cosmetique-koyns" list="catalogue-koyns" placeholder="Cosmétique focus du tirage" autocomplete="off">
+        <button type="button" id="ajouter-tirage" class="bouton-creer">Ajouter</button>
+        <span id="message-tirage" class="message-ajout"></span>
+      </div>
+
       <h3 class="titre-koyns">Bonus de connexion d'un événement</h3>
       <p class="aide-apercu">Une fois par jour (reset à 4 h) entre le début et la fin, à la première visite connectée : des Rikoyns et / ou un cosmétique.</p>
       <div class="ligne-koyns-admin">
@@ -518,7 +527,7 @@
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
   <script src="/admin_ppc/admin_litiges.js?v=1"></script>
   <script src="/commun/koyns.js?v=11"></script>
-  <script src="/admin_ppc/admin_koyns.js?v=4"></script>
+  <script src="/admin_ppc/admin_koyns.js?v=5"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>

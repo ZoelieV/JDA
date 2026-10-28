@@ -17,7 +17,11 @@
 // Rikoyns (cf. commun/koyns.js) : les cosmétiques pas encore possédés sont
 // marqués d'un cadenas (prix, solde affiché en haut) ; un clic les met dans
 // le panier (ou les en retire), achetés ensemble depuis la fenêtre du
-// panier (confirmation au centre de l'écran) ; exclusifs : pas en vente. Filtres et tris de la draft, affichage
+// panier (confirmation au centre de l'écran) ; exclusifs : pas en vente.
+// Onglet Tirage : un cosmétique au hasard (namecard, bannière ou fond pas
+// possédé) ou un cosmétique focus (obtenable seulement par tirage, chance
+// et garantie données par le serveur, cf. tirerCosmetique dans
+// api/_lib/koyns.js). Filtres et tris de la draft, affichage
 // de l'accueil : libres.
 //
 // Fond "Mon image" (fond = "perso") : image importée par le joueur,
@@ -97,7 +101,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=17";
+    lien.href = "/commun/personnalisation.css?v=18";
     document.head.appendChild(lien);
   }
 
@@ -163,6 +167,8 @@
 
   function lireEtatKoyns(etat) {
     koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []) };
+    // tirage : { prix, chance, garantie, focus: [ids], compteur }.
+    koyns.tirage ??= null;
     if (modal) modal.querySelector(".perso-solde").innerHTML = `${koyns.solde} ${ICONE_KOYN}`;
   }
 
@@ -170,6 +176,7 @@
   // considéré comme possédé (le serveur vérifie de toute façon).
   const possede = id => !koyns || koyns.tout || COSMETIQUES_GRATUITS.has(id) || koyns.possedes.has(id);
   const estExclusif = id => !!koyns?.exclusifs.has(id);
+  const estFocusTirage = id => !!koyns?.tirage?.focus?.includes(id);
 
   // Choix enregistrés réduits aux cosmétiques possédés (comme le serveur).
   function sansNonPossedes(parametres = {}) {
@@ -285,6 +292,10 @@
   function basculerPanier(id, article) {
     if (estExclusif(id)) {
       afficherEtat("Cosmétique exclusif : il se gagne aux classements et aux événements.");
+      return;
+    }
+    if (estFocusTirage(id)) {
+      afficherEtat("Cosmétique focus : il ne s'obtient que par tirage (onglet Tirage).");
       return;
     }
     if (panier.has(id)) panier.delete(id);
@@ -470,6 +481,10 @@
             <span class="perso-apercu-titre">Filtres/Tris</span>
             <span class="perso-apercu-image perso-apercu-filtres" data-apercu="filtres"></span>
           </button>
+          <button type="button" class="perso-apercu-bloc" data-onglet="tirage">
+            <span class="perso-apercu-titre">Tirage</span>
+            <span class="perso-apercu-image perso-apercu-tirage" data-apercu="tirage"></span>
+          </button>
           <button type="button" class="perso-apercu-bloc" data-onglet="accueil">
             <span class="perso-apercu-titre">Accueil</span>
             <span class="perso-apercu-image perso-apercu-accueil" data-apercu="accueil"></span>
@@ -558,13 +573,15 @@
       banniere: brouillon.banniere && urlImage(brouillon.banniere),
       banniere2: brouillon.banniere2 && urlImage(brouillon.banniere2),
       skins: urlImage(voyageur.image.replace(/^images\//, "")),
-      filtres: urlImage("others/remove_filters.webp")
+      filtres: urlImage("others/remove_filters.webp"),
+      tirage: urlImage("others/rikoyn.webp")
     };
     const affiches = FILTRES_DRAFT.length - brouillon.filtres_draft.masques.length;
     const textes = {
       skins: `${brouillon.skins.length} skin${brouillon.skins.length > 1 ? "s" : ""}`,
       filtres: `${affiches} / ${FILTRES_DRAFT.length}`,
-      accueil: AFFICHAGES_ACCUEIL.find(affichage => affichage.id === brouillon.accueil)?.nom || ""
+      accueil: AFFICHAGES_ACCUEIL.find(affichage => affichage.id === brouillon.accueil)?.nom || "",
+      tirage: "🎲"
     };
     modal.querySelectorAll("[data-apercu]").forEach(bloc => {
       const url = urls[bloc.dataset.apercu];
@@ -600,10 +617,11 @@
       const badge = document.createElement("span");
       badge.className = "perso-prix";
       const exclusif = estExclusif(cosmetique);
+      const focus = estFocusTirage(cosmetique);
       const montant = prixCosmetique(cosmetique);
-      badge.innerHTML = exclusif ? "🔒 Exclusif" : `${dansPanier ? "🛒" : "🔒"} ${montant} ${ICONE_KOYN}`;
+      badge.innerHTML = exclusif ? "🔒 Exclusif" : focus ? "🎲 Tirage" : `${dansPanier ? "🛒" : "🔒"} ${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
-      bouton.title = `${titre} — ${exclusif ? "exclusif" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
+      bouton.title = `${titre} — ${exclusif ? "exclusif" : focus ? "focus du tirage (onglet Tirage)" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
     }
     bouton.addEventListener("click", () => {
       if (!brouillon) return;
@@ -739,6 +757,137 @@
     conteneur.append(note, grille);
   }
 
+  // ---- Tirage ----
+
+  // Nom, type et image d'un cosmétique (id "<choix>:<valeur>").
+  function infoCosmetique(id) {
+    const [choix, ...reste] = id.split(":");
+    const valeur = reste.join(":");
+    const type = TYPES_COSMETIQUES[choix] || "Cosmétique";
+    if (choix === "fond") {
+      const fond = getFond(valeur);
+      return { choix, valeur, type, nom: fond ? nomFond(fond) : valeur, image: fond && urlImage(fond.miniature) };
+    }
+    if (choix === "banniere" || choix === "banniere2") return { choix, valeur, type, nom: nomNamecard(valeur), image: urlImage(valeur) };
+    if (choix === "skin") return { choix, valeur, type, nom: nomsPersos?.get(valeur) || valeur, image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")) };
+    const option = Object.values(VARIANTES_PERSONNAGES).find(v => v.parametre === choix)?.options[valeur];
+    return { choix, valeur, type, nom: option?.nom || valeur, image: option && urlImage(option.image.replace(/^images\//, "")) };
+  }
+
+  // Cosmétique gagné porté dans le brouillon (à enregistrer ensuite).
+  function equiper(id) {
+    const { choix, valeur } = infoCosmetique(id);
+    if (choix === "skin") {
+      if (!brouillon.skins.includes(valeur)) brouillon.skins = [...brouillon.skins, valeur];
+    } else {
+      brouillon[choix] = valeur;
+      if (choix === "fond") apercuFond(valeur);
+    }
+    rendreApercus();
+    mettreAJourPied();
+  }
+
+  function rendreTirage(conteneur) {
+    const tirage = koyns?.tirage;
+    if (!tirage) {
+      conteneur.textContent = "Tirage indisponible pour l'instant.";
+      return;
+    }
+    const restants = Math.max(1, tirage.garantie - tirage.compteur);
+    const focusRestants = tirage.focus.filter(id => !possede(id));
+    const bloc = document.createElement("div");
+    bloc.className = "perso-tirage";
+    bloc.innerHTML = `
+      <p class="perso-note">Pour ${texteRikoyns(tirage.prix)}, un cosmétique au hasard : une namecard, une bannière ou un fond d'écran que tu n'as pas encore.
+        ${tirage.focus.length ? `1 chance sur ${Math.round(1 / tirage.chance)} d'obtenir un <strong>cosmétique focus</strong> (seulement par tirage), garanti au ${tirage.garantie}e tirage sans focus.` : ""}</p>
+      ${tirage.focus.length ? `
+        <h3 class="perso-categorie">Focus</h3>
+        <div class="perso-tirage-focus"></div>
+        ${focusRestants.length ? `
+          <div class="perso-tirage-garantie">
+            <span>Focus garanti dans <strong>${restants}</strong> tirage${restants > 1 ? "s" : ""}</span>
+            <span class="perso-tirage-jauge"><span style="width: ${Math.min(100, tirage.compteur / (tirage.garantie - 1) * 100)}%"></span></span>
+          </div>` : `<p class="perso-note">Tu as tous les cosmétiques focus !</p>`}` : ""}
+      <button type="button" class="perso-tirer">🎲 Tirer · ${texteRikoyns(tirage.prix)}</button>`;
+    const vitrine = bloc.querySelector(".perso-tirage-focus");
+    tirage.focus.forEach(id => {
+      const info = infoCosmetique(id);
+      const carte = document.createElement("figure");
+      carte.className = `perso-tirage-carte${possede(id) ? " possede" : ""}`;
+      carte.innerHTML = `${info.image ? `<img src="${info.image}" alt="" loading="lazy">` : ""}<figcaption><strong></strong><small>${info.type}${possede(id) ? " · obtenu ✓" : ""}</small></figcaption>`;
+      carte.querySelector("strong").textContent = info.nom;
+      vitrine?.appendChild(carte);
+    });
+    const bouton = bloc.querySelector(".perso-tirer");
+    bouton.disabled = koyns.solde < tirage.prix;
+    if (bouton.disabled) bouton.title = `Il faut ${tirage.prix} Rikoyns : joue des matchs pour en gagner.`;
+    bouton.addEventListener("click", tirer);
+    conteneur.appendChild(bloc);
+  }
+
+  let tirageEnCours = false;
+  async function tirer() {
+    if (tirageEnCours) return;
+    tirageEnCours = true;
+    afficherEtat("Tirage…");
+    try {
+      const reponse = await fetch("/api/auth/profile?action=tirer", { method: "POST", credentials: "include" });
+      const donnees = await reponse.json().catch(() => ({}));
+      if (donnees.koyns) lireEtatKoyns(donnees.koyns);
+      if (!reponse.ok) throw new Error(donnees.error || "Tirage impossible.");
+      afficherEtat("");
+      celebrerAchat();
+      if (ongletActif === "tirage") rendreChoix();
+      revelerGain(donnees.tirage);
+    } catch (erreur) {
+      console.error(erreur);
+      afficherEtat(erreur.message);
+    } finally {
+      tirageEnCours = false;
+    }
+  }
+
+  // Fenêtre du gain : carte retournée (dorée pour un focus), équiper,
+  // retirer encore.
+  function revelerGain({ cosmetique, focus }) {
+    const info = infoCosmetique(cosmetique);
+    const fenetre = document.createElement("dialog");
+    fenetre.className = `perso-fenetre perso-fenetre-gain${focus ? " focus" : ""}`;
+    fenetre.innerHTML = `
+      <h3 class="perso-fenetre-titre">${focus ? "✨ Focus ! ✨" : "Tirage"}</h3>
+      <div class="perso-gain-carte">
+        <div class="perso-gain-dos" aria-hidden="true">🎲</div>
+        <div class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</div>
+      </div>
+      <p class="perso-gain-nom"><strong></strong><small>${info.type}</small></p>
+      <div class="perso-fenetre-actions">
+        <button type="button" data-action="fermer">Fermer</button>
+        <button type="button" data-action="encore"></button>
+        <button type="button" class="perso-fenetre-ok" data-action="equiper">Équiper</button>
+      </div>`;
+    fenetre.querySelector(".perso-gain-nom strong").textContent = info.nom;
+    const encore = fenetre.querySelector('[data-action="encore"]');
+    encore.innerHTML = `Retirer · ${texteRikoyns(koyns.tirage?.prix ?? 10)}`;
+    encore.disabled = !koyns.tirage || koyns.solde < koyns.tirage.prix;
+    fenetre.addEventListener("click", event => {
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      if (event.target === fenetre || action === "fermer") fenetre.close();
+      if (action === "equiper") {
+        equiper(cosmetique);
+        afficherEtat(`« ${info.nom} » équipé : pense à enregistrer.`);
+        fenetre.close();
+      }
+      if (action === "encore") {
+        fenetre.close();
+        tirer();
+      }
+    });
+    fenetre.addEventListener("keydown", event => { if (event.key === "Escape") event.stopPropagation(); });
+    fenetre.addEventListener("close", () => fenetre.remove());
+    document.body.appendChild(fenetre);
+    fenetre.showModal();
+  }
+
   function rendreChoix() {
     const conteneur = modal.querySelector(".perso-choix");
     conteneur.innerHTML = "";
@@ -758,6 +907,10 @@
     }
     if (ongletActif === "accueil") {
       rendreAccueil(conteneur);
+      return;
+    }
+    if (ongletActif === "tirage") {
+      rendreTirage(conteneur);
       return;
     }
 

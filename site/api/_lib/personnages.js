@@ -216,7 +216,9 @@ let pointsLusA = 0;
 
 // Rikoyns (cf. _lib/koyns.js) : cosmétiques exclusifs (pas en vente, gagnés
 // aux classements ou aux événements) et bonus de connexion d'événement.
-let configKoyns = { exclusifs: new Set(), bonusConnexion: null };
+// Tirage : cosmétiques obtenables seulement par tirage (focus, cf.
+// tirerCosmetique).
+let configKoyns = { exclusifs: new Set(), tirage: [], bonusConnexion: null };
 
 function getConfigKoyns() {
   return configKoyns;
@@ -247,6 +249,7 @@ async function actualiserPoints() {
     modesBonus = config.modes || {};
     configKoyns = {
       exclusifs: new Set(Array.isArray(config.cosmetiques_exclusifs) ? config.cosmetiques_exclusifs : []),
+      tirage: Array.isArray(config.cosmetiques_tirage) ? config.cosmetiques_tirage : [],
       bonusConnexion: config.bonus_connexion || null
     };
     personnagesDraft = null;
