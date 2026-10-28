@@ -4,33 +4,18 @@
 // cosmétiques focus du tirage (config.cosmetiques_tirage), et régler le
 // bonus de connexion d'un événement (config.cosmetiques_exclusifs,
 // config.bonus_connexion, api/points.js). Utilise envoyerAjout
-// (admin_ajout.js), idCosmetique et COSMETIQUES_GRATUITS (commun/koyns.js),
-// VARIANTES_PERSONNAGES et SKINS_PERSONNAGES (commun/variantes.js).
+// (admin_ajout.js), choisirCosmetiques et htmlPastilleCosmetique (fenêtre
+// de choix avec images, admin_choix_cosmetiques.js).
 
 let exclusifsKoyns = [];
 let tirageKoyns = []; // cosmétiques focus du tirage (config.cosmetiques_tirage)
-let nomsCosmetiquesKoyns = new Map(); // id -> nom affiché (fonds : cf. nomFond)
+let donCosmetiques = []; // cosmétiques du don en cours
+let bonusCosmetique = null; // cosmétique du bonus de connexion
 
 function messageKoyns(id, texte, type = "") {
   const message = document.getElementById(id);
   message.textContent = texte;
   message.className = `message-ajout ${type}`;
-}
-
-// Tous les cosmétiques payants (ids), pour les listes de suggestions ;
-// noms des fonds dans nomsCosmetiquesKoyns.
-async function chargerCatalogueKoyns() {
-  const reponse = await fetch("/DB/images/cosmetiques.json");
-  const cosmetiques = await reponse.json();
-  nomsCosmetiquesKoyns = new Map(cosmetiques.fonds.map(fond => [idCosmetique("fond", fond.id), `Fond : ${nomFond(fond)}`]));
-  return [
-    ...cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id)),
-    idCosmetique("fond", "perso"),
-    ...cosmetiques.bannieres.map(chemin => idCosmetique("banniere", chemin)),
-    ...cosmetiques.bannieres2.map(chemin => idCosmetique("banniere2", chemin)),
-    ...Object.values(VARIANTES_PERSONNAGES).flatMap(v => Object.keys(v.options).map(option => idCosmetique(v.parametre, option))),
-    ...SKINS_PERSONNAGES.map(id => idCosmetique("skin", id))
-  ].filter(id => !COSMETIQUES_GRATUITS.has(id));
 }
 
 async function chargerJoueursKoyns() {
@@ -44,9 +29,15 @@ async function chargerJoueursKoyns() {
 }
 
 function htmlListeCosmetiques(liste, vide) {
-  return liste.length
-    ? liste.map(id => `<span class="exclusif-koyns" title="${echapper(id)}">${nomsCosmetiquesKoyns.has(id) ? echapper(nomsCosmetiquesKoyns.get(id)) : `<code>${echapper(id)}</code>`}<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`).join("")
-    : `<span class="aide-apercu">${vide}</span>`;
+  return liste.length ? liste.map(htmlPastilleCosmetique).join("") : `<span class="aide-apercu">${vide}</span>`;
+}
+
+function rendreDon() {
+  document.getElementById("don-cosmetiques").innerHTML = htmlListeCosmetiques(donCosmetiques, "Aucun cosmétique.");
+}
+
+function rendreBonusCosmetique() {
+  document.getElementById("bonus-cosmetique").innerHTML = htmlListeCosmetiques(bonusCosmetique ? [bonusCosmetique] : [], "Aucun cosmétique.");
 }
 
 function rendreExclusifs() {
@@ -68,14 +59,16 @@ function remplirBonus(bonus) {
   document.getElementById("bonus-debut").value = versChampDate(bonus?.debut);
   document.getElementById("bonus-fin").value = versChampDate(bonus?.fin);
   document.getElementById("bonus-koyns").value = bonus?.koyns ?? "";
-  document.getElementById("bonus-cosmetique").value = bonus?.cosmetique || "";
+  bonusCosmetique = bonus?.cosmetique || null;
+  rendreBonusCosmetique();
   document.getElementById("supprimer-bonus").disabled = !bonus;
 }
 
 async function ouvrirKoyns() {
   document.getElementById("modal-koyns").classList.add("active");
-  const [config, catalogue] = await Promise.all([chargerPointsAdmin(), chargerCatalogueKoyns(), chargerJoueursKoyns()]);
-  document.getElementById("catalogue-koyns").innerHTML = catalogue.map(id => `<option value="${echapper(id)}"${nomsCosmetiquesKoyns.has(id) ? ` label="${echapper(nomsCosmetiquesKoyns.get(id))}"` : ""}></option>`).join("");
+  // Catalogue (noms et miniatures des pastilles) chargé avant le rendu.
+  const [config] = await Promise.all([chargerPointsAdmin(), chargerCatalogueChoix().catch(() => null), chargerJoueursKoyns()]);
+  rendreDon();
   exclusifsKoyns = Array.isArray(config?.cosmetiques_exclusifs) ? [...config.cosmetiques_exclusifs] : [];
   rendreExclusifs();
   tirageKoyns = Array.isArray(config?.cosmetiques_tirage) ? [...config.cosmetiques_tirage] : [];
@@ -86,7 +79,7 @@ async function ouvrirKoyns() {
 async function donnerKoyns() {
   const discordId = document.getElementById("don-joueur").value;
   const koyns = Number(document.getElementById("don-koyns").value || 0);
-  const cosmetique = document.getElementById("don-cosmetique").value.trim() || null;
+  const cosmetiques = [...donCosmetiques];
   if (!discordId) return messageKoyns("message-don", "Choisis un joueur.", "erreur");
   try {
     // Pas envoyerAjout : la réponse n'est pas la config.
@@ -94,13 +87,14 @@ async function donnerKoyns() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ don: { discord_id: discordId, koyns, cosmetique } })
+      body: JSON.stringify({ don: { discord_id: discordId, koyns, cosmetiques } })
     });
     const donnees = await reponse.json().catch(() => ({}));
     if (!reponse.ok) throw new Error(donnees.error || "Erreur d'enregistrement.");
     messageKoyns("message-don", "Envoyé.", "succes");
     document.getElementById("don-koyns").value = "";
-    document.getElementById("don-cosmetique").value = "";
+    donCosmetiques = [];
+    rendreDon();
   } catch (erreur) {
     console.error(erreur);
     messageKoyns("message-don", erreur.message, "erreur");
@@ -138,7 +132,7 @@ async function enregistrerBonus(supprimer = false) {
     debut: champ("bonus-debut") && new Date(champ("bonus-debut")).toISOString(),
     fin: champ("bonus-fin") && new Date(champ("bonus-fin")).toISOString(),
     koyns: Number(champ("bonus-koyns") || 0),
-    cosmetique: champ("bonus-cosmetique").trim() || null
+    cosmetique: bonusCosmetique
   };
   try {
     const config = await envoyerAjout({ bonus_connexion: bonus });
@@ -162,23 +156,42 @@ function initialiserKoyns() {
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
   });
   document.getElementById("donner-koyns").addEventListener("click", donnerKoyns);
-  document.getElementById("ajouter-exclusif").addEventListener("click", () => {
-    const champ = document.getElementById("nouvel-exclusif");
-    const id = champ.value.trim();
-    if (!id) return;
-    champ.value = "";
-    enregistrerExclusifs([...exclusifsKoyns, id]);
+  // Fenêtres de choix (images) : la sélection actuelle est cochée,
+  // valider la remplace (ajouts et retraits en une fois).
+  document.getElementById("choisir-don").addEventListener("click", async () => {
+    const choix = await choisirCosmetiques({ titre: "Cosmétiques à donner", selection: donCosmetiques });
+    if (!choix) return;
+    donCosmetiques = choix;
+    rendreDon();
+  });
+  document.getElementById("don-cosmetiques").addEventListener("click", event => {
+    const bouton = event.target.closest(".retirer-exclusif");
+    if (!bouton) return;
+    donCosmetiques = donCosmetiques.filter(id => id !== bouton.dataset.id);
+    rendreDon();
+  });
+  document.getElementById("choisir-bonus").addEventListener("click", async () => {
+    const choix = await choisirCosmetiques({ titre: "Cosmétique du bonus de connexion", multiple: false });
+    if (!choix) return;
+    bonusCosmetique = choix[0];
+    rendreBonusCosmetique();
+  });
+  document.getElementById("bonus-cosmetique").addEventListener("click", event => {
+    if (!event.target.closest(".retirer-exclusif")) return;
+    bonusCosmetique = null;
+    rendreBonusCosmetique();
+  });
+  document.getElementById("ajouter-exclusif").addEventListener("click", async () => {
+    const choix = await choisirCosmetiques({ titre: "Cosmétiques exclusifs", selection: exclusifsKoyns });
+    if (choix) enregistrerExclusifs(choix);
   });
   document.getElementById("liste-exclusifs").addEventListener("click", event => {
     const bouton = event.target.closest(".retirer-exclusif");
     if (bouton) enregistrerExclusifs(exclusifsKoyns.filter(id => id !== bouton.dataset.id));
   });
-  document.getElementById("ajouter-tirage").addEventListener("click", () => {
-    const champ = document.getElementById("nouveau-tirage");
-    const id = champ.value.trim();
-    if (!id) return;
-    champ.value = "";
-    enregistrerTirage([...tirageKoyns, id]);
+  document.getElementById("ajouter-tirage").addEventListener("click", async () => {
+    const choix = await choisirCosmetiques({ titre: "Cosmétiques focus du tirage", selection: tirageKoyns });
+    if (choix) enregistrerTirage(choix);
   });
   document.getElementById("liste-tirage").addEventListener("click", event => {
     const bouton = event.target.closest(".retirer-exclusif");

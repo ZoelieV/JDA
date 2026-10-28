@@ -8,6 +8,12 @@ Pour les fonds d'écran (PNG de plusieurs Mo), le script crée aussi :
   - une miniature pour le sélecteur (WebP, 400 px)  : DB/images/bg_miniatures/...
 Les fichiers déjà générés et à jour sont ignorés.
 
+Cosmétiques cachés : ids listés dans DB/images/namecards/caches.json (cf.
+scripts/importer_namecards.py), recopiés dans le manifeste ("caches") s'ils
+existent encore. Ni en vente ni dans le tirage normal : seulement donnés par
+les administrateurs (dons, récompenses, focus du tirage), et visibles dans
+la personnalisation une fois obtenus.
+
 À relancer après tout ajout / suppression d'image dans DB/images/namecards,
 DB/images/namecards/banners ou DB/images/bg (n'importe quel sous-dossier) :
     python scripts/generer_cosmetiques.py
@@ -27,6 +33,7 @@ DOSSIER_BANNIERES_2 = RACINE_IMAGES / "namecards" / "banners"
 DOSSIER_FONDS = RACINE_IMAGES / "bg"
 DOSSIER_FONDS_WEB = RACINE_IMAGES / "bg_web"
 DOSSIER_FONDS_MINIATURES = RACINE_IMAGES / "bg_miniatures"
+FICHIER_CACHES = RACINE_IMAGES / "namecards" / "caches.json"
 
 EXTENSIONS_IMAGES = {".png", ".jpg", ".jpeg", ".webp"}
 LARGEUR_WEB = None  # None = résolution d'origine (4K)
@@ -114,12 +121,16 @@ def main():
         "bannieres2": lister_images(DOSSIER_BANNIERES_2, "Namecard_Banner_"),
         "fonds": generer_fonds()
     }
+    existants = {f"banniere:{c}" for c in manifeste["bannieres"]} | {f"banniere2:{c}" for c in manifeste["bannieres2"]}
+    caches = json.loads(FICHIER_CACHES.read_text(encoding="utf-8")) if FICHIER_CACHES.exists() else []
+    manifeste["caches"] = sorted(set(caches) & existants)
 
     sortie = RACINE_IMAGES / "cosmetiques.json"
     sortie.write_text(json.dumps(manifeste, ensure_ascii=False, indent=1), encoding="utf-8")
     print(
         f"{sortie} : {len(manifeste['bannieres'])} bannières, "
-        f"{len(manifeste['bannieres2'])} bannières 2, {len(manifeste['fonds'])} fonds."
+        f"{len(manifeste['bannieres2'])} bannières 2, {len(manifeste['fonds'])} fonds, "
+        f"{len(manifeste['caches'])} cachés."
     )
 
 

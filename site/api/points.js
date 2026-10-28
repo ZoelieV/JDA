@@ -468,15 +468,19 @@ module.exports = async (req, res) => {
           config = { ...ancienne, bonus_connexion: { debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString(), koyns, cosmetique } };
         }
       } else if (corps.don) {
+        // cosmetiques : [ids] (ancien champ cosmetique : un seul id).
         const { discord_id: cible, koyns: brutKoyns = 0, cosmetique = null } = corps.don;
+        const cosmetiques = [...new Set(Array.isArray(corps.don.cosmetiques) ? corps.don.cosmetiques : cosmetique ? [cosmetique] : [])];
         const koyns = Number(brutKoyns);
         if (typeof cible !== "string" || !/^\d{5,25}$/.test(cible)) return res.status(400).json({ error: "Joueur invalide" });
         if (!Number.isInteger(koyns) || Math.abs(koyns) > MAX_KOYNS_DON) return res.status(400).json({ error: `Rikoyns : entier de -${MAX_KOYNS_DON} à ${MAX_KOYNS_DON}` });
-        if (cosmetique !== null && !estCosmetique(cosmetique)) return res.status(400).json({ error: "Cosmétique inconnu" });
-        if (!koyns && !cosmetique) return res.status(400).json({ error: "Rien à donner" });
+        if (cosmetiques.length > 500) return res.status(400).json({ error: "500 cosmétiques au plus par don" });
+        const inconnu = cosmetiques.find(id => !estCosmetique(id));
+        if (inconnu) return res.status(400).json({ error: `Cosmétique inconnu : ${inconnu}` });
+        if (!koyns && !cosmetiques.length) return res.status(400).json({ error: "Rien à donner" });
         const { data: profil } = await supabase.from("profiles").select("discord_id").eq("discord_id", cible).maybeSingle();
         if (!profil) return res.status(404).json({ error: "Joueur introuvable" });
-        await donner(cible, { koyns, cosmetique }, user.id);
+        await donner(cible, { koyns, cosmetiques }, user.id);
         return res.status(200).json({ ok: true });
       } else if (corps.categoriesArmes) {
         const ids = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));

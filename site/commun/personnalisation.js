@@ -976,6 +976,8 @@
     const grille = nouvelleGrille();
     [...liste]
       .sort((a, b) => (b === PARAMETRES_DEFAUT[ongletActif]) - (a === PARAMETRES_DEFAUT[ongletActif]))
+      // Cachés (cosmetiques.json, "caches") : seulement une fois obtenus.
+      .filter(chemin => !cosmetiques.caches?.includes(idCosmetique(ongletActif, chemin)) || possede(idCosmetique(ongletActif, chemin)))
       .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche))
       .forEach(chemin => grille.appendChild(creerChoix(
         urlImage(chemin), nomNamecard(chemin), brouillon[ongletActif] === chemin, choisir(chemin), "", idCosmetique(ongletActif, chemin))));

@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=46">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=47">
 <link rel="stylesheet" href="/commun/entete.css?v=rem40">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -21,7 +21,7 @@
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=46" defer></script>
+<script src="/commun/compte.js?v=47" defer></script>
 </head>
 <body>
 <a href="/" class="lien-accueil">Accueil</a>
@@ -278,26 +278,25 @@
         Les Rikoyns se gagnent en jouant (5 par match réel et par joueur, 3 games récompensées par jour au plus contre les mêmes adversaires,
         rien en entraînement ni en cas de soupçon de triche) et servent à obtenir les cosmétiques (fonds d'écran et skins 10, fonds de personnages 8, chaque image importée 100, namecards et bannières 15, Voyageur / Manekin gratuits ; le double pour les persos de PERSOS_PRIX_DOUBLE, commun/koyns.js).
         Les administrateurs commencent avec 10 000 Rikoyns (de quoi tout acheter) et achètent comme tout le monde, les mini admins avec 100, les autres avec 0.
-        Ids des cosmétiques : <code>fond:…</code>, <code>banniere:…</code>, <code>banniere2:…</code>, <code>skin:…</code>, <code>voyageur:lumine</code>, <code>manekin:manekina</code> (suggestions en tapant).
+        Cosmétiques choisis dans une fenêtre avec leurs images, plusieurs à la fois. Cachés : namecards et bannières ni en vente ni dans le tirage normal, seulement données ici (dons, exclusifs, focus, bonus).
       </p>
-      <datalist id="catalogue-koyns"></datalist>
 
       <h3 class="titre-koyns">Donner à un joueur</h3>
       <div class="ligne-koyns-admin">
         <select id="don-joueur" class="texte-ajout"></select>
         <label>Rikoyns <input type="number" id="don-koyns" class="texte-ajout champ-nombre-koyns" step="1" placeholder="0"></label>
-        <input type="text" id="don-cosmetique" class="texte-ajout champ-cosmetique-koyns" list="catalogue-koyns" placeholder="Cosmétique (facultatif)" autocomplete="off">
+        <button type="button" id="choisir-don" class="bouton-creer secondaire">🖼 Cosmétiques…</button>
         <button type="button" id="donner-koyns" class="bouton-creer">Donner</button>
         <span id="message-don" class="message-ajout"></span>
       </div>
+      <div id="don-cosmetiques" class="liste-exclusifs"></div>
       <p class="aide-apercu">Un nombre négatif retire des Rikoyns (correction).</p>
 
       <h3 class="titre-koyns">Cosmétiques exclusifs</h3>
       <p class="aide-apercu">Pas en vente : ils se gagnent aux classements et aux événements (dons ci-dessus ou bonus de connexion).</p>
       <div id="liste-exclusifs" class="liste-exclusifs"></div>
       <div class="ligne-koyns-admin">
-        <input type="text" id="nouvel-exclusif" class="texte-ajout champ-cosmetique-koyns" list="catalogue-koyns" placeholder="Cosmétique à rendre exclusif" autocomplete="off">
-        <button type="button" id="ajouter-exclusif" class="bouton-creer">Ajouter</button>
+        <button type="button" id="ajouter-exclusif" class="bouton-creer">🖼 Choisir…</button>
         <span id="message-exclusifs" class="message-ajout"></span>
       </div>
 
@@ -305,8 +304,7 @@
       <p class="aide-apercu">Obtenables seulement par tirage (10 Rikoyns le tirage), pas en vente. À chaque tirage, 1 chance sur 10 d'en gagner un (au hasard parmi ceux que le joueur n'a pas), garanti au 10e tirage sans focus ; sinon une namecard, une bannière ou un fond d'écran que le joueur n'a pas.</p>
       <div id="liste-tirage" class="liste-exclusifs"></div>
       <div class="ligne-koyns-admin">
-        <input type="text" id="nouveau-tirage" class="texte-ajout champ-cosmetique-koyns" list="catalogue-koyns" placeholder="Cosmétique focus du tirage" autocomplete="off">
-        <button type="button" id="ajouter-tirage" class="bouton-creer">Ajouter</button>
+        <button type="button" id="ajouter-tirage" class="bouton-creer">🖼 Choisir…</button>
         <span id="message-tirage" class="message-ajout"></span>
       </div>
 
@@ -316,7 +314,8 @@
         <label>Début <input type="datetime-local" id="bonus-debut" class="texte-ajout"></label>
         <label>Fin <input type="datetime-local" id="bonus-fin" class="texte-ajout"></label>
         <label>Rikoyns <input type="number" id="bonus-koyns" class="texte-ajout champ-nombre-koyns" min="0" step="1" placeholder="0"></label>
-        <input type="text" id="bonus-cosmetique" class="texte-ajout champ-cosmetique-koyns" list="catalogue-koyns" placeholder="Cosmétique (facultatif)" autocomplete="off">
+        <button type="button" id="choisir-bonus" class="bouton-creer secondaire">🖼 Cosmétique…</button>
+        <span id="bonus-cosmetique" class="liste-exclusifs"></span>
       </div>
       <div class="ligne-koyns-admin">
         <button type="button" id="enregistrer-bonus" class="bouton-creer">Enregistrer le bonus</button>
@@ -527,7 +526,8 @@
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
   <script src="/admin_ppc/admin_litiges.js?v=1"></script>
   <script src="/commun/koyns.js?v=11"></script>
-  <script src="/admin_ppc/admin_koyns.js?v=5"></script>
+  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=1"></script>
+  <script src="/admin_ppc/admin_koyns.js?v=6"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>

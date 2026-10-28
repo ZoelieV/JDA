@@ -61,6 +61,9 @@ const CATALOGUE = new Set([
 
 const estCosmetique = id => typeof id === "string" && CATALOGUE.has(id);
 const estTirage = id => getConfigKoyns().tirage.includes(id);
+// Cosmétiques cachés (cosmetiques.json, "caches") : ni en vente ni dans le
+// tirage normal ; donnés par les administrateurs (dons, récompenses, focus).
+const CACHES = new Set(cosmetiques.caches || []);
 
 // Gains possibles d'un tirage hors focus : namecards, bannières et fonds
 // payants (ni gratuits, ni exclusifs, ni focus, ni Mon image).
@@ -70,7 +73,7 @@ function poolTirage() {
     ...cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id)),
     ...cosmetiques.bannieres.map(chemin => idCosmetique("banniere", chemin)),
     ...cosmetiques.bannieres2.map(chemin => idCosmetique("banniere2", chemin))
-  ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id));
+  ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id) && !CACHES.has(id));
 }
 const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 
@@ -199,6 +202,7 @@ async function acheterCosmetique(discordId, id) {
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant l'achat.
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
   if (estTirage(id)) return { status: 403, erreur: "Cosmétique focus du tirage : il ne s'obtient que par tirage." };
+  if (CACHES.has(id)) return { status: 403, erreur: "Ce cosmétique ne s'achète pas." };
   // Mon image : payée à chaque import, enregistrée comme un achat à part
   // (même verrou du solde que les autres achats).
   const achete = id === FOND_IMPORTE ? `${id}#${Date.now()}` : id;
@@ -288,15 +292,16 @@ async function reprendrePartie(ref) {
   }
 }
 
-// Don d'un administrateur : Rikoyns (positif ou négatif) et / ou cosmétique.
-async function donner(discordId, { koyns = 0, cosmetique = null }, admin) {
+// Don d'un administrateur : Rikoyns (positif ou négatif) et / ou
+// cosmétiques (un ou plusieurs).
+async function donner(discordId, { koyns = 0, cosmetiques = [] }, admin) {
   if (koyns) {
     await ajouterMouvement({ discord_id: discordId, montant: koyns, raison: "don", ref: `don:${admin}:${Date.now()}` });
   }
-  if (cosmetique) {
+  if (cosmetiques.length) {
     const { error } = await supabase
       .from("cosmetiques_possedes")
-      .upsert({ discord_id: discordId, cosmetique, source: "don" }, { onConflict: "discord_id,cosmetique", ignoreDuplicates: true });
+      .upsert(cosmetiques.map(cosmetique => ({ discord_id: discordId, cosmetique, source: "don" })), { onConflict: "discord_id,cosmetique", ignoreDuplicates: true });
     if (error) throw error;
   }
 }
