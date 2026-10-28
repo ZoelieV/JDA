@@ -272,6 +272,51 @@ async function reclamerBonusConnexion(discordId) {
   return { koyns: bonus.koyns || 0, cosmetique: bonus.cosmetique || null };
 }
 
+// ---- Notifications (fenêtre des récompenses, cf. commun/compte.js) ----
+// Rikoyns et cosmétiques reçus depuis la dernière visite (date "depuis"
+// gardée par le navigateur, NOUVEAUTES_MAX_MS au plus en arrière) : gains
+// positifs seulement (pas les achats, ni les reprises).
+const NOUVEAUTES_MAX_MS = 7 * 24 * 3600 * 1000;
+const RAISONS_NOTIFIEES = ["match", "don", "connexion", "depart"];
+
+// Aperçu d'un cosmétique reçu : { id, type, image } (image : sous DB/).
+function apercuCosmetique(id) {
+  const [choix, ...reste] = String(id).split("#")[0].split(":");
+  const valeur = reste.join(":");
+  if (choix === "fond") {
+    const fond = cosmetiques.fonds.find(f => f.id === valeur);
+    return { id, type: "Fond d'écran", image: fond ? `images/${fond.miniature || fond.image}` : null };
+  }
+  if (choix === "banniere") return { id, type: "Namecard", image: `images/${valeur}` };
+  if (choix === "banniere2") return { id, type: "Bannière", image: `images/${valeur}` };
+  if (choix === "skin") return { id, type: "Skin", image: `images/characters/${valeur}_skin.webp` };
+  return { id, type: "Cosmétique", image: null };
+}
+
+// -> { koyns: { raison: { total, nb } }, cosmetiques: [aperçu] }, ou null
+// si rien de nouveau.
+async function lireNouveautes(discordId, depuis) {
+  const date = Math.max(Date.parse(depuis) || 0, Date.now() - NOUVEAUTES_MAX_MS);
+  const debut = new Date(date).toISOString();
+  const [mouvements, recus] = await Promise.all([
+    supabase.from("koyns_mouvements").select("montant, raison")
+      .eq("discord_id", discordId).gt("cree_le", debut).gt("montant", 0).in("raison", RAISONS_NOTIFIEES),
+    supabase.from("cosmetiques_possedes").select("cosmetique")
+      .eq("discord_id", discordId).gt("obtenu_le", debut).neq("source", "achat")
+  ]);
+  if (mouvements.error) console.error("Erreur lecture koyns_mouvements :", mouvements.error);
+  if (recus.error) console.error("Erreur lecture cosmetiques_possedes :", recus.error);
+  const koyns = {};
+  (mouvements.data || []).forEach(({ montant, raison }) => {
+    koyns[raison] ??= { total: 0, nb: 0 };
+    koyns[raison].total += montant;
+    koyns[raison].nb += 1;
+  });
+  const cosmetiquesRecus = (recus.data || []).map(ligne => apercuCosmetique(ligne.cosmetique));
+  if (!Object.keys(koyns).length && !cosmetiquesRecus.length) return null;
+  return { koyns, cosmetiques: cosmetiquesRecus };
+}
+
 module.exports = {
   KOYNS_PAR_MATCH,
   KOYNS_ABANDON,
@@ -287,5 +332,6 @@ module.exports = {
   crediterMatchArchive,
   reprendrePartie,
   donner,
-  reclamerBonusConnexion
+  reclamerBonusConnexion,
+  lireNouveautes
 };

@@ -234,16 +234,62 @@
   // Bonus de connexion d'un événement (Rikoyns et / ou cosmétique, cf.
   // api/_lib/koyns.js) : petite annonce en bas de l'écran, quelques
   // secondes.
-  function annoncerBonusConnexion({ koyns, cosmetique }) {
-    const annonce = document.createElement("div");
-    annonce.className = "annonce-koyns";
-    annonce.setAttribute("role", "status");
-    annonce.innerHTML = `Bonus de connexion de l'événement : ${[
-      koyns ? `+${koyns} <img class="icone-koyn" src="${ICONES}rikoyn.webp" alt="Rikoyns">` : "",
-      cosmetique ? "un cosmétique exclusif (à porter depuis Personnalisation)" : ""
-    ].filter(Boolean).join(" et ")} !`;
-    document.body.appendChild(annonce);
-    setTimeout(() => annonce.remove(), 8000);
+  // ---- Fenêtre des récompenses ----
+  // Rikoyns et cosmétiques reçus depuis la dernière visite sur ce
+  // navigateur (cf. lireNouveautes, api/_lib/koyns.js) : date du serveur
+  // gardée par joueur dans le localStorage.
+  const LIBELLES_GAINS = {
+    match: nb => nb > 1 ? `${nb} matchs joués` : "1 match joué",
+    don: () => "Don d'un administrateur",
+    connexion: () => "Bonus de connexion de l'événement",
+    depart: () => "Rikoyns de départ"
+  };
+  const cleVisite = id => `recompenses-vues-${id}`;
+
+  function lireDerniereVisite(id) {
+    try { return localStorage.getItem(cleVisite(id)); } catch { return null; }
+  }
+
+  function noterVisite(id, date) {
+    try { if (date) localStorage.setItem(cleVisite(id), date); } catch { /* stockage bloqué */ }
+  }
+
+  function echapper(texte) {
+    return String(texte ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
+  function afficherRecompenses({ koyns = {}, cosmetiques = [] }, ouvrirPersonnalisation) {
+    const total = Object.values(koyns).reduce((somme, gain) => somme + gain.total, 0);
+    const fenetre = document.createElement("dialog");
+    fenetre.className = "fenetre-recompenses";
+    fenetre.setAttribute("aria-label", "Récompenses reçues");
+    fenetre.innerHTML = `
+      <div class="recompenses-eclat" aria-hidden="true"></div>
+      <h2>Récompenses reçues !</h2>
+      ${total ? `
+        <p class="recompenses-total">+${total} <img src="${ICONES}rikoyn.webp" alt=""> <span>Rikoyns</span></p>
+        <ul class="recompenses-lignes">${Object.entries(koyns).map(([raison, gain]) => `
+          <li><span>${echapper((LIBELLES_GAINS[raison] || (() => "Gain"))(gain.nb))}</span><strong>+${gain.total}</strong></li>`).join("")}
+        </ul>` : ""}
+      ${cosmetiques.length ? `
+        <p class="recompenses-sous-titre">${cosmetiques.length > 1 ? `${cosmetiques.length} nouveaux cosmétiques` : "Nouveau cosmétique"}</p>
+        <div class="recompenses-cosmetiques">${cosmetiques.map(c => `
+          <figure>${c.image ? `<img src="/DB/${echapper(c.image)}" alt="" loading="lazy">` : `<span class="recompenses-sans-image">?</span>`}<figcaption>${echapper(c.type)}</figcaption></figure>`).join("")}
+        </div>` : ""}
+      <div class="recompenses-actions">
+        ${cosmetiques.length ? `<button type="button" class="recompenses-btn secondaire" data-action="porter">Personnalisation</button>` : ""}
+        <button type="button" class="recompenses-btn" data-action="fermer">Super !</button>
+      </div>`;
+    const fermer = () => { fenetre.close(); fenetre.remove(); };
+    fenetre.querySelector('[data-action="fermer"]').addEventListener("click", fermer);
+    fenetre.querySelector('[data-action="porter"]')?.addEventListener("click", () => {
+      fermer();
+      ouvrirPersonnalisation();
+    });
+    fenetre.addEventListener("click", event => { if (event.target === fenetre) fermer(); });
+    fenetre.addEventListener("close", () => fenetre.remove());
+    document.body.appendChild(fenetre);
+    fenetre.showModal();
   }
 
   async function demarrer() {
@@ -259,13 +305,31 @@
     // échoue ensuite (bannière, médaille...).
     let connecte = false;
     try {
-      const reponse = await fetch("/api/auth/me", { credentials: "include" });
+      // Dernière visite (récompenses) : du joueur précédemment connecté sur
+      // ce navigateur, vérifié une fois l'id connu.
+      const idPrecedent = (() => { try { return localStorage.getItem("recompenses-joueur"); } catch { return null; } })();
+      const depuis = idPrecedent && lireDerniereVisite(idPrecedent);
+      const reponse = await fetch(`/api/auth/me${depuis ? `?depuis=${encodeURIComponent(depuis)}` : ""}`, { credentials: "include" });
 
       if (reponse.ok) {
         connecte = true;
-        const { user, bonus_connexion: bonus } = await reponse.json();
+        const { user, maintenant, nouveautes } = await reponse.json();
         const nom = user.global_name || user.username || "Mon compte";
-        if (bonus) annoncerBonusConnexion(bonus);
+        // Autre compte que celui de la date envoyée : date de ce compte (ou
+        // rien) à la prochaine visite, pas de fenêtre cette fois.
+        try { localStorage.setItem("recompenses-joueur", user.id); } catch { /* stockage bloqué */ }
+        if (idPrecedent === user.id || !lireDerniereVisite(user.id)) noterVisite(user.id, maintenant);
+        if (nouveautes && idPrecedent === user.id) {
+          afficherRecompenses(nouveautes, async () => {
+            try {
+              await chargerPersonnalisation();
+              window.Personnalisation.ouvrir();
+            } catch (erreur) {
+              console.error(erreur);
+              window.location.href = `${PAGE_COMPTE}?personnalisation=1`;
+            }
+          });
+        }
 
         // Accès réservés aux administrateurs et mini admins (ex. carte
         // Administration de l'accueil ; lecture seule pour les mini admins).
