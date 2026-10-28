@@ -23,6 +23,7 @@ function rendreListeTournois() {
           <span class="pastille-tournoi">${formatTournoi(t)}</span>
           <span class="pastille-tournoi">${echapperTournoi(modeTournoi(t))}</span>
           ${t.affrontement === "bo3" ? `<span class="pastille-tournoi">Best of 3</span>` : ""}
+          ${t.finale_bo5 ? `<span class="pastille-tournoi">Finale en bo5</span>` : ""}
         </div>
         <span>📅 ${dateTournoi(t.debut)}${t.fin ? ` → ${dateTournoi(t.fin)}` : ""}</span>
         <span>👥 ${t.nb_participants} / ${t.max_participants} ${t.format === "equipe" ? "équipes" : "joueurs"}</span>

@@ -116,6 +116,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
         <label>Affrontements de la phase finale
           <select name="affrontement">${options({ bo1: "Un seul match", bo3: "Best of 3" }, c.affrontement || "bo1")}</select>
         </label>
+        <label class="ligne"><input name="finale_bo5" type="checkbox"${c.finale_bo5 ? " checked" : ""}> La finale (dernier match) en best of 5</label>
         <p class="aide large" data-pour="equipe">En équipe : draft de la carpe avec les vitrines, comme le mode En équipe.</p>
       </fieldset>
       <fieldset${verrouille ? " disabled" : ""}>
@@ -180,6 +181,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
       mode: champ("mode").value,
       box: champ("box").value,
       affrontement: champ("affrontement").value,
+      finale_bo5: champ("finale_bo5").checked,
       max_participants: Number(champ("max_participants").value),
       arbre_max: Number(champ("arbre_max").value),
       qualif_matchs: Number(champ("qualif_matchs").value),

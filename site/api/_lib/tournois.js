@@ -183,6 +183,8 @@ function lireConfig(brut) {
       mode: format === "equipe" ? "carpe" : (MODES_THEATRE.includes(brut?.mode) ? brut.mode : "auto"),
       box: format === "equipe" ? "vitrine" : (BOX_TOURNOI.includes(brut?.box) ? brut.box : "full"),
       affrontement: AFFRONTEMENTS.includes(brut?.affrontement) ? brut.affrontement : "bo1",
+      // Le dernier match (la finale) seulement en best of 5.
+      finale_bo5: brut?.finale_bo5 === true,
       chronos,
       recompense: { type: recompense, texte: texte(brut?.recompense?.texte, LONGUEUR_RECOMPENSE) },
       max_participants: entier(brut?.max_participants, 2, MAX_PARTICIPANTS, 16),
@@ -649,8 +651,13 @@ function joueursDe(tournoi, participant) {
   return tournoi.equipes.find(equipe => equipe.id === participant)?.membres || [];
 }
 
-function manchesAGagner(tournoi, phase) {
-  return phase === "arbre" && tournoi.affrontement === "bo3" ? 2 : 1;
+// Manches à gagner : qualifs 1 ; arbre 1 (bo1) ou 2 (bo3) ; la finale 3
+// si finale_bo5.
+function manchesAGagner(tournoi, phase, matchId = null) {
+  if (phase !== "arbre") return 1;
+  const tours = tournoi.arbre?.tours;
+  if (tournoi.finale_bo5 && tours && tours[tours.length - 1][0].id === matchId) return 3;
+  return tournoi.affrontement === "bo3" ? 2 : 1;
 }
 
 // Prochain match de l'arbre à jouer (ordre des tours, puis de l'arbre).
@@ -683,7 +690,7 @@ function infosDraft(tournoi, match, phase) {
     a: match.a,
     b: match.b,
     box: tournoi.box,
-    manches_a_gagner: manchesAGagner(tournoi, phase),
+    manches_a_gagner: manchesAGagner(tournoi, phase, match.id),
     arbitres: [tournoi.createur, ...(tournoi.arbitres || [])]
   };
 }
@@ -752,7 +759,7 @@ async function enregistrerManche(infos, { vainqueur, trophees = 0, idMatch = nul
     const { match, phase } = trouve;
     match.manches.push({ vainqueur, trophees, match_id: idMatch });
     const gagnees = participant => match.manches.filter(manche => manche.vainqueur === participant).length;
-    const aGagner = manchesAGagner(tournoi, phase);
+    const aGagner = manchesAGagner(tournoi, phase, match.id);
     const score = { [match.a]: gagnees(match.a), [match.b]: gagnees(match.b) };
     if (gagnees(vainqueur) >= aGagner) {
       match.statut = "termine";
