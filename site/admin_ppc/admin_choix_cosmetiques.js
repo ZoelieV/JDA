@@ -1,13 +1,15 @@
 // Fenêtre de choix de cosmétiques (administration des Rikoyns, cf.
 // admin_koyns.js) : images en grille par onglet (namecards, bannières, fonds,
-// skins et variantes), recherche, filtre des cosmétiques cachés
-// (cosmetiques.json, "caches"), un ou plusieurs choix à la fois.
+// skins et variantes ; onglet Cachés en premier, ouvert par défaut :
+// cosmétiques cachés de cosmetiques.json, "caches", seulement donnés par les
+// administrateurs), recherche, un ou plusieurs choix à la fois.
 // choisirCosmetiques({ titre, multiple, selection }) -> Promise<[ids] | null>
 // (null : annulé). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
 // Utilise idCosmetique, COSMETIQUES_GRATUITS (commun/koyns.js), nomFond,
 // VARIANTES_PERSONNAGES, SKINS_PERSONNAGES et imagesSkin (commun/variantes.js).
 
 const ONGLETS_CHOIX_COSMETIQUES = [
+  { id: "caches", nom: "Cachés" },
   { id: "banniere", nom: "Namecards" },
   { id: "banniere2", nom: "Bannières" },
   { id: "fond", nom: "Fonds d'écran" },
@@ -71,7 +73,8 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       return;
     }
     const choisis = new Set(selection);
-    let onglet = "banniere";
+    const nbCaches = [...catalogue.values()].filter(info => info.cache).length;
+    let onglet = nbCaches ? "caches" : "banniere";
     const fenetre = document.createElement("div");
     fenetre.className = "modal-apercu active fenetre-choix-cosmetiques";
     fenetre.innerHTML = `
@@ -80,10 +83,9 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
           <h2></h2>
           <button type="button" class="fermer-apercu" data-action="annuler" aria-label="Fermer">×</button>
         </div>
-        <div class="choix-cosmetiques-onglets">${ONGLETS_CHOIX_COSMETIQUES.map(o => `<button type="button" class="bouton-creer secondaire" data-onglet="${o.id}">${o.nom}</button>`).join("")}</div>
+        <div class="choix-cosmetiques-onglets">${ONGLETS_CHOIX_COSMETIQUES.map(o => `<button type="button" class="bouton-creer secondaire" data-onglet="${o.id}">${o.nom}${o.id === "caches" ? ` (${nbCaches})` : ""}</button>`).join("")}</div>
         <div class="choix-cosmetiques-outils">
           <input type="text" class="texte-ajout choix-cosmetiques-recherche" placeholder="Rechercher…" autocomplete="off">
-          <label><input type="checkbox" class="choix-cosmetiques-caches"> Cachés seulement</label>
           ${multiple ? `<button type="button" class="bouton-creer secondaire" data-action="tout">Tout l'onglet</button>
           <button type="button" class="bouton-creer secondaire" data-action="aucun">Tout désélectionner</button>` : ""}
         </div>
@@ -97,10 +99,10 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
     fenetre.querySelector("h2").textContent = titre;
     const grille = fenetre.querySelector(".choix-cosmetiques-grille");
     const recherche = fenetre.querySelector(".choix-cosmetiques-recherche");
-    const cachesSeulement = fenetre.querySelector(".choix-cosmetiques-caches");
 
-    const visibles = () => [...catalogue.values()].filter(info => info.onglet === onglet &&
-      (!cachesSeulement.checked || info.cache) &&
+    // Onglet Cachés : namecards puis bannières cachées ; les autres onglets
+    // montrent aussi leurs cachés (pastille « caché »).
+    const visibles = () => [...catalogue.values()].filter(info => (onglet === "caches" ? info.cache : info.onglet === onglet) &&
       (!recherche.value.trim() || `${info.nom} ${info.id}`.toLowerCase().includes(recherche.value.trim().toLowerCase())));
 
     const majCompte = () => {
@@ -111,7 +113,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       grille.className = `choix-cosmetiques-grille onglet-${onglet}`;
       const infos = visibles();
       grille.innerHTML = infos.length ? infos.map(info => `
-        <button type="button" class="choix-cosmetique${choisis.has(info.id) ? " choisi" : ""}${info.cache ? " cache" : ""}" data-id="${echapper(info.id)}" title="${echapper(info.id)}">
+        <button type="button" class="choix-cosmetique${choisis.has(info.id) ? " choisi" : ""}${info.cache ? " est-cache" : ""}" data-id="${echapper(info.id)}" title="${echapper(info.id)}">
           <img src="${echapper(info.image)}" alt="" loading="lazy">
           <span>${echapper(info.nom)}</span>
         </button>`).join("") : `<p class="aide-apercu">Aucun cosmétique.</p>`;
@@ -161,7 +163,6 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       }
     });
     recherche.addEventListener("input", rendre);
-    cachesSeulement.addEventListener("change", rendre);
     document.body.appendChild(fenetre);
     rendre();
     recherche.focus();
