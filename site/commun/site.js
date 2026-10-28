@@ -35,7 +35,8 @@
       ["Matchmaking", "/match#matchmaking"],
       ["Classé", "/match#classe"],
       ["Entraînement", "/match#entrainement"],
-      ["En équipe", "/match#equipe"]
+      ["En équipe", "/match#equipe"],
+      ["Tournois", "/tournois"]
     ] },
     { titre: "Joueurs", href: "/comptes" },
     { titre: "Classement", href: "/classement" },
@@ -54,7 +55,6 @@
       ["Tutoriel", "/tutoriel"]
     ] },
     { titre: "Événements", href: "/evenements" },
-    { titre: "Tournois", href: "/tournois" },
     // Administrateurs et mini admins (affiché par commun/compte.js).
     { titre: "Admin", href: "/admin", classe: "carte-admin", menu: [
       ["Équilibrage", "/admin/equilibrage"],

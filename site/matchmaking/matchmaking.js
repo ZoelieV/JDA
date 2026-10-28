@@ -470,7 +470,8 @@ async function choisirCarte(carte) {
   detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-document.querySelectorAll(".carte-match").forEach(carte => {
+// Cartes à détails seulement (Tournois : simple lien vers /tournois).
+document.querySelectorAll(".carte-match[data-detail]").forEach(carte => {
   carte.addEventListener("click", () => choisirCarte(carte));
 });
 
