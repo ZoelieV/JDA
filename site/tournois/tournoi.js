@@ -64,8 +64,7 @@ function rendre() {
     <span class="pastille-tournoi statut-${tournoi.statut}">${STATUTS_TOURNOI[tournoi.statut] || tournoi.statut}</span>
     <span class="pastille-tournoi">${formatTournoi(tournoi)}</span>
     <span class="pastille-tournoi">${echapperTournoi(modeTournoi(tournoi))}</span>
-    ${tournoi.affrontement === "bo3" ? `<span class="pastille-tournoi">Best of 3</span>` : ""}
-    ${tournoi.finale_bo5 ? `<span class="pastille-tournoi">Finale en bo5</span>` : ""}`;
+    ${htmlPastillesAffrontement(tournoi)}`;
   $t("description-tournoi").textContent = tournoi.description || "Pas de description.";
   $t("victoire-tournoi").hidden = !tournoi.vainqueur;
   if (tournoi.vainqueur) $t("victoire-tournoi").innerHTML = htmlVictoireTournoi(nomParticipant(tournoi.vainqueur), tournoi.recompense);
@@ -78,7 +77,7 @@ function rendre() {
     ["Participants", `${tournoi.format === "equipe" ? tournoi.equipes.length : tournoi.inscrits.length} / ${tournoi.max_participants} ${tournoi.format === "equipe" ? "équipes" : "joueurs"}`],
     ["Phase finale", `${TAILLES_ARBRE_TOURNOI[tournoi.arbre_max] || tournoi.arbre_max} au plus`],
     ...(tournoi.max_participants > tournoi.arbre_max ? [["Qualifications", texteQualifs(tournoi)]] : []),
-    ["Affrontements", `${tournoi.affrontement === "bo3" ? "Best of 3" : "Un seul match"}${tournoi.finale_bo5 ? ", finale en best of 5" : ""}`],
+    ["Affrontements", `${tournoi.affrontement === "bo3" ? "Best of 3" : "Un seul match"}, finale en ${NOMS_AFFRONTEMENTS[finaleTournoi(tournoi)] || "un seul match"}`],
     ...(tournoi.format === "1v1" ? [["Box", tournoi.box === "full" ? "Full box imposée" : "Au choix (full / opti)"]] : []),
     ["Chronos", tournoi.chronos ? `analyse ${tournoi.chronos.analyse_s} s, ${tournoi.chronos.action_s} s par pick / ban, ${tournoi.chronos.ban_s} s par ban d'équilibrage` : "Sans chronos"],
     ["Récompense", `${RECOMPENSES_TOURNOI[tournoi.recompense?.type] || "—"}${tournoi.recompense?.texte ? ` : ${echapperTournoi(tournoi.recompense.texte)}` : ""}`],
@@ -176,7 +175,8 @@ function matchsDuTournoi() {
 
 function scoreMatch(match) {
   const finale = vue.tournoi.arbre?.tours.at(-1)[0].id === match.id;
-  if (!match.manches?.length || !(vue.tournoi.affrontement === "bo3" || (finale && vue.tournoi.finale_bo5))) return "";
+  const format = finale ? finaleTournoi(vue.tournoi) : vue.tournoi.affrontement;
+  if (!match.manches?.length || format === "bo1") return "";
   const gagnees = p => match.manches.filter(m => m.vainqueur === p).length;
   return ` <span class="score-arbre">${gagnees(match.a)} - ${gagnees(match.b)}</span>`;
 }

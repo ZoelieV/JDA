@@ -49,6 +49,20 @@ function htmlVictoireTournoi(nomHtml, recompense) {
   return `🏆 ${nomHtml} remporte ${PRIX_TOURNOI[recompense?.type] || "le tournoi"} !`;
 }
 
+// Format de la finale (anciens tournois : finale_bo5, sinon comme l'arbre).
+function finaleTournoi(tournoi) {
+  return tournoi.finale_affrontement || (tournoi.finale_bo5 ? "bo5" : tournoi.affrontement);
+}
+
+const NOMS_AFFRONTEMENTS = { bo1: "un seul match", bo3: "best of 3", bo5: "best of 5" };
+
+// Pastilles : format de l'arbre, et de la finale s'il est différent.
+function htmlPastillesAffrontement(tournoi) {
+  const finale = finaleTournoi(tournoi);
+  return (tournoi.affrontement === "bo3" ? `<span class="pastille-tournoi">Best of 3</span>` : "") +
+    (finale && finale !== tournoi.affrontement ? `<span class="pastille-tournoi">Finale en ${finale}</span>` : "");
+}
+
 function formatTournoi(tournoi) {
   return tournoi.format === "equipe" ? `En équipe ${tournoi.taille_equipe}v${tournoi.taille_equipe}` : "1v1";
 }
@@ -128,7 +142,9 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
         <label>Affrontements de la phase finale
           <select name="affrontement">${options({ bo1: "Un seul match", bo3: "Best of 3" }, c.affrontement || "bo1")}</select>
         </label>
-        <label class="ligne"><input name="finale_bo5" type="checkbox"${c.finale_bo5 ? " checked" : ""}> La finale (dernier match) en best of 5</label>
+        <label>La finale (dernier match)
+          <select name="finale_affrontement">${options({ bo1: "Un seul match", bo3: "Best of 3", bo5: "Best of 5" }, finaleTournoi(c) || "bo1")}</select>
+        </label>
         <p class="aide large" data-pour="equipe">En équipe : draft de la carpe avec les vitrines, comme le mode En équipe.</p>
       </fieldset>
       <fieldset${verrouille ? " disabled" : ""}>
@@ -273,7 +289,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
       mode: champ("mode").value,
       box: champ("box").value,
       affrontement: champ("affrontement").value,
-      finale_bo5: champ("finale_bo5").checked,
+      finale_affrontement: champ("finale_affrontement").value,
       max_participants: Number(champ("max_participants").value),
       arbre_max: Number(champ("arbre_max").value),
       qualif_matchs: Number(champ("qualif_matchs").value),

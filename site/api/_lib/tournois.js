@@ -50,6 +50,9 @@ const FORMATS = ["1v1", "equipe"];
 const TAILLES_EQUIPE = [2, 3, 4];
 const BOX_TOURNOI = ["full", "libre"];
 const AFFRONTEMENTS = ["bo1", "bo3"];
+// La finale (dernier match) : au choix, bo1, bo3 ou bo5.
+const AFFRONTEMENTS_FINALE = ["bo1", "bo3", "bo5"];
+const MANCHES_A_GAGNER = { bo1: 1, bo3: 2, bo5: 3 };
 const RECOMPENSES = ["cosmetiques", "battle_pass", "faveur", "pack", "rien"];
 // Places de l'arbre : finale (2) à 64e de finale (128).
 const TAILLES_ARBRE = [2, 4, 8, 16, 32, 64, 128];
@@ -194,8 +197,10 @@ function lireConfig(brut) {
       mode: format === "equipe" ? "carpe" : (MODES_THEATRE.includes(brut?.mode) ? brut.mode : "auto"),
       box: format === "equipe" ? "vitrine" : (BOX_TOURNOI.includes(brut?.box) ? brut.box : "full"),
       affrontement: AFFRONTEMENTS.includes(brut?.affrontement) ? brut.affrontement : "bo1",
-      // Le dernier match (la finale) seulement en best of 5.
-      finale_bo5: brut?.finale_bo5 === true,
+      // Le dernier match (la finale) : bo1, bo3 ou bo5 (anciens tournois :
+      // finale_bo5, sinon comme le reste de l'arbre).
+      finale_affrontement: AFFRONTEMENTS_FINALE.includes(brut?.finale_affrontement) ? brut.finale_affrontement
+        : brut?.finale_bo5 === true ? "bo5" : (AFFRONTEMENTS.includes(brut?.affrontement) ? brut.affrontement : "bo1"),
       chronos,
       recompense: { type: recompense, texte: texte(brut?.recompense?.texte, LONGUEUR_RECOMPENSE) },
       max_participants: entier(brut?.max_participants, 2, MAX_PARTICIPANTS, 16),
@@ -754,13 +759,18 @@ function joueursDe(tournoi, participant) {
   return tournoi.equipes.find(equipe => equipe.id === participant)?.membres || [];
 }
 
-// Manches à gagner : qualifs 1 ; arbre 1 (bo1) ou 2 (bo3) ; la finale 3
-// si finale_bo5.
+// Format de la finale (anciens tournois : finale_bo5, sinon comme l'arbre).
+function affrontementFinale(tournoi) {
+  return tournoi.finale_affrontement || (tournoi.finale_bo5 ? "bo5" : tournoi.affrontement);
+}
+
+// Manches à gagner : qualifs 1 ; arbre 1 (bo1) ou 2 (bo3) ; la finale selon
+// son format (bo1, bo3, bo5).
 function manchesAGagner(tournoi, phase, matchId = null) {
   if (phase !== "arbre") return 1;
   const tours = tournoi.arbre?.tours;
-  if (tournoi.finale_bo5 && tours && tours[tours.length - 1][0].id === matchId) return 3;
-  return tournoi.affrontement === "bo3" ? 2 : 1;
+  if (tours && tours[tours.length - 1][0].id === matchId) return MANCHES_A_GAGNER[affrontementFinale(tournoi)] || 1;
+  return MANCHES_A_GAGNER[tournoi.affrontement] || 1;
 }
 
 // Prochain match de l'arbre à jouer (ordre des tours, puis de l'arbre).
