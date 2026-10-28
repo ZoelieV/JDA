@@ -790,6 +790,9 @@ async function ouvrirProfil(discordId, nom) {
     afficherPointsBox();
 
     document.getElementById("modal-title").textContent = `Box de ${nom}`;
+    // Bannière du joueur en fond de l'en-tête (chemin validé par le serveur).
+    const banniere = profil.data?.parametres?.banniere2 || BANNIERE2_DEFAUT;
+    document.getElementById("modal-header").style.setProperty("--banniere-profil", `url("${encodeURI(`/DB/images/${banniere}`)}")`);
     rendreProfilBox();
     document.getElementById("modal").classList.add("active");
   } catch (error) {

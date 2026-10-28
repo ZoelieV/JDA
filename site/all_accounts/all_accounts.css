@@ -701,3 +701,206 @@ h1, h2 {
   font-size: 1.25rem;
   line-height: 1;
 }
+
+/* ---- Habillage de la popup des box (même esprit que les détails de
+   Créer un match, matchmaking/matchmaking.css) : verre sombre, liseré doré,
+   bannière du joueur en fond de l'en-tête, sélecteurs segmentés, barre
+   d'outils en bloc. ---- */
+#modal {
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+#modal-content {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 3px solid #f5c542;
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(180deg, rgba(245, 197, 66, 0.1), transparent 10rem),
+    rgba(18, 18, 24, 0.97);
+  -webkit-backdrop-filter: blur(0.75rem);
+  backdrop-filter: blur(0.75rem);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.55);
+}
+
+#modal-header {
+  position: relative;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Bannière du joueur (--banniere-profil, cf. ouvrirProfil), fondue vers
+   la gauche. */
+#modal-header::after {
+  content: "";
+  position: absolute;
+  top: -1.25rem;
+  right: -1.25rem;
+  bottom: 0;
+  width: min(36rem, 60%);
+  background: var(--banniere-profil, none) right center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 65%);
+  mask-image: linear-gradient(90deg, transparent, #000 65%);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+#modal-header h2,
+#close-modal {
+  position: relative;
+  z-index: 1;
+}
+
+#modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-shadow: 0 1px 0.5rem rgba(0, 0, 0, 0.8);
+}
+
+#modal-header h2::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.3125rem;
+  height: 1.1em;
+  border-radius: 1rem;
+  background-color: #f5c542;
+}
+
+#close-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.45);
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+#close-modal:hover,
+#close-modal:focus-visible {
+  border-color: #f5c542;
+  color: #f5c542;
+  transform: rotate(90deg);
+  outline: none;
+}
+
+/* Personnages / armes, full box / stuff : boutons segmentés. */
+#modal #view-selector,
+#modal #box-selector {
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+#modal .view-btn,
+#modal .box-btn {
+  height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+#modal .view-btn:hover,
+#modal .box-btn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+
+#modal .view-btn.active,
+#modal .box-btn.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
+  box-shadow: 0 0 0.75rem rgba(245, 197, 66, 0.18);
+  color: white;
+}
+
+/* Recherche, tris, filtres : dans un bloc, boutons au liseré discret. */
+#modal .barre-outils {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.035);
+}
+
+#modal .recherche-personnage,
+#modal .filtre-icone-btn,
+#modal .filtre-etoile-btn {
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+#modal .recherche-personnage:focus {
+  border-color: rgba(245, 197, 66, 0.8);
+  outline: none;
+}
+
+#modal .filtre-icone-btn:hover,
+#modal .filtre-etoile-btn:hover {
+  border-color: rgba(245, 197, 66, 0.5);
+}
+
+#modal .filtre-icone-btn.active,
+#modal .filtre-etoile-btn.active {
+  border-color: rgba(245, 197, 66, 0.8);
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+#modal .filtres-tri {
+  flex-wrap: wrap;
+}
+
+/* Cartes : légère ombre ; barre de défilement discrète et dorée. */
+#modal .character-visuel {
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.35);
+}
+
+#profile-box {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 197, 66, 0.45) transparent;
+}
+
+#profile-box::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+#profile-box::-webkit-scrollbar-thumb {
+  border-radius: 1rem;
+  background-color: rgba(245, 197, 66, 0.45);
+}
+
+@media (max-width: 700px) {
+  #modal-content {
+    border-right: none;
+    border-left: none;
+    border-bottom: none;
+    border-radius: 0;
+  }
+
+  #modal-header::after {
+    top: -0.75rem;
+    right: -0.75rem;
+    width: 75%;
+  }
+
+  #modal #view-selector,
+  #modal #box-selector {
+    padding: 0.1875rem;
+  }
+
+  #modal .barre-outils {
+    padding: 0.5rem;
+  }
+}
