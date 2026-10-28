@@ -16,7 +16,7 @@ function rendreListeTournois() {
   etat.textContent = filtreTournois === "termines" ? "Aucun tournoi terminé." : "Aucun tournoi pour l'instant.";
   grille.innerHTML = visibles.map(t => `
     <a class="carte-tournoi" href="/tournoi?id=${encodeURIComponent(t.id)}">
-      <div class="carte-tournoi-image"><h2 class="carte-tournoi-titre">${echapperTournoi(t.nom)}</h2></div>
+      <div class="carte-tournoi-image" style="${styleImageTournoi(t)}"><h2 class="carte-tournoi-titre">${echapperTournoi(t.nom)}</h2></div>
       <div class="carte-tournoi-infos">
         ${t.vainqueur ? `<span class="victoire-tournoi">${htmlVictoireTournoi(echapperTournoi(t.vainqueur_nom || createursTournois[t.vainqueur]?.nom || "Le vainqueur"), t.recompense)}</span>` : ""}
         <div class="ligne-pastilles">

@@ -78,6 +78,109 @@ function htmlJoueurTournoi(joueurs, id) {
   return `<span class="joueur-tournoi">${photo}<span>${echapperTournoi(joueur?.nom || "Joueur")}</span></span>`;
 }
 
+// ---- Image du tournoi (cf. changerImage dans api/_lib/tournois.js) ----
+
+const IMAGE_TOURNOI_DEFAUT = "/DB/images/namecards/Namecard_Background_Travel_Notes_Simulnation.webp";
+
+function urlImageTournoi(tournoi) {
+  const image = typeof tournoi?.image === "string" ? tournoi.image : "";
+  if (image.startsWith("site:")) return `/DB/images/${image.slice(5)}`;
+  if (image.startsWith("upload:")) return `/api/rooms/tournoi/image?id=${tournoi.id}&v=${image.slice(7)}`;
+  return IMAGE_TOURNOI_DEFAUT;
+}
+
+// Pour un attribut style (adresse encodée : pas de guillemets ni de
+// parenthèses qui sortiraient du url()).
+function styleImageTournoi(tournoi, url = urlImageTournoi(tournoi)) {
+  return `background-image: url(${encodeURI(url).replace(/['()]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)})`;
+}
+
+// "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
+function nomImageTournoi(chemin) {
+  return chemin.split("/").pop().replace(/^Namecard_Background_/, "").replace(/\.[a-z]+$/i, "").replace(/_/g, " ");
+}
+
+let promesseImagesTournoi = null;
+
+// Namecards et fonds d'écran du site -> { namecards, fonds } : [{ chemin, miniature, nom }].
+function chargerImagesTournoi() {
+  promesseImagesTournoi ??= fetch("/DB/images/cosmetiques.json")
+    .then(reponse => reponse.json())
+    .then(cosmetiques => ({
+      namecards: cosmetiques.bannieres.map(chemin => ({ chemin, miniature: chemin, nom: nomImageTournoi(chemin) })),
+      fonds: cosmetiques.fonds.map(fond => ({ chemin: fond.image, miniature: fond.miniature, nom: nomImageTournoi(fond.image) }))
+    }))
+    .catch(erreur => { promesseImagesTournoi = null; throw erreur; });
+  return promesseImagesTournoi;
+}
+
+// Fenêtre de choix parmi les images du site -> Promise<chemin | null>.
+function choisirImageSiteTournoi() {
+  return new Promise(resoudre => {
+    const fenetre = document.createElement("dialog");
+    fenetre.className = "fenetre-images-tournoi";
+    fenetre.innerHTML = `
+      <h2>Image du tournoi</h2>
+      <div class="onglets-images-tournoi">
+        <button type="button" class="bouton-tournoi petit principal" data-onglet="namecards">Namecards</button>
+        <button type="button" class="bouton-tournoi petit" data-onglet="fonds">Fonds d'écran</button>
+        <input type="search" class="bouton-tournoi" placeholder="Rechercher…">
+      </div>
+      <div class="grille-images-tournoi"><p class="doux">Chargement…</p></div>
+      <div class="pied-formulaire"><button type="button" class="bouton-tournoi" data-action="annuler">Annuler</button></div>`;
+    let choix = null;
+    let images = null;
+    let onglet = "namecards";
+    const recherche = fenetre.querySelector("input");
+    const afficher = () => {
+      if (!images) return;
+      const filtre = recherche.value.trim().toLowerCase();
+      const liste = images[onglet].filter(image => !filtre || image.nom.toLowerCase().includes(filtre));
+      fenetre.querySelector(".grille-images-tournoi").innerHTML = liste.map(image => `
+        <button type="button" class="image-tournoi-choix" data-chemin="${echapperTournoi(image.chemin)}" title="${echapperTournoi(image.nom)}">
+          <img src="${echapperTournoi(encodeURI(`/DB/images/${image.miniature}`))}" alt="" loading="lazy">
+          <span>${echapperTournoi(image.nom)}</span>
+        </button>`).join("") || `<p class="doux">Aucune image.</p>`;
+    };
+    fenetre.addEventListener("click", event => {
+      const bouton = event.target.closest("[data-onglet]");
+      if (bouton) {
+        onglet = bouton.dataset.onglet;
+        fenetre.querySelectorAll("[data-onglet]").forEach(b => b.classList.toggle("principal", b === bouton));
+        afficher();
+      }
+      const image = event.target.closest("[data-chemin]");
+      if (image) { choix = image.dataset.chemin; fenetre.close(); }
+      if (event.target.closest('[data-action="annuler"]')) fenetre.close();
+    });
+    recherche.addEventListener("input", afficher);
+    fenetre.addEventListener("close", () => { fenetre.remove(); resoudre(choix); });
+    document.body.appendChild(fenetre);
+    fenetre.showModal();
+    chargerImagesTournoi().then(donnees => { images = donnees; afficher(); }).catch(() => {
+      fenetre.querySelector(".grille-images-tournoi").innerHTML = `<p class="message-tournoi erreur">Images indisponibles.</p>`;
+    });
+  });
+}
+
+// Image importée -> data URL compressée (1680 × 600 au plus, 400 Ko au plus).
+async function preparerImageTournoi(fichier) {
+  if (!/^image\/(png|jpeg|webp|gif|avif)$/.test(fichier.type)) throw new Error("Choisis une image (png, jpeg, webp).");
+  const bitmap = await createImageBitmap(fichier).catch(() => { throw new Error("Image illisible."); });
+  const echelle = Math.min(1, 1680 / bitmap.width, 600 / bitmap.height);
+  const toile = document.createElement("canvas");
+  toile.width = Math.max(1, Math.round(bitmap.width * echelle));
+  toile.height = Math.max(1, Math.round(bitmap.height * echelle));
+  toile.getContext("2d").drawImage(bitmap, 0, 0, toile.width, toile.height);
+  bitmap.close?.();
+  const limite = 400 * 1024 * 4 / 3; // en base64
+  for (const [type, qualite] of [["image/webp", 0.85], ["image/webp", 0.7], ["image/jpeg", 0.85], ["image/jpeg", 0.7], ["image/jpeg", 0.5]]) {
+    const url = toile.toDataURL(type, qualite);
+    if (url.startsWith(`data:${type};`) && url.length < limite) return url;
+  }
+  throw new Error("Image trop lourde, même compressée.");
+}
+
 // Appel de l'API -> données, ou erreur levée (message du serveur).
 async function appelTournoi(action, { id = null, corps = null } = {}) {
   const url = `/api/rooms/tournoi/${action}${id ? `?id=${encodeURIComponent(id)}` : ""}`;
@@ -183,6 +286,19 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
         <label>Fin <span class="aide">(si plusieurs jours)</span> <input name="fin" type="datetime-local" value="${versChampDateTournoi(c.fin)}"></label>
       </fieldset>
       <fieldset>
+        <legend>Image</legend>
+        <div class="large choix-image-formulaire">
+          <div class="apercu-image-tournoi" style="${styleImageTournoi(c)}"></div>
+          <div class="actions-match">
+            <button type="button" class="bouton-tournoi petit" data-action="image-site">Namecards et fonds d'écran du site</button>
+            <button type="button" class="bouton-tournoi petit" data-action="image-importer">Importer une image</button>
+            <button type="button" class="bouton-tournoi petit" data-action="image-defaut">Image par défaut</button>
+            <input type="file" accept="image/png,image/jpeg,image/webp" hidden data-image-fichier>
+          </div>
+          <p class="aide">Affichée recadrée (format namecard) ; image importée compressée automatiquement.</p>
+        </div>
+      </fieldset>
+      <fieldset>
         <legend>Phase finale</legend>
         <label class="ligne large"><input name="arbre_parallele" type="checkbox"${c.arbre_parallele ? " checked" : ""}> Matchs en parallèle <span class="aide">(lancés par les joueurs du match ou un arbitre ; sinon un match à la fois, lancé par toi)</span></label>
       </fieldset>
@@ -276,12 +392,44 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
     fenetre.querySelectorAll("[data-chronos]").forEach(el => { el.hidden = !champ("chronos_actifs").checked; });
     fenetre.querySelector(".compteur-description").textContent = champ("description").value.length;
   };
+  // Image choisie : envoyée après l'enregistrement du tournoi (undefined :
+  // inchangée ; { site } / { upload } / { aucune: true }, cf. changerImage).
+  let imageChoisie;
+  const apercu = fenetre.querySelector(".apercu-image-tournoi");
+  const fichier = fenetre.querySelector("[data-image-fichier]");
+  const choisirImage = (corps, url) => {
+    imageChoisie = corps;
+    apercu.setAttribute("style", styleImageTournoi(null, url));
+  };
+  fenetre.querySelector('[data-action="image-site"]').addEventListener("click", async () => {
+    const chemin = await choisirImageSiteTournoi();
+    if (chemin) choisirImage({ site: chemin }, `/DB/images/${chemin}`);
+  });
+  fenetre.querySelector('[data-action="image-importer"]').addEventListener("click", () => fichier.click());
+  fenetre.querySelector('[data-action="image-defaut"]').addEventListener("click", () => choisirImage({ aucune: true }, IMAGE_TOURNOI_DEFAUT));
+  fichier.addEventListener("change", async () => {
+    const message = fenetre.querySelector(".message-tournoi");
+    if (!fichier.files[0]) return;
+    try {
+      const url = await preparerImageTournoi(fichier.files[0]);
+      choisirImage({ upload: url }, url);
+      message.textContent = "";
+    } catch (erreur) {
+      message.className = "message-tournoi erreur";
+      message.textContent = erreur.message;
+    }
+    fichier.value = "";
+  });
   formulaire.addEventListener("input", majVisibles);
   formulaire.addEventListener("change", majVisibles);
   majVisibles();
 
   fenetre.querySelector('[data-action="annuler"]').addEventListener("click", () => fenetre.close());
   fenetre.addEventListener("close", () => fenetre.remove());
+  // Tournoi enregistré mais image refusée : un nouvel essai ne renvoie que
+  // l'image.
+  let enregistre = false;
+  formulaire.addEventListener("input", () => { enregistre = false; });
   formulaire.addEventListener("submit", async event => {
     event.preventDefault();
     const message = fenetre.querySelector(".message-tournoi");
@@ -313,9 +461,18 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
     message.className = "message-tournoi";
     message.textContent = "Enregistrement…";
     try {
-      const donnees = await appelTournoi(id ? "modifier" : "creer", { id, corps: { config: configEnvoyee } });
+      if (!enregistre) {
+        const donnees = await appelTournoi(id ? "modifier" : "creer", { id, corps: { config: configEnvoyee } });
+        // Créé : un nouvel essai (image refusée) le modifie au lieu d'en recréer un.
+        id ||= donnees.id;
+        enregistre = true;
+      }
+      if (imageChoisie) {
+        message.textContent = "Envoi de l'image…";
+        await appelTournoi("image", { id, corps: imageChoisie });
+      }
       fenetre.close();
-      surSucces?.(id || donnees.id);
+      surSucces?.(id);
     } catch (erreur) {
       message.className = "message-tournoi erreur";
       message.textContent = erreur.message;

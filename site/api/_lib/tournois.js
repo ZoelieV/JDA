@@ -29,6 +29,12 @@
 //                  avant le premier match.
 //   termine      : vainqueur connu. annule : annulé par le gestionnaire.
 //
+// Image (tournoi.image) : absente = namecard des tournois ; "site:<chemin>"
+// = namecard ou fond d'écran du site (DB/images/<chemin>) ; "upload:<v>" =
+// image envoyée par le gestionnaire, ligne "image_tournoi:<id>" de points
+// ({ type, b64 }), servie par /api/rooms/tournoi/image?id=&v= (cf.
+// changerImage).
+//
 // Gestionnaire : créateur du tournoi (ou administrateur). Arbitres :
 // gestionnaire et joueurs désignés par lui ; ils saisissent les temps des
 // matchs (les joueurs ne les saisissent pas), cf. tempsArbitre.
@@ -47,6 +53,12 @@ const { lireDonneesProprietaire } = require("./boxes_fictives");
 const { verifierFrequenceCompte } = require("./limites");
 
 const PREFIXE = "tournoi:";
+const PREFIXE_IMAGE = "image_tournoi:";
+// Image envoyée : 400 Ko au plus (compressée par la page), webp / png / jpeg.
+const TAILLE_MAX_IMAGE = 400 * 1024;
+const DELAI_IMAGE_MS = 3000;
+// Images du site : namecards (pas les bannières fines) et fonds d'écran.
+const IMAGE_SITE = /^(namecards\/Namecard_Background_[A-Za-z0-9_'!-]+|bg_web\/(autres|boss_hebdo|carnage_chtonien|legendes_locales)\/[A-Za-z0-9_'!.-]+)\.webp$/;
 const LIGNE_TOURNOITATEURS = "tournoitateurs";
 const FORMATS = ["1v1", "equipe"];
 const TAILLES_EQUIPE = [2, 3, 4];
@@ -465,6 +477,62 @@ async function supprimerTournoi(id, user) {
   if (!["inscriptions", "verrouille", "annule"].includes(tournoi.statut)) throw erreur(409, "Annule d'abord le tournoi.");
   const { error } = await supabase.from("points").delete().eq("id", PREFIXE + id);
   if (error) throw error;
+  await supabase.from("points").delete().eq("id", PREFIXE_IMAGE + id);
+}
+
+// ---- Image ----
+
+// Type d'une image envoyée (octets de début), ou null.
+function typeImage(octets) {
+  if (octets.length > 12 && octets.toString("latin1", 0, 4) === "RIFF" && octets.toString("latin1", 8, 12) === "WEBP") return "image/webp";
+  if (octets.length > 8 && octets.readUInt32BE(0) === 0x89504e47) return "image/png";
+  if (octets.length > 3 && octets[0] === 0xff && octets[1] === 0xd8 && octets[2] === 0xff) return "image/jpeg";
+  return null;
+}
+
+// Image du tournoi (gestionnaire, à tout moment) : corps { site: chemin },
+// { upload: data URL } ou { aucune: true } (namecard des tournois).
+async function changerImage(id, user, corps) {
+  const lecture = await lireTournoi(id);
+  if (!lecture) throw erreur(404, "Tournoi introuvable");
+  if (!estGestionnaire(lecture.tournoi, user.id)) throw erreur(403, "Seul le créateur du tournoi change son image.");
+  let image = null;
+  if (typeof corps.site === "string") {
+    if (!IMAGE_SITE.test(corps.site)) throw erreur(400, "Image du site inconnue.");
+    image = "site:" + corps.site;
+  } else if (typeof corps.upload === "string") {
+    const morceaux = /^data:image\/(?:webp|png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/.exec(corps.upload);
+    if (!morceaux) throw erreur(400, "Image invalide.");
+    const octets = Buffer.from(morceaux[1], "base64");
+    if (octets.length > TAILLE_MAX_IMAGE) throw erreur(413, "Image trop lourde (400 Ko au plus).");
+    const type = typeImage(octets);
+    if (!type) throw erreur(400, "Image invalide (webp, png ou jpeg).");
+    const { error } = await supabase.from("points").upsert({
+      id: PREFIXE_IMAGE + id, data: { type, b64: octets.toString("base64") }, updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
+    image = "upload:" + Date.now().toString(36);
+  } else if (corps.aucune !== true) {
+    throw erreur(400, "Image invalide.");
+  }
+  await modifierTournoi(id, tournoi => {
+    if (!estGestionnaire(tournoi, user.id)) throw erreur(403, "Seul le créateur du tournoi change son image.");
+    tournoi.image = image;
+  });
+  if (!image?.startsWith("upload:")) await supabase.from("points").delete().eq("id", PREFIXE_IMAGE + id);
+}
+
+// Image envoyée, servie telle quelle (en cache : l'adresse change avec elle).
+async function servirImage(id, res) {
+  if (typeof id !== "string" || !/^[0-9a-f]{8}$/.test(id)) throw erreur(404, "Image introuvable.");
+  const { data, error } = await supabase.from("points").select("data").eq("id", PREFIXE_IMAGE + id).maybeSingle();
+  if (error) throw error;
+  const image = data?.data;
+  if (!image?.b64 || !["image/webp", "image/png", "image/jpeg"].includes(image.type)) throw erreur(404, "Image introuvable.");
+  res.setHeader("Content-Type", image.type);
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+  return res.status(200).end(Buffer.from(image.b64, "base64"));
 }
 
 // ---- Équilibrage des paires (1v1) ----
@@ -1060,6 +1128,7 @@ async function routeTournoi(action, req, res, user) {
       });
     }
     if (action === "detail") return repondreTournoi();
+    if (action === "image") return servirImage(id, res);
     if (action === "tournoitateurs") {
       if (!user || !await estModerateur(user.id)) throw erreur(403, "Réservé aux administrateurs.");
       return res.status(200).json({ tournoitateurs: await lireTournoitateurs() });
@@ -1069,6 +1138,12 @@ async function routeTournoi(action, req, res, user) {
 
   if (req.method !== "POST") throw erreur(405, "Méthode non autorisée");
   if (!user) throw erreur(401, "Non connecté");
+  // Image : limite à part (envoyée juste après la création du tournoi).
+  if (action === "image") {
+    if (await verifierFrequenceCompte(user.id, "tournoi_image", DELAI_IMAGE_MS) > 0) throw erreur(429, "Doucement : une image toutes les 3 secondes au plus.");
+    await changerImage(id, user, corps);
+    return repondreTournoi();
+  }
   const attente = await verifierFrequenceCompte(user.id, "tournoi", DELAI_ACTION_MS);
   if (attente > 0) throw erreur(429, "Doucement : une action par seconde au plus.");
 

@@ -60,6 +60,7 @@ function rendre() {
   $t("etat-tournoi").hidden = true;
   $t("contenu-tournoi").hidden = false;
   $t("nom-tournoi").textContent = tournoi.nom;
+  document.querySelector(".entete-tournoi").setAttribute("style", styleImageTournoi(tournoi));
   $t("pastilles-tournoi").innerHTML = `
     <span class="pastille-tournoi statut-${tournoi.statut}">${STATUTS_TOURNOI[tournoi.statut] || tournoi.statut}</span>
     <span class="pastille-tournoi">${formatTournoi(tournoi)}</span>
