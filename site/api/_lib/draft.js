@@ -17,10 +17,7 @@ function calculerBansBonus(ecart) {
 }
 
 // Bans d'équilibrage encore à faire (nombre imposé, jokers compris).
-// Mode spécial (entraînement non équilibrable, cf. handleModeSpecial) :
-// une phase de bans d'équilibrage même sans ban calculé, jokers illimités.
 function bansBonusDus(draft) {
-  if (draft.mode_special && !draft.bans_special_faits) return true;
   return (draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0);
 }
 
@@ -248,7 +245,10 @@ function casEquilibrage(topFaible, topFort, limites) {
 // supposés par le calcul), equilibrable, cas, top_faible, top_fort,
 // top_faible_apres, top_fort_apres, verticaux: { faible, fort } (cf.
 // valeursHorizontales) }.
-function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE) {
+// special (mode spécial de l'entraînement, cf. handleModeSpecial) : autant
+// de jokers que nécessaire, dans tous les cas (même les 2 box sous les
+// seuils) ; un joker n'est limité que par min_persos de la box forte.
+function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false } = {}) {
   const garderArmes = Math.abs(ecartPoints) < SEUIL_ARMES_BANNIES;
   const bannisFort = new Set();
   const bannisFaible = new Set();
@@ -272,7 +272,7 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
   });
   noterVerticaux(depart);
   const cas = casEquilibrage(top(depart.faible), top(depart.fort), limites);
-  const jokerPermis = cas === "normal" || cas === "petit";
+  const jokerPermis = special || cas === "normal" || cas === "petit";
   const resultat = {
     bans: 0, jokers: 0, ecart_avant: prevu(), ecart_apres: null, suggestion: [], equilibrable: true,
     cas, top_faible: top(depart.faible), top_fort: top(depart.fort)
@@ -296,7 +296,7 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
       : cas === "petit" ? !commun
         : cas === "plancher" ? top(apres.faible) >= limites.plancher && top(apres.fort) >= limites.plancher
           : true;
-    return { id, gain, commun, valide: persosOk && limitesOk };
+    return { id, gain, commun, persosOk, valide: persosOk && limitesOk };
   };
   const valeur = id => modeleFort.persos[id].valeur + (modeleFort.persos[id].signature?.pleine || 0);
   const meilleur = joker => mesure().fort.top
@@ -315,10 +315,11 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
       noterVerticaux(mesure());
       continue;
     }
-    // Ban impossible : joker (une fois, si le cas le permet), sinon fin.
-    if (!jokerPermis || resultat.jokers) break;
+    // Ban impossible : joker (une fois, si le cas le permet ; mode spécial :
+    // autant que nécessaire), sinon fin.
+    if (!jokerPermis || (resultat.jokers && !special)) break;
     const joker = meilleur(true);
-    if (!joker || !joker.valide) break;
+    if (!joker || !(special ? joker.persosOk : joker.valide)) break;
     bannisFort.add(joker.id);
     resultat.jokers++;
     resultat.suggestion.push(joker.id);
@@ -453,7 +454,6 @@ function appliquerBansBonus(draft, joueur, choix, jokers = [], aleatoires = new 
     draft.actions.push({ joueur, type: "ban", perso_id: persoId, bonus: true, joker: true, ...hasard(persoId) });
   });
   draft.bans_bonus_faits = choix.length + jokers.length;
-  if (draft.mode_special) draft.bans_special_faits = true;
   draft.bans_bonus_choix = [];
   draft.bans_joker_choix = [];
 }
@@ -951,9 +951,8 @@ function etatRevanche(precedent) {
       .filter(id => !bannis.has(id)),
     bans_bonus_total: precedent.bans_bonus_total,
     bans_bonus_faits: precedent.bans_bonus_faits,
-    // Mode spécial de l'entraînement : bans déjà faits, gardés.
+    // Mode spécial de l'entraînement (bans calculés avec jokers illimités).
     mode_special: !!precedent.mode_special,
-    bans_special_faits: !!precedent.bans_special_faits,
     joueur_faible: precedent.joueur_faible || null,
     bans_bonus_joueur: precedent.bans_bonus_joueur,
     // Méthode d'équilibrage de la 1re manche, bans déjà confirmés.

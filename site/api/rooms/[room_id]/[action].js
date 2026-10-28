@@ -15,7 +15,7 @@ const { tirerBossAleatoire, bossCarnageExclus, DUREE_DEFI_SECONDES, estDefiEnnem
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserResultat, messageFormatInvalide, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
-const { calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH, erreurPointsBox, palierDraftRoom } = require("../../_lib/boxes");
+const { calculerEquilibrage, combinaisonsEquilibrables, calculerModeSpecial, BOX_MATCH, erreurPointsBox, palierDraftRoom } = require("../../_lib/boxes");
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
 const { crediterMatch } = require("../../_lib/koyns");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
@@ -635,7 +635,7 @@ async function handleBonusToggle(req, res, roomId, user) {
     }
     if (draft.bans_bonus_choix.length < normaux) {
       draft.bans_bonus_choix.push(persoId);
-    } else if (draft.bans_joker_choix.length < jokers || draft.mode_special) {
+    } else if (draft.bans_joker_choix.length < jokers) {
       const adverse = joueur === "j1" ? "j2" : "j1";
       if (!draft[`pool_${adverse}`]?.includes(persoId)) {
         return res.status(409).json({ error: "Le ban joker vise un personnage de la box adverse" });
@@ -718,12 +718,7 @@ async function handleBonusConfirmer(req, res, roomId, user) {
 
   const choix = draft.bans_bonus_choix || [];
   const jokers = draft.bans_joker_choix || [];
-  // Mode spécial : bans calculés obligatoires, jokers en plus à volonté.
-  if (draft.mode_special) {
-    if (choix.length < bansNormaux(draft) || jokers.length < (draft.bans_joker_total || 0)) {
-      return res.status(409).json({ error: `Sélectionne au moins tes ${draft.bans_bonus_total} ban(s) calculé(s) avant de confirmer` });
-    }
-  } else if (choix.length + jokers.length !== draft.bans_bonus_total) {
+  if (choix.length + jokers.length !== draft.bans_bonus_total) {
     return res.status(409).json({ error: `Sélectionne exactement ${draft.bans_bonus_total} personnage(s) avant de confirmer` });
   }
 
@@ -959,9 +954,10 @@ async function handleMancheTournoi(req, res, roomId, user) {
 
 // ---- mode_special : entraînement dont les box ne s'équilibrent pas, le
 // lanceur continue quand même (cf. afficherAlerteEquilibrage dans
-// match.js) : la box la plus faible fait ses bans d'équilibrage avec des
-// bans joker illimités, pour tenter d'équilibrer. Entraînement seulement,
-// avant les bans d'équilibrage. ----
+// match.js) : bans d'équilibrage recalculés avec autant de bans joker que
+// nécessaire pour équilibrer, même sous les seuils (cf.
+// calculerModeSpecial), imposés à la box la plus faible. Entraînement
+// seulement, avant les bans d'équilibrage. ----
 async function handleModeSpecial(req, res, roomId, user) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -977,8 +973,7 @@ async function handleModeSpecial(req, res, roomId, user) {
     return res.status(409).json({ error: "Trop tard : les bans d'équilibrage ont commencé" });
   }
   draft.mode_special = true;
-  draft.bans_special_faits = false;
-  draft.bans_bonus_joueur ||= draft.joueur_faible || "j1";
+  await calculerModeSpecial(draft);
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
 }

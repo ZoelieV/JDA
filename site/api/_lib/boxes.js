@@ -30,7 +30,7 @@ const {
 // Équilibrage calculé ("fixe_joker") de 2 box (cf. calculerEquilibrageFixe,
 // _lib/draft.js) : { j1: { data, box }, j2: {...} } et palier de théâtre de
 // la draft -> { faible, fort, modeles, resultat }.
-function evaluerEquilibrageFixe(boxes, palier) {
+function evaluerEquilibrageFixe(boxes, palier, options = {}) {
   const personnages = getPersonnages();
   const armes = getArmes();
   const modeles = {};
@@ -42,7 +42,7 @@ function evaluerEquilibrageFixe(boxes, palier) {
   });
   const faible = verticalite(modeles.j1) <= verticalite(modeles.j2) ? "j1" : "j2";
   const fort = faible === "j1" ? "j2" : "j1";
-  const resultat = calculerEquilibrageFixe(modeles[faible], modeles[fort], points.j1 - points.j2, getLimitesEquilibrage(palier));
+  const resultat = calculerEquilibrageFixe(modeles[faible], modeles[fort], points.j1 - points.j2, getLimitesEquilibrage(palier), undefined, options);
   return { faible, fort, modeles, resultat };
 }
 
@@ -104,6 +104,27 @@ async function combinaisonsEquilibrables(draft, boxesPermises = BOX_MATCH) {
     });
   });
   return combinaisons;
+}
+
+// Mode spécial de l'entraînement (box non équilibrables, cf.
+// handleModeSpecial) : équilibrage recalculé avec autant de bans joker que
+// nécessaire (cf. calculerEquilibrageFixe), imposés à la box la plus
+// faible. Méthode d'équilibrage calculée seulement (les autres
+// s'équilibrent toujours).
+async function calculerModeSpecial(draft) {
+  if (!estEquilibrageFixe(draft)) return;
+  const boxes = await chargerDonneesBoxes(draft);
+  const palier = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
+  const { faible, resultat } = evaluerEquilibrageFixe(boxes, palier, { special: true });
+  draft.bans_bonus_total = resultat.bans + resultat.jokers;
+  draft.bans_joker_total = resultat.jokers;
+  draft.bans_bonus_joueur = draft.bans_bonus_total > 0 ? faible : null;
+  draft.joueur_faible = faible;
+  draft.bans_bonus_choix = [];
+  draft.bans_joker_choix = [];
+  draft.ecart_prevu = { ...(draft.ecart_prevu || {}), avant: resultat.ecart_avant, apres: resultat.ecart_apres, cas: resultat.cas };
+  // Toujours pas équilibrable (plus rien à bannir sans vider une box).
+  draft.equilibrable_special = resultat.equilibrable;
 }
 
 // Deux joueurs (données de profil) peuvent-ils s'affronter en full box dans
@@ -264,6 +285,7 @@ module.exports = {
   calculerEquilibrage,
   combinaisonsEquilibrables,
   estEquilibrableFullBox,
+  calculerModeSpecial,
   BOX_MATCH,
   erreurPointsBox,
   palierDraftRoom
