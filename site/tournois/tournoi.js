@@ -200,7 +200,7 @@ function rendreQualifs() {
   $t("matchs-qualifs").innerHTML = tournoi.qualifs.matchs.map(match => {
     const mien = estMoi(match.a) || estMoi(match.b);
     let droite = "";
-    if (match.statut === "termine") droite = `<span>${match.forfait ? "Forfait, " : ""}vainqueur : ${nomParticipant(match.vainqueur)} (${match.trophees} 🏆)</span>`;
+    if (match.statut === "termine") droite = `<span>${match.forfait ? "Victoire par forfait" : "Vainqueur"} : ${nomParticipant(match.vainqueur)} (${match.trophees} 🏆)</span>`;
     else if (match.statut === "en_cours") droite = `<a class="bouton-tournoi petit" href="${lienRoom(match.room_id)}">${mien || moi?.arbitre ? "Rejoindre" : "Regarder"}</a>`;
     else if (enQualifs && (mien || moi?.arbitre)) droite = `<button type="button" class="bouton-tournoi petit principal" data-lancer="${match.id}">Lancer</button>`;
     if (moi?.gestionnaire && enQualifs && match.statut !== "termine") droite += boutonsGestionMatch(match);
@@ -215,9 +215,9 @@ function boutonsGestionMatch(match) {
   if (estMoi(match.a) || estMoi(match.b)) return "";
   const nom = id => vue.tournoi.format === "equipe" ? echapperTournoi(vue.tournoi.equipes.find(e => e.id === id)?.nom || "") : echapperTournoi(vue.joueurs[id]?.nom || "");
   const boutons = (match.statut === "en_cours" ? `<button type="button" class="bouton-tournoi petit" data-relancer="${match.id}" title="Room abandonnée ou annulée : remet le match à jouer">Remettre à jouer</button>` : "") +
-    (match.a && match.b ? `<button type="button" class="bouton-tournoi petit danger" data-forfait="${match.id}" data-vainqueur="${match.a}" title="Victoire par forfait">Forfait → ${nom(match.a)}</button>
-    <button type="button" class="bouton-tournoi petit danger" data-forfait="${match.id}" data-vainqueur="${match.b}" title="Victoire par forfait">Forfait → ${nom(match.b)}</button>` : "");
-  return boutons ? `<details class="gestion-match"><summary title="Forfait, remettre à jouer">⚙</summary><div class="actions-match">${boutons}</div></details>` : "";
+    (match.a && match.b ? `<button type="button" class="bouton-tournoi petit danger" data-forfait="${match.id}" data-vainqueur="${match.a}" title="Victoire par forfait">Victoire par forfait → ${nom(match.a)}</button>
+    <button type="button" class="bouton-tournoi petit danger" data-forfait="${match.id}" data-vainqueur="${match.b}" title="Victoire par forfait">Victoire par forfait → ${nom(match.b)}</button>` : "");
+  return boutons ? `<details class="gestion-match"><summary title="Victoire par forfait, remettre à jouer">⚙</summary><div class="actions-match">${boutons}</div></details>` : "";
 }
 
 function rendreArbre() {
@@ -251,6 +251,7 @@ function rendreArbre() {
           <div class="match-arbre ${match.statut}">
             ${camp("a")}${camp("b")}
             ${scoreMatch(match) ? `<div class="doux">Manches :${scoreMatch(match)}</div>` : ""}
+            ${match.forfait ? `<div class="doux">Victoire par forfait</div>` : ""}
             ${actions ? `<div class="actions-match">${actions}</div>` : ""}
           </div>`;
       }).join("")}
