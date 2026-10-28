@@ -219,6 +219,57 @@ function nettoyerProfil(brut) {
   return profil;
 }
 
+// ---- Box personnalisées enregistrées de l'entraînement ----
+// Persos et armes cochés dans la full box d'un joueur (ou d'une box
+// fictive), sous un nom, pour les reprendre plus tard (cf. matchmaking/
+// matchmaking.js). Table points, ligne "boxes_entrainement:<discord_id>" :
+// à part du profil, que Mon compte réécrit en entier.
+const PREFIXE_BOXES_ENTRAINEMENT = "boxes_entrainement:";
+const MAX_BOXES_ENTRAINEMENT = 30;
+const LONGUEUR_NOM_BOX_ENTRAINEMENT = 30;
+const FORMAT_PROPRIETAIRE = /^(\d{5,25}|fictif_[0-9a-f]{1,16})$/;
+const FORMAT_ID_BOX_ENTRAINEMENT = /^[a-z0-9]{1,16}$/;
+const DELAI_BOXES_ENTRAINEMENT_MS = 1000;
+
+function nettoyerBoxesEntrainement(brut) {
+  if (!Array.isArray(brut)) return null;
+  const ids = new Set();
+  const boxes = [];
+  for (const box of brut.slice(0, MAX_BOXES_ENTRAINEMENT)) {
+    if (!estObjet(box)) continue;
+    const nom = typeof box.nom === "string" ? box.nom.trim().slice(0, LONGUEUR_NOM_BOX_ENTRAINEMENT) : "";
+    if (!nom || !FORMAT_ID_BOX_ENTRAINEMENT.test(box.id) || ids.has(box.id) || !FORMAT_PROPRIETAIRE.test(box.proprietaire)) continue;
+    const liste = (valeurs, format) => Array.isArray(valeurs)
+      ? [...new Set(valeurs.filter(v => typeof v === "string" && format.test(v)))].slice(0, MAX_ENTREES_COLLECTION)
+      : [];
+    ids.add(box.id);
+    boxes.push({ id: box.id, nom, proprietaire: box.proprietaire, persos: liste(box.persos, FORMAT_ID), armes: liste(box.armes, FORMAT_INSTANCE) });
+  }
+  return boxes;
+}
+
+async function routeBoxesEntrainement(req, res, discordId) {
+  const ligne = PREFIXE_BOXES_ENTRAINEMENT + discordId;
+  if (req.method === "GET") {
+    const { data, error } = await supabase.from("points").select("data").eq("id", ligne).maybeSingle();
+    if (error) throw error;
+    return res.status(200).json({ boxes: data?.data?.boxes || [] });
+  }
+  if (req.method === "POST") {
+    const boxes = nettoyerBoxesEntrainement(req.body?.boxes);
+    if (!boxes) return res.status(400).json({ error: "Liste de box invalide." });
+    const attente = await verifierFrequenceCompte(discordId, "boxes_entrainement", DELAI_BOXES_ENTRAINEMENT_MS);
+    if (attente > 0) return res.status(429).json({ error: "Doucement : un enregistrement par seconde au plus." });
+    const { error } = boxes.length
+      ? await supabase.from("points").upsert({ id: ligne, data: { boxes }, updated_at: new Date().toISOString() })
+      : await supabase.from("points").delete().eq("id", ligne);
+    if (error) throw error;
+    return res.status(200).json({ boxes });
+  }
+  res.setHeader("Allow", "GET, POST");
+  return res.status(405).end();
+}
+
 async function getUser(req) {
   const cookies = parseCookies(req);
   const token = cookies["session"];
@@ -238,6 +289,12 @@ module.exports = async (req, res) => {
     }
 
     const discordId = user.id;
+
+    // ---- BOX PERSONNALISÉES DE L'ENTRAÎNEMENT (?action=boxes_entrainement) ----
+    // GET : liste ; POST { boxes } : liste complète remplacée.
+    if (new URL(req.url, "http://x").searchParams.get("action") === "boxes_entrainement") {
+      return routeBoxesEntrainement(req, res, discordId);
+    }
 
     // ---- LECTURE DU PROFIL ----
     if (req.method === "GET") {

@@ -738,3 +738,101 @@
   opacity: 1;
   transform: translate(0, -50%);
 }
+
+/* Box personnalisée de l'entraînement : box enregistrées, filtres
+   (recherche, éléments, types d'arme) et tri par points. */
+.selecteur-box .ent-liste-enregistrees,
+.selecteur-box .ent-nom-box,
+.ent-filtres .ent-recherche {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+}
+
+.selecteur-box .ent-liste-enregistrees {
+  width: min(22rem, 100%);
+  margin-left: 0;
+  text-overflow: ellipsis;
+}
+
+.selecteur-box .ent-nom-box,
+.ent-filtres .ent-recherche {
+  width: min(14rem, 100%);
+}
+
+.detail-match .selecteur-box .ent-liste-enregistrees:focus,
+.detail-match .selecteur-box .ent-nom-box:focus,
+.detail-match .ent-filtres .ent-recherche:focus {
+  outline: none;
+  border-color: var(--couleur-detail);
+}
+
+.ent-message-box {
+  color: var(--texte-doux);
+  font-size: 0.875rem;
+}
+
+.ent-supprimer-box:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ent-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ent-filtre-groupe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.ent-filtre-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0.1875rem;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.5rem;
+  background-color: rgba(20, 20, 20, 0.55);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.ent-filtre-icone img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ent-filtre-icone:hover,
+.ent-filtre-icone.active {
+  border-color: var(--accent-bordure);
+  opacity: 1;
+}
+
+.ent-filtre-icone.active {
+  background-color: var(--accent-fond);
+}
+
+.choix-btn.ent-tri-points {
+  flex-direction: row;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+}
+
+.ent-tri-points img {
+  height: 1.25rem;
+  width: auto;
+}

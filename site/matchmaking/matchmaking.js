@@ -176,6 +176,7 @@ const entrainement = {
   moi: null, // mon compte { id }
   comptes: [], // tous les joueurs { discord_id, nom }
   fictives: [], // box fictives (administrateurs) { id, nom }
+  enregistrees: [], // box personnalisées enregistrées { id, nom, proprietaire, persos, armes }
   profils: new Map(), // discord_id -> données du profil (box)
   personnages: [],
   armes: [],
@@ -185,6 +186,7 @@ const entrainement = {
   vitrines: [],
   cotes: {
     // armes : copies cochées ("idArme", "idArme#2"... comme weapons.full).
+    // enregistree : id de la box enregistrée chargée ; filtres : cf. brancherFiltresEnt.
     moi: { proprietaire: null, box: "full", persos: new Set(), armes: new Set() },
     adverse: { proprietaire: null, box: "full", persos: new Set(), armes: new Set() }
   }
@@ -244,12 +246,23 @@ async function rendreSelecteurBox(cote) {
       ${boxes.map(box => `<button type="button" class="choix-btn${etat.box === box ? " active" : ""}" data-valeur="${box}"></button>`).join("")}
     </div>
     <div class="ent-perso-zone${etat.box === "custom" ? "" : " cache"}">
+      <h4 class="ent-sous-titre">Box enregistrées</h4>
+      <div class="ligne-entrainement ent-enregistrees">
+        <select class="ent-liste-enregistrees"></select>
+        <button type="button" class="choix-btn ent-supprimer-box">Supprimer</button>
+      </div>
+      <div class="ligne-entrainement ent-enregistrees">
+        <input type="text" class="ent-nom-box" maxlength="${LONGUEUR_NOM_BOX_ENT}" placeholder="Nom de la box" autocomplete="off">
+        <button type="button" class="choix-btn ent-enregistrer-box">Enregistrer</button>
+        <span class="ent-message-box"></span>
+      </div>
       <h4 class="ent-sous-titre">Personnages</h4>
       <div class="ligne-entrainement">
         <span class="ent-compteur"></span>
         <button type="button" class="choix-btn ent-tout">Tout cocher</button>
         <button type="button" class="choix-btn ent-rien">Tout décocher</button>
       </div>
+      ${htmlFiltresEnt("persos")}
       <div class="ent-persos"></div>
       <h4 class="ent-sous-titre">Armes</h4>
       <div class="ligne-entrainement">
@@ -257,6 +270,7 @@ async function rendreSelecteurBox(cote) {
         <button type="button" class="choix-btn ent-toutes-armes">Tout cocher</button>
         <button type="button" class="choix-btn ent-aucune-arme">Tout décocher</button>
       </div>
+      ${htmlFiltresEnt("armes")}
       <div class="ent-persos ent-armes"></div>
     </div>
   `;
@@ -302,6 +316,7 @@ async function rendreSelecteurBox(cote) {
     etat.proprietaire = trouve.id;
     etat.persos = new Set();
     etat.armes = new Set();
+    etat.enregistree = null;
     rendreSelecteurBox(cote);
   });
 
@@ -326,7 +341,7 @@ async function rendreSelecteurBox(cote) {
   const constellations = profil?.characters?.full || {};
   const niveaux = profil?.characters?.niveaux || {};
   const stuff = profil?.characters?.selections?.stuff || {};
-  grille.replaceChildren(...possedes.map(perso => {
+  const cartesPersos = possedes.map(perso => {
     const carte = document.createElement("button");
     carte.type = "button";
     carte.className = `ent-perso ${classeFondRarete(perso.rarete)}${etat.persos.has(perso.id) ? " coche" : ""}`;
@@ -346,16 +361,21 @@ async function rendreSelecteurBox(cote) {
       carte.classList.toggle("coche");
       majCompteur();
     });
-    return carte;
-  }));
-  zone.querySelector(".ent-tout").addEventListener("click", () => {
-    possedes.forEach(p => etat.persos.add(p.id));
-    rendreSelecteurBox(cote);
+    const points = pointsPersonnage(perso, constellations[perso.id], niveau);
+    carte.title += ` · ${points} points`;
+    return { carte, cle: perso.id, nom: perso.nom, element: perso.element, type: perso.arme, points };
   });
-  zone.querySelector(".ent-rien").addEventListener("click", () => {
-    etat.persos.clear();
-    rendreSelecteurBox(cote);
-  });
+  const filtrerPersos = brancherFiltresEnt(zone, etat, "persos", grille, cartesPersos);
+  // Tout cocher / décocher : les persos affichés (filtres compris).
+  const cocherPersos = coche => {
+    filtrerPersos().forEach(({ carte, cle }) => {
+      if (coche) etat.persos.add(cle); else etat.persos.delete(cle);
+      carte.classList.toggle("coche", coche);
+    });
+    majCompteur();
+  };
+  zone.querySelector(".ent-tout").addEventListener("click", () => cocherPersos(true));
+  zone.querySelector(".ent-rien").addEventListener("click", () => cocherPersos(false));
   majCompteur();
 
   // Armes : chaque copie de la full box, raffinement en bas à droite.
@@ -368,11 +388,12 @@ async function rendreSelecteurBox(cote) {
       ? `${nb} arme${nb > 1 ? "s" : ""} sur ${copies.length}`
       : "Aucune arme dans la full box de ce joueur.";
   };
-  grilleArmes.replaceChildren(...copies.map(({ instance, arme, raffinement }) => {
+  const cartesArmes = copies.map(({ instance, arme, raffinement }) => {
     const carte = document.createElement("button");
     carte.type = "button";
     carte.className = `ent-perso ${classeFondRarete(arme.rarete)}${etat.armes.has(instance) ? " coche" : ""}`;
-    carte.title = `${arme.nom} R${raffinement + 1}`;
+    const points = Number(arme.PPW?.[raffinement] ?? 0);
+    carte.title = `${arme.nom} R${raffinement + 1} · ${points} points`;
     carte.innerHTML = `<img src="../DB/${arme.image}" alt="" loading="lazy"><span class="ent-badge">R${raffinement + 1}</span>`;
     carte.addEventListener("click", () => {
       if (etat.armes.has(instance)) etat.armes.delete(instance);
@@ -380,17 +401,217 @@ async function rendreSelecteurBox(cote) {
       carte.classList.toggle("coche");
       majCompteurArmes();
     });
-    return carte;
-  }));
-  zone.querySelector(".ent-toutes-armes").addEventListener("click", () => {
-    copies.forEach(c => etat.armes.add(c.instance));
-    rendreSelecteurBox(cote);
+    return { carte, cle: instance, nom: arme.nom, type: arme.type, points };
   });
-  zone.querySelector(".ent-aucune-arme").addEventListener("click", () => {
-    etat.armes.clear();
-    rendreSelecteurBox(cote);
-  });
+  const filtrerArmes = brancherFiltresEnt(zone, etat, "armes", grilleArmes, cartesArmes);
+  const cocherArmes = coche => {
+    filtrerArmes().forEach(({ carte, cle }) => {
+      if (coche) etat.armes.add(cle); else etat.armes.delete(cle);
+      carte.classList.toggle("coche", coche);
+    });
+    majCompteurArmes();
+  };
+  zone.querySelector(".ent-toutes-armes").addEventListener("click", () => cocherArmes(true));
+  zone.querySelector(".ent-aucune-arme").addEventListener("click", () => cocherArmes(false));
   majCompteurArmes();
+
+  brancherBoxesEnregistrees(zone, cote, possedes, copies);
+}
+
+// ---- Box personnalisée : filtres (recherche, éléments, types d'arme) et
+// tri par points des grilles de persos et d'armes ----
+const ELEMENTS_ENT = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
+const TYPES_ARMES_ENT = ["sword", "claymore", "polearm", "bow", "catalyst"];
+const NOMS_TYPES_ARMES_ENT = { sword: "Épée", claymore: "Claymore", polearm: "Arme d'hast", bow: "Arc", catalyst: "Catalyseur" };
+
+function htmlFiltresEnt(vue) {
+  const icone = (groupe, valeur, titre) =>
+    `<button type="button" class="ent-filtre-icone" data-groupe="${groupe}" data-valeur="${valeur}" title="${titre}"><img src="/DB/images/others/${valeur}.webp" alt="${titre}"></button>`;
+  const nomElement = e => e.charAt(0).toUpperCase() + e.slice(1);
+  return `
+    <div class="ent-filtres" data-vue="${vue}">
+      <input type="search" class="ent-recherche" placeholder="Rechercher…" autocomplete="off">
+      ${vue === "persos" ? `<div class="ent-filtre-groupe">${ELEMENTS_ENT.map(e => icone("elements", e, nomElement(e))).join("")}</div>` : ""}
+      <div class="ent-filtre-groupe">${TYPES_ARMES_ENT.map(t => icone("types", t, NOMS_TYPES_ARMES_ENT[t])).join("")}</div>
+      <button type="button" class="choix-btn ent-tri-points" title="Trier par points"><img src="/DB/images/others/scale.webp" alt="">Points<b class="ent-fleche"></b></button>
+    </div>`;
+}
+
+const sansAccents = texte => String(texte || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+// Filtres gardés dans l'état du côté (etat.filtres[vue]) : conservés quand
+// le sélecteur est redessiné. cartes : [{ carte, cle, nom, element?, type,
+// points }] dans l'ordre du catalogue. -> fonction qui applique les filtres
+// et renvoie les cartes affichées.
+function brancherFiltresEnt(zone, etat, vue, grille, cartes) {
+  etat.filtres ||= {};
+  const filtres = etat.filtres[vue] ||= { recherche: "", elements: new Set(), types: new Set(), tri: 0 };
+  const barre = zone.querySelector(`.ent-filtres[data-vue="${vue}"]`);
+  const champ = barre.querySelector(".ent-recherche");
+  const boutonTri = barre.querySelector(".ent-tri-points");
+
+  const appliquer = () => {
+    const recherche = sansAccents(filtres.recherche.trim());
+    const affichees = cartes
+      .filter(c => (!recherche || sansAccents(c.nom).includes(recherche)) &&
+        (!filtres.elements.size || filtres.elements.has(c.element)) &&
+        (!filtres.types.size || filtres.types.has(c.type)))
+      .map((c, index) => ({ c, index }))
+      .sort((a, b) => filtres.tri ? (b.c.points - a.c.points) * filtres.tri || a.index - b.index : a.index - b.index)
+      .map(({ c }) => c);
+    grille.replaceChildren(...affichees.map(c => c.carte));
+    barre.querySelectorAll(".ent-filtre-icone").forEach(b => b.classList.toggle("active", filtres[b.dataset.groupe].has(b.dataset.valeur)));
+    boutonTri.classList.toggle("active", filtres.tri !== 0);
+    boutonTri.querySelector(".ent-fleche").textContent = filtres.tri === 1 ? " ▼" : filtres.tri === -1 ? " ▲" : "";
+    return affichees;
+  };
+
+  champ.value = filtres.recherche;
+  champ.addEventListener("input", () => {
+    filtres.recherche = champ.value;
+    appliquer();
+  });
+  barre.querySelectorAll(".ent-filtre-icone").forEach(bouton => bouton.addEventListener("click", () => {
+    const selection = filtres[bouton.dataset.groupe];
+    if (selection.has(bouton.dataset.valeur)) selection.delete(bouton.dataset.valeur);
+    else selection.add(bouton.dataset.valeur);
+    appliquer();
+  }));
+  // Points : décroissant, croissant, puis ordre du catalogue.
+  boutonTri.addEventListener("click", () => {
+    filtres.tri = filtres.tri === 0 ? 1 : filtres.tri === 1 ? -1 : 0;
+    appliquer();
+  });
+  appliquer();
+  return appliquer;
+}
+
+// ---- Box personnalisées enregistrées (api/auth/profile.js,
+// ?action=boxes_entrainement) : persos et armes cochés d'un joueur sous un
+// nom ; reprises telles quelles (persos ou armes qu'il n'a plus : ignorés) ----
+const MAX_BOXES_ENT = 30;
+const LONGUEUR_NOM_BOX_ENT = 30;
+
+async function chargerBoxesEnregistrees() {
+  try {
+    entrainement.enregistrees = (await chargerJSONApi("/api/auth/profile?action=boxes_entrainement")).boxes || [];
+  } catch (erreur) {
+    console.error(erreur);
+    entrainement.enregistrees = [];
+  }
+}
+
+async function envoyerBoxesEnregistrees(boxes) {
+  const reponse = await fetch("/api/auth/profile?action=boxes_entrainement", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ boxes })
+  });
+  const resultat = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) throw new Error(resultat.error || "Enregistrement impossible.");
+  entrainement.enregistrees = resultat.boxes || boxes;
+}
+
+function nomProprietaire(id) {
+  return entrainement.comptes.find(c => c.discord_id === id)?.nom ||
+    entrainement.fictives.find(b => b.id === id)?.nom || "joueur inconnu";
+}
+
+// Listes des 2 côtés à jour (après un enregistrement ou une suppression).
+function remplirListesEnregistrees() {
+  document.querySelectorAll(".selecteur-box").forEach(zone => {
+    const liste = zone.querySelector(".ent-liste-enregistrees");
+    if (!liste) return;
+    const etat = entrainement.cotes[zone.dataset.cote];
+    const boxes = entrainement.enregistrees || [];
+    const option = (valeur, texte) => {
+      const o = document.createElement("option");
+      o.value = valeur;
+      o.textContent = texte;
+      return o;
+    };
+    liste.replaceChildren(
+      option("", boxes.length ? "Charger une box enregistrée…" : "Aucune box enregistrée"),
+      ...boxes.map(box => option(box.id, `${box.nom} · ${nomProprietaire(box.proprietaire)}`))
+    );
+    liste.value = boxes.some(b => b.id === etat.enregistree) ? etat.enregistree : "";
+    zone.querySelector(".ent-supprimer-box").disabled = !liste.value;
+  });
+}
+
+function brancherBoxesEnregistrees(zone, cote, possedes, copies) {
+  const etat = entrainement.cotes[cote];
+  const liste = zone.querySelector(".ent-liste-enregistrees");
+  const champ = zone.querySelector(".ent-nom-box");
+  const message = zone.querySelector(".ent-message-box");
+  const trouver = id => (entrainement.enregistrees || []).find(b => b.id === id);
+  champ.value = trouver(etat.enregistree)?.nom || "";
+  remplirListesEnregistrees();
+
+  // Box choisie : son joueur, ses persos et ses armes (un joueur dont la
+  // box fictive n'est pas visible ici : refusé).
+  liste.addEventListener("change", () => {
+    const box = trouver(liste.value);
+    if (!box) return;
+    if (box.proprietaire !== entrainement.moi.id && !entrainement.comptes.some(c => c.discord_id === box.proprietaire) && !entrainement.fictives.some(b => b.id === box.proprietaire)) {
+      message.textContent = "Joueur introuvable.";
+      liste.value = "";
+      return;
+    }
+    etat.proprietaire = box.proprietaire;
+    etat.box = "custom";
+    etat.persos = new Set(box.persos);
+    etat.armes = new Set(box.armes);
+    etat.enregistree = box.id;
+    rendreSelecteurBox(cote);
+  });
+
+  zone.querySelector(".ent-supprimer-box").addEventListener("click", async () => {
+    const box = trouver(liste.value);
+    if (!box || !confirm(`Supprimer la box enregistrée « ${box.nom} » ?`)) return;
+    try {
+      await envoyerBoxesEnregistrees(entrainement.enregistrees.filter(b => b !== box));
+      if (etat.enregistree === box.id) etat.enregistree = null;
+      champ.value = "";
+      message.textContent = "Box supprimée.";
+      remplirListesEnregistrees();
+    } catch (erreur) {
+      message.textContent = erreur.message;
+    }
+  });
+
+  // Même nom qu'une box enregistrée : remplacée (après confirmation).
+  zone.querySelector(".ent-enregistrer-box").addEventListener("click", async () => {
+    const nom = champ.value.trim().slice(0, LONGUEUR_NOM_BOX_ENT);
+    if (!nom) {
+      message.textContent = "Donne un nom à la box.";
+      return;
+    }
+    const boxes = [...(entrainement.enregistrees || [])];
+    const existante = boxes.findIndex(b => b.nom.toLowerCase() === nom.toLowerCase());
+    if (existante >= 0 && !confirm(`Remplacer la box enregistrée « ${boxes[existante].nom} » ?`)) return;
+    if (existante < 0 && boxes.length >= MAX_BOXES_ENT) {
+      message.textContent = `${MAX_BOXES_ENT} box enregistrées au plus : supprimes-en une.`;
+      return;
+    }
+    const box = {
+      id: existante >= 0 ? boxes[existante].id : Date.now().toString(36),
+      nom,
+      proprietaire: etat.proprietaire,
+      persos: possedes.filter(p => etat.persos.has(p.id)).map(p => p.id),
+      armes: copies.filter(c => etat.armes.has(c.instance)).map(c => c.instance)
+    };
+    if (existante >= 0) boxes[existante] = box; else boxes.push(box);
+    try {
+      await envoyerBoxesEnregistrees(boxes);
+      etat.enregistree = box.id;
+      message.textContent = "Box enregistrée.";
+      remplirListesEnregistrees();
+    } catch (erreur) {
+      message.textContent = erreur.message;
+    }
+  });
 }
 
 // ---- Entraînement en équipe : vitrines construites par le lanceur ----
@@ -567,6 +788,7 @@ async function initialiserEntrainement() {
   document.getElementById("lancer-entrainement").addEventListener("click", lancerEntrainement);
   document.querySelectorAll("#ent-format .choix-btn").forEach(btn => btn.addEventListener("click", () => choisirFormat(Number(btn.dataset.valeur))));
 
+  await chargerBoxesEnregistrees();
   await Promise.all([rendreSelecteurBox("moi"), rendreSelecteurBox("adverse")]);
   entrainement.pret = true;
   return true;
