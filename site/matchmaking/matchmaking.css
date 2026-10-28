@@ -689,3 +689,35 @@
   border-color: rgba(245, 197, 66, 0.55);
   background: linear-gradient(135deg, rgba(245, 197, 66, 0.16), rgba(245, 197, 66, 0.04));
 }
+
+/* Boss, J1... : jamais plus larges que l'écran (une liste de boss prend
+   sinon la largeur de son nom le plus long). Téléphone : une option par
+   ligne, liste sur la place restante. */
+.ligne-entrainement label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ligne-entrainement select {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
+  .ligne-entrainement label,
+  .detail-match .options-room label {
+    display: flex;
+    width: 100%;
+  }
+
+  .ligne-entrainement select {
+    flex: 1 1 0;
+    margin-left: 0;
+  }
+}
