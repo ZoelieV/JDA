@@ -177,6 +177,14 @@
   ],
   "rewrites": [
     {
+      "source": "/tournois",
+      "destination": "/tournois/tournois"
+    },
+    {
+      "source": "/tournoi",
+      "destination": "/tournois/tournoi"
+    },
+    {
       "source": "/match",
       "has": [
         {

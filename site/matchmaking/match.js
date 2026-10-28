@@ -2722,6 +2722,8 @@ function rendreLibellesResultat() {
 // de sa box pour le lanceur seulement, une fois la draft terminée
 // (facultatif, cf. handleTempsEntrainement). null : pas de saisie.
 function roleSaisieTemps() {
+  // Tournoi : c'est l'arbitre qui saisit les temps (cf. rendreArbitre).
+  if (draft.tournoi) return null;
   if (!draft.entrainement) return monRole;
   return draft.phase === "termine" && moiDiscordId === draft.entrainement.lanceur ? draft.entrainement.cote_moi : null;
 }
@@ -2752,6 +2754,10 @@ function rendreRecap() {
 
 function rendreTemps() {
   rendreRecap();
+  if (draft.tournoi) {
+    rendreArbitre();
+    return;
+  }
 
   if (!monRole) {
     const enAttente = ["j1", "j2"].filter(role => !draft[`temps_${role}`]).length;
@@ -2981,6 +2987,72 @@ function rendreTermine() {
   rendreRejouer();
 }
 
+// ---- Tournois (cf. api/_lib/tournois.js) ----
+// Les joueurs ne saisissent pas leur temps : un arbitre du tournoi
+// (spectateur de la room) saisit les 2. Bo3 : il lance la manche suivante.
+
+function estArbitreTournoi() {
+  return !!draft.tournoi && (draft.tournoi.arbitres || []).includes(moiDiscordId);
+}
+
+function rendreArbitre() {
+  const arbitre = estArbitreTournoi();
+  const zone = document.getElementById("saisie-arbitre");
+  zone.classList.toggle("cache", !arbitre);
+  document.getElementById("etat-temps").textContent = arbitre
+    ? ""
+    : `Combat en cours : l'arbitre du tournoi saisira les ${motsResultat().les}.`;
+  if (!arbitre) return;
+  ["j1", "j2"].forEach(role => {
+    document.getElementById(`arbitre-nom-${role}`).innerHTML = pseudoColore(role);
+    document.getElementById(`arbitre-temps-${role}`).placeholder = defiEnCours() ? "ennemis" : "7:32";
+  });
+  document.getElementById("btn-valider-arbitre").onclick = envoyerTempsArbitre;
+}
+
+function envoyerTempsArbitre() {
+  const corps = {};
+  for (const role of ["j1", "j2"]) {
+    const abandon = document.getElementById(`arbitre-abandon-${role}`).checked;
+    const brut = document.getElementById(`arbitre-temps-${role}`).value.trim();
+    const valeur = defiEnCours() ? brut : brut.replace(/[.,]/, ":");
+    if (!abandon && !(defiEnCours() ? /^[0-9]{1,4}$/ : /^[0-9]{1,3}:[0-5][0-9]$/).test(valeur)) {
+      alert(`${role === "j1" ? joueur1.pseudo : joueur2.pseudo} : ${defiEnCours() ? "nombre d'ennemis invalide (ex : 42)" : "temps invalide (ex : 7:32)"}.`);
+      return;
+    }
+    corps[`abandon_${role}`] = abandon;
+    corps[`temps_${role}`] = abandon ? null : valeur;
+  }
+  if (!confirm(`Valider ${joueur1.pseudo} : ${corps.abandon_j1 ? "abandon" : corps.temps_j1} et ${joueur2.pseudo} : ${corps.abandon_j2 ? "abandon" : corps.temps_j2} ?`)) return;
+  envoyerAction(`/api/rooms/${roomId}/temps_arbitre`, corps)
+    .then(data => definirDraft(data.draft))
+    .catch(err => alert(err.message));
+}
+
+// Fin d'une manche de tournoi : score (bo3), manche suivante (arbitre),
+// retour au tournoi.
+function rendreFinMancheTournoi() {
+  document.getElementById("btn-rejouer").classList.add("cache");
+  document.getElementById("etat-rejouer").classList.add("cache");
+  const t = draft.tournoi;
+  const zone = document.getElementById("fin-manche-tournoi");
+  zone.classList.remove("cache");
+  const score = t.score && t.manches_a_gagner > 1
+    ? `Manches : ${pseudoColore(draft.discord_j1 === t.a ? "j1" : "j2")} ${t.score[t.a] ?? 0} – ${t.score[t.b] ?? 0} ${pseudoColore(draft.discord_j1 === t.a ? "j2" : "j1")}. `
+    : "";
+  const suite = t.termine ? "Match terminé." : t.egalite ? "Égalité : manche à rejouer." : "Le match continue.";
+  zone.innerHTML = `<p>${score}${suite}</p>
+    <div class="boutons-fin-tournoi">
+      ${estArbitreTournoi() && !t.termine ? `<button type="button" id="btn-manche-tournoi" class="btn-valider-temps">Manche suivante</button>` : ""}
+      <a class="btn-valider-temps" href="/tournoi?id=${encodeURIComponent(t.id)}">Retour au tournoi</a>
+    </div>`;
+  document.getElementById("btn-manche-tournoi")?.addEventListener("click", () => {
+    envoyerAction(`/api/rooms/${roomId}/tournoi_manche`, {})
+      .then(data => definirDraft(data.draft))
+      .catch(err => alert(err.message));
+  });
+}
+
 // Légende locale "une fois par jour" tuée (temps saisi) : plus tirée avant
 // le reset de 4 h (cf. api/_lib/legendes.js). "" sinon.
 function messageLegendeTuee() {
@@ -3007,11 +3079,15 @@ function definirTypeRoom(type) {
   if (!type || type === typeRoom) return;
   typeRoom = type;
   document.querySelector(".titre-page").innerHTML =
-    typeRoom === "classe" ? `Match classé ${ICONE_TROPHEE}` : typeRoom === "entrainement" ? `Entraînement ${ICONE_ENTRAINEMENT}` : "Match";
+    typeRoom === "classe" ? `Match classé ${ICONE_TROPHEE}` : typeRoom === "entrainement" ? `Entraînement ${ICONE_ENTRAINEMENT}` : typeRoom === "tournoi" ? `Match de tournoi ${ICONE_TROPHEE}` : "Match";
 }
 
 // Revanche (fin de match ou litige).
 function rendreRejouer() {
+  if (draft.tournoi) {
+    rendreFinMancheTournoi();
+    return;
+  }
   // Spectateur : pas de revanche à demander.
   if (!monRole) {
     document.getElementById("btn-rejouer").classList.add("cache");
@@ -3371,6 +3447,8 @@ const BULLES_PAR_PHASE = {
   "btn-annuler-coup": ["draft"],
   "tour-actuel": ["draft"],
   "etat-temps": ["temps", "verification"],
+  "saisie-arbitre": ["temps", "verification"],
+  "fin-manche-tournoi": ["termine", "litige"],
   "choix-boss": ["boss"],
   "message-boss": ["boss"],
   "etat-rejouer": ["termine", "litige"]

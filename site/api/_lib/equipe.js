@@ -513,6 +513,8 @@ async function quitterEquipes(discordId, { sauf = null } = {}) {
     return;
   }
   for (const room of data || []) {
+    // Match de tournoi : on y reste (relancé par un arbitre s'il le faut).
+    if (room.draft?.tournoi) continue;
     try {
       await retirerMembre(room.room_id, room.draft, discordId);
     } catch (e) {
@@ -637,6 +639,7 @@ async function routeRejoindre(req, res, roomId, user) {
 
 async function routeQuitter(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
+  if (room.draft.tournoi) throw erreur(403, "Match de tournoi : tu ne peux pas quitter le lobby.");
   if (room.draft.phase !== "lobby") throw erreur(409, "Le match a commencé : tu ne peux plus quitter le lobby.");
   await retirerMembre(roomId, room.draft, user.id);
   return res.status(200).json({ ok: true });
@@ -646,7 +649,7 @@ async function routeCamp(req, res, roomId, user) {
   const { camp } = await lireCorps(req);
   const room = await chargerRoom(roomId);
   const draft = room.draft;
-  if (draft.phase !== "lobby" || draft.formation !== "choix") throw erreur(409, "Le choix des équipes n'est pas ouvert.");
+  if (draft.phase !== "lobby" || draft.formation !== "choix" || draft.tournoi) throw erreur(409, "Le choix des équipes n'est pas ouvert.");
   if (!draft.membres.includes(user.id)) throw erreur(403, "Tu n'es pas dans ce lobby.");
   const nouveauCamp = ROLES.includes(camp) ? camp : null;
   if (nouveauCamp && draft.camps[user.id] !== nouveauCamp &&
@@ -680,7 +683,8 @@ async function routeVitrine(req, res, roomId, user) {
 async function routeLancer(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
-  if (draft.createur !== user.id) throw erreur(403, "Seul le créateur de la room peut lancer le match.");
+  const arbitreTournoi = (draft.tournoi?.arbitres || []).includes(user.id);
+  if (draft.createur !== user.id && !arbitreTournoi) throw erreur(403, "Seul le créateur de la room peut lancer le match.");
   if (draft.phase !== "lobby") throw erreur(409, "Le match a déjà commencé.");
   if (draft.membres.length !== draft.taille * 2) throw erreur(409, `Il faut ${draft.taille * 2} joueurs (${draft.membres.length} actuellement).`);
   if (draft.formation === "choix" && ROLES.some(role => draft.membres.filter(id => draft.camps[id] === role).length !== draft.taille)) {
@@ -727,6 +731,16 @@ async function routeLancer(req, res, roomId, user) {
     temps_j2: null,
     vainqueur: null
   });
+  // Tournoi : pas de vote, le capitaine de chaque équipe est son chef (vote
+  // de tous pour lui, résolu tout de suite).
+  if (draft.tournoi?.capitaines) {
+    const capitaines = Object.values(draft.tournoi.capitaines);
+    draft.membres.forEach(id => {
+      const camp = campDe(draft, id);
+      draft.votes[id] = capitaines.find(c => draft.equipes[camp].includes(c)) || id;
+    });
+    await avancerSelonTemps(draft);
+  }
   await sauvegarder(roomId, draft);
   return repondre(res, draft, user.id);
 }
@@ -823,6 +837,7 @@ async function routeTemps(req, res, roomId, user) {
   if (!temps) throw erreur(400, "Format de temps invalide (attendu mm:ss)");
   const room = await chargerRoom(roomId);
   const draft = room.draft;
+  if (draft.tournoi) throw erreur(403, "Tournoi : c'est l'arbitre qui saisit les temps.");
   if (draft.phase !== "temps" && draft.phase !== "verification") throw erreur(409, "La saisie du temps n'est pas ouverte");
   const camp = campDe(draft, user.id);
   if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef saisit le temps de l'équipe");
@@ -883,6 +898,7 @@ async function routeLitige(req, res, roomId, user) {
   if (commentaire.length > COMMENTAIRE_LITIGE_MAX) throw erreur(400, `Commentaire trop long (${COMMENTAIRE_LITIGE_MAX} caractères au maximum).`);
   const room = await chargerRoom(roomId);
   const draft = room.draft;
+  if (draft.tournoi) throw erreur(403, "Tournoi : adresse-toi à l'arbitre.");
   if (draft.phase !== "verification") throw erreur(409, "Les temps ne sont pas en cours de vérification");
   const camp = campDe(draft, user.id);
   if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef signale un litige");
@@ -902,42 +918,46 @@ async function routeRevanche(req, res, roomId, user) {
   const { rejouer = true } = await lireCorps(req);
   const room = await chargerRoom(roomId);
   const draft = room.draft;
+  if (draft.tournoi) throw erreur(403, "Tournoi : c'est l'arbitre qui lance la manche suivante.");
   if (!["termine", "litige"].includes(draft.phase)) throw erreur(409, "Le match n'est pas terminé.");
   const camp = campDe(draft, user.id);
   if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef demande la revanche pour son équipe.");
   draft[`revanche_${camp}`] = !!rejouer;
-  if (draft.revanche_j1 && draft.revanche_j2) {
-    Object.assign(draft, {
-      boss_precedent_id: draft.boss_id,
-      boss_id: null,
-      actions: [],
-      declaration_j1: null,
-      declaration_j2: null,
-      temps_j1: null,
-      temps_j2: null,
-      temps_confirme_j1: false,
-      temps_confirme_j2: false,
-      debut_temps: null,
-      vainqueur: null,
-      litige_par_role: null,
-      litige_commentaire: null,
-      id_match: null,
-      revanche_j1: false,
-      revanche_j2: false
-    });
-    await actualiserPoints();
-    // 3v3 : l'hôte (joueur à 2 persos) peut changer d'une revanche à l'autre
-    // (légende déjà tuée chez lui...) : rechoisi par le chef s'il y a le choix.
-    if (draft.taille === 3 && !preparerHotes(draft)) {
-      draft.phase = "hotes";
-      draft.fin_hote = Date.now() + DUREE_CHOIX_HOTE_MS;
-      draft.revanche_hotes = true;
-    } else {
-      await lancerDraft(draft, { revanche: true });
-    }
-  }
+  if (draft.revanche_j1 && draft.revanche_j2) await lancerRevanche(draft);
   await sauvegarder(roomId, draft);
   return repondre(res, draft, user.id);
+}
+
+// Revanche : mêmes équipes, chefs, hôtes et vitrines, nouveau boss.
+async function lancerRevanche(draft) {
+  Object.assign(draft, {
+    boss_precedent_id: draft.boss_id,
+    boss_id: null,
+    actions: [],
+    declaration_j1: null,
+    declaration_j2: null,
+    temps_j1: null,
+    temps_j2: null,
+    temps_confirme_j1: false,
+    temps_confirme_j2: false,
+    debut_temps: null,
+    vainqueur: null,
+    litige_par_role: null,
+    litige_commentaire: null,
+    id_match: null,
+    revanche_j1: false,
+    revanche_j2: false
+  });
+  await actualiserPoints();
+  // 3v3 : l'hôte (joueur à 2 persos) peut changer d'une revanche à l'autre
+  // (légende déjà tuée chez lui...) : rechoisi par le chef s'il y a le choix.
+  if (draft.taille === 3 && !preparerHotes(draft)) {
+    draft.phase = "hotes";
+    draft.fin_hote = Date.now() + DUREE_CHOIX_HOTE_MS;
+    draft.revanche_hotes = true;
+  } else {
+    await lancerDraft(draft, { revanche: true });
+  }
 }
 
 // Créateur : retour au lobby, mêmes joueurs (équipes gardées en formation
@@ -945,6 +965,7 @@ async function routeRevanche(req, res, roomId, user) {
 async function routeRejouer(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
+  if (draft.tournoi) throw erreur(403, "Tournoi : les matchs se relancent depuis la page du tournoi.");
   if (draft.createur !== user.id) throw erreur(403, "Seul le créateur de la room peut relancer.");
   if (!PHASES_FINIES.includes(draft.phase)) throw erreur(409, "Le match n'est pas terminé.");
   const camps = {};
@@ -965,6 +986,97 @@ async function routeRejouer(req, res, roomId, user) {
   return repondre(res, nouveau, user.id);
 }
 
+// ---- Tournois (cf. _lib/tournois.js) ----
+
+// Lobby d'un match de tournoi en équipe, déjà rempli (les 2 équipes, chacune
+// dans son camp, vitrine conforme de chacun choisie d'office) ; lancé par un
+// arbitre, capitaines = chefs (cf. routeLancer).
+async function creerRoomEquipeTournoi(roomId, tournoi, match, infos) {
+  const equipes = [match.a, match.b].map(id => tournoi.equipes.find(equipe => equipe.id === id));
+  const membres = equipes.flatMap(equipe => equipe.membres);
+  const profils = await lireProfils(membres);
+  const camps = {};
+  equipes.forEach((equipe, i) => equipe.membres.forEach(id => { camps[id] = ROLES[i]; }));
+  const draft = etatLobby({
+    taille: tournoi.taille_equipe,
+    formation: "choix",
+    createur: tournoi.createur,
+    membres,
+    camps,
+    vitrinesChoisies: Object.fromEntries(membres.map(id => [id, vitrineConforme(profils.get(id)?.data) || "vitrine"])),
+    infos: Object.fromEntries(membres.map(id => [id, infosProfil(profils.get(id))]))
+  });
+  draft.tournoi = { ...infos, capitaines: { [match.a]: equipes[0].capitaine, [match.b]: equipes[1].capitaine } };
+  const { error } = await supabase.from("rooms").insert({ room_id: roomId, player1_discord_id: tournoi.createur, type: "equipe", membres, draft });
+  if (error) throw error;
+}
+
+const estArbitreTournoi = (draft, discordId) => (draft.tournoi?.arbitres || []).includes(discordId);
+
+// Équipe du tournoi (participant) qui joue dans un camp : celle dont le
+// capitaine est dans ce camp.
+function participantDuCamp(draft, camp) {
+  return Object.entries(draft.tournoi.capitaines || {}).find(([, capitaine]) => draft.equipes[camp].includes(capitaine))?.[0] || null;
+}
+
+// Arbitre : temps des 2 équipes { temps_j1, temps_j2, abandon_j1?,
+// abandon_j2? } ; manche archivée, résultat reporté au tournoi.
+async function routeTempsArbitre(req, res, roomId, user) {
+  const corps = await lireCorps(req);
+  const room = await chargerRoom(roomId);
+  const draft = room.draft;
+  if (!estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi saisit les temps.");
+  if (draft.phase !== "temps" && draft.phase !== "verification") throw erreur(409, "La saisie des temps n'est pas ouverte.");
+  const temps = {};
+  for (const role of ROLES) {
+    temps[role] = corps[`abandon_${role}`] === true ? { ...TEMPS_ABANDON } : parserTempsMMSS(corps[`temps_${role}`]);
+    if (!temps[role]) throw erreur(400, `Équipe ${role === "j1" ? 1 : 2} : format de temps invalide (attendu mm:ss).`);
+  }
+  draft.temps_j1 = temps.j1;
+  draft.temps_j2 = temps.j2;
+  draft.vainqueur = determinerVainqueur(temps.j1, temps.j2);
+  draft.phase = "termine";
+  await sauvegarder(roomId, draft);
+  draft.id_match = await archiverEquipe(draft);
+  if (draft.id_match) {
+    draft.koyns = await crediterPartie(ROLES.flatMap(role => draft.equipes[role].map(id => ({
+      discordId: id,
+      adversaires: draft.equipes[role === "j1" ? "j2" : "j1"],
+      abandon: !!draft[`temps_${role}`]?.abandon
+    }))), `match:${draft.id_match}`, null);
+  }
+  const { enregistrerManche, tropheesManche } = require("./tournois");
+  if (ROLES.includes(draft.vainqueur)) {
+    const resultat = await enregistrerManche(draft.tournoi, {
+      vainqueur: participantDuCamp(draft, draft.vainqueur),
+      trophees: draft.tournoi.phase === "qualif" ? tropheesManche(draft) : 0,
+      idMatch: draft.id_match
+    });
+    draft.tournoi = { ...draft.tournoi, score: resultat.score, termine: resultat.termine, egalite: false };
+  } else {
+    draft.tournoi = { ...draft.tournoi, egalite: true };
+  }
+  try {
+    await sauvegarder(roomId, draft);
+  } catch (e) {
+    if (!e?.conflit) throw e;
+  }
+  return repondre(res, draft, user.id);
+}
+
+// Arbitre : manche suivante (bo3 pas encore gagné, ou égalité).
+async function routeMancheTournoi(req, res, roomId, user) {
+  const room = await chargerRoom(roomId);
+  const draft = room.draft;
+  if (!estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi lance la manche suivante.");
+  if (draft.phase !== "termine") throw erreur(409, "La manche en cours n'est pas terminée.");
+  if (draft.tournoi.termine) throw erreur(409, "Le match est terminé.");
+  draft.tournoi = { ...draft.tournoi, egalite: false };
+  await lancerRevanche(draft);
+  await sauvegarder(roomId, draft);
+  return repondre(res, draft, user.id);
+}
+
 const ROUTES = {
   equipe_etat: { methode: "GET", route: routeEtat },
   equipe_rejoindre: { methode: "POST", route: routeRejoindre },
@@ -980,7 +1092,9 @@ const ROUTES = {
   equipe_confirmer: { methode: "POST", route: routeConfirmer },
   equipe_litige: { methode: "POST", route: routeLitige },
   equipe_rejouer: { methode: "POST", route: routeRejouer },
-  equipe_revanche: { methode: "POST", route: routeRevanche }
+  equipe_revanche: { methode: "POST", route: routeRevanche },
+  equipe_temps_arbitre: { methode: "POST", route: routeTempsArbitre },
+  equipe_manche_tournoi: { methode: "POST", route: routeMancheTournoi }
 };
 
 function estRouteEquipe(action) {
@@ -1002,6 +1116,7 @@ module.exports = {
   executerRouteEquipe,
   preparerCreation,
   quitterEquipes,
+  creerRoomEquipeTournoi,
   // Tests.
   trouverAttribution,
   equipesEquilibrees,

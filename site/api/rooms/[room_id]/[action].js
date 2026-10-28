@@ -19,6 +19,7 @@ const { calculerEquilibrage, combinaisonsEquilibrables, BOX_MATCH, erreurPointsB
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
 const { crediterMatch } = require("../../_lib/koyns");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
+const { routeTournoi, enregistrerManche, tropheesManche } = require("../../_lib/tournois");
 const {
   PHASES_PAUSABLES,
   estChronometre,
@@ -273,6 +274,9 @@ async function handleBox(req, res, roomId, user) {
     return res.status(409).json({ error: "Le choix de box n'est plus possible à ce stade" });
   }
   if (refuserSiPause(res, draft)) return;
+  if (draft.tournoi?.box === "full" && box !== "full") {
+    return res.status(400).json({ error: "Dans ce tournoi, seule la full box est autorisée." });
+  }
   if (estMatchmakingClassique(draft, room) && !BOX_MATCHMAKING_CLASSIQUE.has(box)) {
     return res.status(400).json({ error: "En matchmaking classique, seule la full box est autorisée." });
   }
@@ -735,6 +739,7 @@ async function handleTemps(req, res, roomId, user) {
 
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
+  if (draft.tournoi) return res.status(403).json({ error: "Tournoi : c'est l'arbitre qui saisit les temps." });
 
   // { temps: "mm:ss" } (nombre d'ennemis tués pour un défi, cf.
   // estDefiEnnemis) ou { abandon: true } (abandon à la place d'un temps).
@@ -874,6 +879,74 @@ async function handleConfirmerTemps(req, res, roomId, user) {
   return repondreDraft(res, draft, joueur);
 }
 
+// ---- Tournois (cf. _lib/tournois.js) : l'arbitre (créateur du tournoi ou
+// arbitre désigné, spectateur de la room) saisit les 2 temps à la place
+// des joueurs ; manche archivée comme un match normal (Rikoyns), résultat
+// reporté au tournoi. Bo3 : l'arbitre lance la manche suivante. ----
+
+function estArbitreRoom(draft, discordId) {
+  return !!draft.tournoi && (draft.tournoi.arbitres || []).includes(discordId);
+}
+
+// temps_arbitre { temps_j1, temps_j2, abandon_j1?, abandon_j2? }
+async function handleTempsArbitre(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
+  const draft = room.draft;
+  if (!estArbitreRoom(draft, user.id)) return res.status(403).json({ error: "Seul un arbitre du tournoi saisit les temps." });
+  if (draft.phase !== "temps" && draft.phase !== "verification") {
+    return res.status(409).json({ error: "La saisie des temps n'est pas ouverte." });
+  }
+  const temps = {};
+  for (const role of ["j1", "j2"]) {
+    temps[role] = req.body?.[`abandon_${role}`] === true ? { ...TEMPS_ABANDON } : parserResultat(req.body?.[`temps_${role}`], draft.boss_id);
+    if (!temps[role]) return res.status(400).json({ error: `${role.toUpperCase()} : ${messageFormatInvalide(draft.boss_id)}` });
+  }
+  draft.temps_j1 = temps.j1;
+  draft.temps_j2 = temps.j2;
+  draft.vainqueur = determinerVainqueur(temps.j1, temps.j2, draft.boss_id);
+  draft.phase = "termine";
+  draft.temps_saisis_par = user.id;
+  // Manche réservée (écriture conditionnelle) avant d'être archivée.
+  await sauvegarderDraft(roomId, draft);
+  const idMatch = await archiverMatch(draft, { classe: false });
+  draft.koyns = await crediterMatch(draft, idMatch, null);
+  // Égalité : manche pas comptée, l'arbitre en relance une.
+  if (draft.vainqueur === "j1" || draft.vainqueur === "j2") {
+    const resultat = await enregistrerManche(draft.tournoi, {
+      vainqueur: draft[`discord_${draft.vainqueur}`],
+      trophees: draft.tournoi.phase === "qualif" ? tropheesManche(draft) : 0,
+      idMatch
+    });
+    draft.tournoi = { ...draft.tournoi, score: resultat.score, termine: resultat.termine };
+  } else {
+    draft.tournoi = { ...draft.tournoi, egalite: true };
+  }
+  await sauvegarderApresArchivage(roomId, draft);
+  return repondreDraft(res, draft, joueur);
+}
+
+// tournoi_manche : manche suivante (bo3 pas encore gagné, ou égalité).
+async function handleMancheTournoi(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
+  const draft = room.draft;
+  if (!estArbitreRoom(draft, user.id)) return res.status(403).json({ error: "Seul un arbitre du tournoi lance la manche suivante." });
+  if (draft.phase !== "termine") return res.status(409).json({ error: "La manche en cours n'est pas terminée." });
+  if (draft.tournoi.termine) return res.status(409).json({ error: "Le match est terminé." });
+  const nouveau = etatRevanche(draft);
+  nouveau.tournoi = { ...draft.tournoi, egalite: false };
+  demarrerAnalyse(nouveau);
+  await sauvegarderDraft(roomId, nouveau);
+  return repondreDraft(res, nouveau, joueur);
+}
+
 // ---- litige : un joueur conteste les temps ; la manche est invalidée (pas
 // de vainqueur) et archivée pour les administrateurs seulement ----
 async function handleLitige(req, res, roomId, user) {
@@ -884,6 +957,7 @@ async function handleLitige(req, res, roomId, user) {
 
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
+  if (draft.tournoi) return res.status(403).json({ error: "Tournoi : adresse-toi à l'arbitre." });
 
   if (draft.phase !== "verification") {
     return res.status(409).json({ error: "Les temps ne sont pas en cours de vérification" });
@@ -918,6 +992,7 @@ async function handleRejouer(req, res, roomId, user) {
 
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
+  if (draft.tournoi) return res.status(403).json({ error: "Tournoi : c'est l'arbitre qui lance la manche suivante." });
 
   if (draft.phase !== "termine" && draft.phase !== "litige") {
     return res.status(409).json({ error: "La manche en cours n'est pas terminée" });
@@ -1233,12 +1308,16 @@ module.exports = async (req, res) => {
   try {
     const cookies = parseCookies(req);
     const user = await verifySessionToken(cookies.session);
+    const { roomId, action } = getSegments(req);
+
+    // Tournois : /api/rooms/tournoi/<action>?id=<tournoi> (lecture ouverte
+    // à tous, cf. _lib/tournois.js).
+    if (roomId === "tournoi") return await routeTournoi(action, req, res, user);
 
     if (!user) {
       return res.status(401).json({ error: "Non connecté" });
     }
 
-    const { roomId, action } = getSegments(req);
     // Entraînement joué seul : rôle dans lequel la page agit (cf.
     // chargerRoomAvecRole).
     user.agirEn = req.body?.agir_en || new URL(req.url, "http://x").searchParams.get("agir_en");
@@ -1306,6 +1385,10 @@ function executerAction(action, req, res, roomId, user) {
       return handleAbandonnerClasse(req, res, roomId, user);
     case "annuler_action":
       return handleAnnulerAction(req, res, roomId, user);
+    case "temps_arbitre":
+      return handleTempsArbitre(req, res, roomId, user);
+    case "tournoi_manche":
+      return handleMancheTournoi(req, res, roomId, user);
     case "draft":
       return handleDraftGet(req, res, roomId, user);
     default:

@@ -48,26 +48,37 @@ function estChronometre(draft) {
   return !!draft?.chronometre;
 }
 
+// Chronos personnalisés d'un tournoi (draft.chronos_config : analyse_s,
+// action_s, ban_s, cf. _lib/tournois.js), sinon ceux du classé.
+function dureesChronos(draft) {
+  const config = draft?.chronos_config;
+  return {
+    analyse: config?.analyse_s ? config.analyse_s * 1000 : ANALYSE_MS,
+    action: config?.action_s ? config.action_s * 1000 : DRAFT_PAR_ACTION_MS,
+    ban: config?.ban_s ? config.ban_s * 1000 : BANS_BONUS_PAR_BAN_MS
+  };
+}
+
 function demarrerAnalyse(draft, maintenant = Date.now()) {
-  if (estChronometre(draft)) draft.fin_analyse = maintenant + ANALYSE_MS;
+  if (estChronometre(draft)) draft.fin_analyse = maintenant + dureesChronos(draft).analyse;
 }
 
 // Temps d'une phase de bans d'équilibrage : 15 s par ban, 1 min au minimum,
 // 5 min au maximum.
-function dureeBansBonus(nbBans) {
-  return Math.min(BANS_BONUS_MAX_MS, Math.max(BANS_BONUS_MIN_MS, nbBans * BANS_BONUS_PAR_BAN_MS));
+function dureeBansBonus(nbBans, parBan = BANS_BONUS_PAR_BAN_MS) {
+  return Math.min(BANS_BONUS_MAX_MS, Math.max(BANS_BONUS_MIN_MS, nbBans * parBan));
 }
 
 // Bans verticaux, puis bans horizontaux (draft.etape_bonus), chacun son temps.
 function demarrerBansBonus(draft, maintenant = Date.now()) {
   const nbBans = draft.etape_bonus === "horizontal" ? draft.bans_horizontaux_total : draft.bans_bonus_total;
-  if (estChronometre(draft)) draft.fin_bans_bonus = maintenant + dureeBansBonus(nbBans || 0);
+  if (estChronometre(draft)) draft.fin_bans_bonus = maintenant + dureeBansBonus(nbBans || 0, dureesChronos(draft).ban);
 }
 
 // Temps de draft d'un joueur : 30 s par pick / ban de sa séquence (fixée au
 // tirage du boss selon le théâtre, cf. lancerTirage dans _lib/draft.js).
 function dureeDraftJoueur(draft, joueur) {
-  return getSequence(draft).filter(action => action.joueur === joueur).length * DRAFT_PAR_ACTION_MS;
+  return getSequence(draft).filter(action => action.joueur === joueur).length * dureesChronos(draft).action;
 }
 
 function demarrerChronoDraft(draft, maintenant = Date.now()) {

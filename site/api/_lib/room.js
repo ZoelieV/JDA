@@ -191,8 +191,9 @@ async function annulerAutresMatchs(supabase, discordId, { sauf = null } = {}) {
     .select("room_id, player1_discord_id, player2_discord_id, type, draft")
     .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`)
     // Rooms d'équipe et Random world boss : cf. quitterEquipes
-    // (_lib/equipe.js) et quitterWorldBoss (_lib/world_boss.js).
-    .not("type", "in", "(equipe,world_boss)");
+    // (_lib/equipe.js) et quitterWorldBoss (_lib/world_boss.js). Matchs de
+    // tournoi : jamais annulés ainsi (relancés par un arbitre au besoin).
+    .not("type", "in", "(equipe,world_boss,tournoi)");
   if (sauf) requete = requete.neq("room_id", sauf);
   // Chargés ici (equipe.js et world_boss.js utilisent aussi ce fichier).
   await require("./equipe").quitterEquipes(discordId, { sauf });

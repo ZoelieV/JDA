@@ -54,6 +54,7 @@
       ["Tutoriel", "/tutoriel"]
     ] },
     { titre: "Événements", href: "/evenements" },
+    { titre: "Tournois", href: "/tournois" },
     // Administrateurs et mini admins (affiché par commun/compte.js).
     { titre: "Admin", href: "/admin", classe: "carte-admin", menu: [
       ["Équilibrage", "/admin/equilibrage"],

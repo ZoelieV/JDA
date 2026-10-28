@@ -65,6 +65,11 @@
       <span class="tuile-admin-titre">Rikoyns</span>
       <span class="tuile-admin-texte">Dons aux joueurs, cosmétiques exclusifs, bonus de connexion.</span>
     </button>
+    <button type="button" id="ouvrir-tournoitateurs" class="tuile-admin" title="Joueurs autorisés à créer des tournois">
+      <img src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="">
+      <span class="tuile-admin-titre">Tournoitateurs</span>
+      <span class="tuile-admin-texte">Joueurs autorisés à créer des tournois (sans accès à l'administration).</span>
+    </button>
     <button type="button" id="ouvrir-comptes" class="tuile-admin" title="UID, lien de stream et niveau du monde d'un joueur">
       <img src="/DB/images/others/Icon_Friends.webp" alt="">
       <span class="tuile-admin-titre">Comptes</span>
@@ -324,6 +329,23 @@
       </div>
     </div>
   </div>
+  <!-- Tournoitateurs (cf. admin_tournoitateurs.js, api/_lib/tournois.js) :
+       administrateurs et mini admins. -->
+  <div id="modal-tournoitateurs" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Tournoitateurs</h2>
+        <button type="button" id="fermer-tournoitateurs" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">Ils créent et gèrent des tournois (page Tournois), sans accès à l'administration. Les administrateurs et mini admins peuvent aussi en créer.</p>
+      <div id="liste-tournoitateurs" class="liste-exclusifs"></div>
+      <div class="ligne-koyns-admin">
+        <select id="nouveau-tournoitateur" class="texte-ajout"></select>
+        <button type="button" id="ajouter-tournoitateur" class="bouton-creer">Ajouter</button>
+        <span id="message-tournoitateurs" class="message-ajout"></span>
+      </div>
+    </div>
+  </div>
   <!-- Litiges et signalements (cf. admin_litiges.js) : page /admin/litiges
        (historique.html) affichée dans la fenêtre, chargée à la 1re
        ouverture. -->
@@ -528,12 +550,13 @@
   <script src="/commun/koyns.js?v=11"></script>
   <script src="/admin_ppc/admin_choix_cosmetiques.js?v=2"></script>
   <script src="/admin_ppc/admin_koyns.js?v=6"></script>
+  <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
   <script src="/admin_ppc/admin_ppc.js?v=39"></script>
-  <script src="/commun/site.js?v=10"></script>
+  <script src="/commun/site.js?v=11"></script>
 </body>
 </html>

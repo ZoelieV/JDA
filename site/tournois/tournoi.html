@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Tournoi</title>
+  <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
+  <meta name="theme-color" content="#1e1e1e">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/commun/theme.css?v=rem5">
+  <link rel="stylesheet" href="/commun/entete.css?v=rem40">
+  <link rel="stylesheet" href="/tournois/tournois.css?v=2">
+  <link rel="stylesheet" href="/commun/site.css?v=10">
+<script src="/commun/fond.js?v=16"></script>
+<script src="/commun/appli.js?v=1" defer></script>
+<script src="/commun/zoom.js?v=3"></script>
+<script src="/commun/compte.js?v=48" defer></script>
+</head>
+<body>
+  <a href="/tournois" class="lien-accueil">Tournois</a>
+
+  <main class="page-tournois">
+    <p id="etat-tournoi" class="panneau etat-tournois">Chargement…</p>
+    <div id="contenu-tournoi" hidden>
+      <!-- Namecard des tournois en bannière, nom et pastilles. -->
+      <header class="entete-tournoi">
+        <div class="entete-tournoi-texte">
+          <h1 id="nom-tournoi"></h1>
+          <div id="pastilles-tournoi" class="ligne-pastilles"></div>
+        </div>
+      </header>
+
+      <!-- Arbre de la phase finale et qualifications, en pleine largeur
+           (cf. tournoi.js). -->
+      <section class="panneau bloc-tournoi" id="bloc-arbre" hidden>
+        <h2>Phase finale</h2>
+        <p id="aide-arbre" class="doux"></p>
+        <div id="arbre-tournoi" class="arbre-tournoi"></div>
+      </section>
+      <section class="panneau bloc-tournoi" id="bloc-qualifs" hidden>
+        <h2>Qualifications</h2>
+        <p class="doux" id="aide-qualifs"></p>
+        <div id="classement-qualifs"></div>
+        <h3>Matchs</h3>
+        <div id="matchs-qualifs" class="matchs-qualifs"></div>
+      </section>
+      <div class="colonnes-tournoi">
+        <div>
+          <section class="panneau bloc-tournoi" id="bloc-description">
+            <h2>Principe</h2>
+            <p id="description-tournoi" class="description-tournoi"></p>
+          </section>
+          <section class="panneau bloc-tournoi" id="bloc-participants">
+            <h2 id="titre-participants">Inscrits</h2>
+            <div id="participants-tournoi"></div>
+          </section>
+        </div>
+
+        <div>
+          <section class="panneau bloc-tournoi">
+            <h2>Infos</h2>
+            <dl id="infos-tournoi" class="infos-tournoi"></dl>
+          </section>
+          <section class="panneau bloc-tournoi" id="bloc-moi" hidden>
+            <h2>Ma participation</h2>
+            <div id="moi-tournoi" class="actions-tournoi"></div>
+            <p id="message-moi" class="message-tournoi"></p>
+          </section>
+          <!-- Créateur du tournoi (et administrateurs) : gestion. -->
+          <section class="panneau bloc-tournoi" id="bloc-gestion" hidden>
+            <h2>Gestion</h2>
+            <div id="gestion-tournoi" class="actions-tournoi"></div>
+            <p id="message-gestion" class="message-tournoi"></p>
+            <h3>Arbitres <span class="doux">(saisissent les temps)</span></h3>
+            <ul id="arbitres-tournoi" class="liste-joueurs-tournoi"></ul>
+            <div class="actions-tournoi">
+              <input id="nouvel-arbitre" list="comptes-tournoi" placeholder="Pseudo d'un joueur" autocomplete="off" class="bouton-tournoi">
+              <datalist id="comptes-tournoi"></datalist>
+              <button type="button" id="ajouter-arbitre" class="bouton-tournoi petit">Ajouter</button>
+            </div>
+          </section>
+          <section class="panneau bloc-tournoi" id="bloc-arbitres-public" hidden>
+            <h2>Arbitres</h2>
+            <ul id="arbitres-public" class="liste-joueurs-tournoi"></ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/tournois/commun.js?v=1"></script>
+  <script src="/tournois/tournoi.js?v=2"></script>
+  <script src="/commun/site.js?v=11"></script>
+</body>
+</html>

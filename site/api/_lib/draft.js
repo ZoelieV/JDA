@@ -926,6 +926,9 @@ function etatRevanche(precedent) {
     boss_precedent_id: precedent.boss_id,
     mode_theatre: precedent.mode_theatre || "auto",
     chronometre: !!precedent.chronometre,
+    // Chronos personnalisés (tournois) et match de tournoi gardés.
+    chronos_config: precedent.chronos_config || null,
+    tournoi: precedent.tournoi || null,
     entrainement: precedent.entrainement || null,
     boss_impose: precedent.boss_impose || null,
     premier: precedent.premier || "aleatoire",

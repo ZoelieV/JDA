@@ -106,6 +106,18 @@ async function combinaisonsEquilibrables(draft, boxesPermises = BOX_MATCH) {
   return combinaisons;
 }
 
+// Deux joueurs (données de profil) peuvent-ils s'affronter en full box dans
+// ce mode (arbres des tournois, cf. _lib/tournois.js) ? Carnage et ancienne
+// méthode d'équilibrage : toujours ; sinon l'équilibrage calculé doit
+// marcher, et chaque full box avoir NB_PERSOS_MIN_BOX persos.
+function estEquilibrableFullBox(dataA, dataB, mode) {
+  const personnages = getPersonnages();
+  if ([dataA, dataB].some(data => poolJoueur(data, personnages, "full").length < NB_PERSOS_MIN_BOX)) return false;
+  if (mode === "carnage" || !estEquilibrageFixe({ equilibrage: getModeEquilibrage() })) return true;
+  const palier = resoudreTheatre(mode, theatreProfil(dataA), theatreProfil(dataB));
+  return evaluerEquilibrageFixe({ j1: { data: dataA, box: "full" }, j2: { data: dataB, box: "full" } }, palier).resultat.equilibrable;
+}
+
 // Côté d'un rôle en entraînement : "moi" (box du lanceur) ou "adverse".
 function coteEntrainement(draft, role) {
   return role === draft.entrainement.cote_moi ? "moi" : "adverse";
@@ -247,6 +259,7 @@ module.exports = {
   chargerDonneesBoxes,
   calculerEquilibrage,
   combinaisonsEquilibrables,
+  estEquilibrableFullBox,
   BOX_MATCH,
   erreurPointsBox,
   palierDraftRoom

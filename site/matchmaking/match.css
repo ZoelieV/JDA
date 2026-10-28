@@ -3165,3 +3165,75 @@ h1 {
   color: #f5c542;
   opacity: 1;
 }
+
+/* ---- Tournoi : saisie des temps par l'arbitre, fin de manche ---- */
+.saisie-arbitre {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-color: var(--accent-bordure, rgba(245, 197, 66, 0.8)) !important;
+}
+
+.titre-saisie-arbitre {
+  margin: 0;
+  color: var(--accent, #f5c542);
+  font-weight: bold;
+}
+
+.ligne-arbitre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ligne-arbitre .nom-arbitre {
+  min-width: 7rem;
+  text-align: right;
+}
+
+.ligne-arbitre input[type="text"] {
+  width: 5.5rem;
+  padding: 0.3125rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.375rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+  font-family: inherit;
+  text-align: center;
+}
+
+.fin-manche-tournoi p {
+  margin: 0 0 0.5rem;
+}
+
+.boutons-fin-tournoi {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.boutons-fin-tournoi a {
+  text-decoration: none;
+}
+
+#btn-valider-arbitre,
+.boutons-fin-tournoi .btn-valider-temps {
+  padding: 0.5rem 1.125rem;
+  border: 2px solid var(--accent, #f5c542);
+  border-radius: 0.5625rem;
+  background-color: rgba(245, 197, 66, 0.22);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: bold;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#btn-valider-arbitre:hover,
+.boutons-fin-tournoi .btn-valider-temps:hover {
+  background-color: rgba(245, 197, 66, 0.38);
+}

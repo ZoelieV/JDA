@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/matchmaking/match.css?v=rem63">
+<link rel="stylesheet" href="/matchmaking/match.css?v=rem64">
 <link rel="stylesheet" href="/commun/entete.css?v=rem40">
 <script src="/commun/zoom.js?v=3"></script>
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -81,6 +81,23 @@
       </div>
       <div id="message-boss" class="bandeau-info"></div>
       <div id="etat-temps" class="bandeau-info"></div>
+      <!-- Tournoi (cf. rendreArbitre) : l'arbitre saisit les 2 temps ;
+           manche suivante (bo3) et retour au tournoi en fin de manche. -->
+      <div id="saisie-arbitre" class="bandeau-info saisie-arbitre cache">
+        <p class="titre-saisie-arbitre">Arbitre : saisis les 2 temps</p>
+        <div class="ligne-arbitre">
+          <span id="arbitre-nom-j1" class="nom-arbitre"></span>
+          <input id="arbitre-temps-j1" type="text" placeholder="7:32" inputmode="decimal">
+          <label><input id="arbitre-abandon-j1" type="checkbox"> Abandon</label>
+        </div>
+        <div class="ligne-arbitre">
+          <span id="arbitre-nom-j2" class="nom-arbitre"></span>
+          <input id="arbitre-temps-j2" type="text" placeholder="7:32" inputmode="decimal">
+          <label><input id="arbitre-abandon-j2" type="checkbox"> Abandon</label>
+        </div>
+        <button id="btn-valider-arbitre" type="button" class="btn-valider-temps">Valider les temps</button>
+      </div>
+      <div id="fin-manche-tournoi" class="bandeau-info fin-manche-tournoi cache"></div>
       <div id="etat-rejouer" class="bandeau-info cache"></div>
     </div>
 
@@ -281,6 +298,6 @@
   <script src="/commun/filtres_draft.js?v=4"></script>
   <script src="/commun/recommandations_boss.js?v=1"></script>
   <script src="/commun/koyns.js?v=11"></script>
-  <script src="/matchmaking/match.js?v=121"></script>
+  <script src="/matchmaking/match.js?v=122"></script>
 </body>
 </html>

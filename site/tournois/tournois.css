@@ -1,0 +1,627 @@
+/* ---- Tournois : liste (tournois.html), page d'un tournoi (tournoi.html),
+   formulaire de création (formulaire.js) ---- */
+
+.page-tournois {
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.etat-tournois {
+  color: var(--texte-doux);
+  text-align: center;
+}
+
+.barre-tournois {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.filtres-tournois {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.bouton-tournoi {
+  padding: 0.5rem 1.125rem;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.5625rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.bouton-tournoi:hover:not(:disabled),
+.bouton-tournoi.actif {
+  border-color: var(--accent-bordure);
+  background-color: var(--accent-fond);
+}
+
+.bouton-tournoi.principal {
+  border-color: var(--accent);
+  background-color: rgba(245, 197, 66, 0.28);
+  font-weight: bold;
+}
+
+.bouton-tournoi.danger {
+  border-color: rgba(255, 107, 118, 0.7);
+}
+
+.bouton-tournoi.danger:hover:not(:disabled) {
+  background-color: rgba(255, 107, 118, 0.2);
+}
+
+.bouton-tournoi.petit {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+}
+
+.bouton-tournoi:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---- Liste : une namecard par tournoi ---- */
+.grille-tournois {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: 1rem;
+}
+
+.carte-tournoi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--bordure);
+  border-radius: 0.875rem;
+  background-color: var(--fond-carte);
+  color: white;
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.carte-tournoi:hover {
+  border-color: var(--accent-bordure);
+  transform: translateY(-2px);
+}
+
+.carte-tournoi-image {
+  position: relative;
+  aspect-ratio: 840 / 400;
+  background: url("/DB/images/namecards/Namecard_Background_Travel_Notes_Simulnation.webp") center / cover;
+}
+
+.carte-tournoi-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(10, 10, 14, 0.85));
+}
+
+.carte-tournoi-titre {
+  position: absolute;
+  left: 0.875rem;
+  right: 0.875rem;
+  bottom: 0.625rem;
+  z-index: 1;
+  margin: 0;
+  font-family: var(--police-titre, inherit);
+  font-size: 1.375rem;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.carte-tournoi-infos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.75rem 0.875rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.ligne-pastilles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.pastille-tournoi {
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--bordure);
+  border-radius: 1rem;
+  background-color: rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.pastille-tournoi.statut-inscriptions { border-color: #3ecf6a; color: #7fe39f; }
+.pastille-tournoi.statut-verrouille { border-color: #f5c542; color: #f5c542; }
+.pastille-tournoi.statut-qualifs,
+.pastille-tournoi.statut-arbre { border-color: #5b9bd5; color: #9cc5ee; }
+.pastille-tournoi.statut-termine { opacity: 0.75; }
+.pastille-tournoi.statut-annule { border-color: #ff6b76; color: #ff9aa2; }
+
+.doux {
+  color: var(--texte-doux);
+}
+
+/* ---- Page d'un tournoi ---- */
+.entete-tournoi {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border: 1px solid var(--bordure);
+  border-radius: 1rem;
+  aspect-ratio: 840 / 300;
+  max-height: 22rem;
+  width: 100%;
+  background: url("/DB/images/namecards/Namecard_Background_Travel_Notes_Simulnation.webp") center / cover;
+}
+
+.entete-tournoi::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 10, 14, 0.1) 30%, rgba(10, 10, 14, 0.9));
+}
+
+.entete-tournoi-texte {
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  bottom: 1rem;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.entete-tournoi h1 {
+  margin: 0;
+  font-family: var(--police-titre, inherit);
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+}
+
+.colonnes-tournoi {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.colonnes-tournoi > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.bloc-tournoi h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.bloc-tournoi h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.description-tournoi {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.infos-tournoi {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.375rem 0.75rem;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.infos-tournoi dt {
+  color: var(--texte-doux);
+}
+
+.infos-tournoi dd {
+  margin: 0;
+}
+
+.actions-tournoi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.message-tournoi {
+  min-height: 1.25rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+}
+
+.message-tournoi.erreur { color: #ff8a93; }
+.message-tournoi.succes { color: #7fe39f; }
+
+/* Joueur : photo ronde et pseudo. */
+.joueur-tournoi {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.joueur-tournoi img,
+.joueur-tournoi .sans-photo {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.joueur-tournoi span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liste-joueurs-tournoi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Équipes */
+.equipes-tournoi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+.equipe-tournoi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.equipe-tournoi.mienne {
+  border-color: var(--accent-bordure);
+}
+
+.equipe-tournoi h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.equipe-tournoi ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.equipe-tournoi li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem;
+}
+
+.badge-capitaine {
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+/* ---- Arbre : une colonne par tour ---- */
+.arbre-tournoi {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.25rem 0.75rem;
+}
+
+.tour-arbre {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 0.75rem;
+  width: 14rem;
+}
+
+.tour-arbre h3 {
+  margin: 0 0 0.25rem;
+  color: var(--accent);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.match-arbre {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.625rem;
+  background-color: rgba(20, 20, 26, 0.85);
+  font-size: 0.8125rem;
+}
+
+.match-arbre.en_cours {
+  border-color: #3ecf6a;
+  box-shadow: 0 0 0.75rem rgba(62, 207, 106, 0.4);
+}
+
+.match-arbre.pret {
+  border-color: rgba(245, 197, 66, 0.6);
+}
+
+.match-arbre .camp-arbre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.375rem;
+}
+
+.match-arbre .camp-arbre.gagnant {
+  background-color: rgba(62, 207, 106, 0.18);
+  font-weight: bold;
+}
+
+.match-arbre .camp-arbre.perdant {
+  opacity: 0.5;
+}
+
+.match-arbre .camp-arbre.choisi {
+  outline: 2px solid var(--accent);
+}
+
+.match-arbre .camp-arbre.cliquable {
+  cursor: pointer;
+}
+
+.match-arbre .vide {
+  color: var(--texte-doux);
+  font-style: italic;
+}
+
+.score-arbre {
+  font-weight: bold;
+}
+
+.actions-match {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* ---- Qualifications ---- */
+.tableau-qualifs {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tableau-qualifs th,
+.tableau-qualifs td {
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.tableau-qualifs th {
+  color: var(--texte-doux);
+  font-weight: normal;
+}
+
+.tableau-qualifs tr.qualifie td:first-child {
+  border-left: 3px solid #3ecf6a;
+}
+
+.tableau-qualifs tr.limite td {
+  border-bottom: 2px dashed var(--accent-bordure);
+}
+
+.matchs-qualifs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.match-qualif {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  font-size: 0.875rem;
+}
+
+.match-qualif.moi {
+  border-color: var(--accent-bordure);
+}
+
+/* ---- Formulaire de création / modification ---- */
+.fenetre-formulaire-tournoi {
+  box-sizing: border-box;
+  width: min(48rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 1.25rem;
+  border: 1px solid var(--accent-bordure);
+  border-radius: 1rem;
+  background-color: rgba(18, 18, 24, 0.97);
+  color: white;
+}
+
+.fenetre-formulaire-tournoi::backdrop {
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.fenetre-formulaire-tournoi h2 {
+  margin: 0 0 1rem;
+  color: var(--accent);
+}
+
+.formulaire-tournoi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.formulaire-tournoi fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.625rem 0.875rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.625rem;
+}
+
+.formulaire-tournoi legend {
+  padding: 0 0.375rem;
+  color: var(--accent);
+}
+
+.formulaire-tournoi label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.formulaire-tournoi label.ligne {
+  flex-direction: row;
+  align-items: center;
+}
+
+.formulaire-tournoi .large {
+  grid-column: 1 / -1;
+}
+
+.formulaire-tournoi input,
+.formulaire-tournoi select,
+.formulaire-tournoi textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.4375rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(0, 0, 0, 0.35);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+}
+
+.formulaire-tournoi input[type="checkbox"] {
+  width: auto;
+}
+
+.formulaire-tournoi textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.formulaire-tournoi .aide {
+  color: var(--texte-doux);
+  font-size: 0.75rem;
+}
+
+.formulaire-tournoi [hidden] {
+  display: none;
+}
+
+.pied-formulaire {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pied-formulaire .message-tournoi {
+  margin: 0 auto 0 0;
+}
+
+@media (max-width: 900px) {
+  .colonnes-tournoi {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .grille-tournois {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .entete-tournoi {
+    aspect-ratio: 840 / 400;
+  }
+}
+
+/* Arbre et qualifications : pleine largeur, sous l'en-tête. */
+#bloc-arbre,
+#bloc-qualifs {
+  margin-bottom: 1rem;
+}
+
+/* Gestion d'un match (forfait, remettre à jouer) : menu ⚙ repliable. */
+.gestion-match {
+  width: 100%;
+}
+
+.gestion-match summary {
+  width: fit-content;
+  padding: 0 0.375rem;
+  border-radius: 0.375rem;
+  color: var(--texte-doux);
+  cursor: pointer;
+  list-style: none;
+}
+
+.gestion-match summary::-webkit-details-marker {
+  display: none;
+}
+
+.gestion-match summary:hover {
+  color: white;
+}
+
+.gestion-match[open] .actions-match {
+  margin-top: 0.25rem;
+}
+
+#nouvel-arbitre {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
