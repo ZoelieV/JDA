@@ -102,14 +102,21 @@ function nomImageTournoi(chemin) {
 
 let promesseImagesTournoi = null;
 
-// Namecards et fonds d'écran du site -> { namecards, fonds } : [{ chemin, miniature, nom }].
+// Namecards et fonds d'écran du site, cachés à part (cosmétiques cachés de
+// cosmetiques.json) -> { namecards, caches, fonds } : [{ chemin, miniature, nom }].
 function chargerImagesTournoi() {
   promesseImagesTournoi ??= fetch("/DB/images/cosmetiques.json")
     .then(reponse => reponse.json())
-    .then(cosmetiques => ({
-      namecards: cosmetiques.bannieres.map(chemin => ({ chemin, miniature: chemin, nom: nomImageTournoi(chemin) })),
-      fonds: cosmetiques.fonds.map(fond => ({ chemin: fond.image, miniature: fond.miniature, nom: nomImageTournoi(fond.image) }))
-    }))
+    .then(cosmetiques => {
+      const caches = new Set(cosmetiques.caches || []);
+      const namecards = cosmetiques.bannieres.map(chemin => ({ chemin, miniature: chemin, nom: nomImageTournoi(chemin), cache: caches.has(`banniere:${chemin}`) }));
+      const fonds = cosmetiques.fonds.map(fond => ({ chemin: fond.image, miniature: fond.miniature, nom: nomImageTournoi(fond.image), cache: caches.has(`fond:${fond.id}`) }));
+      return {
+        namecards: namecards.filter(image => !image.cache),
+        caches: [...namecards, ...fonds].filter(image => image.cache),
+        fonds: fonds.filter(image => !image.cache)
+      };
+    })
     .catch(erreur => { promesseImagesTournoi = null; throw erreur; });
   return promesseImagesTournoi;
 }
@@ -123,6 +130,7 @@ function choisirImageSiteTournoi() {
       <h2>Image du tournoi</h2>
       <div class="onglets-images-tournoi">
         <button type="button" class="bouton-tournoi petit principal" data-onglet="namecards">Namecards</button>
+        <button type="button" class="bouton-tournoi petit" data-onglet="caches">Cachés</button>
         <button type="button" class="bouton-tournoi petit" data-onglet="fonds">Fonds d'écran</button>
         <input type="search" class="bouton-tournoi" placeholder="Rechercher…">
       </div>
