@@ -242,6 +242,9 @@ async function calculerEquilibrage(draft) {
     };
     draft.equilibrable = carnage || resultat.equilibrable;
     draft.bans_bonus_joueur = total > 0 ? faible : null;
+    // Box la plus faible (mode spécial de l'entraînement, cf.
+    // handleModeSpecial) : celle qui bannit même sans ban calculé.
+    draft.joueur_faible = faible;
     return;
   }
 
@@ -250,6 +253,7 @@ async function calculerEquilibrage(draft) {
   const bansBonus = carnage ? 0 : calculerBansBonus(ecart);
   draft.bans_bonus_total = bansBonus;
   draft.bans_bonus_joueur = bansBonus > 0 ? (ecart > 0 ? "j2" : "j1") : null;
+  draft.joueur_faible = ecart > 0 ? "j2" : "j1";
 }
 
 module.exports = {

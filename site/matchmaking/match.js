@@ -1149,7 +1149,7 @@ function rendreChoixBox() {
     : draft.boxes_permises
       ? "Les box choisies ne s'équilibraient pas : choisis parmi les box qui s'équilibrent avec celles de ton adversaire, puis valide."
       : `Choisis ta box (au moins ${NB_PERSOS_MIN_BOX} personnages) et valide-la. La box adverse sera visible une fois les 2 box validées.`;
-  if (enAnalyse && draft.entrainement && draft.equilibrable === false) afficherAlerteEquilibrage();
+  if (enAnalyse && draft.entrainement && draft.equilibrable === false && !draft.mode_special) afficherAlerteEquilibrage();
 
   ["j1", "j2"].forEach(role => {
     const estMoi = role === monRole;
@@ -1408,14 +1408,22 @@ function rendreBansBonus() {
   if (estEtapeHorizontale()) return rendreBansHorizontaux();
   const choix = draft.bans_bonus_choix || [];
   const jokers = draft.bans_joker_choix || [];
-  const nbJokers = draft.bans_joker_total || 0;
-  const nbNormaux = draft.bans_bonus_total - nbJokers;
-  const restant = draft.bans_bonus_total - choix.length - jokers.length;
+  // Mode spécial (entraînement non équilibrable) : jokers illimités, une
+  // case vide de plus pour en ajouter.
+  const special = !!draft.mode_special;
+  const nbJokers = special ? Math.max(draft.bans_joker_total || 0, jokers.length + 1) : draft.bans_joker_total || 0;
+  const nbNormaux = draft.bans_bonus_total - (draft.bans_joker_total || 0);
+  const restant = special
+    ? Math.max(0, nbNormaux - choix.length) + Math.max(0, (draft.bans_joker_total || 0) - jokers.length)
+    : draft.bans_bonus_total - choix.length - jokers.length;
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
-  rendreEchangeJoker(cEstMonTour, nbNormaux);
-  const joker = nbJokers ? ` (dont ${pluriel(nbJokers, "joker")})` : "";
+  if (special) document.getElementById("btn-echanger-joker").classList.add("cache");
+  else rendreEchangeJoker(cEstMonTour, nbNormaux);
+  const joker = draft.bans_joker_total ? ` (dont ${pluriel(draft.bans_joker_total, "joker")})` : "";
   messageBansEquilibrage(draft.bans_bonus_joueur,
-    `${pseudoColore(draft.bans_bonus_joueur)} a ${pluriel(draft.bans_bonus_total, "ban vertical", "bans verticaux")}${joker} sur ${pseudoColore(getAutreRole(draft.bans_bonus_joueur))}.`,
+    special
+      ? `Mode spécial : ${pseudoColore(draft.bans_bonus_joueur)} a ${pluriel(draft.bans_bonus_total, "ban vertical", "bans verticaux")}${joker} et peut ajouter autant de bans joker qu'il veut sur ${pseudoColore(getAutreRole(draft.bans_bonus_joueur))}.`
+      : `${pseudoColore(draft.bans_bonus_joueur)} a ${pluriel(draft.bans_bonus_total, "ban vertical", "bans verticaux")}${joker} sur ${pseudoColore(getAutreRole(draft.bans_bonus_joueur))}.`,
     restant, restant === 0);
 
   const slots = document.getElementById("bans-bonus-slots");
@@ -1463,7 +1471,7 @@ function rendreBansBonus() {
 
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
-    choix, jokers, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible,
+    choix, jokers, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible, special,
     draft.pool_j1, draft.pool_j2, draft.discord_j1, draft.discord_j2, monRole,
     ...cleFiltres()
   ]);
@@ -1478,7 +1486,7 @@ function rendreBansBonus() {
     const dejaChoisi = choix.includes(id) || jokers.includes(id);
     // Bans normaux d'abord, puis jokers (personnages de la box adverse).
     const poolAdverse = draft[`pool_${getAutreRole(draft.bans_bonus_joueur)}`] || [];
-    const placeLibre = choix.length < nbNormaux || (jokers.length < nbJokers && poolAdverse.includes(id));
+    const placeLibre = choix.length < nbNormaux || ((special || jokers.length < nbJokers) && poolAdverse.includes(id));
     const peutCliquer = cEstMonTour && (dejaChoisi || placeLibre);
 
     return obtenirCarteItem(grille, personnage, {
@@ -3237,18 +3245,20 @@ function rendreNonEquilibrable() {
 // Entraînement dont les box ne s'équilibrent pas : en classé, le match
 // aurait été annulé ; le lanceur continue ou change de box (une fois par
 // room et par onglet).
+// Continuer quand même : mode spécial (serveur, cf. handleModeSpecial),
+// la box la plus faible fait ses bans d'équilibrage avec des bans joker
+// illimités.
 function afficherAlerteEquilibrage() {
-  const cle = `alerte-equilibrage-${roomId}`;
-  try {
-    if (sessionStorage.getItem(cle)) return;
-  } catch {}
+  if (moiDiscordId !== draft.entrainement?.lanceur) return;
   const message = document.getElementById("message-choix-box");
   message.innerHTML = `⚠ Ces box ne s'équilibrent pas : en match normal ou classé, ce match aurait été annulé. ` +
-    `<button type="button" class="btn-alerte-equilibrage" id="btn-continuer-equilibrage">Continuer quand même</button> ` +
-    `<a class="btn-alerte-equilibrage" href="/match#entrainement">Changer de box</a>`;
+    `<button type="button" class="btn-alerte-equilibrage" id="btn-continuer-equilibrage">Continuer quand même (mode spécial)</button> ` +
+    `<a class="btn-alerte-equilibrage" href="/match#entrainement">Changer de box</a>` +
+    `<br><small>Mode spécial : la box la plus faible pourra ajouter autant de bans joker qu'elle veut pour tenter d'équilibrer.</small>`;
   document.getElementById("btn-continuer-equilibrage").onclick = () => {
-    try { sessionStorage.setItem(cle, "1"); } catch {}
-    rendreChoixBox();
+    envoyerAction(`/api/rooms/${roomId}/mode_special`, {})
+      .then(data => definirDraft(data.draft))
+      .catch(err => alert(err.message));
   };
 }
 

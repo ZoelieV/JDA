@@ -17,7 +17,10 @@ function calculerBansBonus(ecart) {
 }
 
 // Bans d'équilibrage encore à faire (nombre imposé, jokers compris).
+// Mode spécial (entraînement non équilibrable, cf. handleModeSpecial) :
+// une phase de bans d'équilibrage même sans ban calculé, jokers illimités.
 function bansBonusDus(draft) {
+  if (draft.mode_special && !draft.bans_special_faits) return true;
   return (draft.bans_bonus_faits || 0) < (draft.bans_bonus_total || 0);
 }
 
@@ -450,6 +453,7 @@ function appliquerBansBonus(draft, joueur, choix, jokers = [], aleatoires = new 
     draft.actions.push({ joueur, type: "ban", perso_id: persoId, bonus: true, joker: true, ...hasard(persoId) });
   });
   draft.bans_bonus_faits = choix.length + jokers.length;
+  if (draft.mode_special) draft.bans_special_faits = true;
   draft.bans_bonus_choix = [];
   draft.bans_joker_choix = [];
 }
@@ -947,6 +951,10 @@ function etatRevanche(precedent) {
       .filter(id => !bannis.has(id)),
     bans_bonus_total: precedent.bans_bonus_total,
     bans_bonus_faits: precedent.bans_bonus_faits,
+    // Mode spécial de l'entraînement : bans déjà faits, gardés.
+    mode_special: !!precedent.mode_special,
+    bans_special_faits: !!precedent.bans_special_faits,
+    joueur_faible: precedent.joueur_faible || null,
     bans_bonus_joueur: precedent.bans_bonus_joueur,
     // Méthode d'équilibrage de la 1re manche, bans déjà confirmés.
     equilibrage: precedent.equilibrage || "ancien",

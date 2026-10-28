@@ -635,7 +635,7 @@ async function handleBonusToggle(req, res, roomId, user) {
     }
     if (draft.bans_bonus_choix.length < normaux) {
       draft.bans_bonus_choix.push(persoId);
-    } else if (draft.bans_joker_choix.length < jokers) {
+    } else if (draft.bans_joker_choix.length < jokers || draft.mode_special) {
       const adverse = joueur === "j1" ? "j2" : "j1";
       if (!draft[`pool_${adverse}`]?.includes(persoId)) {
         return res.status(409).json({ error: "Le ban joker vise un personnage de la box adverse" });
@@ -718,7 +718,12 @@ async function handleBonusConfirmer(req, res, roomId, user) {
 
   const choix = draft.bans_bonus_choix || [];
   const jokers = draft.bans_joker_choix || [];
-  if (choix.length + jokers.length !== draft.bans_bonus_total) {
+  // Mode spécial : bans calculés obligatoires, jokers en plus à volonté.
+  if (draft.mode_special) {
+    if (choix.length < bansNormaux(draft) || jokers.length < (draft.bans_joker_total || 0)) {
+      return res.status(409).json({ error: `Sélectionne au moins tes ${draft.bans_bonus_total} ban(s) calculé(s) avant de confirmer` });
+    }
+  } else if (choix.length + jokers.length !== draft.bans_bonus_total) {
     return res.status(409).json({ error: `Sélectionne exactement ${draft.bans_bonus_total} personnage(s) avant de confirmer` });
   }
 
@@ -950,6 +955,32 @@ async function handleMancheTournoi(req, res, roomId, user) {
   demarrerAnalyse(nouveau);
   await sauvegarderDraft(roomId, nouveau);
   return repondreDraft(res, nouveau, joueur);
+}
+
+// ---- mode_special : entraînement dont les box ne s'équilibrent pas, le
+// lanceur continue quand même (cf. afficherAlerteEquilibrage dans
+// match.js) : la box la plus faible fait ses bans d'équilibrage avec des
+// bans joker illimités, pour tenter d'équilibrer. Entraînement seulement,
+// avant les bans d'équilibrage. ----
+async function handleModeSpecial(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
+  const draft = room.draft;
+  if (!draft.entrainement || draft.entrainement.lanceur !== user.id) {
+    return res.status(403).json({ error: "Mode spécial : en entraînement, pour son lanceur seulement" });
+  }
+  if (draft.equilibrable !== false) return res.status(409).json({ error: "Ces box s'équilibrent déjà" });
+  if (!["choix_box", "analyse"].includes(draft.phase)) {
+    return res.status(409).json({ error: "Trop tard : les bans d'équilibrage ont commencé" });
+  }
+  draft.mode_special = true;
+  draft.bans_special_faits = false;
+  draft.bans_bonus_joueur ||= draft.joueur_faible || "j1";
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
 }
 
 // ---- litige : un joueur conteste les temps ; la manche est invalidée (pas
@@ -1390,6 +1421,8 @@ function executerAction(action, req, res, roomId, user) {
       return handleAbandonnerClasse(req, res, roomId, user);
     case "annuler_action":
       return handleAnnulerAction(req, res, roomId, user);
+    case "mode_special":
+      return handleModeSpecial(req, res, roomId, user);
     case "temps_arbitre":
       return handleTempsArbitre(req, res, roomId, user);
     case "tournoi_manche":
