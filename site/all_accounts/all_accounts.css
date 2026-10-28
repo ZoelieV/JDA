@@ -735,18 +735,19 @@ h1, h2 {
 }
 
 /* Bannière du joueur (--banniere-profil, cf. ouvrirProfil), fondue vers
-   la gauche. */
+   la gauche : entière en hauteur et calée à droite (son arrondi en
+   demi-cercle intact), juste avant le bouton ×. */
 #modal-header::after {
   content: "";
   position: absolute;
-  top: -1.25rem;
-  right: -1.25rem;
-  bottom: 0;
+  top: -0.25rem;
+  right: 2.875rem;
+  bottom: 0.625rem;
   width: min(36rem, 60%);
-  background: var(--banniere-profil, none) right center / cover no-repeat;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 65%);
-  mask-image: linear-gradient(90deg, transparent, #000 65%);
-  opacity: 0.45;
+  background: var(--banniere-profil, none) right center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%);
+  mask-image: linear-gradient(90deg, transparent, #000 55%);
+  opacity: 0.7;
   pointer-events: none;
 }
 
@@ -893,9 +894,7 @@ h1, h2 {
   }
 
   #modal-header::after {
-    top: -0.75rem;
-    right: -0.75rem;
-    width: 75%;
+    width: 70%;
   }
 
   #modal #view-selector,
