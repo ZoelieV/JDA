@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/all_accounts/all_accounts.css?v=rem30">
+<link rel="stylesheet" href="/all_accounts/all_accounts.css?v=rem31">
 <link rel="stylesheet" href="/commun/entete.css?v=rem41">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
@@ -16,7 +16,7 @@
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=49" defer></script>
+<script src="/commun/compte.js?v=50" defer></script>
 </head>
 <body>
 <a href="/" class="lien-accueil">Accueil</a>
@@ -47,6 +47,13 @@
       <div id="modal-header">
         <h2 id="modal-title">Profil</h2>
         <button id="close-modal" type="button">×</button>
+      </div>
+
+      <!-- Box du joueur, ou ses flex cosmétiques (12 cosmétiques choisis
+           dans la personnalisation, grille de 3 × 4). -->
+      <div id="onglets-profil">
+        <button type="button" class="onglet-profil active" data-onglet="box">Box</button>
+        <button type="button" class="onglet-profil" data-onglet="flex">Flex cosmétiques</button>
       </div>
 
       <!-- Vue (personnages/armes) et box (full/stuff) sur une seule ligne,
@@ -110,6 +117,11 @@
       </div>
 
       <div id="profile-box" class="grille-pool"></div>
+
+      <div id="zone-flex">
+        <p id="flex-vide" class="flex-vide" hidden></p>
+        <div id="grille-flex" class="grille-flex"></div>
+      </div>
     </div>
   </div>
 
@@ -117,7 +129,7 @@
   <script src="/commun/synergies.js?v=2"></script>
   <script src="/commun/cartes.js?v=33"></script>
   <script src="/commun/tri.js?v=21"></script>
-  <script src="/all_accounts/all_accounts.js?v=38"></script>
+  <script src="/all_accounts/all_accounts.js?v=39"></script>
   <script src="/commun/site.js?v=12"></script>
 </body>
 </html>

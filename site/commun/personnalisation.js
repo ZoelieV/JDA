@@ -24,6 +24,11 @@
 // api/_lib/koyns.js). Filtres et tris de la draft, affichage
 // de l'accueil : libres.
 //
+// Flex cosmétiques (onglet Flex, parametres.flex) : 12 cosmétiques possédés
+// placés sur une grille de 3 × 4, montrés sur le profil (Tous les comptes) ;
+// clic sur une case puis sur un cosmétique (cf. nettoyerParametres dans
+// api/auth/profile.js).
+//
 // Fond "Mon image" (fond = "perso") : image importée par le joueur,
 // redimensionnée et ré-encodée ici (canvas : seuls les pixels sont gardés,
 // sans métadonnées ni contenu caché), puis gardée dans ce navigateur
@@ -48,6 +53,9 @@
   ];
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins"];
+  // Flex : emplacements (TAILLE_FLEX de commun/koyns.js).
+  const TAILLE_FLEX = 12;
+  let caseFlex = 0; // emplacement choisi dans l'onglet Flex
   // Fond personnel : formats acceptés (pas de SVG ni de GIF), poids du
   // fichier importé, nombre de pixels décodés, taille gardée (largeur et
   // hauteur au plus).
@@ -85,8 +93,9 @@
     return fond && urlImage(miniature ? fond.miniature : fond.image);
   };
   const valeurComparable = valeur => JSON.stringify(Array.isArray(valeur) ? [...valeur].sort() : valeur ?? null);
-  const differe = (a, b, cle) => valeurComparable(a[cle]) !== valeurComparable(b[cle]);
-  const cles = () => [...Object.keys(PARAMETRES_DEFAUT), "skins", "filtres_draft"];
+  // Flex : l'ordre des cases compte.
+  const differe = (a, b, cle) => cle === "flex" ? JSON.stringify(a.flex) !== JSON.stringify(b.flex) : valeurComparable(a[cle]) !== valeurComparable(b[cle]);
+  const cles = () => [...Object.keys(PARAMETRES_DEFAUT), "skins", "filtres_draft", "flex"];
 
   // "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
   function nomNamecard(chemin) {
@@ -101,7 +110,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=19";
+    lien.href = "/commun/personnalisation.css?v=20";
     document.head.appendChild(lien);
   }
 
@@ -126,7 +135,7 @@
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=11",
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=12",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=4",
@@ -186,6 +195,7 @@
       if (choix === "skin") propres.skins = (propres.skins || []).filter(skin => skin !== reste.join(":"));
       else delete propres[choix];
     });
+    if (Array.isArray(propres.flex)) propres.flex = propres.flex.map(id => (id && possede(id) ? id : null));
     return propres;
   }
 
@@ -380,7 +390,8 @@
     return {
       ...Object.fromEntries(Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, parametres[cle] || defaut])),
       skins: Array.isArray(parametres.skins) ? parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)) : [],
-      filtres_draft: lireFiltresDraft(parametres.filtres_draft)
+      filtres_draft: lireFiltresDraft(parametres.filtres_draft),
+      flex: Array.from({ length: TAILLE_FLEX }, (_, i) => (typeof parametres.flex?.[i] === "string" ? parametres.flex[i] : null))
     };
   }
 
@@ -389,7 +400,8 @@
     return {
       ...choix,
       skins: [...choix.skins],
-      filtres_draft: { masques: [...choix.filtres_draft.masques], figes: [...choix.filtres_draft.figes] }
+      filtres_draft: { masques: [...choix.filtres_draft.masques], figes: [...choix.filtres_draft.figes] },
+      flex: [...choix.flex]
     };
   }
 
@@ -476,6 +488,10 @@
           <button type="button" class="perso-apercu-bloc" data-onglet="skins">
             <span class="perso-apercu-titre">Skins</span>
             <span class="perso-apercu-image perso-apercu-skins" data-apercu="skins"></span>
+          </button>
+          <button type="button" class="perso-apercu-bloc" data-onglet="flex">
+            <span class="perso-apercu-titre">Flex</span>
+            <span class="perso-apercu-image perso-apercu-flex" data-apercu="flex"></span>
           </button>
           <button type="button" class="perso-apercu-bloc" data-onglet="filtres">
             <span class="perso-apercu-titre">Filtres/Tris</span>
@@ -574,12 +590,14 @@
       banniere2: brouillon.banniere2 && urlImage(brouillon.banniere2),
       skins: urlImage(voyageur.image.replace(/^images\//, "")),
       filtres: urlImage("others/remove_filters.webp"),
+      flex: brouillon.flex.find(Boolean) && infoCosmetique(brouillon.flex.find(Boolean)).image,
       tirage: urlImage("others/rikoyn.webp")
     };
     const affiches = FILTRES_DRAFT.length - brouillon.filtres_draft.masques.length;
     const textes = {
       skins: `${brouillon.skins.length} skin${brouillon.skins.length > 1 ? "s" : ""}`,
       filtres: `${affiches} / ${FILTRES_DRAFT.length}`,
+      flex: `${brouillon.flex.filter(Boolean).length} / ${TAILLE_FLEX}`,
       accueil: AFFICHAGES_ACCUEIL.find(affichage => affichage.id === brouillon.accueil)?.nom || "",
       tirage: "🎲"
     };
@@ -732,6 +750,91 @@
       tableau.appendChild(corps);
       conteneur.append(titreSection(titre), tableau);
     });
+  }
+
+  // Flex cosmétiques : la grille de 3 × 4 (case choisie entourée, × pour
+  // la vider), puis les cosmétiques possédés par type ; clic : placé dans
+  // la case choisie (retiré de son ancienne case), puis case vide suivante.
+  function rendreFlex(conteneur, recherche) {
+    const flex = brouillon.flex;
+    const majTout = () => {
+      rendreApercus();
+      rendreChoix();
+      mettreAJourPied();
+    };
+    const note = document.createElement("p");
+    note.className = "perso-note";
+    note.textContent = `Jusqu'à ${TAILLE_FLEX} cosmétiques que tu possèdes, montrés sur ton profil (Tous les comptes). Clic sur une case, puis sur un cosmétique.`;
+    const grilleFlex = document.createElement("div");
+    grilleFlex.className = "perso-flex-grille";
+    flex.forEach((id, i) => {
+      const caseBouton = document.createElement("button");
+      caseBouton.type = "button";
+      caseBouton.className = `perso-flex-case${i === caseFlex ? " active" : ""}`;
+      if (id) {
+        const info = infoCosmetique(id);
+        caseBouton.classList.add(`perso-flex-${info.choix}`);
+        caseBouton.title = `${info.nom} (${info.type})`;
+        if (info.image) {
+          const img = document.createElement("img");
+          img.src = info.image;
+          img.alt = info.nom;
+          caseBouton.appendChild(img);
+        }
+        const vider = document.createElement("span");
+        vider.className = "perso-flex-vider";
+        vider.textContent = "×";
+        vider.title = "Vider la case";
+        vider.addEventListener("click", event => {
+          event.stopPropagation();
+          flex[i] = null;
+          caseFlex = i;
+          majTout();
+        });
+        caseBouton.appendChild(vider);
+      } else {
+        caseBouton.textContent = "+";
+        caseBouton.title = "Case vide : clic pour la choisir, puis clic sur un cosmétique";
+      }
+      caseBouton.addEventListener("click", () => {
+        caseFlex = i;
+        rendreChoix();
+      });
+      grilleFlex.appendChild(caseBouton);
+    });
+    conteneur.append(note, grilleFlex);
+
+    const placer = id => () => {
+      const ancienne = flex.indexOf(id);
+      if (ancienne >= 0) flex[ancienne] = null;
+      flex[caseFlex] = id;
+      const vide = [...flex.keys()].map(k => (caseFlex + 1 + k) % TAILLE_FLEX).find(k => !flex[k]);
+      if (vide !== undefined) caseFlex = vide;
+    };
+    const correspond = info => !recherche || `${info.nom} ${info.type}`.toLowerCase().includes(recherche);
+    const variantes = Object.values(VARIANTES_PERSONNAGES).flatMap(variante => Object.keys(variante.options).map(valeur => idCosmetique(variante.parametre, valeur)));
+    [
+      ["Namecards", "banniere", cosmetiques.bannieres.map(chemin => idCosmetique("banniere", chemin))],
+      ["Bannières", "banniere2", cosmetiques.bannieres2.map(chemin => idCosmetique("banniere2", chemin))],
+      ["Fonds d'écran", "fond", cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id))],
+      ["Skins", "skins", SKINS_PERSONNAGES.map(id => idCosmetique("skin", id))],
+      ["Voyageur et Manekin", "variantes", variantes]
+    ].forEach(([titre, type, ids]) => {
+      const infos = ids.filter(id => possede(id) && !COSMETIQUES_GRATUITS.has(id)).map(infoCosmetique).filter(correspond);
+      if (!infos.length) return;
+      const grille = nouvelleGrille(type);
+      infos.forEach(info => {
+        const id = idCosmetique(info.choix, info.valeur);
+        grille.appendChild(creerChoix(info.image, info.nom, flex.includes(id), placer(id)));
+      });
+      conteneur.append(titreSection(titre), grille);
+    });
+    if (conteneur.querySelectorAll(".perso-grille").length === 0) {
+      const vide = document.createElement("p");
+      vide.className = "perso-note";
+      vide.textContent = recherche ? "Aucun cosmétique possédé ne correspond." : "Tu n'as pas encore de cosmétique : achète-en ou tente le tirage !";
+      conteneur.appendChild(vide);
+    }
   }
 
   // Affichage de l'accueil : un schéma de chaque page (cartes en petits
@@ -960,6 +1063,7 @@
   function rendreChoix() {
     const conteneur = modal.querySelector(".perso-choix");
     conteneur.innerHTML = "";
+    conteneur.classList.toggle("perso-choix-flex", ongletActif === "flex");
     if (!cosmetiques) {
       conteneur.textContent = "Impossible de charger la liste des images.";
       return;
@@ -976,6 +1080,10 @@
     }
     if (ongletActif === "accueil") {
       rendreAccueil(conteneur);
+      return;
+    }
+    if (ongletActif === "flex") {
+      rendreFlex(conteneur, recherche);
       return;
     }
     if (ongletActif === "tirage") {
@@ -1078,6 +1186,7 @@
       // Cosmétiques plus possédés (lancement des Rikoyns) : choix par défaut.
       enregistres = avecDefauts(sansNonPossedes(profil.parametres));
       brouillon = copieChoix(enregistres);
+      caseFlex = Math.max(0, brouillon.flex.findIndex(id => !id));
       afficherEtat("");
     } catch (erreur) {
       console.error(erreur);

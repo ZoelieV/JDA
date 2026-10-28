@@ -5,6 +5,7 @@ const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, t
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
+const { TAILLE_FLEX } = require("../../commun/koyns.js");
 
 const { fetchAvecReessai, supabase } = require("../_lib/supabase");
 const { memoriser } = require("../_lib/memo");
@@ -122,7 +123,27 @@ function nettoyerParametres(parametres) {
   if (parametres.filtres_draft && typeof parametres.filtres_draft === "object") {
     propres.filtres_draft = lireFiltresDraft(parametres.filtres_draft);
   }
+  // Flex cosmétiques : TAILLE_FLEX emplacements, cosmétiques connus (pas
+  // Mon image, gardée dans le navigateur), sans doublon, ou null. Possédés :
+  // vérifié ensuite (filtrerParametresPossedes).
+  if (Array.isArray(parametres.flex)) {
+    const vus = new Set();
+    const flex = Array.from({ length: TAILLE_FLEX }, (_, i) => {
+      const id = parametres.flex[i];
+      if (typeof id !== "string" || vus.has(id) || !cosmetiqueFlexValide(id)) return null;
+      vus.add(id);
+      return id;
+    });
+    if (flex.some(Boolean)) propres.flex = flex;
+  }
   return propres;
+}
+
+function cosmetiqueFlexValide(id) {
+  const [choix, ...reste] = id.split(":");
+  const valeur = reste.join(":");
+  if (choix === "skin") return SKINS_PERSONNAGES.includes(valeur);
+  return ["fond", "banniere", "banniere2", "voyageur", "manekin"].includes(choix) && valeur !== "perso" && PARAMETRES_AUTORISES[choix].has(valeur);
 }
 
 // ---- Collections (personnages, armes) ----

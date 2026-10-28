@@ -176,6 +176,11 @@ function filtrerParametresPossedes(parametres, possedes) {
     else delete propres[choix];
   });
   if (Array.isArray(propres.skins) && !propres.skins.length) delete propres.skins;
+  // Flex : emplacement d'un cosmétique pas possédé vidé.
+  if (Array.isArray(propres.flex)) {
+    propres.flex = propres.flex.map(id => (id && possede(possedes, id) ? id : null));
+    if (!propres.flex.some(Boolean)) delete propres.flex;
+  }
   return propres;
 }
 

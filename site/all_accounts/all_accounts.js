@@ -602,6 +602,77 @@ function initialiserSelecteursVueEtBox() {
 
 // ---- Ouverture / fermeture popup ----
 
+// ---- Flex cosmétiques (parametres.flex, cf. commun/personnalisation.js) ----
+
+let promesseCosmetiquesFlex = null; // DB/images/cosmetiques.json (fonds)
+let ongletProfil = "box";
+
+function chargerCosmetiquesFlex() {
+  promesseCosmetiquesFlex ??= fetch("/DB/images/cosmetiques.json")
+    .then(reponse => reponse.json())
+    .catch(erreur => { promesseCosmetiquesFlex = null; throw erreur; });
+  return promesseCosmetiquesFlex;
+}
+
+// "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
+function nomNamecardFlex(chemin) {
+  return chemin.split("/").pop().replace(/^Namecard_(Background|Banner)_/, "").replace(/\.[a-z]+$/i, "").replace(/_/g, " ");
+}
+
+// Id de cosmétique ("<choix>:<valeur>") -> { type, nom, image } (null :
+// inconnu).
+function infoCosmetiqueFlex(id, cosmetiques) {
+  const [choix, ...reste] = String(id).split(":");
+  const valeur = reste.join(":");
+  if (choix === "banniere") return { type: "Namecard", nom: nomNamecardFlex(valeur), image: `/DB/images/${valeur}` };
+  if (choix === "banniere2") return { type: "Bannière", nom: nomNamecardFlex(valeur), image: `/DB/images/${valeur}` };
+  if (choix === "fond") {
+    const fond = cosmetiques?.fonds.find(f => f.id === valeur);
+    return fond ? { type: "Fond d'écran", nom: majuscule(fond.image.split("/").pop().replace(/\.[a-z]+$/i, "").replace(/_/g, " ")), image: `/DB/images/${fond.miniature}` } : null;
+  }
+  if (choix === "skin" && SKINS_PERSONNAGES.includes(valeur)) {
+    return { type: "Skin", nom: personnagesBase.find(p => p.id === valeur)?.nom || valeur, image: `/DB/${imagesSkin(valeur).item}` };
+  }
+  const option = Object.values(VARIANTES_PERSONNAGES).find(variante => variante.parametre === choix)?.options[valeur];
+  return option ? { type: choix === "voyageur" ? "Voyageur" : "Manekin", nom: option.nom, image: `/DB/${option.image}` } : null;
+}
+
+async function rendreFlex(nom) {
+  const grille = document.getElementById("grille-flex");
+  const vide = document.getElementById("flex-vide");
+  const flex = Array.isArray(profilCourant?.data?.parametres?.flex) ? profilCourant.data.parametres.flex : [];
+  let cosmetiques = null;
+  try {
+    cosmetiques = await chargerCosmetiquesFlex();
+  } catch (erreur) {
+    console.error(erreur);
+  }
+  const cases = Array.from({ length: 12 }, (_, i) => {
+    const id = typeof flex[i] === "string" ? flex[i] : null;
+    return { id, info: id ? infoCosmetiqueFlex(id, cosmetiques) : null };
+  });
+  vide.hidden = cases.some(c => c.info);
+  vide.textContent = `${nom} n'a pas encore choisi de cosmétiques à flex.`;
+  grille.innerHTML = cases.map(({ id, info }) => info
+    ? `<figure class="case-flex flex-${echapperFlex(id.split(":")[0])}" title="${echapperFlex(`${info.nom} (${info.type})`)}">
+        <img src="${echapperFlex(encodeURI(info.image))}" alt="${echapperFlex(info.nom)}" loading="lazy">
+        <figcaption>${echapperFlex(info.nom)}</figcaption>
+      </figure>`
+    : `<div class="case-flex case-flex-vide"></div>`).join("");
+}
+
+const majuscule = texte => texte.charAt(0).toUpperCase() + texte.slice(1);
+
+function echapperFlex(texte) {
+  return String(texte ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+function choisirOngletProfil(onglet) {
+  ongletProfil = onglet;
+  document.getElementById("modal-content").classList.toggle("vue-flex", onglet === "flex");
+  document.querySelectorAll(".onglet-profil").forEach(bouton => bouton.classList.toggle("active", bouton.dataset.onglet === onglet));
+}
+
 async function ouvrirProfil(discordId, nom) {
   try {
     const dejaCharges = personnagesBase.length > 0 && armesData.length > 0;
@@ -628,8 +699,10 @@ async function ouvrirProfil(discordId, nom) {
     mettreAJourBarreOutils();
     afficherPointsBox();
 
-    document.getElementById("modal-title").textContent = `Box de ${nom}`;
+    document.getElementById("modal-title").textContent = `Profil de ${nom}`;
     rendreProfilBox();
+    choisirOngletProfil(ongletProfil);
+    rendreFlex(nom);
     document.getElementById("modal").classList.add("active");
   } catch (error) {
     console.error(error);
@@ -640,6 +713,10 @@ async function ouvrirProfil(discordId, nom) {
 function initialiserModal() {
   const modal = document.getElementById("modal");
   const closeBtn = document.getElementById("close-modal");
+
+  document.querySelectorAll(".onglet-profil").forEach(bouton => {
+    bouton.addEventListener("click", () => choisirOngletProfil(bouton.dataset.onglet));
+  });
 
   closeBtn.addEventListener("click", () => {
     modal.classList.remove("active");

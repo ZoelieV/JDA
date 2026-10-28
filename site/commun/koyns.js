@@ -83,6 +83,11 @@ const COSMETIQUES_GRATUITS = new Set([
 
 const CHOIX_COSMETIQUES = ["fond", "banniere", "banniere2", "voyageur", "manekin"];
 
+// Flex cosmétiques (parametres.flex) : 12 emplacements (grille de 3 lignes
+// de 4) montrés sur le profil (Tous les comptes) ; id de cosmétique possédé
+// ou null. Choisis dans la personnalisation.
+const TAILLE_FLEX = 12;
+
 // Cosmétiques payants portés avec ces paramètres (ids).
 function cosmetiquesParametres(parametres = {}) {
   const ids = CHOIX_COSMETIQUES
@@ -105,5 +110,5 @@ function htmlGainKoyns(gain) {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { PRIX_COSMETIQUE, prixCosmetique, FOND_IMPORTE, PRIX_IMPORT_FOND, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, idCosmetique, cosmetiquesParametres };
+  module.exports = { PRIX_COSMETIQUE, prixCosmetique, FOND_IMPORTE, PRIX_IMPORT_FOND, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, TAILLE_FLEX, idCosmetique, cosmetiquesParametres };
 }
