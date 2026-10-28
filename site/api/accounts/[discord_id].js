@@ -19,6 +19,9 @@ const {
 // room donnée (?room=), une fois les box révélées (après le choix des box :
 // pools calculés), pour les joueurs comme pour les spectateurs.
 const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+// Vitrines : privées aussi, jamais envoyées aux autres (celle jouée en
+// équipe est recopiée dans la draft au lancement, cf. _lib/equipe.js).
+const BOX_PRIVEES = [...BOX_OPTI, "vitrine", "vitrine2"];
 
 // Box opti de ce joueur révélées dans cette room.
 async function boxOptiRevelees(roomId, discordId) {
@@ -47,7 +50,7 @@ function masquerBoxOpti(data, visibles) {
     const selections = copie[vue]?.selections;
     if (!selections || typeof selections !== "object") return;
     const filtrees = { ...selections };
-    BOX_OPTI.filter(box => !visibles.includes(box)).forEach(box => { delete filtrees[box]; });
+    BOX_PRIVEES.filter(box => !visibles.includes(box)).forEach(box => { delete filtrees[box]; });
     copie[vue] = { ...copie[vue], selections: filtrees };
   });
   return copie;

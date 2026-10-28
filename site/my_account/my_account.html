@@ -108,10 +108,12 @@
         <button type="button" class="box-btn" data-box="opti3"><span class="nom-box">Box optimisée 3</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
         <button type="button" class="box-btn" data-box="opti4"><span class="nom-box">Box optimisée 4</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
         <button type="button" class="box-btn" data-box="opti5"><span class="nom-box">Box optimisée 5</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
-        <button type="button" class="box-btn" data-box="vitrine" title="12 personnages et 12 armes maximum, visibles sur Tous les comptes">Vitrine</button>
-        <!-- Box optimisée active : copier une autre box optimisée enregistrée. -->
+        <!-- Vitrines : privées, renommables, une jouée en 2v2 / 3v3 / 4v4. -->
+        <button type="button" class="box-btn" data-box="vitrine" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 1</span><span class="renommer-box" title="Renommer cette vitrine">✎</span></button>
+        <button type="button" class="box-btn" data-box="vitrine2" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 2</span><span class="renommer-box" title="Renommer cette vitrine">✎</span></button>
+        <!-- Box optimisée ou vitrine active : copier une autre box du même type enregistrée. -->
         <div id="copie-box" class="copie-box cache">
-          <button type="button" id="btn-copier-box" class="btn-copier-box" title="Copier le contenu d'une autre box optimisée enregistrée (16 persos minimum)">⧉ Copier</button>
+          <button type="button" id="btn-copier-box" class="btn-copier-box" title="Copier le contenu d'une autre box du même type enregistrée (box optimisée : 16 persos minimum)">⧉ Copier</button>
           <div id="menu-copie-box" class="menu-copie-box cache"></div>
         </div>
       </div>
@@ -194,7 +196,7 @@
       <div id="box-total" class="box-total">
         <strong>Total <span id="box-total-label">Full Box</span> :</strong>
         <span id="total-ppc">0</span>
-        <!-- Vitrine : règles des modes 2v2, 3v3 et 4v4 ; box opti : jouable
+        <!-- Vitrines : règles des modes 2v2, 3v3 et 4v4 ; box opti : jouable
              en match ou non ; box stuff : indication seulement. -->
         <span id="statut-vitrine" class="statut-vitrine cache"></span>
       </div>
@@ -270,7 +272,7 @@
   <script src="/commun/tri.js?v=21"></script>
   <script src="/commun/personnalisation.js?v=27"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
-  <script src="/my_account/my_account.js?v=72"></script>
+  <script src="/my_account/my_account.js?v=73"></script>
   <script src="/commun/site.js?v=10"></script>
 </body>
 </html>

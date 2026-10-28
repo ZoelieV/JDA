@@ -182,6 +182,11 @@ function rendreLobby() {
     bouton.addEventListener("click", () => agir("equipe_camp", { camp: bouton.dataset.camp || null }));
   });
 
+  $("choix-vitrine").classList.toggle("cache", !suisMembre());
+  document.querySelectorAll("#choix-vitrine [data-vitrine]").forEach(bouton => {
+    bouton.classList.toggle("actif", (draft.vitrines_choisies?.[moi?.id] || "vitrine") === bouton.dataset.vitrine);
+  });
+
   const createur = draft.createur === moi?.id;
   $("btn-rejoindre").classList.toggle("cache", suisMembre() || complet || !moi);
   $("btn-quitter").classList.toggle("cache", !suisMembre() || createur);
@@ -192,7 +197,7 @@ function rendreLobby() {
   $("aide-lobby").textContent = createur
     ? (!complet ? `Partage le lien : il faut ${draft.taille * 2} joueurs.` : !equipesCompletes ? "Les 2 équipes doivent être complètes." : "Tout le monde est là : lance le match quand vous êtes prêts.")
     : suisMembre() ? "Le créateur de la room lance le match quand tout le monde est prêt."
-      : complet ? "Le lobby est complet : tu regardes en spectateur." : "Rejoins le lobby pour jouer (vitrine conforme obligatoire).";
+      : complet ? "Le lobby est complet : tu regardes en spectateur." : "Rejoins le lobby pour jouer (une vitrine conforme obligatoire).";
 }
 
 // ---- Vote des chefs ----
@@ -846,6 +851,9 @@ async function demarrer() {
   initialiserBoutons();
   initialiserBoss();
   initialiserVitrines();
+  document.querySelectorAll("#choix-vitrine [data-vitrine]").forEach(bouton => {
+    bouton.addEventListener("click", () => agir("equipe_vitrine", { box: bouton.dataset.vitrine }));
+  });
   initialiserLitige();
 
   // Arrivée par le lien : on rejoint le lobby s'il reste de la place

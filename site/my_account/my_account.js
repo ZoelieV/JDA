@@ -6,13 +6,19 @@ const nomsBoxes = {
   opti3: "Box optimisée 3",
   opti4: "Box optimisée 4",
   opti5: "Box optimisée 5",
-  vitrine: "Vitrine"
+  vitrine: "Vitrine 1",
+  vitrine2: "Vitrine 2"
 };
 
-// Vitrine : sélection à montrer (Mon compte, Tous les comptes ; plus tard
-// les modes 2v2, 4v4...), limitée en nombre (même limite côté serveur,
-// cf. api/auth/profile.js).
+// Vitrines : 2 sélections privées (comme les box optimisées), une jouée
+// dans les modes 2v2, 3v3 et 4v4 (choisie dans le lobby), limitées en
+// nombre (même limite côté serveur, cf. api/auth/profile.js).
+const BOX_VITRINES = ["vitrine", "vitrine2"];
 const MAX_VITRINE = { characters: 12, weapons: 12 };
+
+function estVitrine(box) {
+  return BOX_VITRINES.includes(box);
+}
 
 // Vitrine des modes 2v2, 3v3 et 4v4 (mêmes règles que api/_lib/vitrine.js) :
 // 12 persos exactement, 1400 points au plus (persos et armes), 6
@@ -20,17 +26,17 @@ const MAX_VITRINE = { characters: 12, weapons: 12 };
 const REGLES_VITRINE = { persos: 12, points: 1400, constellations: 6, c2: 2 };
 
 // -> { nbPersos, points, constellations, c2, erreurs: [texte] }.
-function analyserVitrine(personnages, armes, profil) {
+function analyserVitrine(personnages, armes, profil, box = "vitrine") {
   const collection = profil.characters;
-  const selection = collection.selections?.vitrine || {};
+  const selection = collection.selections?.[box] || {};
   const parId = new Map(personnages.map(p => [p.id, p]));
   const possedes = Object.keys(selection)
     .filter(id => selection[id] && parId.has(id) && (collection.full[id] ?? -1) >= 0);
   const limites = possedes.filter(id => String(parId.get(id).rarete) === "5" && !parId.get(id).standard);
   const constellations = limites.reduce((somme, id) => somme + collection.full[id], 0);
   const c2 = limites.filter(id => collection.full[id] >= 2).length;
-  const points = calculerTotalCollection(personnages, "characters", "vitrine", profil) +
-    calculerTotalArmes(armes, personnages, "vitrine", profil);
+  const points = calculerTotalCollection(personnages, "characters", box, profil) +
+    calculerTotalArmes(armes, personnages, box, profil);
 
   const erreurs = [];
   if (possedes.length !== REGLES_VITRINE.persos) erreurs.push(`${REGLES_VITRINE.persos} persos exactement (${possedes.length})`);
@@ -40,9 +46,11 @@ function analyserVitrine(personnages, armes, profil) {
   return { nbPersos: possedes.length, points, constellations, c2, erreurs };
 }
 
-// Box optimisées renommables par le joueur (profil.nomsBoxes[box], 20
-// caractères max), noms repris en draft.
-const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+// Box optimisées et vitrines renommables par le joueur
+// (profil.nomsBoxes[box], 20 caractères max), noms des box optimisées
+// repris en draft.
+const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+const BOX_RENOMMABLES = [...BOX_OPTI, ...BOX_VITRINES];
 const LONGUEUR_NOM_BOX = 20;
 
 function nomBox(profil, box) {
@@ -177,7 +185,8 @@ function creerSelectionsParDefaut() {
     opti3: {},
     opti4: {},
     opti5: {},
-    vitrine: {}
+    vitrine: {},
+    vitrine2: {}
   };
 }
 
@@ -881,7 +890,7 @@ function rendreCollection(personnages, armes, profil) {
   // Vitrine avec "Sélectionnés" : la sélection de l'autre vue à la suite
   // (persos puis armes, ou armes puis persos), sur une nouvelle ligne.
   const autreVue = vueActive === "characters" ? "weapons" : "characters";
-  const autresItems = boxActive === "vitrine" && selectionnesSeulement
+  const autresItems = estVitrine(boxActive) && selectionnesSeulement
     ? (autreVue === "characters" ? personnages : armes).filter(item =>
       itemPossede(item, autreVue, profil[autreVue]) &&
       itemSelectionne(item, autreVue, boxActive, profil[autreVue]) &&
@@ -1004,7 +1013,8 @@ function verrouillerChampsDefinitifs(profil) {
 // Sur une box optimisée : bouton "Copier" -> liste des autres box
 // optimisées enregistrées (version enregistrée, pas les modifications en
 // cours) d'au moins NB_PERSOS_MIN_BOX persos (Voyageur compté une fois,
-// même règle qu'en match). Persos et armes copiés (seulement ceux encore
+// même règle qu'en match). Sur une vitrine : l'autre vitrine enregistrée,
+// si elle n'est pas vide. Persos et armes copiés (seulement ceux encore
 // possédés), à enregistrer ensuite.
 const NB_PERSOS_MIN_BOX = 16;
 let contexteCopie = null; // { personnages, armes, profil }
@@ -1025,8 +1035,10 @@ function nbPersosSelection(personnages, characters, box) {
 function sourcesCopie(boxActive) {
   const enregistre = collectionsEnregistrees();
   if (!contexteCopie || !enregistre || !BOX_RENOMMABLES.includes(boxActive)) return [];
-  return BOX_RENOMMABLES.filter(box => box !== boxActive &&
-    nbPersosSelection(contexteCopie.personnages, enregistre.characters, box) >= NB_PERSOS_MIN_BOX);
+  const famille = estVitrine(boxActive) ? BOX_VITRINES : BOX_OPTI;
+  const minimum = estVitrine(boxActive) ? 1 : NB_PERSOS_MIN_BOX;
+  return famille.filter(box => box !== boxActive &&
+    nbPersosSelection(contexteCopie.personnages, enregistre.characters, box) >= minimum);
 }
 
 function mettreAJourCopieBox() {
@@ -1090,8 +1102,8 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     calculerTotalArmes(armes, personnages, boxActive, profil);
 
   const vueActive = getVueActive();
-  document.getElementById("box-total-label").textContent = boxActive === "vitrine"
-    ? `${nomBox(profil, boxActive)} (${Object.keys(profil[vueActive].selections.vitrine).length} / ${MAX_VITRINE[vueActive]} ${vueActive === "weapons" ? "armes" : "persos"})`
+  document.getElementById("box-total-label").textContent = estVitrine(boxActive)
+    ? `${nomBox(profil, boxActive)} (${Object.keys(profil[vueActive].selections[boxActive]).length} / ${MAX_VITRINE[vueActive]} ${vueActive === "weapons" ? "armes" : "persos"})`
     : nomBox(profil, boxActive);
   document.getElementById("total-ppc").textContent = total;
   mettreAJourCopieBox();
@@ -1102,8 +1114,8 @@ function mettreAJourTotalBox(personnages, armes, profil) {
   // dans commun/cartes.js) ; box stuff : indication seulement.
   const statut = document.getElementById("statut-vitrine");
   statut.classList.toggle("cache", boxActive === "full");
-  if (boxActive === "vitrine") {
-    const { erreurs } = analyserVitrine(personnages, armes, profil);
+  if (estVitrine(boxActive)) {
+    const { erreurs } = analyserVitrine(personnages, armes, profil, boxActive);
     statut.classList.toggle("conforme", erreurs.length === 0);
     statut.textContent = erreurs.length ? `Modes en équipe : ${erreurs.join(", ")}` : "Conforme aux modes en équipe ✓";
   } else if (boxActive === "stuff") {
@@ -1444,21 +1456,21 @@ async function initialiserPage() {
       const selection = getCollectionProfil(profil, vueCarte).selections[boxActive];
       if (selection[id]) {
         delete selection[id];
-      } else if (boxActive === "vitrine" && Object.keys(selection).length >= MAX_VITRINE[vueCarte]) {
-        afficherToast(`Vitrine pleine : ${MAX_VITRINE[vueCarte]} ${vueCarte === "weapons" ? "armes" : "personnages"} maximum. Retires-en un d'abord.`, "erreur");
+      } else if (estVitrine(boxActive) && Object.keys(selection).length >= MAX_VITRINE[vueCarte]) {
+        afficherToast(`${nomBox(profil, boxActive)} pleine : ${MAX_VITRINE[vueCarte]} ${vueCarte === "weapons" ? "armes" : "personnages"} maximum. Retires-en un d'abord.`, "erreur");
         return;
       } else {
         selection[id] = true;
         // Vitrine : ajout refusé s'il dépasse les règles des modes en équipe
         // (points, constellations de 5★ limités, C2+).
-        if (boxActive === "vitrine") {
-          const avant = analyserVitrine(personnages, armes, profil);
+        if (estVitrine(boxActive)) {
+          const avant = analyserVitrine(personnages, armes, profil, boxActive);
           const depasse = avant.points > REGLES_VITRINE.points ? `${REGLES_VITRINE.points} points maximum (${avant.points} avec celui-ci)`
             : avant.constellations > REGLES_VITRINE.constellations ? `${REGLES_VITRINE.constellations} constellations de 5★ limités maximum (${avant.constellations} avec celui-ci)`
               : avant.c2 > REGLES_VITRINE.c2 ? `${REGLES_VITRINE.c2} persos 5★ limités C2 ou plus maximum` : null;
           if (depasse) {
             delete selection[id];
-            afficherToast(`Vitrine : ${depasse}.`, "erreur");
+            afficherToast(`${nomBox(profil, boxActive)} : ${depasse}.`, "erreur");
             return;
           }
         }

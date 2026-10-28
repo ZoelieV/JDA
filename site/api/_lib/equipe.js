@@ -4,9 +4,11 @@
 // api/rooms/[room_id]/[action].js).
 //
 // Déroulé (draft.phase) :
-//   lobby       : les joueurs rejoignent par le lien (vitrine conforme, cf.
-//                 _lib/vitrine.js) ; formation "choix" : chacun choisit son
-//                 équipe ; le créateur lance quand c'est complet.
+//   lobby       : les joueurs rejoignent par le lien (une vitrine conforme
+//                 au moins, cf. _lib/vitrine.js ; chacun choisit laquelle
+//                 il joue, draft.vitrines_choisies) ; formation "choix" :
+//                 chacun choisit son équipe ; le créateur lance quand
+//                 c'est complet.
 //   chefs       : chaque équipe vote pour son chef (DUREE_VOTE_CHEF_MS) ;
 //                 pas de vote ou égalité : chef tiré au hasard (parmi les
 //                 ex aequo). Seul le chef fait les picks, les bans, la
@@ -36,7 +38,7 @@ const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox, THEATRE_CARP
 const { tirerBossAleatoire, getBossParId, listeBoss, idsLegendesLocales, bossCarnageExclus, estHorsCoop, estReserveWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("./boss");
 const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
-const { analyserVitrine, erreurVitrine } = require("./vitrine");
+const { analyserVitrine, erreurVitrine, vitrineConforme, erreurAucuneVitrine, estBoxVitrine } = require("./vitrine");
 const { saisonActuelle } = require("./saisons");
 const { detecterTriche, detecterTempsSuspects } = require("./sanctions");
 const { crediterPartie } = require("./koyns");
@@ -70,7 +72,7 @@ function erreur(status, message) {
 
 // ---- État ----
 
-function etatLobby({ taille, formation, createur, bossImpose = null, membres = [createur], camps = {}, infos = {}, bossPrecedent = null, version = null }) {
+function etatLobby({ taille, formation, createur, bossImpose = null, membres = [createur], camps = {}, vitrinesChoisies = {}, infos = {}, bossPrecedent = null, version = null }) {
   return {
     mode: "equipe",
     phase: "lobby",
@@ -82,6 +84,8 @@ function etatLobby({ taille, formation, createur, bossImpose = null, membres = [
     membres,
     // Formation au choix : équipe choisie dans le lobby ("j1" | "j2" | null).
     camps: Object.fromEntries(membres.map(id => [id, camps[id] ?? null])),
+    // Vitrine jouée par chacun ("vitrine" | "vitrine2").
+    vitrines_choisies: Object.fromEntries(membres.map(id => [id, vitrinesChoisies[id] || "vitrine"])),
     // Pseudo, photo, namecard et niveau du monde de chaque joueur.
     infos,
     version
@@ -556,10 +560,10 @@ async function preparerCreation(body, user) {
   await actualiserPoints();
   const profils = await lireProfils([user.id]);
   const profil = profils.get(user.id);
-  const erreurV = erreurVitrine(profil?.data);
+  const erreurV = erreurAucuneVitrine(profil?.data);
   if (erreurV) return { erreur: erreurV };
   return {
-    draft: etatLobby({ taille, formation, createur: user.id, bossImpose, infos: { [user.id]: infosProfil(profil) } })
+    draft: etatLobby({ taille, formation, createur: user.id, bossImpose, vitrinesChoisies: { [user.id]: vitrineConforme(profil?.data) }, infos: { [user.id]: infosProfil(profil) } })
   };
 }
 
@@ -613,7 +617,7 @@ async function routeRejoindre(req, res, roomId, user) {
 
   await actualiserPoints();
   const profil = (await lireProfils([user.id])).get(user.id);
-  const erreurV = erreurVitrine(profil?.data);
+  const erreurV = erreurAucuneVitrine(profil?.data);
   if (erreurV) throw erreur(409, erreurV);
 
   const membres = [...draft.membres, user.id];
@@ -621,6 +625,7 @@ async function routeRejoindre(req, res, roomId, user) {
     ...draft,
     membres,
     camps: { ...draft.camps, [user.id]: null },
+    vitrines_choisies: { ...draft.vitrines_choisies, [user.id]: vitrineConforme(profil?.data) },
     infos: { ...draft.infos, [user.id]: infosProfil(profil) }
   };
   await sauvegarder(roomId, nouveau, { membres });
@@ -653,6 +658,23 @@ async function routeCamp(req, res, roomId, user) {
   return repondre(res, draft, user.id);
 }
 
+// Vitrine jouée (lobby) : seulement une vitrine conforme.
+async function routeVitrine(req, res, roomId, user) {
+  const { box } = await lireCorps(req);
+  if (!estBoxVitrine(box)) throw erreur(400, "Vitrine inconnue.");
+  const room = await chargerRoom(roomId);
+  const draft = room.draft;
+  if (draft.phase !== "lobby") throw erreur(409, "Le match a commencé : tu ne peux plus changer de vitrine.");
+  if (!draft.membres.includes(user.id)) throw erreur(403, "Tu n'es pas dans ce lobby.");
+  await actualiserPoints();
+  const profil = (await lireProfils([user.id])).get(user.id);
+  const erreurV = erreurVitrine(profil?.data, box);
+  if (erreurV) throw erreur(409, erreurV);
+  draft.vitrines_choisies = { ...draft.vitrines_choisies, [user.id]: box };
+  await sauvegarder(roomId, draft);
+  return repondre(res, draft, user.id);
+}
+
 // Le créateur lance : vitrines et profils figés, équipes formées, vote des
 // chefs.
 async function routeLancer(req, res, roomId, user) {
@@ -667,7 +689,8 @@ async function routeLancer(req, res, roomId, user) {
 
   await actualiserPoints();
   const profils = await lireProfils(draft.membres);
-  const nonConformes = draft.membres.filter(id => erreurVitrine(profils.get(id)?.data));
+  const vitrineDe = id => draft.vitrines_choisies?.[id] || "vitrine";
+  const nonConformes = draft.membres.filter(id => erreurVitrine(profils.get(id)?.data, vitrineDe(id)));
   if (nonConformes.length) {
     const noms = nonConformes.map(id => infosProfil(profils.get(id)).nom).join(", ");
     throw erreur(409, `Vitrine non conforme (à corriger dans Mon compte) : ${noms}.`);
@@ -678,7 +701,7 @@ async function routeLancer(req, res, roomId, user) {
   const infos = {};
   draft.membres.forEach(id => {
     const data = profils.get(id)?.data;
-    const { persos, armes, points } = analyserVitrine(data);
+    const { persos, armes, points } = analyserVitrine(data, vitrineDe(id));
     vitrines[id] = { persos, armes, points };
     fullBox[id] = pointsFullBox(data);
     infos[id] = infosProfil(profils.get(id));
@@ -933,6 +956,7 @@ async function routeRejouer(req, res, roomId, user) {
     bossImpose: draft.boss_impose,
     membres: draft.membres,
     camps,
+    vitrinesChoisies: draft.vitrines_choisies || {},
     infos: draft.infos,
     bossPrecedent: draft.boss_id || null,
     version: draft.version
@@ -946,6 +970,7 @@ const ROUTES = {
   equipe_rejoindre: { methode: "POST", route: routeRejoindre },
   equipe_quitter: { methode: "POST", route: routeQuitter },
   equipe_camp: { methode: "POST", route: routeCamp },
+  equipe_vitrine: { methode: "POST", route: routeVitrine },
   equipe_lancer: { methode: "POST", route: routeLancer },
   equipe_vote: { methode: "POST", route: routeVote },
   equipe_hote: { methode: "POST", route: routeHote },

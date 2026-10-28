@@ -21,7 +21,7 @@ const configCollections = {
 
 // État courant de la popup
 let vueActive = "characters";   // "characters" | "weapons"
-let boxActive = "full";         // "full" | "stuff" | "vitrine"
+let boxActive = "full";         // "full" | "stuff"
 
 // Filtres / recherche / tris, comme en draft (sans filtre J1/J2). Le filtre
 // élément/type est propre à chaque vue (ordre des clics = ordre des

@@ -13,12 +13,14 @@ const { saisonActuelle } = require("../_lib/saisons");
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Vitrine : 12 personnages et 12 armes maximum (même limite que
-// my_account/my_account.js, MAX_VITRINE) ; au-delà, les suivants sont
-// ignorés.
+// Vitrines (2, "vitrine" et "vitrine2") : 12 personnages et 12 armes
+// maximum chacune (même limite que my_account/my_account.js, MAX_VITRINE) ;
+// au-delà, les suivants sont ignorés.
 const MAX_VITRINE = { characters: 12, weapons: 12 };
-// Noms des box optimisées choisis par le joueur (affichés en draft).
-const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+const BOX_VITRINES = ["vitrine", "vitrine2"];
+// Noms des box optimisées et des vitrines choisis par le joueur (affichés
+// en draft pour les box optimisées).
+const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5", ...BOX_VITRINES];
 const LONGUEUR_NOM_BOX = 20;
 
 // Affiché aux adversaires pendant la saisie des temps (cf. matchmaking/
@@ -126,7 +128,7 @@ function nettoyerParametres(parametres) {
 // -1 à 4 (0 = R1) ; sélections et favoris : true ; niveaux : 95 ou 100.
 const FORMAT_ID = /^[a-z0-9_]{1,40}$/;
 const FORMAT_INSTANCE = /^[a-z0-9_]{1,40}(#\d{1,3})?$/;
-const BOX_SELECTIONS = ["stuff", ...BOX_RENOMMABLES, "vitrine"];
+const BOX_SELECTIONS = ["stuff", ...BOX_RENOMMABLES];
 // Bien au-delà du nombre de personnages / armes du jeu.
 const MAX_ENTREES_COLLECTION = 2000;
 const COLLECTIONS = {
@@ -154,7 +156,7 @@ function nettoyerCollection(brut, vue) {
     full: nettoyerDictionnaire(source.full, formatCle, entierEntre(-1, max)),
     selections: Object.fromEntries(BOX_SELECTIONS.map(box => [
       box,
-      nettoyerDictionnaire(source.selections?.[box], formatCle, estVrai, box === "vitrine" ? MAX_VITRINE[vue] : undefined)
+      nettoyerDictionnaire(source.selections?.[box], formatCle, estVrai, BOX_VITRINES.includes(box) ? MAX_VITRINE[vue] : undefined)
     ]))
   };
   if (niveaux) collection.niveaux = nettoyerDictionnaire(source.niveaux, FORMAT_ID, valeur => valeur === 95 || valeur === 100);

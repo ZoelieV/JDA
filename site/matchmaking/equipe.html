@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/matchmaking/match.css?v=rem61">
 <link rel="stylesheet" href="/commun/entete.css?v=rem39">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
-<link rel="stylesheet" href="/matchmaking/equipe.css?v=6">
+<link rel="stylesheet" href="/matchmaking/equipe.css?v=7">
 <script src="/commun/zoom.js?v=3"></script>
 </head>
 <body>
@@ -38,6 +38,12 @@
     <button id="btn-rejoindre" type="button" class="btn-equipe cache">Rejoindre le lobby</button>
     <button id="btn-quitter" type="button" class="btn-equipe secondaire cache">Quitter le lobby</button>
     <button id="btn-lancer" type="button" class="btn-equipe principal cache" disabled>Lancer le match</button>
+  </div>
+  <!-- Vitrine jouée (2 vitrines dans Mon compte, une conforme au moins). -->
+  <div id="choix-vitrine" class="choix-vitrine cache">
+    <span>Ta vitrine :</span>
+    <button type="button" class="btn-equipe petit" data-vitrine="vitrine">Vitrine 1</button>
+    <button type="button" class="btn-equipe petit" data-vitrine="vitrine2">Vitrine 2</button>
   </div>
   <p id="aide-lobby" class="aide-equipe"></p>
 </section>
@@ -147,6 +153,6 @@
 <script src="/commun/tri.js?v=21"></script>
 <script src="/commun/recommandations_boss.js?v=1"></script>
 <script src="/commun/koyns.js?v=11"></script>
-<script src="/matchmaking/equipe.js?v=14"></script>
+<script src="/matchmaking/equipe.js?v=15"></script>
 </body>
 </html>
