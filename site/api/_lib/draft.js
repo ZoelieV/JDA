@@ -451,6 +451,11 @@ function appliquerBansBonus(draft, joueur, choix, jokers = [], aleatoires = new 
   });
   jokers.forEach(persoId => {
     draft[`pool_${adverse}`] = (draft[`pool_${adverse}`] || []).filter(id => id !== persoId);
+    // Plus personne ne l'a (le banneur ne l'a pas) : retiré de la draft
+    // aussi, pour ne pas pouvoir le bannir une 2e fois pour rien.
+    if (!(draft[`pool_${joueur}`] || []).includes(persoId)) {
+      draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
+    }
     draft.actions.push({ joueur, type: "ban", perso_id: persoId, bonus: true, joker: true, ...hasard(persoId) });
   });
   draft.bans_bonus_faits = choix.length + jokers.length;
