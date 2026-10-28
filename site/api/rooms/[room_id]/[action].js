@@ -897,6 +897,10 @@ async function handleTempsArbitre(req, res, roomId, user) {
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { autoriserSpectateur: true });
   const draft = room.draft;
   if (!estArbitreRoom(draft, user.id)) return res.status(403).json({ error: "Seul un arbitre du tournoi saisit les temps." });
+  // Un arbitre qui joue ce match ne saisit pas ses propres temps.
+  if ([draft.discord_j1, draft.discord_j2].includes(user.id)) {
+    return res.status(403).json({ error: "Tu joues ce match : un autre arbitre doit saisir les temps." });
+  }
   if (draft.phase !== "temps" && draft.phase !== "verification") {
     return res.status(409).json({ error: "La saisie des temps n'est pas ouverte." });
   }

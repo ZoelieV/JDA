@@ -211,6 +211,8 @@ function rendreQualifs() {
 // Gestionnaire : forfait (vainqueur désigné), relance d'un match en cours.
 // Dans un petit menu ⚙ (repliable) pour ne pas encombrer l'arbre.
 function boutonsGestionMatch(match) {
+  // Ses propres matchs : forfait déclaré par un autre admin.
+  if (estMoi(match.a) || estMoi(match.b)) return "";
   const nom = id => vue.tournoi.format === "equipe" ? echapperTournoi(vue.tournoi.equipes.find(e => e.id === id)?.nom || "") : echapperTournoi(vue.joueurs[id]?.nom || "");
   const boutons = (match.statut === "en_cours" ? `<button type="button" class="bouton-tournoi petit" data-relancer="${match.id}" title="Room abandonnée ou annulée : remet le match à jouer">Remettre à jouer</button>` : "") +
     (match.a && match.b ? `<button type="button" class="bouton-tournoi petit danger" data-forfait="${match.id}" data-vainqueur="${match.a}" title="Victoire par forfait">Forfait → ${nom(match.a)}</button>
@@ -277,6 +279,11 @@ function rendreGestion() {
   if (!["termine", "annule"].includes(tournoi.statut)) boutons.push(`<button type="button" class="bouton-tournoi danger" data-gestion="annuler">Annuler le tournoi</button>`);
   if (["inscriptions", "verrouille", "annule"].includes(tournoi.statut)) boutons.push(`<button type="button" class="bouton-tournoi danger" data-gestion="supprimer">Supprimer</button>`);
   $t("gestion-tournoi").innerHTML = boutons.join("");
+  // Créateur qui joue : il lui faut au moins un autre arbitre.
+  const joue = tournoi.format === "equipe" ? tournoi.equipes.some(e => e.membres.includes(moi.id)) : tournoi.inscrits.includes(moi.id);
+  if (joue && !(tournoi.arbitres || []).some(id => id !== moi.id)) {
+    $t("gestion-tournoi").insertAdjacentHTML("beforeend", `<p class="message-tournoi erreur">Tu joues dans ce tournoi : ajoute au moins un autre arbitre, tu ne peux pas saisir les temps de tes propres matchs.</p>`);
+  }
   $t("arbitres-tournoi").innerHTML = [
     `<li>${htmlJoueurTournoi(joueurs, tournoi.createur)} <span class="doux">(toi)</span></li>`,
     ...(tournoi.arbitres || []).map(id => `<li>${htmlJoueurTournoi(joueurs, id)} <button type="button" class="bouton-tournoi petit danger" data-retirer-arbitre="${id}">×</button></li>`)

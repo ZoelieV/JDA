@@ -799,6 +799,8 @@ async function declarerForfait(id, user, matchId, vainqueur) {
     const trouve = trouverMatch(tournoi, matchId);
     if (!trouve) throw erreur(404, "Match introuvable.");
     const { match, phase } = trouve;
+    // Pas de forfait déclaré par un joueur du match (arbitre lui-même).
+    if ([match.a, match.b].some(p => joueursDe(tournoi, p).includes(user.id))) throw erreur(403, "Tu joues ce match : un autre admin doit déclarer le forfait.");
     if (match.statut === "termine") throw erreur(409, "Ce match est terminé.");
     if (![match.a, match.b].includes(vainqueur) || !vainqueur) throw erreur(400, "Vainqueur invalide.");
     match.statut = "termine";

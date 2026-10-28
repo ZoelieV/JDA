@@ -2996,12 +2996,14 @@ function estArbitreTournoi() {
 }
 
 function rendreArbitre() {
-  const arbitre = estArbitreTournoi();
+  // Un arbitre qui joue ce match ne saisit pas les temps (refusé par le
+  // serveur) : un autre arbitre le fait.
+  const arbitre = estArbitreTournoi() && !monRole;
   const zone = document.getElementById("saisie-arbitre");
   zone.classList.toggle("cache", !arbitre);
   document.getElementById("etat-temps").textContent = arbitre
     ? ""
-    : `Combat en cours : l'arbitre du tournoi saisira les ${motsResultat().les}.`;
+    : `Combat en cours : un arbitre du tournoi${monRole && estArbitreTournoi() ? " (pas toi : tu joues ce match)" : ""} saisira les ${motsResultat().les}.`;
   if (!arbitre) return;
   ["j1", "j2"].forEach(role => {
     document.getElementById(`arbitre-nom-${role}`).innerHTML = pseudoColore(role);

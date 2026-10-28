@@ -1027,6 +1027,8 @@ async function routeTempsArbitre(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
   if (!estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi saisit les temps.");
+  // Un arbitre qui joue ce match ne saisit pas les temps.
+  if (draft.membres.includes(user.id)) throw erreur(403, "Tu joues ce match : un autre arbitre doit saisir les temps.");
   if (draft.phase !== "temps" && draft.phase !== "verification") throw erreur(409, "La saisie des temps n'est pas ouverte.");
   const temps = {};
   for (const role of ROLES) {

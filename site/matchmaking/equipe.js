@@ -541,7 +541,7 @@ function rendreTemps() {
   let contenu = `<p class="temps-equipes">${ROLES.map(role => `${NOMS_EQUIPES[role]} : <strong>${texteTemps(role)}</strong>`).join(" — ")}</p>`;
   // Tournoi : l'arbitre saisit les 2 temps (cf. routeTempsArbitre).
   if (draft.tournoi && ["temps", "verification"].includes(draft.phase)) {
-    contenu += estArbitreTournoi() ? `
+    contenu += estArbitreTournoi() && !suisMembre() ? `
       <p><strong>Arbitre : saisis les 2 temps</strong></p>
       ${ROLES.map(role => `
         <div class="ligne-saisie-temps">
@@ -550,7 +550,7 @@ function rendreTemps() {
           <label><input id="arbitre-abandon-${role}" type="checkbox"> Abandon</label>
         </div>`).join("")}
       <button type="button" class="btn-equipe principal" id="btn-temps-arbitre">Valider les temps</button>`
-      : `<p>L'arbitre du tournoi saisit les temps.</p>`;
+      : `<p>Un arbitre du tournoi${estArbitreTournoi() ? " (pas toi : tu joues ce match)" : ""} saisit les temps.</p>`;
   } else if (draft.phase === "temps" && suisChef() && !draft[`temps_${camp}`]) {
     contenu += `
       <div class="ligne-saisie-temps">
