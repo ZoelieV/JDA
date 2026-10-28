@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/matchmaking/match.css?v=rem62">
+<link rel="stylesheet" href="/matchmaking/match.css?v=rem63">
 <link rel="stylesheet" href="/commun/entete.css?v=rem40">
 <script src="/commun/zoom.js?v=3"></script>
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -59,6 +59,9 @@
          bas au centre de l'écran, sur tous les formats. Chaque bulle n'est
          visible que pendant sa phase (cf. BULLES_PAR_PHASE dans match.js). -->
     <div id="bulles-bas" class="bulles-bas">
+      <!-- Chronos (draft classée, entraînement avec chronos) : copie figée
+           en haut de la pile quand #chronos sort de l'écran (cf. majChronos). -->
+      <div id="chronos-flottant" class="chronos chronos-flottant cache" aria-hidden="true"></div>
       <div id="message-choix-box" class="bandeau-info"></div>
       <!-- Bans d'équilibrage : même bouton que "Confirmer" de la draft (rouge). -->
       <button id="btn-confirmer-bonus" type="button" class="btn-confirmer-action action-ban cache" disabled>Confirmer les bans</button>
@@ -278,6 +281,6 @@
   <script src="/commun/filtres_draft.js?v=4"></script>
   <script src="/commun/recommandations_boss.js?v=1"></script>
   <script src="/commun/koyns.js?v=11"></script>
-  <script src="/matchmaking/match.js?v=120"></script>
+  <script src="/matchmaking/match.js?v=121"></script>
 </body>
 </html>

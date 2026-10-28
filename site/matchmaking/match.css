@@ -2708,6 +2708,42 @@ h1 {
   color: #ff7a85;
 }
 
+/* 10 dernières secondes du chrono qui tourne : rouge, pulsation. */
+.chrono.actif.urgent {
+  border-color: #ff3b4a;
+  background-color: rgba(120, 0, 10, 0.75);
+  color: #ff5c69;
+  animation: chrono-urgent 1s ease-in-out infinite;
+}
+
+@keyframes chrono-urgent {
+  50% { box-shadow: 0 0 0.875rem rgba(255, 59, 74, 0.75); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chrono.actif.urgent {
+    animation: none;
+  }
+}
+
+/* Copie figée en haut de la pile des bulles du bas (cf. majChronos). */
+.chronos-flottant {
+  margin: 0;
+}
+
+.chronos-flottant.cache {
+  display: none;
+}
+
+.chronos-flottant .chrono {
+  background-color: rgba(20, 20, 20, 0.92);
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
+}
+
+.chronos-flottant .chrono:not(.actif) {
+  opacity: 0.85;
+}
+
 .zone-crash {
   display: flex;
   justify-content: center;

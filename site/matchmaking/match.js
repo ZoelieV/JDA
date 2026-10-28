@@ -1255,7 +1255,8 @@ function rendreChoixBox() {
 // pile de bulles), sur ordi comme sur téléphone.
 function placerBoutonPret(bouton) {
   const bulles = document.getElementById("bulles-bas");
-  if (bouton.parentElement !== bulles) bulles.prepend(bouton);
+  // Sous le chrono figé, qui reste en haut de la pile.
+  if (bouton.parentElement !== bulles) document.getElementById("chronos-flottant").after(bouton);
 }
 
 // ---- Phase 2 : bans bonus d'équilibrage ----
@@ -3252,23 +3253,52 @@ function annoncerChoixAleatoires(nouvelles) {
     : `⏱ Temps écoulé pour ${(joueur === "j1" ? joueur1 : joueur2)?.pseudo || "ton adversaire"} : ${quoi} aléatoire (${echapperHtml(noms)}).`);
 }
 
+// Chronos sortis de l'écran (défilement) : copie figée en bas, en haut de
+// la pile des bulles (pas en haut de l'écran, où sont figés les filtres).
+let chronosHorsEcran = false;
+function observerChronos() {
+  if (!("IntersectionObserver" in window)) return;
+  new IntersectionObserver(([entree]) => {
+    chronosHorsEcran = !entree.isIntersecting;
+    majChronosFlottant();
+  }).observe(document.getElementById("chronos"));
+}
+
+function majChronosFlottant() {
+  const zone = document.getElementById("chronos");
+  const flottant = document.getElementById("chronos-flottant");
+  const visible = chronosHorsEcran && !zone.classList.contains("cache");
+  flottant.classList.toggle("cache", !visible);
+  if (visible && flottant.dataset.html !== zone.dataset.html) {
+    flottant.dataset.html = zone.dataset.html;
+    flottant.innerHTML = zone.dataset.html;
+  }
+}
+
+// Chrono qui tourne avec 10 s ou moins : rouge.
+const CHRONO_URGENT_MS = 10 * 1000;
+const classeUrgent = reste => reste > 0 && reste <= CHRONO_URGENT_MS ? " urgent" : "";
+
 function majChronos() {
   const zone = document.getElementById("chronos");
   const etat = etatChronos();
   majPause();
   zone.classList.toggle("cache", !etat);
-  if (!etat) return;
+  if (!etat) {
+    majChronosFlottant();
+    return;
+  }
 
   const nom = role => (role === "j1" ? joueur1 : joueur2)?.pseudo || role.toUpperCase();
   let html;
   if (etat.phase === "analyse") {
-    html = `<span class="chrono actif">⏱ Analyse des box : ${formaterChrono(etat.reste)}</span>`;
+    html = `<span class="chrono actif${classeUrgent(etat.reste)}">⏱ Analyse des box : ${formaterChrono(etat.reste)}</span>`;
   } else if (etat.phase === "bans_bonus") {
-    html = `<span class="chrono actif">⏱ Bans d'équilibrage de ${nom(etat.acteur)} : ${formaterChrono(etat.reste)}</span>`;
+    html = `<span class="chrono actif${classeUrgent(etat.reste)}">⏱ Bans d'équilibrage de ${nom(etat.acteur)} : ${formaterChrono(etat.reste)}</span>`;
   } else {
     html = ["j1", "j2"].map(role => {
       const epuise = draft.chrono[`epuise_${role}`];
-      const classes = ["chrono", `chrono-${role}`, role === etat.acteur ? "actif" : "", epuise || etat.restants[role] <= 0 ? "epuise" : ""].join(" ");
+      const classes = ["chrono", `chrono-${role}`, role === etat.acteur ? `actif${classeUrgent(etat.restants[role])}` : "", epuise || etat.restants[role] <= 0 ? "epuise" : ""].join(" ");
       return `<span class="${classes}">${nom(role)} ${formaterChrono(etat.restants[role])}${epuise ? " · aléatoire" : ""}</span>`;
     }).join("");
   }
@@ -3276,6 +3306,7 @@ function majChronos() {
     zone.dataset.html = html;
     zone.innerHTML = html;
   }
+  majChronosFlottant();
 
   if (!monRole || draft.pause) return;
   const cleTour = `${draft.phase}:${draft.sequence_index}:${draft.chrono?.tour_debut || draft.fin_analyse || draft.fin_bans_bonus}`;
@@ -3683,6 +3714,7 @@ async function demarrer() {
     demarrerPolling();
     // Chronos de la draft classée : affichage et fin de temps, 4 fois par
     // seconde (sans requête tant que rien n'expire).
+    observerChronos();
     setInterval(majChronos, 250);
 
     // Onglet masqué : plus de requêtes ; au retour, état rafraîchi tout de
