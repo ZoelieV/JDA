@@ -139,10 +139,26 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
         <label>Phase finale à partir des
           <select name="arbre_max">${options(TAILLES_ARBRE_TOURNOI, c.arbre_max || 16)}</select>
         </label>
-        <label>Matchs de qualification par participant
-          <input name="qualif_matchs" type="number" min="1" max="10" value="${c.qualif_matchs || 3}">
-        </label>
-        <p class="aide large">Plus d'inscrits que de places dans la phase finale : qualifications d'abord (matchs en parallèle, temps saisis par les arbitres) ; les meilleurs en trophées vont dans l'arbre.</p>
+        <div class="large qualifs-formulaire" data-qualifs>
+          <p class="aide">Plus d'inscrits que de places dans la phase finale : qualifications d'abord (matchs en parallèle, temps saisis par les arbitres, trophées comme en classé).</p>
+          <label>Qualifications
+            <select name="qualifs_format">${options({ rondes: "Rondes (adversaires au hasard)", poules: "Poules (tous contre tous)" }, c.qualifs_format || "rondes")}</select>
+          </label>
+          <label data-qualifs-format="rondes">Matchs par participant
+            <input name="qualif_matchs" type="number" min="1" max="10" value="${c.qualif_matchs || 3}">
+          </label>
+          <label data-qualifs-format="poules">Nombre de poules
+            <input name="poules_nombre" type="number" min="2" max="64" value="${c.poules?.nombre || ""}">
+          </label>
+          <label data-qualifs-format="poules">Participants par poule (au plus)
+            <input name="poules_taille" type="number" min="3" max="16" value="${c.poules?.taille || ""}">
+          </label>
+          <label data-qualifs-format="poules">Qualifiés par poule
+            <input name="poules_qualifies" type="number" min="1" max="15" value="${c.poules?.qualifies || ""}">
+          </label>
+          <button type="button" class="bouton-tournoi petit" data-qualifs-format="poules" data-action="proposer-poules">Proposer des poules</button>
+        </div>
+        <p class="large coherence-tournoi"></p>
       </fieldset>
       <fieldset>
         <legend>Dates</legend>
@@ -170,7 +186,71 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
     </form>`;
   const formulaire = fenetre.querySelector("form");
   const champ = nom => formulaire.elements[nom];
+  // Mêmes règles que erreurCoherence (api/_lib/tournois.js) : phase finale
+  // pas plus grande que le tournoi, poules qui remplissent exactement la
+  // phase finale et accueillent tout le monde.
+  const puissance2 = n => { let t = 2; while (t < n) t *= 2; return t; };
+  const lirePoules = () => ({
+    nombre: Number(champ("poules_nombre").value),
+    taille: Number(champ("poules_taille").value),
+    qualifies: Number(champ("poules_qualifies").value)
+  });
+  const coherence = () => {
+    const max = Number(champ("max_participants").value);
+    const places = Number(champ("arbre_max").value);
+    const phase = TAILLES_ARBRE_TOURNOI[places]?.toLowerCase() || "";
+    if (!(max >= 2)) return { erreur: "Au moins 2 participants." };
+    if (places > puissance2(max)) return { erreur: `Phase finale à ${places} places (${phase}) pour ${max} participants au plus : impossible.` };
+    if (max <= places) return { info: `Pas de qualifications : tous les inscrits vont directement en phase finale (${phase}).` };
+    if (champ("qualifs_format").value !== "poules") {
+      return { info: `Si plus de ${places} inscrits : ${champ("qualif_matchs").value} match(s) de qualification chacun, les ${places} meilleurs en ${phase}.` };
+    }
+    const { nombre, taille, qualifies } = lirePoules();
+    if (!(nombre >= 2 && nombre <= 64)) return { erreur: "Entre 2 et 64 poules." };
+    if (!(taille >= 3 && taille <= 16)) return { erreur: "Entre 3 et 16 participants par poule." };
+    if (!(qualifies >= 1 && qualifies < taille)) return { erreur: `Entre 1 et ${taille - 1} qualifiés par poule.` };
+    if (nombre * qualifies !== places) return { erreur: `${nombre} poules × ${qualifies} qualifiés = ${nombre * qualifies} : il en faut exactement ${places} pour les ${phase}.` };
+    if (nombre * taille < max) return { erreur: `${nombre} poules de ${taille} = ${nombre * taille} places pour ${max} participants : pas assez.` };
+    if ((nombre - 1) * taille >= max) return { erreur: `${max} participants tiennent dans ${nombre - 1} poules de ${taille} : une poule de trop.` };
+    return { info: `${nombre} poules de ${taille} au plus, les ${qualifies} meilleurs de chaque poule en ${phase} (${places} qualifiés) ✓` };
+  };
+  // Poules proposées : 2 qualifiés par poule (1 si les poules seraient trop
+  // grandes), poules de la taille juste suffisante.
+  const proposerPoules = () => {
+    const max = Number(champ("max_participants").value);
+    const places = Number(champ("arbre_max").value);
+    for (const qualifies of [2, 1, 3, 4]) {
+      const nombre = places / qualifies;
+      if (!Number.isInteger(nombre) || nombre < 2) continue;
+      const taille = Math.max(qualifies + 1, 3, Math.ceil(max / nombre));
+      if (taille > 16 || (nombre - 1) * taille >= max) continue;
+      champ("poules_nombre").value = nombre;
+      champ("poules_taille").value = taille;
+      champ("poules_qualifies").value = qualifies;
+      return;
+    }
+  };
+  fenetre.querySelector('[data-action="proposer-poules"]').addEventListener("click", () => {
+    proposerPoules();
+    majVisibles();
+  });
   const majVisibles = () => {
+    // Phases finales plus grandes que le tournoi : grisées.
+    const max = Number(champ("max_participants").value) || 2;
+    const selectArbre = champ("arbre_max");
+    [...selectArbre.options].forEach(option => { option.disabled = Number(option.value) > puissance2(max); });
+    if (selectArbre.selectedOptions[0]?.disabled) {
+      selectArbre.value = [...selectArbre.options].filter(o => !o.disabled).at(-1).value;
+    }
+    const qualifs = max > Number(selectArbre.value);
+    fenetre.querySelector("[data-qualifs]").hidden = !qualifs;
+    if (qualifs && champ("qualifs_format").value === "poules" && !champ("poules_nombre").value) proposerPoules();
+    fenetre.querySelectorAll("[data-qualifs-format]").forEach(el => { el.hidden = el.dataset.qualifsFormat !== champ("qualifs_format").value; });
+    const etat = coherence();
+    const zone = fenetre.querySelector(".coherence-tournoi");
+    zone.textContent = etat.erreur || etat.info;
+    zone.className = `large coherence-tournoi ${etat.erreur ? "erreur" : "ok"}`;
+    fenetre.querySelector('button[type="submit"]').disabled = !!etat.erreur && !verrouille;
     const format = champ("format").value;
     fenetre.querySelectorAll("[data-pour]").forEach(el => { el.hidden = el.dataset.pour !== format; });
     fenetre.querySelectorAll("[data-chronos]").forEach(el => { el.hidden = !champ("chronos_actifs").checked; });
@@ -197,6 +277,8 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
       max_participants: Number(champ("max_participants").value),
       arbre_max: Number(champ("arbre_max").value),
       qualif_matchs: Number(champ("qualif_matchs").value),
+      qualifs_format: champ("qualifs_format").value,
+      poules: champ("qualifs_format").value === "poules" ? lirePoules() : null,
       verrouillage: depuisChampDateTournoi(champ("verrouillage").value),
       debut: depuisChampDateTournoi(champ("debut").value),
       fin: depuisChampDateTournoi(champ("fin").value),

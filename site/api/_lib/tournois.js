@@ -59,6 +59,11 @@ const LONGUEUR_RECOMPENSE = 300;
 const LONGUEUR_NOM_EQUIPE = 30;
 const MAX_ARBITRES = 20;
 const MAX_QUALIF_MATCHS = 10;
+// Qualifications : rondes (adversaires au hasard, qualif_matchs chacun) ou
+// poules (tous contre tous dans chaque poule, les meilleurs de chaque poule
+// qualifiés).
+const FORMATS_QUALIFS = ["rondes", "poules"];
+const BORNES_POULES = { nombre: [2, 64], taille: [3, 16] };
 // Chronos personnalisables (secondes) : analyse des box, par pick / ban,
 // par ban d'équilibrage.
 const BORNES_CHRONOS = { analyse_s: [30, 600], action_s: [10, 120], ban_s: [5, 60] };
@@ -192,9 +197,45 @@ function lireConfig(brut) {
       fin,
       verrouillage,
       arbre_max: TAILLES_ARBRE.includes(Number(brut?.arbre_max)) ? Number(brut.arbre_max) : 16,
-      qualif_matchs: entier(brut?.qualif_matchs, 1, MAX_QUALIF_MATCHS, 3)
+      qualif_matchs: entier(brut?.qualif_matchs, 1, MAX_QUALIF_MATCHS, 3),
+      qualifs_format: FORMATS_QUALIFS.includes(brut?.qualifs_format) ? brut.qualifs_format : "rondes",
+      poules: brut?.poules ? {
+        nombre: entier(brut.poules.nombre, 0, 999, 0),
+        taille: entier(brut.poules.taille, 0, 999, 0),
+        qualifies: entier(brut.poules.qualifies, 0, 999, 0)
+      } : null
     }
   };
+}
+
+// Réglages incohérents -> message, sinon null : phase finale plus grande
+// que le tournoi ; poules qui ne remplissent pas exactement la phase finale
+// ou n'ont pas de place pour tout le monde.
+function erreurCoherence(config) {
+  const { max_participants: max, arbre_max: places } = config;
+  const nomPhase = places === 2 ? "la finale seule" : `les ${nomTour(places).toLowerCase()}`;
+  if (places > taillePuissance2(max)) {
+    return `Phase finale à ${places} places (${nomPhase}) pour ${max} participants au plus : choisis une phase finale plus petite ou plus de participants.`;
+  }
+  // Pas de qualifications possibles (jamais plus d'inscrits que de places).
+  if (max <= places) return null;
+  if (config.qualifs_format !== "poules") return null;
+  const { nombre, taille, qualifies } = config.poules || {};
+  const [minN, maxN] = BORNES_POULES.nombre;
+  const [minT, maxT] = BORNES_POULES.taille;
+  if (!(nombre >= minN && nombre <= maxN)) return `Poules : entre ${minN} et ${maxN} poules.`;
+  if (!(taille >= minT && taille <= maxT)) return `Poules : entre ${minT} et ${maxT} participants par poule.`;
+  if (!(qualifies >= 1 && qualifies < taille)) return `Poules : entre 1 et ${taille - 1} qualifiés par poule (moins que les participants d'une poule).`;
+  if (nombre * qualifies !== places) {
+    return `Poules : ${nombre} poules × ${qualifies} qualifiés = ${nombre * qualifies} qualifiés, mais ${nomPhase} demandent exactement ${places} qualifiés.`;
+  }
+  if (nombre * taille < max) {
+    return `Poules : ${nombre} poules de ${taille} = ${nombre * taille} places pour ${max} participants au plus : agrandis les poules ou baisse le nombre de participants.`;
+  }
+  if ((nombre - 1) * taille >= max) {
+    return `Poules : ${max} participants tiennent dans ${nombre - 1} poules de ${taille} ; avec ${nombre} poules, certaines seraient presque vides.`;
+  }
+  return null;
 }
 
 function nouvelId() {
@@ -205,6 +246,8 @@ async function creerTournoi(brut, user) {
   if (!await peutCreerTournoi(user.id)) throw erreur(403, "Seuls les tournoitateurs (et les administrateurs) créent des tournois.");
   const { config, erreur: message } = lireConfig(brut);
   if (message) throw erreur(400, message);
+  const incoherence = erreurCoherence(config);
+  if (incoherence) throw erreur(400, incoherence);
   const id = nouvelId();
   const maintenant = new Date().toISOString();
   const tournoi = {
@@ -236,6 +279,11 @@ async function modifierConfig(id, brut, user) {
     const { config, erreur: message } = lireConfig({ ...tournoi, ...brut });
     if (message) throw erreur(400, message);
     if (tournoi.statut === "inscriptions") {
+      const incoherence = erreurCoherence(config);
+      if (incoherence) throw erreur(400, incoherence);
+      if (config.format === tournoi.format && config.max_participants < nbParticipants(tournoi)) {
+        throw erreur(400, `Il y a déjà ${nbParticipants(tournoi)} inscrits : le maximum ne peut pas descendre en dessous.`);
+      }
       // Format changé : inscriptions de l'autre format retirées.
       if (config.format !== tournoi.format) {
         tournoi.inscrits = [];
@@ -443,7 +491,9 @@ function taillePuissance2(n) {
 
 // Paires du premier tour : exempts (adversaire null) répartis, chaque paire
 // équilibrable si possible (500 tirages) -> { paires, equilibre }.
-function tirerPremierTour(tournoi, liste, donnees) {
+// pouleDe (après des poules) : 2 qualifiés de la même poule évités au
+// premier tour si possible.
+function tirerPremierTour(tournoi, liste, donnees, pouleDe = null) {
   const taille = taillePuissance2(liste.length);
   const exempts = taille - liste.length;
   let meilleur = null;
@@ -453,8 +503,10 @@ function tirerPremierTour(tournoi, liste, donnees) {
     for (let i = 0; i < exempts; i++) paires.push([ordre[i], null]);
     for (let i = exempts; i < ordre.length; i += 2) paires.push([ordre[i], ordre[i + 1]]);
     const ratees = paires.filter(([a, b]) => !equilibrable(tournoi, donnees, a, b)).length;
-    if (!meilleur || ratees < meilleur.ratees) meilleur = { paires: melanger(paires), ratees };
-    if (!ratees) break;
+    const memePoule = pouleDe ? paires.filter(([a, b]) => b && pouleDe.get(a) === pouleDe.get(b)).length : 0;
+    const cout = ratees * 10 + memePoule;
+    if (!meilleur || cout < meilleur.cout) meilleur = { paires: melanger(paires), ratees, cout };
+    if (!cout) break;
   }
   return { paires: meilleur.paires, equilibre: meilleur.ratees === 0 };
 }
@@ -571,6 +623,7 @@ async function echangerPlaces(id, user, a, b) {
 // un adversaire déjà rencontré ni une paire pas équilibrable si possible ;
 // nombre impair : un exempt par ronde (celui qui l'a le moins été).
 function genererQualifs(tournoi, liste, donnees) {
+  if (tournoi.qualifs_format === "poules" && tournoi.poules) return genererPoules(tournoi, liste, donnees);
   const matchs = [];
   const rencontres = new Set();
   const exemptions = new Map(liste.map(p => [p, 0]));
@@ -600,9 +653,44 @@ function genererQualifs(tournoi, liste, donnees) {
   return { matchs };
 }
 
-// Classement des qualifications : trophées, puis victoires.
-function classementQualifs(tournoi) {
-  const lignes = new Map(participants(tournoi).map(p => [p, { id: p, trophees: 0, victoires: 0, joues: 0 }]));
+// Poules : participants répartis au hasard en poules équilibrées en taille
+// (paires pas équilibrables évitées si possible, 200 tirages), puis tous
+// contre tous dans chaque poule (rondes de la méthode du cercle).
+function genererPoules(tournoi, liste, donnees) {
+  const nombre = tournoi.poules.nombre;
+  let meilleur = null;
+  for (let essai = 0; essai < 200; essai++) {
+    const ordre = melanger(liste);
+    const poules = Array.from({ length: nombre }, () => []);
+    ordre.forEach((p, i) => poules[i % nombre].push(p));
+    let ratees = 0;
+    poules.forEach(poule => poule.forEach((a, i) => poule.slice(i + 1).forEach(b => {
+      if (!equilibrable(tournoi, donnees, a, b)) ratees++;
+    })));
+    if (!meilleur || ratees < meilleur.ratees) meilleur = { poules, ratees };
+    if (!ratees) break;
+  }
+  const matchs = [];
+  meilleur.poules.forEach((poule, numero) => {
+    // Méthode du cercle : n - 1 rondes (n pair ; impair : un exempt par ronde).
+    const tour = poule.length % 2 ? [...poule, null] : [...poule];
+    for (let ronde = 1; ronde < tour.length; ronde++) {
+      for (let i = 0; i < tour.length / 2; i++) {
+        const a = tour[i];
+        const b = tour[tour.length - 1 - i];
+        if (a && b) matchs.push({ id: `q${matchs.length}`, poule: numero, ronde, a, b, statut: "pret", vainqueur: null, room_id: null, trophees: 0, manches: [] });
+      }
+      tour.splice(1, 0, tour.pop());
+    }
+  });
+  return { format: "poules", poules: meilleur.poules, matchs, equilibre: meilleur.ratees === 0 };
+}
+
+// Classement des qualifications (d'une poule si numero donné) : trophées,
+// puis victoires.
+function classementQualifs(tournoi, numero = null) {
+  const membres = numero === null ? participants(tournoi) : tournoi.qualifs.poules[numero];
+  const lignes = new Map(membres.map(p => [p, { id: p, trophees: 0, victoires: 0, joues: 0 }]));
   (tournoi.qualifs?.matchs || []).forEach(match => {
     if (match.statut !== "termine" || !match.vainqueur) return;
     const perdant = match.vainqueur === match.a ? match.b : match.a;
@@ -624,9 +712,14 @@ async function terminerQualifs(id, user) {
     if (!estGestionnaire(tournoi, user.id)) throw erreur(403, "Seul le créateur du tournoi termine les qualifications.");
     if (tournoi.statut !== "qualifs") throw erreur(409, "Pas de qualifications en cours.");
     if (tournoi.qualifs.matchs.some(match => match.statut === "en_cours")) throw erreur(409, "Un match de qualification est en cours : attends sa fin.");
-    const qualifies = classementQualifs(tournoi).slice(0, tournoi.arbre_max).map(ligne => ligne.id);
+    // Poules : les meilleurs de chaque poule ; sinon les meilleurs au total.
+    const poules = tournoi.qualifs.format === "poules" ? tournoi.qualifs.poules : null;
+    const qualifies = poules
+      ? poules.flatMap((_, numero) => classementQualifs(tournoi, numero).slice(0, tournoi.poules.qualifies).map(ligne => ligne.id))
+      : classementQualifs(tournoi).slice(0, tournoi.arbre_max).map(ligne => ligne.id);
     tournoi.qualifies = qualifies;
-    const { paires, equilibre } = tirerPremierTour(tournoi, qualifies, donnees);
+    const pouleDe = poules ? new Map(poules.flatMap((poule, numero) => poule.map(p => [p, numero]))) : null;
+    const { paires, equilibre } = tirerPremierTour(tournoi, qualifies, donnees, pouleDe);
     tournoi.arbre = construireArbre(paires);
     tournoi.arbre_equilibre = equilibre;
     tournoi.statut = "arbre";
@@ -878,6 +971,7 @@ async function vueTournoi(tournoi, user) {
     tournoi,
     joueurs: await lireJoueurs(idsCites(tournoi)),
     classement_qualifs: tournoi.qualifs ? classementQualifs(tournoi) : null,
+    classements_poules: tournoi.qualifs?.format === "poules" ? tournoi.qualifs.poules.map((_, numero) => classementQualifs(tournoi, numero)) : null,
     noms_tours: tournoi.arbre ? tournoi.arbre.tours.map(tour => nomTour(tour.length * 2)) : null,
     moi: user ? {
       id: user.id,
