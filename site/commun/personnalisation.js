@@ -101,7 +101,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=18";
+    lien.href = "/commun/personnalisation.css?v=19";
     document.head.appendChild(lien);
   }
 
@@ -808,7 +808,10 @@
             <span>Focus garanti dans <strong>${restants}</strong> tirage${restants > 1 ? "s" : ""}</span>
             <span class="perso-tirage-jauge"><span style="width: ${Math.min(100, tirage.compteur / (tirage.garantie - 1) * 100)}%"></span></span>
           </div>` : `<p class="perso-note">Tu as tous les cosmétiques focus !</p>`}` : ""}
-      <button type="button" class="perso-tirer">🎲 Tirer · ${texteRikoyns(tirage.prix)}</button>`;
+      <div class="perso-tirer-boutons">
+        <button type="button" class="perso-tirer" data-nombre="1">🎲 Tirer · ${texteRikoyns(tirage.prix)}</button>
+        <button type="button" class="perso-tirer" data-nombre="10">🎲 Tirer ×10 · ${texteRikoyns(tirage.prix * 10)}</button>
+      </div>`;
     const vitrine = bloc.querySelector(".perso-tirage-focus");
     tirage.focus.forEach(id => {
       const info = infoCosmetique(id);
@@ -818,27 +821,36 @@
       carte.querySelector("strong").textContent = info.nom;
       vitrine?.appendChild(carte);
     });
-    const bouton = bloc.querySelector(".perso-tirer");
-    bouton.disabled = koyns.solde < tirage.prix;
-    if (bouton.disabled) bouton.title = `Il faut ${tirage.prix} Rikoyns : joue des matchs pour en gagner.`;
-    bouton.addEventListener("click", tirer);
+    bloc.querySelectorAll(".perso-tirer").forEach(bouton => {
+      const prix = tirage.prix * Number(bouton.dataset.nombre);
+      bouton.disabled = koyns.solde < prix;
+      if (bouton.disabled) bouton.title = `Il faut ${prix} Rikoyns : joue des matchs pour en gagner.`;
+      bouton.addEventListener("click", () => tirer(Number(bouton.dataset.nombre)));
+    });
     conteneur.appendChild(bloc);
   }
 
   let tirageEnCours = false;
-  async function tirer() {
+  // nombre : 1 ou 10 tirages.
+  async function tirer(nombre = 1) {
     if (tirageEnCours) return;
     tirageEnCours = true;
     afficherEtat("Tirage…");
     try {
-      const reponse = await fetch("/api/auth/profile?action=tirer", { method: "POST", credentials: "include" });
+      const reponse = await fetch("/api/auth/profile?action=tirer", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre })
+      });
       const donnees = await reponse.json().catch(() => ({}));
       if (donnees.koyns) lireEtatKoyns(donnees.koyns);
       if (!reponse.ok) throw new Error(donnees.error || "Tirage impossible.");
-      afficherEtat("");
+      afficherEtat(donnees.arret ? `Tirages arrêtés après ${donnees.tirages.length} : ${donnees.arret}` : "");
       celebrerAchat();
       if (ongletActif === "tirage") rendreChoix();
-      revelerGain(donnees.tirage);
+      if (nombre > 1) revelerGains(donnees.tirages || [donnees.tirage]);
+      else revelerGain(donnees.tirage);
     } catch (erreur) {
       console.error(erreur);
       afficherEtat(erreur.message);
@@ -880,6 +892,63 @@
       if (action === "encore") {
         fenetre.close();
         tirer();
+      }
+    });
+    fenetre.addEventListener("keydown", event => { if (event.key === "Escape") event.stopPropagation(); });
+    fenetre.addEventListener("close", () => fenetre.remove());
+    document.body.appendChild(fenetre);
+    fenetre.showModal();
+  }
+
+  // Fenêtre de plusieurs gains : cartes retournées l'une après l'autre
+  // (dorées pour un focus) ; clic sur une carte : l'équiper.
+  function revelerGains(tirages) {
+    const nbFocus = tirages.filter(t => t.focus).length;
+    const fenetre = document.createElement("dialog");
+    fenetre.className = `perso-fenetre perso-fenetre-gain perso-fenetre-gains${nbFocus ? " focus" : ""}`;
+    fenetre.innerHTML = `
+      <h3 class="perso-fenetre-titre">${nbFocus ? `✨ ${nbFocus > 1 ? `${nbFocus} focus` : "Focus"} ! ✨` : `${tirages.length} tirages`}</h3>
+      <div class="perso-gains-grille"></div>
+      <p class="perso-note">Clic sur un cosmétique pour l'équiper.</p>
+      <div class="perso-fenetre-actions">
+        <button type="button" data-action="fermer">Fermer</button>
+        <button type="button" class="perso-fenetre-ok" data-action="encore"></button>
+      </div>`;
+    const grille = fenetre.querySelector(".perso-gains-grille");
+    tirages.forEach(({ cosmetique, focus }, i) => {
+      const info = infoCosmetique(cosmetique);
+      const carte = document.createElement("button");
+      carte.type = "button";
+      carte.className = `perso-gains-carte${focus ? " focus" : ""}`;
+      carte.style.setProperty("--delai", `${i * 0.15}s`);
+      carte.dataset.id = cosmetique;
+      carte.title = `${info.nom} (${info.type}) : clic pour l'équiper`;
+      carte.innerHTML = `
+        <span class="perso-gain-carte">
+          <span class="perso-gain-dos" aria-hidden="true">🎲</span>
+          <span class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</span>
+        </span>
+        <span class="perso-gains-nom"></span>`;
+      carte.querySelector(".perso-gains-nom").textContent = info.nom;
+      grille.appendChild(carte);
+    });
+    const encore = fenetre.querySelector('[data-action="encore"]');
+    const prix = (koyns.tirage?.prix ?? 10) * 10;
+    encore.innerHTML = `Retirer ×10 · ${texteRikoyns(prix)}`;
+    encore.disabled = !koyns.tirage || koyns.solde < prix;
+    fenetre.addEventListener("click", event => {
+      const carte = event.target.closest(".perso-gains-carte");
+      if (carte) {
+        equiper(carte.dataset.id);
+        grille.querySelectorAll(".perso-gains-carte").forEach(c => c.classList.toggle("equipe", c === carte));
+        afficherEtat(`« ${infoCosmetique(carte.dataset.id).nom} » équipé : pense à enregistrer.`);
+        return;
+      }
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      if (event.target === fenetre || action === "fermer") fenetre.close();
+      if (action === "encore") {
+        fenetre.close();
+        tirer(10);
       }
     });
     fenetre.addEventListener("keydown", event => { if (event.key === "Escape") event.stopPropagation(); });

@@ -250,11 +250,24 @@ module.exports = async (req, res) => {
       });
     }
 
-    // ---- TIRAGE D'UN COSMÉTIQUE (?action=tirer) ----
+    // ---- TIRAGE DE COSMÉTIQUES (?action=tirer, { nombre: 1 | 10 }) ----
+    // Tirages un par un (garantie comptée à chacun) ; arrêt au premier refus
+    // (solde, plus rien à gagner) : tirages déjà faits gardés, avec le
+    // message (arret).
     if (req.method === "POST" && new URL(req.url, "http://x").searchParams.get("action") === "tirer") {
-      const resultat = await tirerCosmetique(discordId);
-      if (resultat.erreur) return res.status(resultat.status).json({ error: resultat.erreur });
-      return res.status(200).json({ tirage: resultat, koyns: await etatKoyns(discordId) });
+      const nombre = req.body?.nombre === 10 ? 10 : 1;
+      const tirages = [];
+      let arret = null;
+      for (let i = 0; i < nombre; i++) {
+        const resultat = await tirerCosmetique(discordId);
+        if (resultat.erreur) {
+          if (!tirages.length) return res.status(resultat.status).json({ error: resultat.erreur });
+          arret = resultat.erreur;
+          break;
+        }
+        tirages.push(resultat);
+      }
+      return res.status(200).json({ tirage: tirages[0], tirages, arret, koyns: await etatKoyns(discordId) });
     }
 
     // ---- ACHAT DE COSMÉTIQUES (?action=acheter, { cosmetique } ou panier
