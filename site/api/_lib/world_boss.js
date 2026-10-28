@@ -27,6 +27,17 @@
 // Retour au lobby (chef) à tout moment : mêmes joueurs, nouveau tirage au
 // lancement (partie en cours pas archivée).
 //
+// Matchmaking (draft.matchmaking, bouton Matchmaking de la page Événements,
+// cf. rejoindreFileMM) : pas de taille choisie. Le joueur rejoint le lobby
+// de matchmaking en attente le plus rempli (puis le plus ancien), sinon en
+// crée un et attend ; seul dans le sien, il continue de chercher (wb_mm,
+// appelé par la page toutes les quelques secondes) et rejoint un lobby plus
+// ancien ou plus rempli (le sien est alors supprimé). Les joueurs du lobby
+// cochent « Prêt » (draft.prets) : partie lancée quand tout le monde l'est
+// (2 joueurs au moins), ou d'office à TAILLE_MAX. Pas de chef pour lancer ;
+// chef (createur) = premier arrivé, passé au suivant s'il part. Joueur dont
+// la page ne donne plus de nouvelles (draft.vus, MM_ABSENT_MS) : retiré.
+//
 // Accès : administrateurs et mini admins (mode en test, page Événements),
 // tout le monde une fois le mode activé depuis la page admin
 // (config.world_boss_public) ; cf. erreurAcces.
@@ -46,6 +57,10 @@ const NB_PERSOS = 4;
 // impossible à répartir entre les joueurs).
 const ESSAIS_TIRAGE = 500;
 const PHASES_EN_COURS = ["jeu"];
+// Matchmaking : présence notée au plus toutes les MM_BATTEMENT_MS ; joueur
+// sans nouvelles depuis MM_ABSENT_MS retiré du lobby (page fermée).
+const MM_BATTEMENT_MS = 8 * 1000;
+const MM_ABSENT_MS = 30 * 1000;
 
 const auHasard = liste => liste[Math.floor(Math.random() * liste.length)];
 
@@ -55,7 +70,7 @@ function erreur(status, message) {
 
 // ---- État ----
 
-function etatLobby({ createur, membres = [createur], infos = {}, bossPrecedent = null, version = null }) {
+function etatLobby({ createur, membres = [createur], infos = {}, bossPrecedent = null, version = null, matchmaking = false }) {
   return {
     mode: "world_boss",
     phase: "lobby",
@@ -63,7 +78,8 @@ function etatLobby({ createur, membres = [createur], infos = {}, bossPrecedent =
     boss_precedent_id: bossPrecedent,
     membres,
     infos,
-    version
+    version,
+    ...(matchmaking ? { matchmaking: true, prets: [], vus: Object.fromEntries(membres.map(id => [id, Date.now()])) } : {})
   };
 }
 
@@ -87,7 +103,7 @@ function infosProfil(profil) {
 async function chargerRoom(roomId) {
   const { data: room, error } = await supabase
     .from("rooms")
-    .select("room_id, type, player1_discord_id, draft, last_active_at")
+    .select("room_id, type, player1_discord_id, draft, last_active_at, created_at")
     .eq("room_id", roomId)
     .maybeSingle();
   if (error) throw error;
@@ -313,12 +329,18 @@ async function quitterWorldBoss(discordId, { sauf = null } = {}) {
 async function retirerMembre(roomId, draft, discordId) {
   for (let essai = 0; essai < 3; essai++) {
     if (!draft?.membres?.includes(discordId)) return;
-    if (draft.phase === "lobby" && draft.createur === discordId) {
+    const membres = draft.membres.filter(id => id !== discordId);
+    // Lobby : supprimé si son chef part (matchmaking : seulement s'il était
+    // seul, sinon le suivant devient chef).
+    if (draft.phase === "lobby" && draft.createur === discordId && !(draft.matchmaking && membres.length)) {
       await supabase.from("rooms").delete().eq("room_id", roomId);
       return;
     }
-    const membres = draft.membres.filter(id => id !== discordId);
     const nouveau = { ...draft, membres };
+    if (draft.matchmaking) {
+      if (draft.createur === discordId) nouveau.createur = membres[0];
+      nouveau.prets = (draft.prets || []).filter(id => id !== discordId);
+    }
     if (PHASES_EN_COURS.includes(draft.phase)) {
       nouveau.phase = "annule";
       nouveau.annule_par = discordId;
@@ -341,9 +363,9 @@ async function erreurAcces(user) {
 }
 
 // ---- Création (POST /api/rooms { type: "world_boss" }, cf. api/rooms/index.js) ----
-async function preparerCreation(user) {
+async function preparerCreation(user, { matchmaking = false } = {}) {
   const profil = (await lireProfils([user.id])).get(user.id);
-  return { draft: etatLobby({ createur: user.id, infos: { [user.id]: infosProfil(profil) } }) };
+  return { draft: etatLobby({ createur: user.id, infos: { [user.id]: infosProfil(profil) }, matchmaking }) };
 }
 
 // ---- Routes ----
@@ -380,6 +402,10 @@ async function routeRejoindre(req, res, roomId, user) {
   const profil = (await lireProfils([user.id])).get(user.id);
   const membres = [...draft.membres, user.id];
   const nouveau = { ...draft, membres, infos: { ...draft.infos, [user.id]: infosProfil(profil) } };
+  if (draft.matchmaking) {
+    nouveau.vus = { ...draft.vus, [user.id]: Date.now() };
+    await lancerSiPrets(nouveau);
+  }
   await sauvegarder(roomId, nouveau, { membres });
   // Un seul match à la fois : ses autres matchs sont quittés.
   const { annulerAutresMatchs } = require("./room");
@@ -400,6 +426,7 @@ async function routeLancer(req, res, roomId, user) {
   const draft = room.draft;
   if (draft.createur !== user.id) throw erreur(403, "Seul le chef de la room lance la partie.");
   if (draft.phase !== "lobby") throw erreur(409, "La partie a déjà commencé.");
+  if (draft.matchmaking) throw erreur(409, "Matchmaking : la partie se lance quand tout le monde est prêt.");
   await tirerPartie(draft);
   await sauvegarder(roomId, draft);
   return repondre(res, draft);
@@ -554,10 +581,129 @@ async function routeRejouer(req, res, roomId, user) {
     membres: draft.membres,
     infos: draft.infos,
     bossPrecedent: draft.boss_id || draft.boss_precedent_id || null,
-    version: draft.version
+    version: draft.version,
+    matchmaking: !!draft.matchmaking
   });
   if (req.body?.relancer === true) await tirerPartie(nouveau);
   await sauvegarder(roomId, nouveau, { membres: nouveau.membres });
+  return repondre(res, nouveau);
+}
+
+// ---- Matchmaking (cf. en-tête) ----
+
+// Lobby de matchmaking en attente encore vivant (un joueur vu récemment).
+function lobbyVivant(draft, maintenant = Date.now()) {
+  return Object.values(draft.vus || {}).some(vu => maintenant - vu < MM_ABSENT_MS);
+}
+
+// Lobbies de matchmaking en attente avec de la place (sauf sauf), le plus
+// rempli puis le plus ancien d'abord.
+async function lobbiesOuverts(sauf = null) {
+  let requete = supabase.from("rooms").select("room_id, draft, created_at")
+    .eq("type", "world_boss").eq("draft->>matchmaking", "true").eq("draft->>phase", "lobby")
+    .order("created_at", { ascending: true }).limit(30);
+  if (sauf) requete = requete.neq("room_id", sauf);
+  const { data, error } = await requete;
+  if (error) throw error;
+  const maintenant = Date.now();
+  return (data || [])
+    .filter(room => (room.draft.membres || []).length < TAILLE_MAX && lobbyVivant(room.draft, maintenant))
+    .sort((a, b) => b.draft.membres.length - a.draft.membres.length);
+}
+
+// Entrée dans un lobby (écriture conditionnelle) -> draft écrite, ou null
+// (lobby plein, parti en partie ou changé entre-temps).
+async function entrerLobby(room, user, infos) {
+  const draft = room.draft;
+  if (draft.phase !== "lobby" || draft.membres.includes(user.id) || draft.membres.length >= TAILLE_MAX) return null;
+  const membres = [...draft.membres, user.id];
+  const nouveau = { ...draft, membres, infos: { ...draft.infos, [user.id]: infos }, vus: { ...draft.vus, [user.id]: Date.now() } };
+  await lancerSiPrets(nouveau);
+  return await ecrireDraft(supabase, room.room_id, nouveau, { membres }) ? nouveau : null;
+}
+
+// Bouton Matchmaking (POST /api/rooms { type: "world_boss", matchmaking:
+// true }, cf. api/rooms/index.js) : lobby en attente rejoint -> room_id, ou
+// null (aucun : l'appelant en crée un, cf. preparerCreation).
+async function rejoindreFileMM(user) {
+  const infos = infosProfil((await lireProfils([user.id])).get(user.id));
+  for (const room of await lobbiesOuverts()) {
+    if (await entrerLobby(room, user, infos)) return room.room_id;
+  }
+  return null;
+}
+
+// Tout le monde prêt (2 joueurs au moins), ou lobby complet : partie tirée.
+// Tirage impossible (full box vide...) : message dans le lobby, prêts
+// remis à zéro.
+async function lancerSiPrets(draft) {
+  const membres = draft.membres;
+  const prets = membres.length >= 2 && membres.every(id => (draft.prets || []).includes(id));
+  if (draft.phase !== "lobby" || !(prets || membres.length >= TAILLE_MAX)) return;
+  try {
+    await tirerPartie(draft);
+    delete draft.erreur_lancement;
+  } catch (e) {
+    if (!e?.status) throw e;
+    draft.erreur_lancement = e.message;
+    draft.prets = [];
+  }
+}
+
+// Page du lobby de matchmaking (toutes les quelques secondes) : présence
+// notée, absents retirés ; seul, cherche un lobby plus rempli ou plus
+// ancien (le sien est alors supprimé). -> { draft, room_id }.
+async function routeMM(req, res, roomId, user) {
+  const room = await chargerRoom(roomId);
+  let draft = room.draft;
+  if (!draft.matchmaking || draft.phase !== "lobby" || !draft.membres.includes(user.id)) return repondre(res, draft, { room_id: roomId });
+  const maintenant = Date.now();
+
+  if (draft.membres.length === 1) {
+    const infos = draft.infos[user.id] || infosProfil(null);
+    for (const autre of await lobbiesOuverts(roomId)) {
+      // Deux joueurs seuls : le plus récent rejoint le plus ancien.
+      const plusAncien = Date.parse(autre.created_at) < Date.parse(room.created_at ?? maintenant);
+      if (autre.draft.membres.length === 1 && !plusAncien) continue;
+      const rejoint = await entrerLobby(autre, user, infos);
+      if (rejoint) {
+        // Seulement si personne ne l'a rejoint entre-temps (version lue).
+        const suppression = supabase.from("rooms").delete().eq("room_id", roomId);
+        await (draft.version == null ? suppression.is("draft->>version", null) : suppression.eq("draft->>version", String(draft.version)));
+        return repondre(res, rejoint, { room_id: autre.room_id });
+      }
+    }
+  }
+
+  const absents = draft.membres.filter(id => id !== user.id && maintenant - (draft.vus?.[id] || 0) > MM_ABSENT_MS);
+  const battement = maintenant - (draft.vus?.[user.id] || 0) > MM_BATTEMENT_MS;
+  if (!absents.length && !battement) return repondre(res, draft, { room_id: roomId });
+  const membres = draft.membres.filter(id => !absents.includes(id));
+  draft = {
+    ...draft,
+    membres,
+    createur: membres.includes(draft.createur) ? draft.createur : membres[0],
+    prets: (draft.prets || []).filter(id => membres.includes(id)),
+    vus: { ...Object.fromEntries(Object.entries(draft.vus || {}).filter(([id]) => membres.includes(id))), [user.id]: maintenant }
+  };
+  await lancerSiPrets(draft);
+  await sauvegarder(roomId, draft, { membres });
+  return repondre(res, draft, { room_id: roomId });
+}
+
+// « Prêt » coché / décoché (matchmaking).
+async function routePret(req, res, roomId, user) {
+  const room = await chargerRoom(roomId);
+  const draft = room.draft;
+  if (!draft.matchmaking) throw erreur(409, "Pas un lobby de matchmaking.");
+  if (draft.phase !== "lobby") return repondre(res, draft);
+  if (!draft.membres.includes(user.id)) throw erreur(403, "Tu n'es pas dans ce lobby.");
+  const prets = (draft.prets || []).filter(id => id !== user.id);
+  if (req.body?.pret === true) prets.push(user.id);
+  const nouveau = { ...draft, prets, vus: { ...draft.vus, [user.id]: Date.now() } };
+  delete nouveau.erreur_lancement;
+  await lancerSiPrets(nouveau);
+  await sauvegarder(roomId, nouveau);
   return repondre(res, nouveau);
 }
 
@@ -569,7 +715,9 @@ const ROUTES = {
   wb_declarer: { methode: "POST", route: routeDeclarer },
   wb_resultat: { methode: "POST", route: routeResultat },
   wb_hote: { methode: "POST", route: routeHote },
-  wb_rejouer: { methode: "POST", route: routeRejouer }
+  wb_rejouer: { methode: "POST", route: routeRejouer },
+  wb_mm: { methode: "POST", route: routeMM },
+  wb_pret: { methode: "POST", route: routePret }
 };
 
 function estRouteWorldBoss(action) {
@@ -592,6 +740,7 @@ module.exports = {
   estRouteWorldBoss,
   executerRouteWorldBoss,
   preparerCreation,
+  rejoindreFileMM,
   quitterWorldBoss,
   // Tests.
   tirerPersos,

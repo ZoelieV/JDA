@@ -423,10 +423,6 @@
   --couleur-detail-fond: rgba(157, 140, 240, 0.15);
 }
 
-.detail-match[data-detail="world-boss"] .modes-match::before {
-  content: "Lance la partie";
-}
-
 .detail-match[data-detail="equipe"] {
   --couleur-detail: #7d95f0;
   --couleur-detail-fond: rgba(125, 149, 240, 0.16);

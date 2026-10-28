@@ -1,4 +1,7 @@
-// Random world boss : lobby (seul ou jusqu'à 4 joueurs), boss et 4 persos
+// Random world boss : lobby (seul ou jusqu'à 4 joueurs ; ou lobby de
+// matchmaking : recherche d'autres joueurs, chacun coche « Prêt », lancé
+// quand tout le monde l'est ou dès 4, cf. routeMM dans
+// api/_lib/world_boss.js), boss et 4 persos
 // tirés au hasard (animation du tirage, cf. animerTirage), déclaration des
 // persos joués par chacun et du résultat (chef). Seul : persos et hôte
 // déclarés d'office par le serveur, il ne reste que le résultat.
@@ -32,6 +35,9 @@ const suisMembre = () => !!moi && !!draft?.membres?.includes(moi.id);
 const suisJoueur = () => !!moi && !!draft?.joueurs?.includes(moi.id);
 const suisChef = () => !!moi && draft?.createur === moi.id;
 const enSolo = () => draft?.joueurs?.length === 1;
+// Lobby de matchmaking (avant le tirage).
+const lobbyMM = () => !!draft?.matchmaking && draft.phase === "lobby";
+const suisPret = () => !!moi && !!draft?.prets?.includes(moi.id);
 
 async function appel(action, corps = null) {
   const reponse = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/${action}`, corps === null
@@ -70,6 +76,12 @@ function htmlNom(id) {
 }
 
 function badgesJoueur(id) {
+  if (lobbyMM()) {
+    return [
+      draft.prets?.includes(id) ? `<span class="badge-equipe pret">✓ Prêt</span>` : `<span class="badge-equipe attente">en attente</span>`,
+      id === moi?.id ? `<span class="badge-equipe moi">toi</span>` : ""
+    ].join("");
+  }
   return [
     id === draft.createur ? `<span class="badge-equipe chef" title="Chef de la room : lance la partie et déclare le résultat">★ Chef</span>` : "",
     id === moi?.id ? `<span class="badge-equipe moi">toi</span>` : ""
@@ -139,6 +151,7 @@ function rendre() {
 
 function rendreLobby() {
   preparerLeurres();
+  if (draft.matchmaking) return rendreLobbyMM();
   const membres = draft.membres || [];
   const complet = membres.length >= TAILLE_MAX;
   const places = Array.from({ length: TAILLE_MAX - membres.length }, () => `<li class="place-libre">Place libre</li>`).join("");
@@ -158,6 +171,31 @@ function rendreLobby() {
     ? (membres.length === 1 ? "Lance la partie seul (boss pas faisables en co-op compris), ou partage le lien pour jouer en co-op." : "Lance la partie quand tout le monde est là.")
     : suisMembre() ? "Le chef lance la partie quand tout le monde est là."
       : complet ? `La room est complète (${TAILLE_MAX} joueurs).` : "Rejoins la room pour jouer.";
+}
+
+// Lobby de matchmaking : joueurs trouvés (prêts ou non), places en
+// recherche ; « Je suis prêt » dès 2 joueurs.
+function rendreLobbyMM() {
+  const membres = draft.membres || [];
+  const prets = membres.filter(id => draft.prets?.includes(id)).length;
+  const places = Array.from({ length: TAILLE_MAX - membres.length }, () => `<li class="place-libre recherche-mm">Recherche d'un joueur…</li>`).join("");
+  $("lobby-joueurs").innerHTML = `
+    <div class="carte-equipe tous">
+      <h2>Matchmaking <span class="compte-equipe">${membres.length} / ${TAILLE_MAX}</span></h2>
+      <ul>${membres.map(id => `<li>${htmlNom(id)}${badgesJoueur(id)}</li>`).join("")}${places}</ul>
+      <p class="aide-equipe">Les persos seront tirés dans vos full box au lancement.</p>
+    </div>`;
+  $("btn-rejoindre").classList.toggle("cache", suisMembre() || membres.length >= TAILLE_MAX || !moi);
+  $("btn-quitter").classList.toggle("cache", !suisMembre());
+  $("btn-lancer").classList.add("cache");
+  const pret = $("btn-pret");
+  pret.classList.toggle("cache", !suisMembre() || membres.length < 2);
+  pret.classList.toggle("actif", suisPret());
+  pret.textContent = suisPret() ? "✓ Prêt (clic pour annuler)" : "Je suis prêt";
+  const aide = membres.length < 2
+    ? "Recherche d'autres joueurs… Garde la page ouverte."
+    : `La partie se lance quand tout le monde est prêt (${prets} / ${membres.length}), ou dès que vous êtes ${TAILLE_MAX}. Sinon, attendez d'autres joueurs.`;
+  $("aide-lobby").textContent = draft.erreur_lancement ? `${draft.erreur_lancement} ${aide}` : aide;
 }
 
 // ---- Partie ----
@@ -585,6 +623,7 @@ function initialiserBoutons() {
     }
   });
   $("btn-lancer").addEventListener("click", () => agir("wb_lancer", {}));
+  $("btn-pret").addEventListener("click", () => agir("wb_pret", { pret: !suisPret() }));
   $("btn-declarer").addEventListener("click", async () => {
     if (await agir("wb_declarer", { persos: [...selectionPersos] })) selectionPersos = null;
     derniereCle = "";
@@ -618,7 +657,13 @@ function initialiserBoutons() {
 
 async function rafraichir() {
   try {
-    const data = await appel("wb_etat");
+    // Lobby de matchmaking : présence notée et recherche (le serveur peut
+    // nous faire passer dans un autre lobby : room_id changé).
+    const data = lobbyMM() && suisMembre() ? await appel("wb_mm", {}) : await appel("wb_etat");
+    if (data.room_id && data.room_id !== roomId) {
+      roomId = data.room_id;
+      history.replaceState(null, "", `${location.pathname}?room=${encodeURIComponent(roomId)}`);
+    }
     noterHorloge(data);
     definirDraft(data.draft);
   } catch (erreur) {

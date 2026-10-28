@@ -3,7 +3,7 @@ const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
 const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("../_lib/room");
-const { verifierFrequence } = require("../_lib/limites");
+const { verifierFrequence, verifierFrequenceCompte } = require("../_lib/limites");
 const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur, resoudreTheatre, theatreProfil } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
@@ -12,7 +12,7 @@ const { getBossParId, bossCarnageExclus, estReserveWorldBoss, estHorsCoop, ERREU
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation, creerEntrainementEquipe: creerRoomEntrainementEquipe } = require("../_lib/equipe");
 const { analyserVitrine } = require("../_lib/vitrine");
-const { preparerCreation: preparerWorldBoss, erreurAcces: erreurAccesWorldBoss } = require("../_lib/world_boss");
+const { preparerCreation: preparerWorldBoss, erreurAcces: erreurAccesWorldBoss, rejoindreFileMM } = require("../_lib/world_boss");
 const { estModerateur } = require("../_lib/admin");
 const { estIdFictif, lireBoxFictive } = require("../_lib/boxes_fictives");
 
@@ -256,24 +256,33 @@ async function creerEquipe(req, res, user) {
   return res.status(200).json({ room_id: roomId, equipe: true });
 }
 
-// POST { type: "world_boss" } : room Random world boss (cf.
+// POST { type: "world_boss", matchmaking? } : room Random world boss (cf.
 // _lib/world_boss.js), même limite de création que les rooms privées.
+// matchmaking : lobby de matchmaking en attente rejoint, sinon nouveau lobby
+// de matchmaking (une recherche toutes les 5 s au plus).
 // Administrateurs et mini admins seulement, mode pas désactivé.
 async function creerWorldBoss(req, res, user) {
   const refus = await erreurAccesWorldBoss(user);
   if (refus) return res.status(refus.status).json({ error: refus.message });
-  const { draft } = await preparerWorldBoss(user);
+  const matchmaking = req.body?.matchmaking === true;
+  const { draft } = await preparerWorldBoss(user, { matchmaking });
 
-  const attente = await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);
+  const attente = matchmaking
+    ? await verifierFrequenceCompte(user.id, "world_boss_mm", DELAI_MM_WORLD_BOSS_MS)
+    : await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);
   if (attente > 0) {
     const secondes = Math.ceil(attente / 1000);
     res.setHeader("Retry-After", String(secondes));
-    return res.status(429).json({ error: `Une room par minute au maximum : réessaie dans ${secondes} s.`, attente: secondes });
+    return res.status(429).json({ error: matchmaking ? `Réessaie dans ${secondes} s.` : `Une room par minute au maximum : réessaie dans ${secondes} s.`, attente: secondes });
   }
 
   const enCours = await matchClasseEnCours(supabase, user.id);
   if (enCours) return res.status(409).json({ error: ERREUR_MATCH_CLASSE, room_id: enCours });
   await annulerAutresMatchs(supabase, user.id);
+  if (matchmaking) {
+    const rejoint = await rejoindreFileMM(user);
+    if (rejoint) return res.status(200).json({ room_id: rejoint, world_boss: true });
+  }
   const roomId = genererRoomId();
   const { error } = await supabase.from("rooms").insert({
     room_id: roomId,
@@ -297,6 +306,8 @@ const MODES_MATCHMAKING = { matchmaking: ["auto", MODE_MELEE, "carnage"], classe
 
 // Match privé : une création par minute et par adresse IP au plus.
 const DELAI_ROOM_PRIVEE_MS = 60 * 1000;
+// Matchmaking du Random world boss : une recherche toutes les 5 s par compte.
+const DELAI_MM_WORLD_BOSS_MS = 5 * 1000;
 
 
 function genererRoomId() {

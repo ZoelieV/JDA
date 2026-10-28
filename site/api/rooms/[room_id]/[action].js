@@ -1354,7 +1354,7 @@ module.exports = async (req, res) => {
     user.agirEn = req.body?.agir_en || new URL(req.url, "http://x").searchParams.get("agir_en");
 
     // Personnages / boss ajoutés par les admins et points à jour (cache 30 s).
-    if (!["draft", "equipe_etat", "wb_etat"].includes(action)) await actualiserPoints();
+    if (!["draft", "equipe_etat", "wb_etat", "wb_mm"].includes(action)) await actualiserPoints();
 
     // Room modifiée par une autre requête pendant celle-ci (cf.
     // sauvegarderDraft) : route rejouée sur la room à jour, 3 essais.

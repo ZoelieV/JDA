@@ -17,15 +17,16 @@ async function chargerUtilisateur() {
   }
 }
 
-// Room Random world boss, puis page de son lobby.
-async function creerWorldBoss(bouton) {
+// Room Random world boss (matchmaking : lobby en attente rejoint, ou
+// nouveau lobby de matchmaking), puis page de son lobby.
+async function creerWorldBoss(bouton, matchmaking = false) {
   bouton.disabled = true;
   try {
     const reponse = await fetch("/api/rooms", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "world_boss" })
+      body: JSON.stringify({ type: "world_boss", ...(matchmaking ? { matchmaking: true } : {}) })
     });
     if (reponse.status === 401) {
       alert("Tu dois être connecté avec Discord pour créer une room.");
@@ -84,6 +85,7 @@ async function demarrer() {
     carte.addEventListener("click", () => choisirCarte(carte));
   });
   document.getElementById("creer-world-boss").addEventListener("click", event => creerWorldBoss(event.currentTarget));
+  document.getElementById("mm-world-boss").addEventListener("click", event => creerWorldBoss(event.currentTarget, true));
 
   // evenements.html#world-boss : détails ouverts.
   const ancre = location.hash && document.querySelector(`.carte-match:not(.cache)[data-detail="${CSS.escape(location.hash.slice(1))}"]`);
