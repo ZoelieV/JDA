@@ -37,6 +37,18 @@ function dateTournoi(iso) {
   return new Date(iso).toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+// « X remporte la faveur de l'astre ! » (nomHtml déjà échappé).
+const PRIX_TOURNOI = {
+  cosmetiques: "des cosmétiques du site",
+  battle_pass: "le battle pass",
+  faveur: "la faveur de l'astre",
+  pack: "un pack Genshin"
+};
+
+function htmlVictoireTournoi(nomHtml, recompense) {
+  return `🏆 ${nomHtml} remporte ${PRIX_TOURNOI[recompense?.type] || "le tournoi"} !`;
+}
+
 function formatTournoi(tournoi) {
   return tournoi.format === "equipe" ? `En équipe ${tournoi.taille_equipe}v${tournoi.taille_equipe}` : "1v1";
 }

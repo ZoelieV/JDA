@@ -343,7 +343,7 @@ async function reclamerBonusConnexion(discordId) {
 // gardée par le navigateur, NOUVEAUTES_MAX_MS au plus en arrière) : gains
 // positifs seulement (pas les achats, ni les reprises).
 const NOUVEAUTES_MAX_MS = 7 * 24 * 3600 * 1000;
-const RAISONS_NOTIFIEES = ["match", "don", "connexion", "depart"];
+const RAISONS_NOTIFIEES = ["match", "don", "connexion", "depart", "tournoi"];
 
 // Aperçu d'un cosmétique reçu : { id, type, image } (image : sous DB/).
 function apercuCosmetique(id) {
@@ -365,22 +365,43 @@ async function lireNouveautes(discordId, depuis) {
   const date = Math.max(Date.parse(depuis) || 0, Date.now() - NOUVEAUTES_MAX_MS);
   const debut = new Date(date).toISOString();
   const [mouvements, recus] = await Promise.all([
-    supabase.from("koyns_mouvements").select("montant, raison")
-      .eq("discord_id", discordId).gt("cree_le", debut).gt("montant", 0).in("raison", RAISONS_NOTIFIEES),
+    // Victoire de tournoi : mouvement à 0 (cf. noterVictoireTournoi).
+    supabase.from("koyns_mouvements").select("montant, raison, ref")
+      .eq("discord_id", discordId).gt("cree_le", debut).gte("montant", 0).in("raison", RAISONS_NOTIFIEES),
     supabase.from("cosmetiques_possedes").select("cosmetique")
       .eq("discord_id", discordId).gt("obtenu_le", debut).not("source", "in", "(achat,tirage,tirage_focus)")
   ]);
   if (mouvements.error) console.error("Erreur lecture koyns_mouvements :", mouvements.error);
   if (recus.error) console.error("Erreur lecture cosmetiques_possedes :", recus.error);
   const koyns = {};
-  (mouvements.data || []).forEach(({ montant, raison }) => {
+  const idsTournois = [];
+  (mouvements.data || []).forEach(({ montant, raison, ref }) => {
+    if (raison === "tournoi") {
+      idsTournois.push(String(ref).replace(/^tournoi:/, ""));
+      return;
+    }
+    if (montant <= 0) return;
     koyns[raison] ??= { total: 0, nb: 0 };
     koyns[raison].total += montant;
     koyns[raison].nb += 1;
   });
+  // Tournois gagnés : nom et récompense annoncée (table points).
+  let tournois = [];
+  if (idsTournois.length) {
+    const { data } = await supabase.from("points").select("data").in("id", idsTournois.map(id => `tournoi:${id}`));
+    tournois = (data || []).map(ligne => ({ id: ligne.data.id, nom: ligne.data.nom, recompense: ligne.data.recompense || null }));
+  }
   const cosmetiquesRecus = (recus.data || []).map(ligne => apercuCosmetique(ligne.cosmetique));
-  if (!Object.keys(koyns).length && !cosmetiquesRecus.length) return null;
-  return { koyns, cosmetiques: cosmetiquesRecus };
+  if (!Object.keys(koyns).length && !cosmetiquesRecus.length && !tournois.length) return null;
+  return { koyns, cosmetiques: cosmetiquesRecus, tournois };
+}
+
+// Victoire d'un tournoi : mouvement à 0 Rikoyn (une fois par joueur et par
+// tournoi), pour la fenêtre des récompenses (cf. lireNouveautes).
+async function noterVictoireTournoi(discordIds, tournoiId) {
+  for (const discordId of discordIds) {
+    await ajouterMouvement({ discord_id: discordId, montant: 0, raison: "tournoi", ref: `tournoi:${tournoiId}` });
+  }
 }
 
 module.exports = {
@@ -400,5 +421,6 @@ module.exports = {
   donner,
   reclamerBonusConnexion,
   lireNouveautes,
-  tirerCosmetique
+  tirerCosmetique,
+  noterVictoireTournoi
 };

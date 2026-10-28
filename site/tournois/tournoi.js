@@ -67,6 +67,8 @@ function rendre() {
     ${tournoi.affrontement === "bo3" ? `<span class="pastille-tournoi">Best of 3</span>` : ""}
     ${tournoi.finale_bo5 ? `<span class="pastille-tournoi">Finale en bo5</span>` : ""}`;
   $t("description-tournoi").textContent = tournoi.description || "Pas de description.";
+  $t("victoire-tournoi").hidden = !tournoi.vainqueur;
+  if (tournoi.vainqueur) $t("victoire-tournoi").innerHTML = htmlVictoireTournoi(nomParticipant(tournoi.vainqueur), tournoi.recompense);
 
   const infos = [
     ["Organisateur", htmlJoueurTournoi(joueurs, tournoi.createur)],

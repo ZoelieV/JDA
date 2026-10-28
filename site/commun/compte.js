@@ -258,14 +258,28 @@
     return String(texte ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
 
-  function afficherRecompenses({ koyns = {}, cosmetiques = [] }, ouvrirPersonnalisation) {
+  // Récompense annoncée d'un tournoi (cf. tournois/commun.js).
+  const PRIX_TOURNOIS = {
+    cosmetiques: "des cosmétiques du site",
+    battle_pass: "le battle pass",
+    faveur: "la faveur de l'astre",
+    pack: "un pack Genshin"
+  };
+
+  function afficherRecompenses({ koyns = {}, cosmetiques = [], tournois = [] }, ouvrirPersonnalisation) {
     const total = Object.values(koyns).reduce((somme, gain) => somme + gain.total, 0);
     const fenetre = document.createElement("dialog");
     fenetre.className = "fenetre-recompenses";
     fenetre.setAttribute("aria-label", "Récompenses reçues");
     fenetre.innerHTML = `
       <div class="recompenses-eclat" aria-hidden="true"></div>
-      <h2>Récompenses reçues !</h2>
+      <h2>${tournois.length ? "Victoire !" : "Récompenses reçues !"}</h2>
+      ${tournois.map(t => `
+        <div class="recompenses-tournoi">
+          <p class="recompenses-tournoi-titre">🏆 Tu remportes le tournoi « ${echapper(t.nom)} » !</p>
+          ${PRIX_TOURNOIS[t.recompense?.type] ? `<p>Tu gagnes ${PRIX_TOURNOIS[t.recompense.type]}${t.recompense.texte ? ` : ${echapper(t.recompense.texte)}` : ""}. À récupérer auprès de l'organisateur.</p>` : ""}
+          <a href="/tournoi?id=${encodeURIComponent(t.id)}">Voir le tournoi</a>
+        </div>`).join("")}
       ${total ? `
         <p class="recompenses-total">+${total} <img src="${ICONES}rikoyn.webp" alt=""> <span>Rikoyns</span></p>
         <ul class="recompenses-lignes">${Object.entries(koyns).map(([raison, gain]) => `
@@ -292,6 +306,24 @@
     fenetre.showModal();
   }
 
+  // Bandeau « match de tournoi lancé » (cf. matchTournoiEnCours dans
+  // api/auth/me.js), masquable pour cette room.
+  function afficherMatchTournoi({ room_id: roomId, equipe, nom }) {
+    const cle = `bandeau-tournoi-${roomId}`;
+    try { if (sessionStorage.getItem(cle)) return; } catch { /* stockage bloqué */ }
+    const bandeau = document.createElement("div");
+    bandeau.className = "bandeau-match-tournoi";
+    bandeau.setAttribute("role", "status");
+    bandeau.innerHTML = `<span>🏆 Ton match de tournoi${nom ? ` « ${echapper(nom)} »` : ""} est lancé !</span>
+      <a class="recompenses-btn" href="/${equipe ? "equipe" : "match"}?room=${encodeURIComponent(roomId)}">Rejoindre</a>
+      <button type="button" class="fermer-bandeau-tournoi" aria-label="Masquer">×</button>`;
+    bandeau.querySelector("button").addEventListener("click", () => {
+      try { sessionStorage.setItem(cle, "1"); } catch { /* stockage bloqué */ }
+      bandeau.remove();
+    });
+    document.body.appendChild(bandeau);
+  }
+
   async function demarrer() {
     let zone = document.getElementById("zone-compte");
     if (!zone) {
@@ -313,12 +345,13 @@
 
       if (reponse.ok) {
         connecte = true;
-        const { user, maintenant, nouveautes } = await reponse.json();
+        const { user, maintenant, nouveautes, match_tournoi: matchTournoi } = await reponse.json();
         const nom = user.global_name || user.username || "Mon compte";
         // Autre compte que celui de la date envoyée : date de ce compte (ou
         // rien) à la prochaine visite, pas de fenêtre cette fois.
         try { localStorage.setItem("recompenses-joueur", user.id); } catch { /* stockage bloqué */ }
         if (idPrecedent === user.id || !lireDerniereVisite(user.id)) noterVisite(user.id, maintenant);
+        if (matchTournoi) afficherMatchTournoi(matchTournoi);
         if (nouveautes && idPrecedent === user.id) {
           afficherRecompenses(nouveautes, async () => {
             try {

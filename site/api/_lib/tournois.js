@@ -752,8 +752,28 @@ async function lancerMatch(id, user, matchId = null) {
 // tempsArbitre et equipe.js) : vainqueur (participant), trophées (qualifs),
 // id du match archivé. Bo3 : match terminé à 2 manches gagnées.
 // -> { termine, score } pour la room.
+// Finale jouée : tournoi terminé. -> joueurs vainqueurs (discord ids), ou
+// null.
+function verifierFin(tournoi) {
+  const finale = tournoi.arbre.tours[tournoi.arbre.tours.length - 1][0];
+  if (finale.statut !== "termine") return null;
+  tournoi.vainqueur = finale.vainqueur;
+  tournoi.statut = "termine";
+  return joueursDe(tournoi, finale.vainqueur);
+}
+
+// Vainqueurs prévenus (fenêtre des récompenses, cf. lireNouveautes dans
+// _lib/koyns.js).
+async function annoncerVictoire(id, gagnants) {
+  if (!gagnants?.length) return;
+  const { noterVictoireTournoi } = require("./koyns");
+  await noterVictoireTournoi(gagnants, id).catch(e => console.error("Erreur annonce du vainqueur :", e));
+}
+
 async function enregistrerManche(infos, { vainqueur, trophees = 0, idMatch = null }) {
-  return modifierTournoi(infos.id, tournoi => {
+  let gagnants = null;
+  const resultat = await modifierTournoi(infos.id, tournoi => {
+    gagnants = null;
     const trouve = trouverMatch(tournoi, infos.match);
     if (!trouve) throw erreur(404, "Match du tournoi introuvable.");
     const { match, phase } = trouve;
@@ -767,16 +787,14 @@ async function enregistrerManche(infos, { vainqueur, trophees = 0, idMatch = nul
       match.trophees = match.manches.reduce((total, manche) => total + (manche.vainqueur === vainqueur ? manche.trophees : -manche.trophees), 0);
       if (phase === "arbre") {
         propager(tournoi.arbre, match);
-        const finale = tournoi.arbre.tours[tournoi.arbre.tours.length - 1][0];
-        if (finale.statut === "termine") {
-          tournoi.vainqueur = finale.vainqueur;
-          tournoi.statut = "termine";
-        }
+        gagnants = verifierFin(tournoi);
       }
       return { termine: true, score };
     }
     return { termine: false, score };
   });
+  await annoncerVictoire(infos.id, gagnants);
+  return resultat;
 }
 
 // Manche annulée ou room abandonnée : match remis à jouer (gestionnaire).
@@ -794,7 +812,9 @@ async function relancerMatch(id, user, matchId) {
 // Forfait : le gestionnaire désigne le vainqueur d'un match pas terminé
 // (adversaire absent...). Qualifications : trophées maximum.
 async function declarerForfait(id, user, matchId, vainqueur) {
-  return modifierTournoi(id, tournoi => {
+  let gagnants = null;
+  await modifierTournoi(id, tournoi => {
+    gagnants = null;
     if (!estGestionnaire(tournoi, user.id)) throw erreur(403, "Seul le créateur du tournoi déclare un forfait.");
     const trouve = trouverMatch(tournoi, matchId);
     if (!trouve) throw erreur(404, "Match introuvable.");
@@ -810,13 +830,10 @@ async function declarerForfait(id, user, matchId, vainqueur) {
     match.room_id = null;
     if (phase === "arbre") {
       propager(tournoi.arbre, match);
-      const finale = tournoi.arbre.tours[tournoi.arbre.tours.length - 1][0];
-      if (finale.statut === "termine") {
-        tournoi.vainqueur = finale.vainqueur;
-        tournoi.statut = "termine";
-      }
+      gagnants = verifierFin(tournoi);
     }
   });
+  await annoncerVictoire(id, gagnants);
 }
 
 // Trophées d'une manche de qualification (même calcul qu'en classé).
@@ -850,7 +867,9 @@ function idsCites(tournoi) {
 
 function resume(tournoi) {
   const { inscrits, equipes, qualifs, arbre, ...reste } = tournoi;
-  return { ...reste, nb_participants: nbParticipants(tournoi) };
+  // Vainqueur : nom de l'équipe (en équipe), sinon son id (cf. joueurs).
+  const equipeGagnante = tournoi.format === "equipe" ? equipes.find(e => e.id === tournoi.vainqueur) : null;
+  return { ...reste, nb_participants: nbParticipants(tournoi), ...(equipeGagnante ? { vainqueur_nom: equipeGagnante.nom } : {}) };
 }
 
 async function vueTournoi(tournoi, user) {
@@ -887,7 +906,7 @@ async function routeTournoi(action, req, res, user) {
         .sort((a, b) => Date.parse(b.debut) - Date.parse(a.debut));
       return res.status(200).json({
         tournois,
-        createurs: await lireJoueurs(tournois.map(t => t.createur)),
+        createurs: await lireJoueurs(tournois.flatMap(t => [t.createur, t.format === "1v1" ? t.vainqueur : null])),
         peut_creer: user ? await peutCreerTournoi(user.id) : false
       });
     }
