@@ -691,7 +691,9 @@ function calculerPointsBox(profilData, boxChoisie, personnages) {
   const meilleurParGroupe = {};
 
   const liste = getPersonnagesBox(profilData, personnages, boxChoisie);
-  const presents = idsDraftBox(liste);
+  // Vitrines (modes en équipe, co-op : les alliés apportent les persos qui
+  // manquent) : pas de malus de synergie (cf. malusSynergie).
+  const presents = ["vitrine", "vitrine2"].includes(boxChoisie) ? null : idsDraftBox(liste);
   liste.forEach(({ personnage, valeur, niveau }) => {
     const points = pointsPersonnageBox(personnage, valeur, niveau, presents);
     if (personnage.groupe) {

@@ -159,6 +159,8 @@ let synergiesPersos = {};
 
 // Ids de la draft (Voyageur : "traveler") des persos possédés d'une box.
 function idsDraftCollection(collectionPersos, personnages, box) {
+  // Vitrines (co-op) : pas de malus de synergie (cf. malusSynergie).
+  if (box === "vitrine" || box === "vitrine2") return null;
   const ids = new Set();
   personnages.forEach(p => {
     const constellation = collectionPersos?.full?.[p.id];

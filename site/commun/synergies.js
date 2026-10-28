@@ -26,10 +26,11 @@ function lireSynergies(brutes) {
 }
 
 // Points retirés à ce perso dans une box (presents : Set des ids de la
-// draft des persos de la box).
+// draft des persos de la box ; null : pas de malus, ex. les vitrines des
+// modes en équipe, où les alliés apportent les persos qui manquent).
 function malusSynergie(synergies, perso, presents) {
   const synergie = synergies?.[perso?.id];
-  if (!synergie) return 0;
+  if (!synergie || !presents) return 0;
   const absents = synergie.persos.filter(id => !presents.has(id)).length;
   return Math.round(synergie.malus * absents / synergie.persos.length);
 }
