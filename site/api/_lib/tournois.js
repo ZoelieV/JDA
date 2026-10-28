@@ -21,7 +21,9 @@
 //                  trophées comme en classé (cf. calculerTrophees) ; les
 //                  arbre_max meilleurs vont dans l'arbre.
 //   arbre        : élimination directe, 1 match à la fois, lancé par le
-//                  gestionnaire (« Prochain match »), bo1 ou bo3 ; premier
+//                  gestionnaire (« Prochain match »), ou en parallèle si
+//                  arbre_parallele (lancés par les joueurs du match ou un
+//                  arbitre, comme les qualifs), bo1 ou bo3 ; premier
 //                  tour tiré au hasard, chaque paire équilibrable en full
 //                  box (1v1) ; le gestionnaire peut échanger des places
 //                  avant le premier match.
@@ -201,6 +203,8 @@ function lireConfig(brut) {
       // finale_bo5, sinon comme le reste de l'arbre).
       finale_affrontement: AFFRONTEMENTS_FINALE.includes(brut?.finale_affrontement) ? brut.finale_affrontement
         : brut?.finale_bo5 === true ? "bo5" : (AFFRONTEMENTS.includes(brut?.affrontement) ? brut.affrontement : "bo1"),
+      // Phase finale : matchs en parallèle (sinon un à la fois).
+      arbre_parallele: brut?.arbre_parallele === true,
       chronos,
       recompense: { type: recompense, texte: texte(brut?.recompense?.texte, LONGUEUR_RECOMPENSE) },
       max_participants: entier(brut?.max_participants, 2, MAX_PARTICIPANTS, 16),
@@ -306,7 +310,7 @@ async function modifierConfig(id, brut, user) {
       }
       Object.assign(tournoi, config);
     } else {
-      Object.assign(tournoi, { nom: config.nom, description: config.description, recompense: config.recompense, fin: config.fin });
+      Object.assign(tournoi, { nom: config.nom, description: config.description, recompense: config.recompense, fin: config.fin, arbre_parallele: config.arbre_parallele });
     }
   });
 }
@@ -828,7 +832,9 @@ async function creerRoomMatch(roomId, tournoi, match, phase) {
 }
 
 // Lancement d'un match : arbre = gestionnaire (« Prochain match », ou un
-// match précis) ; qualifications = un des joueurs du match ou un arbitre.
+// match précis), un seul à la fois ; arbre en parallèle et qualifications
+// = un des joueurs du match ou un arbitre (gestionnaire : aussi « Prochain
+// match »).
 async function lancerMatch(id, user, matchId = null) {
   const lecture = await lireTournoi(id);
   if (!lecture) throw erreur(404, "Tournoi introuvable");
@@ -836,9 +842,18 @@ async function lancerMatch(id, user, matchId = null) {
   avancerSelonDates(tournoi);
   let trouve;
   if (tournoi.statut === "arbre") {
-    if (!estGestionnaire(tournoi, user.id)) throw erreur(403, "Seul le créateur du tournoi lance les matchs de l'arbre.");
-    if (tournoi.arbre.tours.flat().some(match => match.statut === "en_cours")) throw erreur(409, "Un match est déjà en cours : termine-le d'abord.");
-    const match = matchId ? trouverMatch(tournoi, matchId)?.match : prochainMatchArbre(tournoi);
+    const trouveId = matchId ? trouverMatch(tournoi, matchId) : null;
+    if (trouveId && trouveId.phase !== "arbre") throw erreur(404, "Match introuvable.");
+    const match = matchId ? trouveId?.match : prochainMatchArbre(tournoi);
+    if (tournoi.arbre_parallele) {
+      const joue = !!match && [match.a, match.b].some(p => joueursDe(tournoi, p).includes(user.id));
+      if (!(matchId ? joue || estArbitre(tournoi, user.id) : estGestionnaire(tournoi, user.id))) {
+        throw erreur(403, "Seuls les joueurs du match ou un arbitre le lancent.");
+      }
+    } else {
+      if (!estGestionnaire(tournoi, user.id)) throw erreur(403, "Seul le créateur du tournoi lance les matchs de l'arbre.");
+      if (tournoi.arbre.tours.flat().some(m => m.statut === "en_cours")) throw erreur(409, "Un match est déjà en cours : termine-le d'abord.");
+    }
     if (!match || match.statut !== "pret") throw erreur(409, "Aucun match prêt à jouer.");
     trouve = { match, phase: "arbre" };
   } else if (tournoi.statut === "qualifs") {

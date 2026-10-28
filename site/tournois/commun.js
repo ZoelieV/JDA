@@ -116,7 +116,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
   fenetre.innerHTML = `
     <h2>${id ? "Modifier le tournoi" : "Créer un tournoi"}</h2>
     <form class="formulaire-tournoi" novalidate>
-      ${verrouille ? `<p class="aide">Inscriptions fermées : seuls le nom, la description, la récompense et la fin se modifient encore.</p>` : ""}
+      ${verrouille ? `<p class="aide">Inscriptions fermées : seuls le nom, la description, la récompense, la fin et les matchs en parallèle se modifient encore.</p>` : ""}
       <fieldset>
         <legend>Présentation</legend>
         <label class="large">Nom <input name="nom" maxlength="60" required value="${echapperTournoi(c.nom || "")}"></label>
@@ -181,6 +181,10 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
         <label${verrouille ? " hidden" : ""}>Fin des inscriptions <input name="verrouillage" type="datetime-local" value="${versChampDateTournoi(c.verrouillage)}"></label>
         <label${verrouille ? " hidden" : ""}>Début <input name="debut" type="datetime-local" required value="${versChampDateTournoi(c.debut)}"></label>
         <label>Fin <span class="aide">(si plusieurs jours)</span> <input name="fin" type="datetime-local" value="${versChampDateTournoi(c.fin)}"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Phase finale</legend>
+        <label class="ligne large"><input name="arbre_parallele" type="checkbox"${c.arbre_parallele ? " checked" : ""}> Matchs en parallèle <span class="aide">(lancés par les joueurs du match ou un arbitre ; sinon un match à la fois, lancé par toi)</span></label>
       </fieldset>
       <fieldset${verrouille ? " disabled" : ""}>
         <legend>Chronos de la draft</legend>
@@ -290,6 +294,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
       box: champ("box").value,
       affrontement: champ("affrontement").value,
       finale_affrontement: champ("finale_affrontement").value,
+      arbre_parallele: champ("arbre_parallele").checked,
       max_participants: Number(champ("max_participants").value),
       arbre_max: Number(champ("arbre_max").value),
       qualif_matchs: Number(champ("qualif_matchs").value),

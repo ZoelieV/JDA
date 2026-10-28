@@ -75,7 +75,7 @@ function rendre() {
     ...(tournoi.fin ? [["Fin", dateTournoi(tournoi.fin)]] : []),
     ["Fin des inscriptions", dateTournoi(tournoi.verrouillage)],
     ["Participants", `${tournoi.format === "equipe" ? tournoi.equipes.length : tournoi.inscrits.length} / ${tournoi.max_participants} ${tournoi.format === "equipe" ? "équipes" : "joueurs"}`],
-    ["Phase finale", `${TAILLES_ARBRE_TOURNOI[tournoi.arbre_max] || tournoi.arbre_max} au plus`],
+    ["Phase finale", `${TAILLES_ARBRE_TOURNOI[tournoi.arbre_max] || tournoi.arbre_max} au plus, ${tournoi.arbre_parallele ? "matchs en parallèle" : "un match à la fois"}`],
     ...(tournoi.max_participants > tournoi.arbre_max ? [["Qualifications", texteQualifs(tournoi)]] : []),
     ["Affrontements", `${tournoi.affrontement === "bo3" ? "Best of 3" : "Un seul match"}, finale en ${NOMS_AFFRONTEMENTS[finaleTournoi(tournoi)] || "un seul match"}`],
     ...(tournoi.format === "1v1" ? [["Box", tournoi.box === "full" ? "Full box imposée" : "Au choix (full / opti)"]] : []),
@@ -268,7 +268,8 @@ function rendreArbre() {
         };
         let actions = "";
         if (match.statut === "en_cours") actions += `<a class="bouton-tournoi petit principal" href="${lienRoom(match.room_id)}">${estMoi(match.a) || estMoi(match.b) ? "Rejoindre" : "Regarder"}</a>`;
-        if (moi?.gestionnaire && tournoi.statut === "arbre" && match.statut === "pret") actions += `<button type="button" class="bouton-tournoi petit" data-lancer="${match.id}">Lancer ce match</button>`;
+        const peutLancer = tournoi.arbre_parallele ? estMoi(match.a) || estMoi(match.b) || moi?.arbitre : moi?.gestionnaire;
+        if (peutLancer && tournoi.statut === "arbre" && match.statut === "pret") actions += `<button type="button" class="bouton-tournoi petit${tournoi.arbre_parallele ? " principal" : ""}" data-lancer="${match.id}">Lancer ce match</button>`;
         if (moi?.gestionnaire && tournoi.statut === "arbre" && ["pret", "en_cours"].includes(match.statut)) actions += boutonsGestionMatch(match);
         return `
           <div class="match-arbre ${match.statut}">
@@ -295,10 +296,10 @@ function rendreGestion() {
   }
   if (tournoi.statut === "qualifs") boutons.push(`<button type="button" class="bouton-tournoi principal" data-gestion="terminer_qualifs">Terminer les qualifications</button>`);
   if (tournoi.statut === "arbre") {
-    const enCours = tournoi.arbre.tours.flat().find(m => m.statut === "en_cours");
-    boutons.push(enCours
-      ? `<a class="bouton-tournoi principal" href="${lienRoom(enCours.room_id)}">▶ Match en cours</a>`
-      : `<button type="button" class="bouton-tournoi principal" data-gestion="lancer"${tournoi.arbre.tours.flat().some(m => m.statut === "pret") ? "" : " disabled"}>▶ Prochain match</button>`);
+    const enCours = tournoi.arbre.tours.flat().filter(m => m.statut === "en_cours");
+    // En parallèle : « Prochain match » même avec des matchs en cours.
+    if (enCours.length && !tournoi.arbre_parallele) boutons.push(`<a class="bouton-tournoi principal" href="${lienRoom(enCours[0].room_id)}">▶ Match en cours</a>`);
+    else boutons.push(`<button type="button" class="bouton-tournoi principal" data-gestion="lancer"${tournoi.arbre.tours.flat().some(m => m.statut === "pret") ? "" : " disabled"}>▶ Prochain match</button>`);
   }
   if (!["termine", "annule"].includes(tournoi.statut)) boutons.push(`<button type="button" class="bouton-tournoi danger" data-gestion="annuler">Annuler le tournoi</button>`);
   if (["inscriptions", "verrouille", "annule"].includes(tournoi.statut)) boutons.push(`<button type="button" class="bouton-tournoi danger" data-gestion="supprimer">Supprimer</button>`);
