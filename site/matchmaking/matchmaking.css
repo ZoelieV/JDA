@@ -257,6 +257,13 @@
   box-sizing: border-box;
 }
 
+/* Flèche ajoutée par le navigateur aux champs à suggestions (datalist) :
+   inutile, les suggestions s'affichent en tapant le pseudo. */
+.ent-joueur::-webkit-calendar-picker-indicator {
+  display: none !important;
+  opacity: 0;
+}
+
 /* Box personnalisée : persos de la full box du joueur, à cocher. */
 .ent-persos {
   display: grid;
