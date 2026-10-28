@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmétiques</title>
+  <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png">
+  <meta name="theme-color" content="#1e1e1e">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/commun/theme.css?v=rem5">
+  <link rel="stylesheet" href="/commun/entete.css?v=rem41">
+  <link id="styles-personnalisation" rel="stylesheet" href="/commun/personnalisation.css?v=20">
+  <link rel="stylesheet" href="/cosmetiques/cosmetiques.css?v=1">
+  <link rel="stylesheet" href="/commun/site.css?v=10">
+<script src="/commun/fond.js?v=16"></script>
+<script src="/commun/appli.js?v=1" defer></script>
+<script src="/commun/zoom.js?v=3"></script>
+<script src="/commun/compte.js?v=53" defer></script>
+</head>
+<body>
+  <a href="/" class="lien-accueil">Accueil</a>
+  <h1 class="titre-page">Cosmétiques</h1>
+
+  <!-- Tirages de cosmétiques (cf. cosmetiques/cosmetiques.js) ; achats et
+       choix des cosmétiques : fenêtre Personnalisation. -->
+  <section class="panneau-cosmetiques">
+    <div class="entete-cosmetiques">
+      <h2>Tirage</h2>
+      <span id="solde-cosmetiques" class="solde-cosmetiques" title="Rikoyns : gagnés en jouant (5 par match)"></span>
+    </div>
+    <div id="tirage-cosmetiques"><p class="perso-note">Chargement…</p></div>
+    <p id="etat-cosmetiques" class="etat-cosmetiques"></p>
+    <p class="perso-note lien-personnalisation">Pour acheter ou choisir tes cosmétiques : <button type="button" id="ouvrir-personnalisation" class="bouton-lien">Personnalisation</button>.</p>
+  </section>
+
+  <script src="/commun/variantes.js?v=4"></script>
+  <script src="/commun/koyns.js?v=12"></script>
+  <script src="/commun/personnalisation.js?v=35"></script>
+  <script src="/cosmetiques/cosmetiques.js?v=1"></script>
+  <script src="/commun/site.js?v=15"></script>
+</body>
+</html>

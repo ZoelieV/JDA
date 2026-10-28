@@ -50,9 +50,11 @@
   // 1er clic).
   let promessePersonnalisation = null;
   function chargerPersonnalisation() {
+    // Déjà chargée par la page (page Cosmétiques).
+    if (window.Personnalisation) return Promise.resolve();
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=34";
+      script.src = "/commun/personnalisation.js?v=35";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;
