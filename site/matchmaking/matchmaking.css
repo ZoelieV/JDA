@@ -195,7 +195,8 @@
 
 .ligne-entrainement select,
 .selecteur-box select,
-.selecteur-box .ent-joueur {
+.selecteur-box .ent-joueur,
+.ent-vitrine .ent-joueur {
   margin-left: 0.375rem;
   padding: 0.25rem 0.5rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -250,7 +251,8 @@
 }
 
 /* Joueur (entraînement) : champ de recherche avec suggestions. */
-.selecteur-box .ent-joueur {
+.selecteur-box .ent-joueur,
+.ent-vitrine .ent-joueur {
   width: min(18rem, 100%);
   box-sizing: border-box;
 }
@@ -609,5 +611,66 @@
 
   .detail-match .mode-match {
     min-height: 3.75rem;
+  }
+}
+
+/* ---- Entraînement en équipe : vitrines (cf. rendreVitrinesEntrainement) ---- */
+.aide-vitrines {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 0.875rem;
+}
+
+.ent-vitrines {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ent-colonne-vitrines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.ent-vitrine {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border: 1px solid var(--bordure);
+  border-radius: 0.625rem;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.ent-vitrine.ouverte {
+  border-color: var(--accent-bordure);
+}
+
+.ent-vitrine-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ent-vitrine-entete .ent-joueur {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.ent-vitrine-compte {
+  font-size: 0.8125rem;
+  color: #7fe39f;
+}
+
+.ent-vitrine-compte.insuffisant {
+  color: #ffb36b;
+}
+
+@media (max-width: 800px) {
+  .ent-vitrines {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

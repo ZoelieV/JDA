@@ -31,7 +31,18 @@ async function creerMatch(corps) {
     // Refus avec un message du serveur (mode classique sans théâtre, box
     // d'entraînement trop petite...).
     if (reponse.status === 409 || reponse.status === 400) {
-      const { error, room_id: matchEnCours } = await reponse.json().catch(() => ({}));
+      const { error, room_id: matchEnCours, vitrines_non_conformes: nonConformes } = await reponse.json().catch(() => ({}));
+      // Entraînement en équipe : vitrines hors règles, lancé quand même si
+      // le lanceur confirme (comme une box non équilibrable).
+      if (nonConformes?.length) {
+        const detail = nonConformes.map(v => `• ${v.libelle} (${v.nom}) : ${v.erreurs.join(", ")}`).join("\n");
+        if (confirm(`Vitrines non conformes aux règles des modes en équipe :\n${detail}\n\nLancer l'entraînement quand même ?`)) {
+          creationEnCours = false;
+          ouverture = true;
+          return creerMatch({ ...corps, config: { ...corps.config, forcer: true } });
+        }
+        return;
+      }
       // Match classé en cours (cf. matchClasseEnCours, api/_lib/room.js) :
       // retour à ce match, ou abandon puis cette demande relancée
       // (proposerAbandonClasse ne revient qu'après un abandon).
@@ -161,6 +172,10 @@ const entrainement = {
   profils: new Map(), // discord_id -> données du profil (box)
   personnages: [],
   armes: [],
+  // Entraînement en équipe : 2 × taille vitrines (équipe 1 puis équipe 2),
+  // { proprietaire, persos: Set, armes: Set, ouverte }.
+  taille: 1,
+  vitrines: [],
   cotes: {
     // armes : copies cochées ("idArme", "idArme#2"... comme weapons.full).
     moi: { proprietaire: null, box: "full", persos: new Set(), armes: new Set() },
@@ -371,6 +386,149 @@ async function rendreSelecteurBox(cote) {
   majCompteurArmes();
 }
 
+// ---- Entraînement en équipe : vitrines construites par le lanceur ----
+const MAX_VITRINE_ENTRAINEMENT = 12;
+
+// Choix des joueurs (et box fictives) : libellés uniques.
+function choixProprietaires() {
+  const choix = [
+    ...entrainement.comptes.map(compte => ({ id: compte.discord_id, libelle: compte.discord_id === entrainement.moi.id ? `${compte.nom} (moi)` : compte.nom })),
+    ...entrainement.fictives.map(box => ({ id: box.id, libelle: `${box.nom} (box fictive)` }))
+  ];
+  const vus = new Map();
+  choix.forEach(c => {
+    const n = (vus.get(c.libelle) || 0) + 1;
+    vus.set(c.libelle, n);
+    if (n > 1) c.libelle = `${c.libelle} (${n})`;
+  });
+  return choix;
+}
+
+function choisirFormat(taille) {
+  entrainement.taille = taille;
+  document.querySelectorAll("#ent-format .choix-btn").forEach(b => b.classList.toggle("active", Number(b.dataset.valeur) === taille));
+  document.querySelectorAll("#detail-entrainement .ent-1v1").forEach(el => el.classList.toggle("cache", taille > 1));
+  document.querySelectorAll("#detail-entrainement .ent-equipe").forEach(el => el.classList.toggle("cache", taille === 1));
+  if (taille === 1) return;
+  // Vitrines gardées si on change de taille (complétées ou retirées).
+  const n = taille * 2;
+  while (entrainement.vitrines.length < n) {
+    entrainement.vitrines.push({ proprietaire: entrainement.moi.id, persos: new Set(), armes: new Set(), ouverte: false });
+  }
+  entrainement.vitrines.length = n;
+  rendreVitrinesEntrainement();
+}
+
+async function rendreVitrinesEntrainement() {
+  const zone = document.getElementById("ent-vitrines");
+  const taille = entrainement.taille;
+  const choix = choixProprietaires();
+  const liste = document.getElementById("ent-joueurs-vitrines");
+  if (!liste.childElementCount) {
+    choix.forEach(c => {
+      const option = document.createElement("option");
+      option.value = c.libelle;
+      liste.appendChild(option);
+    });
+  }
+  const colonnes = [0, 1].map(equipe => {
+    const colonne = document.createElement("div");
+    colonne.className = "ent-colonne-vitrines";
+    colonne.innerHTML = `<h4 class="ent-sous-titre">Équipe ${equipe + 1}</h4>`;
+    return colonne;
+  });
+  for (const [i, vitrine] of entrainement.vitrines.entries()) {
+    colonnes[i < taille ? 0 : 1].appendChild(await carteVitrineEntrainement(vitrine, i, choix));
+  }
+  zone.replaceChildren(...colonnes);
+}
+
+// Une vitrine : joueur, nombres choisis, persos et armes (dépliable).
+async function carteVitrineEntrainement(vitrine, index, choix) {
+  const carte = document.createElement("div");
+  carte.className = `ent-vitrine${vitrine.ouverte ? " ouverte" : ""}`;
+  const profil = await profilJoueur(vitrine.proprietaire);
+  const possedes = personnagesPossedes(profil);
+  const copies = armesPossedees(profil);
+  const nbPersos = () => new Set(possedes.filter(p => vitrine.persos.has(p.id)).map(p => p.groupe || p.id)).size;
+  carte.innerHTML = `
+    <div class="ent-vitrine-entete">
+      <strong>Joueur ${(index % entrainement.taille) + 1}</strong>
+      <input type="text" class="ent-joueur" list="ent-joueurs-vitrines" autocomplete="off" placeholder="Rechercher un joueur…">
+      <span class="ent-vitrine-compte"></span>
+      <button type="button" class="choix-btn ent-vitrine-ouvrir">${vitrine.ouverte ? "Fermer" : "Choisir les persos"}</button>
+    </div>
+    <div class="ent-vitrine-contenu${vitrine.ouverte ? "" : " cache"}">
+      <h4 class="ent-sous-titre">Personnages</h4>
+      <div class="ent-persos"></div>
+      <h4 class="ent-sous-titre">Armes</h4>
+      <div class="ent-persos ent-armes"></div>
+    </div>`;
+  const majCompte = () => {
+    const n = nbPersos();
+    const compte = carte.querySelector(".ent-vitrine-compte");
+    compte.textContent = `${n} / ${MAX_VITRINE_ENTRAINEMENT} persos · ${vitrine.armes.size} / ${MAX_VITRINE_ENTRAINEMENT} armes`;
+    compte.classList.toggle("insuffisant", n !== MAX_VITRINE_ENTRAINEMENT);
+  };
+  majCompte();
+
+  const champ = carte.querySelector(".ent-joueur");
+  const libelleActuel = choix.find(c => c.id === vitrine.proprietaire)?.libelle || "";
+  champ.value = libelleActuel;
+  champ.addEventListener("focus", () => champ.select());
+  champ.addEventListener("change", () => {
+    const trouve = choix.find(c => c.libelle.toLowerCase() === champ.value.trim().toLowerCase());
+    if (!trouve || trouve.id === vitrine.proprietaire) {
+      champ.value = libelleActuel;
+      return;
+    }
+    vitrine.proprietaire = trouve.id;
+    vitrine.persos = new Set();
+    vitrine.armes = new Set();
+    vitrine.ouverte = true;
+    rendreVitrinesEntrainement();
+  });
+  carte.querySelector(".ent-vitrine-ouvrir").addEventListener("click", () => {
+    vitrine.ouverte = !vitrine.ouverte;
+    rendreVitrinesEntrainement();
+  });
+  if (!vitrine.ouverte) return carte;
+
+  // Persos (12 au plus) et copies d'armes (12 au plus) de la full box.
+  const constellations = profil?.characters?.full || {};
+  carte.querySelector(".ent-persos").replaceChildren(...possedes.map(perso => {
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = `ent-perso ${classeFondRarete(perso.rarete)}${vitrine.persos.has(perso.id) ? " coche" : ""}`;
+    bouton.title = `${perso.nom} C${constellations[perso.id]}`;
+    bouton.innerHTML = `<img src="../DB/${perso.image}" alt="" loading="lazy"><span class="ent-badge">C${constellations[perso.id]}</span>`;
+    bouton.addEventListener("click", () => {
+      if (vitrine.persos.has(perso.id)) vitrine.persos.delete(perso.id);
+      else if (nbPersos() >= MAX_VITRINE_ENTRAINEMENT && !(perso.groupe && possedes.some(p => p.groupe === perso.groupe && vitrine.persos.has(p.id)))) return;
+      else vitrine.persos.add(perso.id);
+      bouton.classList.toggle("coche", vitrine.persos.has(perso.id));
+      majCompte();
+    });
+    return bouton;
+  }));
+  carte.querySelector(".ent-armes").replaceChildren(...copies.map(({ instance, arme, raffinement }) => {
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = `ent-perso ${classeFondRarete(arme.rarete)}${vitrine.armes.has(instance) ? " coche" : ""}`;
+    bouton.title = `${arme.nom} R${raffinement + 1}`;
+    bouton.innerHTML = `<img src="../DB/${arme.image}" alt="" loading="lazy"><span class="ent-badge">R${raffinement + 1}</span>`;
+    bouton.addEventListener("click", () => {
+      if (vitrine.armes.has(instance)) vitrine.armes.delete(instance);
+      else if (vitrine.armes.size >= MAX_VITRINE_ENTRAINEMENT) return;
+      else vitrine.armes.add(instance);
+      bouton.classList.toggle("coche", vitrine.armes.has(instance));
+      majCompte();
+    });
+    return bouton;
+  }));
+  return carte;
+}
+
 async function initialiserEntrainement() {
   const reponseMoi = await fetch("/api/auth/me", { credentials: "include" });
   if (!reponseMoi.ok) {
@@ -400,6 +558,7 @@ async function initialiserEntrainement() {
     document.querySelectorAll("#ent-mode .choix-btn").forEach(b => b.classList.toggle("active", b === btn));
   }));
   document.getElementById("lancer-entrainement").addEventListener("click", lancerEntrainement);
+  document.querySelectorAll("#ent-format .choix-btn").forEach(btn => btn.addEventListener("click", () => choisirFormat(Number(btn.dataset.valeur))));
 
   await Promise.all([rendreSelecteurBox("moi"), rendreSelecteurBox("adverse")]);
   entrainement.pret = true;
@@ -407,6 +566,18 @@ async function initialiserEntrainement() {
 }
 
 function lancerEntrainement() {
+  if (entrainement.taille > 1) {
+    creerMatch({
+      type: "entrainement",
+      config: {
+        equipe: true,
+        taille: entrainement.taille,
+        vitrines: entrainement.vitrines.map(v => ({ proprietaire: v.proprietaire, persos: [...v.persos], armes: [...v.armes] })),
+        boss_id: document.getElementById("ent-boss").value || null
+      }
+    });
+    return;
+  }
   const cote = c => {
     const etat = entrainement.cotes[c];
     return { proprietaire: etat.proprietaire, box: etat.box, ...(etat.box === "custom" ? { persos: [...etat.persos], armes: [...etat.armes] } : {}) };

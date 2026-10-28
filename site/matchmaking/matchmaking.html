@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/commun/entete.css?v=rem41">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/namecards.css?v=3">
-<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=21">
+<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=22">
   <link rel="stylesheet" href="/commun/site.css?v=10">
 <script src="/commun/fond.js?v=16"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -159,9 +159,22 @@
     <h2>Entraînement <img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt=""></h2>
     <p>Choisis la draft, ta box et celle d'en face (les tiennes, celles des autres joueurs ou une box
       personnalisée), le boss et le J1. Seul, tu joues les deux rôles ; partage le lien pour te faire aider.
+      En équipe (2v2 à 4v4) : tu construis les vitrines des 2 équipes et tu joues les deux.
       Visible seulement par toi dans l'historique.</p>
 
+    <!-- Format : 1v1 (box) ou en équipe (vitrines construites par le
+         lanceur, cf. rendreVitrinesEntrainement). -->
     <div class="etape-entrainement">
+      <h3>Format</h3>
+      <div class="choix-boutons" id="ent-format">
+        <button type="button" class="choix-btn active" data-valeur="1">1v1<span>une box contre une box</span></button>
+        <button type="button" class="choix-btn" data-valeur="2">2v2<span>vitrines, co-op</span></button>
+        <button type="button" class="choix-btn" data-valeur="3">3v3<span>vitrines, co-op</span></button>
+        <button type="button" class="choix-btn" data-valeur="4">4v4<span>vitrines, co-op</span></button>
+      </div>
+    </div>
+
+    <div class="etape-entrainement ent-1v1">
       <h3>1. Draft</h3>
       <label class="case-entrainement"><input type="checkbox" id="ent-classe"> Draft classée (chronos : analyse 2 min, bans d'équilibrage 15 s par ban (1 min minimum, 5 min maximum par phase), 30 s par pick / ban de chaque joueur)</label>
       <div class="choix-boutons" id="ent-mode">
@@ -174,21 +187,30 @@
       </div>
     </div>
 
-    <div class="etape-entrainement">
+    <div class="etape-entrainement ent-1v1">
       <h3>2. Ta box</h3>
       <div class="selecteur-box" data-cote="moi"></div>
     </div>
 
-    <div class="etape-entrainement">
+    <div class="etape-entrainement ent-1v1">
       <h3>3. Box adverse</h3>
       <div class="selecteur-box" data-cote="adverse"></div>
     </div>
 
+    <!-- En équipe : draft de la carpe ; une vitrine par joueur, persos et
+         armes pris dans la full box d'un joueur (ou d'une box fictive). -->
+    <div class="etape-entrainement ent-equipe cache">
+      <h3>1. Vitrines</h3>
+      <p class="aide-vitrines">Draft de la carpe, comme le mode En équipe. Pour chaque joueur : choisis une box, puis ses persos et ses armes (règles des vitrines : 12 persos, 1400 points au plus, 6 constellations de 5★ limités dont 2 persos C2+ au plus ; vérifiées au lancement, tu pourras lancer quand même). Tu joues les 2 équipes.</p>
+      <datalist id="ent-joueurs-vitrines"></datalist>
+      <div id="ent-vitrines" class="ent-vitrines"></div>
+    </div>
+
     <div class="etape-entrainement">
-      <h3>4. Boss et J1</h3>
+      <h3><span class="ent-1v1">4. Boss et J1</span><span class="ent-equipe cache">2. Boss</span></h3>
       <div class="ligne-entrainement">
         <label>Boss <select id="ent-boss"><option value="">Aléatoire</option></select></label>
-        <label>J1 (commence la draft)
+        <label class="ent-1v1">J1 (commence la draft)
           <select id="ent-premier">
             <option value="aleatoire">Aléatoire</option>
             <option value="moi">Ta box</option>
@@ -204,7 +226,7 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/synergies.js?v=2"></script>
   <script src="/commun/cartes.js?v=33"></script>
-  <script src="/matchmaking/matchmaking.js?v=35"></script>
+  <script src="/matchmaking/matchmaking.js?v=36"></script>
   <script src="/commun/site.js?v=12"></script>
 </body>
 </html>

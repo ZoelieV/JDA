@@ -37,9 +37,18 @@ function campDe(id) {
   return ROLES.find(role => draft.equipes?.[role]?.includes(id)) || null;
 }
 
-const monCamp = () => (moi && draft ? campDe(moi.id) : null);
-const suisChef = () => !!monCamp() && draft.chefs?.[monCamp()] === moi.id;
-const suisMembre = () => !!moi && !!draft?.membres?.includes(moi.id);
+// Entraînement en équipe : le lanceur joue les 2 équipes (chef de chacune),
+// pour celle dont c'est le tour (cf. campActif côté serveur).
+const estLanceur = () => !!moi && draft?.entrainement?.lanceur === moi.id;
+function campActif() {
+  if (draft.phase === "draft") return draft.sequence?.[draft.sequence_index]?.joueur || "j1";
+  if (draft.phase === "declaration") return ROLES.find(role => !draft[`declaration_${role}`]) || "j1";
+  if (draft.phase === "hotes") return ROLES.find(role => !draft.hotes?.[role]) || "j1";
+  return "j1";
+}
+const monCamp = () => (moi && draft ? (estLanceur() ? campActif() : campDe(moi.id)) : null);
+const suisChef = () => estLanceur() || (!!monCamp() && draft.chefs?.[monCamp()] === moi.id);
+const suisMembre = () => !!moi && (!!draft?.membres?.includes(moi.id) || estLanceur());
 
 async function appel(action, corps = null) {
   const reponse = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/${action}`, corps === null
@@ -110,10 +119,10 @@ function afficherPhase(id) {
 function rendre() {
   $("chargement").classList.add("cache");
   const mode = MODES[draft.taille] || "";
-  $("titre-equipe").textContent = `Match ${mode}`;
+  $("titre-equipe").textContent = draft.entrainement ? `Entraînement ${mode}` : draft.tournoi ? `Match de tournoi ${mode}` : `Match ${mode}`;
   const boss = draft.boss_impose && bossParId.get(draft.boss_impose);
   $("sous-titre-equipe").textContent = [
-    draft.formation === "choix" ? "Équipes au choix" : "Équipes aléatoires (équilibrées)",
+    draft.entrainement ? (estLanceur() ? "Tu joues les 2 équipes" : "Entraînement") : draft.formation === "choix" ? "Équipes au choix" : "Équipes aléatoires (équilibrées)",
     "Draft de la carpe",
     boss ? `Boss : ${boss.nom}` : null
   ].filter(Boolean).join(" · ");
@@ -237,13 +246,13 @@ function rendreHotes() {
           <li class="${eligibles.includes(id) || choisi === id ? "" : "non-eligible"}">
             ${htmlNom(id)}${badgesJoueur(id, role)}
             <span class="full-box" title="Full box">${draft.full_box?.[id] ?? "?"} pts</span>
-            ${peutChoisir && eligibles.includes(id) ? `<button type="button" class="btn-equipe petit" data-hote="${echapperHtml(id)}">Hôte</button>` : ""}
+            ${peutChoisir && eligibles.includes(id) ? `<button type="button" class="btn-equipe petit" data-hote="${echapperHtml(id)}" data-camp-hote="${role}">Hôte</button>` : ""}
           </li>`).join("")}</ul>
         <p class="aide-equipe">${choisi ? `Hôte : ${echapperHtml(nomJoueur(choisi))}` : "Le chef choisit l'hôte…"}</p>
       </div>`;
   }).join("");
   $("hotes-equipes").querySelectorAll("[data-hote]").forEach(bouton => {
-    bouton.addEventListener("click", () => agir("equipe_hote", { hote: bouton.dataset.hote }));
+    bouton.addEventListener("click", () => agir("equipe_hote", { hote: bouton.dataset.hote, camp: bouton.dataset.campHote }));
   });
 }
 
@@ -513,7 +522,7 @@ function rendreDeclaration() {
     select.addEventListener("change", () => { declarationSaisie[select.dataset.pick] = select.value; });
   });
   $("btn-declarer").addEventListener("click", async () => {
-    await agir("equipe_declarer", { attributions: declarationSaisie });
+    await agir("equipe_declarer", { attributions: declarationSaisie, camp: monCamp() });
     delete zone.dataset.modification;
     derniereCle = "";
     rendre();
@@ -540,7 +549,21 @@ function rendreTemps() {
 
   let contenu = `<p class="temps-equipes">${ROLES.map(role => `${NOMS_EQUIPES[role]} : <strong>${texteTemps(role)}</strong>`).join(" — ")}</p>`;
   // Tournoi : l'arbitre saisit les 2 temps (cf. routeTempsArbitre).
-  if (draft.tournoi && ["temps", "verification"].includes(draft.phase)) {
+  // Entraînement : le lanceur saisit les 2 temps (ou termine sans temps).
+  if (estLanceur() && ["temps", "verification"].includes(draft.phase)) {
+    contenu += `
+      <p><strong>Entraînement : temps des 2 équipes (facultatif)</strong></p>
+      ${ROLES.map(role => `
+        <div class="ligne-saisie-temps">
+          <span>${NOMS_EQUIPES[role]}</span>
+          <input id="arbitre-temps-${role}" type="text" placeholder="mm:ss" inputmode="decimal">
+          <label><input id="arbitre-abandon-${role}" type="checkbox"> Abandon</label>
+        </div>`).join("")}
+      <div class="boutons-verification">
+        <button type="button" class="btn-equipe principal" id="btn-temps-arbitre">Valider les temps</button>
+        <button type="button" class="btn-equipe secondaire" id="btn-sans-temps">Terminer sans temps</button>
+      </div>`;
+  } else if (draft.tournoi && ["temps", "verification"].includes(draft.phase)) {
     contenu += estArbitreTournoi() && !suisMembre() ? `
       <p><strong>Arbitre : saisis les 2 temps</strong></p>
       ${ROLES.map(role => `
@@ -568,7 +591,7 @@ function rendreTemps() {
         </div>`;
   }
   if (draft.phase === "termine") {
-    contenu += `<p class="ligne-resultat">${draft.vainqueur === "egalite" ? "Égalité" : `Victoire de l'${NOMS_EQUIPES[draft.vainqueur]?.toLowerCase() || "équipe"}`}</p>`;
+    contenu += `<p class="ligne-resultat">${!draft.vainqueur ? "Entraînement terminé" : draft.vainqueur === "egalite" ? "Égalité" : `Victoire de l'${NOMS_EQUIPES[draft.vainqueur]?.toLowerCase() || "équipe"}`}</p>`;
     // Rikoyns gagnés par le joueur connecté (cf. commun/koyns.js).
     contenu += htmlGainKoyns(draft.koyns?.[moi?.id]);
   }
@@ -602,6 +625,7 @@ function rendreTemps() {
     agir("equipe_temps_arbitre", corps);
   });
   $("btn-manche-tournoi")?.addEventListener("click", () => agir("equipe_manche_tournoi", {}));
+  $("btn-sans-temps")?.addEventListener("click", () => agir("equipe_temps_arbitre", { sans_temps: true }));
 
   $("btn-temps")?.addEventListener("click", () => agir("equipe_temps", { temps: $("input-temps-equipe").value }));
   $("input-temps-equipe")?.addEventListener("keydown", event => {
@@ -740,7 +764,9 @@ function rendreFinDeMatch() {
     bouton.textContent = demande ? "Annuler la revanche" : "Rejouer";
     bouton.classList.toggle("actif", demande);
   }
-  $("btn-rejouer").classList.toggle("cache", !(fini && createur));
+  // Entraînement : revanche seulement (vitrines fictives, pas de lobby).
+  $("btn-rejouer").classList.toggle("cache", !(fini && createur) || !!draft.entrainement);
+  if (draft.entrainement && !revanchePossible) $("actions-fin").classList.add("cache");
 }
 
 // ---- Bulles du bas ----

@@ -8,9 +8,10 @@ const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculer
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
-const { getBossParId, bossCarnageExclus, estReserveWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
+const { getBossParId, bossCarnageExclus, estReserveWorldBoss, estHorsCoop, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
-const { preparerCreation } = require("../_lib/equipe");
+const { preparerCreation, creerEntrainementEquipe: creerRoomEntrainementEquipe } = require("../_lib/equipe");
+const { analyserVitrine } = require("../_lib/vitrine");
 const { preparerCreation: preparerWorldBoss, erreurAcces: erreurAccesWorldBoss } = require("../_lib/world_boss");
 const { estModerateur } = require("../_lib/admin");
 const { estIdFictif, lireBoxFictive } = require("../_lib/boxes_fictives");
@@ -153,6 +154,75 @@ async function creerEntrainement(req, res, user) {
   return res.status(200).json({ room_id: roomId });
 }
 
+// POST { type: "entrainement", config: { equipe: true, taille, vitrines:
+// [{ proprietaire, persos, armes }] (taille × 2 : équipe 1 puis équipe 2),
+// boss_id?, forcer? } } : entraînement en équipe (cf.
+// creerEntrainementEquipe, _lib/equipe.js). Chaque vitrine : persos et
+// copies d'armes de la full box de son propriétaire (joueur, ou box fictive
+// pour les administrateurs), vérifiée avec les règles des vitrines (cf.
+// analyserVitrine) ; non conforme : refusée avec la liste des problèmes
+// (vitrines_non_conformes), sauf forcer (lancée quand même).
+const MAX_PERSOS_VITRINE_ENTRAINEMENT = 40;
+
+async function creerEntrainementEquipe(req, res, user) {
+  const config = req.body?.config || {};
+  const taille = Number(config.taille);
+  if (![2, 3, 4].includes(taille)) return res.status(400).json({ error: "Mode inconnu (2v2, 3v3 ou 4v4)" });
+  const brutes = Array.isArray(config.vitrines) ? config.vitrines : [];
+  if (brutes.length !== taille * 2) return res.status(400).json({ error: `Il faut ${taille * 2} vitrines.` });
+
+  await actualiserPoints();
+  const moderateur = await estModerateur(user.id);
+  const vitrines = [];
+  const nonConformes = [];
+  for (const [i, brut] of brutes.entries()) {
+    const libelle = `Équipe ${i < taille ? 1 : 2}, joueur ${(i % taille) + 1}`;
+    const proprietaire = typeof brut?.proprietaire === "string" ? brut.proprietaire : "";
+    let profil = null;
+    if (estIdFictif(proprietaire)) {
+      if (!moderateur) return res.status(403).json({ error: `${libelle} : box fictive réservée aux administrateurs` });
+      const fictive = await lireBoxFictive(proprietaire);
+      profil = fictive && { nom: fictive.nom, avatar: null, data: fictive.data };
+    } else if (/^\d{5,25}$/.test(proprietaire)) {
+      const { data } = await supabase.from("profiles")
+        .select("discord_global_name, discord_username, discord_avatar_url, data").eq("discord_id", proprietaire).maybeSingle();
+      profil = data && { nom: data.discord_global_name || data.discord_username || "Joueur", avatar: data.discord_avatar_url, data: data.data };
+    }
+    if (!profil?.data) return res.status(400).json({ error: `${libelle} : joueur introuvable` });
+    const characters = migrerCollectionPersos(profil.data.characters) || { full: {} };
+    const full = characters.full || {};
+    const armesFull = profil.data.weapons?.full || {};
+    const persos = [...new Set((Array.isArray(brut.persos) ? brut.persos : []).filter(id => typeof id === "string" && (full[id] ?? -1) >= 0))].slice(0, MAX_PERSOS_VITRINE_ENTRAINEMENT);
+    const armes = [...new Set((Array.isArray(brut.armes) ? brut.armes : []).filter(id => typeof id === "string" && Number.isInteger(armesFull[id]) && armesFull[id] >= 0))].slice(0, MAX_PERSOS_VITRINE_ENTRAINEMENT);
+    if (!persos.length) return res.status(400).json({ error: `${libelle} : choisis au moins un perso.` });
+    const vers = ids => Object.fromEntries(ids.map(id => [id, true]));
+    const data = {
+      ...profil.data,
+      characters: { ...characters, selections: { ...(characters.selections || {}), vitrine: vers(persos) } },
+      weapons: { ...(profil.data.weapons || {}), selections: { ...(profil.data.weapons?.selections || {}), vitrine: vers(armes) } }
+    };
+    const { erreurs } = analyserVitrine(data, "vitrine");
+    if (erreurs.length) nonConformes.push({ index: i, libelle, nom: profil.nom, erreurs });
+    vitrines.push({ nom: profil.nom, avatar: profil.avatar, niveau_monde: profil.data.niveau_monde || "", data });
+  }
+  if (nonConformes.length && config.forcer !== true) {
+    return res.status(409).json({ error: "Vitrines non conformes aux règles des modes en équipe.", vitrines_non_conformes: nonConformes });
+  }
+
+  const bossId = config.boss_id ? String(config.boss_id) : null;
+  const erreurBoss = await erreurBossImpose(bossId, user.id, { entrainement: true });
+  if (erreurBoss) return res.status(400).json({ error: erreurBoss });
+  if (bossId && estHorsCoop(getBossParId(bossId))) return res.status(400).json({ error: "Ce boss n'est pas faisable en co-op." });
+
+  const attente = await verifierFrequence(req, "entrainement", DELAI_ENTRAINEMENT_MS);
+  if (attente > 0) {
+    return res.status(429).json({ error: `Un entraînement toutes les 10 s au maximum : réessaie dans ${Math.ceil(attente / 1000)} s.` });
+  }
+  const roomId = genererRoomId();
+  await creerRoomEntrainementEquipe(roomId, user.id, { taille, vitrines, bossId });
+  return res.status(200).json({ room_id: roomId, equipe: true });
+}
+
 // POST { type: "equipe", taille: 2 | 3 | 4, formation: "aleatoire" |
 // "choix", boss_id? } : lobby d'un match en équipe (cf. _lib/equipe.js),
 // même limite de création que les rooms privées.
@@ -263,6 +333,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    if (req.body?.type === "entrainement" && req.body?.config?.equipe === true) return await creerEntrainementEquipe(req, res, user);
     if (req.body?.type === "entrainement") return await creerEntrainement(req, res, user);
     if (req.body?.type === "equipe") return await creerEquipe(req, res, user);
     if (req.body?.type === "world_boss") return await creerWorldBoss(req, res, user);

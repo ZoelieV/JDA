@@ -136,11 +136,27 @@ async function sauvegarder(roomId, draft, colonnes = {}) {
   if (!ecrite) throw { status: 409, conflit: true, message: "La room a changé entre-temps : réessaie." };
 }
 
-function campDe(draft, discordId) {
+// Entraînement en équipe (cf. creerEntrainementEquipe) : le lanceur joue
+// les 2 équipes, chef de chacune ; il agit pour le camp demandé (campVoulu)
+// ou, à défaut, celui dont c'est le tour.
+function estLanceur(draft, discordId) {
+  return !!discordId && draft?.entrainement?.lanceur === discordId;
+}
+
+function campActif(draft) {
+  if (draft.phase === "draft") return draft.sequence?.[draft.sequence_index]?.joueur || "j1";
+  if (draft.phase === "declaration") return ROLES.find(role => !draft[`declaration_${role}`]) || "j1";
+  if (draft.phase === "hotes") return ROLES.find(role => !draft.hotes?.[role]) || "j1";
+  return "j1";
+}
+
+function campDe(draft, discordId, campVoulu = null) {
+  if (estLanceur(draft, discordId)) return ROLES.includes(campVoulu) ? campVoulu : campActif(draft);
   return ROLES.find(role => draft.equipes?.[role]?.includes(discordId)) || null;
 }
 
 function estChef(draft, discordId) {
+  if (estLanceur(draft, discordId)) return true;
   const camp = campDe(draft, discordId);
   return !!camp && draft.chefs?.[camp] === discordId;
 }
@@ -409,6 +425,8 @@ async function avancerSelonTemps(draft, maintenant = Date.now()) {
 // Votes des autres, déclaration et temps de l'autre équipe cachés tant que
 // la phase n'est pas finie.
 function vueEquipe(draft, discordId) {
+  // Lanceur d'un entraînement : il voit tout (il joue les 2 équipes).
+  if (estLanceur(draft, discordId)) return { ...draft };
   const camp = campDe(draft, discordId);
   const vue = { ...draft };
   if (draft.phase === "chefs") {
@@ -480,6 +498,8 @@ async function archiverEquipe(draft, { litige = false } = {}) {
     equipes: { j1: equipe("j1"), j2: equipe("j2") },
     ...(draft.tournoi ? { tournoi: draft.tournoi.id } : {}),
     saison: await saisonActuelle(),
+    // Entraînement : visible de son lanceur seulement (cf. api/matches.js).
+    ...(draft.entrainement ? { entrainement: true, lanceur_discord_id: draft.entrainement.lanceur } : {}),
     ...(litige ? { litige: "ouvert", litige_par: draft.litige_par_role || null, litige_commentaire: draft.litige_commentaire || null } : {})
   };
   const { data, error } = await supabase.from("match_history").insert(ligne).select("id").single();
@@ -489,8 +509,8 @@ async function archiverEquipe(draft, { litige = false } = {}) {
   }
   // Légendes locales : tuées dans le monde de l'hôte de chaque équipe qui a
   // saisi un temps (les autres joueurs peuvent la refaire chez un autre
-  // hôte, cf. lancerDraft).
-  await enregistrerMorts(draft.boss_id, data.id, ROLES.filter(role => draft.hotes?.[role]).map(role => ({
+  // hôte, cf. lancerDraft). Entraînement : joueurs fictifs, rien.
+  if (!draft.entrainement) await enregistrerMorts(draft.boss_id, data.id, ROLES.filter(role => draft.hotes?.[role]).map(role => ({
     discord_id: draft.hotes[role],
     temps_secondes: draft[`temps_${role}`]?.secondes ?? null
   })));
@@ -586,7 +606,7 @@ async function routeEtat(req, res, roomId, user) {
   const draft = room.draft;
   if (await avancerSelonTemps(draft)) await sauvegarder(roomId, draft);
   const maintenant = Date.now();
-  const membre = draft.membres.includes(user.id);
+  const membre = draft.membres.includes(user.id) || estLanceur(draft, user.id);
   const colonnes = {};
   // Activité de la room (nettoyage des rooms inactives) : au plus 1 fois par minute.
   if (!room.last_active_at || maintenant - Date.parse(room.last_active_at) > 60 * 1000) {
@@ -761,11 +781,11 @@ async function routeVote(req, res, roomId, user) {
 }
 
 async function routeHote(req, res, roomId, user) {
-  const { hote } = await lireCorps(req);
+  const { hote, camp: campVoulu } = await lireCorps(req);
   const room = await chargerRoom(roomId);
   const draft = room.draft;
   if (draft.phase !== "hotes") throw erreur(409, "Le choix de l'hôte est terminé.");
-  const camp = campDe(draft, user.id);
+  const camp = campDe(draft, user.id, campVoulu);
   if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef choisit l'hôte.");
   if (draft.hotes[camp]) throw erreur(409, "L'hôte de ton équipe est déjà choisi.");
   if (!draft.eligibles_hote[camp].includes(hote)) throw erreur(400, `L'hôte doit avoir une full box de ${HOTE_3V3_FULL_BOX_MAX} points au plus.`);
@@ -807,11 +827,11 @@ async function routeAction(req, res, roomId, user) {
 
 // { attributions: { perso_id: discord_id } } : qui joue quel pick.
 async function routeDeclarer(req, res, roomId, user) {
-  const { attributions } = await lireCorps(req);
+  const { attributions, camp: campVoulu } = await lireCorps(req);
   const room = await chargerRoom(roomId);
   const draft = room.draft;
   if (draft.phase !== "declaration") throw erreur(409, "Ce n'est pas le moment de déclarer les persos");
-  const camp = campDe(draft, user.id);
+  const camp = campDe(draft, user.id, campVoulu);
   if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef déclare qui joue quel perso");
   const picks = picksEquipe(draft, camp);
   const imposee = {};
@@ -900,6 +920,7 @@ async function routeLitige(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
   if (draft.tournoi) throw erreur(403, "Tournoi : adresse-toi à l'arbitre.");
+  if (draft.entrainement) throw erreur(403, "Pas de litige en entraînement.");
   if (draft.phase !== "verification") throw erreur(409, "Les temps ne sont pas en cours de vérification");
   const camp = campDe(draft, user.id);
   if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef signale un litige");
@@ -924,6 +945,11 @@ async function routeRevanche(req, res, roomId, user) {
   const camp = campDe(draft, user.id);
   if (!estChef(draft, user.id)) throw erreur(403, "Seul le chef demande la revanche pour son équipe.");
   draft[`revanche_${camp}`] = !!rejouer;
+  // Entraînement : le lanceur décide pour les 2 équipes.
+  if (estLanceur(draft, user.id)) {
+    draft.revanche_j1 = !!rejouer;
+    draft.revanche_j2 = !!rejouer;
+  }
   if (draft.revanche_j1 && draft.revanche_j2) await lancerRevanche(draft);
   await sauvegarder(roomId, draft);
   return repondre(res, draft, user.id);
@@ -967,6 +993,7 @@ async function routeRejouer(req, res, roomId, user) {
   const room = await chargerRoom(roomId);
   const draft = room.draft;
   if (draft.tournoi) throw erreur(403, "Tournoi : les matchs se relancent depuis la page du tournoi.");
+  if (draft.entrainement) throw erreur(403, "Entraînement : utilise la revanche, ou relance un entraînement depuis Créer un match.");
   if (draft.createur !== user.id) throw erreur(403, "Seul le créateur de la room peut relancer.");
   if (!PHASES_FINIES.includes(draft.phase)) throw erreur(409, "Le match n'est pas terminé.");
   const camps = {};
@@ -1013,6 +1040,54 @@ async function creerRoomEquipeTournoi(roomId, tournoi, match, infos) {
 }
 
 // Liste des arbitres à jour (cf. estArbitreActuel dans _lib/tournois.js).
+// ---- Entraînement en équipe (cf. creerEntrainementEquipe dans
+// api/rooms/index.js) ----
+// Vitrines construites par le lanceur (joueurs fictifs "ent_<n>", chacun
+// avec la full box de son propriétaire et la vitrine choisie) ; équipes
+// d'office (les taille premières en équipe 1), chefs = premier joueur de
+// chaque équipe, mais le lanceur joue les 2 (cf. estLanceur). Directement
+// après le vote des chefs (hôtes en 3v3, sinon la draft).
+// vitrines : [{ nom, avatar, niveau_monde, data }] (data : données de
+// profil, sélection "vitrine" = vitrine choisie).
+async function creerEntrainementEquipe(roomId, lanceur, { taille, vitrines, bossId = null }) {
+  const membres = vitrines.map((_, i) => `ent_${i}`);
+  const camps = Object.fromEntries(membres.map((id, i) => [id, i < taille ? "j1" : "j2"]));
+  const infos = Object.fromEntries(vitrines.map((v, i) => [membres[i], {
+    nom: v.nom, avatar: v.avatar || null, banniere: null, banniere2: null, niveau_monde: v.niveau_monde || ""
+  }]));
+  const draft = etatLobby({
+    taille, formation: "choix", createur: lanceur, bossImpose: bossId, membres, camps,
+    vitrinesChoisies: Object.fromEntries(membres.map(id => [id, "vitrine"])), infos
+  });
+  draft.entrainement = { lanceur };
+  const analyses = {};
+  const fullBox = {};
+  vitrines.forEach((v, i) => {
+    const { persos, armes, points } = analyserVitrine(v.data, "vitrine");
+    analyses[membres[i]] = { persos, armes, points };
+    fullBox[membres[i]] = pointsFullBox(v.data);
+  });
+  const equipes = Object.fromEntries(ROLES.map(role => [role, membres.filter(id => camps[id] === role)]));
+  Object.assign(draft, {
+    phase: "chefs",
+    equipes,
+    vitrines: analyses,
+    full_box: fullBox,
+    votes: Object.fromEntries(membres.map(id => [id, equipes[camps[id]][0]])),
+    fin_vote: Date.now(),
+    chefs: null,
+    hotes: null,
+    boss_id: null,
+    actions: [],
+    temps_j1: null,
+    temps_j2: null,
+    vainqueur: null
+  });
+  await avancerSelonTemps(draft);
+  const { error } = await supabase.from("rooms").insert({ room_id: roomId, player1_discord_id: lanceur, type: "equipe", membres: [lanceur], draft });
+  if (error) throw error;
+}
+
 const estArbitreTournoi = (draft, discordId) => !!draft.tournoi && require("./tournois").estArbitreActuel(draft.tournoi, discordId);
 
 // Équipe du tournoi (participant) qui joue dans un camp : celle dont le
@@ -1027,22 +1102,33 @@ async function routeTempsArbitre(req, res, roomId, user) {
   const corps = await lireCorps(req);
   const room = await chargerRoom(roomId);
   const draft = room.draft;
-  if (!await estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi saisit les temps.");
-  // Un arbitre qui joue ce match ne saisit pas les temps.
-  if (draft.membres.includes(user.id)) throw erreur(403, "Tu joues ce match : un autre arbitre doit saisir les temps.");
-  if (draft.phase !== "temps" && draft.phase !== "verification") throw erreur(409, "La saisie des temps n'est pas ouverte.");
-  const temps = {};
-  for (const role of ROLES) {
-    temps[role] = corps[`abandon_${role}`] === true ? { ...TEMPS_ABANDON } : parserTempsMMSS(corps[`temps_${role}`]);
-    if (!temps[role]) throw erreur(400, `Équipe ${role === "j1" ? 1 : 2} : format de temps invalide (attendu mm:ss).`);
+  // Entraînement : son lanceur saisit les temps des 2 équipes (ou termine
+  // sans temps, sans_temps) ; tournoi : un arbitre qui ne joue pas.
+  const lanceur = estLanceur(draft, user.id);
+  if (!lanceur) {
+    if (!await estArbitreTournoi(draft, user.id)) throw erreur(403, "Seul un arbitre du tournoi saisit les temps.");
+    // Un arbitre qui joue ce match ne saisit pas les temps.
+    if (draft.membres.includes(user.id)) throw erreur(403, "Tu joues ce match : un autre arbitre doit saisir les temps.");
   }
-  draft.temps_j1 = temps.j1;
-  draft.temps_j2 = temps.j2;
-  draft.vainqueur = determinerVainqueur(temps.j1, temps.j2);
+  if (draft.phase !== "temps" && draft.phase !== "verification") throw erreur(409, "La saisie des temps n'est pas ouverte.");
+  if (lanceur && corps.sans_temps === true) {
+    draft.temps_j1 = null;
+    draft.temps_j2 = null;
+    draft.vainqueur = null;
+  } else {
+    const temps = {};
+    for (const role of ROLES) {
+      temps[role] = corps[`abandon_${role}`] === true ? { ...TEMPS_ABANDON } : parserTempsMMSS(corps[`temps_${role}`]);
+      if (!temps[role]) throw erreur(400, `Équipe ${role === "j1" ? 1 : 2} : format de temps invalide (attendu mm:ss).`);
+    }
+    draft.temps_j1 = temps.j1;
+    draft.temps_j2 = temps.j2;
+    draft.vainqueur = determinerVainqueur(temps.j1, temps.j2);
+  }
   draft.phase = "termine";
   await sauvegarder(roomId, draft);
   draft.id_match = await archiverEquipe(draft);
-  if (draft.id_match) {
+  if (draft.id_match && !draft.entrainement) {
     draft.koyns = await crediterPartie(ROLES.flatMap(role => draft.equipes[role].map(id => ({
       discordId: id,
       adversaires: draft.equipes[role === "j1" ? "j2" : "j1"],
@@ -1050,7 +1136,9 @@ async function routeTempsArbitre(req, res, roomId, user) {
     }))), `match:${draft.id_match}`, null);
   }
   const { enregistrerManche, tropheesManche } = require("./tournois");
-  if (ROLES.includes(draft.vainqueur)) {
+  if (!draft.tournoi) {
+    // Entraînement : rien à reporter.
+  } else if (ROLES.includes(draft.vainqueur)) {
     const resultat = await enregistrerManche(draft.tournoi, {
       vainqueur: participantDuCamp(draft, draft.vainqueur),
       trophees: draft.tournoi.phase === "qualif" ? tropheesManche(draft) : 0,
@@ -1121,6 +1209,7 @@ module.exports = {
   preparerCreation,
   quitterEquipes,
   creerRoomEquipeTournoi,
+  creerEntrainementEquipe,
   // Tests.
   trouverAttribution,
   equipesEquilibrees,
