@@ -3281,3 +3281,37 @@ h1 {
   vertical-align: -0.2em;
   object-fit: contain;
 }
+
+/* ---- Grand écran, choix / analyse des box et bans d'équilibrage : barre
+   des filtres et tris remontée entre les namecards des 2 joueurs (vide au
+   centre), centrée, sans "Trier :" ; toujours figée en haut au
+   défilement. Namecard : 10,5rem de haut, 22,05rem de large (840x400) :
+   seulement si #zone-match laisse au moins 38rem au centre (largeur de la
+   zone, zoom du site compris). ---- */
+#zone-match {
+  container-type: inline-size;
+}
+
+@container (min-width: 85rem) {
+  #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) #barre-outils {
+    box-sizing: border-box;
+    width: calc(100% - 2 * (22.05rem + 1.5rem));
+    min-height: 10.5rem;
+    margin: calc(-10.5rem - 1.25rem) auto 1.25rem;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) :is(.zone-recherche, .filtres-tri) {
+    justify-content: center;
+  }
+
+  #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) .toolbar-droite {
+    align-items: center;
+  }
+
+  #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) .tris-label {
+    display: none;
+  }
+}
