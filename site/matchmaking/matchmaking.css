@@ -836,3 +836,16 @@
   height: 1.25rem;
   width: auto;
 }
+
+/* Pastille "Admin" (mode Équilibrage de l'entraînement) : même style que
+   sur Événements (evenements/evenements.css). */
+.badge-admin {
+  padding: 1px 0.4375rem;
+  border-radius: 62.4375rem;
+  background-color: #f5c542;
+  color: #1e1e1e;
+  font-size: 0.6875rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
