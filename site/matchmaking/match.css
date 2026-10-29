@@ -3328,8 +3328,10 @@ h1 {
     width: calc(100% - 2 * (22.05rem + 1.5rem));
     min-height: 10.5rem;
     margin: calc(-10.5rem - 1.25rem) auto 1.25rem;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: center;
+    align-content: center;
     align-items: center;
   }
 
@@ -3343,5 +3345,48 @@ h1 {
 
   #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) .tris-label {
     display: none;
+  }
+}
+
+/* ---- Ordinateur : barre des filtres et tris compressée (groupes collés,
+   petits écarts), sans "Trier :" ; J1 / J2 / = / Δ au moins carrés. ---- */
+@media (min-width: 701px) {
+  #barre-outils .tris-label {
+    display: none;
+  }
+
+  #barre-outils,
+  #barre-outils .toolbar-droite,
+  #barre-outils .filtres-tri,
+  #barre-outils .filtres-icones,
+  #barre-outils .filtres-etoiles,
+  #barre-outils .filtres-proprietaire,
+  #barre-outils .tris,
+  #barre-outils .zone-recherche {
+    gap: 0.25rem;
+  }
+
+  #barre-outils .recherche-personnage {
+    margin-right: 0.25rem;
+  }
+
+  #barre-outils .filtre-proprietaire-btn {
+    min-width: 2.4375rem;
+    padding: 0 0.375rem;
+  }
+
+  /* Recherche, tris et filtres à la suite (blocs effacés), qui reviennent
+     à la ligne au besoin. */
+  #barre-outils {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  #barre-outils .zone-recherche,
+  #barre-outils .toolbar-droite,
+  #barre-outils .filtres-tri {
+    display: contents;
   }
 }

@@ -1817,3 +1817,27 @@ body {
   margin: 0;
   vertical-align: middle;
 }
+
+/* ---- Ordinateur : recherche, tris et filtres compressés (groupes collés,
+   petits écarts, raretés en carrés comme les autres), sans "Trier :". ---- */
+@media (min-width: 701px) {
+  .ligne-vues .tris-label {
+    display: none;
+  }
+
+  .ligne-vues .barre-filtres,
+  .ligne-vues .tris,
+  .ligne-vues .groupe-filtres {
+    gap: 0.25rem;
+  }
+
+  .ligne-vues .recherche-personnage {
+    margin-right: 0.25rem;
+  }
+
+  .ligne-vues .filtre-rarete + span {
+    justify-content: center;
+    width: 2.4375rem;
+    padding: 0;
+  }
+}
