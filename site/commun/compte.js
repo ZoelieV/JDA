@@ -1,6 +1,6 @@
 // Bouton du compte (deuxième bannière, photo, pseudo) en haut à droite des
 // pages ; bouton de connexion Discord si l'utilisateur n'est pas connecté.
-// Pas sur Mon compte (menu du compte propre) ni dans les rooms de match.
+// Pas sur Mon compte (menu du compte propre).
 // Clic sur la photo : menu des paramètres, comme sur Mon compte (UID,
 // niveau du monde, stream, théâtre, zoom du site, Personnalisation ouverte
 // sur place avec Voyageur / Manekin / skins, Déconnexion) ; clic ailleurs sur la

@@ -1,5 +1,5 @@
 // Fond d'écran choisi dans Mon compte (profil.parametres.fond), appliqué sur
-// toutes les pages du site sauf les rooms de match. Garde aussi la deuxième
+// toutes les pages du site sauf les rooms de match (data-sans-fond). Garde aussi la deuxième
 // bannière (profil.parametres.banniere2), affichée dans le bouton du compte
 // (classe .avec-banniere2, cf. appliquerBanniere2).
 //
@@ -106,6 +106,10 @@
   const TABLE_PERSO = "images";
   const CLE_IMAGE_PERSO = "fond";
   const sansRequete = document.currentScript?.hasAttribute("data-sans-requete");
+  // Attribut data-sans-fond : fond d'écran du joueur pas appliqué (rooms de
+  // match : fond du boss tiré, cf. match.js), seulement l'affichage de
+  // l'accueil et le bouton du compte de l'en-tête.
+  const sansFond = document.currentScript?.hasAttribute("data-sans-fond");
 
   // Styles du fond (calque fixe body::before) et du bouton du compte
   // (.avec-banniere2) : commun/entete.css.
@@ -172,6 +176,7 @@
 
   // url : URL d'image, FOND_PERSO ou null (aucun fond).
   function appliquer(url) {
+    if (sansFond) return;
     const numero = ++numeroApplication;
     const style = document.documentElement.style;
     if (url !== FOND_PERSO) {

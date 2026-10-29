@@ -2,7 +2,8 @@
 // personnalisation seulement (profil.parametres.accueil, posé sur
 // <html data-accueil> par commun/fond.js) : en-tête (logo, liens des pages
 // et leurs menus déroulants, bouton du compte) et pied de page (feedback,
-// réseaux) sur toutes les pages, sauf les rooms de match (pas chargé). En
+// réseaux) sur toutes les pages ; rooms de match (attribut data-room) :
+// en-tête seulement, pas figé (disparaît au défilement). En
 // "panneau" et "cartes" : rien n'est ajouté, design d'origine des pages.
 // Styles : commun/site.css.
 //
@@ -17,6 +18,7 @@
   // Page affichée dans une fenêtre d'une autre page (Litiges dans
   // l'administration, cf. admin_litiges.js) : ni en-tête ni pied de page.
   if (window.self !== window.top) return;
+  const room = document.currentScript?.hasAttribute("data-room");
   if (document.documentElement.dataset.accueil !== "classique") {
     // Affichage changé depuis la personnalisation : page rechargée pour
     // afficher (ou retirer) l'en-tête.
@@ -206,7 +208,8 @@
     document.body.prepend(entete);
   }
   entete.classList.add("site-entete");
-  document.body.appendChild(creerPied());
+  if (room) document.documentElement.classList.add("entete-room");
+  else document.body.appendChild(creerPied());
 
   // Hauteur de l'en-tête (zoom compris) : éléments figés en haut des pages
   // (barres de filtres, en-têtes de tableaux) placés juste en dessous (cf.

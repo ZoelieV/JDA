@@ -92,6 +92,17 @@ html.site-classique .site-entete::before {
   pointer-events: none;
 }
 
+/* Rooms de match (cf. commun/site.js) : en-tête pas figé, il part au
+   défilement ; bouton "Partager le lien" (seul dans sa barre, sans le lien
+   Accueil) gardé à droite, sous l'en-tête. */
+html.entete-room .site-entete {
+  position: relative;
+}
+
+html.entete-room .barre-room {
+  justify-content: flex-end;
+}
+
 /* Autres pages : d'un bord à l'autre de l'écran, au-dessus du contenu. */
 html.avec-entete-site .site-entete {
   margin: 0 calc(-1 * var(--marge-page) / var(--zoom-barres)) calc(var(--marge-page) / var(--zoom-barres));
