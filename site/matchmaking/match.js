@@ -283,8 +283,9 @@ async function postAnnulerCoup() {
   await definirDraft(data.draft);
 }
 
-async function postBonusToggle(persoId) {
-  const data = await envoyerAction(`/api/rooms/${roomId}/bonus_toggle`, { perso_id: persoId });
+// joker : ban joker choisi tout de suite (cf. modeJokerBonus).
+async function postBonusToggle(persoId, joker = false) {
+  const data = await envoyerAction(`/api/rooms/${roomId}/bonus_toggle`, { perso_id: persoId, ...(joker ? { joker: true } : {}) });
   await definirDraft(data.draft);
 }
 
@@ -1404,6 +1405,11 @@ function rendreBansHorizontaux() {
   }));
 }
 
+// Bans d'équilibrage : prochain perso cliqué en ban joker (bouton "Choisir
+// un ban joker" ou clic sur un emplacement joker vide), sans attendre
+// d'avoir rempli les bans normaux.
+let modeJokerBonus = false;
+
 function rendreBansBonus() {
   if (estEtapeHorizontale()) return rendreBansHorizontaux();
   const choix = draft.bans_bonus_choix || [];
@@ -1415,7 +1421,20 @@ function rendreBansBonus() {
   const nbNormaux = draft.bans_bonus_total - nbJokers;
   const restant = draft.bans_bonus_total - choix.length - jokers.length;
   const cEstMonTour = draft.bans_bonus_joueur === monRole;
+  const jokerLibre = cEstMonTour && jokers.length < nbJokers;
+  if (!jokerLibre) modeJokerBonus = false;
   rendreEchangeJoker(cEstMonTour, nbNormaux);
+  const btnModeJoker = document.getElementById("btn-mode-joker");
+  btnModeJoker.classList.toggle("cache", !jokerLibre);
+  btnModeJoker.classList.toggle("actif", modeJokerBonus);
+  btnModeJoker.textContent = modeJokerBonus ? "Joker : clique un perso adverse (annuler)" : "Choisir un ban joker";
+  btnModeJoker.title = modeJokerBonus
+    ? "Le prochain perso cliqué (box adverse) sera un ban joker. Clique ici pour revenir aux bans normaux."
+    : "Le prochain perso cliqué (box adverse) sera un ban joker, sans attendre d'avoir fait tous les bans normaux";
+  btnModeJoker.onclick = () => {
+    modeJokerBonus = !modeJokerBonus;
+    rendreBansBonus();
+  };
   const joker = nbJokers ? ` (dont ${pluriel(nbJokers, "joker")})` : "";
   messageBansEquilibrage(draft.bans_bonus_joueur,
     `${special ? "Mode spécial : " : ""}${pseudoColore(draft.bans_bonus_joueur)} a ${pluriel(draft.bans_bonus_total, "ban vertical", "bans verticaux")}${joker} sur ${pseudoColore(getAutreRole(draft.bans_bonus_joueur))}.` +
@@ -1445,6 +1464,16 @@ function rendreBansBonus() {
       }
     } else {
       slot.className = "slot-bonus";
+      // Emplacement joker vide : clic = prochain perso en joker.
+      if (joker && jokerLibre) {
+        slot.classList.add("cliquable");
+        slot.classList.toggle("arme", modeJokerBonus);
+        slot.title = "Cliquer pour choisir ce ban joker maintenant";
+        slot.addEventListener("click", () => {
+          modeJokerBonus = !modeJokerBonus;
+          rendreBansBonus();
+        });
+      }
     }
     if (joker) {
       slot.classList.add("joker");
@@ -1467,7 +1496,7 @@ function rendreBansBonus() {
 
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
-    choix, jokers, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible, special,
+    choix, jokers, draft.bans_bonus_total, draft.bans_bonus_joueur, draft.pool_disponible, special, modeJokerBonus,
     draft.pool_j1, draft.pool_j2, draft.discord_j1, draft.discord_j2, monRole,
     ...cleFiltres()
   ]);
@@ -1480,15 +1509,22 @@ function rendreBansBonus() {
   remplirGrilleGroupee(grille, groupesDraft(personnages), carteDraftOuArme(grille, personnage => {
     const id = personnage.id;
     const dejaChoisi = choix.includes(id) || jokers.includes(id);
-    // Bans normaux d'abord, puis jokers (personnages de la box adverse).
+    // Bans normaux d'abord, puis jokers (personnages de la box adverse) ;
+    // joker demandé (modeJokerBonus) : persos de la box adverse seulement.
     const poolAdverse = draft[`pool_${getAutreRole(draft.bans_bonus_joueur)}`] || [];
-    const placeLibre = choix.length < nbNormaux || (jokers.length < nbJokers && poolAdverse.includes(id));
+    const placeLibre = modeJokerBonus
+      ? poolAdverse.includes(id)
+      : choix.length < nbNormaux || (jokers.length < nbJokers && poolAdverse.includes(id));
     const peutCliquer = cEstMonTour && (dejaChoisi || placeLibre);
 
     return obtenirCarteItem(grille, personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi,
-      onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
+      onClick: () => {
+        const enJoker = modeJokerBonus && !dejaChoisi;
+        if (enJoker) modeJokerBonus = false;
+        postBonusToggle(id, enJoker).catch(err => alert(err.message));
+      },
       ...getInfosCarte(id)
     });
   }));

@@ -582,7 +582,9 @@ async function handleBonusToggle(req, res, roomId, user) {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { perso_id: persoId } = req.body || {};
+  // joker : true -> ban joker choisi tout de suite (sans attendre d'avoir
+  // fait tous les bans normaux), s'il en reste un à placer.
+  const { perso_id: persoId, joker: enJoker } = req.body || {};
 
   if (!persoId || typeof persoId !== "string") {
     return res.status(400).json({ error: "perso_id manquant" });
@@ -620,9 +622,11 @@ async function handleBonusToggle(req, res, roomId, user) {
   draft.bans_joker_choix = draft.bans_joker_choix || [];
   const index = draft.bans_bonus_choix.indexOf(persoId);
   const indexJoker = draft.bans_joker_choix.indexOf(persoId);
-  // Nombre imposé : bans normaux d'abord, puis jokers (cf. appliquerBansBonus).
+  // Nombre imposé : bans normaux d'abord, puis jokers (cf. appliquerBansBonus),
+  // sauf joker demandé (enJoker).
   const jokers = draft.bans_joker_total || 0;
   const normaux = bansNormaux(draft);
+  const adverse = joueur === "j1" ? "j2" : "j1";
 
   if (index >= 0) {
     // Déjà sélectionné : on le retire (annulation/remplacement).
@@ -633,10 +637,14 @@ async function handleBonusToggle(req, res, roomId, user) {
     if (!draft.pool_disponible.includes(persoId)) {
       return res.status(409).json({ error: "Ce personnage n'est plus disponible" });
     }
-    if (draft.bans_bonus_choix.length < normaux) {
+    if (enJoker === true && draft.bans_joker_choix.length < jokers) {
+      if (!draft[`pool_${adverse}`]?.includes(persoId)) {
+        return res.status(409).json({ error: "Le ban joker vise un personnage de la box adverse" });
+      }
+      draft.bans_joker_choix.push(persoId);
+    } else if (draft.bans_bonus_choix.length < normaux) {
       draft.bans_bonus_choix.push(persoId);
     } else if (draft.bans_joker_choix.length < jokers) {
-      const adverse = joueur === "j1" ? "j2" : "j1";
       if (!draft[`pool_${adverse}`]?.includes(persoId)) {
         return res.status(409).json({ error: "Le ban joker vise un personnage de la box adverse" });
       }

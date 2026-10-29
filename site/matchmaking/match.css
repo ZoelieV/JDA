@@ -3148,6 +3148,36 @@ h1 {
   background-color: rgba(224, 184, 74, 0.25);
 }
 
+/* Ban joker demandé : bouton plein, emplacement joker vide qui pulse. */
+.btn-mode-joker.actif {
+  background-color: #e0b84a;
+  color: #1e1e1e;
+}
+
+.slot-bonus.joker.cliquable {
+  cursor: pointer;
+}
+
+.slot-bonus.joker.cliquable:hover {
+  background-color: rgba(224, 184, 74, 0.15);
+}
+
+.slot-bonus.joker.arme {
+  border-style: solid;
+  background-color: rgba(224, 184, 74, 0.25);
+  animation: joker-arme 1.2s ease-in-out infinite;
+}
+
+@keyframes joker-arme {
+  50% { box-shadow: 0 0 0.75rem rgba(224, 184, 74, 0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-bonus.joker.arme {
+    animation: none;
+  }
+}
+
 .btn-echanger-joker:disabled {
   opacity: 0.5;
   cursor: default;
