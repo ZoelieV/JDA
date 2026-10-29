@@ -123,7 +123,7 @@ function rendre() {
   const boss = draft.boss_impose && bossParId.get(draft.boss_impose);
   $("sous-titre-equipe").textContent = [
     draft.entrainement ? (estLanceur() ? "Tu joues les 2 équipes" : "Entraînement") : draft.formation === "choix" ? "Équipes au choix" : "Équipes aléatoires (équilibrées)",
-    "Draft de la carpe",
+    "Draft Classique",
     boss ? `Boss : ${boss.nom}` : null
   ].filter(Boolean).join(" · ");
 

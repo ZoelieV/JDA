@@ -68,7 +68,7 @@ function formatTournoi(tournoi) {
 }
 
 function modeTournoi(tournoi) {
-  return tournoi.format === "equipe" ? "Draft de la carpe (vitrines)" : MODES_TOURNOI[tournoi.mode] || tournoi.mode;
+  return tournoi.format === "equipe" ? "Draft Classique (vitrines)" : MODES_TOURNOI[tournoi.mode] || tournoi.mode;
 }
 
 // Joueur (photo, pseudo) : joueurs = { id: { nom, avatar } }.
@@ -256,7 +256,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
         <label>La finale (dernier match)
           <select name="finale_affrontement">${options({ bo1: "Un seul match", bo3: "Best of 3", bo5: "Best of 5" }, finaleTournoi(c) || "bo1")}</select>
         </label>
-        <p class="aide large" data-pour="equipe">En équipe : draft de la carpe avec les vitrines, comme le mode En équipe.</p>
+        <p class="aide large" data-pour="equipe">En équipe : draft Classique avec les vitrines, comme le mode En équipe.</p>
       </fieldset>
       <fieldset${verrouille ? " disabled" : ""}>
         <legend>Participants</legend>
