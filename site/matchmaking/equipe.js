@@ -876,11 +876,15 @@ function initialiserBoutons() {
     const lien = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
     try {
       await navigator.clipboard.writeText(lien);
-      partager.textContent = "Lien copié ✓";
+      partager.querySelector(".texte-partager").textContent = "Lien copié";
+      partager.classList.add("copie");
     } catch {
       window.prompt("Copie ce lien et envoie-le aux autres joueurs :", lien);
     }
-    setTimeout(() => { partager.innerHTML = texte; }, 2000);
+    setTimeout(() => {
+      partager.innerHTML = texte;
+      partager.classList.remove("copie");
+    }, 2000);
   });
 }
 

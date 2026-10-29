@@ -2369,8 +2369,9 @@ function initialiserFiltresTri() {
   });
   zoneRecherche.appendChild(zoneTris);
 
-  // Téléphone : filtres non figés (au-dessus du bloc figé) et tris figés
-  // (dans le bloc figé), cf. placerFiltresDraft.
+  // Téléphone : filtres, tris, recherche et Réinitialiser non figés (bloc
+  // au-dessus du bloc figé) et figés (dans le bloc figé), cf.
+  // placerFiltresDraft.
   const libres = document.createElement("div");
   libres.className = "filtres-libres";
   container.insertBefore(libres, figeables);
@@ -2409,10 +2410,11 @@ function placerFiltresDraft() {
   const fige = id => telephone && choixFiltresDraft.figes.includes(id);
   const element = id => container.closest("#barre-outils").querySelector(`[data-filtre="${id}"]`);
 
-  // Recherche : en tête du bloc figé, ou avant les tris.
+  // Recherche : en tête du bloc figé, sinon (téléphone) du bloc non figé,
+  // sinon (ordi) avant les tris.
   const recherche = element("recherche");
   if (fige("recherche")) figeables.prepend(recherche);
-  else zoneRecherche.prepend(recherche);
+  else (telephone ? libres : zoneRecherche).prepend(recherche);
   // Filtres, puis tris figés et Réinitialiser (dans l'ordre de la liste).
   FILTRES_DRAFT.forEach(filtre => {
     const el = element(filtre.id);
@@ -2423,23 +2425,31 @@ function placerFiltresDraft() {
     else (telephone && !fige(filtre.id) ? libres : figeables).appendChild(el);
   });
   figeables.appendChild(trisFiges);
+  // Téléphone : tris non figés dans le bloc non figé (après ses filtres) ;
+  // ordi : à droite de la recherche.
+  if (telephone) libres.appendChild(zoneTris);
+  else zoneRecherche.appendChild(zoneTris);
   if (fige("clear")) figeables.appendChild(btnClear);
-  else container.appendChild(btnClear);
+  else (telephone ? libres : container).appendChild(btnClear);
   compacterFiltresFiges();
 }
 
-// Téléphone : bloc figé en grille de COLONNES_FIGES boutons par ligne (cf.
-// CSS). Éléments puis types d'arme : chacun en début de sa propre ligne,
+// Téléphone : blocs figé et non figé en grilles de COLONNES_FIGES boutons
+// par ligne (cf. CSS). Éléments puis types d'arme : chacun en début de sa propre ligne,
 // sans coupure ; la fin de ces lignes, puis les suivantes, sont remplies
 // par les autres filtres puis par les tris (un groupe entier s'il tient
-// dans la place restante, sinon le début du suivant). Recherche figée :
-// seule sur la 1re ligne. Seuls les boutons visibles comptent (refait à
+// dans la place restante, sinon le début du suivant). Recherche : seule
+// sur la 1re ligne de son bloc. Seuls les boutons visibles comptent (refait à
 // chaque rendu : J1/J2, favoris, bonus de saison changent selon la phase).
 const COLONNES_FIGES = 8;
 
 function compacterFiltresFiges() {
   if (!barreFiltres) return;
-  const { figeables } = barreFiltres;
+  compacterBlocFiltres(barreFiltres.figeables);
+  compacterBlocFiltres(barreFiltres.libres);
+}
+
+function compacterBlocFiltres(figeables) {
   figeables.querySelectorAll("button, input").forEach(el => {
     el.style.gridRow = "";
     el.style.gridColumn = "";
@@ -2464,7 +2474,7 @@ function compacterFiltresFiges() {
   const groupes = [];
   [...figeables.children].forEach(enfant => {
     if (enfant === recherche) return;
-    const boutons = enfant.classList.contains("tris-figes")
+    const boutons = enfant.classList.contains("tris")
       ? [...enfant.querySelectorAll(".tri-btn")].filter(visible).map(bouton => ({ id: bouton.dataset.filtre, boutons: [bouton] }))
       : [{ id: enfant.dataset.filtre, boutons: (enfant.matches("button") ? [enfant] : [...enfant.querySelectorAll("button")]).filter(visible) }];
     groupes.push(...boutons.filter(groupe => groupe.boutons.length));
@@ -3754,12 +3764,16 @@ function initialiserPartage() {
     const lien = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
     try {
       await navigator.clipboard.writeText(lien);
-      bouton.textContent = "Lien copié ✓";
+      bouton.querySelector(".texte-partager").textContent = "Lien copié";
+      bouton.classList.add("copie");
     } catch {
       // Presse-papiers indisponible : on affiche le lien à copier à la main.
       window.prompt("Copie ce lien et envoie-le à ton adversaire :", lien);
     }
-    setTimeout(() => { bouton.innerHTML = texteInitial; }, 2000);
+    setTimeout(() => {
+      bouton.innerHTML = texteInitial;
+      bouton.classList.remove("copie");
+    }, 2000);
   });
 }
 
