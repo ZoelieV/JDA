@@ -743,6 +743,8 @@
    (recherche, éléments, types d'arme) et tri par points. */
 .selecteur-box .ent-liste-enregistrees,
 .selecteur-box .ent-nom-box,
+.ent-vitrine .ent-liste-vitrines,
+.ent-vitrine .ent-nom-vitrine,
 .ent-filtres .ent-recherche {
   box-sizing: border-box;
   max-width: 100%;
@@ -755,19 +757,23 @@
   font-size: 0.9375rem;
 }
 
-.selecteur-box .ent-liste-enregistrees {
+.selecteur-box .ent-liste-enregistrees,
+.ent-vitrine .ent-liste-vitrines {
   width: min(22rem, 100%);
   margin-left: 0;
   text-overflow: ellipsis;
 }
 
 .selecteur-box .ent-nom-box,
+.ent-vitrine .ent-nom-vitrine,
 .ent-filtres .ent-recherche {
   width: min(14rem, 100%);
 }
 
 .detail-match .selecteur-box .ent-liste-enregistrees:focus,
 .detail-match .selecteur-box .ent-nom-box:focus,
+.detail-match .ent-vitrine .ent-liste-vitrines:focus,
+.detail-match .ent-vitrine .ent-nom-vitrine:focus,
 .detail-match .ent-filtres .ent-recherche:focus {
   outline: none;
   border-color: var(--couleur-detail);

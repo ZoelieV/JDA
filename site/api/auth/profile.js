@@ -243,7 +243,15 @@ function nettoyerBoxesEntrainement(brut) {
       ? [...new Set(valeurs.filter(v => typeof v === "string" && format.test(v)))].slice(0, MAX_ENTREES_COLLECTION)
       : [];
     ids.add(box.id);
-    boxes.push({ id: box.id, nom, proprietaire: box.proprietaire, persos: liste(box.persos, FORMAT_ID), armes: liste(box.armes, FORMAT_INSTANCE) });
+    // type "vitrine" : vitrine personnalisée de l'entraînement en équipe
+    // (12 persos et 12 armes au plus, cf. matchmaking.js) ; sinon box 1v1.
+    const vitrine = box.type === "vitrine";
+    boxes.push({
+      id: box.id, nom, proprietaire: box.proprietaire,
+      ...(vitrine ? { type: "vitrine" } : {}),
+      persos: liste(box.persos, FORMAT_ID).slice(0, vitrine ? 12 : undefined),
+      armes: liste(box.armes, FORMAT_INSTANCE).slice(0, vitrine ? 12 : undefined)
+    });
   }
   return boxes;
 }

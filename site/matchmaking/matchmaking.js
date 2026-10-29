@@ -517,6 +517,16 @@ async function envoyerBoxesEnregistrees(boxes) {
   entrainement.enregistrees = resultat.boxes || boxes;
 }
 
+// Box 1v1 et vitrines (entraînement en équipe) enregistrées : même liste
+// (30 au plus en tout), vitrines marquées type "vitrine".
+function boxesEnregistrees() {
+  return (entrainement.enregistrees || []).filter(b => b.type !== "vitrine");
+}
+
+function vitrinesEnregistrees() {
+  return (entrainement.enregistrees || []).filter(b => b.type === "vitrine");
+}
+
 function nomProprietaire(id) {
   return entrainement.comptes.find(c => c.discord_id === id)?.nom ||
     entrainement.fictives.find(b => b.id === id)?.nom || "joueur inconnu";
@@ -528,7 +538,7 @@ function remplirListesEnregistrees() {
     const liste = zone.querySelector(".ent-liste-enregistrees");
     if (!liste) return;
     const etat = entrainement.cotes[zone.dataset.cote];
-    const boxes = entrainement.enregistrees || [];
+    const boxes = boxesEnregistrees();
     const option = (valeur, texte) => {
       const o = document.createElement("option");
       o.value = valeur;
@@ -549,7 +559,7 @@ function brancherBoxesEnregistrees(zone, cote, possedes, copies) {
   const liste = zone.querySelector(".ent-liste-enregistrees");
   const champ = zone.querySelector(".ent-nom-box");
   const message = zone.querySelector(".ent-message-box");
-  const trouver = id => (entrainement.enregistrees || []).find(b => b.id === id);
+  const trouver = id => boxesEnregistrees().find(b => b.id === id);
   champ.value = trouver(etat.enregistree)?.nom || "";
   remplirListesEnregistrees();
 
@@ -593,7 +603,7 @@ function brancherBoxesEnregistrees(zone, cote, possedes, copies) {
       return;
     }
     const boxes = [...(entrainement.enregistrees || [])];
-    const existante = boxes.findIndex(b => b.nom.toLowerCase() === nom.toLowerCase());
+    const existante = boxes.findIndex(b => b.type !== "vitrine" && b.nom.toLowerCase() === nom.toLowerCase());
     if (existante >= 0 && !confirm(`Remplacer la box enregistrée « ${boxes[existante].nom} » ?`)) return;
     if (existante < 0 && boxes.length >= MAX_BOXES_ENT) {
       message.textContent = `${MAX_BOXES_ENT} box enregistrées au plus : supprimes-en une.`;
@@ -690,7 +700,16 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
       <span class="ent-vitrine-compte"></span>
       <button type="button" class="choix-btn ent-vitrine-ouvrir">${vitrine.ouverte ? "Fermer" : "Choisir les persos"}</button>
     </div>
+    <div class="ligne-entrainement ent-enregistrees">
+      <select class="ent-liste-vitrines"></select>
+      <button type="button" class="choix-btn ent-supprimer-vitrine">Supprimer</button>
+    </div>
     <div class="ent-vitrine-contenu${vitrine.ouverte ? "" : " cache"}">
+      <div class="ligne-entrainement ent-enregistrees">
+        <input type="text" class="ent-nom-vitrine" maxlength="${LONGUEUR_NOM_BOX_ENT}" placeholder="Nom de la vitrine" autocomplete="off">
+        <button type="button" class="choix-btn ent-enregistrer-vitrine">Enregistrer</button>
+        <span class="ent-message-box"></span>
+      </div>
       <h4 class="ent-sous-titre">Personnages</h4>
       <div class="ent-persos"></div>
       <h4 class="ent-sous-titre">Armes</h4>
@@ -717,6 +736,7 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
     vitrine.proprietaire = trouve.id;
     vitrine.persos = new Set();
     vitrine.armes = new Set();
+    vitrine.enregistree = null;
     vitrine.ouverte = true;
     rendreVitrinesEntrainement();
   });
@@ -724,6 +744,7 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
     vitrine.ouverte = !vitrine.ouverte;
     rendreVitrinesEntrainement();
   });
+  brancherVitrinesEnregistrees(carte, vitrine, profil);
   if (!vitrine.ouverte) return carte;
 
   // Persos (12 au plus) et copies d'armes (12 au plus) de la full box.
@@ -759,6 +780,106 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
     return bouton;
   }));
   return carte;
+}
+
+// Vitrine d'une carte : charger une de ses 2 vitrines (Mon compte, joueur
+// connecté seulement : elles restent privées) ou une vitrine enregistrée
+// (version personnalisée, de n'importe quel joueur) ; enregistrer /
+// supprimer comme les box personnalisées du 1v1.
+function brancherVitrinesEnregistrees(carte, vitrine, profil) {
+  const liste = carte.querySelector(".ent-liste-vitrines");
+  const champ = carte.querySelector(".ent-nom-vitrine");
+  const message = carte.querySelector(".ent-message-box");
+  const trouver = id => vitrinesEnregistrees().find(b => b.id === id);
+  const option = (valeur, texte) => {
+    const o = document.createElement("option");
+    o.value = valeur;
+    o.textContent = texte;
+    return o;
+  };
+  const miennes = vitrine.proprietaire === entrainement.moi.id
+    ? ["vitrine", "vitrine2"].filter(box => profil?.characters?.selections?.[box])
+    : [];
+  const noms = profil?.nomsBoxes || {};
+  const enregistrees = vitrinesEnregistrees();
+  liste.replaceChildren(
+    option("", miennes.length || enregistrees.length ? "Charger une vitrine…" : "Aucune vitrine enregistrée"),
+    ...miennes.map(box => option(`compte:${box}`, `${typeof noms[box] === "string" && noms[box] ? noms[box] : box === "vitrine" ? "Vitrine 1" : "Vitrine 2"} (ma vitrine)`)),
+    ...enregistrees.map(b => option(b.id, `${b.nom} · ${nomProprietaire(b.proprietaire)}`))
+  );
+  liste.value = enregistrees.some(b => b.id === vitrine.enregistree) ? vitrine.enregistree : "";
+  carte.querySelector(".ent-supprimer-vitrine").disabled = !trouver(liste.value);
+  if (champ) champ.value = trouver(vitrine.enregistree)?.nom || "";
+
+  liste.addEventListener("change", () => {
+    if (liste.value.startsWith("compte:")) {
+      const box = liste.value.slice(7);
+      const persos = profil.characters.selections[box] || {};
+      const armes = profil.weapons?.selections?.[box] || {};
+      vitrine.persos = new Set(Object.keys(persos).filter(id => persos[id]));
+      vitrine.armes = new Set(Object.keys(armes).filter(id => armes[id]));
+      vitrine.enregistree = null;
+      rendreVitrinesEntrainement();
+      return;
+    }
+    const enregistree = trouver(liste.value);
+    if (!enregistree) return;
+    if (enregistree.proprietaire !== entrainement.moi.id && !entrainement.comptes.some(c => c.discord_id === enregistree.proprietaire) && !entrainement.fictives.some(b => b.id === enregistree.proprietaire)) {
+      alert("Joueur introuvable.");
+      liste.value = "";
+      return;
+    }
+    vitrine.proprietaire = enregistree.proprietaire;
+    vitrine.persos = new Set(enregistree.persos);
+    vitrine.armes = new Set(enregistree.armes);
+    vitrine.enregistree = enregistree.id;
+    rendreVitrinesEntrainement();
+  });
+
+  carte.querySelector(".ent-supprimer-vitrine").addEventListener("click", async () => {
+    const enregistree = trouver(liste.value);
+    if (!enregistree || !confirm(`Supprimer la vitrine enregistrée « ${enregistree.nom} » ?`)) return;
+    try {
+      await envoyerBoxesEnregistrees(entrainement.enregistrees.filter(b => b !== enregistree));
+      entrainement.vitrines.forEach(v => { if (v.enregistree === enregistree.id) v.enregistree = null; });
+      rendreVitrinesEntrainement();
+    } catch (erreur) {
+      alert(erreur.message);
+    }
+  });
+
+  // Même nom qu'une vitrine enregistrée : remplacée (après confirmation).
+  carte.querySelector(".ent-enregistrer-vitrine")?.addEventListener("click", async () => {
+    const nom = champ.value.trim().slice(0, LONGUEUR_NOM_BOX_ENT);
+    if (!nom) {
+      message.textContent = "Donne un nom à la vitrine.";
+      return;
+    }
+    const boxes = [...(entrainement.enregistrees || [])];
+    const existante = boxes.findIndex(b => b.type === "vitrine" && b.nom.toLowerCase() === nom.toLowerCase());
+    if (existante >= 0 && !confirm(`Remplacer la vitrine enregistrée « ${boxes[existante].nom} » ?`)) return;
+    if (existante < 0 && boxes.length >= MAX_BOXES_ENT) {
+      message.textContent = `${MAX_BOXES_ENT} box et vitrines enregistrées au plus : supprimes-en une.`;
+      return;
+    }
+    const enregistree = {
+      id: existante >= 0 ? boxes[existante].id : Date.now().toString(36),
+      nom,
+      type: "vitrine",
+      proprietaire: vitrine.proprietaire,
+      persos: [...vitrine.persos],
+      armes: [...vitrine.armes]
+    };
+    if (existante >= 0) boxes[existante] = enregistree; else boxes.push(enregistree);
+    try {
+      await envoyerBoxesEnregistrees(boxes);
+      vitrine.enregistree = enregistree.id;
+      await rendreVitrinesEntrainement();
+      remplirListesEnregistrees();
+    } catch (erreur) {
+      message.textContent = erreur.message;
+    }
+  });
 }
 
 async function initialiserEntrainement() {
