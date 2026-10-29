@@ -747,6 +747,21 @@
   cursor: not-allowed;
 }
 
+/* Cosmétique focus du tirage : aperçu, puis lien vers la page Cosmétiques. */
+.perso-tirage-apercu {
+  display: block;
+  width: min(100%, 18rem);
+  max-height: 9rem;
+  margin: 0 auto 0.75rem;
+  border-radius: 0.625rem;
+  object-fit: cover;
+  box-shadow: 0 0 1.25rem rgba(245, 197, 66, 0.35);
+}
+
+.perso-tirage-type {
+  color: rgba(255, 255, 255, 0.65);
+}
+
 /* Panier : une ligne par cosmétique (aperçu, nom et type, prix, retirer). */
 .perso-panier-lignes {
   margin: 0 0 0.75rem;

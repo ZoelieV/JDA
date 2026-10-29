@@ -109,7 +109,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=20";
+    lien.href = "/commun/personnalisation.css?v=21";
     document.head.appendChild(lien);
   }
 
@@ -299,13 +299,25 @@
 
   // Cosmétique focus du tirage (pas en vente) : proposer d'aller tenter le
   // tirage sur la page Cosmétiques (déjà dessus : la fenêtre se ferme).
-  function proposerTirage(article) {
+  async function proposerTirage(article) {
     const modifie = !!brouillon && (cles().some(cle => differe(brouillon, enregistres, cle)) || imageBrouillon !== imageEnregistree);
     const surPage = location.pathname.replace(/\/$/, "") === "/cosmetiques";
-    const message = `🎲 « ${article?.nom || "Ce cosmétique"} » est en focus du tirage : il ne s'achète pas, il se gagne seulement par tirage.\n\n` +
-      (surPage ? "Fermer la personnalisation pour tenter ta chance ?" : "Aller sur la page Cosmétiques pour tenter ta chance ?") +
-      (modifie ? "\n\n(Tes changements non enregistrés seront perdus.)" : "");
-    if (!confirm(message)) {
+    const zone = document.createElement("div");
+    zone.innerHTML = `
+      ${article?.image ? `<img class="perso-tirage-apercu" src="${article.image}" alt="">` : ""}
+      <p><strong class="perso-tirage-nom"></strong>${article?.type ? ` <small class="perso-tirage-type">${article.type}</small>` : ""}</p>
+      <p>En focus du tirage : il ne s'achète pas, il se gagne seulement en tentant ta chance sur la page Cosmétiques.</p>
+      ${modifie ? `<p class="perso-fenetre-alerte">Tes changements non enregistrés seront perdus.</p>` : ""}`;
+    // Nom en texte (jamais interprété comme du HTML).
+    zone.querySelector(".perso-tirage-nom").textContent = article?.nom || "Ce cosmétique";
+    const ok = await confirmer({
+      titre: "🎲 Exclusif au tirage",
+      contenu: zone,
+      ok: surPage ? "Tenter ma chance" : "Aller aux tirages",
+      annuler: "Plus tard",
+      classe: "perso-fenetre-tirage"
+    });
+    if (!ok) {
       afficherEtat("Cosmétique focus : il ne s'obtient que par tirage (page Cosmétiques).");
       return;
     }
