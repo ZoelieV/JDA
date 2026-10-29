@@ -2,18 +2,20 @@
    Classic (HYWenHei 55W / 75W, police de Genshin) partout, en gras pour
    tout ce qui est en gras (font-weight 600 et plus) ; Titre (HYWenHei 85W)
    pour les titres. Versions allégées en WOFF2 (sans les caractères
-   chinois : ~30 Ko au lieu de 2 Mo). Classic n'a pas certains accents
-   (â ç ô î û ï œ É È À Ç) : ces lettres s'affichent en Arial. */
+   chinois : ~30 Ko au lieu de 2 Mo). Lettres françaises absentes de
+   Classic (â ç ô î û ï ÿ œ æ, majuscules accentuées, « », ñ) ajoutées à
+   ces versions, construites avec ses propres formes (accents de à é ê ü,
+   cédille tirée de la virgule, guillemets tirés de < >). */
 @font-face {
   font-family: "Classic";
-  src: url("/DB/fonts/classic-latin.woff2") format("woff2");
+  src: url("/DB/fonts/classic-latin.woff2?v=2") format("woff2");
   font-weight: 100 500;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Classic";
-  src: url("/DB/fonts/classic_bold-latin.woff2") format("woff2");
+  src: url("/DB/fonts/classic_bold-latin.woff2?v=2") format("woff2");
   font-weight: 600 900;
   font-display: swap;
 }
