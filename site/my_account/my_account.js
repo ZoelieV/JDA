@@ -626,7 +626,7 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
   const boutonDupliquer = estDuplicata
     ? `<span class="badge-copie">Copie</span>`
     : peutDupliquer
-      ? `<button type="button" class="constellation-btn dupliquer-btn" data-base-id="${item.id}" title="Dupliquer cette arme">⧉</button>`
+      ? `<button type="button" class="constellation-btn dupliquer-btn" data-base-id="${item.id}" title="Dupliquer cette arme"><img class="icone-copier" src="/DB/images/others/copier.webp" alt="Dupliquer"></button>`
       : "";
 
   const zoneAction = boxActive === "full"
