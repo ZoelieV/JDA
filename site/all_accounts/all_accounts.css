@@ -906,3 +906,38 @@ h1, h2 {
     padding: 0.5rem;
   }
 }
+
+/* ---- Ordinateur, box d'un joueur : recherche, tris et filtres
+   compressés comme dans Mon compte (à la suite, petits écarts, raretés en
+   carrés), sans "Trier :". ---- */
+@media (min-width: 701px) {
+  #modal .barre-outils {
+    justify-content: flex-start;
+    gap: 0.25rem;
+  }
+
+  #modal .barre-outils .zone-recherche,
+  #modal .barre-outils .filtres-tri {
+    display: contents;
+  }
+
+  #modal .barre-outils .tris,
+  #modal .barre-outils .filtres-icones,
+  #modal .barre-outils .filtres-etoiles {
+    gap: 0.25rem;
+  }
+
+  #modal .barre-outils .tris-label {
+    display: none;
+  }
+
+  #modal .barre-outils .recherche-personnage {
+    margin-right: 0.25rem;
+  }
+
+  #modal .filtres-etoiles .filtre-etoile-btn {
+    width: 2.4375rem;
+    padding: 0;
+    font-size: 1rem;
+  }
+}
