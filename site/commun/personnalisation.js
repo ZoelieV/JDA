@@ -297,6 +297,22 @@
     bouton.title = `Panier : ${panier.size} cosmétique${panier.size > 1 ? "s" : ""}, clic pour acheter`;
   }
 
+  // Cosmétique focus du tirage (pas en vente) : proposer d'aller tenter le
+  // tirage sur la page Cosmétiques (déjà dessus : la fenêtre se ferme).
+  function proposerTirage(article) {
+    const modifie = !!brouillon && (cles().some(cle => differe(brouillon, enregistres, cle)) || imageBrouillon !== imageEnregistree);
+    const surPage = location.pathname.replace(/\/$/, "") === "/cosmetiques";
+    const message = `🎲 « ${article?.nom || "Ce cosmétique"} » est en focus du tirage : il ne s'achète pas, il se gagne seulement par tirage.\n\n` +
+      (surPage ? "Fermer la personnalisation pour tenter ta chance ?" : "Aller sur la page Cosmétiques pour tenter ta chance ?") +
+      (modifie ? "\n\n(Tes changements non enregistrés seront perdus.)" : "");
+    if (!confirm(message)) {
+      afficherEtat("Cosmétique focus : il ne s'obtient que par tirage (page Cosmétiques).");
+      return;
+    }
+    if (surPage) fermer();
+    else location.href = "/cosmetiques";
+  }
+
   // Clic sur un cosmétique pas possédé : ajouté au panier, ou retiré.
   function basculerPanier(id, article) {
     if (estExclusif(id)) {
@@ -304,7 +320,7 @@
       return;
     }
     if (estFocusTirage(id)) {
-      afficherEtat("Cosmétique focus : il ne s'obtient que par tirage (page Cosmétiques).");
+      proposerTirage(article);
       return;
     }
     if (panier.has(id)) panier.delete(id);
