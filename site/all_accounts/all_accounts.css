@@ -696,7 +696,7 @@ h1, h2 {
   color: rgb(var(--rvb-profil, 245 197 66));
 }
 
-/* Tris en emoji (C6 5★ 🐋, Matchs ⚔️, Winrate 🏆), à la taille des logos. */
+/* Tris en emoji (Matchs ⚔️, Winrate 🏆), à la taille des logos. */
 .tri-emoji {
   font-size: 1.25rem;
   line-height: 1;
