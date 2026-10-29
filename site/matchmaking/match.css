@@ -3237,3 +3237,14 @@ h1 {
 .boutons-fin-tournoi .btn-valider-temps:hover {
   background-color: rgba(245, 197, 66, 0.38);
 }
+
+/* Icône du bouton « Partager le lien » (copie le lien) : même règle que
+   commun/site.css, pas chargé sur les pages de match. */
+.icone-copier {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  margin-right: 0.35em;
+  vertical-align: -0.2em;
+  object-fit: contain;
+}

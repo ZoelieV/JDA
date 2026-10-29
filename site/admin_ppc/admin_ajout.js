@@ -308,7 +308,7 @@ function htmlImages(genre, entree) {
             <code>${echapper(image.chemin)}</code>
             ${image.note ? `<span class="note-image">${image.note}</span>` : ""}
           </span>
-          <button type="button" class="copier-chemin" data-nom="${echapper(image.chemin.split("/").pop())}" title="Copier le nom du fichier">Copier</button>
+          <button type="button" class="copier-chemin" data-nom="${echapper(image.chemin.split("/").pop())}" title="Copier le nom du fichier"><img class="icone-copier" src="/DB/images/others/copier.webp" alt="">Copier</button>
           ${image.lien ? `<a class="lien-image" href="${echapper(image.lien)}" target="_blank" rel="noopener">Chercher</a>` : ""}
           <span class="statut-image" data-statut="attente">…</span>
         </div>`).join("")}
@@ -513,8 +513,9 @@ function initialiserAjout() {
     const copie = event.target.closest(".copier-chemin");
     if (copie) {
       navigator.clipboard?.writeText(copie.dataset.nom).then(() => {
+        const contenu = copie.innerHTML;
         copie.textContent = "Copié";
-        setTimeout(() => { copie.textContent = "Copier"; }, 1200);
+        setTimeout(() => { copie.innerHTML = contenu; }, 1200);
       }).catch(() => {});
     }
     const suppression = event.target.closest(".supprimer-ajout");

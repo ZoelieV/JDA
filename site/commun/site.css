@@ -480,3 +480,14 @@ html.avec-entete-site body:has(.box-total) .site-pied {
     justify-content: center;
   }
 }
+
+/* Icône des boutons qui copient (lien d'une room, box, nom de fichier) :
+   blanche, à la hauteur du texte. */
+.icone-copier {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  margin-right: 0.35em;
+  vertical-align: -0.2em;
+  object-fit: contain;
+}

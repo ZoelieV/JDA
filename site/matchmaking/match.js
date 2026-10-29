@@ -3748,7 +3748,7 @@ function initialiserAnnulationMatchmaking() {
 
 function initialiserPartage() {
   const bouton = document.getElementById("btn-partager");
-  const texteInitial = bouton.textContent;
+  const texteInitial = bouton.innerHTML; // icône comprise
 
   bouton.addEventListener("click", async () => {
     const lien = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
@@ -3759,7 +3759,7 @@ function initialiserPartage() {
       // Presse-papiers indisponible : on affiche le lien à copier à la main.
       window.prompt("Copie ce lien et envoie-le à ton adversaire :", lien);
     }
-    setTimeout(() => { bouton.textContent = texteInitial; }, 2000);
+    setTimeout(() => { bouton.innerHTML = texteInitial; }, 2000);
   });
 }
 

@@ -871,7 +871,7 @@ function initialiserBoutons() {
   $("btn-revanche").addEventListener("click", () => agir("equipe_revanche", { rejouer: !draft[`revanche_${monCamp()}`] }));
 
   const partager = $("btn-partager");
-  const texte = partager.textContent;
+  const texte = partager.innerHTML; // icône comprise
   partager.addEventListener("click", async () => {
     const lien = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
     try {
@@ -880,7 +880,7 @@ function initialiserBoutons() {
     } catch {
       window.prompt("Copie ce lien et envoie-le aux autres joueurs :", lien);
     }
-    setTimeout(() => { partager.textContent = texte; }, 2000);
+    setTimeout(() => { partager.innerHTML = texte; }, 2000);
   });
 }
 
