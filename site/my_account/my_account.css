@@ -758,7 +758,7 @@ textarea {
 .btn-enregistrer-fixe {
   position: fixed;
   right: 1rem;
-  bottom: 1rem;
+  bottom: calc(1rem + var(--decalage-pied, 0px));
   z-index: 60;
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
@@ -843,7 +843,7 @@ textarea {
 .box-total {
   position: fixed;
   left: 50%;
-  bottom: 1rem;
+  bottom: calc(1rem + var(--decalage-pied, 0px));
   transform: translateX(-50%);
   z-index: 50;
   margin: 0;
@@ -855,14 +855,16 @@ textarea {
   box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.5);
 }
 
-/* Place pour le total et le bouton Enregistrer figés en bas. */
+/* Place pour le total et le bouton Enregistrer figés en bas. Ils
+   remontent au-dessus du pied de page quand il apparaît (--decalage-pied :
+   hauteur visible du pied, cf. suivrePiedDePage dans my_account.js). */
 body {
   padding-bottom: 5rem;
 }
 
 /* Les notifications s'affichent au-dessus du total. */
 #toast-conteneur {
-  bottom: 4.75rem;
+  bottom: calc(4.75rem + var(--decalage-pied, 0px));
 }
 
 /* ---- Ligne des box : bouton de détection automatique à droite ---- */
@@ -1224,14 +1226,14 @@ body {
 @media (max-width: 700px) {
   .box-total {
     left: 0.75rem;
-    bottom: 0.75rem;
+    bottom: calc(0.75rem + var(--decalage-pied, 0px));
     transform: none;
     max-width: calc(100vw - 10rem);
   }
 
   .btn-enregistrer-fixe {
     right: 0.75rem;
-    bottom: 0.75rem;
+    bottom: calc(0.75rem + var(--decalage-pied, 0px));
   }
 
   .niveau-choix {

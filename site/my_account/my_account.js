@@ -1769,7 +1769,24 @@ function afficherToast(message, type = "succes") {
   }, 3000);
 }
 
+// Pied de page (affichage classique, cf. commun/site.js) : sa hauteur
+// visible à l'écran dans --decalage-pied, pour que le total de la box, le
+// bouton Enregistrer et les notifications (figés en bas) restent au-dessus.
+function suivrePiedDePage() {
+  const maj = () => {
+    const pied = document.querySelector(".site-pied");
+    const visible = pied ? Math.max(0, window.innerHeight - pied.getBoundingClientRect().top) : 0;
+    document.documentElement.style.setProperty("--decalage-pied", `${Math.round(visible)}px`);
+  };
+  window.addEventListener("scroll", maj, { passive: true });
+  window.addEventListener("resize", maj);
+  // Hauteur de la page changée (grille filtrée, box changée).
+  new ResizeObserver(maj).observe(document.body);
+  maj();
+}
+
 async function demarrer() {
+  suivrePiedDePage();
   const connecte = await chargerSessionDiscord();
 
   if (connecte) {

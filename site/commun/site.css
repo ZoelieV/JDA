@@ -302,14 +302,11 @@ html.avec-entete-site .site-pied {
   left: 0;
 }
 
-/* Mon compte : total de la box figé en bas de l'écran (cf.
-   my_account.css) ; pied de page au-dessus, pour ne pas être caché. */
+/* Mon compte : total de la box et Enregistrer figés en bas de l'écran,
+   remontés au-dessus du pied de page quand il apparaît (cf.
+   my_account.css) ; pied tout en bas, comme ailleurs. */
 html.avec-entete-site body:has(.box-total) {
   padding-bottom: 11rem;
-}
-
-html.avec-entete-site body:has(.box-total) .site-pied {
-  bottom: calc(5rem / var(--zoom-barres));
 }
 
 .pied-contenu {
