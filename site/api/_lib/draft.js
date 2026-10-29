@@ -461,6 +461,34 @@ function calculerBansHorizontaux(draft) {
   draft.bans_horizontaux_choix = [];
 }
 
+// Mode Équilibrage de l'entraînement : bans horizontaux prévus si le
+// petit joueur fait exactement les bans verticaux de l'optimiseur (choix :
+// bans normaux, jokers), calculés comme calculerBansHorizontaux sur une
+// copie de la draft (rien n'est modifié). Nombre maximal : il baisse si
+// les vrais bans laissent moins de cibles.
+// -> { sommes: { j1, j2 }, ecart, brut (avant plafond), total, banneur, cibles }
+function prevoirBansHorizontaux(draft, banneur, choix, jokers) {
+  const copie = {
+    ...draft,
+    pool_j1: [...(draft.pool_j1 || [])],
+    pool_j2: [...(draft.pool_j2 || [])],
+    pool_disponible: [...(draft.pool_disponible || [])],
+    actions: [],
+    horizontal_calcule: false
+  };
+  if (banneur) appliquerBansBonus(copie, banneur, choix, jokers);
+  calculerBansHorizontaux(copie);
+  const ecart = copie.somme_horizontale_j1 - copie.somme_horizontale_j2;
+  return {
+    sommes: { j1: copie.somme_horizontale_j1, j2: copie.somme_horizontale_j2 },
+    ecart,
+    brut: Math.floor(Math.abs(ecart) / (copie.seuil_horizontal || SEUIL_HORIZONTAL)),
+    total: copie.bans_horizontaux_total,
+    banneur: copie.bans_horizontaux_joueur,
+    cibles: copie.bans_horizontaux_joueur ? ciblesHorizontales(copie, []).length : 0
+  };
+}
+
 // Bans horizontaux à faire maintenant (calculés au premier appel, après
 // les bans verticaux). Pas en carnage ni avec les autres méthodes.
 function preparerBansHorizontaux(draft) {
@@ -1114,6 +1142,7 @@ module.exports = {
   SEUIL_HORIZONTAL,
   ciblesHorizontales,
   preparerBansHorizontaux,
+  prevoirBansHorizontaux,
   appliquerBansHorizontaux,
   acteurBansBonus,
   verticalite,

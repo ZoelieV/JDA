@@ -208,6 +208,22 @@
     return "Fin";
   }
 
+  // Bans horizontaux prévus si les bans verticaux sont ceux de l'optimiseur
+  // (cf. prevoirBansHorizontaux, api/_lib/draft.js) : nombre maximal.
+  function htmlHorizontalPrevu(d) {
+    const p = d.horizontal_prevu;
+    if (!p) return "";
+    const seuil = draft.seuil_horizontal || 200;
+    const role = { faible: d.faible, fort: d.fort };
+    return `<div class="eq-decision eq-prevu">
+      <p><b>Bans horizontaux prévus</b> si ${nomRole(d.faible)} fait exactement ces bans : 
+        S<sub>${nomRole(role.faible)}</sub> = <b>${p.sommes[role.faible]}</b>, S<sub>${nomRole(role.fort)}</sub> = <b>${p.sommes[role.fort]}</b> ;
+        ⌊ ${Math.abs(p.ecart)} / ${seuil} ⌋ = <b>${p.brut}</b>${p.total < p.brut ? `, plafonné à <b>${p.total}</b> (cibles possibles : ${p.cibles})` : ""}
+        → <b class="eq-gros" data-de="0" data-vers="${p.total}">${p.total}</b> ban${p.total > 1 ? "s" : ""} horizonta${p.total > 1 ? "ux" : "l"}${p.banneur ? ` pour ${nomRole(p.banneur)}` : ""}.</p>
+      <p class="eq-note">Nombre maximal : d'autres bans verticaux changent les sommes, et il baisse s'il ne reste plus assez de cibles.</p>
+    </div>`;
+  }
+
   // ---- Vertical ----
   function formulesVerticales(d, etape) {
     const v = etape.verticalite || {};
@@ -288,7 +304,8 @@
           ${e.equilibrable ? `≤ ${d.tolerance} : équilibrable.` : `&gt; ${d.tolerance} : <b class="eq-alerte">pas équilibrable</b>.`}</p>
         <p>${nomRole(d.faible)} a <b>${d.bans + d.jokers}</b> ban${d.bans + d.jokers > 1 ? "s" : ""} d'équilibrage${d.jokers ? ` (dont ${d.jokers} joker${d.jokers > 1 ? "s" : ""})` : ""} sur ${nomRole(d.fort)}. Il choisit librement lesquels ; ceux de l'optimiseur, dans l'ordre :</p>
         <div class="eq-suggestion">${liste || "<em>aucun</em>"}</div>
-      </div>`;
+      </div>
+      ${htmlHorizontalPrevu(d)}`;
     }
     if (e.type === "refus") {
       return `<div class="eq-decision eq-refus">Meilleur retrait : ${imagePerso(e.refus.id)} <b>${nomPerso(e.refus.id)}</b> (−${e.refus.gain}) refusé : ${(TEXTES_REFUS[e.refus.raison] || (() => ""))(d)}.</div>`;
@@ -431,6 +448,7 @@
         ${brut === 0 ? "<p>Écart sous le seuil : pas de ban horizontal.</p>" : `
           <p>${nomRole(s1 < s2 ? h.faible.role : h.fort.role)} (plus petite somme) bannit parmi les persos horizontaux de ${nomRole(s1 < s2 ? h.fort.role : h.faible.role)}.</p>
           <p>${total_ < brut ? `Plafonné à <b>${total_}</b> : plus assez de cibles (persos horizontaux encore jouables, sans faire passer une box sous ${draft.min_persos_equilibrage || 0} persos).` : `Nombre retenu : <b>${total_}</b>${cibles ? ` (${cibles} cibles possibles)` : ""}.`}</p>`}
+        ${d.horizontal_prevu ? `<p>Prévu par l'optimiseur (si les bans verticaux avaient été les siens) : <b>${d.horizontal_prevu.total}</b> ; réel : <b>${total_}</b>${d.horizontal_prevu.total !== total_ ? " (bans verticaux différents de ceux de l'optimiseur, ou moins de cibles)" : ""}.</p>` : ""}
       </div>` : `<div class="eq-decision">${textes[index]}</div>`;
     fenetre.querySelector(".eq-etape").innerHTML = `
       ${resultat}

@@ -18,6 +18,7 @@ const {
   estEquilibrageFixe,
   estEquilibrageHorizontal,
   valeursHorizontales,
+  prevoirBansHorizontaux,
   verticalite,
   horizontalite,
   calculerEquilibrageFixe,
@@ -118,7 +119,11 @@ async function calculerModeSpecial(draft) {
   const trace = draft.entrainement?.detail_equilibrage && draft.mode_theatre !== "carnage" ? [] : null;
   const { faible, fort, resultat } = evaluerEquilibrageFixe(boxes, palier, { special: true, trace });
   // Horizontal : inchangé (persos horizontaux figés au 1er calcul).
-  if (trace) draft.detail_equilibrage = { ...detailEquilibrage(faible, fort, resultat, trace), horizontal: draft.detail_equilibrage?.horizontal || null };
+  if (trace) {
+    const horizontal = draft.detail_equilibrage?.horizontal || null;
+    draft.detail_equilibrage = { ...detailEquilibrage(faible, fort, resultat, trace), horizontal };
+    if (horizontal) draft.detail_equilibrage.horizontal_prevu = horizontalPrevu(draft, faible, trace);
+  }
   draft.bans_bonus_total = resultat.bans + resultat.jokers;
   draft.bans_joker_total = resultat.jokers;
   draft.bans_bonus_joueur = draft.bans_bonus_total > 0 ? faible : null;
@@ -217,6 +222,15 @@ function detailEquilibrage(faible, fort, resultat, trace) {
   };
 }
 
+// Bans horizontaux prévus si les bans verticaux sont ceux de l'optimiseur
+// (trace : bans normaux et jokers, cf. prevoirBansHorizontaux).
+function horizontalPrevu(draft, faible, trace) {
+  const retraits = type => trace.filter(e => e.type === type).map(e => e.choix);
+  const choix = retraits("ban");
+  const jokers = retraits("joker");
+  return prevoirBansHorizontaux(draft, choix.length || jokers.length ? faible : null, choix, jokers);
+}
+
 // Fin du choix des box : points, pools, théâtres et bans d'équilibrage.
 // Les places j1/j2 sont encore provisoires ici (le tirage vient après).
 async function calculerEquilibrage(draft) {
@@ -275,7 +289,10 @@ async function calculerEquilibrage(draft) {
       draft[`horizontaux_${faible}`] = valeursHorizontales(modeles[faible], resultat.verticaux.faible, details.faible);
       draft[`horizontaux_${fort}`] = valeursHorizontales(modeles[fort], resultat.verticaux.fort, details.fort);
       draft.seuil_horizontal = getSeuilHorizontal();
-      if (trace) draft.detail_equilibrage.horizontal = details;
+      if (trace) {
+        draft.detail_equilibrage.horizontal = details;
+        draft.detail_equilibrage.horizontal_prevu = horizontalPrevu(draft, faible, trace);
+      }
     }
     ["j1", "j2"].forEach(role => {
       draft[`verticalite_${role}`] = Math.round(verticalite(modeles[role]) * 10) / 10;
