@@ -1840,4 +1840,31 @@ body {
     width: 2.4375rem;
     padding: 0;
   }
+
+  /* Personnages / Armes compris : à gauche de la recherche, mêmes carrés
+     que les filtres, tout à la suite. */
+  .ligne-vues {
+    justify-content: flex-start;
+    gap: 0.25rem;
+  }
+
+  .ligne-vues .view-selector,
+  .ligne-vues .barre-filtres {
+    display: contents;
+  }
+
+  .ligne-vues .view-btn {
+    box-sizing: border-box;
+    width: 2.4375rem;
+    height: 2.4375rem;
+    padding: 0.25rem;
+  }
+
+  .ligne-vues .view-btn img {
+    height: 1.5rem;
+  }
+
+  .ligne-vues .view-btn:last-child {
+    margin-right: 0.25rem;
+  }
 }
