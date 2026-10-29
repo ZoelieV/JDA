@@ -447,8 +447,8 @@
   background-color: var(--couleur-detail);
 }
 
+/* Texte d'introduction : toute la largeur du panneau. */
 .detail-match > p {
-  max-width: 52rem;
   line-height: 1.5;
 }
 
