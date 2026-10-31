@@ -224,6 +224,100 @@ function armesPossedees(profil) {
     .sort((a, b) => rang.get(a.arme.id) - rang.get(b.arme.id) || a.instance.localeCompare(b.instance));
 }
 
+// Choix d'un joueur (entraînement) : champ où l'on écrit pour filtrer et
+// liste de hauteur fixe qui défile (flèche : ouverte sans rien écrire).
+// Choix au clic sur un nom, ou Entrée / flèches ; texte qui ne correspond à
+// personne : nom actuel remis. choix : [{ id, libelle }] ; actuel : id ;
+// surChoix(id) appelé quand un autre joueur est choisi. -> élément.
+function creerChoixJoueurEnt(choix, actuel, surChoix) {
+  const libelleActuel = choix.find(c => c.id === actuel)?.libelle || "";
+  const boite = document.createElement("div");
+  boite.className = "choix-joueur-ent";
+  boite.innerHTML = `
+    <input type="text" class="ent-joueur" autocomplete="off" spellcheck="false" placeholder="Rechercher un joueur…" role="combobox" aria-expanded="false">
+    <button type="button" class="fleche-joueur-ent" tabindex="-1" aria-label="Voir tous les joueurs">▾</button>
+    <ul class="liste-joueurs-ent" role="listbox" hidden></ul>`;
+  const champ = boite.querySelector("input");
+  const liste = boite.querySelector("ul");
+  champ.value = libelleActuel;
+  let visibles = [];
+  let surligne = -1;
+
+  const rendre = (tout = false) => {
+    const filtre = tout || champ.value === libelleActuel ? "" : sansAccents(champ.value.trim());
+    visibles = choix.filter(c => !filtre || sansAccents(c.libelle).includes(filtre));
+    surligne = Math.max(0, visibles.findIndex(c => c.id === actuel));
+    liste.innerHTML = visibles.length
+      ? visibles.map((c, i) => `<li role="option" data-index="${i}" class="${c.id === actuel ? "actuel" : ""}${i === surligne ? " surligne" : ""}">${echapperHtml(c.libelle)}</li>`).join("")
+      : `<li class="aucun-joueur-ent">Aucun joueur</li>`;
+    liste.hidden = false;
+    champ.setAttribute("aria-expanded", "true");
+    liste.querySelector(".surligne")?.scrollIntoView({ block: "nearest" });
+  };
+  const fermer = () => {
+    liste.hidden = true;
+    champ.setAttribute("aria-expanded", "false");
+  };
+  const choisir = c => {
+    fermer();
+    if (!c || c.id === actuel) {
+      champ.value = libelleActuel;
+      champ.blur();
+      return;
+    }
+    champ.value = c.libelle;
+    surChoix(c.id);
+  };
+  const surligner = i => {
+    if (!visibles.length) return;
+    surligne = (i + visibles.length) % visibles.length;
+    liste.querySelectorAll("li").forEach((li, j) => li.classList.toggle("surligne", j === surligne));
+    liste.children[surligne]?.scrollIntoView({ block: "nearest" });
+  };
+
+  // Clic : tout le texte sélectionné (la saisie remplace le nom), liste
+  // ouverte.
+  champ.addEventListener("focus", () => {
+    champ.select();
+    rendre();
+  });
+  champ.addEventListener("input", () => rendre());
+  champ.addEventListener("keydown", event => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (liste.hidden) rendre();
+      else surligner(surligne + (event.key === "ArrowDown" ? 1 : -1));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      choisir(visibles[surligne]);
+    } else if (event.key === "Escape") {
+      champ.value = libelleActuel;
+      fermer();
+      champ.blur();
+    }
+  });
+  // Sortie du champ : nom tapé en entier choisi, sinon nom actuel remis.
+  champ.addEventListener("blur", () => {
+    if (liste.hidden) return;
+    const exact = choix.find(c => sansAccents(c.libelle) === sansAccents(champ.value.trim()));
+    choisir(exact);
+  });
+  // mousedown : le champ garde le focus (sinon il se ferme avant le clic).
+  liste.addEventListener("mousedown", event => event.preventDefault());
+  liste.addEventListener("click", event => {
+    const li = event.target.closest("[data-index]");
+    if (li) choisir(visibles[Number(li.dataset.index)]);
+  });
+  const fleche = boite.querySelector(".fleche-joueur-ent");
+  fleche.addEventListener("mousedown", event => event.preventDefault());
+  fleche.addEventListener("click", () => {
+    if (!liste.hidden) return fermer();
+    champ.focus({ preventScroll: true });
+    rendre(true);
+  });
+  return boite;
+}
+
 // Sélecteur d'un côté : joueur, box, et persos cochés si personnalisée.
 async function rendreSelecteurBox(cote) {
   const etat = entrainement.cotes[cote];
@@ -240,8 +334,7 @@ async function rendreSelecteurBox(cote) {
   if (!boxes.includes(etat.box)) etat.box = "full";
 
   zone.innerHTML = `
-    <label>Joueur <input type="text" class="ent-joueur" list="ent-joueurs-${cote}" autocomplete="off" placeholder="Rechercher un joueur…"></label>
-    <datalist id="ent-joueurs-${cote}"></datalist>
+    <div class="ligne-joueur-ent"><span>Joueur</span></div>
     <div class="choix-boutons ent-box">
       ${boxes.map(box => `<button type="button" class="choix-btn${etat.box === box ? " active" : ""}" data-valeur="${box}"></button>`).join("")}
     </div>
@@ -281,10 +374,10 @@ async function rendreSelecteurBox(cote) {
     btn.textContent = typeof nomsBoxes[box] === "string" && nomsBoxes[box] ? nomsBoxes[box] : fictive && box === "opti1" ? "Opti" : LIBELLES_BOX[box];
   });
 
-  // Joueur : champ de recherche avec suggestions (une liste déroulante de
-  // tous les joueurs, trop longue, s'ouvrait par-dessus le champ et le
-  // relâchement du clic choisissait le joueur sous la souris). Libellés
-  // uniques (homonymes numérotés).
+  // Joueur : champ de recherche et liste qui défile (cf.
+  // creerChoixJoueurEnt ; une liste déroulante native, trop longue, s'ouvrait
+  // par-dessus le champ et le relâchement du clic choisissait le joueur sous
+  // la souris). Libellés uniques (homonymes numérotés).
   const choix = [
     ...entrainement.comptes.map(compte => ({ id: compte.discord_id, libelle: compte.discord_id === entrainement.moi.id ? `${compte.nom} (moi)` : compte.nom })),
     ...entrainement.fictives.map(box => ({ id: box.id, libelle: `${box.nom} (box fictive)` }))
@@ -295,30 +388,13 @@ async function rendreSelecteurBox(cote) {
     vus.set(c.libelle, n);
     if (n > 1) c.libelle = `${c.libelle} (${n})`;
   });
-  const liste = zone.querySelector("datalist");
-  choix.forEach(c => {
-    const option = document.createElement("option");
-    option.value = c.libelle;
-    liste.appendChild(option);
-  });
-  const champ = zone.querySelector(".ent-joueur");
-  const libelleActuel = choix.find(c => c.id === etat.proprietaire)?.libelle || "";
-  champ.value = libelleActuel;
-  // Clic : tout le texte sélectionné, la saisie remplace le nom.
-  champ.addEventListener("focus", () => champ.select());
-  champ.addEventListener("change", () => {
-    const saisi = champ.value.trim().toLowerCase();
-    const trouve = choix.find(c => c.libelle.toLowerCase() === saisi);
-    if (!trouve || trouve.id === etat.proprietaire) {
-      champ.value = libelleActuel;
-      return;
-    }
-    etat.proprietaire = trouve.id;
+  zone.querySelector(".ligne-joueur-ent").appendChild(creerChoixJoueurEnt(choix, etat.proprietaire, id => {
+    etat.proprietaire = id;
     etat.persos = new Set();
     etat.armes = new Set();
     etat.enregistree = null;
     rendreSelecteurBox(cote);
-  });
+  }));
 
   zone.querySelectorAll(".ent-box .choix-btn").forEach(btn => btn.addEventListener("click", () => {
     etat.box = btn.dataset.valeur;
@@ -665,14 +741,6 @@ async function rendreVitrinesEntrainement() {
   const zone = document.getElementById("ent-vitrines");
   const taille = entrainement.taille;
   const choix = choixProprietaires();
-  const liste = document.getElementById("ent-joueurs-vitrines");
-  if (!liste.childElementCount) {
-    choix.forEach(c => {
-      const option = document.createElement("option");
-      option.value = c.libelle;
-      liste.appendChild(option);
-    });
-  }
   const colonnes = [0, 1].map(equipe => {
     const colonne = document.createElement("div");
     colonne.className = "ent-colonne-vitrines";
@@ -696,7 +764,7 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
   carte.innerHTML = `
     <div class="ent-vitrine-entete">
       <strong>Joueur ${(index % entrainement.taille) + 1}</strong>
-      <input type="text" class="ent-joueur" list="ent-joueurs-vitrines" autocomplete="off" placeholder="Rechercher un joueur…">
+      <span class="place-choix-joueur"></span>
       <span class="ent-vitrine-compte"></span>
       <button type="button" class="choix-btn ent-vitrine-ouvrir">${vitrine.ouverte ? "Fermer" : "Choisir les persos"}</button>
     </div>
@@ -723,23 +791,14 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
   };
   majCompte();
 
-  const champ = carte.querySelector(".ent-joueur");
-  const libelleActuel = choix.find(c => c.id === vitrine.proprietaire)?.libelle || "";
-  champ.value = libelleActuel;
-  champ.addEventListener("focus", () => champ.select());
-  champ.addEventListener("change", () => {
-    const trouve = choix.find(c => c.libelle.toLowerCase() === champ.value.trim().toLowerCase());
-    if (!trouve || trouve.id === vitrine.proprietaire) {
-      champ.value = libelleActuel;
-      return;
-    }
-    vitrine.proprietaire = trouve.id;
+  carte.querySelector(".place-choix-joueur").replaceWith(creerChoixJoueurEnt(choix, vitrine.proprietaire, id => {
+    vitrine.proprietaire = id;
     vitrine.persos = new Set();
     vitrine.armes = new Set();
     vitrine.enregistree = null;
     vitrine.ouverte = true;
     rendreVitrinesEntrainement();
-  });
+  }));
   carte.querySelector(".ent-vitrine-ouvrir").addEventListener("click", () => {
     vitrine.ouverte = !vitrine.ouverte;
     rendreVitrinesEntrainement();
