@@ -449,7 +449,10 @@
   border-color: #3ecf6a;
 }
 
+/* Contour en demi-cercle à droite, comme l'extrémité de l'image (à gauche,
+   caché sous la photo). */
 .match-arbre .camp-arbre.gagnant .banniere-joueur::before {
+  border-radius: 0 999px 999px 0;
   box-shadow: inset 0 0 0 2px #3ecf6a;
 }
 
