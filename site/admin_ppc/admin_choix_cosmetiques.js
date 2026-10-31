@@ -3,8 +3,8 @@
 // skins et variantes ; onglet Cachés en premier, ouvert par défaut :
 // cosmétiques cachés de cosmetiques.json, "caches", seulement donnés par les
 // administrateurs), recherche, un ou plusieurs choix à la fois.
-// choisirCosmetiques({ titre, multiple, selection }) -> Promise<[ids] | null>
-// (null : annulé). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
+// choisirCosmetiques({ titre, multiple, selection, onglets }) -> Promise<[ids]
+// | null> (null : annulé ; onglets : ids des onglets proposés, tous sinon). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
 // Utilise idCosmetique, COSMETIQUES_GRATUITS (commun/koyns.js), nomFond,
 // VARIANTES_PERSONNAGES, SKINS_PERSONNAGES et imagesSkin (commun/variantes.js).
 
@@ -64,7 +64,7 @@ function htmlPastilleCosmetique(id) {
     `<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`;
 }
 
-function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [] } = {}) {
+function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null } = {}) {
   return new Promise(async resoudre => {
     const catalogue = await chargerCatalogueChoix().catch(() => null);
     if (!catalogue) {
@@ -74,7 +74,8 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
     }
     const choisis = new Set(selection);
     const nbCaches = [...catalogue.values()].filter(info => info.cache).length;
-    let onglet = nbCaches ? "caches" : "banniere";
+    const ongletsProposes = ONGLETS_CHOIX_COSMETIQUES.filter(o => !onglets || onglets.includes(o.id));
+    let onglet = nbCaches && ongletsProposes.some(o => o.id === "caches") ? "caches" : ongletsProposes.find(o => o.id !== "caches").id;
     const fenetre = document.createElement("div");
     fenetre.className = "modal-apercu active fenetre-choix-cosmetiques";
     fenetre.innerHTML = `
@@ -83,7 +84,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
           <h2></h2>
           <button type="button" class="fermer-apercu" data-action="annuler" aria-label="Fermer">×</button>
         </div>
-        <div class="choix-cosmetiques-onglets">${ONGLETS_CHOIX_COSMETIQUES.map(o => `<button type="button" class="bouton-creer secondaire" data-onglet="${o.id}">${o.nom}${o.id === "caches" ? ` (${nbCaches})` : ""}</button>`).join("")}</div>
+        <div class="choix-cosmetiques-onglets">${ongletsProposes.map(o => `<button type="button" class="bouton-creer secondaire" data-onglet="${o.id}">${o.nom}${o.id === "caches" ? ` (${nbCaches})` : ""}</button>`).join("")}</div>
         <div class="choix-cosmetiques-outils">
           <input type="text" class="texte-ajout choix-cosmetiques-recherche" placeholder="Rechercher…" autocomplete="off">
           ${multiple ? `<button type="button" class="bouton-creer secondaire" data-action="tout">Tout l'onglet</button>

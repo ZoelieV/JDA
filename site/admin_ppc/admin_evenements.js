@@ -43,23 +43,31 @@ function initialiserEvenements() {
 
 // ---- Calendrier de la page Événements (config.calendrier, cf.
 // lireCalendrier dans api/points.js) ----
-// D'abord les dates de la saison de JDA (jours affichés), puis les
-// événements : un ou plusieurs jours, couleur, description courte (dans le
-// jour, 20 caractères au plus) et longue (fenêtre du jour). Chaque
+// D'abord les dates de la saison de JDA (jours de la frise), puis les
+// événements : un ou plusieurs jours (choisis sur le sélecteur de jours de
+// la saison ou écrits), bannière, description courte (sur la frise, 20
+// caractères au plus) et longue (fenêtre de l'événement). Chaque
 // modification envoie tout le calendrier.
 const COURT_CALENDRIER_MAX = 20;
+const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+const NOMS_JOURS_ADMIN = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
 
 function initialiserCalendrierAdmin() {
   const $c = id => document.getElementById(id);
   let calendrier = null; // { saison: { debut, fin }, evenements: [...] }
   let modifie = null; // id de l'événement en cours de modification
+  let banniere = BANNIERE_CALENDRIER_DEFAUT;
 
   const message = (id, texte, type = "") => {
     $c(id).className = `message-ajout ${type}`;
     $c(id).textContent = texte;
   };
-  const dateLisible = jour => new Date(`${jour}T00:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  // "AAAA-MM-JJ" <-> Date à midi UTC (pas de décalage d'heure d'été).
+  const versDate = jour => new Date(`${jour}T12:00:00Z`);
+  const versJour = date => date.toISOString().slice(0, 10);
+  const dateLisible = jour => versDate(jour).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   const echapper = texte => String(texte).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const urlBanniere = chemin => encodeURI(`/DB/images/${chemin}`);
 
   async function enregistrer(nouveau, idMessage, succes) {
     message(idMessage, "Enregistrement…");
@@ -76,18 +84,63 @@ function initialiserCalendrierAdmin() {
     }
   }
 
+  function majBanniere() {
+    $c("calendrier-banniere").style.backgroundImage = `url("${urlBanniere(banniere)}")`;
+    $c("calendrier-banniere").title = banniere.split("/").pop().replace(/^Namecard_Banner_|\.webp$/g, "").replace(/_/g, " ");
+  }
+
   function viderFormulaire() {
     modifie = null;
     ["calendrier-debut", "calendrier-fin", "calendrier-court", "calendrier-long"].forEach(id => { $c(id).value = ""; });
-    $c("calendrier-couleur").value = "#e2d29a";
+    banniere = BANNIERE_CALENDRIER_DEFAUT;
     $c("calendrier-titre-formulaire").textContent = "Ajouter un événement";
     $c("calendrier-valider").textContent = "Ajouter l'événement";
     $c("calendrier-annuler").hidden = true;
     majCompteur();
+    majBanniere();
+    rendreSelecteur();
   }
 
   function majCompteur() {
     $c("calendrier-compteur").textContent = `${[...$c("calendrier-court").value].length} / ${COURT_CALENDRIER_MAX}`;
+  }
+
+  // Sélecteur de jours : un mois par bloc, jours de la saison cliquables ;
+  // période choisie surlignée, jours qui ont déjà un événement pointés.
+  function rendreSelecteur() {
+    const zone = $c("calendrier-selecteur");
+    const saison = calendrier?.saison;
+    if (!saison) {
+      zone.innerHTML = "";
+      return;
+    }
+    const debut = $c("calendrier-debut").value;
+    const fin = $c("calendrier-fin").value || debut;
+    const occupes = new Set();
+    (calendrier.evenements || []).filter(e => e.id !== modifie).forEach(e => {
+      for (let d = versDate(e.debut); versJour(d) <= e.fin; d.setUTCDate(d.getUTCDate() + 1)) occupes.add(versJour(d));
+    });
+    const mois = [];
+    for (let d = versDate(saison.debut); versJour(d) <= saison.fin; d.setUTCDate(d.getUTCDate() + 1)) {
+      const jour = versJour(d);
+      if (mois.at(-1)?.cle !== jour.slice(0, 7)) mois.push({ cle: jour.slice(0, 7), jours: [] });
+      mois.at(-1).jours.push(jour);
+    }
+    zone.innerHTML = mois.map(({ cle, jours }) => `
+      <div class="mois-selecteur">
+        <h4>${versDate(`${cle}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" })}</h4>
+        <div class="grille-selecteur">
+          ${NOMS_JOURS_ADMIN.map(nom => `<span class="nom-jour-selecteur">${nom}</span>`).join("")}
+          ${"<span></span>".repeat((versDate(jours[0]).getUTCDay() + 6) % 7)}
+          ${jours.map(jour => {
+            const classes = ["jour-selecteur",
+              debut && jour >= debut && jour <= fin ? "choisi" : "",
+              jour === debut || jour === fin ? "borne" : "",
+              occupes.has(jour) ? "occupe" : ""].filter(Boolean).join(" ");
+            return `<button type="button" class="${classes} action-calendrier" data-jour="${jour}">${Number(jour.slice(8))}</button>`;
+          }).join("")}
+        </div>
+      </div>`).join("");
   }
 
   function rendre() {
@@ -104,21 +157,49 @@ function initialiserCalendrierAdmin() {
       ? `<li class="doux">Choisis d'abord les dates de la saison.</li>`
       : evenements.length ? evenements.map(e => `
         <li>
-          <span class="pastille-couleur-calendrier" style="background-color: ${echapper(e.couleur)}"></span>
+          <span class="apercu-banniere-calendrier petit" style="background-image: url(&quot;${echapper(urlBanniere(e.banniere))}&quot;)"></span>
           <span class="dates-calendrier-admin">${dateLisible(e.debut)}${e.fin !== e.debut ? ` → ${dateLisible(e.fin)}` : ""}</span>
           <strong>${echapper(e.court)}</strong>
           <span class="long-calendrier-admin doux" title="${echapper(e.long)}">${echapper(e.long)}</span>
           <button type="button" class="bouton-creer secondaire action-calendrier" data-modifier="${e.id}">Modifier</button>
           <button type="button" class="bouton-creer secondaire action-calendrier" data-supprimer="${e.id}">Supprimer</button>
         </li>`).join("") : `<li class="doux">Aucun événement.</li>`;
+    rendreSelecteur();
   }
 
   chargerPointsAdmin().then(config => {
     calendrier = config?.calendrier || null;
     rendre();
   });
+  majBanniere();
 
   $c("calendrier-court").addEventListener("input", majCompteur);
+  ["calendrier-debut", "calendrier-fin"].forEach(id => $c(id).addEventListener("change", rendreSelecteur));
+
+  // 1er clic : début (et fin le même jour) ; 2e clic à partir du début :
+  // fin ; clic avant le début, ou une fois la période choisie : nouveau début.
+  let attenteFin = false;
+  $c("calendrier-selecteur").addEventListener("click", event => {
+    const jour = event.target.closest("[data-jour]")?.dataset.jour;
+    if (!jour) return;
+    const debut = $c("calendrier-debut").value;
+    if (attenteFin && debut && jour >= debut) {
+      $c("calendrier-fin").value = jour;
+      attenteFin = false;
+    } else {
+      $c("calendrier-debut").value = jour;
+      $c("calendrier-fin").value = jour;
+      attenteFin = true;
+    }
+    rendreSelecteur();
+  });
+
+  $c("calendrier-choisir-banniere").addEventListener("click", async () => {
+    const choix = await choisirCosmetiques({ titre: "Bannière de l'événement", multiple: false, selection: [`banniere2:${banniere}`], onglets: ["banniere2"] });
+    if (!choix?.length) return;
+    banniere = choix[0].replace(/^banniere2:/, "");
+    majBanniere();
+  });
 
   $c("calendrier-enregistrer-saison").addEventListener("click", () => {
     const debut = $c("calendrier-saison-debut").value;
@@ -136,7 +217,7 @@ function initialiserCalendrierAdmin() {
     if (!debut || fin < debut) return message("message-calendrier", "Choisis le jour de début (et de fin, le même jour ou après).", "erreur");
     if (!court || [...court].length > COURT_CALENDRIER_MAX) return message("message-calendrier", `Description courte : 1 à ${COURT_CALENDRIER_MAX} caractères.`, "erreur");
     if (!long) return message("message-calendrier", "Écris la description longue.", "erreur");
-    const evenement = { id: modifie || undefined, debut, fin, court, long, couleur: $c("calendrier-couleur").value };
+    const evenement = { id: modifie || undefined, debut, fin, court, long, banniere };
     const evenements = modifie
       ? calendrier.evenements.map(e => (e.id === modifie ? evenement : e))
       : [...calendrier.evenements, evenement];
@@ -157,13 +238,16 @@ function initialiserCalendrierAdmin() {
       modifie = e.id;
       $c("calendrier-debut").value = e.debut;
       $c("calendrier-fin").value = e.fin;
-      $c("calendrier-couleur").value = e.couleur;
       $c("calendrier-court").value = e.court;
       $c("calendrier-long").value = e.long;
+      banniere = e.banniere || BANNIERE_CALENDRIER_DEFAUT;
       $c("calendrier-titre-formulaire").textContent = `Modifier « ${e.court} »`;
       $c("calendrier-valider").textContent = "Enregistrer la modification";
       $c("calendrier-annuler").hidden = false;
+      attenteFin = false;
       majCompteur();
+      majBanniere();
+      rendreSelecteur();
       $c("calendrier-titre-formulaire").scrollIntoView({ behavior: "smooth", block: "nearest" });
     } else if (bouton.dataset.supprimer) {
       const e = calendrier.evenements.find(x => x.id === bouton.dataset.supprimer);

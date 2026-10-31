@@ -78,10 +78,11 @@
 //   { equilibrage: méthode }         méthode des bans d'équilibrage des
 //                                    prochaines drafts (cf. _lib/personnages.js)
 //   { calendrier: { saison: { debut, fin }, evenements: [{ id, debut, fin,
-//       court, long, couleur }] } }  calendrier de la page Événements (dates
-//                                    "AAAA-MM-JJ" ; court : 20 caractères au
-//                                    plus, affiché dans le jour ; long : dans
-//                                    la fenêtre du jour ; couleur "#rrggbb"),
+//       court, long, banniere }] } }  calendrier de la page Événements
+//                                    (dates "AAAA-MM-JJ" ; court : 20
+//                                    caractères au plus, sur la frise ; long :
+//                                    fenêtre de l'événement ; banniere : chemin
+//                                    d'une bannière de DB/images/cosmetiques.json),
 //                                    cf. lireCalendrier
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
@@ -220,6 +221,8 @@ const CALENDRIER_MAX_EVENEMENTS = 300;
 const CALENDRIER_MAX_JOURS_SAISON = 400;
 const CALENDRIER_COURT_MAX = 20;
 const CALENDRIER_LONG_MAX = 2000;
+const BANNIERES_CALENDRIER = new Set(require("../DB/images/cosmetiques.json").bannieres2);
+const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 
 // "AAAA-MM-JJ" valide -> nombre de jours depuis 1970, sinon null.
 function jourCalendrier(valeur) {
@@ -245,13 +248,14 @@ function lireCalendrier(brut) {
     if (!court || [...court].length > CALENDRIER_COURT_MAX) return { erreur: `Description courte de 1 à ${CALENDRIER_COURT_MAX} caractères (${court || "vide"}).` };
     if (!long || long.length > CALENDRIER_LONG_MAX) return { erreur: `Description longue de 1 à ${CALENDRIER_LONG_MAX} caractères (${court}).` };
     if (jourDebut === null || jourFin === null || jourFin < jourDebut) return { erreur: `Dates invalides (${court}).` };
+    if (e.banniere != null && !BANNIERES_CALENDRIER.has(e.banniere)) return { erreur: `Bannière inconnue (${court}).` };
     evenements.push({
       id: typeof e.id === "string" && /^[a-z0-9]{4,16}$/.test(e.id) ? e.id : Math.random().toString(36).slice(2, 10),
       debut: e.debut,
       fin: e.fin,
       court,
       long,
-      couleur: typeof e.couleur === "string" && /^#[0-9a-f]{6}$/i.test(e.couleur) ? e.couleur.toLowerCase() : "#e2d29a"
+      banniere: e.banniere || BANNIERE_CALENDRIER_DEFAUT
     });
   }
   evenements.sort((a, b) => a.debut.localeCompare(b.debut) || a.fin.localeCompare(b.fin));

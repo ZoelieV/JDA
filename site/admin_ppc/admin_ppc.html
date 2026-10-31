@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=49">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=50">
 <link rel="stylesheet" href="/commun/entete.css?v=rem42">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -275,9 +275,9 @@
       <div id="calendrier-admin">
         <h3 class="titre-koyns">Calendrier</h3>
         <p class="aide-apercu">
-          Les dates de la saison de JDA choisissent les jours affichés sur le calendrier de la page Événements.
-          Chaque événement (un ou plusieurs jours) colore ses jours : sa description courte (20 caractères au plus) s'écrit dans le jour,
-          la longue s'affiche quand on clique sur le jour.
+          Les dates de la saison de JDA choisissent les jours de la frise du calendrier de la page Événements.
+          Chaque événement (un ou plusieurs jours) y est une barre à sa bannière, avec ses dates et sa description courte (20 caractères au plus) ;
+          la longue s'affiche quand on clique dessus.
         </p>
         <div class="ligne-koyns-admin">
           <label>Début de la saison <input type="date" id="calendrier-saison-debut" class="texte-ajout"></label>
@@ -288,15 +288,20 @@
 
         <h3 class="titre-koyns" id="calendrier-titre-formulaire">Ajouter un événement</h3>
         <div class="formulaire-calendrier">
+          <p class="aide-apercu">Clique sur le premier jour puis sur le dernier (un seul clic : un seul jour), ou écris les dates.</p>
+          <div id="calendrier-selecteur" class="selecteur-jours"></div>
           <div class="ligne-koyns-admin">
             <label>Du <input type="date" id="calendrier-debut" class="texte-ajout"></label>
             <label>Au <input type="date" id="calendrier-fin" class="texte-ajout"></label>
-            <label>Couleur <input type="color" id="calendrier-couleur" value="#e2d29a"></label>
           </div>
-          <label class="champ-calendrier">Description courte (dans le jour) <span id="calendrier-compteur" class="doux">0 / 20</span>
+          <div class="ligne-koyns-admin">
+            <span id="calendrier-banniere" class="apercu-banniere-calendrier"></span>
+            <button type="button" id="calendrier-choisir-banniere" class="bouton-creer secondaire action-calendrier">🖼 Bannière…</button>
+          </div>
+          <label class="champ-calendrier">Description courte (sur la frise) <span id="calendrier-compteur" class="doux">0 / 20</span>
             <input type="text" id="calendrier-court" class="texte-ajout" maxlength="20" placeholder="Ex. : Bannière Mitya">
           </label>
-          <label class="champ-calendrier">Description longue (fenêtre du jour)
+          <label class="champ-calendrier">Description longue (fenêtre de l'événement)
             <textarea id="calendrier-long" class="texte-ajout" rows="4" maxlength="2000"></textarea>
           </label>
           <div class="ligne-koyns-admin">
@@ -582,11 +587,11 @@
   <script src="/admin_ppc/admin_equilibrage.js?v=8"></script>
   <script src="/admin_ppc/admin_comparateur.js?v=2"></script>
   <script src="/admin_ppc/admin_fictives.js?v=5"></script>
-  <script src="/admin_ppc/admin_evenements.js?v=3"></script>
+  <script src="/admin_ppc/admin_evenements.js?v=4"></script>
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
   <script src="/admin_ppc/admin_litiges.js?v=1"></script>
   <script src="/commun/koyns.js?v=12"></script>
-  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=2"></script>
+  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=3"></script>
   <script src="/admin_ppc/admin_koyns.js?v=6"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>

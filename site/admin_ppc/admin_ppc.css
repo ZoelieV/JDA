@@ -2435,11 +2435,84 @@ body.page-equilibrage #tuiles-admin {
   padding: 0.25rem 0.75rem;
 }
 
-.pastille-couleur-calendrier {
+/* Bannière d'un événement : aperçu au format de la bannière (1000x137). */
+.apercu-banniere-calendrier {
   flex: none;
-  width: 1rem;
-  height: 1rem;
+  width: 16rem;
+  aspect-ratio: 1000 / 137;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.08);
+  background-position: right center;
+  background-size: cover;
+}
+
+.apercu-banniere-calendrier.petit {
+  width: 6rem;
+}
+
+/* Sélecteur de jours de la saison : un bloc par mois. */
+.selecteur-jours {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0.75rem;
+}
+
+.mois-selecteur h4 {
+  margin: 0 0 0.25rem;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.grille-selecteur {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.1875rem;
+}
+
+.nom-jour-selecteur {
+  color: var(--texte-doux);
+  font-size: 0.6875rem;
+  text-align: center;
+}
+
+.jour-selecteur {
+  position: relative;
+  padding: 0.25rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.jour-selecteur:hover:not(:disabled) {
+  border-color: #e2d29a;
+}
+
+.jour-selecteur.choisi {
+  background-color: rgba(226, 210, 154, 0.3);
+}
+
+.jour-selecteur.borne {
+  border-color: #e2d29a;
+  background-color: #e2d29a;
+  color: #1e1e1e;
+  font-weight: bold;
+}
+
+/* Jour qui a déjà un événement : point en bas. */
+.jour-selecteur.occupe::after {
+  content: "";
+  position: absolute;
+  bottom: 0.125rem;
+  left: 50%;
+  width: 0.25rem;
+  height: 0.25rem;
   border-radius: 50%;
+  background-color: #7fb2ff;
+  transform: translateX(-50%);
 }
 
 .dates-calendrier-admin {
