@@ -78,9 +78,8 @@
   // Crédits : fenêtre du bouton Crédits du pied de page.
   const CREDITS = [
     ["Développeurs", "Strike, Koy"],
-    ["Équilibrage", "Lightningstorm, Matrere, Gogetox"],
-    ["Streameuse", "Laïna"],
-    ["Paparazzi", "Zekroy"]
+    ["Équilibrage", "Lightningstorm, Matrere, Gogetox, Zekroy, Jeson"],
+    ["Streameuse", "Laïna"]
   ];
 
   function element(balise, attributs = {}, texte = "") {
