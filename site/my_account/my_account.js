@@ -1010,7 +1010,8 @@ function verrouillerChampsDefinitifs(profil) {
 }
 
 // ---- Copier une box optimisée dans une autre ----
-// Sur une box optimisée : bouton "Copier" -> liste des autres box
+// Sur une box optimisée : bouton "Copier" -> la box stuff enregistrée si
+// elle n'est pas vide (point de départ d'une opti), puis les autres box
 // optimisées enregistrées (version enregistrée, pas les modifications en
 // cours) d'au moins NB_PERSOS_MIN_BOX persos (Voyageur compté une fois,
 // même règle qu'en match). Sur une vitrine : l'autre vitrine enregistrée,
@@ -1037,8 +1038,9 @@ function sourcesCopie(boxActive) {
   if (!contexteCopie || !enregistre || !BOX_RENOMMABLES.includes(boxActive)) return [];
   const famille = estVitrine(boxActive) ? BOX_VITRINES : BOX_OPTI;
   const minimum = estVitrine(boxActive) ? 1 : NB_PERSOS_MIN_BOX;
-  return famille.filter(box => box !== boxActive &&
-    nbPersosSelection(contexteCopie.personnages, enregistre.characters, box) >= minimum);
+  const stuff = !estVitrine(boxActive) && nbPersosSelection(contexteCopie.personnages, enregistre.characters, "stuff") >= 1 ? ["stuff"] : [];
+  return [...stuff, ...famille.filter(box => box !== boxActive &&
+    nbPersosSelection(contexteCopie.personnages, enregistre.characters, box) >= minimum)];
 }
 
 function mettreAJourCopieBox() {
