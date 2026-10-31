@@ -1571,6 +1571,29 @@ h1 {
   opacity: 0.85;
 }
 
+/* Armes parties avec un perso banni (gros écart de points). */
+.ban-mini.arme {
+  outline: 2px solid rgba(255, 90, 90, 0.8);
+  outline-offset: -2px;
+}
+
+.ban-mini.arme img {
+  object-fit: contain;
+}
+
+/* Grille de la draft : copie d'arme bannie (raffinement barré, carte grisée
+   si plus aucun joueur ne peut la jouer). */
+.character-constellation.raffinement-banni {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  background-color: rgba(200, 40, 40, 0.85);
+}
+
+.carte-arme.arme-bannie .character-visuel img {
+  filter: grayscale(100%);
+  opacity: 0.45;
+}
+
 /* ---- Cases des tableaux au format de la bannière du personnage : bannière
    (1000x137) privée de ses 20 % de gauche -> 800x137 ; tableau de droite en
    miroir. Les cases vides ont le même format. ---- */

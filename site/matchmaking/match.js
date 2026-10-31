@@ -964,17 +964,20 @@ function getProprietairesPersoLie(arme, roles) {
 // possède en haut, de son côté et dans sa couleur (comme les
 // constellations) ; en bas, le portrait du personnage dont c'est l'arme
 // signature, à gauche si j1 a l'arme et ce personnage, à droite pour j2.
-// raffinements : { j1?, j2? } (0 = R1 ... 4 = R5).
-function creerCarteArme(arme, raffinements, proprietairesPerso = []) {
+// raffinements : { j1?, j2? } (0 = R1 ... 4 = R5). bannies : { j1?, j2? }
+// id du perso banni avec qui la copie de ce joueur est partie (raffinement
+// barré ; carte grisée si plus personne ne peut la jouer).
+function creerCarteArme(arme, raffinements, proprietairesPerso = [], bannies = {}) {
   const card = document.createElement("div");
-  card.className = "character-card carte-arme";
-  card.title = arme.instanceId?.includes("#") ? `${arme.nom} (copie)` : arme.nom;
+  const roles = ["j1", "j2"].filter(role => raffinements[role] != null);
+  card.className = `character-card carte-arme${roles.length && roles.every(role => bannies[role]) ? " arme-bannie" : ""}`;
+  card.title = (arme.instanceId?.includes("#") ? `${arme.nom} (copie)` : arme.nom) +
+    roles.filter(role => bannies[role]).map(role => `\n${role.toUpperCase()} : bannie avec ${getPersonnageParId(bannies[role])?.nom || bannies[role]}`).join("");
   const personnageLie = trouverPersonnageSignature(armesData, personnagesData, arme.id);
   card.innerHTML = `
     <div class="character-visuel ${classeFondRarete(arme.rarete)}">
       <img src="../DB/${arme.image}" alt="${arme.nom}" loading="lazy" decoding="async">
-      ${["j1", "j2"].filter(role => raffinements[role] != null)
-        .map(role => `<span class="character-constellation constellation-${role}">R${raffinements[role] + 1}</span>`).join("")}
+      ${roles.map(role => `<span class="character-constellation constellation-${role}${bannies[role] ? " raffinement-banni" : ""}">R${raffinements[role] + 1}</span>`).join("")}
       ${personnageLie ? proprietairesPerso.map(role =>
         `<img class="perso-lie-icone lie-${role}" src="../DB/${getIconeLaterale(personnageLie)}" alt="${personnageLie.nom}" title="${role.toUpperCase()} : ${personnageLie.nom}">`).join("") : ""}
     </div>
@@ -990,8 +993,8 @@ function carteDraftOuArme(grille, creerCartePerso, rolesPersos = ["j1", "j2"]) {
   return item => {
     if (!item.infosArme) return creerCartePerso(item);
     const proprietaires = getProprietairesPersoLie(item, rolesPersos);
-    return obtenirCarte(grille, JSON.stringify(["arme", item.instanceId || item.id, item.infosArme, proprietaires]),
-      () => creerCarteArme(item, item.infosArme, proprietaires));
+    return obtenirCarte(grille, JSON.stringify(["arme", item.instanceId || item.id, item.infosArme, proprietaires, item.bannies || {}]),
+      () => creerCarteArme(item, item.infosArme, proprietaires, item.bannies));
   };
 }
 
@@ -1014,6 +1017,14 @@ function groupesArmesDraft() {
         cartes[n].infosArme[role] = arme.raffinement;
       });
       parId.set(id, cartes);
+    });
+  });
+  // Copies parties avec un perso banni (gros écart de points, cf.
+  // bannirArmesPerso dans api/_lib/draft.js) : { role: id du perso }.
+  ["j1", "j2"].forEach(role => {
+    (draft[`armes_bannies_${role}`] || []).forEach(({ arme, copie, perso }) => {
+      const carte = parId.get(arme)?.[copie];
+      if (carte?.infosArme[role] != null) carte.bannies = { ...carte.bannies, [role]: perso };
     });
   });
 
@@ -1785,12 +1796,25 @@ function rendreTableaux() {
 // passée à ce stade).
 // Bans d'équilibrage : bloc au-dessus du tableau du joueur qui les a faits,
 // bans horizontaux à part.
+// Armes bannies (gros écart de points) : bloc du joueur à qui elles sont.
 function rendreBansEquilibrage() {
   ["j1", "j2"].forEach(role => {
     const bans = draft.actions.filter(a => a.bonus && a.joueur === role);
     const verticaux = bans.filter(a => !a.horizontal);
     const horizontaux = bans.filter(a => a.horizontal);
-    document.getElementById(`bans-eq-${role}`).classList.toggle("cache", bans.length === 0);
+    const armes = (draft[`armes_bannies_${role}`] || []).filter(b => armesData.some(a => a.id === b.arme));
+    document.getElementById(`bans-eq-${role}`).classList.toggle("cache", bans.length === 0 && armes.length === 0);
+    document.getElementById(`titre-armes-bannies-${role}`).classList.toggle("cache", armes.length === 0);
+    const grilleArmes = document.getElementById(`armes-bannies-grille-${role}`);
+    if (grilleAChange(grilleArmes, JSON.stringify(armes.map(b => b.cle)))) {
+      grilleArmes.replaceChildren(...armes.map(b => {
+        const arme = armesData.find(a => a.id === b.arme);
+        const carte = creerBanMini(arme);
+        carte.classList.add("arme");
+        carte.title = `${arme.nom}${b.copie ? " (copie)" : ""} — bannie avec ${getPersonnageParId(b.perso)?.nom || b.perso}`;
+        return carte;
+      }));
+    }
     document.getElementById(`titre-bans-eq-${role}`).classList.toggle("cache", verticaux.length === 0);
     document.getElementById(`titre-bans-h-${role}`).classList.toggle("cache", horizontaux.length === 0);
 

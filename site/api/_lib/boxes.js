@@ -25,7 +25,8 @@ const {
   theatreProfil,
   resoudreTheatre,
   calculerPoolJoueur: poolJoueur,
-  NB_PERSOS_MIN_BOX
+  NB_PERSOS_MIN_BOX,
+  SEUIL_ARMES_BANNIES
 } = require("./draft");
 
 // Équilibrage calculé ("fixe_joker") de 2 box (cf. calculerEquilibrageFixe,
@@ -271,6 +272,11 @@ async function calculerEquilibrage(draft) {
   draft.bans_horizontaux_faits = 0;
   draft.bans_horizontaux_joueur = null;
   draft.bans_horizontaux_choix = [];
+  ["j1", "j2"].forEach(role => {
+    draft[`modele_armes_${role}`] = null;
+    draft[`porteurs_h_${role}`] = null;
+    draft[`armes_bannies_${role}`] = [];
+  });
 
   // Bans calculés (cf. calculerEquilibrageFixe, _lib/draft.js) : la box à la
   // verticalité la plus faible bannit (nombre imposé, jokers compris).
@@ -282,12 +288,18 @@ async function calculerEquilibrage(draft) {
     const { faible, fort, modeles, resultat } = evaluerEquilibrageFixe(boxes, palier, { trace });
     draft.min_persos_equilibrage = getLimitesEquilibrage(palier).min_persos;
     if (trace) draft.detail_equilibrage = detailEquilibrage(faible, fort, resultat, trace);
+    // Gros écart de points : les armes d'un perso banni pendant les bans
+    // d'équilibrage partent avec lui (cf. bannirArmesPerso, _lib/draft.js).
+    const armesBannies = !carnage && Math.abs(ecart) >= SEUIL_ARMES_BANNIES;
+    const porteurs = { [faible]: armesBannies ? {} : null, [fort]: armesBannies ? {} : null };
+    if (armesBannies) ["j1", "j2"].forEach(role => { draft[`modele_armes_${role}`] = modeles[role]; });
     // Bans horizontaux : persos jamais entrés dans le top 12 pendant le
     // calcul, figés ici (cf. calculerBansHorizontaux, _lib/draft.js).
     if (estEquilibrageHorizontal(draft)) {
       const details = { faible: trace ? [] : null, fort: trace ? [] : null };
-      draft[`horizontaux_${faible}`] = valeursHorizontales(modeles[faible], resultat.verticaux.faible, details.faible);
-      draft[`horizontaux_${fort}`] = valeursHorizontales(modeles[fort], resultat.verticaux.fort, details.fort);
+      draft[`horizontaux_${faible}`] = valeursHorizontales(modeles[faible], resultat.verticaux.faible, details.faible, porteurs[faible]);
+      draft[`horizontaux_${fort}`] = valeursHorizontales(modeles[fort], resultat.verticaux.fort, details.fort, porteurs[fort]);
+      if (armesBannies) ["j1", "j2"].forEach(role => { draft[`porteurs_h_${role}`] = porteurs[role]; });
       draft.seuil_horizontal = getSeuilHorizontal();
       if (trace) {
         draft.detail_equilibrage.horizontal = details;

@@ -142,9 +142,11 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
     raffinements.sort((a, b) => b - a).forEach((raffinement, index) => {
       const pleine = Number(arme.PPW?.[raffinement] ?? 0);
       const alternative = Math.round(pleine * (arme.alternatif ?? 100) / 100);
-      const libre = { cle: `l${libres.length}`, arme: arme.id, type: arme.type, support };
+      // copie : rang de la copie (0 = meilleure), comme les cartes d'armes de
+      // la draft (cf. bannirArmesPerso).
+      const libre = { cle: `l${libres.length}`, arme: arme.id, copie: index, type: arme.type, support };
       if (!signature) libres.push({ ...libre, valeur: index === 0 ? pleine : alternative });
-      else if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support, arme: arme.id };
+      else if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support, arme: arme.id, copie: 0 };
       else libres.push({ ...libre, valeur: alternative });
     });
   });
@@ -403,8 +405,10 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
 // verticalité, la plus forte arme au perso compatible qui vaut le plus).
 // detail (tableau, mode Équilibrage de l'entraînement) : [id, points du
 // perso, arme signature, arme libre, id de l'arme libre] de chaque perso.
+// porteurs (objet, armes bannies avec leur perso) : rempli avec { id du
+// perso: cle de l'arme libre qu'il reçoit }.
 // -> { id: valeur }
-function valeursHorizontales(modele, verticaux, detail = null) {
+function valeursHorizontales(modele, verticaux, detail = null, porteurs = null) {
   const persos = Object.entries(modele.persos)
     .filter(([id]) => !verticaux.persos.has(id))
     .map(([id, p]) => ({ id, base: p.valeur, sig: p.signature?.pleine || 0, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support, attaque: p.attaque }));
@@ -420,9 +424,53 @@ function valeursHorizontales(modele, verticaux, detail = null) {
       receveur.receveur = false;
       receveur.armeValeur = arme.valeur;
       receveur.armeId = arme.arme || null;
+      if (porteurs) porteurs[receveur.id] = arme.cle;
     });
   detail?.push(...persos.map(p => [p.id, p.base, p.sig, p.armeValeur || 0, p.armeId || null]));
   return Object.fromEntries(persos.map(p => [p.id, p.valeur]));
+}
+
+// ---- Armes bannies avec leur perso ----
+//
+// À SEUIL_ARMES_BANNIES points d'écart ou plus entre les 2 box (draft.
+// points_jX), un perso banni pendant les bans d'équilibrage (normaux,
+// jokers, horizontaux) emporte ses armes : sa signature et l'arme libre que
+// le calcul lui donne à ce moment-là. Elles ne sont plus jouables pendant
+// le combat. Sous ce seuil, l'arme reste jouable (le calcul ne la compte
+// quand même qu'une fois, cf. mesurerVerticalite). Modèles des 2 box
+// (modele_armes_jX, cf. modeleEquilibrage) et armes libres des persos
+// horizontaux (porteurs_h_jX) figés au calcul de l'équilibrage (cf.
+// calculerEquilibrage, _lib/boxes.js), seulement à partir du seuil.
+const SEUIL_ARMES_BANNIES = 4000;
+
+// Persos retirés de la box de role par les bans d'équilibrage déjà faits
+// (sauf persoId) : bans normaux et horizontaux pour les 2, jokers pour
+// l'adversaire du banneur seulement.
+function persosRetiresBox(draft, role, sauf) {
+  return new Set((draft.actions || [])
+    .filter(a => a.bonus && a.type === "ban" && a.perso_id !== sauf && (!a.joker || a.joueur !== role))
+    .map(a => a.perso_id));
+}
+
+// Armes du perso persoId de la box de role ajoutées à armes_bannies_jX
+// ([{ cle, arme, copie, perso }], copie : 0 = meilleure copie de l'arme).
+// Arme libre : celle du calcul vertical après les bans déjà faits, ou celle
+// des valeurs horizontales pour un perso horizontal de cette box.
+function bannirArmesPerso(draft, role, persoId) {
+  const modele = draft[`modele_armes_${role}`];
+  const perso = modele?.persos?.[persoId];
+  if (!perso) return;
+  const bannies = draft[`armes_bannies_${role}`] = draft[`armes_bannies_${role}`] || [];
+  const ajouter = (cle, arme, copie) => {
+    if (arme && !bannies.some(b => b.cle === cle)) bannies.push({ cle, arme, copie, perso: persoId });
+  };
+  if (perso.signature) ajouter(`s:${persoId}`, perso.signature.arme, perso.signature.copie ?? 0);
+  const horizontal = draft[`horizontaux_${role}`]?.[persoId] != null;
+  const cle = horizontal
+    ? draft[`porteurs_h_${role}`]?.[persoId]
+    : mesurerVerticalite(modele, persosRetiresBox(draft, role, persoId), new Set(bannies.map(b => b.cle))).porteurs[persoId];
+  const libre = cle && modele.libres.find(l => l.cle === cle);
+  if (libre) ajouter(libre.cle, libre.arme, libre.copie ?? 0);
 }
 
 // Seuil par défaut : 1 ban horizontal tous les SEUIL_HORIZONTAL points
@@ -518,6 +566,7 @@ function appliquerBansHorizontaux(draft, choix, aleatoires = new Set()) {
   choix.forEach(persoId => {
     draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
     draft.actions.push({ joueur, type: "ban", perso_id: persoId, bonus: true, horizontal: true, ...(aleatoires.has(persoId) ? { aleatoire: true } : {}) });
+    ["j1", "j2"].forEach(role => bannirArmesPerso(draft, role, persoId));
   });
   // Moins de bans que prévu si plus aucune cible n'était possible.
   draft.bans_horizontaux_faits = draft.bans_horizontaux_total;
@@ -540,6 +589,7 @@ function appliquerBansBonus(draft, joueur, choix, jokers = [], aleatoires = new 
   choix.forEach(persoId => {
     draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
     draft.actions.push({ joueur, type: "ban", perso_id: persoId, bonus: true, ...hasard(persoId) });
+    ["j1", "j2"].forEach(role => bannirArmesPerso(draft, role, persoId));
   });
   jokers.forEach(persoId => {
     draft[`pool_${adverse}`] = (draft[`pool_${adverse}`] || []).filter(id => id !== persoId);
@@ -549,6 +599,7 @@ function appliquerBansBonus(draft, joueur, choix, jokers = [], aleatoires = new 
       draft.pool_disponible = draft.pool_disponible.filter(id => id !== persoId);
     }
     draft.actions.push({ joueur, type: "ban", perso_id: persoId, bonus: true, joker: true, ...hasard(persoId) });
+    bannirArmesPerso(draft, adverse, persoId);
   });
   draft.bans_bonus_faits = choix.length + jokers.length;
   draft.bans_bonus_choix = [];
@@ -710,6 +761,12 @@ function etatInitialDraft() {
     ecart_prevu: null, // équilibrage fixe : { avant, apres, cas, top, top_apres } écart d'équipe prévu et top 12 des box
     etape_bonus: null, // phase bans_bonus : "vertical" | "horizontal" (cf. acteurBansBonus)
     min_persos_equilibrage: null, // équilibrage fixe : persos min d'une box (limites du palier de la draft)
+    modele_armes_j1: null, // SEUIL_ARMES_BANNIES points d'écart ou plus : modèle de la box (cf. bannirArmesPerso), jamais envoyé aux joueurs
+    modele_armes_j2: null,
+    porteurs_h_j1: null, // idem : { perso horizontal: cle de son arme libre }
+    porteurs_h_j2: null,
+    armes_bannies_j1: [], // armes parties avec un perso banni pendant les bans d'équilibrage : [{ cle, arme, copie, perso }]
+    armes_bannies_j2: [],
     detail_equilibrage: null, // mode Équilibrage de l'entraînement : déroulé du calcul (cf. detailEquilibrage, _lib/boxes.js)
     horizontaux_j1: null, // "fixe_horizontal" : { id: valeur } persos horizontaux de la box de j1 (cf. valeursHorizontales)
     horizontaux_j2: null,
@@ -1075,6 +1132,8 @@ function etatRevanche(precedent) {
     bans_horizontaux_total: precedent.bans_horizontaux_total || 0,
     bans_horizontaux_faits: precedent.bans_horizontaux_faits || 0,
     bans_horizontaux_joueur: precedent.bans_horizontaux_joueur || null,
+    armes_bannies_j1: precedent.armes_bannies_j1 || [],
+    armes_bannies_j2: precedent.armes_bannies_j2 || [],
     actions: bansBonus,
     // Même room : la version continue (écriture conditionnelle, cf.
     // ecrireDraft dans _lib/room.js).
@@ -1094,7 +1153,14 @@ function etatRevanche(precedent) {
 // est masqué : on sait seulement qu'il est saisi.
 const TEMPS_MASQUE = { affiche: null, secondes: null, masque: true };
 
+// Modèles des box (armes bannies) : calcul serveur, pas envoyés.
 function vuePourJoueur(draft, joueur) {
+  const vue = vueBrute(draft, joueur);
+  if (!["modele_armes_j1", "modele_armes_j2", "porteurs_h_j1", "porteurs_h_j2"].some(cle => vue[cle])) return vue;
+  return { ...vue, modele_armes_j1: null, modele_armes_j2: null, porteurs_h_j1: null, porteurs_h_j2: null };
+}
+
+function vueBrute(draft, joueur) {
   // Entraînement seul : il tient les 2 rôles, rien à lui cacher.
   if (estEntrainementSolo(draft)) return draft;
   const autre = joueur === "j1" ? "j2" : "j1";
@@ -1165,6 +1231,7 @@ module.exports = {
   calculerEquilibrageFixe,
   modeleEquilibrage,
   mesurerVerticalite,
+  SEUIL_ARMES_BANNIES,
   TOLERANCE_FIXE,
   appliquerBansBonus,
   MARGE_FIXE,
