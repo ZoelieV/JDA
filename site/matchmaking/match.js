@@ -3742,7 +3742,7 @@ async function tick() {
   }
 }
 
-// ---- Nombre de spectateurs (joueurs seulement, cf. handleDraftGet) ----
+// ---- Nombre de spectateurs (joueurs et spectateurs, cf. handleDraftGet) ----
 
 function afficherSpectateurs(nombre) {
   const indicateur = document.getElementById("indicateur-spectateurs");

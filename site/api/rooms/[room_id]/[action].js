@@ -1337,8 +1337,10 @@ async function handleDraftGet(req, res, roomId, user) {
     maintenant: Date.now(),
     // Pastilles en ligne / afk des namecards (joueurs et spectateurs).
     presences: presencesJoueurs(room),
-    // Nombre de spectateurs : pour les joueurs seulement (indicateur 👁).
-    ...(joueur ? { nb_spectateurs: spectateursPresents(room).length } : {})
+    // Nombre de spectateurs (indicateur 👁), pour les joueurs comme pour
+    // les spectateurs ; un spectateur se compte lui-même (sa présence n'est
+    // réécrite qu'au plus toutes les ECRITURE_SPECTATEUR_MS).
+    nb_spectateurs: new Set([...spectateursPresents(room).map(([id]) => id), ...(joueur ? [] : [user.id])]).size
   });
 }
 

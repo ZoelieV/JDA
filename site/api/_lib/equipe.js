@@ -623,8 +623,9 @@ async function routeEtat(req, res, roomId, user) {
     if (error) console.error("Erreur activité / spectateurs :", error);
   }
   const nbSpectateurs = new Set([...presents.map(([id]) => id), ...(membre ? [] : [user.id])]).size;
-  // Nombre de spectateurs : pour les joueurs (indicateur 👁).
-  return repondre(res, draft, user.id, { room_id: roomId, ...(membre ? { nb_spectateurs: nbSpectateurs } : {}) });
+  // Nombre de spectateurs (indicateur 👁), pour les joueurs comme pour les
+  // spectateurs.
+  return repondre(res, draft, user.id, { room_id: roomId, nb_spectateurs: nbSpectateurs });
 }
 
 async function routeRejoindre(req, res, roomId, user) {

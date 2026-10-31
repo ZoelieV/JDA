@@ -888,7 +888,7 @@ function initialiserBoutons() {
   });
 }
 
-// Nombre de spectateurs (joueurs seulement), en bas à gauche.
+// Nombre de spectateurs (joueurs et spectateurs), en bas à gauche.
 function afficherSpectateurs(nombre) {
   const indicateur = $("indicateur-spectateurs");
   const visible = Number.isInteger(nombre) && nombre > 0;
