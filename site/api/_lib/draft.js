@@ -153,18 +153,17 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
 
 // Verticalité d'un modèle sans les persos bannis -> { verticalite, top (ids
 // des VERTICALITE_PERSOS meilleurs), armes (cles des armes libres données
-// à un perso du top) }. garderArmes : la signature d'un perso banni reste
-// dans la box comme arme libre (sinon elle part avec lui). detail (mode
-// Équilibrage de l'entraînement, cf. calculerEquilibrageFixe) : [id, points
-// du perso, arme signature, arme libre, id de l'arme libre] du top.
-function mesurerVerticalite(modele, bannis = new Set(), garderArmes = true) {
-  const libres = [...modele.libres];
+// à un perso du top), porteurs ({ id du perso: cle de l'arme libre qu'il
+// porte }) }. Chaque arme ne compte qu'une fois : la signature d'un perso
+// banni part avec lui, et consommees (cles) = armes libres que portaient
+// les persos bannis, qui ne reviennent pas sur un autre perso (cf.
+// calculerEquilibrageFixe). detail (mode Équilibrage de l'entraînement) :
+// [id, points du perso, arme signature, arme libre, id de l'arme libre] du top.
+function mesurerVerticalite(modele, bannis = new Set(), consommees = new Set()) {
+  const libres = modele.libres.filter(arme => !consommees.has(arme.cle));
   const persos = [];
   Object.entries(modele.persos).forEach(([id, p]) => {
-    if (bannis.has(id)) {
-      if (garderArmes && p.signature) libres.push({ cle: `s:${id}`, arme: p.signature.arme, valeur: p.signature.alternative, type: p.signature.type, support: p.signature.support });
-      return;
-    }
+    if (bannis.has(id)) return;
     persos.push({ id, base: p.valeur, sig: p.signature?.pleine || 0, valeur: p.valeur + (p.signature?.pleine || 0), receveur: !p.signature, type: p.type, support: p.support, attaque: p.attaque });
   });
   attribuerArmesLibres(persos, libres);
@@ -174,6 +173,7 @@ function mesurerVerticalite(modele, bannis = new Set(), garderArmes = true) {
     verticalite: top.reduce((somme, p) => somme + p.valeur, 0) / VERTICALITE_PERSOS,
     top: top.map(p => p.id),
     armes: top.filter(p => p.arme).map(p => p.arme),
+    porteurs: Object.fromEntries(persos.filter(p => p.arme).map(p => [p.id, p.arme])),
     detail: top.map(p => [p.id, p.base, p.sig, p.armeValeur || 0, p.armeId || null])
   };
 }
@@ -210,12 +210,6 @@ function horizontalite(modele) {
   return Object.values(modele?.persos || {}).filter(p => p.valeur > 0).length;
 }
 
-// Écart de points entre les 2 box (draft.points_jX) à partir duquel la
-// signature d'un perso banni part avec lui au lieu de rester comme arme
-// libre : face à une box bien plus investie, chaque ban doit retirer plus,
-// sinon il en faudrait tant que la draft se jouerait presque sans 5★.
-const SEUIL_ARMES_BANNIES = 4000;
-
 // Écart prévu accepté en fin de calcul (objectif MARGE_FIXE) : au-delà, le
 // match n'est pas équilibrable.
 const TOLERANCE_FIXE = 30;
@@ -237,7 +231,7 @@ function casEquilibrage(topFaible, topFort, limites) {
 }
 
 // modeleFaible / modeleFort : cf. modeleEquilibrage ; ecartPoints : écart
-// de points entre les 2 box (cf. SEUIL_ARMES_BANNIES) ; limites : cf.
+// de points entre les 2 box (montré dans la trace) ; limites : cf.
 // getLimitesEquilibrage. Bans optimaux un à un (le plus grand gain d'écart
 // prévu) jusqu'à un écart prévu de MARGE_FIXE ou moins. Un ban qui ne
 // respecte pas les limites du cas (cf. casEquilibrage) ou qui ferait passer
@@ -256,14 +250,34 @@ function casEquilibrage(topFaible, topFort, limites) {
 // trace (tableau, mode Équilibrage de l'entraînement) : chaque étape du
 // calcul y est ajoutée (cf. etapeTrace), pour la montrer aux joueurs.
 function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false, trace = null } = {}) {
-  const garderArmes = Math.abs(ecartPoints) < SEUIL_ARMES_BANNIES;
   const bannisFort = new Set();
   const bannisFaible = new Set();
+  // Armes libres consommées : portées par un perso au moment de son ban
+  // (chaque arme ne compte qu'une fois, cf. mesurerVerticalite).
+  const consommeesFort = new Set();
+  const consommeesFaible = new Set();
   const restants = (modele, bannis) => Object.keys(modele.persos).filter(id => !bannis.has(id)).length;
   const mesure = () => ({
-    fort: mesurerVerticalite(modeleFort, bannisFort, garderArmes),
-    faible: mesurerVerticalite(modeleFaible, bannisFaible, garderArmes)
+    fort: mesurerVerticalite(modeleFort, bannisFort, consommeesFort),
+    faible: mesurerVerticalite(modeleFaible, bannisFaible, consommeesFaible)
   });
+  // Ban d'un perso (box forte, et box faible si commun) avec l'arme libre
+  // qu'il porte à ce moment-là -> fonction qui l'annule (essais).
+  const bannir = (id, commun) => {
+    const { fort, faible } = mesure();
+    const armeFort = fort.porteurs[id];
+    const armeFaible = commun ? faible.porteurs[id] : undefined;
+    bannisFort.add(id);
+    if (armeFort) consommeesFort.add(armeFort);
+    if (commun) bannisFaible.add(id);
+    if (armeFaible) consommeesFaible.add(armeFaible);
+    return () => {
+      bannisFort.delete(id);
+      if (armeFort) consommeesFort.delete(armeFort);
+      if (commun) bannisFaible.delete(id);
+      if (armeFaible) consommeesFaible.delete(armeFaible);
+    };
+  };
   const top = m => Math.round(m.verticalite * VERTICALITE_PERSOS);
   const prevu = () => {
     const { fort, faible } = mesure();
@@ -291,12 +305,10 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
   const essayer = (id, joker) => {
     const commun = !joker && id in modeleFaible.persos && !bannisFaible.has(id);
     const avant = prevu();
-    bannisFort.add(id);
-    if (commun) bannisFaible.add(id);
+    const annuler = bannir(id, commun);
     const gain = avant - prevu();
     const apres = mesure();
-    bannisFort.delete(id);
-    if (commun) bannisFaible.delete(id);
+    annuler();
     const persosOk = restants(modeleFort, bannisFort) - 1 >= limites.min_persos &&
       (!commun || restants(modeleFaible, bannisFaible) - 1 >= limites.min_persos);
     const limitesOk = cas === "normal" ? !commun || top(apres.faible) >= limites.seuil_bas
@@ -333,8 +345,7 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
     const ban = meilleur(false, candidatsBan);
     if (!ban) { raisonFin = "aucun_gain"; break; }
     if (ban.valide && !(resultat.jokers && ban.commun)) {
-      bannisFort.add(ban.id);
-      if (ban.commun) bannisFaible.add(ban.id);
+      bannir(ban.id, ban.commun);
       resultat.bans++;
       resultat.suggestion.push(ban.id);
       noterVerticaux(mesure());
@@ -356,7 +367,7 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
       if (trace) etapeTrace("refus", { refus, candidats: candidatsBan });
       break;
     }
-    bannisFort.add(joker.id);
+    bannir(joker.id, false);
     resultat.jokers++;
     resultat.suggestion.push(joker.id);
     noterVerticaux(mesure());
@@ -367,12 +378,16 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
   resultat.top_faible_apres = top(fin.faible);
   resultat.top_fort_apres = top(fin.fort);
   resultat.equilibrable = resultat.ecart_apres <= TOLERANCE_FIXE;
+  // Armes des persos bannis : déjà comptées, jamais réattribuées aux persos
+  // horizontaux non plus.
+  consommeesFaible.forEach(cle => verticaux.faible.armes.add(cle));
+  consommeesFort.forEach(cle => verticaux.fort.armes.add(cle));
   resultat.verticaux = verticaux;
   if (trace) {
     trace.push({ type: "fin", raison: raisonFin, ecart: resultat.ecart_apres, equilibrable: resultat.equilibrable });
     resultat.contexte = {
       cas, limites, marge, tolerance: TOLERANCE_FIXE, taille_equipe: TAILLE_EQUIPE, nb_top: VERTICALITE_PERSOS,
-      garder_armes: garderArmes, ecart_points: ecartPoints, seuil_armes_bannies: SEUIL_ARMES_BANNIES, joker_permis: jokerPermis, special
+      ecart_points: ecartPoints, joker_permis: jokerPermis, special
     };
   }
   return resultat;
@@ -1150,7 +1165,6 @@ module.exports = {
   calculerEquilibrageFixe,
   modeleEquilibrage,
   mesurerVerticalite,
-  SEUIL_ARMES_BANNIES,
   TOLERANCE_FIXE,
   appliquerBansBonus,
   MARGE_FIXE,

@@ -237,7 +237,7 @@
       <p class="eq-contexte">
         Box faible : ${nomRole(d.faible)} (top ${d.nb_top} : ${d.top_faible} pts) · box forte : ${nomRole(d.fort)} (top ${d.nb_top} : ${d.top_fort} pts).<br>
         ${(TEXTES_CAS[d.cas] || (() => ""))(d.limites)}${d.special ? " <b>Mode spécial</b> : autant de jokers que nécessaire." : ""}<br>
-        Aucune box sous ${d.limites.min_persos} persos. Écart de points entre les box : ${Math.abs(d.ecart_points)} → l'arme signature d'un perso banni ${d.garder_armes ? `reste dans la box comme arme libre (moins de ${d.seuil_armes_bannies} pts d'écart)` : `part avec lui (${d.seuil_armes_bannies} pts d'écart ou plus)`}.
+        Aucune box sous ${d.limites.min_persos} persos. Écart de points entre les box : ${Math.abs(d.ecart_points)}. Chaque arme ne compte qu'une fois : l'arme d'un perso banni (signature ou arme libre qu'il portait) ne revient sur aucun autre perso.
       </p>`;
   }
 
