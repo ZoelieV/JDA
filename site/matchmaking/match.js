@@ -975,7 +975,7 @@ function creerCarteArme(arme, raffinements, proprietairesPerso = [], bannies = {
   const roles = ["j1", "j2"].filter(role => raffinements[role] != null);
   card.className = `character-card carte-arme${roles.length && roles.every(role => bannies[role]) ? " arme-bannie" : ""}`;
   card.title = (arme.instanceId?.includes("#") ? `${arme.nom} (copie)` : arme.nom) +
-    roles.filter(role => bannies[role]).map(role => `\n${role.toUpperCase()} : bannie avec ${getPersonnageParId(bannies[role])?.nom || bannies[role]}`).join("");
+    roles.filter(role => bannies[role]).map(role => `\n${role.toUpperCase()} : ${texteArmeBannie(bannies[role])}`).join("");
   const personnageLie = trouverPersonnageSignature(armesData, personnagesData, arme.id);
   card.innerHTML = `
     <div class="character-visuel ${classeFondRarete(arme.rarete)}">
@@ -1027,7 +1027,7 @@ function groupesArmesDraft() {
   ["j1", "j2"].forEach(role => {
     (draft[`armes_bannies_${role}`] || []).forEach(({ arme, copie, perso }) => {
       const carte = parId.get(arme)?.[copie];
-      if (carte?.infosArme[role] != null) carte.bannies = { ...carte.bannies, [role]: perso };
+      if (carte?.infosArme[role] != null) carte.bannies = { ...carte.bannies, [role]: perso || BANNIE_OFFICE };
     });
   });
 
@@ -1804,7 +1804,14 @@ function rendreTableaux() {
 // passée à ce stade).
 // Bans d'équilibrage : bloc au-dessus du tableau du joueur qui les a faits,
 // bans horizontaux à part.
-// Armes bannies (gros écart de points) : bloc du joueur à qui elles sont.
+// Arme bannie d'office (5★ support, signatures 5★ d'un match pas
+// équilibrable, cf. evaluerEquilibrageFixe), sinon partie avec un perso.
+const BANNIE_OFFICE = "office";
+const texteArmeBannie = perso => perso === BANNIE_OFFICE
+  ? "bannie d'office (équilibrage)"
+  : `bannie avec ${getPersonnageParId(perso)?.nom || perso}`;
+
+// Armes bannies (équilibrage) : bloc du joueur à qui elles sont.
 function rendreBansEquilibrage() {
   ["j1", "j2"].forEach(role => {
     const bans = draft.actions.filter(a => a.bonus && a.joueur === role);
@@ -1819,7 +1826,7 @@ function rendreBansEquilibrage() {
         const arme = armesData.find(a => a.id === b.arme);
         const carte = creerBanMini(arme);
         carte.classList.add("arme");
-        carte.title = `${arme.nom}${b.copie ? " (copie)" : ""} — bannie avec ${getPersonnageParId(b.perso)?.nom || b.perso}`;
+        carte.title = `${arme.nom}${b.copie ? " (copie)" : ""} — ${texteArmeBannie(b.perso || BANNIE_OFFICE)}`;
         return carte;
       }));
     }

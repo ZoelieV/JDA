@@ -459,29 +459,19 @@ function valeursHorizontales(modele, verticaux, detail = null, porteurs = null) 
 // ---- Armes bannies avec leur perso ----
 //
 // À SEUIL_ARMES_BANNIES points d'écart ou plus entre les 2 box (draft.
-// points_jX), un perso banni pendant les bans d'équilibrage (normaux,
-// jokers, horizontaux) emporte ses armes : sa signature et l'arme libre que
-// le calcul lui donne à ce moment-là. Elles ne sont plus jouables pendant
-// le combat. Sous ce seuil, l'arme reste jouable (le calcul ne la compte
-// quand même qu'une fois, cf. mesurerVerticalite). Modèles des 2 box
-// (modele_armes_jX, cf. modeleEquilibrage) et armes libres des persos
-// horizontaux (porteurs_h_jX) figés au calcul de l'équilibrage (cf.
-// calculerEquilibrage, _lib/boxes.js), seulement à partir du seuil.
+// points_jX) : armes 5★ support bannies d'office (cf. armesBanniesOffice,
+// _lib/boxes.js) ; un perso banni par le joueur pendant les bans
+// d'équilibrage (normaux, jokers, horizontaux) emporte sa signature (le
+// calcul la suppose partie avec lui, mais elle n'est bannie que si le joueur
+// bannit vraiment le perso). Sous ce seuil, l'arme reste jouable (le calcul
+// ne la compte quand même qu'une fois, cf. mesurerVerticalite). Modèles des
+// 2 box (modele_armes_jX, cf. modeleEquilibrage) figés au calcul de
+// l'équilibrage (cf. calculerEquilibrage, _lib/boxes.js), seulement à
+// partir du seuil.
 const SEUIL_ARMES_BANNIES = 4000;
 
-// Persos retirés de la box de role par les bans d'équilibrage déjà faits
-// (sauf persoId) : bans normaux et horizontaux pour les 2, jokers pour
-// l'adversaire du banneur seulement.
-function persosRetiresBox(draft, role, sauf) {
-  return new Set((draft.actions || [])
-    .filter(a => a.bonus && a.type === "ban" && a.perso_id !== sauf && (!a.joker || a.joueur !== role))
-    .map(a => a.perso_id));
-}
-
-// Armes du perso persoId de la box de role ajoutées à armes_bannies_jX
+// Signature du perso persoId de la box de role ajoutée à armes_bannies_jX
 // ([{ cle, arme, copie, perso }], copie : 0 = meilleure copie de l'arme).
-// Arme libre : celle du calcul vertical après les bans déjà faits, ou celle
-// des valeurs horizontales pour un perso horizontal de cette box.
 function bannirArmesPerso(draft, role, persoId) {
   const modele = draft[`modele_armes_${role}`];
   const perso = modele?.persos?.[persoId];
@@ -490,13 +480,9 @@ function bannirArmesPerso(draft, role, persoId) {
   const ajouter = (cle, arme, copie) => {
     if (arme && !bannies.some(b => b.cle === cle)) bannies.push({ cle, arme, copie, perso: persoId });
   };
+  // Signature seulement (l'arme libre qu'il portait dans le calcul reste
+  // jouable).
   if (perso.signature) ajouter(`s:${persoId}`, perso.signature.arme, perso.signature.copie ?? 0);
-  const horizontal = draft[`horizontaux_${role}`]?.[persoId] != null;
-  const cle = horizontal
-    ? draft[`porteurs_h_${role}`]?.[persoId]
-    : mesurerVerticalite(modele, persosRetiresBox(draft, role, persoId), new Set(bannies.map(b => b.cle))).porteurs[persoId];
-  const libre = cle && modele.libres.find(l => l.cle === cle);
-  if (libre) ajouter(libre.cle, libre.arme, libre.copie ?? 0);
 }
 
 // Seuil par défaut : 1 ban horizontal tous les SEUIL_HORIZONTAL points

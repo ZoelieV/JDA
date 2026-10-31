@@ -29,9 +29,63 @@ const {
   SEUIL_ARMES_BANNIES
 } = require("./draft");
 
+// ---- Armes bannies d'office (cf. evaluerEquilibrageFixe) ----
+// Ids des armes d'un modèle (signatures et armes libres, toutes copies).
+function idsArmesModele(modele) {
+  return new Set([
+    ...Object.values(modele.persos).map(p => p.signature?.arme).filter(Boolean),
+    ...modele.libres.map(l => l.arme)
+  ]);
+}
+
+// Modèle sans ces armes (signature retirée : le perso peut recevoir une
+// arme libre).
+function retirerArmesModele(modele, ids) {
+  return {
+    persos: Object.fromEntries(Object.entries(modele.persos).map(([id, p]) =>
+      [id, p.signature && ids.has(p.signature.arme) ? { ...p, signature: null } : p])),
+    libres: modele.libres.filter(l => !ids.has(l.arme))
+  };
+}
+
+// Copies de ces armes dans un modèle, au format de armes_bannies_jX (cf.
+// bannirArmesPerso, _lib/draft.js ; perso null : bannie d'office).
+function copiesArmesModele(modele, ids) {
+  return [
+    ...Object.entries(modele.persos).filter(([, p]) => p.signature && ids.has(p.signature.arme))
+      .map(([id, p]) => ({ cle: `s:${id}`, arme: p.signature.arme, copie: p.signature.copie ?? 0, perso: null })),
+    ...modele.libres.filter(l => ids.has(l.arme)).map(l => ({ cle: l.cle, arme: l.arme, copie: l.copie ?? 0, perso: null }))
+  ];
+}
+
+// Armes bannies d'office de la grosse box (et chez la petite si elle a les
+// mêmes) : 5★ support (catégorie "support" des administrateurs) ; avec
+// signatures : aussi les signatures 5★.
+function armesBanniesOffice(modeleFort, armes, personnages, signatures = false) {
+  const cles = new Set(personnages.map(p => p.groupe || p.id));
+  const parId = new Map(armes.map(a => [a.id, a]));
+  return new Set([...idsArmesModele(modeleFort)].filter(id => {
+    const arme = parId.get(id);
+    if (String(arme?.rarete) !== "5") return false;
+    if (Array.isArray(arme.categories) && arme.categories.includes("support")) return true;
+    const cle = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/)?.[1];
+    return signatures && cles.has(cle);
+  }));
+}
+
 // Équilibrage calculé ("fixe_joker") de 2 box (cf. calculerEquilibrageFixe,
 // _lib/draft.js) : { j1: { data, box }, j2: {...} } et palier de théâtre de
-// la draft -> { faible, fort, modeles, resultat }.
+// la draft -> { faible, fort, modeles (ceux du calcul retenu : sans les
+// armes bannies d'office), resultat (resultat.armes_office : { j1, j2 }
+// copies bannies d'office, ou null) }.
+// - SEUIL_ARMES_BANNIES points d'écart ou plus : armes 5★ support bannies
+//   d'office dès le départ ;
+// - pas équilibrable avec un joker : second essai avec 2 jokers
+//   (deux_jokers : pas d'échange de bans contre un joker supplémentaire, cf.
+//   echangeJokerPossible) ;
+// - toujours pas équilibrable : armes 5★ support et signatures 5★ bannies
+//   d'office, puis de nouveau 1 joker, puis 2.
+// Les armes bannies d'office ne sont pas des jokers.
 function evaluerEquilibrageFixe(boxes, palier, options = {}) {
   const personnages = getPersonnages();
   const armes = getArmes();
@@ -44,20 +98,38 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
   });
   const faible = verticalite(modeles.j1) <= verticalite(modeles.j2) ? "j1" : "j2";
   const fort = faible === "j1" ? "j2" : "j1";
-  const calculer = (maxJokers, trace) => calculerEquilibrageFixe(modeles[faible], modeles[fort], points.j1 - points.j2, getLimitesEquilibrage(palier), undefined, { ...options, trace, maxJokers });
-  let resultat = calculer(1, options.trace);
-  // Pas équilibrable avec un joker : second essai avec 2 jokers ; s'il
-  // réussit, le match se joue avec ce résultat (deux_jokers : pas d'échange
-  // de bans contre un joker supplémentaire, cf. echangeJokerPossible).
-  if (!resultat.equilibrable && !options.special) {
-    const trace = options.trace ? [] : null;
-    const essai = calculer(2, trace);
-    if (essai.equilibrable) {
-      resultat = { ...essai, deux_jokers: true };
-      if (options.trace) options.trace.splice(0, options.trace.length, ...trace);
+  const ecart = points.j1 - points.j2;
+  // Modèles du calcul et copies bannies d'office, selon les armes retirées.
+  const sans = ids => ids.size
+    ? {
+      modeles: { [faible]: retirerArmesModele(modeles[faible], ids), [fort]: retirerArmesModele(modeles[fort], ids) },
+      office: { [faible]: copiesArmesModele(modeles[faible], ids), [fort]: copiesArmesModele(modeles[fort], ids) }
     }
+    : { modeles, office: null };
+  const calculer = (version, maxJokers, trace) => calculerEquilibrageFixe(version.modeles[faible], version.modeles[fort], ecart, getLimitesEquilibrage(palier), undefined, { ...options, trace, maxJokers });
+  const special = !!options.special;
+  // Essais dans l'ordre : le premier équilibrable est retenu (sinon le
+  // premier, pour l'affichage du non équilibrable).
+  const versions = [sans(Math.abs(ecart) >= SEUIL_ARMES_BANNIES && !special ? armesBanniesOffice(modeles[fort], armes, personnages) : new Set())];
+  const essais = [{ version: versions[0], maxJokers: 1 }];
+  if (!special) {
+    essais.push({ version: versions[0], maxJokers: 2 });
+    const toutes = sans(armesBanniesOffice(modeles[fort], armes, personnages, true));
+    essais.push({ version: toutes, maxJokers: 1 }, { version: toutes, maxJokers: 2 });
   }
-  return { faible, fort, modeles, resultat };
+  let retenu = null;
+  let premier = null;
+  for (const essai of essais) {
+    const trace = options.trace ? [] : null;
+    const resultat = calculer(essai.version, essai.maxJokers, trace);
+    const tentative = { ...essai, resultat, trace };
+    premier ||= tentative;
+    if (resultat.equilibrable) { retenu = tentative; break; }
+  }
+  const choisi = retenu || premier;
+  if (options.trace) options.trace.splice(0, options.trace.length, ...choisi.trace);
+  const resultat = { ...choisi.resultat, deux_jokers: choisi.maxJokers === 2, armes_office: choisi.version.office };
+  return { faible, fort, modeles: choisi.version.modeles, resultat };
 }
 
 // Box de match d'un joueur : la full box et ses box opti (la box "stuff"
@@ -306,6 +378,12 @@ async function calculerEquilibrage(draft) {
     const armesBannies = !carnage && Math.abs(ecart) >= SEUIL_ARMES_BANNIES;
     const porteurs = { [faible]: armesBannies ? {} : null, [fort]: armesBannies ? {} : null };
     if (armesBannies) ["j1", "j2"].forEach(role => { draft[`modele_armes_${role}`] = modeles[role]; });
+    // Armes bannies d'office (5★ support ; match pas équilibrable sinon :
+    // aussi les signatures 5★), pour les 2 joueurs (cf.
+    // evaluerEquilibrageFixe) : pas des jokers, gardées en revanche.
+    if (resultat.armes_office && !carnage) {
+      ["j1", "j2"].forEach(role => { draft[`armes_bannies_${role}`] = resultat.armes_office[role].map(copie => ({ ...copie })); });
+    }
     // Bans horizontaux : persos jamais entrés dans le top 12 pendant le
     // calcul, figés ici (cf. calculerBansHorizontaux, _lib/draft.js).
     if (estEquilibrageHorizontal(draft)) {
