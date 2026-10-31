@@ -334,28 +334,64 @@
   font-size: 0.75rem;
 }
 
-/* ---- Arbre : une colonne par tour ---- */
+/* ---- Arbre : une grille, une colonne par tour (cf. rendreArbre) ----
+   Lignes de même hauteur (1fr) : chaque match est centré entre ses 2 matchs
+   d'origine. Les traits sont dessinés dans l'écart entre les colonnes. */
 .arbre-tournoi {
-  display: flex;
-  gap: 1.25rem;
+  --ecart-colonnes-arbre: 2.5rem;
+  --ecart-lignes-arbre: 0.75rem;
+  --trait-arbre: rgba(226, 210, 154, 0.55);
+  display: grid;
+  grid-template-columns: repeat(var(--tours-arbre, 1), 14rem);
+  grid-template-rows: auto repeat(var(--lignes-arbre, 1), 1fr);
+  column-gap: var(--ecart-colonnes-arbre);
+  row-gap: var(--ecart-lignes-arbre);
   overflow-x: auto;
   padding: 0.25rem 0.25rem 0.75rem;
 }
 
-.tour-arbre {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  justify-content: space-around;
-  gap: 0.75rem;
-  width: 14rem;
-}
-
-.tour-arbre h3 {
+.titre-tour-arbre {
+  grid-row: 1;
   margin: 0 0 0.25rem;
   color: var(--accent);
   font-size: 0.875rem;
   text-align: center;
+}
+
+.case-arbre {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.trait-arbre {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Sortie : du bord droit du match au milieu de l'écart. */
+.trait-arbre.sortie {
+  top: 50%;
+  right: calc(var(--ecart-colonnes-arbre) / -2);
+  width: calc(var(--ecart-colonnes-arbre) / 2);
+  border-top: 2px solid var(--trait-arbre);
+}
+
+/* Entrée : du milieu de l'écart au bord gauche du match. */
+.trait-arbre.entree {
+  top: 50%;
+  left: calc(var(--ecart-colonnes-arbre) / -2);
+  width: calc(var(--ecart-colonnes-arbre) / 2);
+  border-top: 2px solid var(--trait-arbre);
+}
+
+/* Paire : du centre de ce match (pair) au centre du suivant (même hauteur). */
+.trait-arbre.paire {
+  top: 50%;
+  right: calc(var(--ecart-colonnes-arbre) / -2 - 1px);
+  height: calc(100% + var(--ecart-lignes-arbre));
+  border-right: 2px solid var(--trait-arbre);
 }
 
 .match-arbre {

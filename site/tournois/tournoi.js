@@ -255,10 +255,17 @@ function rendreArbre() {
     tournoi.arbre_equilibre === false ? "⚠ Certaines paires du premier tour ne s'équilibrent pas en full box (aucun tirage n'a tout réussi)." : "",
     modifiable ? "Clique sur 2 participants du premier tour pour les échanger." : ""
   ].filter(Boolean).join(" ");
-  $t("arbre-tournoi").innerHTML = tournoi.arbre.tours.map((tour, t) => `
-    <div class="tour-arbre">
-      <h3>${noms[t]}</h3>
-      ${tour.map(match => {
+  // Une seule grille : une colonne par tour, une ligne par match du premier
+  // tour (+ la ligne des titres) ; le match i du tour t couvre les lignes de
+  // ses 2 matchs d'origine (2^t lignes), donc il est centré entre eux. Traits :
+  // sortie vers la droite, liaison verticale de chaque paire, entrée à gauche.
+  const conteneur = $t("arbre-tournoi");
+  conteneur.style.setProperty("--tours-arbre", tournoi.arbre.tours.length);
+  conteneur.style.setProperty("--lignes-arbre", tournoi.arbre.tours[0].length);
+  const dernier = tournoi.arbre.tours.length - 1;
+  conteneur.innerHTML = tournoi.arbre.tours.map((tour, t) => `
+      <h3 class="titre-tour-arbre" style="grid-column: ${t + 1}">${noms[t]}</h3>
+      ${tour.map((match, i) => {
         const camp = cote => {
           const id = match[cote];
           const classes = ["camp-arbre",
@@ -272,15 +279,21 @@ function rendreArbre() {
         const peutLancer = tournoi.arbre_parallele ? estMoi(match.a) || estMoi(match.b) || moi?.arbitre : moi?.gestionnaire;
         if (peutLancer && tournoi.statut === "arbre" && match.statut === "pret") actions += `<button type="button" class="bouton-tournoi petit${tournoi.arbre_parallele ? " principal" : ""}" data-lancer="${match.id}">Lancer ce match</button>`;
         if (moi?.gestionnaire && tournoi.statut === "arbre" && ["pret", "en_cours"].includes(match.statut)) actions += boutonsGestionMatch(match);
+        const hauteur = 2 ** t;
+        const traits = (t > 0 ? `<span class="trait-arbre entree"></span>` : "") +
+          (t < dernier ? `<span class="trait-arbre sortie"></span>` : "") +
+          (t < dernier && i % 2 === 0 ? `<span class="trait-arbre paire"></span>` : "");
         return `
-          <div class="match-arbre ${match.statut}">
-            ${camp("a")}${camp("b")}
-            ${scoreMatch(match) ? `<div class="doux">Manches :${scoreMatch(match)}</div>` : ""}
-            ${match.forfait ? `<div class="doux">Victoire par forfait</div>` : ""}
-            ${actions ? `<div class="actions-match">${actions}</div>` : ""}
+          <div class="case-arbre" style="grid-column: ${t + 1}; grid-row: ${i * hauteur + 2} / span ${hauteur}">
+            ${traits}
+            <div class="match-arbre ${match.statut}">
+              ${camp("a")}${camp("b")}
+              ${scoreMatch(match) ? `<div class="doux">Manches :${scoreMatch(match)}</div>` : ""}
+              ${match.forfait ? `<div class="doux">Victoire par forfait</div>` : ""}
+              ${actions ? `<div class="actions-match">${actions}</div>` : ""}
+            </div>
           </div>`;
-      }).join("")}
-    </div>`).join("");
+      }).join("")}`).join("");
 }
 
 function rendreGestion() {
