@@ -1059,16 +1059,18 @@ function tropheesManche(draft) {
 
 // ---- Vues ----
 
-// Noms, photos des joueurs cités dans les tournois.
+// Noms, photos et bannières (2e bannière, chemin sous DB/images) des
+// joueurs cités dans les tournois.
 async function lireJoueurs(ids) {
   const uniques = [...new Set(ids.filter(Boolean))];
   if (!uniques.length) return {};
   const { data, error } = await supabase.from("profiles")
-    .select("discord_id, discord_username, discord_global_name, discord_avatar_url").in("discord_id", uniques);
+    .select("discord_id, discord_username, discord_global_name, discord_avatar_url, banniere2:data->parametres->>banniere2").in("discord_id", uniques);
   if (error) throw error;
   return Object.fromEntries((data || []).map(p => [p.discord_id, {
     nom: p.discord_global_name || p.discord_username || "Joueur",
-    avatar: p.discord_avatar_url || null
+    avatar: p.discord_avatar_url || null,
+    banniere2: p.banniere2 || null
   }]));
 }
 

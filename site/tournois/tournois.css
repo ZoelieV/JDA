@@ -428,6 +428,37 @@
   font-weight: bold;
 }
 
+/* 1v1 : bannière du joueur sur toute la largeur du camp (photo à gauche). */
+.match-arbre .camp-arbre:has(> .banniere-joueur) {
+  padding: 0;
+  background-color: transparent;
+}
+
+.match-arbre .banniere-joueur {
+  --taille-avatar: 2.25rem;
+  flex: 1;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.match-arbre .banniere-joueur > .photo-joueur {
+  border: 2px solid transparent;
+}
+
+.match-arbre .camp-arbre.gagnant .banniere-joueur > .photo-joueur {
+  border-color: #3ecf6a;
+}
+
+.match-arbre .camp-arbre.gagnant .banniere-joueur::before {
+  box-shadow: inset 0 0 0 2px #3ecf6a;
+}
+
+.nom-camp-arbre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .match-arbre .camp-arbre.perdant {
   opacity: 0.5;
 }
