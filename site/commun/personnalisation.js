@@ -109,7 +109,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=22";
+    lien.href = "/commun/personnalisation.css?v=23";
     document.head.appendChild(lien);
   }
 
@@ -778,8 +778,9 @@
   }
 
   // Flex cosmétiques : la grille de 3 × 4 (case choisie entourée, × pour
-  // la vider), puis les cosmétiques possédés par type ; clic : placé dans
-  // la case choisie (retiré de son ancienne case), puis case vide suivante.
+  // la vider ; glisser-déposer d'une case pleine sur une autre : échangées),
+  // puis les cosmétiques possédés par type ; clic : placé dans la case
+  // choisie (retiré de son ancienne case), puis case vide suivante.
   function rendreFlex(conteneur, recherche) {
     const flex = brouillon.flex;
     const majTout = () => {
@@ -789,7 +790,7 @@
     };
     const note = document.createElement("p");
     note.className = "perso-note";
-    note.textContent = `Jusqu'à ${TAILLE_FLEX} namecards et fonds d'écran que tu possèdes, montrés sur la page Joueurs (onglet Flex cosmétiques). Clic sur une case, puis sur un cosmétique.`;
+    note.textContent = `Jusqu'à ${TAILLE_FLEX} namecards et fonds d'écran que tu possèdes, montrés sur la page Joueurs (onglet Flex cosmétiques). Clic sur une case, puis sur un cosmétique ; fais glisser une case sur une autre pour les échanger.`;
     const grilleFlex = document.createElement("div");
     grilleFlex.className = "perso-flex-grille";
     flex.forEach((id, i) => {
@@ -804,6 +805,7 @@
           const img = document.createElement("img");
           img.src = info.image;
           img.alt = info.nom;
+          img.draggable = false;
           caseBouton.appendChild(img);
         }
         const vider = document.createElement("span");
@@ -821,10 +823,12 @@
         caseBouton.textContent = "+";
         caseBouton.title = "Case vide : clic pour la choisir, puis clic sur un cosmétique";
       }
+      caseBouton.dataset.case = i;
       caseBouton.addEventListener("click", () => {
         caseFlex = i;
         rendreChoix();
       });
+      if (id) caseBouton.addEventListener("pointerdown", event => glisserCaseFlex(event, caseBouton, grilleFlex, i, majTout));
       grilleFlex.appendChild(caseBouton);
     });
     conteneur.append(note, grilleFlex);
@@ -880,6 +884,66 @@
       grille.appendChild(bouton);
     });
     conteneur.append(note, grille);
+  }
+
+  // Glisser-déposer d'une case pleine du flex (souris et doigt) : au-delà de
+  // quelques pixels, l'image suit le pointeur ; lâchée sur une autre case,
+  // les 2 cases sont échangées (case vide : déplacée). Sans déplacement :
+  // simple clic.
+  function glisserCaseFlex(event, caseBouton, grille, depart, majTout) {
+    if (event.button !== 0 || event.target.closest(".perso-flex-vider")) return;
+    const flex = brouillon.flex;
+    const x0 = event.clientX;
+    const y0 = event.clientY;
+    let fantome = null;
+    let cible = null;
+    const caseSous = e => {
+      const element = document.elementFromPoint(e.clientX, e.clientY)?.closest(".perso-flex-case");
+      return element && grille.contains(element) ? element : null;
+    };
+    const bouger = e => {
+      if (!fantome) {
+        if (Math.hypot(e.clientX - x0, e.clientY - y0) < 6) return;
+        const rect = caseBouton.getBoundingClientRect();
+        fantome = caseBouton.cloneNode(true);
+        fantome.classList.add("perso-flex-fantome");
+        fantome.style.width = `${rect.width}px`;
+        fantome.style.height = `${rect.height}px`;
+        document.body.appendChild(fantome);
+        caseBouton.classList.add("deplacee");
+      }
+      e.preventDefault();
+      fantome.style.left = `${e.clientX}px`;
+      fantome.style.top = `${e.clientY}px`;
+      const nouvelle = caseSous(e);
+      if (nouvelle !== cible) {
+        cible?.classList.remove("cible");
+        cible = nouvelle !== caseBouton ? nouvelle : null;
+        cible?.classList.add("cible");
+      }
+    };
+    const finir = e => {
+      window.removeEventListener("pointermove", bouger);
+      window.removeEventListener("pointerup", finir);
+      window.removeEventListener("pointercancel", finir);
+      if (!fantome) return;
+      fantome.remove();
+      caseBouton.classList.remove("deplacee");
+      cible?.classList.remove("cible");
+      // Le clic qui suit le lâcher (s'il y en a un) ne choisit pas la case de
+      // départ.
+      const bloquer = ev => ev.stopImmediatePropagation();
+      caseBouton.addEventListener("click", bloquer, { capture: true, once: true });
+      setTimeout(() => caseBouton.removeEventListener("click", bloquer, { capture: true }), 0);
+      const arrivee = e.type === "pointerup" && cible ? Number(cible.dataset.case) : null;
+      if (arrivee === null || arrivee === depart) return;
+      [flex[depart], flex[arrivee]] = [flex[arrivee], flex[depart]];
+      caseFlex = arrivee;
+      majTout();
+    };
+    window.addEventListener("pointermove", bouger);
+    window.addEventListener("pointerup", finir);
+    window.addEventListener("pointercancel", finir);
   }
 
   // ---- Infos des cosmétiques (flex, équiper) ----
