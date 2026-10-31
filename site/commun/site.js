@@ -47,7 +47,9 @@
     { titre: "Historique", href: "/historique", menu: [
       ["Matchs", "/historique?onglet=matchs"],
       ["Matchs en équipe", "/historique?onglet=equipe"],
-      ["Random world boss", "/historique?onglet=world_boss"],
+      // Masqué tant que le mode est désactivé, sauf pour les administrateurs
+      // et mini admins (affiché par commun/compte.js).
+      ["Random world boss", "/historique?onglet=world_boss", "carte-world-boss"],
       ["Entraînements", "/historique?onglet=entrainements"]
     ] },
     { titre: "Statistiques", href: "/statistiques" },

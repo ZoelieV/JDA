@@ -345,9 +345,14 @@
       const depuis = idPrecedent && lireDerniereVisite(idPrecedent);
       const reponse = await fetch(`/api/auth/me${depuis ? `?depuis=${encodeURIComponent(depuis)}` : ""}`, { credentials: "include" });
 
+      const donneesMoi = await reponse.json().catch(() => ({}));
+      // Lien Random world boss du menu Historique (cf. commun/site.js).
+      if (donneesMoi.world_boss) {
+        document.querySelectorAll(".carte-world-boss").forEach(lien => { lien.hidden = false; });
+      }
       if (reponse.ok) {
         connecte = true;
-        const { user, maintenant, nouveautes, match_tournoi: matchTournoi } = await reponse.json();
+        const { user, maintenant, nouveautes, match_tournoi: matchTournoi } = donneesMoi;
         const nom = user.global_name || user.username || "Mon compte";
         // Autre compte que celui de la date envoyée : date de ce compte (ou
         // rien) à la prochaine visite, pas de fenêtre cette fois.

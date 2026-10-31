@@ -1,7 +1,7 @@
 const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { estAdmin, estMiniAdmin, estShadowban } = require("../_lib/admin");
-const { actualiserPoints } = require("../_lib/personnages");
+const { actualiserPoints, estWorldBossPublic } = require("../_lib/personnages");
 const { reclamerBonusConnexion, lireNouveautes } = require("../_lib/koyns");
 const { noterConnexion } = require("../_lib/statistiques");
 // Match de tournoi en cours du joueur (room "tournoi" en 1v1, room
@@ -25,14 +25,19 @@ module.exports = async (req, res) => {
     const cookies = parseCookies(req);
     const user = await verifySessionToken(cookies.session);
 
+    // Config (cache 30 s) : bonus de connexion d'un événement
+    // (config.bonus_connexion, gagné à la première visite de la journée) et
+    // world_boss : lien Random world boss du menu Historique visible ; tout
+    // le monde une fois le mode activé, sinon administrateurs et mini admins
+    // (cf. _lib/world_boss.js).
+    await actualiserPoints();
     if (!user) {
       return res.status(401).json({
-        authenticated: false      });
+        authenticated: false,
+        world_boss: estWorldBossPublic()
+      });
     }
 
-    // Bonus de connexion d'un événement (config.bonus_connexion, cache
-    // 30 s) : gagné à la première visite de la journée.
-    await actualiserPoints();
     // Connexion du jour (statistiques, une écriture par jour au plus) et
     // bonus de l'événement.
     await Promise.all([reclamerBonusConnexion(user.id), noterConnexion(user.id)]);
@@ -63,7 +68,8 @@ module.exports = async (req, res) => {
         admin: estAdmin(user.id),
         mini_admin: !estAdmin(user.id) && await estMiniAdmin(user.id),
         theorycraft: !await estShadowban(user.id)
-      }
+      },
+      world_boss: estWorldBossPublic() || estAdmin(user.id) || await estMiniAdmin(user.id)
     });
   } catch (error) {
     console.error(error);
