@@ -427,6 +427,18 @@ h2 {
   overflow: hidden;
 }
 
+/* Perso de la saison (+3 trophées en classé) : contour doré par-dessus
+   l'image, comme en draft classée (match.css). */
+.visuel-personnage.bonus-saison::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px #f5c542;
+  pointer-events: none;
+}
+
 .visuel-personnage.selectionnable {
   cursor: pointer;
 }

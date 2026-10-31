@@ -755,8 +755,11 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
     ? `<img class="badge-carte badge-element" src="${ICONES_ELEMENTS_TRI[item.element]}" alt="${item.element}" title="${NOMS_ELEMENTS[item.element] || item.element}">`
     : "";
 
+  // Perso de la saison (config.bonus_saison, cf. marquerBonusSaison dans
+  // commun/cartes.js) : contour doré, comme en draft classée.
+  const bonusSaison = vueActive === "characters" && item.bonusSaison;
   conteneur.innerHTML = `
-<div class="visuel-personnage ${classeFondRarete(item.rarete)} ${classeSelectionnable} ${classeSelectionnee} ${classeEstompee}" data-id="${idInstance}">
+<div class="visuel-personnage ${classeFondRarete(item.rarete)} ${classeSelectionnable} ${classeSelectionnee} ${classeEstompee}${bonusSaison ? " bonus-saison" : ""}" data-id="${idInstance}"${bonusSaison ? ` title="Perso de la saison : +3 trophées s'il est dans ton équipe en classé"` : ""}>
 <img class="image-personnage" src="../DB/${item.image}" alt="${item.nom}" loading="lazy" decoding="async">
       ${badgeConstellation}
       ${badgeNiveau}
