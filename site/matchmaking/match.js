@@ -2192,6 +2192,27 @@ function initialiserGrillesPersos() {
 // Construite UNE SEULE FOIS (pas à chaque rendu) pour ne pas perdre le
 // focus/texte de la recherche à chaque poll.
 
+// Filtres, tris et recherche remis à zéro : bouton Réinitialiser, et
+// entrée dans la draft (picks et bans) après le choix des box et les bans
+// d'équilibrage (cf. rendrePhase).
+function viderFiltresDraft() {
+  filtreVue = null;
+  filtreElement.clear();
+  filtreArme.clear();
+  filtreEtoile.clear();
+  filtreVoeux.clear();
+  filtreFactions.clear();
+  filtreSoutiens.clear();
+  filtreProprietaire = null;
+  filtrePossession = null;
+  rechercheTexte = "";
+  viderTris(etatTri);
+  document.getElementById("barre-outils").querySelectorAll(".active").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#barre-outils .tri-btn").forEach(b => majBoutonTri(b, etatTri));
+  const input = document.getElementById("recherche-personnage");
+  if (input) input.value = "";
+}
+
 function initialiserFiltresTri() {
   const container = document.getElementById("filtres-tri");
   if (!container) return;
@@ -2381,21 +2402,7 @@ function initialiserFiltresTri() {
   btnClear.title = "Réinitialiser les filtres";
   btnClear.innerHTML = '<img src="../DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres">';
   btnClear.addEventListener("click", () => {
-    filtreVue = null;
-    filtreElement.clear();
-    filtreArme.clear();
-    filtreEtoile.clear();
-    filtreVoeux.clear();
-    filtreFactions.clear();
-    filtreSoutiens.clear();
-    filtreProprietaire = null;
-    filtrePossession = null;
-    rechercheTexte = "";
-    viderTris(etatTri);
-    document.getElementById("barre-outils").querySelectorAll(".active").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll("#barre-outils .tri-btn").forEach(b => majBoutonTri(b, etatTri));
-    const input = document.getElementById("recherche-personnage");
-    if (input) input.value = "";
+    viderFiltresDraft();
     rendrePhase();
   });
   btnClear.dataset.filtre = "clear";
@@ -3664,6 +3671,9 @@ function rendrePhase() {
 
   if (draft.phase === "draft" && phasePrecedente && phasePrecedente !== "draft") {
     annoncerRole();
+    // Nouvelle étape : filtres et tris du choix des box / des bans
+    // d'équilibrage remis à zéro pour la draft.
+    viderFiltresDraft();
   }
 
   if (draft.phase === "choix_box" || draft.phase === "analyse") rendreChoixBox();
