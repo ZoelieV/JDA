@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=48">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=49">
 <link rel="stylesheet" href="/commun/entete.css?v=rem42">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -268,6 +268,44 @@
           Random world boss activé (ouvert à tous)
         </label>
         <span id="message-world-boss" class="message-ajout"></span>
+      </div>
+
+      <!-- Calendrier de la page Événements (cf. admin_evenements.js,
+           config.calendrier dans api/points.js). -->
+      <div id="calendrier-admin">
+        <h3 class="titre-koyns">Calendrier</h3>
+        <p class="aide-apercu">
+          Les dates de la saison de JDA choisissent les jours affichés sur le calendrier de la page Événements.
+          Chaque événement (un ou plusieurs jours) colore ses jours : sa description courte (20 caractères au plus) s'écrit dans le jour,
+          la longue s'affiche quand on clique sur le jour.
+        </p>
+        <div class="ligne-koyns-admin">
+          <label>Début de la saison <input type="date" id="calendrier-saison-debut" class="texte-ajout"></label>
+          <label>Fin <input type="date" id="calendrier-saison-fin" class="texte-ajout"></label>
+          <button type="button" id="calendrier-enregistrer-saison" class="bouton-creer action-calendrier">Enregistrer les dates</button>
+          <span id="message-calendrier-saison" class="message-ajout"></span>
+        </div>
+
+        <h3 class="titre-koyns" id="calendrier-titre-formulaire">Ajouter un événement</h3>
+        <div class="formulaire-calendrier">
+          <div class="ligne-koyns-admin">
+            <label>Du <input type="date" id="calendrier-debut" class="texte-ajout"></label>
+            <label>Au <input type="date" id="calendrier-fin" class="texte-ajout"></label>
+            <label>Couleur <input type="color" id="calendrier-couleur" value="#e2d29a"></label>
+          </div>
+          <label class="champ-calendrier">Description courte (dans le jour) <span id="calendrier-compteur" class="doux">0 / 20</span>
+            <input type="text" id="calendrier-court" class="texte-ajout" maxlength="20" placeholder="Ex. : Bannière Mitya">
+          </label>
+          <label class="champ-calendrier">Description longue (fenêtre du jour)
+            <textarea id="calendrier-long" class="texte-ajout" rows="4" maxlength="2000"></textarea>
+          </label>
+          <div class="ligne-koyns-admin">
+            <button type="button" id="calendrier-valider" class="bouton-creer action-calendrier">Ajouter l'événement</button>
+            <button type="button" id="calendrier-annuler" class="bouton-creer secondaire action-calendrier" hidden>Annuler la modification</button>
+            <span id="message-calendrier" class="message-ajout"></span>
+          </div>
+        </div>
+        <ul id="calendrier-liste" class="liste-calendrier-admin"></ul>
       </div>
     </div>
   </div>
@@ -544,7 +582,7 @@
   <script src="/admin_ppc/admin_equilibrage.js?v=8"></script>
   <script src="/admin_ppc/admin_comparateur.js?v=2"></script>
   <script src="/admin_ppc/admin_fictives.js?v=5"></script>
-  <script src="/admin_ppc/admin_evenements.js?v=2"></script>
+  <script src="/admin_ppc/admin_evenements.js?v=3"></script>
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
   <script src="/admin_ppc/admin_litiges.js?v=1"></script>
   <script src="/commun/koyns.js?v=12"></script>
@@ -556,7 +594,7 @@
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
-  <script src="/admin_ppc/admin_ppc.js?v=39"></script>
+  <script src="/admin_ppc/admin_ppc.js?v=40"></script>
   <script src="/commun/site.js?v=16"></script>
 </body>
 </html>

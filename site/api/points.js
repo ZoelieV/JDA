@@ -77,6 +77,12 @@
 //                                    commun/recommandations_stuff.js)
 //   { equilibrage: méthode }         méthode des bans d'équilibrage des
 //                                    prochaines drafts (cf. _lib/personnages.js)
+//   { calendrier: { saison: { debut, fin }, evenements: [{ id, debut, fin,
+//       court, long, couleur }] } }  calendrier de la page Événements (dates
+//                                    "AAAA-MM-JJ" ; court : 20 caractères au
+//                                    plus, affiché dans le jour ; long : dans
+//                                    la fenêtre du jour ; couleur "#rrggbb"),
+//                                    cf. lireCalendrier
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
@@ -206,6 +212,50 @@ function validerModifBoss(brut = {}) {
   const res = Array.from({ length: NB_RESISTANCES }, (_, i) => Number(brut.res?.[i] ?? 0));
   if (brut.chrono != null && !MOMENTS_CHRONO.includes(brut.chrono)) return null;
   return nom && res.every(Number.isFinite) ? { nom, res, chrono: brut.chrono ?? null, reco: lireRecommandationsBoss(brut.reco) } : null;
+}
+
+// ---- Calendrier de la page Événements (config.calendrier) ----
+// Saison de JDA (jours affichés) et événements, sur un ou plusieurs jours.
+const CALENDRIER_MAX_EVENEMENTS = 300;
+const CALENDRIER_MAX_JOURS_SAISON = 400;
+const CALENDRIER_COURT_MAX = 20;
+const CALENDRIER_LONG_MAX = 2000;
+
+// "AAAA-MM-JJ" valide -> nombre de jours depuis 1970, sinon null.
+function jourCalendrier(valeur) {
+  if (typeof valeur !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valeur)) return null;
+  const date = new Date(`${valeur}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === valeur ? date.getTime() / 86400000 : null;
+}
+
+// -> { calendrier } ou { erreur }.
+function lireCalendrier(brut) {
+  const debut = jourCalendrier(brut?.saison?.debut);
+  const fin = jourCalendrier(brut?.saison?.fin);
+  if (debut === null || fin === null || fin < debut) return { erreur: "Dates de la saison invalides (fin le jour du début ou après)." };
+  if (fin - debut + 1 > CALENDRIER_MAX_JOURS_SAISON) return { erreur: `Saison de ${CALENDRIER_MAX_JOURS_SAISON} jours au plus.` };
+  const liste = Array.isArray(brut?.evenements) ? brut.evenements : [];
+  if (liste.length > CALENDRIER_MAX_EVENEMENTS) return { erreur: `${CALENDRIER_MAX_EVENEMENTS} événements au plus.` };
+  const evenements = [];
+  for (const e of liste) {
+    const court = typeof e?.court === "string" ? e.court.trim() : "";
+    const long = typeof e?.long === "string" ? e.long.trim() : "";
+    const jourDebut = jourCalendrier(e?.debut);
+    const jourFin = jourCalendrier(e?.fin);
+    if (!court || [...court].length > CALENDRIER_COURT_MAX) return { erreur: `Description courte de 1 à ${CALENDRIER_COURT_MAX} caractères (${court || "vide"}).` };
+    if (!long || long.length > CALENDRIER_LONG_MAX) return { erreur: `Description longue de 1 à ${CALENDRIER_LONG_MAX} caractères (${court}).` };
+    if (jourDebut === null || jourFin === null || jourFin < jourDebut) return { erreur: `Dates invalides (${court}).` };
+    evenements.push({
+      id: typeof e.id === "string" && /^[a-z0-9]{4,16}$/.test(e.id) ? e.id : Math.random().toString(36).slice(2, 10),
+      debut: e.debut,
+      fin: e.fin,
+      court,
+      long,
+      couleur: typeof e.couleur === "string" && /^#[0-9a-f]{6}$/i.test(e.couleur) ? e.couleur.toLowerCase() : "#e2d29a"
+    });
+  }
+  evenements.sort((a, b) => a.debut.localeCompare(b.debut) || a.fin.localeCompare(b.fin));
+  return { calendrier: { saison: { debut: brut.saison.debut, fin: brut.saison.fin }, evenements } };
 }
 
 // Réponse du GET hors administrateurs : les ajouts masqués (absents des JSON
@@ -437,6 +487,10 @@ module.exports = async (req, res) => {
       } else if (typeof corps.equilibrage === "string") {
         if (!MODES_EQUILIBRAGE.includes(corps.equilibrage)) return res.status(400).json({ error: "Méthode d'équilibrage inconnue" });
         config = { ...ancienne, equilibrage: corps.equilibrage };
+      } else if (corps.calendrier && typeof corps.calendrier === "object") {
+        const { calendrier, erreur } = lireCalendrier(corps.calendrier);
+        if (erreur) return res.status(400).json({ error: erreur });
+        config = { ...ancienne, calendrier };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
       } else if (typeof corps.world_boss_public === "boolean") {

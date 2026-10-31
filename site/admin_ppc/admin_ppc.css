@@ -2392,3 +2392,64 @@ body.page-equilibrage #tuiles-admin {
 .onglet-caches .choix-cosmetique img {
   object-fit: contain;
 }
+
+/* ---- Calendrier de la page Événements (fenêtre Événements, cf.
+   admin_evenements.js) ---- */
+.formulaire-calendrier {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.champ-calendrier {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.champ-calendrier textarea {
+  resize: vertical;
+  font: inherit;
+}
+
+.liste-calendrier-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liste-calendrier-admin li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.liste-calendrier-admin .bouton-creer {
+  padding: 0.25rem 0.75rem;
+}
+
+.pastille-couleur-calendrier {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+}
+
+.dates-calendrier-admin {
+  white-space: nowrap;
+}
+
+.long-calendrier-admin {
+  flex: 1;
+  min-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

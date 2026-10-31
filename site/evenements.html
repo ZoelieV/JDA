@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/commun/entete.css?v=rem42">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
   <link rel="stylesheet" href="/matchmaking/matchmaking.css?v=32">
-  <link rel="stylesheet" href="/evenements/evenements.css?v=1">
+  <link rel="stylesheet" href="/evenements/evenements.css?v=2">
   <link rel="stylesheet" href="/commun/site.css?v=14">
 <script src="/commun/fond.js?v=17"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -38,6 +38,13 @@
         <p>Un boss et 4 persos au hasard, seul ou en co-op.</p>
       </div>
     </button>
+    <button type="button" class="carte-section carte-match cache" data-detail="calendrier" aria-expanded="false" aria-controls="detail-calendrier">
+      <img src="/DB/images/namecards/Namecard_Background_Achievement_Time_Apart.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Calendrier <span class="badge-admin">Admin</span></h2>
+        <p>Les sorties et les nouveautés de la saison.</p>
+      </div>
+    </button>
   </div>
 
   <!-- Random world boss (cf. api/_lib/world_boss.js) : room par lien, seul
@@ -59,10 +66,29 @@
     </div>
   </section>
 
+  <!-- Calendrier de la saison de JDA (config.calendrier, réglé dans la
+       fenêtre Événements de l'admin) : jours de la saison, événements
+       colorés avec leur description courte ; clic sur un jour : fenêtre
+       des descriptions longues (cf. evenements.js). -->
+  <section id="detail-calendrier" class="panneau detail-match cache" data-detail="calendrier">
+    <h2>Calendrier <span class="badge-admin">Admin</span></h2>
+    <p id="intro-calendrier">Clique sur un jour coloré pour voir le détail.</p>
+    <p class="regle-admin">Pas encore de saison : choisis ses dates dans la fenêtre Événements de la page admin. Seuls les administrateurs voient le calendrier en attendant.</p>
+    <div id="calendrier" class="calendrier"></div>
+  </section>
+
+  <div id="fenetre-jour" class="fenetre-jour" hidden>
+    <div class="fenetre-jour-contenu panneau" role="dialog" aria-modal="true" aria-labelledby="titre-fenetre-jour">
+      <button type="button" class="fermer-fenetre-jour" aria-label="Fermer">×</button>
+      <h2 id="titre-fenetre-jour"></h2>
+      <div id="corps-fenetre-jour"></div>
+    </div>
+  </div>
+
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/synergies.js?v=2"></script>
   <script src="/commun/cartes.js?v=34"></script>
-  <script src="/evenements/evenements.js?v=5"></script>
+  <script src="/evenements/evenements.js?v=6"></script>
   <script src="/commun/site.js?v=16"></script>
 </body>
 </html>

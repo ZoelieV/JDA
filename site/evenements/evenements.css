@@ -21,3 +21,162 @@
   letter-spacing: 0.5px;
   vertical-align: middle;
 }
+
+/* ---- Calendrier de la saison (cf. rendreCalendrier, evenements.js) ---- */
+.calendrier {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 30rem), 1fr));
+  gap: 1.25rem;
+}
+
+.mois-calendrier h3 {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.grille-calendrier {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.nom-jour {
+  color: var(--texte-doux);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.jour-calendrier {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.125rem;
+  min-width: 0;
+  min-height: 4.25rem;
+  padding: 0.25rem;
+  box-sizing: border-box;
+  border: 1px solid var(--bordure);
+  border-radius: 0.5rem;
+  background-color: rgba(20, 20, 26, 0.6);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.jour-calendrier.passe {
+  opacity: 0.55;
+}
+
+.jour-calendrier.aujourdhui {
+  border: 2px solid var(--accent);
+}
+
+/* Jour d'un événement : fond à sa couleur (le 1er s'il y en a plusieurs). */
+.jour-calendrier.avec-evenement {
+  border-color: var(--couleur);
+  background-color: color-mix(in srgb, var(--couleur) 30%, rgba(20, 20, 26, 0.8));
+  cursor: pointer;
+}
+
+.jour-calendrier.avec-evenement:hover {
+  background-color: color-mix(in srgb, var(--couleur) 45%, rgba(20, 20, 26, 0.8));
+}
+
+.numero-jour {
+  font-size: 0.8125rem;
+  font-weight: bold;
+}
+
+.etiquette-calendrier {
+  padding: 0.0625rem 0.25rem;
+  border-left: 3px solid var(--couleur);
+  border-radius: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.45);
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+/* Téléphone : barres de couleur sans texte (texte dans la fenêtre du jour). */
+@media (max-width: 600px) {
+  .jour-calendrier {
+    min-height: 3rem;
+    padding: 0.1875rem;
+  }
+
+  .etiquette-calendrier {
+    height: 0.3125rem;
+    padding: 0;
+    border-left: 0;
+    background-color: var(--couleur);
+    font-size: 0;
+  }
+}
+
+/* Fenêtre d'un jour : descriptions longues de ses événements. */
+.fenetre-jour {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.fenetre-jour[hidden] {
+  display: none;
+}
+
+.fenetre-jour-contenu {
+  position: relative;
+  box-sizing: border-box;
+  width: min(36rem, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.fenetre-jour-contenu h2 {
+  margin: 0 2rem 0.75rem 0;
+}
+
+.fenetre-jour-contenu h2::first-letter {
+  text-transform: uppercase;
+}
+
+.fermer-fenetre-jour {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.evenement-jour {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid var(--couleur);
+  border-radius: 0.5rem;
+  background-color: color-mix(in srgb, var(--couleur) 15%, transparent);
+}
+
+.evenement-jour h3 {
+  margin: 0 0 0.25rem;
+}
+
+.dates-evenement {
+  margin: 0 0 0.375rem;
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+}
+
+.long-evenement {
+  margin: 0;
+  white-space: pre-line;
+}

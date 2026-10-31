@@ -62,6 +62,87 @@ function choisirCarte(carte) {
   detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
+// ---- Calendrier (config.calendrier, cf. lireCalendrier dans api/points.js)
+// Un mois par bloc (semaines du lundi au dimanche), jours de la saison
+// seulement ; chaque jour d'un événement prend sa couleur et sa description
+// courte ; clic : fenêtre des descriptions longues du jour.
+const NOMS_JOURS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
+
+// "AAAA-MM-JJ" <-> Date à midi UTC (pas de décalage d'heure d'été).
+const versDate = jour => new Date(`${jour}T12:00:00Z`);
+const versJour = date => date.toISOString().slice(0, 10);
+
+function echapperCalendrier(texte) {
+  return String(texte).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function dateLongue(jour, annee = true) {
+  return versDate(jour).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", ...(annee ? { year: "numeric" } : {}), timeZone: "UTC" });
+}
+
+function rendreCalendrier(calendrier) {
+  const zone = document.getElementById("calendrier");
+  const saison = calendrier?.saison;
+  if (!saison) return;
+  const evenements = calendrier.evenements || [];
+  const duJour = jour => evenements.filter(e => e.debut <= jour && jour <= e.fin);
+  const aujourdhui = versJour(new Date(Date.now() - new Date().getTimezoneOffset() * 60000));
+
+  const mois = [];
+  for (let date = versDate(saison.debut); versJour(date) <= saison.fin; date.setUTCDate(date.getUTCDate() + 1)) {
+    const cle = versJour(date).slice(0, 7);
+    if (mois.at(-1)?.cle !== cle) mois.push({ cle, jours: [] });
+    mois.at(-1).jours.push(versJour(date));
+  }
+
+  zone.innerHTML = mois.map(({ cle, jours }) => {
+    const titre = versDate(`${cle}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
+    // Cases vides avant le 1er jour affiché (lundi = 0).
+    const decalage = (versDate(jours[0]).getUTCDay() + 6) % 7;
+    const cases = jours.map(jour => {
+      const liste = duJour(jour);
+      const classes = ["jour-calendrier", liste.length ? "avec-evenement" : "", jour === aujourdhui ? "aujourdhui" : "", jour < aujourdhui ? "passe" : ""].filter(Boolean).join(" ");
+      const etiquettes = liste.map(e => `<span class="etiquette-calendrier" style="--couleur: ${echapperCalendrier(e.couleur)}">${echapperCalendrier(e.court)}</span>`).join("");
+      const attributs = liste.length
+        ? ` type="button" data-jour="${jour}" style="--couleur: ${echapperCalendrier(liste[0].couleur)}" title="${echapperCalendrier(liste.map(e => e.court).join(" · "))}"`
+        : "";
+      const balise = liste.length ? "button" : "div";
+      return `<${balise} class="${classes}"${attributs}><span class="numero-jour">${Number(jour.slice(8))}</span>${etiquettes}</${balise}>`;
+    }).join("");
+    return `
+      <div class="mois-calendrier">
+        <h3>${titre}</h3>
+        <div class="grille-calendrier">
+          ${NOMS_JOURS.map(nom => `<span class="nom-jour">${nom}</span>`).join("")}
+          ${'<span class="jour-vide"></span>'.repeat(decalage)}
+          ${cases}
+        </div>
+      </div>`;
+  }).join("");
+
+  const fenetre = document.getElementById("fenetre-jour");
+  const fermer = () => { fenetre.hidden = true; };
+  zone.addEventListener("click", event => {
+    const jour = event.target.closest("[data-jour]")?.dataset.jour;
+    if (!jour) return;
+    document.getElementById("titre-fenetre-jour").textContent = dateLongue(jour);
+    document.getElementById("corps-fenetre-jour").innerHTML = duJour(jour).map(e => `
+      <article class="evenement-jour" style="--couleur: ${echapperCalendrier(e.couleur)}">
+        <h3>${echapperCalendrier(e.court)}</h3>
+        ${e.debut !== e.fin ? `<p class="dates-evenement">Du ${dateLongue(e.debut, false)} au ${dateLongue(e.fin)}</p>` : ""}
+        <p class="long-evenement">${echapperCalendrier(e.long)}</p>
+      </article>`).join("");
+    fenetre.hidden = false;
+    fenetre.querySelector(".fermer-fenetre-jour").focus();
+  });
+  fenetre.addEventListener("click", event => {
+    if (event.target === fenetre || event.target.closest(".fermer-fenetre-jour")) fermer();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !fenetre.hidden) fermer();
+  });
+}
+
 async function demarrer() {
   const etat = document.getElementById("etat-evenements");
   const [utilisateur, config] = await Promise.all([
@@ -69,8 +150,10 @@ async function demarrer() {
     chargerPointsAdmin().catch(erreur => { console.error(erreur); return {}; })
   ]);
   const admin = !!(utilisateur?.admin || utilisateur?.mini_admin);
-  // { data-detail : activé pour tous }
-  const evenements = { "world-boss": config?.world_boss_public === true };
+  // { data-detail : activé pour tous } ; calendrier : dès que la saison a
+  // ses dates.
+  const evenements = { "world-boss": config?.world_boss_public === true, calendrier: !!config?.calendrier?.saison };
+  rendreCalendrier(config?.calendrier);
 
   for (const [nom, public_] of Object.entries(evenements)) {
     document.querySelector(`.carte-match[data-detail="${nom}"]`).classList.toggle("cache", !public_ && !admin);
