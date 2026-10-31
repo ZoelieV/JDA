@@ -264,9 +264,24 @@
     </div>
   </div>
 
+  <!-- Rappel après la détection automatique (cf. auto_box/interface.js) :
+       constellations à revérifier, armes à renseigner. -->
+  <div id="modal-rappel-armes" class="modal-parametres">
+    <div class="modal-parametres-contenu modal-confirmation" role="dialog" aria-modal="true" aria-labelledby="rappel-armes-titre">
+      <h2 id="rappel-armes-titre">Ta box n'est pas encore finie</h2>
+      <p><strong>Constellations :</strong> revérifie celles des personnages qui ont un chapeau ou des cheveux longs. Ils cachent souvent l'icône des constellations sur la capture et la détection peut se tromper.</p>
+      <p><strong>Armes :</strong> la détection ne lit que les personnages. Renseigne tes armes et leurs doublons (icône de copie sur la carte de l'arme) dans la vue Armes : une arme qui n'est pas dans ta box ne pourra pas être jouée en match.</p>
+      <p class="confirmation-note">Rien n'est enregistré tant que tu n'as pas cliqué sur Enregistrer.</p>
+      <div class="pied-parametres">
+        <button type="button" id="rappel-armes-plus-tard" class="btn-secondaire">Plus tard</button>
+        <button type="button" id="rappel-armes-ouvrir" class="btn-enregistrer">Renseigner mes armes</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/my_account/auto_box/detection.js?v=2"></script>
-  <script src="/my_account/auto_box/interface.js?v=4"></script>
+  <script src="/my_account/auto_box/interface.js?v=5"></script>
   <script src="/commun/synergies.js?v=2"></script>
   <script src="/commun/cartes.js?v=34"></script>
   <script src="/commun/tri.js?v=21"></script>

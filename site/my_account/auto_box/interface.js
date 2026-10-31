@@ -337,7 +337,21 @@ function initialiserAutoBox(profil, personnages, armes) {
     mettreAJourTotalBox(personnages, armes, profil);
     modal.classList.remove("active");
     afficherToast(`${nb} personnages importés : vérifie puis clique sur Enregistrer`);
+    rappel.classList.add("active");
   }
+
+  // ---- Rappel après l'application : constellations des persos à chapeau
+  // ou cheveux longs à revérifier, armes (et doublons) à renseigner. ----
+  const rappel = document.getElementById("modal-rappel-armes");
+  const fermerRappel = () => rappel.classList.remove("active");
+  document.getElementById("rappel-armes-plus-tard").addEventListener("click", fermerRappel);
+  document.getElementById("rappel-armes-ouvrir").addEventListener("click", () => {
+    fermerRappel();
+    document.querySelector('.view-btn[data-view="weapons"]')?.click();
+  });
+  rappel.addEventListener("click", event => {
+    if (event.target === rappel) fermerRappel();
+  });
 
   // ---- Dépôt / choix du fichier ----
 
@@ -363,5 +377,6 @@ function initialiserAutoBox(profil, personnages, armes) {
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
+    if (event.key === "Escape" && rappel.classList.contains("active")) fermerRappel();
   });
 }
