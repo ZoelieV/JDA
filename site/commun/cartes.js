@@ -217,8 +217,13 @@ const chargerArmes = (avecMasques = false) => Promise.all([chargerJSON("weapons.
       const max = Number(points.limites_equilibrage?.[palier]?.points_max_box);
       if (max > 0) pointsMaxBoxParPalier[palier] = max;
     });
-    // Valeur alternative (copies en double, signature sans son perso).
-    liste.forEach(arme => { arme.alternatif = ALTERNATIVES_ARMES.includes(points.alternatives_armes?.[arme.id]) ? points.alternatives_armes[arme.id] : 100; });
+    // Valeurs alternatives (copies en double, signature sans son perso) :
+    // le reste et des groupes de persos (cf. commun/synergies.js) ;
+    // alternatif : le reste.
+    liste.forEach(arme => {
+      arme.alternative = lireAlternativeArme(points.alternatives_armes?.[arme.id]);
+      arme.alternatif = arme.alternative.reste;
+    });
     // Catégories (support, standard) modifiées par les administrateurs.
     appliquerPointsAdmin(liste, points.categoriesArmes, "categories");
     return avecMasques ? liste : retirerMasques(liste, points.masques?.weapons);
@@ -435,14 +440,16 @@ function trouverPersonnageSignature(armes, personnages, idArme) {
   return cle ? personnages.find(p => getCleSignature(p) === cle) || null : null;
 }
 
-// ---- Valeur alternative des armes ----
-// Pourcentage des points d'une copie d'arme (ALTERNATIVES_ARMES), réglé
-// par arme sur la page admin (arme.alternatif, 100 par défaut), appliqué
-// dans les points d'une box à chaque copie en double (toutes sauf la
-// meilleure) et à une arme signature dont le perso n'est pas dans la box
-// (une seule fois si les 2). Arrondi à l'entier. Même calcul côté serveur :
+// ---- Valeurs alternatives des armes ----
+// Pourcentages des points d'une copie d'arme (POURCENTAGES_ALTERNATIFS,
+// 0 à 200 %), réglés par arme sur la page admin (arme.alternative : le reste
+// et des groupes de persos, cf. commun/synergies.js), appliqués dans les
+// points d'une box à chaque copie en double (toutes sauf la meilleure) et à
+// une arme signature dont le perso n'est pas dans la box (une seule fois si
+// les 2) : le meilleur % des persos de la box qui peuvent la porter (sauf
+// celui de sa signature). Arrondi à l'entier. Même calcul côté serveur :
 // calculerPointsArmesBox (api/_lib/draft.js).
-const ALTERNATIVES_ARMES = [0, 25, 50, 75, 100];
+const ALTERNATIVES_ARMES = POURCENTAGES_ALTERNATIFS;
 
 // Clés signature (cf. getCleSignature) des persos d'une box.
 function clesPersosBox(collectionPersos, personnages, box) {
@@ -478,6 +485,9 @@ function pointsArmesBox(copies, clesPersos, armes, personnages) {
 function pointsCopiesArmes(copies, clesPersos, armes, personnages) {
   const { cleParArme } = getIndexSignatures(armes);
   const clesCatalogue = new Set(personnages.map(getCleSignature));
+  // Porteurs possibles (persos de la box : clé, type d'arme).
+  const porteurs = [...new Map(personnages.filter(p => clesPersos.has(getCleSignature(p)))
+    .map(p => [getCleSignature(p), { cle: getCleSignature(p), type: p.arme }])).values()];
   const parId = new Map();
   copies.forEach(copie => {
     if (!parId.has(copie.arme.id)) parId.set(copie.arme.id, []);
@@ -489,7 +499,8 @@ function pointsCopiesArmes(copies, clesPersos, armes, personnages) {
       const points = Number(copie.arme.PPW?.[copie.raffinement] ?? 0);
       const cle = cleParArme.get(copie.arme.id);
       const reduite = index > 0 || (clesCatalogue.has(cle) && !clesPersos.has(cle));
-      resultat.push({ ...copie, reduite, double: index > 0, points: reduite ? Math.round(points * (copie.arme.alternatif ?? 100) / 100) : points });
+      const pourcentage = reduite ? pourcentageAlternatifBox(copie.arme.alternative, copie.arme.type, porteurs, cle) : 100;
+      resultat.push({ ...copie, reduite, double: index > 0, pourcentage, points: reduite ? Math.round(points * pourcentage / 100) : points });
     });
   });
   return resultat;

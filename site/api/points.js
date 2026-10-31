@@ -23,7 +23,7 @@
 //          theatre: [id...],    (personnages buffés par le théâtre du mois)
 //          synergies: { id: { persos: [id de la draft], malus } },  (valeur
 //                       alternative des persos, cf. commun/synergies.js)
-//          alternatives_armes: { id: 0|25|50|75 },  (valeur alternative des
+//          alternatives_armes: { id: { reste, groupes: [{ pourcentage, persos }] } },  (valeurs alternatives des
 //                       armes en %, absente = 100 ; cf. calculerPointsArmesBox)
 //          bonus_saison: [id...],  (bonus de saison : trophées en classé)
 //          factions: { id: "lunar" | "hexerei" | "stellar" },  (filtres des
@@ -92,7 +92,7 @@ const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
-const { lireSynergies } = require("../commun/synergies.js");
+const { lireSynergies, lireAlternativesArmes } = require("../commun/synergies.js");
 const { lireRecommandationsStuff } = require("../commun/recommandations_stuff.js");
 const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
@@ -325,11 +325,13 @@ async function lireConfig() {
   return data?.data || {};
 }
 
-// Valeurs alternatives des armes : ids connus, pourcentages permis (100,
-// la valeur par défaut, n'est pas gardé).
-function nettoyerAlternatives(valeurs, ids) {
-  return Object.fromEntries(Object.entries(valeurs || {})
-    .filter(([id, pourcentage]) => ids.has(id) && pourcentage !== 100 && ALTERNATIVES_ARMES.includes(pourcentage)));
+// Valeurs alternatives des armes : ids connus, pourcentages permis (0 à
+// 200 %), persos connus (clés signature : id, ou groupe pour le Voyageur) ;
+// valeur par défaut (100 %, aucun groupe) pas gardée (cf.
+// lireAlternativesArmes, commun/synergies.js).
+function nettoyerAlternatives(valeurs, ids, persos) {
+  const cles = new Set(persos.flatMap(p => [p.id, p.groupe].filter(Boolean)));
+  return lireAlternativesArmes(valeurs, ids, cles);
 }
 
 // Synergies de persos connus, avec des persos en synergie connus (ids de la
@@ -584,7 +586,7 @@ module.exports = async (req, res) => {
           bonus_saison: nettoyerMasques(corps.bonus_saison ?? ancienne.bonus_saison, ids("characters")),
           factions: nettoyerFactions(corps.factions ?? ancienne.factions, ids("characters")),
           soutiens: nettoyerSoutiens(corps.soutiens ?? ancienne.soutiens, ids("characters")),
-          alternatives_armes: nettoyerAlternatives(corps.alternatives_armes ?? ancienne.alternatives_armes, ids("weapons")),
+          alternatives_armes: nettoyerAlternatives(corps.alternatives_armes ?? ancienne.alternatives_armes, ids("weapons"), [...listeJSON("characters"), ...ajouts.characters]),
           // Synergies (valeur alternative des persos, cf. commun/synergies.js).
           synergies: nettoyerSynergies(corps.synergies ?? ancienne.synergies, [...listeJSON("characters"), ...ajouts.characters])
         };

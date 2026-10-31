@@ -206,7 +206,7 @@ function htmlMethodeEquilibrage(paliers) {
     </ul>
     ${htmlLimitesEquilibrage()}
     <p>Si l'écart prévu reste au-dessus de 30 malgré tout, le match n'est pas équilibrable : les joueurs peuvent revenir au choix des box si une autre combinaison de leurs box s'équilibre (seulement celles-là), ou annuler le match. Si aucune combinaison ne s'équilibre, le match est annulé d'office, ne compte pas et les administrateurs en sont prévenus ; en classé, ces 2 joueurs ne sont plus mis face à face tant qu'aucun des 2 n'a modifié son compte. En entraînement, tu es prévenu et tu choisis de continuer ou de changer de box.</p>
-    <p><strong>Armes libres</strong> : chaque copie en double d'une arme signature, chaque arme signature dont le personnage n'est pas dans la box, et chaque arme qui n'est la signature de personne (armes perma, Ultime soupir…) est donnée à un personnage qui n'a pas sa propre signature, du même type d'arme : une arme support va à un support ou un sub-dps, une autre arme à un sub-dps ou un dps. Elle compte pour la même valeur que dans les points de la box : valeur alternative pour les copies en double et les signatures sans leur personnage, pleine valeur pour la 1re copie d'une arme qui n'est la signature de personne. Une arme par personnage, attribuée là où elle fait le plus monter la verticalité (de la plus forte à la plus faible). Ainsi, une box avec beaucoup d'armes est mieux prise en compte.</p>
+    <p><strong>Armes libres</strong> : chaque copie en double d'une arme signature, chaque arme signature dont le personnage n'est pas dans la box, et chaque arme qui n'est la signature de personne (armes perma, Ultime soupir…) est donnée à un personnage qui n'a pas sa propre signature, du même type d'arme : une arme support va à un support ou un sub-dps, une autre arme à un sub-dps ou un dps. Elle compte pour la valeur alternative du personnage qui la reçoit (copies en double et signatures sans leur personnage), pleine valeur pour la 1re copie d'une arme qui n'est la signature de personne. Une arme par personnage, attribuée là où elle fait le plus monter la verticalité (de la plus forte à la plus faible). Ainsi, une box avec beaucoup d'armes est mieux prise en compte.</p>
     <p><strong>Chaque arme ne compte qu'une fois</strong> : quand un personnage est banni dans le calcul, l'arme qu'il avait (sa signature, ou l'arme libre qui lui était donnée) a déjà compté sur lui ; elle ne revient comme arme libre sur aucun autre personnage, ni dans le top 12 ni pour les personnages horizontaux. Sous 4000 points d'écart entre les 2 box, elle reste jouable dans le match. À 4000 points d'écart ou plus, quand le joueur fait ses bans d'équilibrage (verticaux, joker ou horizontaux), le personnage banni emporte vraiment ses armes (sa signature et l'arme libre que le calcul lui donne à ce moment-là) : elles ne sont pas jouables pendant le combat.</p>
     <p>Pourquoi 12 : c'est ce qu'il reste à un joueur une fois les bans et les picks adverses passés, et ce qui prédit le mieux l'écart entre les équipes dans les simulations de drafts. Les bans d'équilibrage sont gardés pour les revanches. En mode carnage, il n'y en a jamais.</p>`;
 }
@@ -348,8 +348,9 @@ function rendreFiltres() {
 
 // ---- Valeurs alternatives (en vert) ----
 // Perso : malus sans ses persos en synergie (cf. commun/synergies.js,
-// synergiesPersos chargé par commun/cartes.js) ; arme : valeur alternative
-// (arme.alternatif %, copie en double ou signature sans son perso).
+// synergiesPersos chargé par commun/cartes.js) ; arme : valeurs alternatives
+// (arme.alternative : groupes de persos et le reste, copie en double ou
+// signature sans son perso).
 
 // Nom d'un id de la draft (Voyageur : "traveler").
 function nomPersoDraft(id) {
@@ -376,11 +377,16 @@ function htmlSynergieTc(perso) {
   return `<span class="valeur-alternative-tc" title="Points perdus selon le nombre de ces persos absents de la box : ${detail}">−${parAbsent}</span> par perso absent parmi ${liste} (−${synergie.malus} s'il n'y en a aucun)`;
 }
 
+// Le reste, puis chaque groupe de persos (cf. commun/synergies.js).
 function htmlAlternativeArmeTc(arme) {
-  const pourcentage = arme.alternatif ?? 100;
-  if (pourcentage === 100) return "";
-  const valeurs = points(arme, "weapons").map(p => Math.round(p * pourcentage / 100));
-  return `<span class="valeur-alternative-tc" title="Copie en double, ou arme signature sans son perso dans la box">${pourcentage} % : ${valeurs.join(" / ")}</span>`;
+  const alternative = arme.alternative || { reste: arme.alternatif ?? 100, groupes: [] };
+  if (alternative.reste === 100 && !alternative.groupes.length) return "";
+  const valeurs = pourcentage => points(arme, "weapons").map(p => Math.round(p * pourcentage / 100)).join(" / ");
+  const lignes = [
+    ...alternative.groupes.map(g => `<span class="valeur-alternative-tc" title="Portée par ${echapper(g.persos.map(nomPersoDraft).join(", "))}">${g.pourcentage} % : ${valeurs(g.pourcentage)}</span> sur ${echapper(g.persos.map(nomPersoDraft).join(", "))}`),
+    `<span class="valeur-alternative-tc" title="Copie en double, ou arme signature sans son perso dans la box, portée par un autre perso">${alternative.reste} % : ${valeurs(alternative.reste)}</span>${alternative.groupes.length ? " sur les autres" : ""}`
+  ];
+  return lignes.join("<br>");
 }
 
 function rendreEntete() {
@@ -686,12 +692,12 @@ function rendreEquilibrage() {
 
     <h2>2. Points d'une arme</h2>
     <p class="formule-tc">points = R<sub>raffinement</sub></p>
-    <p>Chaque copie d'une arme présente dans la box compte (onglet Armes). Certaines armes ont une <strong>valeur alternative</strong> (25, 50 ou 75 % de leurs points, arrondie à l'entier), qui remplace leurs points dans 2 cas :</p>
+    <p>Chaque copie d'une arme présente dans la box compte (onglet Armes). Certaines armes ont des <strong>valeurs alternatives</strong> (de 0 à 200 % de leurs points, arrondies à l'entier), qui remplacent leurs points dans 2 cas :</p>
     <ul class="notes-theorycraft">
       <li>pour chaque copie en double (la meilleure copie compte en entier),</li>
       <li>et pour une arme signature quand son personnage n'est pas dans la box.</li>
     </ul>
-    <p>Si les 2 cas se cumulent, la réduction ne s'applique qu'une fois.</p>
+    <p>Si les 2 cas se cumulent, la valeur alternative ne s'applique qu'une fois. Une arme peut avoir une valeur pour certains personnages (par exemple 100 % sur un personnage qui la porte aussi bien que son propriétaire) et une autre pour « le reste » des personnages. Dans les points de la box, l'arme compte la meilleure valeur parmi les personnages de la box qui peuvent la porter (même type d'arme), sinon celle du reste. Dans le calcul des bans d'équilibrage, elle compte la valeur du personnage à qui elle est donnée.</p>
 
     <h2>3. Points d'une box</h2>
     <p class="formule-tc">points de la box = Σ points des personnages + Σ points des armes</p>

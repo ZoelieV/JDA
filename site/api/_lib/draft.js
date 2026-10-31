@@ -1,4 +1,5 @@
 const { migrerCollectionPersos, pointsPersonnageBox, palierTheatre, getPersonnages } = require("./personnages");
+const { pourcentageAlternatifPerso, pourcentageAlternatifBox } = require("../../commun/synergies.js");
 
 // ---- Équilibrage ----
 //
@@ -89,17 +90,18 @@ function estEquilibrageHorizontal(draft) {
 //
 // valeur d'un perso = ses points (Voyageur : son meilleur élément) + la
 // meilleure copie de son arme signature dans la box (pleine valeur).
-// Armes libres, à la même valeur que dans les points de la box (cf.
-// calculerPointsArmesBox) : copies en double d'une signature et signatures
-// dont le perso n'est pas dans la box (valeur alternative, arme.alternatif),
-// armes signature d'aucun perso (perma, Ultime soupir... : 1re copie pleine
+// Armes libres : copies en double d'une signature et signatures dont le
+// perso n'est pas dans la box (valeur alternative du perso qui la porte :
+// son groupe ou le reste, cf. valeurLibre et commun/synergies.js), armes
+// signature d'aucun perso (perma, Ultime soupir... : 1re copie pleine
 // valeur, doublons valeur alternative). Chaque arme libre est attribuée à un
 // perso sans sa signature, du même type d'arme (arme support : persos
 // support ou sub-dps ; autre arme : persos sub-dps ou dps), un perso par
 // arme, au plus grand gain de verticalité (cf. attribuerArmesLibres).
 // -> { persos: { id: { valeur, type, support, attaque, signature: { pleine,
-//      alternative, type, support } | null } }, libres: [{ cle, valeur, type,
-//      support }] } (cle : repère de l'arme libre, cf. armesVerticales).
+//      type, support } | null } }, libres: [{ cle, valeur (la plus haute
+//      possible), pleine, reduite, alternative, exclue, type, support }] }
+//      (cle : repère de l'arme libre, cf. armesVerticales).
 const CATEGORIES_ARME_SUPPORT = ["support", "subdps"];
 const CATEGORIES_ARME_ATTAQUE = ["subdps", "dps"];
 
@@ -139,15 +141,17 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
     const cle = typeof arme.image === "string" && arme.image.match(/([^/]+)_w\.webp$/)?.[1];
     const signature = clesCatalogue.has(cle);
     const support = Array.isArray(arme.categories) && arme.categories.includes("support");
+    // Valeurs alternatives par perso (le reste, groupes) : cf.
+    // valeurLibre ; la signature n'est jamais une arme libre de son perso.
+    const alternative = arme.alternative || { reste: arme.alternatif ?? 100, groupes: [] };
     raffinements.sort((a, b) => b - a).forEach((raffinement, index) => {
       const pleine = Number(arme.PPW?.[raffinement] ?? 0);
-      const alternative = Math.round(pleine * (arme.alternatif ?? 100) / 100);
       // copie : rang de la copie (0 = meilleure), comme les cartes d'armes de
       // la draft (cf. bannirArmesPerso).
-      const libre = { cle: `l${libres.length}`, arme: arme.id, copie: index, type: arme.type, support };
-      if (!signature) libres.push({ ...libre, valeur: index === 0 ? pleine : alternative });
-      else if (index === 0 && persos[cle]) persos[cle].signature = { pleine, alternative, type: arme.type, support, arme: arme.id, copie: 0 };
-      else libres.push({ ...libre, valeur: alternative });
+      const libre = { cle: `l${libres.length}`, arme: arme.id, copie: index, type: arme.type, support, pleine, exclue: signature ? cle : null };
+      if (!signature && index === 0) libres.push({ ...libre, reduite: false, valeur: pleine });
+      else if (signature && index === 0 && persos[cle]) persos[cle].signature = { pleine, type: arme.type, support, arme: arme.id, copie: 0 };
+      else libres.push({ ...libre, reduite: true, alternative, valeur: valeurMaxLibre(pleine, alternative) });
     });
   });
   return { persos, libres };
@@ -180,10 +184,26 @@ function mesurerVerticalite(modele, bannis = new Set(), consommees = new Set()) 
   };
 }
 
-// Attribution gloutonne, de l'arme libre la plus forte à la plus faible :
-// au perso compatible qui fait le plus monter la somme du top (dans le top :
-// toute la valeur de l'arme ; hors du top : ce qui dépasse le dernier du
-// top) ; ex aequo : le mieux classé. Arme sans gain : pas attribuée.
+// Valeur d'une arme libre : pleine (1re copie d'une arme qui n'est la
+// signature de personne), sinon selon le perso qui la porte (valeurs
+// alternatives : son groupe, ou le reste, cf. commun/synergies.js).
+// Anciens modèles (sans pleine) : leur valeur fixe.
+function valeurLibre(arme, cle) {
+  if (!arme.reduite || arme.pleine == null) return arme.valeur;
+  return Math.round(arme.pleine * pourcentageAlternatifPerso(arme.alternative, cle) / 100);
+}
+
+// Valeur la plus haute qu'une arme libre peut prendre (ordre d'attribution).
+function valeurMaxLibre(pleine, alternative) {
+  const pourcentages = [alternative.reste, ...alternative.groupes.map(g => g.pourcentage)];
+  return Math.round(pleine * Math.max(...pourcentages) / 100);
+}
+
+// Attribution gloutonne, de l'arme libre la plus forte à la plus faible
+// (valeur la plus haute possible) : au perso compatible qui fait le plus
+// monter la somme du top, à la valeur de l'arme sur ce perso (dans le top :
+// toute cette valeur ; hors du top : ce qui dépasse le dernier du top) ; ex
+// aequo : le mieux classé. Arme sans gain : pas attribuée.
 function attribuerArmesLibres(persos, libres) {
   libres.sort((a, b) => b.valeur - a.valeur).forEach(arme => {
     if (arme.valeur <= 0) return;
@@ -191,15 +211,16 @@ function attribuerArmesLibres(persos, libres) {
     const dernier = persos.length >= VERTICALITE_PERSOS ? persos[VERTICALITE_PERSOS - 1].valeur : 0;
     let meilleur = null;
     persos.forEach((p, rang) => {
-      if (!p.receveur || p.type !== arme.type || !(arme.support ? p.support : p.attaque)) return;
-      const gain = rang < VERTICALITE_PERSOS ? arme.valeur : Math.max(0, p.valeur + arme.valeur - dernier);
-      if (gain > 0 && (!meilleur || gain > meilleur.gain)) meilleur = { p, gain };
+      if (!p.receveur || p.type !== arme.type || !(arme.support ? p.support : p.attaque) || p.id === arme.exclue) return;
+      const valeur = valeurLibre(arme, p.id);
+      const gain = rang < VERTICALITE_PERSOS ? valeur : Math.max(0, p.valeur + valeur - dernier);
+      if (gain > 0 && (!meilleur || gain > meilleur.gain)) meilleur = { p, gain, valeur };
     });
     if (!meilleur) return;
-    meilleur.p.valeur += arme.valeur;
+    meilleur.p.valeur += meilleur.valeur;
     meilleur.p.receveur = false;
     meilleur.p.arme = arme.cle;
-    meilleur.p.armeValeur = arme.valeur;
+    meilleur.p.armeValeur = meilleur.valeur;
     meilleur.p.armeId = arme.arme || null;
   });
 }
@@ -417,12 +438,13 @@ function valeursHorizontales(modele, verticaux, detail = null, porteurs = null) 
     .sort((a, b) => b.valeur - a.valeur)
     .forEach(arme => {
       const receveur = persos
-        .filter(p => p.receveur && p.type === arme.type && (arme.support ? p.support : p.attaque))
+        .filter(p => p.receveur && p.type === arme.type && (arme.support ? p.support : p.attaque) && p.id !== arme.exclue)
         .sort((a, b) => b.valeur - a.valeur)[0];
       if (!receveur) return;
-      receveur.valeur += arme.valeur;
+      const valeur = valeurLibre(arme, receveur.id);
+      receveur.valeur += valeur;
       receveur.receveur = false;
-      receveur.armeValeur = arme.valeur;
+      receveur.armeValeur = valeur;
       receveur.armeId = arme.arme || null;
       if (porteurs) porteurs[receveur.id] = arme.cle;
     });
@@ -902,16 +924,21 @@ function pointsSignatureBox(profilData, boxChoisie, armes, persoId) {
 // ---- Points des armes d'une box (PPW du raffinement), copies comprises
 // ("idArme#2"...) : même sélection que Mon compte et l'aperçu des box du
 // match. Box personnalisée (entraînement) : armes cochées (cf. donneesBoxRole).
-// Valeur alternative (arme.alternatif, % réglé sur la page admin, 100 par
-// défaut) : chaque copie en double (toutes sauf la meilleure) et une arme
-// signature dont le perso n'est pas dans la box (une seule fois si les 2),
+// Valeur alternative (arme.alternative, % réglés sur la page admin : le
+// reste et des groupes de persos, cf. commun/synergies.js) : chaque copie en
+// double (toutes sauf la meilleure) et une arme signature dont le perso
+// n'est pas dans la box (une seule fois si les 2) valent le meilleur % des
+// persos de la box qui peuvent la porter (sauf celui de sa signature),
 // arrondi à l'entier. Même calcul côté client : pointsArmesBox
 // (commun/cartes.js). ----
 function calculerPointsArmesBox(profilData, boxChoisie, armes) {
   const collection = profilData?.weapons || {};
   const parId = new Map(armes.map(arme => [arme.id, arme]));
-  const persos = new Set(getPersonnagesBox(profilData, getPersonnages(), boxChoisie)
-    .map(({ personnage }) => personnage.groupe || personnage.id));
+  // Persos de la box : clé signature et type d'arme (valeurs alternatives
+  // par perso : le meilleur des porteurs possibles, cf. commun/synergies.js).
+  const porteurs = getPersonnagesBox(profilData, getPersonnages(), boxChoisie)
+    .map(({ personnage }) => ({ cle: personnage.groupe || personnage.id, type: personnage.arme }));
+  const persos = new Set(porteurs.map(p => p.cle));
   // Une arme n'est une signature que si un perso du catalogue a sa clé.
   const clesCatalogue = new Set(getPersonnages().map(p => p.groupe || p.id));
   const copies = new Map();
@@ -930,7 +957,7 @@ function calculerPointsArmesBox(profilData, boxChoisie, armes) {
     raffinements.sort((a, b) => b - a).forEach((raffinement, index) => {
       const points = Number(arme.PPW?.[raffinement] ?? 0);
       const reduite = index > 0 || (clesCatalogue.has(signature) && !persos.has(signature));
-      total += reduite ? Math.round(points * (arme.alternatif ?? 100) / 100) : points;
+      total += reduite ? Math.round(points * pourcentageAlternatifBox(arme.alternative, arme.type, porteurs, signature) / 100) : points;
     });
   });
   return total;

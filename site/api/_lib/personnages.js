@@ -8,7 +8,7 @@
 const personnages = require("../../DB/characters.json");
 const armes = require("../../DB/weapons.json");
 const bossList = require("../../DB/boss.json"); // même tableau que _lib/boss.js
-const { lireSynergies, appliquerSynergie } = require("../../commun/synergies.js");
+const { lireSynergies, appliquerSynergie, lireAlternativeArme, POURCENTAGES_ALTERNATIFS } = require("../../commun/synergies.js");
 const { definirPrixCosmetiques } = require("../../commun/koyns.js");
 
 // ---- Groupes (Voyageur) ----
@@ -69,8 +69,8 @@ function estWorldBossPublic() {
 // enregistrée qui n'existe plus : "ancien".
 const MODES_EQUILIBRAGE = ["ancien", "fixe_joker", "fixe_horizontal"];
 // Valeurs alternatives permises pour les armes (% des points, cf.
-// api/points.js) ; 100 = aucune réduction.
-const ALTERNATIVES_ARMES = [0, 25, 50, 75, 100];
+// commun/synergies.js) ; 100 = valeur normale, au-delà : plus de points.
+const ALTERNATIVES_ARMES = POURCENTAGES_ALTERNATIFS;
 let modeEquilibrage = "ancien";
 
 function getModeEquilibrage() {
@@ -268,9 +268,11 @@ async function actualiserPoints() {
     });
     armes.forEach(a => {
       if (Array.isArray(config.weapons?.[a.id])) a.PPW = config.weapons[a.id];
-      // Valeur alternative (% : copies en double, signature sans son perso,
-      // cf. calculerPointsArmesBox dans _lib/draft.js).
-      a.alternatif = ALTERNATIVES_ARMES.includes(config.alternatives_armes?.[a.id]) ? config.alternatives_armes[a.id] : 100;
+      // Valeurs alternatives (% : copies en double, signature sans son
+      // perso ; le reste et les groupes de persos, cf. commun/synergies.js
+      // et calculerPointsArmesBox dans _lib/draft.js). alternatif : le reste.
+      a.alternative = lireAlternativeArme(config.alternatives_armes?.[a.id]);
+      a.alternatif = a.alternative.reste;
       if (Array.isArray(config.categoriesArmes?.[a.id])) a.categories = config.categoriesArmes[a.id];
     });
     pointsLusA = Date.now();

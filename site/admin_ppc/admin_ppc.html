@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=51">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=52">
 <link rel="stylesheet" href="/commun/entete.css?v=rem42">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -158,6 +158,19 @@
         Pris en compte partout (points des box, équilibrage), après les bonus niveau et théâtre.
       </p>
       <div id="contenu-synergie"></div>
+    </div>
+  </div>
+
+  <!-- Valeurs alternatives d'une arme (cf. admin_alternatives.js,
+       commun/synergies.js) : le reste et des groupes de persos. -->
+  <div id="modal-alternative" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <span id="alternative-miniature" class="apercu-miniature"><img id="alternative-image" alt=""></span>
+        <h2 id="alternative-titre">Arme</h2>
+        <button type="button" id="fermer-alternative" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <div id="contenu-alternative"></div>
     </div>
   </div>
 
@@ -593,8 +606,8 @@
   </div>
 
   <script src="/commun/variantes.js?v=4"></script>
-  <script src="/commun/synergies.js?v=2"></script>
-  <script src="/commun/cartes.js?v=35"></script>
+  <script src="/commun/synergies.js?v=3"></script>
+  <script src="/commun/cartes.js?v=36"></script>
   <script src="/commun/tri.js?v=21"></script>
   <script src="/admin_ppc/admin_ajout.js?v=8"></script>
   <script src="/commun/recommandations_boss.js?v=1"></script>
@@ -612,11 +625,12 @@
   <script src="/admin_ppc/admin_koyns.js?v=7"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
+  <script src="/admin_ppc/admin_alternatives.js?v=1"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
-  <script src="/admin_ppc/admin_ppc.js?v=40"></script>
+  <script src="/admin_ppc/admin_ppc.js?v=41"></script>
   <script src="/commun/site.js?v=18"></script>
 </body>
 </html>

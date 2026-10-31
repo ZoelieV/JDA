@@ -1556,8 +1556,8 @@ select.texte-ajout optgroup {
   font-variant-numeric: tabular-nums;
 }
 
-/* Valeur alternative des armes (copies en double, signature sans son
-   perso) : choix du pourcentage et points qui en résultent (R1..R5). */
+/* Valeurs alternatives des armes (copies en double, signature sans son
+   perso) : résumé cliquable, ouvre la fenêtre de l'arme. */
 .tableau-admin td.col-alternative {
   white-space: nowrap;
 }
@@ -1566,7 +1566,46 @@ select.texte-ajout optgroup {
   background-color: rgba(120, 180, 245, 0.12);
 }
 
-.choix-alternative {
+.modifier-alternative {
+  padding: 0.125rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.modifier-alternative:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+/* Fenêtre des valeurs alternatives d'une arme (admin_alternatives.js). */
+#modal-alternative .modal-apercu-contenu {
+  max-width: min(46rem, calc(100% - 2rem));
+}
+
+.groupe-alternative {
+  margin: 0.75rem 0;
+  padding: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.625rem;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.reste-alternative {
+  border-color: rgba(120, 180, 245, 0.4);
+}
+
+.entete-groupe-alternative {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.entete-groupe-alternative select {
   padding: 0.125rem 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 0.375rem;
@@ -1575,11 +1614,66 @@ select.texte-ajout optgroup {
   font: inherit;
 }
 
-.apercu-alternative {
+.persos-groupe-alternative {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.persos-groupe-alternative .miniature,
+.perso-alternative .miniature {
   display: block;
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  opacity: 0.75;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.persos-groupe-alternative img,
+.perso-alternative img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Choix des persos d'un groupe : icônes, cochés en doré. */
+.choix-persos-alternative {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+  gap: 0.375rem;
+  max-height: 16rem;
+  margin-top: 0.5rem;
+  overflow-y: auto;
+}
+
+.perso-alternative {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.perso-alternative span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perso-alternative.choisi {
+  border-color: #f5c542;
+  background-color: rgba(245, 197, 66, 0.15);
+  opacity: 1;
 }
 
 /* Limites des bans calculés (fenêtre Équilibrage). */

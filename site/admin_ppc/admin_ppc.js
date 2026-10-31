@@ -66,7 +66,7 @@ let modes = {};                                  // cle bonus -> "addition" | "m
 let masques = { characters: [], weapons: [] };  // ids masqués (triés)
 let buffs = [];                                  // personnages buffés par le théâtre du mois (triés)
 let bonusSaison = [];                            // personnages au bonus de saison (triés) : trophées en classé
-let alternatives = {};                           // arme -> valeur alternative en % (absente = 100)
+let alternatives = {};                           // arme -> { reste, groupes } valeurs alternatives (cf. commun/synergies.js) ; absente = 100 %
 let synergies = {};                              // perso -> { persos, malus } (cf. commun/synergies.js, admin_synergies.js)
 let factions = {};                               // perso -> faction (cf. FACTIONS, commun/tri.js) ; sans faction : absent
 let soutiens = {};                               // perso -> rôles ["shield", "heal"] (cf. SOUTIENS, commun/tri.js) ; sans rôle : absent
@@ -110,16 +110,22 @@ function basculerSoutien(id, role) {
   soutiens = nouveaux.length ? { ...autres, [id]: nouveaux } : autres;
 }
 
-// Valeur alternative d'une arme (% de ses points, cf. ALTERNATIVES_ARMES
-// dans commun/cartes.js) : copies en double et signature sans son perso,
-// dans les points d'une box (cf. calculerPointsArmesBox, api/_lib/draft.js).
+// Valeurs alternatives d'une arme (% de ses points, cf. commun/synergies.js
+// et la fenêtre de admin_alternatives.js) : copies en double et signature
+// sans son perso ; le reste et des groupes de persos.
 function alternativeArme(id) {
-  return alternatives[id] ?? 100;
+  return alternatives[id] || { reste: 100, groupes: [] };
 }
 
-function changerAlternative(id, pourcentage) {
+// Valeur par défaut (100 %, aucun groupe) : retirée.
+function changerAlternative(id, alternative) {
   const { [id]: _, ...reste } = alternatives;
-  alternatives = pourcentage === 100 ? reste : { ...reste, [id]: pourcentage };
+  alternatives = alternative.reste === 100 && !alternative.groupes.length ? reste : { ...reste, [id]: alternative };
+}
+
+function aAlternative(id) {
+  const a = alternativeArme(id);
+  return a.reste !== 100 || a.groupes.length > 0;
 }
 
 function estMasque(id) {
@@ -365,7 +371,8 @@ async function chargerDonnees() {
   masques = lireMasquesConfig(config);
   buffs = Array.isArray(config?.theatre) ? [...config.theatre].sort() : [];
   bonusSaison = Array.isArray(config?.bonus_saison) ? [...config.bonus_saison].sort() : [];
-  alternatives = { ...(config?.alternatives_armes || {}) };
+  // Ancien format (un pourcentage) lu comme le reste (cf. commun/synergies.js).
+  alternatives = lireAlternativesArmes(config?.alternatives_armes);
   synergies = lireSynergies(config?.synergies);
   factions = { ...(config?.factions || {}) };
   soutiens = { ...(config?.soutiens || {}) };
@@ -389,7 +396,7 @@ function rendreEntete() {
       ${vue === "characters" ? `<th class="col-synergie" title="Nombre de persos en synergie : sans eux dans la box, le perso perd des points (bouton Synergie)">Synergie</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Faction du perso (aucune ou une seule) : filtres des persos sur tout le site">Faction</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Rôles du perso (bouclier, soin ; aucun, un ou les deux) : filtres des persos sur tout le site">Rôles</th>` : ""}
-      ${vue === "weapons" ? `<th class="col-alternative" title="Part des points comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box (arrondi à l'entier)">Valeur alt.</th>` : ""}
+      ${vue === "weapons" ? `<th class="col-alternative" title="Part des points (0 à 200 %) comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box : par groupe de persos, et « le reste » (arrondi à l'entier)">Valeur alt.</th>` : ""}
     </tr>
     ${vue === "characters" ? `
       <tr class="ligne-modes">
@@ -464,11 +471,8 @@ function rendreCorps() {
           <td class="col-faction">${htmlChoixFaction(item.id)}</td>
           <td class="col-faction">${htmlChoixSoutiens(item.id)}</td>` : ""}
         ${vue === "weapons" ? `
-          <td class="col-alternative${alternativeArme(item.id) !== 100 ? " avec-alternative" : ""}">
-            <select class="choix-alternative" data-id="${item.id}" title="Copie en double ou signature sans son perso : ${alternativeArme(item.id)} % des points">
-              ${ALTERNATIVES_ARMES.map(p => `<option value="${p}"${p === alternativeArme(item.id) ? " selected" : ""}>${p} %</option>`).join("")}
-            </select>
-            <span class="apercu-alternative">${texteAlternative(item.id)}</span>
+          <td class="col-alternative${aAlternative(item.id) ? " avec-alternative" : ""}">
+            <button type="button" class="modifier-alternative" data-id="${item.id}" title="Copie en double ou signature sans son perso : valeurs alternatives">${texteAlternative(item.id)}</button>
           </td>` : ""}
       </tr>`)
     .join("");
@@ -533,10 +537,12 @@ function rendreCorpsSommes(corps, items) {
 }
 
 // Points R1..R5 avec la valeur alternative (arrondis), ou rien à 100 %.
+// Résumé dans le tableau : « 100 % (2 persos) · reste 25 % ».
 function texteAlternative(id) {
-  const pourcentage = alternativeArme(id);
-  if (pourcentage === 100) return "";
-  return valeurs.weapons[id].map(p => Math.round(p * pourcentage / 100)).join(" · ");
+  const a = alternativeArme(id);
+  if (!aAlternative(id)) return "100 %";
+  const groupes = a.groupes.map(g => `${g.pourcentage} % (${g.persos.length} perso${g.persos.length > 1 ? "s" : ""})`);
+  return [...groupes, `${a.groupes.length ? "reste " : ""}${a.reste} %`].join(" · ");
 }
 
 function rendre() {
@@ -651,15 +657,11 @@ function initialiserSaisie() {
     input.nextElementSibling.textContent = "";
   });
 
-  // Valeur alternative d'une arme.
-  corps.addEventListener("change", event => {
-    const choix = event.target.closest(".choix-alternative");
-    if (!choix) return;
-    changerAlternative(choix.dataset.id, Number(choix.value));
-    const cellule = choix.closest("td");
-    cellule.classList.toggle("avec-alternative", Number(choix.value) !== 100);
-    cellule.querySelector(".apercu-alternative").textContent = texteAlternative(choix.dataset.id);
-    mettreAJourPied();
+  // Valeurs alternatives d'une arme : fenêtre (cf. admin_alternatives.js ;
+  // mini admins : lecture seule).
+  corps.addEventListener("click", event => {
+    const bouton = event.target.closest(".modifier-alternative");
+    if (bouton) ouvrirAlternative(bouton.dataset.id);
   });
 
   // Case Bonus de saison : ajouté / retiré.
@@ -761,8 +763,8 @@ function signeEcart(liste, index) {
 
 // Pourcentages d'une ligne, après une modification.
 function mettreAJourEcarts(id) {
-  const alternative = vue === "weapons" && document.querySelector(`#corps-admin .choix-alternative[data-id="${id}"]`);
-  if (alternative) alternative.closest("td").querySelector(".apercu-alternative").textContent = texteAlternative(id);
+  const alternative = vue === "weapons" && document.querySelector(`#corps-admin .modifier-alternative[data-id="${id}"]`);
+  if (alternative) alternative.textContent = texteAlternative(id);
   document.querySelectorAll(`#corps-admin .ecart-points[data-id="${id}"]`).forEach(span => {
     const index = Number(span.dataset.index);
     span.textContent = texteEcart(valeurs[vue][id], index);
@@ -1047,8 +1049,8 @@ async function demarrer() {
 // boutons qui modifient désactivés (y compris dans ce qui est redessiné plus
 // tard), ajouts et enregistrements cachés. Le serveur refuse de toute façon
 // les enregistrements (api/points.js, administrateurs seulement).
-const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage", "contenu-synergie", "modal-recommandations", "calendrier-admin"];
-const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button, .action-synergie, .action-reco, .choix-faction, .action-calendrier";
+const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage", "contenu-synergie", "modal-recommandations", "calendrier-admin", "contenu-alternative"];
+const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button, .action-synergie, .action-reco, .choix-faction, .action-calendrier, .action-alternative";
 
 function passerEnLectureSeule() {
   document.body.classList.add("lecture-seule");
