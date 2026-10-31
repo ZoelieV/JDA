@@ -9,7 +9,7 @@ const MODES_TOURNOI = {
   dauphin: "Dauphin",
   baleine: "Baleine",
   12: "Mêlée générale",
-  carnage: "Carnage (sans équilibrage)"
+  carnage: "No ban (sans équilibrage)"
 };
 const RECOMPENSES_TOURNOI = {
   cosmetiques: "Cosmétiques du site",

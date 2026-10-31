@@ -447,7 +447,7 @@ function creerLigneMatch(match) {
       ${match.equipe ? `<span class="match-entrainement match-mode-equipe">${echapperHtml(match.equipe.mode)}</span>` : ""}
       ${match.classe ? `<span class="match-classe">Classé ${ICONE_TROPHEE}</span>` : ""}
       ${match.tournoi ? `<a class="match-classe match-tournoi" href="/tournoi?id=${encodeURIComponent(match.tournoi)}" title="Voir le tournoi">Tournoi ${ICONE_TROPHEE}</a>` : ""}
-      ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="Draft Classique sans équilibrage"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span>` : ""}
+      ${match.mode_theatre === "carnage" ? `<span class="match-carnage" title="No ban : draft Classique sans équilibrage"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> Carnage</span>` : ""}
       ${htmlTheatreJoue(match.theatre)}
       <span class="match-boss-nom">${boss ? boss.nom : enCours ? "Boss pas encore tiré" : ""}</span>
       ${infos}
