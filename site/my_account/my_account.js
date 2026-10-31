@@ -6,6 +6,9 @@ const nomsBoxes = {
   opti3: "Box optimisée 3",
   opti4: "Box optimisée 4",
   opti5: "Box optimisée 5",
+  opti6: "Box optimisée 6",
+  opti7: "Box optimisée 7",
+  opti8: "Box optimisée 8",
   vitrine: "Vitrine 1",
   vitrine2: "Vitrine 2",
   vitrine3: "Vitrine 3"
@@ -50,7 +53,7 @@ function analyserVitrine(personnages, armes, profil, box = "vitrine") {
 // Box optimisées et vitrines renommables par le joueur
 // (profil.nomsBoxes[box], 20 caractères max), noms des box optimisées
 // repris en draft.
-const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5", "opti6", "opti7", "opti8"];
 const BOX_RENOMMABLES = [...BOX_OPTI, ...BOX_VITRINES];
 const LONGUEUR_NOM_BOX = 20;
 
@@ -186,6 +189,9 @@ function creerSelectionsParDefaut() {
     opti3: {},
     opti4: {},
     opti5: {},
+    opti6: {},
+    opti7: {},
+    opti8: {},
     vitrine: {},
     vitrine2: {},
     vitrine3: {}

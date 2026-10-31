@@ -12,6 +12,9 @@ const BOX_LABELS = {
   opti3: "Opti 3",
   opti4: "Opti 4",
   opti5: "Opti 5",
+  opti6: "Opti 6",
+  opti7: "Opti 7",
+  opti8: "Opti 8",
   custom: "Personnalisée" // entraînement seulement
 };
 
@@ -1191,6 +1194,8 @@ function rendreChoixBox() {
         : estMatchmakingClassique() ? BOX_MATCHMAKING_CLASSIQUE.includes(valeur) : !["custom", "stuff"].includes(valeur))
       // Adversaire : ses box opti en un seul bouton "Opti".
       .filter(([valeur]) => !boxCachee(role) || !estBoxOpti(valeur) || valeur === premiereOpti(role, permises))
+      // Ses propres box opti vides (8 au plus) : pas de bouton.
+      .filter(([valeur]) => !peutChoisir || !estBoxOpti(valeur) || nbPersosBox(role, valeur) > 0 || draft[`box_${role}`] === valeur)
       .forEach(([valeur, label]) => {
       const groupeOpti = boxCachee(role) && estBoxOpti(valeur);
       if (groupeOpti) label = LIBELLE_OPTI_CACHEE;

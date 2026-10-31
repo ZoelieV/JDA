@@ -21,7 +21,7 @@ const MAX_VITRINE = { characters: 12, weapons: 12 };
 const BOX_VITRINES = ["vitrine", "vitrine2", "vitrine3"];
 // Noms des box optimisées et des vitrines choisis par le joueur (affichés
 // en draft pour les box optimisées).
-const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5", ...BOX_VITRINES];
+const BOX_RENOMMABLES = ["opti1", "opti2", "opti3", "opti4", "opti5", "opti6", "opti7", "opti8", ...BOX_VITRINES];
 const LONGUEUR_NOM_BOX = 20;
 // Panier de la personnalisation : cosmétiques achetés en une fois au plus.
 const MAX_PANIER = 50;

@@ -169,7 +169,7 @@ document.querySelectorAll(".mode-plus").forEach(bouton => {
 // Administrateurs et mini admins : box fictives en plus des joueurs (full,
 // opti ou personnalisée, cf. api/_lib/boxes_fictives.js).
 const MIN_PERSOS_BOX = 16; // cf. NB_PERSOS_MIN_BOX, api/_lib/draft.js
-const LIBELLES_BOX = { full: "Full box", stuff: "Stuff", opti1: "Opti 1", opti2: "Opti 2", opti3: "Opti 3", opti4: "Opti 4", opti5: "Opti 5", custom: "Personnalisée" };
+const LIBELLES_BOX = { full: "Full box", stuff: "Stuff", opti1: "Opti 1", opti2: "Opti 2", opti3: "Opti 3", opti4: "Opti 4", opti5: "Opti 5", opti6: "Opti 6", opti7: "Opti 7", opti8: "Opti 8", custom: "Personnalisée" };
 
 const entrainement = {
   pret: false,
@@ -329,7 +329,7 @@ async function rendreSelecteurBox(cote) {
   // "stuff" n'est plus jouable) ; box fictive : full ou sa box opti. Hors
   // full box : 5000 points au plus (vérifié par le serveur).
   const fictive = etat.proprietaire.startsWith("fictif_");
-  const boxes = estMoi ? ["full", "opti1", "opti2", "opti3", "opti4", "opti5", "custom"]
+  const boxes = estMoi ? ["full", "opti1", "opti2", "opti3", "opti4", "opti5", "opti6", "opti7", "opti8", "custom"]
     : fictive ? ["full", "opti1", "custom"] : ["full", "custom"];
   if (!boxes.includes(etat.box)) etat.box = "full";
 

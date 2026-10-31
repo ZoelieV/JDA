@@ -18,7 +18,7 @@ const {
 // propriétaire seulement ; aux autres, uniquement une box jouée dans la
 // room donnée (?room=), une fois les box révélées (après le choix des box :
 // pools calculés), pour les joueurs comme pour les spectateurs.
-const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5", "opti6", "opti7", "opti8"];
 // Vitrines : privées aussi, jamais envoyées aux autres (celle jouée en
 // équipe est recopiée dans la draft au lancement, cf. _lib/equipe.js).
 const BOX_PRIVEES = [...BOX_OPTI, "vitrine", "vitrine2", "vitrine3"];

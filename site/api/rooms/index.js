@@ -18,7 +18,7 @@ const { estIdFictif, lireBoxFictive } = require("../_lib/boxes_fictives");
 
 // Entraînement : une création toutes les 10 s par IP au plus.
 const DELAI_ENTRAINEMENT_MS = 10 * 1000;
-const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
+const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5", "opti6", "opti7", "opti8"];
 const PREMIERS = ["moi", "adverse", "aleatoire"];
 // Room privée : J1 choisi par le créateur.
 const PREMIERS_ROOM = ["createur", "adversaire", "aleatoire"];

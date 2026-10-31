@@ -50,7 +50,7 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
 
 // Box de match d'un joueur : la full box et ses box opti (la box "stuff"
 // n'est qu'une indication pour Tous les comptes, plus jouable).
-const BOX_MATCH = ["full", "opti1", "opti2", "opti3", "opti4", "opti5"];
+const BOX_MATCH = ["full", "opti1", "opti2", "opti3", "opti4", "opti5", "opti6", "opti7", "opti8"];
 
 // Toute box jouable autre que la full box (opti, personnalisée, opti d'une
 // box fictive) : getPointsMaxBox(palier) points au plus (persos + armes),
