@@ -2526,3 +2526,94 @@ body.page-equilibrage #tuiles-admin {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ---- Prix des cosmétiques (fenêtre Rikoyns, cf. rendrePrix dans
+   admin_koyns.js) : une carte par cosmétique (image, nom, prix). ---- */
+.liste-prix-cosmetiques {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.625rem;
+  margin: 0.5rem 0;
+}
+
+.carte-prix-cosmetique {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.625rem;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.carte-prix-cosmetique img,
+.sans-image-prix {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.375rem;
+  object-fit: cover;
+}
+
+.sans-image-prix {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.08);
+  font-size: 2rem;
+}
+
+.nom-prix-cosmetique {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  font-weight: bold;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.champ-prix-cosmetique {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.champ-prix-cosmetique input {
+  width: 6rem;
+}
+
+.champ-prix-cosmetique .icone-koyn {
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+}
+
+.carte-prix-cosmetique .retirer-exclusif {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.75);
+  line-height: 1;
+}
+
+/* Fenêtre de choix : prix actuel écrit sur l'image. */
+.etiquette-choix-cosmetique {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.75);
+  font-size: 0.8125rem;
+  font-weight: bold;
+}
+
+.etiquette-choix-cosmetique .icone-koyn {
+  width: 1rem;
+  height: 1rem;
+}

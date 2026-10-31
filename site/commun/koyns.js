@@ -41,7 +41,24 @@ const PRIX_IMPORT_FOND = 100;
 const FOND_PERSONNAGE = /^fond:bg\/autres\/personnage_\d+\.webp$/;
 const PRIX_FOND_PERSONNAGE = 8;
 
+// Prix réglés par les administrateurs (config.prix_cosmetiques, { id: prix },
+// fenêtre Rikoyns de l'admin) : prioritaires sur le prix par défaut.
+// Serveur : chargés avec la config (actualiserPoints) ; pages : avec l'état
+// des Rikoyns (etatKoyns).
+let prixCosmetiquesAdmin = {};
+const PRIX_COSMETIQUE_MAX = 10000;
+
+function definirPrixCosmetiques(prix) {
+  prixCosmetiquesAdmin = prix && typeof prix === "object" ? prix : {};
+}
+
 function prixCosmetique(id) {
+  const regle = prixCosmetiquesAdmin[String(id).split("#")[0]];
+  return Number.isInteger(regle) && regle >= 0 ? regle : prixParDefautCosmetique(id);
+}
+
+// Prix sans réglage des administrateurs.
+function prixParDefautCosmetique(id) {
   if (String(id).split("#")[0] === FOND_IMPORTE) return PRIX_IMPORT_FOND;
   if (FOND_PERSONNAGE.test(String(id))) return PRIX_FOND_PERSONNAGE;
   const prix = PRIX_PAR_CHOIX[String(id).split(":")[0]] ?? PRIX_COSMETIQUE;
@@ -110,5 +127,5 @@ function htmlGainKoyns(gain) {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { PRIX_COSMETIQUE, prixCosmetique, FOND_IMPORTE, PRIX_IMPORT_FOND, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, TAILLE_FLEX, idCosmetique, cosmetiquesParametres };
+  module.exports = { PRIX_COSMETIQUE, PRIX_COSMETIQUE_MAX, prixCosmetique, prixParDefautCosmetique, definirPrixCosmetiques, FOND_IMPORTE, PRIX_IMPORT_FOND, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, TAILLE_FLEX, idCosmetique, cosmetiquesParametres };
 }

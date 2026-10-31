@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=50">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=51">
 <link rel="stylesheet" href="/commun/entete.css?v=rem42">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -21,7 +21,7 @@
 <script src="/commun/fond.js?v=17"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=57" defer></script>
+<script src="/commun/compte.js?v=58" defer></script>
 </head>
 <body>
 <a href="/" class="lien-accueil">Accueil</a>
@@ -356,6 +356,23 @@
         <span id="message-tirage" class="message-ajout"></span>
       </div>
 
+      <h3 class="titre-koyns">Prix des cosmétiques</h3>
+      <p class="aide-apercu">
+        Prix par défaut : fonds d'écran et skins 10, fonds de personnages 8, namecards et bannières 15, le double pour les persos populaires, Mon image 100 à chaque import.
+        Choisis des cosmétiques (leur prix actuel est écrit sur l'image) pour leur donner un autre prix ; × : retour au prix par défaut.
+      </p>
+      <div class="ligne-koyns-admin">
+        <button type="button" id="choisir-prix" class="bouton-creer secondaire">🖼 Choisir des cosmétiques…</button>
+        <button type="button" id="prix-mon-image" class="bouton-creer secondaire">+ Mon image</button>
+        <label>Même prix pour toute la liste <input type="number" id="prix-tous" class="texte-ajout champ-nombre-koyns" min="0" max="10000" step="1"></label>
+        <button type="button" id="appliquer-prix-tous" class="bouton-creer secondaire">Appliquer</button>
+      </div>
+      <div id="liste-prix" class="liste-prix-cosmetiques"></div>
+      <div class="ligne-koyns-admin">
+        <button type="button" id="enregistrer-prix" class="bouton-creer">Enregistrer les prix</button>
+        <span id="message-prix" class="message-ajout"></span>
+      </div>
+
       <h3 class="titre-koyns">Bonus de connexion d'un événement</h3>
       <p class="aide-apercu">Une fois par jour (reset à 4 h) entre le début et la fin, à la première visite connectée : des Rikoyns et / ou un cosmétique.</p>
       <div class="ligne-koyns-admin">
@@ -590,9 +607,9 @@
   <script src="/admin_ppc/admin_evenements.js?v=5"></script>
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
   <script src="/admin_ppc/admin_litiges.js?v=1"></script>
-  <script src="/commun/koyns.js?v=12"></script>
-  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=3"></script>
-  <script src="/admin_ppc/admin_koyns.js?v=6"></script>
+  <script src="/commun/koyns.js?v=13"></script>
+  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=4"></script>
+  <script src="/admin_ppc/admin_koyns.js?v=7"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>

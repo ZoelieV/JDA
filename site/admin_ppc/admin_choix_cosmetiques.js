@@ -3,8 +3,9 @@
 // skins et variantes ; onglet Cachés en premier, ouvert par défaut :
 // cosmétiques cachés de cosmetiques.json, "caches", seulement donnés par les
 // administrateurs), recherche, un ou plusieurs choix à la fois.
-// choisirCosmetiques({ titre, multiple, selection, onglets }) -> Promise<[ids]
-// | null> (null : annulé ; onglets : ids des onglets proposés, tous sinon). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
+// choisirCosmetiques({ titre, multiple, selection, onglets, etiquette }) ->
+// Promise<[ids] | null> (null : annulé ; onglets : ids des onglets proposés,
+// tous sinon ; etiquette(id) : texte affiché sur l'image, ex. son prix). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
 // Utilise idCosmetique, COSMETIQUES_GRATUITS (commun/koyns.js), nomFond,
 // VARIANTES_PERSONNAGES, SKINS_PERSONNAGES et imagesSkin (commun/variantes.js).
 
@@ -64,7 +65,7 @@ function htmlPastilleCosmetique(id) {
     `<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`;
 }
 
-function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null } = {}) {
+function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, etiquette = null } = {}) {
   return new Promise(async resoudre => {
     const catalogue = await chargerCatalogueChoix().catch(() => null);
     if (!catalogue) {
@@ -116,6 +117,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       grille.innerHTML = infos.length ? infos.map(info => `
         <button type="button" class="choix-cosmetique${choisis.has(info.id) ? " choisi" : ""}${info.cache ? " est-cache" : ""}" data-id="${echapper(info.id)}" title="${echapper(info.id)}">
           <img src="${echapper(info.image)}" alt="" loading="lazy">
+          ${etiquette ? `<span class="etiquette-choix-cosmetique">${etiquette(info.id)}</span>` : ""}
           <span>${echapper(info.nom)}</span>
         </button>`).join("") : `<p class="aide-apercu">Aucun cosmétique.</p>`;
       majCompte();

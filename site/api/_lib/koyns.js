@@ -151,6 +151,8 @@ async function etatKoyns(discordId) {
     tout: possedes === null,
     possedes: possedes ? [...possedes] : [],
     exclusifs: [...getConfigKoyns().exclusifs],
+    // Prix réglés par les administrateurs (cf. definirPrixCosmetiques).
+    prix: getConfigKoyns().prix || {},
     tirage: {
       prix: TIRAGE_PRIX,
       chance: TIRAGE_CHANCE_FOCUS,

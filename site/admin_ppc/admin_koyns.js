@@ -11,6 +11,9 @@ let exclusifsKoyns = [];
 let tirageKoyns = []; // cosmétiques focus du tirage (config.cosmetiques_tirage)
 let donCosmetiques = []; // cosmétiques du don en cours
 let bonusCosmetique = null; // cosmétique du bonus de connexion
+// Prix réglés (config.prix_cosmetiques) : { id: prix }, modifiés dans la
+// fenêtre puis enregistrés d'un coup.
+let prixKoyns = {};
 
 function messageKoyns(id, texte, type = "") {
   const message = document.getElementById(id);
@@ -44,6 +47,25 @@ function rendreExclusifs() {
   document.getElementById("liste-exclusifs").innerHTML = htmlListeCosmetiques(exclusifsKoyns, "Aucun cosmétique exclusif pour l'instant.");
 }
 
+// Prix d'un cosmétique : réglé, sinon par défaut (commun/koyns.js).
+const prixActuel = id => (id in prixKoyns ? prixKoyns[id] : prixParDefautCosmetique(id));
+
+// Liste des prix réglés : image, nom, prix par défaut, champ du prix, ×.
+function rendrePrix() {
+  const ids = Object.keys(prixKoyns);
+  document.getElementById("liste-prix").innerHTML = ids.length ? ids.map(id => {
+    const info = id === FOND_IMPORTE ? { nom: "Mon image (chaque import)", type: "Fond d'écran", image: null } : infoCosmetiqueAdmin(id);
+    return `
+      <div class="carte-prix-cosmetique" title="${echapper(`${info.type} : ${id}`)}">
+        ${info.image ? `<img src="${echapper(info.image)}" alt="" loading="lazy">` : `<span class="sans-image-prix">🖼</span>`}
+        <span class="nom-prix-cosmetique">${echapper(info.nom)}</span>
+        <span class="aide-apercu">défaut : ${prixParDefautCosmetique(id)}</span>
+        <label class="champ-prix-cosmetique"><input type="number" min="0" max="${PRIX_COSMETIQUE_MAX}" step="1" class="texte-ajout" data-prix="${echapper(id)}" value="${prixKoyns[id]}"> ${ICONE_KOYN}</label>
+        <button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Prix par défaut" title="Prix par défaut">×</button>
+      </div>`;
+  }).join("") : `<span class="aide-apercu">Aucun prix réglé : tous les cosmétiques sont au prix par défaut.</span>`;
+}
+
 function rendreTirage() {
   document.getElementById("liste-tirage").innerHTML = htmlListeCosmetiques(tirageKoyns, "Aucun cosmétique focus : les tirages ne donnent que des cosmétiques normaux.");
 }
@@ -74,6 +96,21 @@ async function ouvrirKoyns() {
   tirageKoyns = Array.isArray(config?.cosmetiques_tirage) ? [...config.cosmetiques_tirage] : [];
   rendreTirage();
   remplirBonus(config?.bonus_connexion);
+  prixKoyns = { ...(config?.prix_cosmetiques || {}) };
+  rendrePrix();
+  messageKoyns("message-prix", "");
+}
+
+async function enregistrerPrix() {
+  try {
+    const config = await envoyerAjout({ prix_cosmetiques: prixKoyns });
+    prixKoyns = { ...(config.prix_cosmetiques || {}) };
+    rendrePrix();
+    messageKoyns("message-prix", "Prix enregistrés.", "succes");
+  } catch (erreur) {
+    console.error(erreur);
+    messageKoyns("message-prix", erreur.message, "erreur");
+  }
 }
 
 async function donnerKoyns() {
@@ -197,6 +234,51 @@ function initialiserKoyns() {
     const bouton = event.target.closest(".retirer-exclusif");
     if (bouton) enregistrerTirage(tirageKoyns.filter(id => id !== bouton.dataset.id));
   });
+  // Prix : les cosmétiques choisis rejoignent la liste à leur prix actuel ;
+  // rien n'est enregistré avant « Enregistrer les prix ».
+  const prixModifies = () => messageKoyns("message-prix", "Modifications pas encore enregistrées.");
+  document.getElementById("choisir-prix").addEventListener("click", async () => {
+    const choix = await choisirCosmetiques({
+      titre: "Cosmétiques dont tu changes le prix",
+      // Cachés : pas en vente (seulement donnés), pas de prix à régler.
+      onglets: ["banniere", "banniere2", "fond", "persos"],
+      selection: Object.keys(prixKoyns).filter(id => id !== FOND_IMPORTE),
+      etiquette: id => `${prixActuel(id)} ${ICONE_KOYN}`
+    });
+    if (!choix) return;
+    const garde = new Set([...choix, FOND_IMPORTE]);
+    Object.keys(prixKoyns).forEach(id => { if (!garde.has(id)) delete prixKoyns[id]; });
+    choix.filter(id => !COSMETIQUES_GRATUITS.has(id)).forEach(id => { prixKoyns[id] ??= prixParDefautCosmetique(id); });
+    rendrePrix();
+    prixModifies();
+  });
+  document.getElementById("prix-mon-image").addEventListener("click", () => {
+    prixKoyns[FOND_IMPORTE] ??= prixParDefautCosmetique(FOND_IMPORTE);
+    rendrePrix();
+    prixModifies();
+  });
+  document.getElementById("appliquer-prix-tous").addEventListener("click", () => {
+    const prix = Number(document.getElementById("prix-tous").value);
+    if (!Number.isInteger(prix) || prix < 0 || prix > PRIX_COSMETIQUE_MAX) return messageKoyns("message-prix", `Prix : entier de 0 à ${PRIX_COSMETIQUE_MAX}.`, "erreur");
+    Object.keys(prixKoyns).forEach(id => { prixKoyns[id] = prix; });
+    rendrePrix();
+    prixModifies();
+  });
+  const listePrix = document.getElementById("liste-prix");
+  listePrix.addEventListener("input", event => {
+    const id = event.target.dataset?.prix;
+    if (!id) return;
+    prixKoyns[id] = Math.max(0, Math.min(PRIX_COSMETIQUE_MAX, Math.round(Number(event.target.value) || 0)));
+    prixModifies();
+  });
+  listePrix.addEventListener("click", event => {
+    const bouton = event.target.closest(".retirer-exclusif");
+    if (!bouton) return;
+    delete prixKoyns[bouton.dataset.id];
+    rendrePrix();
+    prixModifies();
+  });
+  document.getElementById("enregistrer-prix").addEventListener("click", enregistrerPrix);
   document.getElementById("enregistrer-bonus").addEventListener("click", () => enregistrerBonus());
   document.getElementById("supprimer-bonus").addEventListener("click", () => enregistrerBonus(true));
 }

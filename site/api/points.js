@@ -66,6 +66,9 @@
 //   { cosmetiques_tirage: [id...] }     Rikoyns : cosmétiques focus du
 //                                       tirage (obtenables seulement par
 //                                       tirage, cf. tirerCosmetique)
+//   { prix_cosmetiques: { id: prix } }  Rikoyns : prix réglés par
+//                                    cosmétique (remplacent le prix par
+//                                    défaut, cf. prixCosmetique)
 //   { bonus_connexion: { debut, fin, koyns, cosmetique } | null }  bonus
 //                                    quotidien de connexion d'un événement
 //   { don: { discord_id, koyns, cosmetique } }  donne des Rikoyns (négatif :
@@ -95,7 +98,7 @@ const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
 // modifiées, cf. commun/recommandations_stuff.js).
 const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
-const { COSMETIQUES_GRATUITS } = require("../commun/koyns.js");
+const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX } = require("../commun/koyns.js");
 const { estCosmetique, donner, MAX_KOYNS_DON } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
@@ -509,6 +512,15 @@ module.exports = async (req, res) => {
         const inconnus = corps.cosmetiques_tirage.filter(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
         if (inconnus.length) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnus[0]}` });
         config = { ...ancienne, cosmetiques_tirage: [...new Set(corps.cosmetiques_tirage)].sort() };
+      } else if (corps.prix_cosmetiques && typeof corps.prix_cosmetiques === "object" && !Array.isArray(corps.prix_cosmetiques)) {
+        const prix = {};
+        for (const [id, valeur] of Object.entries(corps.prix_cosmetiques)) {
+          if (!estCosmetique(id) || COSMETIQUES_GRATUITS.has(id)) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${id}` });
+          const n = Number(valeur);
+          if (!Number.isInteger(n) || n < 0 || n > PRIX_COSMETIQUE_MAX) return res.status(400).json({ error: `Prix : entier de 0 à ${PRIX_COSMETIQUE_MAX} (${id})` });
+          prix[id] = n;
+        }
+        config = { ...ancienne, prix_cosmetiques: prix };
       } else if ("bonus_connexion" in corps) {
         const bonus = corps.bonus_connexion;
         if (bonus === null) {

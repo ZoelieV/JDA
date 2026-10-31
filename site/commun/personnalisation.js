@@ -134,7 +134,7 @@
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=12",
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=13",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=4",
@@ -175,6 +175,8 @@
 
   function lireEtatKoyns(etat) {
     koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []) };
+    // Prix réglés par les administrateurs (commun/koyns.js).
+    definirPrixCosmetiques(etat.prix);
     // tirage : { prix, chance, garantie, focus: [ids], compteur }.
     koyns.tirage ??= null;
     if (modal) modal.querySelector(".perso-solde").innerHTML = `${koyns.solde} ${ICONE_KOYN}`;

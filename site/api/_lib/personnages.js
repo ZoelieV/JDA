@@ -9,6 +9,7 @@ const personnages = require("../../DB/characters.json");
 const armes = require("../../DB/weapons.json");
 const bossList = require("../../DB/boss.json"); // même tableau que _lib/boss.js
 const { lireSynergies, appliquerSynergie } = require("../../commun/synergies.js");
+const { definirPrixCosmetiques } = require("../../commun/koyns.js");
 
 // ---- Groupes (Voyageur) ----
 // Un personnage par élément dans les comptes ("traveler_pyro"...,
@@ -218,7 +219,7 @@ let pointsLusA = 0;
 // aux classements ou aux événements) et bonus de connexion d'événement.
 // Tirage : cosmétiques obtenables seulement par tirage (focus, cf.
 // tirerCosmetique).
-let configKoyns = { exclusifs: new Set(), tirage: [], bonusConnexion: null };
+let configKoyns = { exclusifs: new Set(), tirage: [], bonusConnexion: null, prix: {} };
 
 function getConfigKoyns() {
   return configKoyns;
@@ -250,8 +251,11 @@ async function actualiserPoints() {
     configKoyns = {
       exclusifs: new Set(Array.isArray(config.cosmetiques_exclusifs) ? config.cosmetiques_exclusifs : []),
       tirage: Array.isArray(config.cosmetiques_tirage) ? config.cosmetiques_tirage : [],
-      bonusConnexion: config.bonus_connexion || null
+      bonusConnexion: config.bonus_connexion || null,
+      prix: config.prix_cosmetiques && typeof config.prix_cosmetiques === "object" ? config.prix_cosmetiques : {}
     };
+    // Prix réglés par les administrateurs (cf. prixCosmetique).
+    definirPrixCosmetiques(configKoyns.prix);
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
     bossList.forEach(b => {
