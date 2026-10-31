@@ -48,7 +48,7 @@ function initialiserEvenements() {
 // la saison ou écrits), bannière, description courte (sur la frise, 20
 // caractères au plus) et longue (fenêtre de l'événement). Chaque
 // modification envoie tout le calendrier.
-const COURT_CALENDRIER_MAX = 20;
+const COURT_CALENDRIER_MAX = 30;
 const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 const NOMS_JOURS_ADMIN = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
 

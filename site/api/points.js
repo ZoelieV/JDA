@@ -219,7 +219,7 @@ function validerModifBoss(brut = {}) {
 // Saison de JDA (jours affichés) et événements, sur un ou plusieurs jours.
 const CALENDRIER_MAX_EVENEMENTS = 300;
 const CALENDRIER_MAX_JOURS_SAISON = 400;
-const CALENDRIER_COURT_MAX = 20;
+const CALENDRIER_COURT_MAX = 30;
 const CALENDRIER_LONG_MAX = 2000;
 const BANNIERES_CALENDRIER = new Set(require("../DB/images/cosmetiques.json").bannieres2);
 const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
