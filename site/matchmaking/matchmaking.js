@@ -381,6 +381,7 @@ async function rendreSelecteurBox(cote) {
         <span class="ent-compteur"></span>
         <button type="button" class="choix-btn ent-tout">Tout cocher</button>
         <button type="button" class="choix-btn ent-rien">Tout décocher</button>
+        <button type="button" class="choix-btn ent-stuff" title="Coche les persos de la box stuff du joueur (persos montés)">Cocher le stuff</button>
       </div>
       ${htmlFiltresEnt("persos")}
       <div class="ent-persos"></div>
@@ -389,6 +390,7 @@ async function rendreSelecteurBox(cote) {
         <span class="ent-compteur-armes"></span>
         <button type="button" class="choix-btn ent-toutes-armes">Tout cocher</button>
         <button type="button" class="choix-btn ent-aucune-arme">Tout décocher</button>
+        <button type="button" class="choix-btn ent-stuff-armes" title="Coche les armes de la box stuff du joueur">Cocher le stuff</button>
       </div>
       ${htmlFiltresEnt("armes")}
       <div class="ent-persos ent-armes"></div>
@@ -486,6 +488,16 @@ async function rendreSelecteurBox(cote) {
   };
   zone.querySelector(".ent-tout").addEventListener("click", () => cocherPersos(true));
   zone.querySelector(".ent-rien").addEventListener("click", () => cocherPersos(false));
+  // Cocher le stuff : persos de la box stuff du joueur ajoutés (filtres
+  // ignorés, déjà cochés gardés).
+  zone.querySelector(".ent-stuff").addEventListener("click", () => {
+    cartesPersos.forEach(({ carte, cle }) => {
+      if (!stuff[cle]) return;
+      etat.persos.add(cle);
+      carte.classList.add("coche");
+    });
+    majCompteur();
+  });
   majCompteur();
 
   // Armes : chaque copie de la full box, raffinement en bas à droite.
@@ -528,6 +540,14 @@ async function rendreSelecteurBox(cote) {
   };
   zone.querySelector(".ent-toutes-armes").addEventListener("click", () => cocherArmes(true));
   zone.querySelector(".ent-aucune-arme").addEventListener("click", () => cocherArmes(false));
+  zone.querySelector(".ent-stuff-armes").addEventListener("click", () => {
+    cartesArmes.forEach(({ carte, cle }) => {
+      if (!stuffArmes[cle]) return;
+      etat.armes.add(cle);
+      carte.classList.add("coche");
+    });
+    majCompteurArmes();
+  });
   majCompteurArmes();
 
   brancherBoxesEnregistrees(zone, cote, possedes, copies);
