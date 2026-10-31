@@ -3155,12 +3155,14 @@ h1 {
   cursor: default;
 }
 
-/* Échange de 5 bans d'équilibrage contre 1 joker (couleur du joker). */
+/* Échange de 5 bans d'équilibrage contre 1 joker, choix d'un ban joker :
+   fond gris de « Confirmer les bans » (.btn-confirmer-action), texte et
+   contour à la couleur du joker. */
 .btn-echanger-joker {
   padding: 0.5rem 0.875rem;
   border: 2px solid #e0b84a;
   border-radius: 0.5rem;
-  background-color: rgba(224, 184, 74, 0.12);
+  background-color: rgba(80, 80, 80, 0.95);
   color: #e0b84a;
   font: inherit;
   font-weight: bold;
@@ -3168,7 +3170,7 @@ h1 {
 }
 
 .btn-echanger-joker:hover:not(:disabled) {
-  background-color: rgba(224, 184, 74, 0.25);
+  filter: brightness(1.12);
 }
 
 /* Ban joker demandé : bouton plein, emplacement joker vide qui pulse. */
