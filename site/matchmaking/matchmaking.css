@@ -369,15 +369,12 @@
   font-size: 0.9375rem;
 }
 
-/* Nom des modes de théâtre (Auto, Sardine, Carnage…) en police des titres
-   ("Théâtre" : le "â" manque dans la police du texte) ; leur description
-   et les choix de box (Ta box, Box adverse…) gardent la police du texte. */
+/* Modes (Auto, Full box, Classique, Plus d'options…) : nom et description
+   en police du texte, comme les noms avec icône (.titre-mode) ; la police du
+   texte a maintenant toutes les lettres accentuées. */
 .mode-match,
-#ent-mode .choix-btn {
-  font-family: var(--police-titre);
-}
-
 .mode-match span,
+#ent-mode .choix-btn,
 #ent-mode .choix-btn span {
   font-family: var(--police-texte);
 }
