@@ -507,8 +507,16 @@ function setBoxActive(box) {
   majGroupesBox();
 }
 
+// Vue « perso + arme » (bouton data-view="combo") : les persos, comme la
+// vue Personnages pour tout le reste (données, réglages, filtres), avec les
+// points de leur signature ajoutés (cf. pointsCombo).
 function getVueActive() {
-  return document.querySelector(".view-btn.active")?.dataset.view || "characters";
+  const vue = document.querySelector(".view-btn.active")?.dataset.view || "characters";
+  return vue === "combo" ? "characters" : vue;
+}
+
+function estVueCombo() {
+  return document.querySelector(".view-btn.active")?.dataset.view === "combo";
 }
 
 function setVueActive(view) {
@@ -629,6 +637,30 @@ function contexteBox(personnages, armes, boxActive, profil) {
 
 // Points affichés d'une carte possédée -> { points, alternative } (cf.
 // creerBadgePPC).
+// Points de l'arme signature d'un perso dans la box active (vue « perso +
+// arme ») : sa meilleure copie de la box, au raffinement possédé (pleine
+// valeur, le perso étant là), 0 sans signature.
+function pointsSignatureBox(item, armes, contexte) {
+  const arme = trouverArmeSignature(armes, item);
+  if (!arme) return 0;
+  let meilleur = 0;
+  contexte.armes.forEach(copie => {
+    if (copie.arme.id === arme.id && !copie.double) meilleur = Math.max(meilleur, copie.points);
+  });
+  return meilleur;
+}
+
+// Vue « perso + arme » : points du perso + de sa signature (ex. Flins C6
+// R1 : 274 + 26 = 300).
+function pointsCombo(affichage, item, armes, contexte) {
+  const signature = pointsSignatureBox(item, armes, contexte);
+  if (!affichage || !signature) return affichage;
+  return {
+    points: affichage.points + signature,
+    alternative: affichage.alternative ? { ...affichage.alternative, normale: affichage.alternative.normale + signature } : null
+  };
+}
+
 function pointsCarte(item, valeur, vueActive, niveau, instanceId, contexte) {
   const normale = Number(getPPC(item, valeur, vueActive, niveau) || 0);
   if (vueActive === "characters") {
@@ -964,10 +996,19 @@ function rendreCollection(personnages, armes, profil) {
       correspondSoutiens(item, soutiensActifs);
   });
 
+  // Vue « perso + arme » : tri par points cumulés (perso + signature).
+  const combo = vueActive === "characters" && estVueCombo();
+  const contexte = contexteBox(personnages, armes, boxActive, profil);
+  const valeursTri = getValeursTri(vueActive, collectionProfil);
+  if (combo) {
+    const pointsPerso = valeursTri.points;
+    valeursTri.points = item => pointsPerso(item) + pointsSignatureBox(item, armes, contexte);
+  }
+
   // Possédés / sélectionnés, étoiles, vœux : regroupés par rareté par défaut.
   const groupes = trierEtGrouper(itemsFiltres, etatTri, {
     vue: vueActive,
-    valeurs: getValeursTri(vueActive, collectionProfil),
+    valeurs: valeursTri,
     elements: selectionElements,
     armes: selectionArmes,
     soutiens: soutiensActifs,
@@ -991,7 +1032,6 @@ function rendreCollection(personnages, armes, profil) {
       .map(groupe => ({ ...groupe, section: "autre-vue" }))
     : [];
 
-  const contexte = contexteBox(personnages, armes, boxActive, profil);
   remplirGrilleGroupee(liste, [...groupes, ...groupesAutres], item => {
     const vueItem = autres.has(item) ? autreVue : vueActive;
     return cartesItem(item, vueItem, getCollectionProfil(profil, vueItem));
@@ -1029,10 +1069,13 @@ function rendreCollection(personnages, armes, profil) {
       : !!collectionProfil.selections[boxActive][item.id];
 
     const niveau = collectionProfil.niveaux?.[cleNiveau(item)] ?? null;
-    const coinBasDroite = creerCoinBasDroite(item, vueActive, personnages, armes, profil);
+    // Pastille de l'arme signature : vue « perso + arme » seulement (la vue
+    // Personnages montre le perso seul).
+    const coinBasDroite = combo ? creerCoinBasDroite(item, vueActive, personnages, armes, profil) : "";
     // Cœur des favoris : persos possédés uniquement.
     const favori = valeur >= 0 ? !!collectionProfil.favoris?.[item.id] : null;
-    const affichage = valeur >= 0 ? pointsCarte(item, valeur, vueActive, niveau, item.id, contexte) : null;
+    const affichageBase = valeur >= 0 ? pointsCarte(item, valeur, vueActive, niveau, item.id, contexte) : null;
+    const affichage = combo ? pointsCombo(affichageBase, item, armes, contexte) : affichageBase;
     return obtenirCarteItem(liste, item, valeur, boxActive, selectionne, vueActive, null, false, false, niveau, coinBasDroite, favori, affichage);
   }
 }
@@ -1353,9 +1396,10 @@ async function initialiserPage() {
     // pour que tous les écouteurs voient le changement.
     profil.parametres ??= {};
     const personnages = appliquerVariantes(personnagesBase, profil.parametres);
-    // Logo de la vue Personnages : tête du Voyageur choisi.
-    const logoVuePersonnages = document.querySelector('.view-btn[data-view="characters"] img');
-    const majLogoVuePersonnages = () => { logoVuePersonnages.src = `../DB/${getIconeVuePersonnages(profil.parametres)}`; };
+    // Logo des vues Personnages et perso + arme : tête du Voyageur choisi.
+    const majLogoVuePersonnages = () => {
+      document.querySelectorAll(".view-btn .logo-vue-personnages").forEach(logo => { logo.src = `../DB/${getIconeVuePersonnages(profil.parametres)}`; });
+    };
     majLogoVuePersonnages();
     document.addEventListener("personnalisation-enregistree", event => {
       profil.parametres = { ...event.detail };

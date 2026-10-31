@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem48">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem49">
 <link rel="stylesheet" href="/commun/entete.css?v=rem42">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
@@ -142,6 +142,9 @@
         <div class="view-selector">
           <button type="button" class="view-btn active" data-view="characters" title="Personnages"><img class="logo-vue-personnages" src="/DB/images/others/Aether_Icon_Character.webp" alt="Personnages"></button>
           <button type="button" class="view-btn" data-view="weapons" title="Armes"><img class="logo-vue-armes" src="/DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
+          <!-- Perso + arme : persos avec les points de leur signature ajoutés
+               (cf. pointsCombo dans my_account.js). -->
+          <button type="button" class="view-btn view-btn-combo" data-view="combo" title="Perso + arme signature : points cumulés"><img class="logo-vue-personnages" src="/DB/images/others/Aether_Icon_Character.webp" alt="Personnages"><span class="plus-vue-combo">+</span><img class="logo-vue-armes" src="/DB/images/others/Icon_Inventory_Weapons.webp" alt="Armes"></button>
         </div>
         <!-- Recherche, tri et filtres sur une seule ligne (mêmes styles que la
              draft et la liste des comptes). -->
@@ -303,7 +306,7 @@
   <script src="/commun/tri.js?v=21"></script>
   <script src="/commun/personnalisation.js?v=40"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
-  <script src="/my_account/my_account.js?v=78"></script>
+  <script src="/my_account/my_account.js?v=79"></script>
   <script src="/commun/site.js?v=18"></script>
 </body>
 </html>
