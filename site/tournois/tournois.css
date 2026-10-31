@@ -858,3 +858,41 @@
 .fenetre-images-tournoi .pied-formulaire {
   margin-top: 0.75rem;
 }
+
+/* Dates des phases (tournoi.dates_phases) : sous le titre d'un tour de
+   l'arbre, à côté du nom d'une poule, liste dans les infos. */
+.date-phase {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--texte-doux);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: normal;
+}
+
+.poule-tournoi h3 .date-phase {
+  display: inline;
+  margin: 0 0 0 0.375rem;
+}
+
+.liste-dates-phases {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liste-dates-phases span {
+  color: var(--texte-doux);
+}
+
+.dates-phases-formulaire {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.dates-phases-formulaire label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

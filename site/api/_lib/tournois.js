@@ -87,6 +87,7 @@ const MAX_QUALIF_MATCHS = 10;
 // qualifiés).
 const FORMATS_QUALIFS = ["rondes", "poules"];
 const BORNES_POULES = { nombre: [2, 64], taille: [3, 16] };
+// Matchs de poule : bo1 ou bo3 (rondes : toujours un seul match).
 // Chronos personnalisables (secondes) : analyse des box, par pick / ban,
 // par ban d'équilibrage.
 const BORNES_CHRONOS = { analyse_s: [30, 600], action_s: [10, 120], ban_s: [5, 60] };
@@ -180,6 +181,20 @@ const date = valeur => {
   return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
 };
 
+// Dates des phases (informatives, modifiables à tout moment) : { qualifs
+// (rondes), poules: [une par poule], tours: { places du tour: date } } ;
+// dates ISO ou null.
+function lireDatesPhases(brut) {
+  const tours = {};
+  TAILLES_ARBRE.forEach(places => {
+    const valeur = date(brut?.tours?.[places]);
+    if (valeur) tours[places] = valeur;
+  });
+  const poules = Array.isArray(brut?.poules) ? brut.poules.slice(0, BORNES_POULES.nombre[1]).map(date) : [];
+  while (poules.length && !poules.at(-1)) poules.pop();
+  return { qualifs: date(brut?.qualifs), poules, tours };
+}
+
 // Configuration envoyée par la page -> { config } ou { erreur }.
 function lireConfig(brut) {
   const nom = texte(brut?.nom, LONGUEUR_NOM);
@@ -211,6 +226,8 @@ function lireConfig(brut) {
       mode: format === "equipe" ? "carpe" : (MODES_THEATRE.includes(brut?.mode) ? brut.mode : "auto"),
       box: format === "equipe" ? "vitrine" : (BOX_TOURNOI.includes(brut?.box) ? brut.box : "full"),
       affrontement: AFFRONTEMENTS.includes(brut?.affrontement) ? brut.affrontement : "bo1",
+      poules_affrontement: AFFRONTEMENTS.includes(brut?.poules_affrontement) ? brut.poules_affrontement : "bo1",
+      dates_phases: lireDatesPhases(brut?.dates_phases),
       // Le dernier match (la finale) : bo1, bo3 ou bo5 (anciens tournois :
       // finale_bo5, sinon comme le reste de l'arbre).
       finale_affrontement: AFFRONTEMENTS_FINALE.includes(brut?.finale_affrontement) ? brut.finale_affrontement
@@ -302,8 +319,8 @@ async function creerTournoi(brut, user) {
 }
 
 // Modification par le gestionnaire : tout tant que les inscriptions sont
-// ouvertes ; ensuite seulement le texte (nom, description, récompense) et
-// la date de fin.
+// ouvertes ; ensuite seulement le texte (nom, description, récompense), la
+// date de fin, les dates des phases et les matchs en parallèle.
 async function modifierConfig(id, brut, user) {
   return modifierTournoi(id, tournoi => {
     if (!estGestionnaire(tournoi, user.id)) throw erreur(403, "Seul le créateur du tournoi le modifie.");
@@ -322,7 +339,7 @@ async function modifierConfig(id, brut, user) {
       }
       Object.assign(tournoi, config);
     } else {
-      Object.assign(tournoi, { nom: config.nom, description: config.description, recompense: config.recompense, fin: config.fin, arbre_parallele: config.arbre_parallele });
+      Object.assign(tournoi, { nom: config.nom, description: config.description, recompense: config.recompense, fin: config.fin, arbre_parallele: config.arbre_parallele, dates_phases: config.dates_phases });
     }
   });
 }
@@ -836,10 +853,10 @@ function affrontementFinale(tournoi) {
   return tournoi.finale_affrontement || (tournoi.finale_bo5 ? "bo5" : tournoi.affrontement);
 }
 
-// Manches à gagner : qualifs 1 ; arbre 1 (bo1) ou 2 (bo3) ; la finale selon
-// son format (bo1, bo3, bo5).
+// Manches à gagner : qualifs en rondes 1 ; poules et arbre 1 (bo1) ou 2
+// (bo3) ; la finale selon son format (bo1, bo3, bo5).
 function manchesAGagner(tournoi, phase, matchId = null) {
-  if (phase !== "arbre") return 1;
+  if (phase !== "arbre") return tournoi.qualifs?.format === "poules" ? MANCHES_A_GAGNER[tournoi.poules_affrontement] || 1 : 1;
   const tours = tournoi.arbre?.tours;
   if (tours && tours[tours.length - 1][0].id === matchId) return MANCHES_A_GAGNER[affrontementFinale(tournoi)] || 1;
   return MANCHES_A_GAGNER[tournoi.affrontement] || 1;

@@ -93,7 +93,8 @@ function rendre() {
     ["Participants", `${tournoi.format === "equipe" ? tournoi.equipes.length : tournoi.inscrits.length} / ${tournoi.max_participants} ${tournoi.format === "equipe" ? "équipes" : "joueurs"}`],
     ["Phase finale", `${TAILLES_ARBRE_TOURNOI[tournoi.arbre_max] || tournoi.arbre_max} au plus, ${tournoi.arbre_parallele ? "matchs en parallèle" : "un match à la fois"}`],
     ...(tournoi.max_participants > tournoi.arbre_max ? [["Qualifications", texteQualifs(tournoi)]] : []),
-    ["Affrontements", `${tournoi.affrontement === "bo3" ? "Best of 3" : "Un seul match"}, finale en ${NOMS_AFFRONTEMENTS[finaleTournoi(tournoi)] || "un seul match"}`],
+    ["Affrontements", `${tournoi.max_participants > tournoi.arbre_max && tournoi.qualifs_format === "poules" ? `poules en ${NOMS_AFFRONTEMENTS[tournoi.poules_affrontement] || "un seul match"}, ` : ""}phase finale en ${NOMS_AFFRONTEMENTS[tournoi.affrontement] || "un seul match"}, finale en ${NOMS_AFFRONTEMENTS[finaleTournoi(tournoi)] || "un seul match"}`],
+    ...(htmlDatesPhases(tournoi) ? [["Dates des phases", htmlDatesPhases(tournoi)]] : []),
     ...(tournoi.format === "1v1" ? [["Box", tournoi.box === "full" ? "Full box imposée" : "Au choix (full / opti)"]] : []),
     ["Chronos", tournoi.chronos ? `analyse ${tournoi.chronos.analyse_s} s, ${tournoi.chronos.action_s} s par pick / ban, ${tournoi.chronos.ban_s} s par ban d'équilibrage` : "Sans chronos"],
     ["Récompense", `${RECOMPENSES_TOURNOI[tournoi.recompense?.type] || "—"}${tournoi.recompense?.texte ? ` : ${echapperTournoi(tournoi.recompense.texte)}` : ""}`],
@@ -191,7 +192,8 @@ function matchsDuTournoi() {
 
 function scoreMatch(match) {
   const finale = vue.tournoi.arbre?.tours.at(-1)[0].id === match.id;
-  const format = finale ? finaleTournoi(vue.tournoi) : vue.tournoi.affrontement;
+  const format = match.id.startsWith("q") ? (vue.tournoi.qualifs?.format === "poules" ? vue.tournoi.poules_affrontement : "bo1")
+    : finale ? finaleTournoi(vue.tournoi) : vue.tournoi.affrontement;
   if (!match.manches?.length || format === "bo1") return "";
   const gagnees = p => match.manches.filter(m => m.vainqueur === p).length;
   return ` <span class="score-arbre">${gagnees(match.a)} - ${gagnees(match.b)}</span>`;
@@ -206,8 +208,25 @@ function texteQualifs(tournoi) {
   return `si plus d'inscrits que de places : ${tournoi.qualif_matchs} match${tournoi.qualif_matchs > 1 ? "s" : ""} chacun, les ${tournoi.arbre_max} meilleurs qualifiés`;
 }
 
-const LETTRES_POULES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const nomPoule = numero => `Poule ${numero < 26 ? LETTRES_POULES[numero] : numero + 1}`;
+const nomPoule = nomPouleTournoi;
+
+// Dates des phases (tournoi.dates_phases, réglées par le gestionnaire) :
+// date d'une phase -> pastille, ou "".
+const dateTour = (tournoi, places) => tournoi.dates_phases?.tours?.[places] || null;
+const datePoule = (tournoi, numero) => tournoi.dates_phases?.poules?.[numero] || null;
+const htmlDatePhase = iso => (iso ? `<span class="date-phase">📅 ${dateTournoi(iso)}</span>` : "");
+
+// Infos : dates des phases réglées, dans l'ordre du tournoi.
+function htmlDatesPhases(tournoi) {
+  const d = tournoi.dates_phases;
+  if (!d) return "";
+  const lignes = [
+    ...(d.qualifs ? [["Qualifications", d.qualifs]] : []),
+    ...(d.poules || []).map((iso, numero) => [nomPoule(numero), iso]).filter(([, iso]) => iso),
+    ...Object.entries(d.tours || {}).sort(([a], [b]) => b - a).map(([places, iso]) => [TAILLES_ARBRE_TOURNOI[places] || places, iso])
+  ];
+  return lignes.length ? `<ul class="liste-dates-phases">${lignes.map(([nom, iso]) => `<li><span>${echapperTournoi(nom)}</span> ${dateTournoi(iso)}</li>`).join("")}</ul>` : "";
+}
 
 // Tableau de classement ; nbQualifies : places qualificatives (trait sous la
 // dernière).
@@ -230,18 +249,20 @@ function rendreQualifs() {
   bloc.hidden = !tournoi.qualifs;
   if (!tournoi.qualifs) return;
   $t("aide-qualifs").textContent = tournoi.statut === "qualifs"
-    ? `${poules ? `${poules.length} poules, tous contre tous ; les ${tournoi.poules.qualifies} meilleurs de chaque poule vont en phase finale.` : `${tournoi.qualif_matchs} match${tournoi.qualif_matchs > 1 ? "s" : ""} chacun ; les ${tournoi.arbre_max} premiers vont en phase finale.`} Matchs à lancer par un des joueurs quand vous êtes prêts ; un arbitre saisit les temps. Trophées comme en classé.`
+    ? `${poules ? `${poules.length} poules, tous contre tous${tournoi.poules_affrontement === "bo3" ? " en best of 3" : ""} ; les ${tournoi.poules.qualifies} meilleurs de chaque poule vont en phase finale.` : `${tournoi.qualif_matchs} match${tournoi.qualif_matchs > 1 ? "s" : ""} chacun ; les ${tournoi.arbre_max} premiers vont en phase finale.${tournoi.dates_phases?.qualifs ? ` Prévues le ${dateTournoi(tournoi.dates_phases.qualifs)}.` : ""}`} Matchs à lancer par un des joueurs quand vous êtes prêts ; un arbitre saisit les temps. Trophées comme en classé.`
     : "Qualifications terminées.";
   $t("classement-qualifs").innerHTML = poules
-    ? `<div class="poules-tournoi">${poules.map((lignes, numero) => `<div class="poule-tournoi"><h3>${nomPoule(numero)}</h3>${htmlClassement(lignes, tournoi.poules.qualifies)}</div>`).join("")}</div>`
+    ? `<div class="poules-tournoi">${poules.map((lignes, numero) => `<div class="poule-tournoi"><h3>${nomPoule(numero)} ${htmlDatePhase(datePoule(tournoi, numero))}</h3>${htmlClassement(lignes, tournoi.poules.qualifies)}</div>`).join("")}</div>`
     : htmlClassement(classement, tournoi.arbre_max);
   const enQualifs = tournoi.statut === "qualifs";
   $t("matchs-qualifs").innerHTML = tournoi.qualifs.matchs.map(match => {
     const mien = estMoi(match.a) || estMoi(match.b);
     let droite = "";
-    if (match.statut === "termine") droite = `<span>${match.forfait ? "Victoire par forfait" : "Vainqueur"} : ${nomParticipant(match.vainqueur)} (${match.trophees} 🏆)</span>`;
+    if (match.statut === "termine") droite = `<span>${match.forfait ? "Victoire par forfait" : "Vainqueur"} : ${nomParticipant(match.vainqueur)} (${match.trophees} 🏆)${scoreMatch(match)}</span>`;
     else if (match.statut === "en_cours") droite = `<a class="bouton-tournoi petit" href="${lienRoom(match.room_id)}">${mien || moi?.arbitre ? "Rejoindre" : "Regarder"}</a>`;
     else if (enQualifs && (mien || moi?.arbitre)) droite = `<button type="button" class="bouton-tournoi petit principal" data-lancer="${match.id}">Lancer</button>`;
+    // Best of 3 en cours : manches gagnées.
+    if (match.statut !== "termine" && scoreMatch(match)) droite = `<span>Manches :${scoreMatch(match)}</span> ${droite}`;
     if (moi?.gestionnaire && enQualifs && match.statut !== "termine") droite += boutonsGestionMatch(match);
     return `<div class="match-qualif${mien ? " moi" : ""}"><span>${match.poule !== undefined ? `${nomPoule(match.poule)} · ` : ""}Ronde ${match.ronde} · ${nomParticipant(match.a)} <span class="doux">vs</span> ${nomParticipant(match.b)}</span><span class="actions-match">${droite}</span></div>`;
   }).join("");
@@ -279,7 +300,7 @@ function rendreArbre() {
   conteneur.style.setProperty("--lignes-arbre", tournoi.arbre.tours[0].length);
   const dernier = tournoi.arbre.tours.length - 1;
   conteneur.innerHTML = tournoi.arbre.tours.map((tour, t) => `
-      <h3 class="titre-tour-arbre" style="grid-column: ${t + 1}">${noms[t]}</h3>
+      <h3 class="titre-tour-arbre" style="grid-column: ${t + 1}">${noms[t]}${htmlDatePhase(dateTour(tournoi, tour.length * 2))}</h3>
       ${tour.map((match, i) => {
         const camp = cote => {
           const id = match[cote];

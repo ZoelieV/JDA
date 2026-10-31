@@ -56,6 +56,9 @@ function finaleTournoi(tournoi) {
 
 const NOMS_AFFRONTEMENTS = { bo1: "un seul match", bo3: "best of 3", bo5: "best of 5" };
 
+const LETTRES_POULES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const nomPouleTournoi = numero => `Poule ${numero < 26 ? LETTRES_POULES[numero] : numero + 1}`;
+
 // Pastilles : format de l'arbre, et de la finale s'il est différent.
 function htmlPastillesAffrontement(tournoi) {
   const finale = finaleTournoi(tournoi);
@@ -227,7 +230,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
   fenetre.innerHTML = `
     <h2>${id ? "Modifier le tournoi" : "Créer un tournoi"}</h2>
     <form class="formulaire-tournoi" novalidate>
-      ${verrouille ? `<p class="aide">Inscriptions fermées : seuls le nom, la description, la récompense, la fin et les matchs en parallèle se modifient encore.</p>` : ""}
+      ${verrouille ? `<p class="aide">Inscriptions fermées : seuls le nom, la description, la récompense, la fin, les dates des phases et les matchs en parallèle se modifient encore.</p>` : ""}
       <fieldset>
         <legend>Présentation</legend>
         <label class="large">Nom <input name="nom" maxlength="60" required value="${echapperTournoi(c.nom || "")}"></label>
@@ -283,6 +286,9 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
           <label data-qualifs-format="poules">Qualifiés par poule
             <input name="poules_qualifies" type="number" min="1" max="15" value="${c.poules?.qualifies || ""}">
           </label>
+          <label data-qualifs-format="poules">Matchs de poule
+            <select name="poules_affrontement">${options({ bo1: "Un seul match", bo3: "Best of 3" }, c.poules_affrontement || "bo1")}</select>
+          </label>
           <button type="button" class="bouton-tournoi petit" data-qualifs-format="poules" data-action="proposer-poules">Proposer des poules</button>
         </div>
         <p class="large coherence-tournoi"></p>
@@ -292,6 +298,11 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
         <label${verrouille ? " hidden" : ""}>Fin des inscriptions <input name="verrouillage" type="datetime-local" value="${versChampDateTournoi(c.verrouillage)}"></label>
         <label${verrouille ? " hidden" : ""}>Début <input name="debut" type="datetime-local" required value="${versChampDateTournoi(c.debut)}"></label>
         <label>Fin <span class="aide">(si plusieurs jours)</span> <input name="fin" type="datetime-local" value="${versChampDateTournoi(c.fin)}"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Dates des phases</legend>
+        <p class="aide large">Facultatives, affichées sur la page du tournoi ; modifiables à tout moment.</p>
+        <div class="large dates-phases-formulaire"></div>
       </fieldset>
       <fieldset>
         <legend>Image</legend>
@@ -378,6 +389,43 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
     proposerPoules();
     majVisibles();
   });
+  // Dates des phases : qualifications (rondes) ou une par poule, puis une par
+  // tour de la phase finale ; champs refaits selon les réglages, valeurs
+  // gardées (clé data-date).
+  const datesSaisies = new Map([
+    ["qualifs", versChampDateTournoi(c.dates_phases?.qualifs)],
+    ...(c.dates_phases?.poules || []).map((valeur, numero) => [`poule:${numero}`, versChampDateTournoi(valeur)]),
+    ...Object.entries(c.dates_phases?.tours || {}).map(([places, valeur]) => [`tour:${places}`, versChampDateTournoi(valeur)])
+  ]);
+  const zoneDates = fenetre.querySelector(".dates-phases-formulaire");
+  let signatureDates = "";
+  const majDates = qualifs => {
+    zoneDates.querySelectorAll("[data-date]").forEach(champDate => datesSaisies.set(champDate.dataset.date, champDate.value));
+    const lignes = [];
+    if (qualifs && champ("qualifs_format").value === "poules") {
+      const nombre = Math.min(64, Number(champ("poules_nombre").value) || 0);
+      for (let numero = 0; numero < nombre; numero++) lignes.push([`poule:${numero}`, nomPouleTournoi(numero)]);
+    } else if (qualifs) {
+      lignes.push(["qualifs", "Qualifications"]);
+    }
+    for (let places = Number(champ("arbre_max").value); places >= 2; places /= 2) lignes.push([`tour:${places}`, TAILLES_ARBRE_TOURNOI[places]]);
+    const signature = lignes.map(([cle]) => cle).join(",");
+    if (signature === signatureDates) return;
+    signatureDates = signature;
+    zoneDates.innerHTML = lignes.map(([cle, libelle]) =>
+      `<label>${libelle} <input type="datetime-local" data-date="${cle}" value="${echapperTournoi(datesSaisies.get(cle) || "")}"></label>`).join("");
+  };
+  const lireDatesPhases = () => {
+    zoneDates.querySelectorAll("[data-date]").forEach(champDate => datesSaisies.set(champDate.dataset.date, champDate.value));
+    const visibles = new Set([...zoneDates.querySelectorAll("[data-date]")].map(champDate => champDate.dataset.date));
+    const valeur = cle => (visibles.has(cle) ? depuisChampDateTournoi(datesSaisies.get(cle)) : null);
+    const poules = [...visibles].filter(cle => cle.startsWith("poule:")).map(valeur);
+    return {
+      qualifs: valeur("qualifs"),
+      poules,
+      tours: Object.fromEntries([...visibles].filter(cle => cle.startsWith("tour:")).map(cle => [cle.slice(5), valeur(cle)]).filter(([, v]) => v))
+    };
+  };
   const majVisibles = () => {
     // Phases finales plus grandes que le tournoi : grisées.
     const max = Number(champ("max_participants").value) || 2;
@@ -390,6 +438,7 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
     fenetre.querySelector("[data-qualifs]").hidden = !qualifs;
     if (qualifs && champ("qualifs_format").value === "poules" && !champ("poules_nombre").value) proposerPoules();
     fenetre.querySelectorAll("[data-qualifs-format]").forEach(el => { el.hidden = el.dataset.qualifsFormat !== champ("qualifs_format").value; });
+    majDates(qualifs);
     const etat = coherence();
     const zone = fenetre.querySelector(".coherence-tournoi");
     zone.textContent = etat.erreur || etat.info;
@@ -456,6 +505,8 @@ function ouvrirFormulaireTournoi({ config = null, id = null, surSucces }) {
       qualif_matchs: Number(champ("qualif_matchs").value),
       qualifs_format: champ("qualifs_format").value,
       poules: champ("qualifs_format").value === "poules" ? lirePoules() : null,
+      poules_affrontement: champ("poules_affrontement").value,
+      dates_phases: lireDatesPhases(),
       verrouillage: depuisChampDateTournoi(champ("verrouillage").value),
       debut: depuisChampDateTournoi(champ("debut").value),
       fin: depuisChampDateTournoi(champ("fin").value),
