@@ -1,4 +1,4 @@
-// Recommandations de la box stuff ("Personnages stuff" de Mon compte : les
+// Recommandations de la box stuff ("Box stuff" de Mon compte : les
 // persos montés). Règles : une ligne par DPS, avec ses supports par
 // priorité (config.recommandations_stuff, modifiables sur la page admin ;
 // par défaut DB/recommandations_stuff.json, tiré de la feuille "box stuff",

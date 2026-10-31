@@ -1,6 +1,6 @@
 const nomsBoxes = {
   full: "Full Box",
-  stuff: "Personnages stuff",
+  stuff: "Box stuff",
   opti1: "Box optimisée 1",
   opti2: "Box optimisée 2",
   opti3: "Box optimisée 3",
