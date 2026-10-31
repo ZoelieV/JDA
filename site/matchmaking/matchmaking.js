@@ -841,7 +841,7 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
   return carte;
 }
 
-// Vitrine d'une carte : charger une de ses 2 vitrines (Mon compte, joueur
+// Vitrine d'une carte : charger une de ses 3 vitrines (Mon compte, joueur
 // connecté seulement : elles restent privées) ou une vitrine enregistrée
 // (version personnalisée, de n'importe quel joueur) ; enregistrer /
 // supprimer comme les box personnalisées du 1v1.
@@ -857,13 +857,13 @@ function brancherVitrinesEnregistrees(carte, vitrine, profil) {
     return o;
   };
   const miennes = vitrine.proprietaire === entrainement.moi.id
-    ? ["vitrine", "vitrine2"].filter(box => profil?.characters?.selections?.[box])
+    ? ["vitrine", "vitrine2", "vitrine3"].filter(box => profil?.characters?.selections?.[box])
     : [];
   const noms = profil?.nomsBoxes || {};
   const enregistrees = vitrinesEnregistrees();
   liste.replaceChildren(
     option("", miennes.length || enregistrees.length ? "Charger une vitrine…" : "Aucune vitrine enregistrée"),
-    ...miennes.map(box => option(`compte:${box}`, `${typeof noms[box] === "string" && noms[box] ? noms[box] : box === "vitrine" ? "Vitrine 1" : "Vitrine 2"} (ma vitrine)`)),
+    ...miennes.map(box => option(`compte:${box}`, `${typeof noms[box] === "string" && noms[box] ? noms[box] : box === "vitrine" ? "Vitrine 1" : box === "vitrine2" ? "Vitrine 2" : "Vitrine 3"} (ma vitrine)`)),
     ...enregistrees.map(b => option(b.id, `${b.nom} · ${nomProprietaire(b.proprietaire)}`))
   );
   liste.value = enregistrees.some(b => b.id === vitrine.enregistree) ? vitrine.enregistree : "";

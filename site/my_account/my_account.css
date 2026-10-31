@@ -248,8 +248,114 @@ h2 {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.box-btn.active .renommer-box {
+.box-btn.active .renommer-box,
+.box-btn-groupe.active .renommer-box {
   display: inline;
+}
+
+/* ---- Box optimisées et vitrines : menu déroulant par groupe (cf.
+   initialiserGroupesBox dans my_account.js), au style du site (verre
+   sombre, liseré doré), pas celui du navigateur. ---- */
+.groupe-box {
+  position: relative;
+  display: flex;
+}
+
+.box-btn-groupe {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.375rem 0.625rem;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.5rem;
+  background-color: rgba(20, 20, 20, 0.45);
+  color: white;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.box-btn-groupe:hover {
+  border-color: rgba(245, 197, 66, 0.6);
+}
+
+.box-btn-groupe.active {
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.box-btn-groupe[aria-expanded="true"] {
+  border-color: rgba(245, 197, 66, 0.8);
+}
+
+.fleche-groupe-box {
+  margin-left: 0.375rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+}
+
+.menu-groupe-box {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: max(100%, 13rem);
+  max-height: 18rem;
+  padding: 0.3125rem;
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: 1px solid rgba(245, 197, 66, 0.55);
+  border-radius: 0.625rem;
+  background-color: rgba(24, 24, 30, 0.96);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  scrollbar-color: rgba(245, 197, 66, 0.6) transparent;
+}
+
+.menu-groupe-box[hidden] {
+  display: none;
+}
+
+.menu-groupe-box .box-btn,
+.ajouter-box {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 0.4375rem;
+  background-color: transparent;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.menu-groupe-box .box-btn:hover {
+  background-color: rgba(245, 197, 66, 0.15);
+}
+
+.menu-groupe-box .box-btn.active {
+  border-color: rgba(245, 197, 66, 0.6);
+  background-color: rgba(245, 197, 66, 0.15);
+  color: #f5c542;
+}
+
+.ajouter-box {
+  margin-top: 0.125rem;
+  padding: 0.375rem 0.625rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0 0 0.4375rem 0.4375rem;
+  color: #f5c542;
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.ajouter-box:hover {
+  background-color: rgba(245, 197, 66, 0.12);
+}
+
+.ajouter-box[hidden] {
+  display: none;
 }
 
 .renommer-box:hover {
@@ -1498,11 +1604,35 @@ body {
   }
 
   .box-selector .box-btn,
+  .box-selector .box-btn-groupe,
   .box-selector .renommer-input {
     box-sizing: border-box;
     width: 100%;
     height: 2.75rem;
     min-width: 0;
+  }
+
+  .box-selector .box-btn-groupe {
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Menu : sous le bouton, de sa largeur au moins ; box pas encore
+     ajoutées masquées (display: flex ci-dessus l'emporterait sur hidden). */
+  .box-selector .menu-groupe-box .box-btn {
+    justify-content: flex-start;
+    height: 2.5rem;
+    text-align: left;
+  }
+
+  .box-selector .menu-groupe-box .box-btn[hidden] {
+    display: none;
+  }
+
+  /* Vitrines (colonne de droite) : menu calé à droite, dans l'écran. */
+  .groupe-box[data-groupe="vitrine"] .menu-groupe-box {
+    left: auto;
+    right: 0;
   }
 
   .box-selector .box-btn {
@@ -1697,6 +1827,9 @@ body {
 /* ---- Box fictive (my_account?box_fictive=<id>, cf. preparerModeFictif) :
    full box seulement, champs du compte connecté cachés. ---- */
 .mode-fictif .box-btn:not([data-box="full"], [data-box="opti1"]),
+.mode-fictif .groupe-box[data-groupe="vitrine"],
+.mode-fictif .ajouter-box,
+.mode-fictif .fleche-groupe-box,
 .mode-fictif .renommer-box,
 .mode-fictif #copie-box,
 .mode-fictif #menu-compte .menu-champ,

@@ -84,7 +84,7 @@ function etatLobby({ taille, formation, createur, bossImpose = null, membres = [
     membres,
     // Formation au choix : équipe choisie dans le lobby ("j1" | "j2" | null).
     camps: Object.fromEntries(membres.map(id => [id, camps[id] ?? null])),
-    // Vitrine jouée par chacun ("vitrine" | "vitrine2").
+    // Vitrine jouée par chacun ("vitrine" | "vitrine2" | "vitrine3").
     vitrines_choisies: Object.fromEntries(membres.map(id => [id, vitrinesChoisies[id] || "vitrine"])),
     // Pseudo, photo, namecard et niveau du monde de chaque joueur.
     infos,

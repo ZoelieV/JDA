@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem44">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem47">
 <link rel="stylesheet" href="/commun/entete.css?v=rem42">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
@@ -102,18 +102,34 @@
       <div class="box-selector">
         <button type="button" class="box-btn active" data-box="full">Full box</button>
         <button type="button" class="box-btn" data-box="stuff">Personnages stuff</button>
-        <!-- Box optimisées : renommables (crayon sur la box active). -->
-        <button type="button" class="box-btn" data-box="opti1"><span class="nom-box">Box optimisée 1</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
-        <button type="button" class="box-btn" data-box="opti2"><span class="nom-box">Box optimisée 2</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
-        <button type="button" class="box-btn" data-box="opti3"><span class="nom-box">Box optimisée 3</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
-        <button type="button" class="box-btn" data-box="opti4"><span class="nom-box">Box optimisée 4</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
-        <button type="button" class="box-btn" data-box="opti5"><span class="nom-box">Box optimisée 5</span><span class="renommer-box" title="Renommer cette box">✎</span></button>
+        <!-- Box optimisées et vitrines : un menu déroulant chacune (cf.
+             initialiserGroupesBox) ; bouton = box du groupe affichée, crayon
+             pour la renommer quand elle est active ; une seule de chaque par
+             défaut, les autres ajoutées par « + Ajouter ». -->
+        <div class="groupe-box" data-groupe="opti">
+          <button type="button" class="box-btn-groupe" aria-haspopup="listbox" aria-expanded="false"><span class="nom-box">Box optimisée 1</span><span class="renommer-box" title="Renommer cette box">✎</span><span class="fleche-groupe-box">▾</span></button>
+          <div class="menu-groupe-box" hidden>
+            <button type="button" class="box-btn" data-box="opti1"><span class="nom-box">Box optimisée 1</span></button>
+            <button type="button" class="box-btn" data-box="opti2"><span class="nom-box">Box optimisée 2</span></button>
+            <button type="button" class="box-btn" data-box="opti3"><span class="nom-box">Box optimisée 3</span></button>
+            <button type="button" class="box-btn" data-box="opti4"><span class="nom-box">Box optimisée 4</span></button>
+            <button type="button" class="box-btn" data-box="opti5"><span class="nom-box">Box optimisée 5</span></button>
+            <button type="button" class="ajouter-box">+ Ajouter une box optimisée</button>
+          </div>
+        </div>
         <!-- Vitrines : privées, renommables, une jouée en 2v2 / 3v3 / 4v4. -->
-        <button type="button" class="box-btn" data-box="vitrine" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 1</span><span class="renommer-box" title="Renommer cette vitrine">✎</span></button>
-        <button type="button" class="box-btn" data-box="vitrine2" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 2</span><span class="renommer-box" title="Renommer cette vitrine">✎</span></button>
-        <!-- Box optimisée active : copier la box stuff ou une autre box optimisée enregistrée ; vitrine : l'autre vitrine. -->
+        <div class="groupe-box" data-groupe="vitrine">
+          <button type="button" class="box-btn-groupe" aria-haspopup="listbox" aria-expanded="false" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 1</span><span class="renommer-box" title="Renommer cette vitrine">✎</span><span class="fleche-groupe-box">▾</span></button>
+          <div class="menu-groupe-box" hidden>
+            <button type="button" class="box-btn" data-box="vitrine" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 1</span></button>
+            <button type="button" class="box-btn" data-box="vitrine2" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 2</span></button>
+            <button type="button" class="box-btn" data-box="vitrine3" title="12 personnages et 12 armes maximum, privée : à jouer dans les modes en équipe"><span class="nom-box">Vitrine 3</span></button>
+            <button type="button" class="ajouter-box">+ Ajouter une vitrine</button>
+          </div>
+        </div>
+        <!-- Box optimisée active : copier la box stuff ou une autre box optimisée enregistrée ; vitrine : une autre vitrine. -->
         <div id="copie-box" class="copie-box cache">
-          <button type="button" id="btn-copier-box" class="btn-copier-box" title="Copier le contenu d'une autre box enregistrée : box stuff ou autre box optimisée (16 persos minimum) ; vitrine : l'autre vitrine"><img class="icone-copier" src="/DB/images/others/copier.webp" alt="">Copier</button>
+          <button type="button" id="btn-copier-box" class="btn-copier-box" title="Copier le contenu d'une autre box enregistrée : box stuff ou autre box optimisée (16 persos minimum) ; vitrine : une autre vitrine"><img class="icone-copier" src="/DB/images/others/copier.webp" alt="">Copier</button>
           <div id="menu-copie-box" class="menu-copie-box cache"></div>
         </div>
       </div>
@@ -283,11 +299,11 @@
   <script src="/my_account/auto_box/detection.js?v=2"></script>
   <script src="/my_account/auto_box/interface.js?v=5"></script>
   <script src="/commun/synergies.js?v=2"></script>
-  <script src="/commun/cartes.js?v=34"></script>
+  <script src="/commun/cartes.js?v=35"></script>
   <script src="/commun/tri.js?v=21"></script>
   <script src="/commun/personnalisation.js?v=40"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
-  <script src="/my_account/my_account.js?v=76"></script>
+  <script src="/my_account/my_account.js?v=77"></script>
   <script src="/commun/site.js?v=18"></script>
 </body>
 </html>

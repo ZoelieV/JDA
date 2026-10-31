@@ -1,5 +1,5 @@
 // Vitrines d'un joueur (profil.characters.selections.vitrine / vitrine2 et
-// pareil pour weapons) : 2 vitrines privées (comme les box opti), il en
+// pareil pour weapons) : 3 vitrines privées (comme les box opti), il en
 // choisit une dans le lobby des modes 2v2, 3v3 et 4v4 : les persos qu'il y
 // apporte (cf. _lib/equipe.js). Même règles dans Mon compte
 // (cf. my_account/my_account.js, analyserVitrine).
@@ -16,8 +16,8 @@ const NB_PERSOS_VITRINE = 12;
 const POINTS_MAX_VITRINE = 1400;
 const CONSTELLATIONS_TEMPORAIRES_MAX = 6;
 const C2_MAX_VITRINE = 2;
-const BOX_VITRINES = ["vitrine", "vitrine2"];
-const NOMS_VITRINES = { vitrine: "Vitrine 1", vitrine2: "Vitrine 2" };
+const BOX_VITRINES = ["vitrine", "vitrine2", "vitrine3"];
+const NOMS_VITRINES = { vitrine: "Vitrine 1", vitrine2: "Vitrine 2", vitrine3: "Vitrine 3" };
 
 function estBoxVitrine(box) {
   return BOX_VITRINES.includes(box);

@@ -7,13 +7,14 @@ const nomsBoxes = {
   opti4: "Box optimisée 4",
   opti5: "Box optimisée 5",
   vitrine: "Vitrine 1",
-  vitrine2: "Vitrine 2"
+  vitrine2: "Vitrine 2",
+  vitrine3: "Vitrine 3"
 };
 
-// Vitrines : 2 sélections privées (comme les box optimisées), une jouée
+// Vitrines : 3 sélections privées (comme les box optimisées), une jouée
 // dans les modes 2v2, 3v3 et 4v4 (choisie dans le lobby), limitées en
 // nombre (même limite côté serveur, cf. api/auth/profile.js).
-const BOX_VITRINES = ["vitrine", "vitrine2"];
+const BOX_VITRINES = ["vitrine", "vitrine2", "vitrine3"];
 const MAX_VITRINE = { characters: 12, weapons: 12 };
 
 function estVitrine(box) {
@@ -186,7 +187,8 @@ function creerSelectionsParDefaut() {
     opti4: {},
     opti5: {},
     vitrine: {},
-    vitrine2: {}
+    vitrine2: {},
+    vitrine3: {}
   };
 }
 
@@ -366,6 +368,89 @@ function afficherNomsBoxes(profil) {
     const span = document.querySelector(`.box-btn[data-box="${box}"] .nom-box`);
     if (span) span.textContent = nomBox(profil, box);
   });
+  majGroupesBox();
+}
+
+// ---- Box optimisées et vitrines : un menu déroulant par groupe ----
+// Le bouton du groupe montre sa box active (sinon la dernière choisie du
+// groupe) ; le menu liste les box montrées : la 1re toujours, les autres
+// dès qu'elles ont du contenu enregistré ou un nom, ou une fois ajoutées
+// (« + Ajouter », jusqu'au nombre maximum de box du groupe).
+const GROUPES_BOX = { opti: BOX_OPTI, vitrine: BOX_VITRINES };
+const boxAjoutees = new Set();
+const derniereBoxGroupe = { opti: "opti1", vitrine: "vitrine" };
+
+function boxMontree(profil, box) {
+  if (GROUPES_BOX.opti[0] === box || GROUPES_BOX.vitrine[0] === box || boxAjoutees.has(box) || getBoxActive() === box) return true;
+  if (profil.nomsBoxes?.[box]) return true;
+  return ["characters", "weapons"].some(vue => Object.keys(profil[vue]?.selections?.[box] || {}).length > 0);
+}
+
+function majGroupesBox(profil = contexteGroupes?.profil) {
+  if (!profil) return;
+  const active = getBoxActive();
+  document.querySelectorAll(".groupe-box").forEach(groupe => {
+    const boxes = GROUPES_BOX[groupe.dataset.groupe];
+    if (boxes.includes(active)) derniereBoxGroupe[groupe.dataset.groupe] = active;
+    const affichee = derniereBoxGroupe[groupe.dataset.groupe];
+    const declencheur = groupe.querySelector(".box-btn-groupe");
+    declencheur.dataset.box = affichee;
+    declencheur.classList.toggle("active", boxes.includes(active));
+    declencheur.querySelector(".nom-box").textContent = groupe.querySelector(`.box-btn[data-box="${affichee}"] .nom-box`)?.textContent || nomBox(profil, affichee);
+    const montrees = boxes.filter(box => boxMontree(profil, box));
+    groupe.querySelectorAll(".menu-groupe-box .box-btn").forEach(btn => { btn.hidden = !montrees.includes(btn.dataset.box); });
+    groupe.querySelector(".ajouter-box").hidden = montrees.length >= boxes.length;
+  });
+}
+
+let contexteGroupes = null;
+
+function fermerMenusGroupesBox(sauf = null) {
+  document.querySelectorAll(".groupe-box").forEach(groupe => {
+    if (groupe === sauf) return;
+    groupe.querySelector(".menu-groupe-box").hidden = true;
+    groupe.querySelector(".box-btn-groupe").setAttribute("aria-expanded", "false");
+  });
+}
+
+// choisirBox(box) : même effet qu'un clic sur une box (affichage, total).
+function initialiserGroupesBox(profil, choisirBox, apresRenommage) {
+  contexteGroupes = { profil };
+  document.querySelectorAll(".groupe-box").forEach(groupe => {
+    const declencheur = groupe.querySelector(".box-btn-groupe");
+    const menu = groupe.querySelector(".menu-groupe-box");
+    declencheur.addEventListener("click", event => {
+      // Crayon de la box active du groupe : renommage.
+      if (event.target.closest(".renommer-box") && declencheur.classList.contains("active")) {
+        fermerMenusGroupesBox();
+        commencerRenommage(declencheur, profil, apresRenommage);
+        return;
+      }
+      const ouvrir = menu.hidden;
+      fermerMenusGroupesBox();
+      menu.hidden = !ouvrir;
+      declencheur.setAttribute("aria-expanded", String(ouvrir));
+    });
+    menu.addEventListener("click", event => {
+      if (event.target.closest(".box-btn")) {
+        fermerMenusGroupesBox();
+        return;
+      }
+      if (!event.target.closest(".ajouter-box")) return;
+      const nouvelle = GROUPES_BOX[groupe.dataset.groupe].find(box => !boxMontree(profil, box));
+      if (!nouvelle) return;
+      boxAjoutees.add(nouvelle);
+      fermerMenusGroupesBox();
+      choisirBox(nouvelle);
+    });
+  });
+  document.addEventListener("click", event => {
+    if (!event.target.closest(".groupe-box")) fermerMenusGroupesBox();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") fermerMenusGroupesBox();
+  });
+  majGroupesBox(profil);
 }
 
 // Champ à la place du bouton : Entrée ou sortie du champ = valider (vide =
@@ -419,6 +504,7 @@ function setBoxActive(box) {
   document.querySelectorAll(".box-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.box === box);
   });
+  majGroupesBox();
 }
 
 function getVueActive() {
@@ -1338,6 +1424,14 @@ async function initialiserPage() {
         afficherCollection(personnages, armes, profil);
         mettreAJourTotalBox(personnages, armes, profil);
       });
+    });
+    initialiserGroupesBox(profil, box => {
+      setBoxActive(box);
+      afficherCollection(personnages, armes, profil);
+      mettreAJourTotalBox(personnages, armes, profil);
+    }, () => {
+      mettreAJourTotalBox(personnages, armes, profil);
+      mettreAJourBoutonEnregistrer(profil);
     });
     afficherNomsBoxes(profil);
     initialiserCopieBox(personnages, armes, profil);

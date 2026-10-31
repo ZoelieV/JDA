@@ -21,7 +21,7 @@ const {
 const BOX_OPTI = ["opti1", "opti2", "opti3", "opti4", "opti5"];
 // Vitrines : privées aussi, jamais envoyées aux autres (celle jouée en
 // équipe est recopiée dans la draft au lancement, cf. _lib/equipe.js).
-const BOX_PRIVEES = [...BOX_OPTI, "vitrine", "vitrine2"];
+const BOX_PRIVEES = [...BOX_OPTI, "vitrine", "vitrine2", "vitrine3"];
 
 // Box opti de ce joueur révélées dans cette room.
 async function boxOptiRevelees(roomId, discordId) {
