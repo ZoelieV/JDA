@@ -916,3 +916,14 @@
   letter-spacing: 0.5px;
   vertical-align: middle;
 }
+
+/* Entraînement, box personnalisée : total des points (persos + armes
+   cochés), cf. pointsSelectionEnt. */
+.ent-total-points {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+}
+
+.ent-total-points strong {
+  color: var(--accent);
+}

@@ -224,6 +224,32 @@ function armesPossedees(profil) {
     .sort((a, b) => rang.get(a.arme.id) - rang.get(b.arme.id) || a.instance.localeCompare(b.instance));
 }
 
+// Points d'une sélection d'entraînement (box personnalisée, vitrine) :
+// persos cochés (Voyageur : son meilleur élément ; synergies comptées dans
+// une box personnalisée, pas dans une vitrine où les alliés complètent) et
+// copies d'armes cochées (valeurs alternatives comprises), même calcul que
+// les points d'une box (cf. pointsBoxJoueur, match.js).
+// -> { persos, armes, total }
+function pointsSelectionEnt(profil, persos, armes, avecSynergies = true) {
+  const box = "selection";
+  const characters = { ...(profil?.characters || {}), selections: { [box]: Object.fromEntries([...persos].map(id => [id, true])) } };
+  const weapons = { ...(profil?.weapons || {}), selections: { [box]: Object.fromEntries([...armes].map(id => [id, true])) } };
+  const presents = avecSynergies ? idsDraftCollection(characters, entrainement.personnages, box) : null;
+  const niveaux = characters.niveaux || {};
+  let pointsPersos = 0;
+  const meilleurParGroupe = {};
+  entrainement.personnages.forEach(perso => {
+    const c = characters.full?.[perso.id];
+    if (typeof c !== "number" || c < 0 || !persos.has(perso.id)) return;
+    const points = pointsPersonnageBox(perso, c, niveaux[perso.groupe || perso.id] ?? null, presents);
+    if (perso.groupe) meilleurParGroupe[perso.groupe] = Math.max(meilleurParGroupe[perso.groupe] ?? 0, points);
+    else pointsPersos += points;
+  });
+  Object.values(meilleurParGroupe).forEach(points => { pointsPersos += points; });
+  const pointsArmes = pointsArmesBox(copiesArmesBox(weapons, entrainement.armes, box), clesPersosBox(characters, entrainement.personnages, box), entrainement.armes, entrainement.personnages);
+  return { persos: pointsPersos, armes: pointsArmes, total: pointsPersos + pointsArmes };
+}
+
 // Choix d'un joueur (entraînement) : champ où l'on écrit pour filtrer et
 // liste de hauteur fixe qui défile (flèche : ouverte sans rien écrire).
 // Choix au clic sur un nom, ou Entrée / flèches ; texte qui ne correspond à
@@ -349,6 +375,7 @@ async function rendreSelecteurBox(cote) {
         <button type="button" class="choix-btn ent-enregistrer-box">Enregistrer</button>
         <span class="ent-message-box"></span>
       </div>
+      <p class="ent-total-points"></p>
       <h4 class="ent-sous-titre">Personnages</h4>
       <div class="ligne-entrainement">
         <span class="ent-compteur"></span>
@@ -405,11 +432,18 @@ async function rendreSelecteurBox(cote) {
   const possedes = personnagesPossedes(profil);
   const grille = zone.querySelector(".ent-persos");
   const compteur = zone.querySelector(".ent-compteur");
+  // Total de la box personnalisée (persos + armes cochés), à chaque coche.
+  const totalPoints = zone.querySelector(".ent-total-points");
+  const majTotal = () => {
+    const { persos, armes, total } = pointsSelectionEnt(profil, etat.persos, etat.armes);
+    totalPoints.innerHTML = `Total : <strong>${total} points</strong> <span class="doux">(persos ${persos} + armes ${armes})</span>`;
+  };
   const majCompteur = () => {
     // Voyageur : un seul perso quel que soit le nombre d'éléments cochés.
     const nb = new Set(possedes.filter(p => etat.persos.has(p.id)).map(p => p.groupe || p.id)).size;
     compteur.textContent = `${nb} personnage${nb > 1 ? "s" : ""} (${MIN_PERSOS_BOX} minimum)`;
     compteur.classList.toggle("insuffisant", nb < MIN_PERSOS_BOX);
+    majTotal();
   };
   // Constellation (bas à droite), niveau 95 / 100 (haut à gauche),
   // pastille rouge (haut à droite) : pas dans la box stuff (persos montés)
@@ -464,6 +498,7 @@ async function rendreSelecteurBox(cote) {
     compteurArmes.textContent = copies.length
       ? `${nb} arme${nb > 1 ? "s" : ""} sur ${copies.length}`
       : "Aucune arme dans la full box de ce joueur.";
+    majTotal();
   };
   const cartesArmes = copies.map(({ instance, arme, raffinement }) => {
     const carte = document.createElement("button");
@@ -706,6 +741,8 @@ function brancherBoxesEnregistrees(zone, cote, possedes, copies) {
 
 // ---- Entraînement en équipe : vitrines construites par le lanceur ----
 const MAX_VITRINE_ENTRAINEMENT = 12;
+// Points au plus d'une vitrine (POINTS_MAX_VITRINE, api/_lib/vitrine.js).
+const POINTS_MAX_VITRINE_ENT = 1400;
 
 // Choix des joueurs (et box fictives) : libellés uniques.
 function choixProprietaires() {
@@ -786,8 +823,10 @@ async function carteVitrineEntrainement(vitrine, index, choix) {
   const majCompte = () => {
     const n = nbPersos();
     const compte = carte.querySelector(".ent-vitrine-compte");
-    compte.textContent = `${n} / ${MAX_VITRINE_ENTRAINEMENT} persos · ${vitrine.armes.size} / ${MAX_VITRINE_ENTRAINEMENT} armes`;
-    compte.classList.toggle("insuffisant", n !== MAX_VITRINE_ENTRAINEMENT);
+    // Points : persos et armes cochés, sans synergies (alliés en équipe).
+    const { total } = pointsSelectionEnt(profil, vitrine.persos, vitrine.armes, false);
+    compte.textContent = `${n} / ${MAX_VITRINE_ENTRAINEMENT} persos · ${vitrine.armes.size} / ${MAX_VITRINE_ENTRAINEMENT} armes · ${total} / ${POINTS_MAX_VITRINE_ENT} points`;
+    compte.classList.toggle("insuffisant", n !== MAX_VITRINE_ENTRAINEMENT || total > POINTS_MAX_VITRINE_ENT);
   };
   majCompte();
 
