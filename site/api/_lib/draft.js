@@ -35,8 +35,10 @@ function bansNormaux(draft) {
   return (draft.bans_bonus_total || 0) - (draft.bans_joker_total || 0);
 }
 
+// Match équilibré grâce à un 2e joker (draft.deux_jokers, cf.
+// evaluerEquilibrageFixe dans _lib/boxes.js) : pas d'échange possible.
 function echangeJokerPossible(draft) {
-  return draft.phase === "bans_bonus" && !draft.echange_joker && bansNormaux(draft) >= BANS_PAR_JOKER;
+  return draft.phase === "bans_bonus" && !draft.echange_joker && !draft.deux_jokers && bansNormaux(draft) >= BANS_PAR_JOKER;
 }
 
 // Échange (annuler = false) ou annulation (annuler = true). Choix en trop
@@ -272,7 +274,9 @@ function casEquilibrage(topFaible, topFort, limites) {
 // seuils) ; un joker n'est limité que par min_persos de la box forte.
 // trace (tableau, mode Équilibrage de l'entraînement) : chaque étape du
 // calcul y est ajoutée (cf. etapeTrace), pour la montrer aux joueurs.
-function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false, trace = null } = {}) {
+// maxJokers : jokers permis (1 ; 2 en second essai d'un match pas
+// équilibrable, cf. evaluerEquilibrageFixe dans _lib/boxes.js).
+function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false, trace = null, maxJokers = 1 } = {}) {
   const bannisFort = new Set();
   const bannisFaible = new Set();
   // Armes libres consommées : portées par un perso au moment de son ban
@@ -375,10 +379,10 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
       etapeTrace("ban", { choix: ban.id, gain: ban.gain, commun: ban.commun, candidats: candidatsBan });
       continue;
     }
-    // Ban impossible : joker (une fois, si le cas le permet ; mode spécial :
-    // autant que nécessaire), sinon fin.
+    // Ban impossible : joker (maxJokers fois au plus, si le cas le permet ;
+    // mode spécial : autant que nécessaire), sinon fin.
     const refus = { id: ban.id, gain: ban.gain, raison: !ban.persosOk ? "min_persos" : resultat.jokers && ban.commun ? "apres_joker" : "limites" };
-    if (!jokerPermis || (resultat.jokers && !special)) {
+    if (!jokerPermis || (resultat.jokers >= maxJokers && !special)) {
       raisonFin = jokerPermis ? "joker_deja_pris" : "joker_interdit";
       if (trace) etapeTrace("refus", { refus, candidats: candidatsBan });
       break;
@@ -410,7 +414,7 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
     trace.push({ type: "fin", raison: raisonFin, ecart: resultat.ecart_apres, equilibrable: resultat.equilibrable });
     resultat.contexte = {
       cas, limites, marge, tolerance: TOLERANCE_FIXE, taille_equipe: TAILLE_EQUIPE, nb_top: VERTICALITE_PERSOS,
-      ecart_points: ecartPoints, joker_permis: jokerPermis, special
+      ecart_points: ecartPoints, joker_permis: jokerPermis, max_jokers: maxJokers, special
     };
   }
   return resultat;
@@ -771,6 +775,7 @@ function etatInitialDraft() {
     bans_joker_total: 0, // bans joker (compris dans bans_bonus_total), interdits à l'adversaire seulement
     bans_joker_choix: [], // jokers en cours de sélection, pas encore confirmés
     echange_joker: false, // BANS_PAR_JOKER bans échangés contre un joker (cf. echangerBansContreJoker)
+    deux_jokers: false, // match équilibrable seulement avec 2 jokers : pas d'échange contre un joker (cf. evaluerEquilibrageFixe)
     equilibrable: true, // équilibrage calculé : false si les box ne s'équilibrent pas (cf. calculerEquilibrageFixe)
     combinaisons_equilibrables: null, // phase non_equilibrable : [{ j1, j2 }] box qui s'équilibrent
     votes_equilibrage: { j1: null, j2: null }, // phase non_equilibrable : "revenir" | "annuler"
@@ -1144,6 +1149,7 @@ function etatRevanche(precedent) {
     equilibrage: precedent.equilibrage || "ancien",
     bans_joker_total: precedent.bans_joker_total || 0,
     echange_joker: !!precedent.echange_joker,
+    deux_jokers: !!precedent.deux_jokers,
     verticalite_j1: precedent.verticalite_j1 ?? null,
     verticalite_j2: precedent.verticalite_j2 ?? null,
     horizontalite_j1: precedent.horizontalite_j1 ?? null,

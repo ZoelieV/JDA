@@ -1336,7 +1336,9 @@ function messageBansEquilibrage(banneur, constat, restant, termine) {
 // Bouton d'échange (ou d'annulation de l'échange), pour celui qui bannit.
 function rendreEchangeJoker(cEstMonTour, nbNormaux) {
   const bouton = document.getElementById("btn-echanger-joker");
-  const possible = !draft.echange_joker && nbNormaux >= BANS_PAR_JOKER;
+  // Match équilibré grâce à un 2e joker : pas d'échange (cf.
+  // echangeJokerPossible, api/_lib/draft.js).
+  const possible = !draft.echange_joker && !draft.deux_jokers && nbNormaux >= BANS_PAR_JOKER;
   bouton.classList.toggle("cache", !cEstMonTour || (!possible && !draft.echange_joker));
   bouton.textContent = draft.echange_joker
     ? `Annuler l'échange (récupérer ${BANS_PAR_JOKER} bans)`
@@ -1454,7 +1456,8 @@ function rendreBansBonus() {
   const joker = nbJokers ? ` (dont ${pluriel(nbJokers, "joker")})` : "";
   messageBansEquilibrage(draft.bans_bonus_joueur,
     `${special ? "Mode spécial : " : ""}${pseudoColore(draft.bans_bonus_joueur)} a ${pluriel(draft.bans_bonus_total, "ban vertical", "bans verticaux")}${joker} sur ${pseudoColore(getAutreRole(draft.bans_bonus_joueur))}.` +
-      (special && draft.equilibrable_special === false ? " Même avec tous ces jokers, l'écart reste au-dessus de la tolérance." : ""),
+      (special && draft.equilibrable_special === false ? " Même avec tous ces jokers, l'écart reste au-dessus de la tolérance." : "") +
+      (draft.deux_jokers ? " Match équilibré grâce à un 2e joker : pas d'échange de bans contre un joker." : ""),
     restant, restant === 0);
 
   const slots = document.getElementById("bans-bonus-slots");

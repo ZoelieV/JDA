@@ -203,6 +203,7 @@ function htmlMethodeEquilibrage(paliers) {
       <li><strong>Les 2 sous le seuil bas</strong> : pas de joker.</li>
       <li>Aucune box ne descend sous le nombre de persos minimum de la draft ; si un ban y obligerait, même règle : le joker, s'il est permis.</li>
       <li>Après le joker, seuls les bans de personnages que le petit joueur n'a pas continuent.</li>
+      <li>Si le match n'est pas équilibrable avec un joker, le calcul est refait avec 2 jokers au plus : s'il s'équilibre ainsi, le match se joue avec ces 2 jokers, mais l'échange de 5 bans contre 1 joker n'est alors plus proposé.</li>
     </ul>
     ${htmlLimitesEquilibrage()}
     <p>Si l'écart prévu reste au-dessus de 30 malgré tout, le match n'est pas équilibrable : les joueurs peuvent revenir au choix des box si une autre combinaison de leurs box s'équilibre (seulement celles-là), ou annuler le match. Si aucune combinaison ne s'équilibre, le match est annulé d'office, ne compte pas et les administrateurs en sont prévenus ; en classé, ces 2 joueurs ne sont plus mis face à face tant qu'aucun des 2 n'a modifié son compte. En entraînement, tu es prévenu et tu choisis de continuer ou de changer de box.</p>

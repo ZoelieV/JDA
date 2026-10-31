@@ -44,7 +44,19 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
   });
   const faible = verticalite(modeles.j1) <= verticalite(modeles.j2) ? "j1" : "j2";
   const fort = faible === "j1" ? "j2" : "j1";
-  const resultat = calculerEquilibrageFixe(modeles[faible], modeles[fort], points.j1 - points.j2, getLimitesEquilibrage(palier), undefined, options);
+  const calculer = (maxJokers, trace) => calculerEquilibrageFixe(modeles[faible], modeles[fort], points.j1 - points.j2, getLimitesEquilibrage(palier), undefined, { ...options, trace, maxJokers });
+  let resultat = calculer(1, options.trace);
+  // Pas équilibrable avec un joker : second essai avec 2 jokers ; s'il
+  // réussit, le match se joue avec ce résultat (deux_jokers : pas d'échange
+  // de bans contre un joker supplémentaire, cf. echangeJokerPossible).
+  if (!resultat.equilibrable && !options.special) {
+    const trace = options.trace ? [] : null;
+    const essai = calculer(2, trace);
+    if (essai.equilibrable) {
+      resultat = { ...essai, deux_jokers: true };
+      if (options.trace) options.trace.splice(0, options.trace.length, ...trace);
+    }
+  }
   return { faible, fort, modeles, resultat };
 }
 
@@ -262,6 +274,7 @@ async function calculerEquilibrage(draft) {
   draft.bans_joker_choix = [];
   draft.bans_joker_total = 0;
   draft.echange_joker = false;
+  draft.deux_jokers = false;
   draft.equilibrable = true;
   draft.ecart_prevu = null;
   draft.etape_bonus = null;
@@ -323,6 +336,7 @@ async function calculerEquilibrage(draft) {
     };
     draft.equilibrable = carnage || resultat.equilibrable;
     draft.bans_bonus_joueur = total > 0 ? faible : null;
+    draft.deux_jokers = !carnage && !!resultat.deux_jokers;
     // Box la plus faible (mode spécial de l'entraînement, cf.
     // handleModeSpecial) : celle qui bannit même sans ban calculé.
     draft.joueur_faible = faible;
