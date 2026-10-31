@@ -13,6 +13,9 @@
 //
 // GET ?stats_site=1 : statistiques du site (administrateurs et mini admins,
 //          cf. _lib/statistiques.js).
+// GET ?dons=1 : historique des dons de Rikoyns et de cosmétiques
+//          (administrateurs et mini admins, cf. lireHistoriqueDons) :
+//          { dons, joueurs: { id: nom } }.
 // GET  : { characters: { id: [...] }, weapons: { id: [...] }, modes: {...},
 //          ajouts: { characters: [...], weapons: [...], boss: [...] },
 //          masques: { characters: [id...], weapons: [id...] },
@@ -99,7 +102,7 @@ const { lireStatistiques } = require("./_lib/statistiques");
 // modifiées, cf. commun/recommandations_stuff.js).
 const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
 const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX } = require("../commun/koyns.js");
-const { estCosmetique, donner, MAX_KOYNS_DON } = require("./_lib/koyns");
+const { estCosmetique, donner, MAX_KOYNS_DON, lireHistoriqueDons } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
@@ -383,6 +386,19 @@ module.exports = async (req, res) => {
       res.setHeader("Cache-Control", "no-store");
       if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
       return res.status(200).json(await lireStatistiques());
+    }
+
+    // Historique des dons (fenêtre Rikoyns) : administrateurs et mini admins.
+    if (req.method === "GET" && req.query?.dons === "1") {
+      res.setHeader("Cache-Control", "no-store");
+      if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+      const dons = await lireHistoriqueDons();
+      const ids = [...new Set(dons.flatMap(d => [d.joueur, d.admin]).filter(Boolean))];
+      const { data } = ids.length
+        ? await supabase.from("profiles").select("discord_id, discord_username, discord_global_name").in("discord_id", ids)
+        : { data: [] };
+      const joueurs = Object.fromEntries((data || []).map(p => [p.discord_id, p.discord_global_name || p.discord_username || p.discord_id]));
+      return res.status(200).json({ dons, joueurs });
     }
 
     if (req.method === "GET") {

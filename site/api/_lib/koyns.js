@@ -322,12 +322,48 @@ async function donner(discordId, { koyns = 0, cosmetiques = [] }, admin) {
   if (koyns) {
     await ajouterMouvement({ discord_id: discordId, montant: koyns, raison: "don", ref: `don:${admin}:${Date.now()}` });
   }
+  // Source "don:<administrateur>" (historique des dons, cf.
+  // lireHistoriqueDons ; anciens dons : "don", sans administrateur).
   if (cosmetiques.length) {
     const { error } = await supabase
       .from("cosmetiques_possedes")
-      .upsert(cosmetiques.map(cosmetique => ({ discord_id: discordId, cosmetique, source: "don" })), { onConflict: "discord_id,cosmetique", ignoreDuplicates: true });
+      .upsert(cosmetiques.map(cosmetique => ({ discord_id: discordId, cosmetique, source: `don:${admin}` })), { onConflict: "discord_id,cosmetique", ignoreDuplicates: true });
     if (error) throw error;
   }
+}
+
+// ---- Historique des dons (fenêtre Rikoyns de l'admin) ----
+// Rikoyns (koyns_mouvements, raison "don", ref "don:<admin>:<ms>") et
+// cosmétiques donnés (cosmetiques_possedes, source "don" ou
+// "don:<admin>"), du plus récent au plus ancien ; un don qui mêle les deux
+// (même joueur, à quelques secondes) n'est qu'une ligne. Cosmétique déjà
+// possédé au moment du don : pas réécrit, donc absent.
+// -> [{ date, joueur, admin (id ou null), koyns, cosmetiques: [ids] }]
+const ECART_DON_MS = 15 * 1000;
+
+async function lireHistoriqueDons(limite = 200) {
+  const [mouvements, cosmetiquesDonnes] = await Promise.all([
+    supabase.from("koyns_mouvements").select("discord_id, montant, ref, cree_le")
+      .eq("raison", "don").order("cree_le", { ascending: false }).limit(limite),
+    supabase.from("cosmetiques_possedes").select("discord_id, cosmetique, source, obtenu_le")
+      .like("source", "don%").order("obtenu_le", { ascending: false }).limit(limite * 5)
+  ]);
+  if (mouvements.error) throw mouvements.error;
+  if (cosmetiquesDonnes.error) throw cosmetiquesDonnes.error;
+  const evenements = [
+    ...(mouvements.data || []).map(m => ({ date: Date.parse(m.cree_le), joueur: m.discord_id, admin: String(m.ref).split(":")[1] || null, koyns: m.montant, cosmetiques: [] })),
+    ...(cosmetiquesDonnes.data || []).map(c => ({ date: Date.parse(c.obtenu_le), joueur: c.discord_id, admin: String(c.source).split(":")[1] || null, koyns: 0, cosmetiques: [c.cosmetique] }))
+  ].sort((a, b) => b.date - a.date);
+  const dons = [];
+  evenements.forEach(e => {
+    const meme = dons.find(d => d.joueur === e.joueur && Math.abs(d.date - e.date) <= ECART_DON_MS &&
+      (!d.admin || !e.admin || d.admin === e.admin));
+    if (!meme) return dons.push({ ...e });
+    meme.koyns += e.koyns;
+    meme.cosmetiques.push(...e.cosmetiques);
+    meme.admin ||= e.admin;
+  });
+  return dons.slice(0, limite).map(d => ({ ...d, date: new Date(d.date).toISOString() }));
 }
 
 // ---- Bonus de connexion d'événement (config.bonus_connexion : { debut,
@@ -434,6 +470,7 @@ module.exports = {
   MAX_GAMES_PAR_ADVERSAIRE,
   MAX_KOYNS_DON,
   estCosmetique,
+  lireHistoriqueDons,
   lirePossedes,
   etatKoyns,
   filtrerParametresPossedes,

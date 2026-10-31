@@ -91,6 +91,7 @@ async function ouvrirKoyns() {
   // Catalogue (noms et miniatures des pastilles) chargé avant le rendu.
   const [config] = await Promise.all([chargerPointsAdmin(), chargerCatalogueChoix().catch(() => null), chargerJoueursKoyns()]);
   rendreDon();
+  chargerHistoriqueDons();
   exclusifsKoyns = Array.isArray(config?.cosmetiques_exclusifs) ? [...config.cosmetiques_exclusifs] : [];
   rendreExclusifs();
   tirageKoyns = Array.isArray(config?.cosmetiques_tirage) ? [...config.cosmetiques_tirage] : [];
@@ -113,6 +114,37 @@ async function enregistrerPrix() {
   }
 }
 
+// ---- Historique des dons (GET /api/points?dons=1, cf. lireHistoriqueDons
+// dans api/_lib/koyns.js) : date, administrateur -> joueur, Rikoyns,
+// cosmétiques (miniatures). ----
+async function chargerHistoriqueDons() {
+  const zone = document.getElementById("liste-dons");
+  zone.innerHTML = `<span class="aide-apercu">Chargement…</span>`;
+  try {
+    const reponse = await fetch("/api/points?dons=1", { credentials: "include" });
+    const donnees = await reponse.json().catch(() => ({}));
+    if (!reponse.ok) throw new Error(donnees.error || "Historique indisponible.");
+    const nom = id => echapper(donnees.joueurs?.[id] || id);
+    zone.innerHTML = donnees.dons.length ? donnees.dons.map(don => {
+      const date = new Date(don.date).toLocaleString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const koyns = don.koyns ? `<span class="koyns-don${don.koyns < 0 ? " retrait" : ""}">${don.koyns > 0 ? "+" : ""}${don.koyns} <img class="icone-koyn" src="/DB/images/others/rikoyn.webp" alt="Rikoyns"></span>` : "";
+      const cosmetiques = don.cosmetiques.map(id => {
+        const info = infoCosmetiqueAdmin(id);
+        return `<span class="cosmetique-don" title="${echapper(`${info.type} : ${info.nom}`)}">${info.image ? `<img src="${echapper(info.image)}" alt="" loading="lazy">` : echapper(info.nom)}</span>`;
+      }).join("");
+      return `
+        <div class="ligne-don">
+          <span class="date-don">${date}</span>
+          <span class="acteurs-don">${don.admin ? nom(don.admin) : `<span class="aide-apercu">admin inconnu</span>`} → <strong>${nom(don.joueur)}</strong></span>
+          <span class="contenu-don">${koyns}${cosmetiques}</span>
+        </div>`;
+    }).join("") : `<span class="aide-apercu">Aucun don pour l'instant.</span>`;
+  } catch (erreur) {
+    console.error(erreur);
+    zone.innerHTML = `<span class="message-ajout erreur">${echapper(erreur.message)}</span>`;
+  }
+}
+
 async function donnerKoyns() {
   const discordId = document.getElementById("don-joueur").value;
   const koyns = Number(document.getElementById("don-koyns").value || 0);
@@ -129,6 +161,7 @@ async function donnerKoyns() {
     const donnees = await reponse.json().catch(() => ({}));
     if (!reponse.ok) throw new Error(donnees.error || "Erreur d'enregistrement.");
     messageKoyns("message-don", "Envoyé.", "succes");
+    chargerHistoriqueDons();
     document.getElementById("don-koyns").value = "";
     donCosmetiques = [];
     rendreDon();

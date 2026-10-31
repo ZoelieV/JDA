@@ -2711,3 +2711,73 @@ body.page-equilibrage #tuiles-admin {
   width: 1rem;
   height: 1rem;
 }
+
+/* ---- Historique des dons (fenêtre Rikoyns, cf. chargerHistoriqueDons) ---- */
+.historique-dons summary {
+  cursor: pointer;
+}
+
+.liste-dons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.ligne-don {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(10rem, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  font-size: 0.875rem;
+}
+
+.date-don {
+  color: var(--texte-doux, rgba(255, 255, 255, 0.7));
+  font-variant-numeric: tabular-nums;
+}
+
+.contenu-don {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+.koyns-don {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #3ecf6a;
+  font-weight: bold;
+}
+
+.koyns-don.retrait {
+  color: #ff5a5a;
+}
+
+.koyns-don .icone-koyn {
+  width: 1rem;
+  height: 1rem;
+}
+
+.cosmetique-don img {
+  display: block;
+  height: 1.75rem;
+  border-radius: 0.25rem;
+}
+
+@media (max-width: 700px) {
+  .ligne-don {
+    grid-template-columns: 1fr;
+  }
+
+  .contenu-don {
+    justify-content: flex-start;
+  }
+}
