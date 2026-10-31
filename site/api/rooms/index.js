@@ -365,7 +365,7 @@ module.exports = async (req, res) => {
       try {
         return res.status(200).json(await chercher(user.id, roomIdAttente, req.body.type, mode));
       } catch (erreur) {
-        if (erreur?.status) return res.status(erreur.status).json({ error: erreur.message });
+        if (erreur?.status) return res.status(erreur.status).json({ error: erreur.message, ...(erreur.room_id ? { room_id: erreur.room_id } : {}) });
         throw erreur;
       }
     }
