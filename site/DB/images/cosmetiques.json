@@ -1632,6 +1632,12 @@
    "miniature": "bg_miniatures/legendes_locales/churldric_ll.webp"
   },
   {
+   "id": "bg/legendes_locales/defi_mer_dantan.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/defi_mer_dantan.webp",
+   "miniature": "bg_miniatures/legendes_locales/defi_mer_dantan.webp"
+  },
+  {
    "id": "bg/legendes_locales/deianeira_ll.png",
    "categorie": "legendes_locales",
    "image": "bg_web/legendes_locales/deianeira_ll.webp",
