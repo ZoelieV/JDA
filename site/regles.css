@@ -124,7 +124,9 @@
   background-color: var(--fond-carte);
   border: 1px solid var(--bordure);
   border-radius: 0.75rem;
-  scroll-margin-top: 1rem;
+  /* Lien du sommaire : section juste sous l'en-tête figé du site
+     (--hauteur-entete, cf. commun/site.js), pas cachée dessous. */
+  scroll-margin-top: calc(var(--hauteur-entete, 0px) + 1rem);
 }
 
 .section-regles[open] {
