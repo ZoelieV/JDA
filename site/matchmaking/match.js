@@ -58,6 +58,9 @@ let typeRoom = "prive"; // "prive" | "matchmaking" | "classe" (trophées en fin 
 let moiDiscordId = null;
 let monRole = null; // "j1" | "j2" | null (spectateur)
 let personnagesBase = [];   // characters.json (un Voyageur par élément)
+// Catalogue de draft sans variantes ni skins (picks : versions de leur
+// joueur appliquées dessus, cf. creerCaseRecap).
+let personnagesDraftBase = [];
 let personnagesData = [];   // catalogue de draft (un seul Voyageur), variantes (Voyageur, Manekin) du joueur connecté
 let armesData = [];
 let bossData = [];
@@ -438,7 +441,8 @@ async function definirDraft(nouveauDraft) {
     // Logo du filtre Personnages : tête du même Voyageur que la grille.
     const logoPersonnages = document.querySelector('#filtres-vue [data-vue="characters"] img');
     if (logoPersonnages) logoPersonnages.src = `../DB/${getIconeVuePersonnages(parametresVue)}`;
-    personnagesData = appliquerVariantes(regrouperPourDraft(personnagesBase), parametresVue);
+    personnagesDraftBase = regrouperPourDraft(personnagesBase);
+    personnagesData = appliquerVariantes(personnagesDraftBase, parametresVue);
     document.querySelectorAll(".grille-pool").forEach(grille => delete grille.dataset.cle);
   }
 
@@ -2646,7 +2650,11 @@ const PHASES_RECAP = ["temps", "verification", "termine", "litige"];
 function creerCaseRecap(personnage, role, element = null) {
   const slot = document.createElement("div");
   slot.className = "slot-pick";
-  remplirCaseTableau(slot, appliquerVariante(personnage, getJoueurDataParRole(role)?.parametres), element);
+  // Variante et skin du joueur qui a pické, appliqués sur le perso sans
+  // ceux de la personne qui regarde (sinon son skin restait affiché quand
+  // le joueur n'en a pas).
+  const base = personnagesDraftBase.find(p => p.id === personnage.id) || personnage;
+  remplirCaseTableau(slot, appliquerVariante(base, getJoueurDataParRole(role)?.parametres), element);
 
   // À côté du personnage, côté centre de l'écran : à sa droite pour j1, à
   // sa gauche pour j2 (la case de j2 est en miroir).
@@ -3890,7 +3898,8 @@ async function demarrer() {
       chargerFondsBoss(),
       chargerChoixFiltresDraft()
     ]);
-    personnagesData = regrouperPourDraft(personnagesBase);
+    personnagesDraftBase = regrouperPourDraft(personnagesBase);
+    personnagesData = personnagesDraftBase;
 
     initialiserFiltresTri();
     initialiserGrillesPersos();
