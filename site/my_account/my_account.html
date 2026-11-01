@@ -199,6 +199,11 @@
             <label class="filtre-icone" title="Bouclier"><input type="checkbox" class="filtre-soutien" value="shield"><img src="/DB/images/others/shield.webp" alt="Bouclier"></label>
             <label class="filtre-icone" title="Soin"><input type="checkbox" class="filtre-soutien" value="heal"><img src="/DB/images/others/heal.webp" alt="Soin"></label>
           </div>
+          <!-- Persos de la saison (config.bonus_saison, contour doré) :
+               seulement s'il y en a (cf. afficherCollection). -->
+          <div class="groupe-filtres" id="filtres-saison" hidden>
+            <label class="filtre-texte" title="Persos de la saison : +3 trophées s'ils sont dans ton équipe en classé"><input type="checkbox" id="filtre-saison"><span>🌟 Saison</span></label>
+          </div>
           <!-- Favoris : filtre (seuls les favoris), activé / désactivé. -->
           <div class="groupe-filtres">
             <button type="button" class="tri-btn filtre-favoris" data-tri="favoris" title="N'afficher que les favoris"><img class="tri-logo" src="/DB/images/others/favourite.webp" alt="Favoris"></button>
@@ -322,7 +327,7 @@
   <script src="/commun/tri.js?v=21"></script>
   <script src="/commun/personnalisation.js?v=40"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
-  <script src="/my_account/my_account.js?v=82"></script>
+  <script src="/my_account/my_account.js?v=83"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=21"></script>
 </body>

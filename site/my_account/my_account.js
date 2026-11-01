@@ -865,7 +865,7 @@ function getValeursTri(vueActive, collectionProfil) {
   };
 }
 
-function mettreAJourBoutonsTri() {
+function mettreAJourBoutonsTri(personnages = []) {
   const vueActive = getVueActive();
 
   // Pas de niveau pour les armes : tri masqué dans cette vue.
@@ -884,6 +884,8 @@ function mettreAJourBoutonsTri() {
   document.getElementById("filtres-voeux").hidden = vueActive === "weapons";
   document.getElementById("filtres-factions").hidden = vueActive === "weapons";
   document.getElementById("filtres-soutiens").hidden = vueActive === "weapons";
+  // Saison : persos seulement, et seulement s'il y a des persos de saison.
+  document.getElementById("filtres-saison").hidden = vueActive === "weapons" || !personnages.some(p => p.bonusSaison);
   document.getElementById("filtres-categories-armes").hidden = vueActive !== "weapons";
 }
 
@@ -961,9 +963,13 @@ function rendreCollection(personnages, armes, profil) {
     ? "N'afficher que ce que je possède"
     : "N'afficher que ce qui est sélectionné dans cette box";
 
-  mettreAJourBoutonsTri();
+  mettreAJourBoutonsTri(personnages);
+
+  // Persos de la saison seulement (filtre visible en vue Personnages).
+  const saisonSeulement = vueActive === "characters" && document.getElementById("filtre-saison").checked;
 
   const itemsFiltres = items.filter(item => {
+    if (saisonSeulement && !item.bonusSaison) return false;
     const typeValeur = getTypeValeur(item, vueActive);
     const rareteValeur = item.rarete != null ? String(item.rarete) : "";
 
@@ -1423,7 +1429,7 @@ async function initialiserPage() {
     afficherCollection(personnages, armes, profil);
     mettreAJourTotalBox(personnages, armes, profil);
 
-    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-faction, .filtre-soutien, .filtre-categorie-arme, #filtre-possedes").forEach(input => {
+    document.querySelectorAll(".filtre-element, .filtre-arme, .filtre-rarete, .filtre-voeu-input, .filtre-faction, .filtre-soutien, .filtre-categorie-arme, #filtre-possedes, #filtre-saison").forEach(input => {
       input.addEventListener("change", () => {
         // Factions exclusives (cf. basculerFiltreFaction) : une seule cochée.
         if (input.classList.contains("filtre-faction") && input.checked) {
