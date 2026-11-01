@@ -1823,7 +1823,10 @@ h1 {
     top: 0.75rem;
     max-height: calc(100vh - 1.5rem);
     overflow-y: auto;
+    /* Barre de défilement du site (dorée, fond transparent), comme les
+       listes déroulantes (commun/listes.css). */
     scrollbar-width: thin;
+    scrollbar-color: rgba(245, 197, 66, 0.55) transparent;
   }
 
   #zone-match.mode-draft #colonne-j1 {
