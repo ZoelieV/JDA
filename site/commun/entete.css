@@ -858,6 +858,15 @@ body::before {
   color: #3ecf6a;
 }
 
+.recompenses-invalide {
+  border-left-color: #ff5a5a;
+}
+
+.recompenses-sanction {
+  color: #ff5a5a;
+  font-weight: bold;
+}
+
 .recompenses-message strong.retrait {
   color: #ff5a5a;
 }

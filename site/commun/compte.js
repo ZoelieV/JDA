@@ -270,7 +270,11 @@
 
   // messages : mots des administrateurs avec un don ou un retrait
   // ({ montant, message }) ; retire : Rikoyns retirés par un administrateur.
-  function afficherRecompenses({ koyns = {}, cosmetiques = [], tournois = [], messages = [], retire = 0 }, ouvrirPersonnalisation) {
+  // invalides : matchs invalidés après un signalement ({ date, boss,
+  // retire (Rikoyns repris), sanction }).
+  const SANCTIONS_INVALIDATION = { semaine: "Ban du classé pour 1 semaine.", saison: "Ban du classé jusqu'à la fin de la saison.", definitif: "Ban définitif du classé." };
+
+  function afficherRecompenses({ koyns = {}, cosmetiques = [], tournois = [], messages = [], retire = 0, invalides = [] }, ouvrirPersonnalisation) {
     const total = Object.values(koyns).reduce((somme, gain) => somme + gain.total, 0);
     const gains = total || cosmetiques.length || tournois.length;
     const montantMessage = montant => montant ? `<strong class="${montant < 0 ? "retrait" : ""}">${montant > 0 ? "+" : ""}${montant} <img src="${ICONES}rikoyn.webp" alt="Rikoyns"></strong>` : "";
@@ -279,7 +283,7 @@
     fenetre.setAttribute("aria-label", "Récompenses reçues");
     fenetre.innerHTML = `
       <div class="recompenses-eclat" aria-hidden="true"></div>
-      <h2>${tournois.length ? "Victoire !" : gains ? "Récompenses reçues !" : retire ? "Rikoyns retirés" : "Message de l'équipe"}</h2>
+      <h2>${tournois.length ? "Victoire !" : gains ? "Récompenses reçues !" : invalides.length ? (invalides.length > 1 ? "Matchs invalidés" : "Match invalidé") : retire ? "Rikoyns retirés" : "Message de l'équipe"}</h2>
       ${tournois.map(t => `
         <div class="recompenses-tournoi">
           <p class="recompenses-tournoi-titre">🏆 Tu remportes le tournoi « ${echapper(t.nom)} » !</p>
@@ -291,6 +295,18 @@
         <ul class="recompenses-lignes">${Object.entries(koyns).map(([raison, gain]) => `
           <li><span>${echapper((LIBELLES_GAINS[raison] || (() => "Gain"))(gain.nb))}</span><strong>+${gain.total}</strong></li>`).join("")}
         </ul>` : ""}
+      ${invalides.length ? `
+        <div class="recompenses-messages">${invalides.map(m => {
+          const quand = m.date ? new Date(m.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "";
+          const quoi = [m.boss ? `contre ${echapper(m.boss)}` : "", quand ? `du ${quand}` : ""].filter(Boolean).join(" ");
+          return `
+          <blockquote class="recompenses-message recompenses-invalide">
+            <span>⚠️ Ton match${quoi ? ` ${quoi}` : ""} a été invalidé par un administrateur après un signalement : il ne compte pas (classement, trophées, statistiques).</span>
+            ${m.retire ? `${montantMessage(-m.retire)}` : ""}
+            ${SANCTIONS_INVALIDATION[m.sanction] ? `<span class="recompenses-sanction">${SANCTIONS_INVALIDATION[m.sanction]}</span>` : ""}
+          </blockquote>`;
+        }).join("")}
+        </div>` : ""}
       ${retire ? `
         <p class="recompenses-total recompenses-retrait">-${retire} <img src="${ICONES}rikoyn.webp" alt=""> <span>Rikoyns retirés par un administrateur</span></p>` : ""}
       ${messages.length ? `

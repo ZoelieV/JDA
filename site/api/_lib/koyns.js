@@ -316,6 +316,19 @@ async function reprendrePartie(ref) {
   }
 }
 
+// Match invalidé (signalement, cf. traiterSignalement) : mouvement à 0
+// Rikoyn pour chacun de ses joueurs, pour le prévenir (fenêtre des
+// récompenses, cf. lireNouveautes ; Rikoyns repris : cf. reprendrePartie).
+async function noterInvalidation(match) {
+  if (!match?.id) return;
+  const joueurs = match.equipes
+    ? ["j1", "j2"].flatMap(role => (match.equipes[role]?.membres || []).map(m => m.discord_id))
+    : [match.player1_discord_id, match.player2_discord_id];
+  for (const discordId of new Set(joueurs.filter(Boolean))) {
+    await ajouterMouvement({ discord_id: discordId, montant: 0, raison: "invalidation", ref: `invalidation:match:${match.id}` });
+  }
+}
+
 // Don d'un administrateur : Rikoyns (positif ou négatif) et / ou
 // cosmétiques (un ou plusieurs), message au joueur facultatif (montré dans
 // sa fenêtre des récompenses, cf. lireNouveautes ; cosmétiques seuls :
@@ -453,7 +466,7 @@ async function reclamerBonusConnexion(discordId) {
 // gardée par le navigateur, NOUVEAUTES_MAX_MS au plus en arrière) : gains
 // positifs seulement (pas les achats, ni les reprises).
 const NOUVEAUTES_MAX_MS = 7 * 24 * 3600 * 1000;
-const RAISONS_NOTIFIEES = ["match", "don", "connexion", "depart", "tournoi"];
+const RAISONS_NOTIFIEES = ["match", "don", "connexion", "depart", "tournoi", "reprise", "invalidation"];
 
 // Aperçu d'un cosmétique reçu : { id, type, image } (image : sous DB/).
 function apercuCosmetique(id) {
@@ -489,7 +502,14 @@ async function lireNouveautes(discordId, depuis) {
   // Messages des administrateurs (dons et retraits) : { montant, message }.
   const messages = [];
   let retire = 0;
+  // Matchs invalidés : { match_id: Rikoyns repris }.
+  const invalides = new Map();
   (mouvements.data || []).forEach(({ montant, raison, ref, message }) => {
+    if (raison === "reprise" || raison === "invalidation") {
+      const id = String(ref).match(/match:(.+)$/)?.[1];
+      if (id) invalides.set(id, (invalides.get(id) || 0) + (raison === "reprise" ? -montant : 0));
+      return;
+    }
     if (raison === "tournoi") {
       idsTournois.push(String(ref).replace(/^tournoi:/, ""));
       return;
@@ -508,8 +528,34 @@ async function lireNouveautes(discordId, depuis) {
     tournois = (data || []).map(ligne => ({ id: ligne.data.id, nom: ligne.data.nom, recompense: ligne.data.recompense || null }));
   }
   const cosmetiquesRecus = (recus.data || []).map(ligne => apercuCosmetique(ligne.cosmetique));
-  if (!Object.keys(koyns).length && !cosmetiquesRecus.length && !tournois.length && !messages.length && !retire) return null;
-  return { koyns, cosmetiques: cosmetiquesRecus, tournois, messages, retire };
+  const matchsInvalides = await decrireInvalidations(discordId, invalides);
+  if (!Object.keys(koyns).length && !cosmetiquesRecus.length && !tournois.length && !messages.length && !retire && !matchsInvalides.length) return null;
+  return { koyns, cosmetiques: cosmetiquesRecus, tournois, messages, retire, invalides: matchsInvalides };
+}
+
+// Matchs invalidés du joueur : date, boss, Rikoyns repris et sanction
+// donnée pour ce match (ban du classé).
+// -> [{ match_id, date, boss, retire, sanction }]
+async function decrireInvalidations(discordId, invalides) {
+  if (!invalides.size) return [];
+  const ids = [...invalides.keys()];
+  const [matchs, sanctions] = await Promise.all([
+    supabase.from("match_history").select("id, created_at, boss_id").in("id", ids),
+    supabase.from("sanctions").select("match_id, type").eq("discord_id", discordId).in("match_id", ids)
+  ]);
+  const { getBossParId } = require("./boss");
+  const parId = new Map((matchs.data || []).map(m => [String(m.id), m]));
+  const sanctionDe = new Map((sanctions.data || []).map(s => [String(s.match_id), s.type]));
+  return ids.map(id => {
+    const match = parId.get(id);
+    return {
+      match_id: id,
+      date: match?.created_at || null,
+      boss: match ? getBossParId(match.boss_id)?.nom || null : null,
+      retire: invalides.get(id),
+      sanction: sanctionDe.get(id) || null
+    };
+  });
 }
 
 // Victoire d'un tournoi : mouvement à 0 Rikoyn (une fois par joueur et par
@@ -529,6 +575,7 @@ module.exports = {
   estCosmetique,
   lireHistoriqueDons,
   lireHistoriqueRetraits,
+  noterInvalidation,
   lirePossedes,
   etatKoyns,
   filtrerParametresPossedes,

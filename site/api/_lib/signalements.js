@@ -14,7 +14,7 @@ const { debutJournee } = require("./journee");
 const { banClasse, SANCTIONS, finSanction } = require("./sanctions");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./temps");
 const { calculerTrophees } = require("./trophees");
-const { reprendrePartie } = require("./koyns");
+const { reprendrePartie, noterInvalidation } = require("./koyns");
 
 const SIGNALEMENTS_JOUR_MAX = 10;
 const COMMENTAIRE_SIGNALEMENT_MAX = 500;
@@ -176,7 +176,11 @@ async function traiterSignalement(req, res, user) {
     if (erreurMaj) throw erreurMaj;
   }
   // Match invalidé : Rikoyns gagnés repris (cf. _lib/koyns.js).
-  if (decision === "invalide") await reprendrePartie(`match:${match.id}`);
+  // Joueurs prévenus à leur prochaine visite (cf. noterInvalidation).
+  if (decision === "invalide") {
+    await reprendrePartie(`match:${match.id}`);
+    await noterInvalidation(match);
+  }
   if (bans.length) {
     const { error: erreurBans } = await supabase.from("sanctions").insert(bans);
     if (erreurBans) {
