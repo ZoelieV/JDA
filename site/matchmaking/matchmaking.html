@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/commun/entete.css?v=rem42">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/namecards.css?v=3">
-<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=35">
+<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=36">
   <link rel="stylesheet" href="/commun/site.css?v=14">
 <script src="/commun/fond.js?v=17"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -151,10 +151,12 @@
   <!-- Configuration de l'entraînement (cf. creerEntrainement, api/rooms/index.js). -->
   <section id="detail-entrainement" class="panneau detail-match panneau-entrainement cache" data-detail="entrainement">
     <h2>Entraînement <img class="icone-texte" src="/DB/images/others/Icon_Training_Guide.webp" alt=""></h2>
-    <p>Choisis la draft, ta box et celle d'en face (les tiennes, celles des autres joueurs ou une box
-      personnalisée), le boss et le J1. Seul, tu joues les deux rôles ; partage le lien pour te faire aider.
-      En équipe (2v2 à 4v4) : tu construis les vitrines des 2 équipes et tu joues les deux.
-      Visible seulement par toi dans l'historique.</p>
+    <ul class="liste-entrainement">
+      <li>Choisis la draft, ta box et celle d'en face (les tiennes, celles des autres joueurs ou une box personnalisée), le boss et le J1.</li>
+      <li>Seul, tu joues les deux rôles ; partage le lien pour te faire aider.</li>
+      <li>En équipe (2v2 à 4v4) : tu construis les vitrines des 2 équipes et tu joues les deux.</li>
+      <li>Visible seulement par toi dans l'historique.</li>
+    </ul>
 
     <!-- Format : 1v1 (box) ou en équipe (vitrines construites par le
          lanceur, cf. rendreVitrinesEntrainement). -->
