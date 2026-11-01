@@ -119,17 +119,31 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
   }
   let retenu = null;
   let premier = null;
+  const tentatives = [];
   for (const essai of essais) {
     const trace = options.trace ? [] : null;
     const resultat = calculer(essai.version, essai.maxJokers, trace);
     const tentative = { ...essai, resultat, trace };
     premier ||= tentative;
+    tentatives.push(tentative);
     if (resultat.equilibrable) { retenu = tentative; break; }
   }
   const choisi = retenu || premier;
-  if (options.trace) options.trace.splice(0, options.trace.length, ...choisi.trace);
+  // Déroulé montré (mode Équilibrage, options.trace) : l'essai retenu, ou,
+  // si aucun n'est équilibrable, celui qui va le plus loin (plus petit
+  // écart final ; à égalité, le premier), avec la liste de tous les essais
+  // (detail.essais).
+  const montre = retenu || tentatives.reduce((m, t) => (t.resultat.ecart_apres < m.resultat.ecart_apres ? t : m));
+  if (options.trace) options.trace.splice(0, options.trace.length, ...montre.trace);
+  const detail = {
+    resultat: { ...montre.resultat, deux_jokers: montre.maxJokers === 2, armes_office: montre.version.office },
+    essais: tentatives.map(t => ({
+      max_jokers: t.maxJokers, armes_office: !!t.version.office,
+      ecart_apres: t.resultat.ecart_apres, equilibrable: t.resultat.equilibrable, montre: t === montre
+    }))
+  };
   const resultat = { ...choisi.resultat, deux_jokers: choisi.maxJokers === 2, armes_office: choisi.version.office };
-  return { faible, fort, modeles: choisi.version.modeles, resultat };
+  return { faible, fort, modeles: choisi.version.modeles, resultat, detail };
 }
 
 // Box de match d'un joueur : la full box et ses box opti (la box "stuff"
@@ -202,11 +216,11 @@ async function calculerModeSpecial(draft) {
   const boxes = await chargerDonneesBoxes(draft);
   const palier = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
   const trace = draft.entrainement?.detail_equilibrage && draft.mode_theatre !== "carnage" ? [] : null;
-  const { faible, fort, resultat } = evaluerEquilibrageFixe(boxes, palier, { special: true, trace });
+  const { faible, fort, resultat, detail } = evaluerEquilibrageFixe(boxes, palier, { special: true, trace });
   // Horizontal : inchangé (persos horizontaux figés au 1er calcul).
   if (trace) {
     const horizontal = draft.detail_equilibrage?.horizontal || null;
-    draft.detail_equilibrage = { ...detailEquilibrage(faible, fort, resultat, trace), horizontal };
+    draft.detail_equilibrage = { ...detailEquilibrage(faible, fort, detail, trace), horizontal };
     if (horizontal) draft.detail_equilibrage.horizontal_prevu = horizontalPrevu(draft, faible, trace);
   }
   draft.bans_bonus_total = resultat.bans + resultat.jokers;
@@ -289,8 +303,11 @@ async function chargerDonneesBoxes(draft) {
 // matchmaking/equilibrage.js). Rôles du calcul : places provisoires, les
 // mêmes pendant les bans (le tirage J1 / J2 vient après). id : nouveau à
 // chaque calcul (le déroulé est remontré).
-function detailEquilibrage(faible, fort, resultat, trace) {
+// detail : { resultat (essai montré), essais } (cf. evaluerEquilibrageFixe).
+function detailEquilibrage(faible, fort, { resultat, essais }, trace) {
   return {
+    essais,
+    armes_office: !!resultat.armes_office,
     id: Date.now(),
     faible,
     fort,
@@ -370,9 +387,9 @@ async function calculerEquilibrage(draft) {
     // modeleEquilibrage, _lib/draft.js) ; limites du palier de la draft.
     const palier = resoudreTheatre(draft.mode_theatre, draft.theatre_j1, draft.theatre_j2);
     const trace = draft.entrainement?.detail_equilibrage && draft.mode_theatre !== "carnage" ? [] : null;
-    const { faible, fort, modeles, resultat } = evaluerEquilibrageFixe(boxes, palier, { trace });
+    const { faible, fort, modeles, resultat, detail } = evaluerEquilibrageFixe(boxes, palier, { trace });
     draft.min_persos_equilibrage = getLimitesEquilibrage(palier).min_persos;
-    if (trace) draft.detail_equilibrage = detailEquilibrage(faible, fort, resultat, trace);
+    if (trace) draft.detail_equilibrage = detailEquilibrage(faible, fort, detail, trace);
     // Gros écart de points : les armes d'un perso banni pendant les bans
     // d'équilibrage partent avec lui (cf. bannirArmesPerso, _lib/draft.js).
     const armesBannies = !carnage && Math.abs(ecart) >= SEUIL_ARMES_BANNIES;

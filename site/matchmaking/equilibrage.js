@@ -237,8 +237,24 @@
       <p class="eq-contexte">
         Box faible : ${nomRole(d.faible)} (top ${d.nb_top} : ${d.top_faible} pts) · box forte : ${nomRole(d.fort)} (top ${d.nb_top} : ${d.top_fort} pts).<br>
         ${(TEXTES_CAS[d.cas] || (() => ""))(d.limites)}${d.special ? " <b>Mode spécial</b> : autant de jokers que nécessaire." : ""}<br>
+        ${htmlEssais(d)}
         Aucune box sous ${d.limites.min_persos} persos. Écart de points entre les box : ${Math.abs(d.ecart_points)}. Chaque arme ne compte qu'une fois : l'arme d'un perso banni (signature ou arme libre qu'il portait) ne revient sur aucun autre perso${Math.abs(d.ecart_points) >= 4000 ? " ; 4000 pts d'écart ou plus : elle sera aussi bannie pour le combat avec les vrais bans" : ""}.
       </p>`;
+  }
+
+  // Essais du calcul (cf. evaluerEquilibrageFixe, api/_lib/boxes.js) :
+  // 1 joker, 2 jokers, puis les mêmes avec les armes support et signatures
+  // 5★ bannies d'office ; le déroulé montré est le retenu, ou, si aucun
+  // n'est équilibrable, celui qui va le plus loin.
+  function htmlEssais(d) {
+    if (!d.essais || d.essais.length < 2) return d.armes_office ? "Armes support et signatures 5★ bannies d'office pour ce calcul.<br>" : "";
+    const libelle = e => `${e.armes_office ? "armes bannies d'office + " : ""}${e.max_jokers} joker${e.max_jokers > 1 ? "s" : ""}`;
+    const liste = d.essais.map(e => {
+      const texte = `${libelle(e)} → écart <b>${e.ecart_apres}</b>${e.equilibrable ? " (équilibrable)" : ""}`;
+      return e.montre ? `<span class="eq-essai-montre">${texte} : déroulé ci-dessous</span>` : texte;
+    }).join(" · ");
+    const aucun = !d.essais.some(e => e.equilibrable);
+    return `Essais : ${liste}.${aucun ? " Aucun n'est équilibrable : le déroulé montré est celui qui va le plus loin." : ""}<br>`;
   }
 
   // Top 12 d'une box : barres empilées (perso / signature / arme libre).

@@ -664,3 +664,9 @@ body.eq-ouverte {
     display: none;
   }
 }
+
+/* Essai dont le déroulé est montré (cf. htmlEssais). */
+.eq-essai-montre {
+  color: #f5c542;
+  font-weight: bold;
+}
