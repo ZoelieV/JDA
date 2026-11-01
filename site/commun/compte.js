@@ -269,7 +269,8 @@
   };
 
   // messages : mots des administrateurs avec un don ou un retrait
-  // ({ montant, message }) ; retire : Rikoyns retirés par un administrateur.
+  // ({ montant, message } ; montant déjà dans les totaux, pas répété) ;
+  // retire : Rikoyns retirés par un administrateur.
   // invalides : matchs invalidés après un signalement ({ date, boss,
   // retire (Rikoyns repris), sanction }).
   const SANCTIONS_INVALIDATION = { semaine: "Ban du classé pour 1 semaine.", saison: "Ban du classé jusqu'à la fin de la saison.", definitif: "Ban définitif du classé." };
@@ -311,7 +312,7 @@
         <p class="recompenses-total recompenses-retrait">-${retire} <img src="${ICONES}rikoyn.webp" alt=""> <span>Rikoyns retirés par un administrateur</span></p>` : ""}
       ${messages.length ? `
         <div class="recompenses-messages">${messages.map(m => `
-          <blockquote class="recompenses-message">${montantMessage(m.montant)}<span>${echapper(m.message)}</span></blockquote>`).join("")}
+          <blockquote class="recompenses-message"><span>${echapper(m.message)}</span></blockquote>`).join("")}
         </div>` : ""}
       ${cosmetiques.length ? `
         <p class="recompenses-sous-titre">${cosmetiques.length > 1 ? `${cosmetiques.length} nouveaux cosmétiques` : "Nouveau cosmétique"}</p>
