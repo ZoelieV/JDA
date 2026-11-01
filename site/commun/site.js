@@ -74,7 +74,7 @@
     ["Discord", "https://discord.com", "discord"],
     ["TikTok", "https://www.tiktok.com", "tiktok"],
     ["Instagram", "https://www.instagram.com", "instagram"],
-    ["YouTube", "https://www.youtube.com", "youtube"],
+    ["YouTube", "https://www.youtube.com/@laina_emyko", "youtube"],
     ["Ko-fi", "https://ko-fi.com", "kofi"]
   ];
   // Crédits : fenêtre du bouton Crédits du pied de page.
