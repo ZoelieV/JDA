@@ -113,6 +113,15 @@ async function chargerSessionDiscord() {
       credentials: "include"
     });
 
+    // Liens réservés de l'en-tête (cf. commun/site.js), affichés ailleurs
+    // par commun/compte.js, que Mon compte ne charge pas : Random world
+    // boss, Theorycraft, Admin.
+    const moi = await response.clone().json().catch(() => ({}));
+    const afficher = classe => document.querySelectorAll(`.${classe}`).forEach(lien => { lien.hidden = false; });
+    if (moi.world_boss) afficher("carte-world-boss");
+    if (moi.user?.theorycraft) afficher("carte-theorycraft");
+    if (moi.user?.admin || moi.user?.mini_admin) afficher("carte-admin");
+
     if (!response.ok) {
       loginGate.classList.add("actif");
       accountContent.classList.remove("actif");
