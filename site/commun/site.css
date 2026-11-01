@@ -1,3 +1,13 @@
+/* Barres de défilement de tout le site : fines, dorées, fond transparent
+   (scrollbar-color s'hérite ; scrollbar-width non, d'où *). */
+:root {
+  scrollbar-color: rgba(245, 197, 66, 0.55) transparent;
+}
+
+* {
+  scrollbar-width: thin;
+}
+
 /* ---- En-tête et pied de page du site (affichage "classique", cf.
    commun/site.js) : barres en verre (à peine teintées, fond flouté
    derrière), à 85 % de leur taille. html.site-classique : posé par
@@ -170,8 +180,6 @@ html.site-classique .entete-nav {
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
 
 html.site-classique .entete-nav > *,

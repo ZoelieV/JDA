@@ -108,7 +108,6 @@ body.eq-ouverte {
 
 /* Frise des étapes. */
 .eq-frise {
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
   display: flex;
   gap: 0.25rem;
   margin: 0;
@@ -143,7 +142,6 @@ body.eq-ouverte {
 }
 
 .eq-etape {
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;

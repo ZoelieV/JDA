@@ -310,7 +310,6 @@
   background-color: rgba(24, 24, 30, 0.97);
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5);
   list-style: none;
-  scrollbar-color: rgba(245, 197, 66, 0.6) transparent;
 }
 
 .liste-joueurs-ent li {
