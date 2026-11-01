@@ -1,7 +1,7 @@
-/* Barres de défilement de tout le site : fines, dorées, fond transparent
+/* Barres de défilement de tout le site : fines, grises, fond transparent
    (scrollbar-color s'hérite ; scrollbar-width non, d'où *). */
 :root {
-  scrollbar-color: rgba(245, 197, 66, 0.55) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 * {
