@@ -33,7 +33,7 @@ const { serieDuJour } = require("./serie_classe");
 // Room en attente sans nouvelles de sa page depuis plus longtemps : joueur
 // parti, ignorée.
 const ATTENTE_VIVANTE_MS = 20 * 1000;
-const COLONNES = "room_id, player1_discord_id, player2_discord_id, created_at, draft";
+const COLONNES = "room_id, player1_discord_id, player2_discord_id, created_at, draft, type";
 // Types de room du matchmaking (une file chacun).
 const TYPES_FILE = ["matchmaking", "classe"];
 
@@ -105,12 +105,25 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     if (ban) throw { status: 403, message: messageBan(ban) };
   }
 
+  // Rappel de la page d'attente : seulement la room d'attente de ce joueur,
+  // dans cette file (un room_id inventé ou d'un autre joueur ne saute pas
+  // les vérifications d'une nouvelle recherche ci-dessous).
+  let room = null;
+  if (roomIdAttente) {
+    const { data } = await supabase
+      .from("rooms")
+      .select(COLONNES)
+      .eq("room_id", roomIdAttente)
+      .maybeSingle();
+    if (data?.player1_discord_id === discordId && data.type === type) room = data;
+  }
+
   // Début d'une recherche (pas un rappel de la page d'attente) : un seul
   // match à la fois, le match en cours du joueur est annulé. Sauf un match
   // classé en cours : refusé comme une room privée (409 + room_id), la page
   // propose d'y retourner ou de l'abandonner, puis relance la recherche
   // (cf. proposerAbandonClasse, commun/cartes.js).
-  if (!roomIdAttente) {
+  if (!room) {
     // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
     const incomplet = await erreurProfilIncomplet(supabase, discordId);
     if (incomplet) throw { status: 409, message: incomplet, profil_incomplet: true };
@@ -119,20 +132,11 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     await annulerAutresMatchs(supabase, discordId);
   }
 
-  // Room d'attente déjà prise par un adversaire : match trouvé.
-  if (roomIdAttente) {
-    const { data: room } = await supabase
-      .from("rooms")
-      .select(COLONNES)
-      .eq("room_id", roomIdAttente)
-      .maybeSingle();
-    if (room?.player1_discord_id === discordId && room.player2_discord_id) {
-      return { room_id: room.room_id, trouve: true };
-    }
-    // Rappel de la page d'attente : même mode que la room d'attente (classé :
-    // toujours la mêlée générale, même pour une room d'avant sa suppression
-    // du mode classique).
-    if (room?.draft?.mode_theatre && type !== "classe") mode = room.draft.box_libre ? MODE_AUTO_LIBRE : room.draft.mode_theatre;
+  if (room) {
+    // Room d'attente déjà prise par un adversaire : match trouvé.
+    if (room.player2_discord_id) return { room_id: room.room_id, trouve: true };
+    // Même mode que la room d'attente (classé : toujours le mode "12").
+    if (room.draft?.mode_theatre && type !== "classe") mode = room.draft.box_libre ? MODE_AUTO_LIBRE : room.draft.mode_theatre;
   }
 
   // Attente dans l'autre file abandonnée : une seule recherche à la fois.
