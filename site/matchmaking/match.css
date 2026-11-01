@@ -3370,6 +3370,20 @@ h1 {
   #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) .tris-label {
     display: none;
   }
+
+  /* Namecards figées elles aussi, au même niveau que la barre (qui est
+     au-dessus d'elles : z-index 5). */
+  #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) .entetes-joueurs {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    /* Entre et autour des namecards : clics sur ce qui défile dessous. */
+    pointer-events: none;
+  }
+
+  #zone-match.outils-figes:has(#entete-joueur1.avec-namecard):has(#entete-joueur2.avec-namecard) .entete-joueur {
+    pointer-events: auto;
+  }
 }
 
 /* ---- Ordinateur : barre des filtres et tris compressée (groupes collés,
