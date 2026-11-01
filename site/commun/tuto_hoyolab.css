@@ -1,0 +1,123 @@
+/* Tutoriel « Récupérer sa box sur HoYoLAB » (cf. commun/tuto_hoyolab.js) :
+   une étape par bloc (numéro doré, texte, capture cliquable). */
+.tuto-hoyolab {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.etape-hoyolab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  background-color: rgba(20, 20, 26, 0.6);
+}
+
+.etape-hoyolab p {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.etape-hoyolab a {
+  color: #f5c542;
+}
+
+.numero-etape-hoyolab {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 50%;
+  background-color: #f5c542;
+  color: #1e1e1e;
+  font-weight: bold;
+}
+
+.capture-hoyolab {
+  margin-top: auto;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background: none;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.capture-hoyolab:hover {
+  border-color: #f5c542;
+}
+
+.capture-hoyolab img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Capture agrandie par-dessus la page. */
+.capture-hoyolab-agrandie {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+}
+
+.capture-hoyolab-agrandie img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6);
+}
+
+/* Page Tutoriel. */
+.page-tutoriel {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  box-sizing: border-box;
+}
+
+.page-tutoriel .panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.page-tutoriel h2,
+.page-tutoriel p {
+  margin: 0;
+}
+
+.page-tutoriel a {
+  color: #f5c542;
+}
+
+/* Fenêtre Détection auto (Mon compte) : tutoriel repliable. */
+.tuto-hoyolab-repli summary {
+  color: #f5c542;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.tuto-hoyolab-repli[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+.tuto-hoyolab-repli .tuto-hoyolab {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+}

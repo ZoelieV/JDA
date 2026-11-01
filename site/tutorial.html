@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem42">
   <link rel="stylesheet" href="/commun/site.css?v=14">
+  <link rel="stylesheet" href="/commun/tuto_hoyolab.css?v=1">
 <script src="/commun/fond.js?v=17"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
@@ -19,6 +20,18 @@
 <body>
   <a href="/" class="lien-accueil">Accueil</a>
   <h1 class="titre-page">Tutoriel</h1>
+
+  <main class="page-tutoriel">
+    <!-- Récupérer sa box sur HoYoLAB (étapes : commun/tuto_hoyolab.js), pour
+         la Détection auto de Mon compte. -->
+    <section class="panneau" id="hoyolab">
+      <h2>Récupérer ta box sur HoYoLAB</h2>
+      <p>La détection automatique de Mon compte remplit ta full box à partir de l'image de tous tes personnages, exportée depuis HoYoLAB (en français). Voici comment l'obtenir :</p>
+      <div data-tuto-hoyolab></div>
+      <p>Ensuite, dans <a href="/compte">Mon compte</a>, clique sur « Détection auto » et dépose l'image. Vérifie les constellations proposées, puis renseigne tes armes et leurs doublons à la main : la détection ne lit que les personnages.</p>
+    </section>
+  </main>
+  <script src="/commun/tuto_hoyolab.js?v=1"></script>
   <script src="/commun/site.js?v=20"></script>
 </body>
 </html>
