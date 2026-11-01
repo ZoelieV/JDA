@@ -1,7 +1,7 @@
 const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE } = require("../_lib/matchmaking");
-const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("../_lib/room");
+const { annulerAutresMatchs, matchClasseEnCours, erreurProfilIncomplet, ERREUR_MATCH_CLASSE } = require("../_lib/room");
 
 
 const COLONNES = "room_id, player1_discord_id, player2_discord_id, type";
@@ -116,6 +116,10 @@ module.exports = async (req, res) => {
       // Match classé en cours : pas d'autre match (ce serait un abandon).
       const enCours = await matchClasseEnCours(supabase, user.id, { sauf: roomId });
       if (enCours) return res.status(409).json({ error: ERREUR_MATCH_CLASSE, room_id: enCours });
+
+      // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
+      const incomplet = await erreurProfilIncomplet(supabase, user.id);
+      if (incomplet) return res.status(409).json({ error: incomplet, profil_incomplet: true });
 
       // Mise à jour conditionnelle : si deux personnes ouvrent le lien en
       // même temps, une seule devient player2.

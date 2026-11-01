@@ -59,6 +59,8 @@ async function appel(action, corps = null) {
     const erreur = new Error(data.error || "Erreur");
     // Match classé en cours (cf. rejoindre).
     erreur.roomEnCours = data.room_id || null;
+    // Box stuff, niveau du monde ou UID manquant (cf. rejoindre).
+    erreur.profilIncomplet = data.profil_incomplet === true;
     throw erreur;
   }
   if (Number.isFinite(data.maintenant)) decalageServeur = data.maintenant - Date.now();
@@ -840,7 +842,9 @@ async function rejoindre() {
     if (data.draft) definirDraft(data.draft);
   } catch (erreur) {
     if (erreur.roomEnCours) roomEnCours = erreur.roomEnCours;
-    else alert(erreur.message);
+    else if (erreur.profilIncomplet) {
+      if (confirm(`${erreur.message}\n\nAller dans Mon compte ?`)) window.location.href = "/compte";
+    } else alert(erreur.message);
   } finally {
     envoiEnCours = false;
   }

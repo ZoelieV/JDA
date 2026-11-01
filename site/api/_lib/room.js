@@ -254,7 +254,31 @@ async function quitterRoom(supabase, room, discordId) {
   console.error("Match pas annulé (room modifiée en continu) :", room.room_id);
 }
 
+// ---- Profil complet avant de jouer ----
+// Match privé (créé ou rejoint), matchmaking, classé, mode en équipe et
+// inscription à un tournoi : box stuff (au moins un perso), niveau du monde
+// et UID renseignés dans Mon compte. Pas exigé pour l'entraînement ni le
+// Random world boss. Erreur 409 avec profil_incomplet: true (la page
+// propose d'aller dans Mon compte).
+function manquesProfil(data) {
+  const manques = [];
+  if (!Object.values(data?.characters?.selections?.stuff || {}).some(Boolean)) manques.push("ta box stuff");
+  if (!data?.niveau_monde) manques.push("ton niveau du monde");
+  if (!data?.uid) manques.push("ton UID");
+  return manques;
+}
+
+// -> message d'erreur, ou null si le profil est complet.
+async function erreurProfilIncomplet(supabase, discordId) {
+  const { data } = await supabase.from("profiles").select("data").eq("discord_id", discordId).maybeSingle();
+  const manques = manquesProfil(data?.data);
+  if (!manques.length) return null;
+  const liste = manques.length > 1 ? `${manques.slice(0, -1).join(", ")} et ${manques[manques.length - 1]}` : manques[0];
+  return `Avant de jouer, renseigne ${liste} dans Mon compte.`;
+}
+
 module.exports = {
+  erreurProfilIncomplet,
   ecrireDraft,
   ERREUR_MATCH_CLASSE,
   matchClasseEnCours,

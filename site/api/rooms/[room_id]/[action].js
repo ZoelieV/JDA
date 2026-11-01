@@ -1379,7 +1379,9 @@ module.exports = async (req, res) => {
     if (error && error.status) {
       // room_id : match classé en cours (cf. matchClasseEnCours), pour la
       // fenêtre d'abandon de la page.
-      return res.status(error.status).json({ error: error.message, ...(error.room_id ? { room_id: error.room_id } : {}) });
+      // profil_incomplet : box stuff, niveau du monde ou UID manquant
+      // (cf. erreurProfilIncomplet, _lib/room.js).
+      return res.status(error.status).json({ error: error.message, ...(error.room_id ? { room_id: error.room_id } : {}), ...(error.profil_incomplet ? { profil_incomplet: true } : {}) });
     }
     console.error(error);
     return res.status(500).json({ error: "Erreur serveur" });

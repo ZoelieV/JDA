@@ -32,7 +32,7 @@
 //   annule      : un joueur est parti (autre match démarré).
 // Rejouer (créateur) : retour au lobby avec les mêmes joueurs.
 const { supabase } = require("./supabase");
-const { ecrireDraft, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("./room");
+const { ecrireDraft, matchClasseEnCours, erreurProfilIncomplet, ERREUR_MATCH_CLASSE } = require("./room");
 const { actualiserPoints, getPersonnages, getArmes, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("./personnages");
 const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox, THEATRE_CARPE, MODE_MELEE } = require("./draft");
 const { tirerBossAleatoire, getBossParId, listeBoss, idsLegendesLocales, bossCarnageExclus, estHorsCoop, estReserveWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("./boss");
@@ -638,6 +638,9 @@ async function routeRejoindre(req, res, roomId, user) {
   // room_id pour la fenêtre d'abandon de la page (proposerAbandonClasse).
   const classeEnCours = await matchClasseEnCours(supabase, user.id);
   if (classeEnCours) throw { ...erreur(409, ERREUR_MATCH_CLASSE), room_id: classeEnCours };
+  // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
+  const incomplet = await erreurProfilIncomplet(supabase, user.id);
+  if (incomplet) throw { ...erreur(409, incomplet), profil_incomplet: true };
 
   await actualiserPoints();
   const profil = (await lireProfils([user.id])).get(user.id);

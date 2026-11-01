@@ -25,7 +25,7 @@
 // DELETE -> annuler() : supprime les rooms en attente du joueur (2 files).
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
-const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("./room");
+const { annulerAutresMatchs, matchClasseEnCours, erreurProfilIncomplet, ERREUR_MATCH_CLASSE } = require("./room");
 const { banClasse, messageBan } = require("./sanctions");
 const { serieDuJour } = require("./serie_classe");
 
@@ -106,6 +106,9 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
   // propose d'y retourner ou de l'abandonner, puis relance la recherche
   // (cf. proposerAbandonClasse, commun/cartes.js).
   if (!roomIdAttente) {
+    // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
+    const incomplet = await erreurProfilIncomplet(supabase, discordId);
+    if (incomplet) throw { status: 409, message: incomplet, profil_incomplet: true };
     const enCours = await matchClasseEnCours(supabase, discordId);
     if (enCours) throw { status: 409, message: ERREUR_MATCH_CLASSE, room_id: enCours };
     await annulerAutresMatchs(supabase, discordId);

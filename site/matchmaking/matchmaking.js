@@ -31,7 +31,16 @@ async function creerMatch(corps) {
     // Refus avec un message du serveur (mode classique sans théâtre, box
     // d'entraînement trop petite...).
     if (reponse.status === 409 || reponse.status === 400) {
-      const { error, room_id: matchEnCours, vitrines_non_conformes: nonConformes } = await reponse.json().catch(() => ({}));
+      const { error, room_id: matchEnCours, vitrines_non_conformes: nonConformes, profil_incomplet: profilIncomplet } = await reponse.json().catch(() => ({}));
+      // Box stuff, niveau du monde ou UID manquant (cf. erreurProfilIncomplet,
+      // api/_lib/room.js) : direction Mon compte si le joueur le veut.
+      if (profilIncomplet) {
+        if (confirm(`${error}\n\nAller dans Mon compte ?`)) {
+          ouverture = true;
+          window.location.href = "/compte";
+        }
+        return;
+      }
       // Entraînement en équipe : vitrines hors règles, lancé quand même si
       // le lanceur confirme (comme une box non équilibrable).
       if (nonConformes?.length) {

@@ -371,6 +371,9 @@ function verifierInscriptionsOuvertes(tournoi) {
 async function verifierJoueur(discordId) {
   const data = await lireDonneesProprietaire(discordId);
   if (!data) throw erreur(409, "Crée d'abord ton compte (Mon compte).");
+  // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
+  const incomplet = await require("./room").erreurProfilIncomplet(supabase, discordId);
+  if (incomplet) throw { ...erreur(409, incomplet), profil_incomplet: true };
   return data;
 }
 

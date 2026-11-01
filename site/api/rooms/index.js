@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE, chercher, annuler } = require("../_lib/matchmaking");
-const { annulerAutresMatchs, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("../_lib/room");
+const { annulerAutresMatchs, matchClasseEnCours, erreurProfilIncomplet, ERREUR_MATCH_CLASSE } = require("../_lib/room");
 const { verifierFrequence, verifierFrequenceCompte } = require("../_lib/limites");
 const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur, resoudreTheatre, theatreProfil } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
@@ -236,6 +236,8 @@ async function creerEntrainementEquipe(req, res, user) {
 // "choix", boss_id? } : lobby d'un match en équipe (cf. _lib/equipe.js),
 // même limite de création que les rooms privées.
 async function creerEquipe(req, res, user) {
+  const incomplet = await erreurProfilIncomplet(supabase, user.id);
+  if (incomplet) return res.status(409).json({ error: incomplet, profil_incomplet: true });
   const { draft, erreur } = await preparerCreation(req.body, user);
   if (erreur) return res.status(400).json({ error: erreur });
 
@@ -365,12 +367,16 @@ module.exports = async (req, res) => {
       try {
         return res.status(200).json(await chercher(user.id, roomIdAttente, req.body.type, mode));
       } catch (erreur) {
-        if (erreur?.status) return res.status(erreur.status).json({ error: erreur.message, ...(erreur.room_id ? { room_id: erreur.room_id } : {}) });
+        if (erreur?.status) return res.status(erreur.status).json({ error: erreur.message, ...(erreur.room_id ? { room_id: erreur.room_id } : {}), ...(erreur.profil_incomplet ? { profil_incomplet: true } : {}) });
         throw erreur;
       }
     }
 
     const mode = MODES_THEATRE.includes(req.body?.mode) ? req.body.mode : "auto";
+
+    // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
+    const incomplet = await erreurProfilIncomplet(supabase, user.id);
+    if (incomplet) return res.status(409).json({ error: incomplet, profil_incomplet: true });
 
     // Boss et J1 choisis à la création (sinon au hasard au tirage).
     await actualiserPoints();

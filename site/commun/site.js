@@ -71,7 +71,7 @@
   ];
   // Réseaux : chaînes de Laïna (Ko-fi : site officiel en attendant le lien).
   const RESEAUX = [
-    ["Discord", "https://discord.gg/fVAcUxpcc", "discord"],
+    ["Discord", "https://discord.gg/aFj47jVGvT", "discord"],
     ["TikTok", "https://www.tiktok.com/@_laina_e", "tiktok"],
     ["Instagram", "https://www.instagram.com/_laina_e/", "instagram"],
     ["YouTube", "https://www.youtube.com/@laina_emyko", "youtube"],
