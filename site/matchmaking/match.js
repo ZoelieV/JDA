@@ -2208,10 +2208,11 @@ function initialiserGrillesPersos() {
 // Construite UNE SEULE FOIS (pas à chaque rendu) pour ne pas perdre le
 // focus/texte de la recherche à chaque poll.
 
-// Filtres, tris et recherche remis à zéro : bouton Réinitialiser, et
-// entrée dans la draft (picks et bans) après le choix des box et les bans
-// d'équilibrage (cf. rendrePhase).
-function viderFiltresDraft() {
+// Filtres, tris et recherche remis à zéro (bouton Réinitialiser) ; entrée
+// dans la draft (picks et bans) après le choix des box et les bans
+// d'équilibrage : filtres et recherche seulement, tris gardés (garderTris,
+// cf. rendrePhase).
+function viderFiltresDraft({ garderTris = false } = {}) {
   filtreVue = null;
   filtreElement.clear();
   filtreArme.clear();
@@ -2222,7 +2223,7 @@ function viderFiltresDraft() {
   filtreProprietaire = null;
   filtrePossession = null;
   rechercheTexte = "";
-  viderTris(etatTri);
+  if (!garderTris) viderTris(etatTri);
   document.getElementById("barre-outils").querySelectorAll(".active").forEach(b => b.classList.remove("active"));
   document.querySelectorAll("#barre-outils .tri-btn").forEach(b => majBoutonTri(b, etatTri));
   const input = document.getElementById("recherche-personnage");
@@ -3691,9 +3692,9 @@ function rendrePhase() {
 
   if (draft.phase === "draft" && phasePrecedente && phasePrecedente !== "draft") {
     annoncerRole();
-    // Nouvelle étape : filtres et tris du choix des box / des bans
-    // d'équilibrage remis à zéro pour la draft.
-    viderFiltresDraft();
+    // Nouvelle étape : filtres du choix des box / des bans d'équilibrage
+    // remis à zéro pour la draft ; tris gardés.
+    viderFiltresDraft({ garderTris: true });
   }
 
   if (draft.phase === "choix_box" || draft.phase === "analyse") rendreChoixBox();
