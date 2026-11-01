@@ -1260,7 +1260,7 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     statut.textContent = erreurs.length ? `Modes en équipe : ${erreurs.join(", ")}` : "Conforme aux modes en équipe ✓";
   } else if (boxActive === "stuff") {
     statut.classList.remove("conforme");
-    statut.textContent = "Tes persos montés : pas jouable en match, sert aux recommandations ci-dessous.";
+    statut.textContent = "Cette box n'est pas jouable en match mais elle doit être renseignée.";
   } else {
     const paliers = Object.keys(PALIERS_THEATRE).filter(palier => total <= pointsMaxBox(palier));
     statut.classList.toggle("conforme", paliers.length > 0);
