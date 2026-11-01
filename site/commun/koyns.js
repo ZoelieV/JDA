@@ -86,11 +86,13 @@ function nomFond(fond) {
   return nom.charAt(0).toUpperCase() + nom.slice(1);
 }
 
-// Choix par défaut, et les 2 variantes du Voyageur et du Manekin : gratuits
+// Choix par défaut (Hero's Fame ; l'ancien, Default, reste gratuit), et les 2 variantes du Voyageur et du Manekin : gratuits
 // pour tout le monde.
 const COSMETIQUES_GRATUITS = new Set([
   "banniere:namecards/Namecard_Background_Default.webp",
   "banniere2:namecards/banners/Namecard_Banner_Default.webp",
+  "banniere:namecards/Namecard_Background_Mondstadt_Hero_s_Fame.webp",
+  "banniere2:namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp",
   "fond:bg/autres/default_bg.webp",
   "voyageur:aether",
   "voyageur:lumine",

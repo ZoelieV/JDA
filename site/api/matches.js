@@ -31,7 +31,7 @@ const NB_ROOMS_MAX = 30;
 // Room sans activité depuis plus longtemps : considérée comme abandonnée
 // (le nettoyage automatique la supprime après 1 h).
 const INACTIVITE_MAX_MS = 60 * 60 * 1000;
-const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
 
 // Ni litiges ouverts ni matchs invalidés après un signalement (cf.
 // _lib/signalements.js).

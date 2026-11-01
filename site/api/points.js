@@ -231,7 +231,7 @@ const CALENDRIER_MAX_JOURS_SAISON = 400;
 const CALENDRIER_COURT_MAX = 30;
 const CALENDRIER_LONG_MAX = 2000;
 const BANNIERES_CALENDRIER = new Set(require("../DB/images/cosmetiques.json").bannieres2);
-const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
 
 // "AAAA-MM-JJ" valide -> nombre de jours depuis 1970, sinon null.
 function jourCalendrier(valeur) {

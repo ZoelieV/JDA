@@ -1776,8 +1776,8 @@ function urlImage(chemin) {
 
 // Choix attribués par défaut à tout le monde.
 const PARAMETRES_DEFAUT = {
-  banniere: "namecards/Namecard_Background_Default.webp",
-  banniere2: "namecards/banners/Namecard_Banner_Default.webp",
+  banniere: "namecards/Namecard_Background_Mondstadt_Hero_s_Fame.webp",
+  banniere2: "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp",
   fond: "bg/autres/default_bg.webp"
 };
 
