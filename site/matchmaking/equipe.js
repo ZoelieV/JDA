@@ -118,13 +118,16 @@ function afficherPhase(id) {
   document.querySelectorAll(".phase-equipe").forEach(section => section.classList.toggle("cache", section.id !== id));
 }
 
+// Constitution des équipes (cf. FORMATIONS, api/_lib/equipe.js).
+const TITRES_FORMATIONS = { equilibre: "Équipes équilibrées", choix: "Équipes au choix", aleatoire: "Équipes aléatoires" };
+
 function rendre() {
   $("chargement").classList.add("cache");
   const mode = MODES[draft.taille] || "";
   $("titre-equipe").textContent = draft.entrainement ? `Entraînement ${mode}` : draft.tournoi ? `Match de tournoi ${mode}` : `Match ${mode}`;
   const boss = draft.boss_impose && bossParId.get(draft.boss_impose);
   $("sous-titre-equipe").textContent = [
-    draft.entrainement ? (estLanceur() ? "Tu joues les 2 équipes" : "Entraînement") : draft.formation === "choix" ? "Équipes au choix" : "Équipes aléatoires (équilibrées)",
+    draft.entrainement ? (estLanceur() ? "Tu joues les 2 équipes" : "Entraînement") : TITRES_FORMATIONS[draft.formation] || TITRES_FORMATIONS.equilibre,
     "Draft Classique",
     boss ? `Boss : ${boss.nom}` : null
   ].filter(Boolean).join(" · ");
@@ -186,7 +189,7 @@ function rendreLobby() {
       <div class="carte-equipe tous">
         <h2>Joueurs <span class="compte-equipe">${membres.length} / ${draft.taille * 2}</span></h2>
         <ul>${membres.map(id => `<li>${htmlNom(id)}${id === draft.createur ? `<span class="badge-equipe">créateur</span>` : ""}${id === moi?.id ? `<span class="badge-equipe moi">toi</span>` : ""}</li>`).join("")}${places}</ul>
-        <p class="aide-equipe">Les équipes seront tirées au lancement, équilibrées sur la somme des full box.</p>
+        <p class="aide-equipe">${draft.formation === "aleatoire" ? "Les équipes seront tirées au hasard au lancement." : "Les équipes seront tirées au lancement, équilibrées sur la somme des full box."}</p>
       </div>`;
   }
   zone.querySelectorAll("[data-camp]").forEach(bouton => {

@@ -44,7 +44,10 @@ const { detecterTriche, detecterTempsSuspects } = require("./sanctions");
 const { crediterPartie } = require("./koyns");
 
 const TAILLES = [2, 3, 4];
-const FORMATIONS = ["aleatoire", "choix"];
+// Constitution des équipes : "equilibre" (somme des full box la plus
+// proche, cf. equipesEquilibrees), "choix" (chacun choisit son équipe) ou
+// "aleatoire" (tirage au hasard, sans équilibrage).
+const FORMATIONS = ["equilibre", "choix", "aleatoire"];
 const ROLES = ["j1", "j2"];
 const DUREE_VOTE_CHEF_MS = 30 * 1000;
 const DUREE_CHOIX_HOTE_MS = 30 * 1000;
@@ -191,6 +194,16 @@ function equipesEquilibrees(membres, fullBox, taille) {
 
 function pointsFullBox(data) {
   return calculerPointsBox(data, "full", getPersonnages()) + calculerPointsArmesBox(data, "full", getArmes());
+}
+
+// Équipes aléatoires : joueurs mélangés, coupés en 2.
+function equipesAleatoires(membres, taille) {
+  const melanges = [...membres];
+  for (let i = melanges.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [melanges[i], melanges[j]] = [melanges[j], melanges[i]];
+  }
+  return { j1: melanges.slice(0, taille), j2: melanges.slice(taille) };
 }
 
 // ---- Persos et versions ----
@@ -572,7 +585,7 @@ async function retirerMembre(roomId, draft, discordId) {
 async function preparerCreation(body, user) {
   const taille = Number(body?.taille);
   if (!TAILLES.includes(taille)) return { erreur: "Mode inconnu (2v2, 3v3 ou 4v4)" };
-  const formation = FORMATIONS.includes(body?.formation) ? body.formation : "aleatoire";
+  const formation = FORMATIONS.includes(body?.formation) ? body.formation : "equilibre";
   const bossImpose = body?.boss_id ? String(body.boss_id) : null;
   if (bossImpose && !getBossParId(bossImpose)) return { erreur: "Boss inconnu" };
   if (estReserveWorldBoss(getBossParId(bossImpose))) return { erreur: ERREUR_WORLD_BOSS };
@@ -738,7 +751,9 @@ async function routeLancer(req, res, roomId, user) {
 
   const equipes = draft.formation === "choix"
     ? Object.fromEntries(ROLES.map(role => [role, draft.membres.filter(id => draft.camps[id] === role)]))
-    : equipesEquilibrees(draft.membres, fullBox, draft.taille);
+    : draft.formation === "aleatoire"
+      ? equipesAleatoires(draft.membres, draft.taille)
+      : equipesEquilibrees(draft.membres, fullBox, draft.taille);
 
   Object.assign(draft, {
     phase: "chefs",

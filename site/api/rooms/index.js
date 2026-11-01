@@ -232,7 +232,7 @@ async function creerEntrainementEquipe(req, res, user) {
   return res.status(200).json({ room_id: roomId, equipe: true });
 }
 
-// POST { type: "equipe", taille: 2 | 3 | 4, formation: "aleatoire" |
+// POST { type: "equipe", taille: 2 | 3 | 4, formation: "equilibre" | "aleatoire" |
 // "choix", boss_id? } : lobby d'un match en équipe (cf. _lib/equipe.js),
 // même limite de création que les rooms privées.
 async function creerEquipe(req, res, user) {
