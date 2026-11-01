@@ -311,9 +311,11 @@ async function creerWorldBoss(req, res, user) {
 }
 
 // Modes de théâtre : room privée = au choix ("auto", un palier ou
-// "carnage") ; matchmaking = classique ("auto"), mêlée générale ou carnage ;
-// classé = mêlée générale seulement (1er mode = mode par défaut).
-const MODES_MATCHMAKING = { matchmaking: ["auto", MODE_MELEE, "carnage"], classe: [MODE_MELEE] };
+// "carnage") ; matchmaking amical = « Full box » ("auto", full box
+// seulement), « Auto » ("auto_libre" : "auto" avec les box opti) ou
+// « Classique » ("carpe") ; classé = mode "12" seulement (1er mode = mode
+// par défaut ; cf. _lib/matchmaking.js).
+const MODES_MATCHMAKING = { matchmaking: ["auto", "auto_libre", "carpe"], classe: [MODE_MELEE] };
 
 // Match privé : une création par minute et par adresse IP au plus.
 const DELAI_ROOM_PRIVEE_MS = 60 * 1000;
@@ -384,6 +386,8 @@ module.exports = async (req, res) => {
     const erreurBoss = await erreurBossImpose(bossImpose, user.id);
     if (erreurBoss) return res.status(400).json({ error: erreurBoss });
     const premier = PREMIERS_ROOM.includes(req.body?.premier) ? req.body.premier : "aleatoire";
+    // « Full box » : mode "auto" avec la full box imposée aux 2 joueurs.
+    const fullBox = req.body?.full_box === true && mode === "auto";
 
     const attente = await verifierFrequence(req, "room_privee", DELAI_ROOM_PRIVEE_MS);
     if (attente > 0) {
@@ -407,7 +411,7 @@ module.exports = async (req, res) => {
       room_id: roomId,
       player1_discord_id: user.id,
       type: "prive",
-      draft: { mode_theatre: mode, boss_impose: bossImpose, premier, createur: user.id }
+      draft: { mode_theatre: mode, ...(fullBox ? { full_box_imposee: true } : {}), boss_impose: bossImpose, premier, createur: user.id }
     });
 
     if (error) {

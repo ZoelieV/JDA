@@ -1127,7 +1127,9 @@ const NB_PERSOS_MIN_BOX = 16;
 const BOX_MATCHMAKING_CLASSIQUE = ["full"];
 
 function estMatchmakingClassique() {
-  return typeRoom === "matchmaking" && (draft?.mode_theatre || "auto") === "auto";
+  // Room privée « Full box » : draft.full_box_imposee.
+  if (draft?.full_box_imposee === true) return true;
+  return typeRoom === "matchmaking" && (draft?.mode_theatre || "auto") === "auto" && !draft?.box_libre;
 }
 function nbPersosBox(role, box) {
   const collection = getJoueurDataParRole(role)?.characters || { full: {}, selections: {} };
@@ -1908,7 +1910,7 @@ function htmlModeTheatre(theatre) {
   // création de la room, ou mêlée générale (matchmaking / classé).
   const mode = draft.mode_theatre === "auto" ? "plus petit palier"
     : draft.mode_theatre === "carnage" ? "no ban, sans équilibrage"
-      : draft.mode_theatre === "12" ? "classé" : "choisi pour la room";
+      : draft.mode_theatre === "12" ? "classé" : typeRoom === "matchmaking" ? "matchmaking" : "choisi pour la room";
   return `<span class="mode-theatre" title="Draft ${infos.nom} : 4 picks et ${infos.bans} bans par joueur (${mode})">` +
     `<img src="${urlMedailleTheatre(infos.medaille)}" alt="">${infos.nom} · ${mode}</span>`;
 }

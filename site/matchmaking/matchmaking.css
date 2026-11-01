@@ -936,3 +936,12 @@
 .ent-total-points strong {
   color: var(--accent);
 }
+
+/* Amical : blocs Matchmaking et Créer une room. */
+.detail-match .titre-bloc-match {
+  margin: 0.5rem 0 0;
+  color: var(--accent, #f5c542);
+  font-family: var(--police-titre, inherit);
+  font-weight: normal;
+  font-size: 1.25rem;
+}

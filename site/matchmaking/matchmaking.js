@@ -141,12 +141,11 @@ async function remplirBossRoom(idSelect = "room-boss") {
   }
 }
 
-// Mode choisi : room privée (mode de théâtre au choix) ou recherche
-// (matchmaking : classique, mêlée générale ou carnage ; classé : mêlée
-// générale).
+// Mode choisi : room privée (mode de théâtre au choix, « Full box » :
+// full_box) ou recherche (matchmaking amical : Full box, Auto, Classique ;
+// classé : mode "12").
 document.querySelectorAll(".mode-match:not(.mode-plus)").forEach(bouton => {
   bouton.addEventListener("click", () => {
-    // Classé : bouton de la file "classe" dans le détail Matchmaking.
     const type = bouton.dataset.type || bouton.closest(".modes-match").dataset.type;
     const mode = bouton.dataset.mode;
     if (type === "equipe") {
@@ -159,7 +158,7 @@ document.querySelectorAll(".mode-match:not(.mode-plus)").forEach(bouton => {
       return;
     }
     creerMatch(type === "prive"
-      ? { mode, boss_id: document.getElementById("room-boss").value || null, premier: document.getElementById("room-premier").value }
+      ? { mode, ...(bouton.dataset.fullBox ? { full_box: true } : {}), boss_id: document.getElementById("room-boss").value || null, premier: document.getElementById("room-premier").value }
       : { type, mode });
   });
 });
@@ -1093,7 +1092,7 @@ function lancerEntrainement() {
 // (room), comptes et box (entraînement). ----
 const PREPARATIONS = {
   // Rectangle ouvert tout de suite, liste des boss remplie en arrière-plan.
-  room: async () => { remplirBossRoom(); return true; },
+  amical: async () => { remplirBossRoom(); return true; },
   equipe: async () => { remplirBossRoom("equipe-boss"); return true; },
   entrainement: async () => {
     if (entrainement.pret) return true;
@@ -1144,8 +1143,8 @@ document.querySelectorAll(".carte-match[data-detail]").forEach(carte => {
 // commun/site.js) : détail du mode ouvert, aussi quand l'ancre change sur
 // la page (pas refermé s'il l'est déjà).
 function ouvrirAncre() {
-  // Ancien lien /match#classe : le classé est dans Matchmaking.
-  const ancre = location.hash.slice(1) === "classe" ? "matchmaking" : location.hash.slice(1);
+  // Anciens liens /match#room et #matchmaking : carte Amical.
+  const ancre = ["room", "matchmaking"].includes(location.hash.slice(1)) ? "amical" : location.hash.slice(1);
   const carte = ancre && document.querySelector(`.carte-match[data-detail="${CSS.escape(ancre)}"]`);
   if (carte && carte.getAttribute("aria-expanded") !== "true") choisirCarte(carte);
 }

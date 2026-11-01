@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/commun/entete.css?v=rem44">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/namecards.css?v=3">
-<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=36">
+<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=37">
   <link rel="stylesheet" href="/commun/site.css?v=14">
 <script src="/commun/fond.js?v=17"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -32,17 +32,18 @@
        cliquer dessus affiche ses détails dans le rectangle en dessous, un
        seul ouvert à la fois (cf. matchmaking.js). -->
   <div class="cartes-match">
-    <button type="button" class="carte-section carte-match" data-detail="room" aria-expanded="false" aria-controls="detail-room">
+    <!-- Amical : matchmaking (Full box, Auto, Classique) et création d'une
+         room (tous les modes). Classé : un seul mode. -->
+    <button type="button" class="carte-section carte-match" data-detail="amical" aria-expanded="false" aria-controls="detail-amical">
       <img src="/DB/images/namecards/Namecard_Background_Achievement_Fighting_Spirit.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
-        <h2>Créer une room</h2>
+        <h2>Amical</h2>
       </div>
     </button>
-    <!-- Matchmaking : classé (1er mode), full box, carnage. -->
-    <button type="button" class="carte-section carte-match principale" data-detail="matchmaking" aria-expanded="false" aria-controls="detail-matchmaking">
+    <button type="button" class="carte-section carte-match principale" data-detail="classe" aria-expanded="false" aria-controls="detail-classe">
       <img src="/DB/images/others/Namecard_Background_competitif.webp" alt="" loading="lazy">
       <div class="carte-section-texte">
-        <h2>Matchmaking</h2>
+        <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt=""></h2>
       </div>
     </button>
     <button type="button" class="carte-section carte-match" data-detail="entrainement" aria-expanded="false" aria-controls="detail-entrainement">
@@ -72,8 +73,21 @@
        palier du joueur au plus petit palier ; mêlée générale : draft de la
        carpe pour tout le monde. Détail par joueur : bans, picks, bans,
        picks. -->
-  <section id="detail-room" class="panneau detail-match cache" data-detail="room">
-    <h2>Créer une room</h2>
+  <!-- Amical : matchmaking (file "matchmaking" : « Full box » = mode "auto",
+       full box seulement ; « Auto » = "auto_libre", box opti permises ;
+       « Classique » = "carpe" ; cf. api/_lib/matchmaking.js), puis
+       création d'une room (lien partagé, tous les modes). -->
+  <section id="detail-amical" class="panneau detail-match cache" data-detail="amical">
+    <h2>Amical</h2>
+    <h3 class="titre-bloc-match">Matchmaking</h3>
+    <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode. Pas de trophées en jeu.</p>
+    <div class="modes-match" data-type="matchmaking">
+      <button type="button" class="mode-match" data-mode="auto">Full box<span>draft du plus petit palier, full box seulement</span></button>
+      <button type="button" class="mode-match" data-mode="auto_libre">Auto<span>draft du plus petit palier, full box ou box opti</span></button>
+      <button type="button" class="mode-match" data-mode="carpe"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""> Classique</span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
+    </div>
+
+    <h3 class="titre-bloc-match">Créer une room</h3>
     <p>Tu reçois un lien à envoyer à ton adversaire : la première personne qui l'ouvre joue contre toi.
       Les autres peuvent regarder depuis l'historique.</p>
     <!-- Boss et J1 : au choix ou au hasard (au tirage). -->
@@ -87,9 +101,12 @@
         </select>
       </label>
     </div>
-    <!-- Par défaut : Auto, Classique et « Plus d'options » (tous les modes). -->
+    <!-- Par défaut : Full box, Auto, Classique et « Plus d'options » (tous
+         les modes). Full box : mode "auto" de la room (box au choix des
+         joueurs) avec la full box imposée (full_box). -->
     <div class="modes-match modes-reduits" data-type="prive">
-      <button type="button" class="mode-match" data-mode="auto">Auto<span>draft du plus petit palier</span></button>
+      <button type="button" class="mode-match" data-mode="auto" data-full-box="1">Full box<span>draft du plus petit palier, full box seulement</span></button>
+      <button type="button" class="mode-match" data-mode="auto">Auto<span>draft du plus petit palier, full box ou box opti</span></button>
       <button type="button" class="mode-match mode-avance" data-mode="sardine"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_sardine.webp?v=3" alt=""> Sardine</span><span>2 bans, 2 picks, 1 ban, 2 picks</span></button>
       <button type="button" class="mode-match" data-mode="carpe"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_carpe.webp?v=3" alt=""> Classique</span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
       <button type="button" class="mode-match mode-avance" data-mode="dauphin"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/theatre_dauphin.webp?v=3" alt=""> Dauphin</span><span>3 bans, 2 picks, 2 bans, 2 picks</span></button>
@@ -99,13 +116,10 @@
     </div>
   </section>
 
-  <!-- Classé : file "classe" (mêlée générale, mode "12") ; Full box : file
-       "matchmaking" mode "auto" ; Carnage : file "matchmaking" (cf.
-       api/_lib/matchmaking.js). -->
-  <section id="detail-matchmaking" class="panneau detail-match cache" data-detail="matchmaking">
-    <h2>Matchmaking</h2>
-    <p>Tu es mis automatiquement face au prochain joueur qui cherche un match dans le même mode.
-      Classé : trophées en jeu, voir le <a href="/classement">classement</a>.</p>
+  <!-- Classé : file "classe" (mode "12", cf. api/_lib/matchmaking.js). -->
+  <section id="detail-classe" class="panneau detail-match cache" data-detail="classe">
+    <h2>Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt=""></h2>
+    <p>Tu es mis automatiquement face au prochain joueur qui cherche un match classé. Trophées en jeu, voir le <a href="/classement">classement</a>.</p>
     <ul class="regles-classe">
       <li>Le gagnant remporte un demi-trophée par seconde d'écart (30 au maximum), que le perdant perd.</li>
       <li>Victoires d'affilée : +1 trophée bonus à la 2e, +2 à la 3e, puis +3.</li>
@@ -113,10 +127,8 @@
       <li>Prime : battre le joueur à la plus longue série de victoires en cours rapporte +5 trophées.</li>
       <li>Exploit : battre un joueur qui avait plus de trophées que toi te rapporte +10 trophées par tranche complète de 100 trophées d'écart.</li>
     </ul>
-    <div class="modes-match" data-type="matchmaking">
-      <button type="button" class="mode-match mode-classe" data-type="classe" data-mode="12"><span class="titre-mode">Classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
-      <button type="button" class="mode-match" data-mode="auto">Full box<span>draft du plus petit palier, full box seulement</span></button>
-      <button type="button" class="mode-match" data-mode="carnage"><span class="titre-mode"><img class="medaille-theatre" src="/DB/images/others/carnage_inverse.webp?v=2" alt=""> No ban</span><span>2 bans, 2 picks, 2 bans, 2 picks, sans équilibrage</span></button>
+    <div class="modes-match" data-type="classe">
+      <button type="button" class="mode-match mode-classe" data-mode="12"><span class="titre-mode">Lancer un match classé <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></span><span>2 bans, 2 picks, 2 bans, 2 picks</span></button>
     </div>
   </section>
 
@@ -225,8 +237,8 @@
   <script src="/commun/variantes.js?v=4"></script>
   <script src="/commun/synergies.js?v=3"></script>
   <script src="/commun/cartes.js?v=36"></script>
-  <script src="/matchmaking/matchmaking.js?v=47"></script>
+  <script src="/matchmaking/matchmaking.js?v=48"></script>
   <script src="/commun/listes.js?v=1"></script>
-  <script src="/commun/site.js?v=21"></script>
+  <script src="/commun/site.js?v=22"></script>
 </body>
 </html>

@@ -61,13 +61,16 @@ const COMMENTAIRE_LITIGE_MAX = 500;
 // Box choisissables en match (la box "stuff" n'est plus jouable : indication
 // pour Tous les comptes seulement).
 const BOX_AUTORISEES = new Set(BOX_MATCH);
-// Matchmaking classique (théâtre "auto") : full box seulement, ni
-// personnages stuff ni box opti (cf. BOX_MATCHMAKING_CLASSIQUE de
-// matchmaking/match.js).
+// Matchmaking « Full box » (théâtre "auto", sans draft.box_libre) : full
+// box seulement, ni personnages stuff ni box opti (cf.
+// BOX_MATCHMAKING_CLASSIQUE de matchmaking/match.js). « Auto »
+// (draft.box_libre) : box opti permises.
 const BOX_MATCHMAKING_CLASSIQUE = new Set(["full"]);
 
 function estMatchmakingClassique(draft, room) {
-  return room?.type === "matchmaking" && (draft.mode_theatre || "auto") === "auto";
+  // Room privée « Full box » : draft.full_box_imposee.
+  if (draft.full_box_imposee === true) return true;
+  return room?.type === "matchmaking" && (draft.mode_theatre || "auto") === "auto" && !draft.box_libre;
 }
 function getSegments(req) {
   const url = new URL(req.url, `https://${req.headers.host}`);
@@ -278,7 +281,7 @@ async function handleBox(req, res, roomId, user) {
     return res.status(400).json({ error: "Dans ce tournoi, seule la full box est autorisée." });
   }
   if (estMatchmakingClassique(draft, room) && !BOX_MATCHMAKING_CLASSIQUE.has(box)) {
-    return res.status(400).json({ error: "En matchmaking Full box, seule la full box est autorisée." });
+    return res.status(400).json({ error: "En mode Full box, seule la full box est autorisée." });
   }
   // Retour au choix des box après des box non équilibrables : seulement
   // celles des combinaisons qui s'équilibrent.

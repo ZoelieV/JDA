@@ -5,9 +5,10 @@
 // joueur en classé, ni un joueur en mode classique sur un joueur en mêlée
 // générale) : rooms de type "matchmaking" ou "classe" sans player2
 // (colonnes type et created_at), mode de
-// théâtre dans draft.mode_theatre ("auto" = classique, "12" = mêlée,
-// "carnage" ; classé : mêlée seulement, cf. MODES_MATCHMAKING dans
-// api/rooms/index.js). Une
+// théâtre dans draft.mode_theatre ; amical : "auto" (« Full box » : full
+// box seulement), "auto_libre" (« Auto » : draft.mode_theatre "auto" et
+// draft.box_libre, box opti permises) ou "carpe" (« Classique ») ; classé :
+// "12" seulement (cf. MODES_MATCHMAKING dans api/rooms/index.js). Une
 // room "classe" le reste pour les revanches ; ses matchs rapportent des
 // trophées (cf. _lib/trophees.js). Le premier joueur crée sa
 // room et attend dessus ; le suivant prend la plus ancienne room en attente
@@ -93,6 +94,10 @@ async function nonEquilibrables(discordId, autreId) {
   return !(profils || []).some(p => Date.parse(p.updated_at) > derniere);
 }
 
+// « Auto » du matchmaking amical : draft du plus petit palier comme
+// « Full box » ("auto"), mais box opti permises (draft.box_libre).
+const MODE_AUTO_LIBRE = "auto_libre";
+
 async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "auto") {
   // Joueur banni du classé (sanction d'un administrateur).
   if (type === "classe") {
@@ -127,7 +132,7 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     // Rappel de la page d'attente : même mode que la room d'attente (classé :
     // toujours la mêlée générale, même pour une room d'avant sa suppression
     // du mode classique).
-    if (room?.draft?.mode_theatre && type !== "classe") mode = room.draft.mode_theatre;
+    if (room?.draft?.mode_theatre && type !== "classe") mode = room.draft.box_libre ? MODE_AUTO_LIBRE : room.draft.mode_theatre;
   }
 
   // Attente dans l'autre file abandonnée : une seule recherche à la fois.
@@ -139,16 +144,20 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
   // Rooms des autres, les plus anciennes d'abord (plus anciennes que la
   // mienne seulement, pour que deux joueurs en attente ne se prennent pas
   // chacun la room de l'autre).
+  const boxLibre = mode === MODE_AUTO_LIBRE;
+  const modeTheatre = boxLibre ? "auto" : mode;
   let requete = supabase
     .from("rooms")
     .select(COLONNES)
     .eq("type", type)
-    .eq("draft->>mode_theatre", mode)
+    .eq("draft->>mode_theatre", modeTheatre)
     .is("player2_discord_id", null)
     .neq("player1_discord_id", discordId)
     .gte("last_active_at", new Date(Date.now() - ATTENTE_VIVANTE_MS).toISOString())
     .order("created_at", { ascending: true })
     .limit(5);
+  // Full box et Auto : même mode de théâtre, files séparées.
+  if (modeTheatre === "auto") requete = boxLibre ? requete.eq("draft->>box_libre", "true") : requete.is("draft->>box_libre", null);
   if (maRoom) requete = requete.lt("created_at", maRoom.created_at);
   const { data: candidates, error } = await requete;
   if (error) throw error;
@@ -178,7 +187,7 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     player1_discord_id: discordId,
     type,
     // Classé : draft chronométrée (cf. _lib/chronos.js).
-    draft: { mode_theatre: mode, chronometre: type === "classe" },
+    draft: { mode_theatre: modeTheatre, ...(boxLibre ? { box_libre: true } : {}), chronometre: type === "classe" },
     last_active_at: new Date().toISOString()
   });
   if (erreurCreation) throw erreurCreation;
