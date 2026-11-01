@@ -69,11 +69,11 @@
       ["Litiges", "/admin?litiges=1"]
     ] }
   ];
-  // Réseaux : sites officiels en attendant les liens du site.
+  // Réseaux : chaînes de Laïna (Ko-fi : site officiel en attendant le lien).
   const RESEAUX = [
-    ["Discord", "https://discord.com", "discord"],
-    ["TikTok", "https://www.tiktok.com", "tiktok"],
-    ["Instagram", "https://www.instagram.com", "instagram"],
+    ["Discord", "https://discord.gg/fVAcUxpcc", "discord"],
+    ["TikTok", "https://www.tiktok.com/@_laina_e", "tiktok"],
+    ["Instagram", "https://www.instagram.com/_laina_e/", "instagram"],
     ["YouTube", "https://www.youtube.com/@laina_emyko", "youtube"],
     ["Ko-fi", "https://ko-fi.com", "kofi"]
   ];
