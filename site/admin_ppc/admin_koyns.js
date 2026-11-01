@@ -92,6 +92,7 @@ async function ouvrirKoyns() {
   const [config] = await Promise.all([chargerPointsAdmin(), chargerCatalogueChoix().catch(() => null), chargerJoueursKoyns()]);
   rendreDon();
   chargerHistoriqueDons();
+  chargerHistoriqueRetraits();
   exclusifsKoyns = Array.isArray(config?.cosmetiques_exclusifs) ? [...config.cosmetiques_exclusifs] : [];
   rendreExclusifs();
   tirageKoyns = Array.isArray(config?.cosmetiques_tirage) ? [...config.cosmetiques_tirage] : [];
@@ -145,6 +146,43 @@ async function chargerHistoriqueDons() {
   }
 }
 
+// ---- Historique des retraits (GET /api/points?retraits=1, cf.
+// lireHistoriqueRetraits dans api/_lib/koyns.js) : date, joueur, Rikoyns
+// retirés, raison (match invalidé + sanction, ou retrait d'un
+// administrateur), solde actuel (en rouge s'il est négatif). ----
+const SANCTIONS_RETRAIT = { semaine: "ban classé 1 semaine", saison: "ban classé jusqu'à la fin de la saison", definitif: "ban classé définitif" };
+
+async function chargerHistoriqueRetraits() {
+  const zone = document.getElementById("liste-retraits");
+  zone.innerHTML = `<span class="aide-apercu">Chargement…</span>`;
+  try {
+    const reponse = await fetch("/api/points?retraits=1", { credentials: "include" });
+    const donnees = await reponse.json().catch(() => ({}));
+    if (!reponse.ok) throw new Error(donnees.error || "Historique indisponible.");
+    const nom = id => echapper(donnees.joueurs?.[id] || id);
+    const rikoyns = n => `${n} <img class="icone-koyn" src="/DB/images/others/rikoyn.webp" alt="Rikoyns">`;
+    zone.innerHTML = donnees.retraits.length ? donnees.retraits.map(r => {
+      const date = new Date(r.date).toLocaleString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const par = r.admin ? ` par ${nom(r.admin)}` : "";
+      const raison = r.type === "reprise"
+        ? `Match n° ${echapper(r.match_id || "?")} invalidé${par}${r.sanction ? ` · ${SANCTIONS_RETRAIT[r.sanction] || echapper(r.sanction)}` : ""}`
+        : `Retrait${par || ` <span class="aide-apercu">(admin inconnu)</span>`}`;
+      return `
+        <div class="ligne-don ligne-retrait">
+          <span class="date-don">${date}</span>
+          <span class="acteurs-don"><strong>${nom(r.joueur)}</strong> · ${raison}</span>
+          <span class="contenu-don">
+            <span class="koyns-don retrait">${rikoyns(r.montant)}</span>
+            <span class="solde-retrait${r.solde < 0 ? " negatif" : ""}" title="Solde actuel du joueur">solde ${rikoyns(r.solde)}</span>
+          </span>
+        </div>`;
+    }).join("") : `<span class="aide-apercu">Aucun retrait pour l'instant.</span>`;
+  } catch (erreur) {
+    console.error(erreur);
+    zone.innerHTML = `<span class="message-ajout erreur">${echapper(erreur.message)}</span>`;
+  }
+}
+
 async function donnerKoyns() {
   const discordId = document.getElementById("don-joueur").value;
   const koyns = Number(document.getElementById("don-koyns").value || 0);
@@ -162,6 +200,7 @@ async function donnerKoyns() {
     if (!reponse.ok) throw new Error(donnees.error || "Erreur d'enregistrement.");
     messageKoyns("message-don", "Envoyé.", "succes");
     chargerHistoriqueDons();
+    if (koyns < 0) chargerHistoriqueRetraits();
     document.getElementById("don-koyns").value = "";
     donCosmetiques = [];
     rendreDon();

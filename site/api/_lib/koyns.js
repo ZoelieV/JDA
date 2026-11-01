@@ -366,6 +366,50 @@ async function lireHistoriqueDons(limite = 200) {
   return dons.slice(0, limite).map(d => ({ ...d, date: new Date(d.date).toISOString() }));
 }
 
+// ---- Historique des retraits (fenêtre Rikoyns de l'admin) ----
+// Rikoyns repris (koyns_mouvements, raison "reprise", ref
+// "reprise:match:<id>" : match invalidé à la suite d'un signalement, cf.
+// traiterSignalement dans _lib/signalements.js) et retirés par un
+// administrateur (raison "don", montant négatif), du plus récent au plus
+// ancien. Reprise : administrateur qui a invalidé le match (signalements,
+// traite_par) et sanction donnée au joueur pour ce match (sanctions).
+// Solde actuel du joueur : négatif s'il avait déjà dépensé ses Rikoyns.
+// -> [{ date, joueur, montant, type ("reprise" | "retrait"), admin,
+// match_id, sanction, solde }]
+async function lireHistoriqueRetraits(limite = 200) {
+  const { data, error } = await supabase.from("koyns_mouvements").select("discord_id, montant, raison, ref, cree_le")
+    .or("raison.eq.reprise,and(raison.eq.don,montant.lt.0)")
+    .order("cree_le", { ascending: false }).limit(limite);
+  if (error) throw error;
+  const lignes = (data || []).map(m => {
+    const reprise = m.raison === "reprise";
+    const matchId = reprise ? String(m.ref).match(/^reprise:match:(.+)$/)?.[1] || null : null;
+    return {
+      date: m.cree_le, joueur: m.discord_id, montant: m.montant, type: reprise ? "reprise" : "retrait",
+      admin: reprise ? null : String(m.ref).split(":")[1] || null, match_id: matchId, sanction: null, solde: null
+    };
+  });
+  const matchs = [...new Set(lignes.map(l => l.match_id).filter(Boolean))];
+  const joueurs = [...new Set(lignes.map(l => l.joueur))];
+  const [signalements, sanctions, mouvements] = await Promise.all([
+    matchs.length ? supabase.from("signalements").select("match_id, traite_par").in("match_id", matchs).eq("statut", "invalide") : { data: [] },
+    matchs.length ? supabase.from("sanctions").select("match_id, discord_id, type").in("match_id", matchs) : { data: [] },
+    joueurs.length ? supabase.from("koyns_mouvements").select("discord_id, montant").in("discord_id", joueurs) : { data: [] }
+  ]);
+  const adminMatch = new Map((signalements.data || []).map(s => [String(s.match_id), s.traite_par]));
+  const sanctionMatch = new Map((sanctions.data || []).map(s => [`${s.match_id}|${s.discord_id}`, s.type]));
+  const soldes = {};
+  (mouvements.data || []).forEach(m => { soldes[m.discord_id] = (soldes[m.discord_id] || 0) + m.montant; });
+  lignes.forEach(l => {
+    if (l.match_id) {
+      l.admin = adminMatch.get(l.match_id) || null;
+      l.sanction = sanctionMatch.get(`${l.match_id}|${l.joueur}`) || null;
+    }
+    l.solde = soldes[l.joueur] ?? 0;
+  });
+  return lignes;
+}
+
 // ---- Bonus de connexion d'événement (config.bonus_connexion : { debut,
 // fin (dates ISO), koyns, cosmetique }) : une fois par journée pendant
 // l'événement, à la première visite connectée (cf. api/auth/me.js). ----
@@ -471,6 +515,7 @@ module.exports = {
   MAX_KOYNS_DON,
   estCosmetique,
   lireHistoriqueDons,
+  lireHistoriqueRetraits,
   lirePossedes,
   etatKoyns,
   filtrerParametresPossedes,
