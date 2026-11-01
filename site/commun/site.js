@@ -33,8 +33,8 @@
   // Liens des pages ; menus déroulants : Match, Joueurs, Historique, Règles.
   const LIENS = [
     { titre: "Match", href: "/match", menu: [
-      ["Amical", "/match#amical"],
       ["Classé", "/match#classe"],
+      ["Amical", "/match#amical"],
       ["Entraînement", "/match#entrainement"],
       ["En équipe", "/match#equipe"],
       ["Tournois", "/tournois"]
