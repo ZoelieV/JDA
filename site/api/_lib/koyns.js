@@ -317,10 +317,14 @@ async function reprendrePartie(ref) {
 }
 
 // Don d'un administrateur : Rikoyns (positif ou négatif) et / ou
-// cosmétiques (un ou plusieurs).
-async function donner(discordId, { koyns = 0, cosmetiques = [] }, admin) {
-  if (koyns) {
-    await ajouterMouvement({ discord_id: discordId, montant: koyns, raison: "don", ref: `don:${admin}:${Date.now()}` });
+// cosmétiques (un ou plusieurs), message au joueur facultatif (montré dans
+// sa fenêtre des récompenses, cf. lireNouveautes ; cosmétiques seuls :
+// mouvement à 0 Rikoyn qui porte le message).
+const LONGUEUR_MESSAGE_DON = 300;
+
+async function donner(discordId, { koyns = 0, cosmetiques = [], message = null }, admin) {
+  if (koyns || message) {
+    await ajouterMouvement({ discord_id: discordId, montant: koyns, raison: "don", ref: `don:${admin}:${Date.now()}`, message: message || null });
   }
   // Source "don:<administrateur>" (historique des dons, cf.
   // lireHistoriqueDons ; anciens dons : "don", sans administrateur).
@@ -343,7 +347,7 @@ const ECART_DON_MS = 15 * 1000;
 
 async function lireHistoriqueDons(limite = 200) {
   const [mouvements, cosmetiquesDonnes] = await Promise.all([
-    supabase.from("koyns_mouvements").select("discord_id, montant, ref, cree_le")
+    supabase.from("koyns_mouvements").select("discord_id, montant, ref, cree_le, message")
       .eq("raison", "don").order("cree_le", { ascending: false }).limit(limite),
     supabase.from("cosmetiques_possedes").select("discord_id, cosmetique, source, obtenu_le")
       .like("source", "don%").order("obtenu_le", { ascending: false }).limit(limite * 5)
@@ -351,8 +355,8 @@ async function lireHistoriqueDons(limite = 200) {
   if (mouvements.error) throw mouvements.error;
   if (cosmetiquesDonnes.error) throw cosmetiquesDonnes.error;
   const evenements = [
-    ...(mouvements.data || []).map(m => ({ date: Date.parse(m.cree_le), joueur: m.discord_id, admin: String(m.ref).split(":")[1] || null, koyns: m.montant, cosmetiques: [] })),
-    ...(cosmetiquesDonnes.data || []).map(c => ({ date: Date.parse(c.obtenu_le), joueur: c.discord_id, admin: String(c.source).split(":")[1] || null, koyns: 0, cosmetiques: [c.cosmetique] }))
+    ...(mouvements.data || []).map(m => ({ date: Date.parse(m.cree_le), joueur: m.discord_id, admin: String(m.ref).split(":")[1] || null, koyns: m.montant, cosmetiques: [], message: m.message || null })),
+    ...(cosmetiquesDonnes.data || []).map(c => ({ date: Date.parse(c.obtenu_le), joueur: c.discord_id, admin: String(c.source).split(":")[1] || null, koyns: 0, cosmetiques: [c.cosmetique], message: null }))
   ].sort((a, b) => b.date - a.date);
   const dons = [];
   evenements.forEach(e => {
@@ -362,6 +366,7 @@ async function lireHistoriqueDons(limite = 200) {
     meme.koyns += e.koyns;
     meme.cosmetiques.push(...e.cosmetiques);
     meme.admin ||= e.admin;
+    meme.message ||= e.message;
   });
   return dons.slice(0, limite).map(d => ({ ...d, date: new Date(d.date).toISOString() }));
 }
@@ -377,7 +382,7 @@ async function lireHistoriqueDons(limite = 200) {
 // -> [{ date, joueur, montant, type ("reprise" | "retrait"), admin,
 // match_id, sanction, solde }]
 async function lireHistoriqueRetraits(limite = 200) {
-  const { data, error } = await supabase.from("koyns_mouvements").select("discord_id, montant, raison, ref, cree_le")
+  const { data, error } = await supabase.from("koyns_mouvements").select("discord_id, montant, raison, ref, cree_le, message")
     .or("raison.eq.reprise,and(raison.eq.don,montant.lt.0)")
     .order("cree_le", { ascending: false }).limit(limite);
   if (error) throw error;
@@ -386,7 +391,8 @@ async function lireHistoriqueRetraits(limite = 200) {
     const matchId = reprise ? String(m.ref).match(/^reprise:match:(.+)$/)?.[1] || null : null;
     return {
       date: m.cree_le, joueur: m.discord_id, montant: m.montant, type: reprise ? "reprise" : "retrait",
-      admin: reprise ? null : String(m.ref).split(":")[1] || null, match_id: matchId, sanction: null, solde: null
+      admin: reprise ? null : String(m.ref).split(":")[1] || null, match_id: matchId, sanction: null, solde: null,
+      message: m.message || null
     };
   });
   const matchs = [...new Set(lignes.map(l => l.match_id).filter(Boolean))];
@@ -470,8 +476,9 @@ async function lireNouveautes(discordId, depuis) {
   const debut = new Date(date).toISOString();
   const [mouvements, recus] = await Promise.all([
     // Victoire de tournoi : mouvement à 0 (cf. noterVictoireTournoi).
-    supabase.from("koyns_mouvements").select("montant, raison, ref")
-      .eq("discord_id", discordId).gt("cree_le", debut).gte("montant", 0).in("raison", RAISONS_NOTIFIEES),
+    // Dons : retraits (montant négatif) et messages compris.
+    supabase.from("koyns_mouvements").select("montant, raison, ref, message, cree_le")
+      .eq("discord_id", discordId).gt("cree_le", debut).in("raison", RAISONS_NOTIFIEES).order("cree_le", { ascending: true }),
     supabase.from("cosmetiques_possedes").select("cosmetique")
       .eq("discord_id", discordId).gt("obtenu_le", debut).not("source", "in", "(achat,tirage,tirage_focus)")
   ]);
@@ -479,11 +486,16 @@ async function lireNouveautes(discordId, depuis) {
   if (recus.error) console.error("Erreur lecture cosmetiques_possedes :", recus.error);
   const koyns = {};
   const idsTournois = [];
-  (mouvements.data || []).forEach(({ montant, raison, ref }) => {
+  // Messages des administrateurs (dons et retraits) : { montant, message }.
+  const messages = [];
+  let retire = 0;
+  (mouvements.data || []).forEach(({ montant, raison, ref, message }) => {
     if (raison === "tournoi") {
       idsTournois.push(String(ref).replace(/^tournoi:/, ""));
       return;
     }
+    if (raison === "don" && message) messages.push({ montant, message });
+    if (raison === "don" && montant < 0) retire += -montant;
     if (montant <= 0) return;
     koyns[raison] ??= { total: 0, nb: 0 };
     koyns[raison].total += montant;
@@ -496,8 +508,8 @@ async function lireNouveautes(discordId, depuis) {
     tournois = (data || []).map(ligne => ({ id: ligne.data.id, nom: ligne.data.nom, recompense: ligne.data.recompense || null }));
   }
   const cosmetiquesRecus = (recus.data || []).map(ligne => apercuCosmetique(ligne.cosmetique));
-  if (!Object.keys(koyns).length && !cosmetiquesRecus.length && !tournois.length) return null;
-  return { koyns, cosmetiques: cosmetiquesRecus, tournois };
+  if (!Object.keys(koyns).length && !cosmetiquesRecus.length && !tournois.length && !messages.length && !retire) return null;
+  return { koyns, cosmetiques: cosmetiquesRecus, tournois, messages, retire };
 }
 
 // Victoire d'un tournoi : mouvement à 0 Rikoyn (une fois par joueur et par
@@ -513,6 +525,7 @@ module.exports = {
   KOYNS_ABANDON,
   MAX_GAMES_PAR_ADVERSAIRE,
   MAX_KOYNS_DON,
+  LONGUEUR_MESSAGE_DON,
   estCosmetique,
   lireHistoriqueDons,
   lireHistoriqueRetraits,

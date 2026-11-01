@@ -2766,6 +2766,22 @@ body.page-equilibrage #tuiles-admin {
   height: 1rem;
 }
 
+.texte-don {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* Message joint au don / retrait, sur toute la largeur de la ligne. */
+.texte-message-don {
+  grid-column: 1 / -1;
+  color: var(--texte-doux, rgba(255, 255, 255, 0.75));
+  font-style: italic;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
 .solde-retrait {
   display: inline-flex;
   align-items: center;

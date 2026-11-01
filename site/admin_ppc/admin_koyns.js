@@ -138,6 +138,7 @@ async function chargerHistoriqueDons() {
           <span class="date-don">${date}</span>
           <span class="acteurs-don">${don.admin ? nom(don.admin) : `<span class="aide-apercu">admin inconnu</span>`} → <strong>${nom(don.joueur)}</strong></span>
           <span class="contenu-don">${koyns}${cosmetiques}</span>
+          ${don.message ? `<span class="texte-message-don">« ${echapper(don.message)} »</span>` : ""}
         </div>`;
     }).join("") : `<span class="aide-apercu">Aucun don pour l'instant.</span>`;
   } catch (erreur) {
@@ -175,6 +176,7 @@ async function chargerHistoriqueRetraits() {
             <span class="koyns-don retrait">${rikoyns(r.montant)}</span>
             <span class="solde-retrait${r.solde < 0 ? " negatif" : ""}" title="Solde actuel du joueur">solde ${rikoyns(r.solde)}</span>
           </span>
+          ${r.message ? `<span class="texte-message-don">« ${echapper(r.message)} »</span>` : ""}
         </div>`;
     }).join("") : `<span class="aide-apercu">Aucun retrait pour l'instant.</span>`;
   } catch (erreur) {
@@ -187,6 +189,7 @@ async function donnerKoyns() {
   const discordId = document.getElementById("don-joueur").value;
   const koyns = Number(document.getElementById("don-koyns").value || 0);
   const cosmetiques = [...donCosmetiques];
+  const message = document.getElementById("don-texte").value.trim();
   if (!discordId) return messageKoyns("message-don", "Choisis un joueur.", "erreur");
   try {
     // Pas envoyerAjout : la réponse n'est pas la config.
@@ -194,7 +197,7 @@ async function donnerKoyns() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ don: { discord_id: discordId, koyns, cosmetiques } })
+      body: JSON.stringify({ don: { discord_id: discordId, koyns, cosmetiques, ...(message ? { message } : {}) } })
     });
     const donnees = await reponse.json().catch(() => ({}));
     if (!reponse.ok) throw new Error(donnees.error || "Erreur d'enregistrement.");
@@ -202,6 +205,7 @@ async function donnerKoyns() {
     chargerHistoriqueDons();
     if (koyns < 0) chargerHistoriqueRetraits();
     document.getElementById("don-koyns").value = "";
+    document.getElementById("don-texte").value = "";
     donCosmetiques = [];
     rendreDon();
   } catch (erreur) {

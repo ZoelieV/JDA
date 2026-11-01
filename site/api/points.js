@@ -77,7 +77,7 @@
 //                                    défaut, cf. prixCosmetique)
 //   { bonus_connexion: { debut, fin, koyns, cosmetique } | null }  bonus
 //                                    quotidien de connexion d'un événement
-//   { don: { discord_id, koyns, cosmetique } }  donne des Rikoyns (négatif :
+//   { don: { discord_id, koyns, cosmetiques, message? } }  donne des Rikoyns (négatif :
 //                                    en retire) et / ou un cosmétique à un
 //                                    joueur (config inchangée ; cf.
 //                                    _lib/koyns.js)
@@ -105,7 +105,7 @@ const { lireStatistiques } = require("./_lib/statistiques");
 // modifiées, cf. commun/recommandations_stuff.js).
 const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
 const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX } = require("../commun/koyns.js");
-const { estCosmetique, donner, MAX_KOYNS_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
+const { estCosmetique, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
@@ -572,9 +572,12 @@ module.exports = async (req, res) => {
         const inconnu = cosmetiques.find(id => !estCosmetique(id));
         if (inconnu) return res.status(400).json({ error: `Cosmétique inconnu : ${inconnu}` });
         if (!koyns && !cosmetiques.length) return res.status(400).json({ error: "Rien à donner" });
+        // Message au joueur (facultatif).
+        const message = typeof corps.don.message === "string" ? corps.don.message.trim() : "";
+        if (message.length > LONGUEUR_MESSAGE_DON) return res.status(400).json({ error: `Message : ${LONGUEUR_MESSAGE_DON} caractères au plus` });
         const { data: profil } = await supabase.from("profiles").select("discord_id").eq("discord_id", cible).maybeSingle();
         if (!profil) return res.status(404).json({ error: "Joueur introuvable" });
-        await donner(cible, { koyns, cosmetiques }, user.id);
+        await donner(cible, { koyns, cosmetiques, message: message || null }, user.id);
         return res.status(200).json({ ok: true });
       } else if (corps.categoriesArmes) {
         const ids = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));

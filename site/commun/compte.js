@@ -268,14 +268,18 @@
     pack: "un pack Genshin"
   };
 
-  function afficherRecompenses({ koyns = {}, cosmetiques = [], tournois = [] }, ouvrirPersonnalisation) {
+  // messages : mots des administrateurs avec un don ou un retrait
+  // ({ montant, message }) ; retire : Rikoyns retirés par un administrateur.
+  function afficherRecompenses({ koyns = {}, cosmetiques = [], tournois = [], messages = [], retire = 0 }, ouvrirPersonnalisation) {
     const total = Object.values(koyns).reduce((somme, gain) => somme + gain.total, 0);
+    const gains = total || cosmetiques.length || tournois.length;
+    const montantMessage = montant => montant ? `<strong class="${montant < 0 ? "retrait" : ""}">${montant > 0 ? "+" : ""}${montant} <img src="${ICONES}rikoyn.webp" alt="Rikoyns"></strong>` : "";
     const fenetre = document.createElement("dialog");
     fenetre.className = "fenetre-recompenses";
     fenetre.setAttribute("aria-label", "Récompenses reçues");
     fenetre.innerHTML = `
       <div class="recompenses-eclat" aria-hidden="true"></div>
-      <h2>${tournois.length ? "Victoire !" : "Récompenses reçues !"}</h2>
+      <h2>${tournois.length ? "Victoire !" : gains ? "Récompenses reçues !" : retire ? "Rikoyns retirés" : "Message de l'équipe"}</h2>
       ${tournois.map(t => `
         <div class="recompenses-tournoi">
           <p class="recompenses-tournoi-titre">🏆 Tu remportes le tournoi « ${echapper(t.nom)} » !</p>
@@ -287,6 +291,12 @@
         <ul class="recompenses-lignes">${Object.entries(koyns).map(([raison, gain]) => `
           <li><span>${echapper((LIBELLES_GAINS[raison] || (() => "Gain"))(gain.nb))}</span><strong>+${gain.total}</strong></li>`).join("")}
         </ul>` : ""}
+      ${retire ? `
+        <p class="recompenses-total recompenses-retrait">-${retire} <img src="${ICONES}rikoyn.webp" alt=""> <span>Rikoyns retirés par un administrateur</span></p>` : ""}
+      ${messages.length ? `
+        <div class="recompenses-messages">${messages.map(m => `
+          <blockquote class="recompenses-message">${montantMessage(m.montant)}<span>${echapper(m.message)}</span></blockquote>`).join("")}
+        </div>` : ""}
       ${cosmetiques.length ? `
         <p class="recompenses-sous-titre">${cosmetiques.length > 1 ? `${cosmetiques.length} nouveaux cosmétiques` : "Nouveau cosmétique"}</p>
         <div class="recompenses-cosmetiques">${cosmetiques.map(c => `
@@ -294,7 +304,7 @@
         </div>` : ""}
       <div class="recompenses-actions">
         ${cosmetiques.length ? `<button type="button" class="recompenses-btn secondaire" data-action="porter">Personnalisation</button>` : ""}
-        <button type="button" class="recompenses-btn" data-action="fermer">Super !</button>
+        <button type="button" class="recompenses-btn" data-action="fermer">${gains ? "Super !" : "OK"}</button>
       </div>`;
     const fermer = () => { fenetre.close(); fenetre.remove(); };
     fenetre.querySelector('[data-action="fermer"]').addEventListener("click", fermer);
