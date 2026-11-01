@@ -282,10 +282,13 @@ function casEquilibrage(topFaible, topFort, limites) {
 // extreme (dernier recours, quand tous les autres essais ont échoué) :
 // meilleur ban refusé et plus de joker -> au lieu de s'arrêter, ban non
 // optimal : le retrait du top de la box forte qui réduit le plus l'écart
-// parmi ceux qui ne touchent que la box forte ; tolérance finale
-// TOLERANCE_EXTREME au lieu de TOLERANCE_FIXE.
-function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false, trace = null, maxJokers = 1, extreme = false } = {}) {
+// parmi ceux qui ne touchent que la box forte ; objectif et tolérance
+// finale TOLERANCE_EXTREME (arrêt dès 45).
+function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, margeNormale = MARGE_FIXE, { special = false, trace = null, maxJokers = 1, extreme = false } = {}) {
   const tolerance = extreme ? TOLERANCE_EXTREME : TOLERANCE_FIXE;
+  // Dernier recours : arrêt dès que l'écart prévu est à TOLERANCE_EXTREME
+  // ou moins (le moins de bans possible).
+  const marge = extreme ? TOLERANCE_EXTREME : margeNormale;
   const bannisFort = new Set();
   const bannisFaible = new Set();
   // Armes libres consommées : portées par un perso au moment de son ban
