@@ -47,8 +47,10 @@
   };
   const AFFICHAGES_ACCUEIL = [
     { id: "classique", nom: "Classique", description: "En-tête avec les pages et leurs menus, logo et modes de jeu au centre, bas de page." },
-    { id: "panneau", nom: "Panneau", description: "Créer un match et Mon compte au centre, les autres pages dans un panneau à gauche (bouton ☰ pour le plier)." },
-    { id: "cartes", nom: "Cartes", description: "Toutes les pages au centre, en grille de cartes." }
+    // beta : affichage plus suivi au même rythme que Classique (pastille
+    // « Bêta », avertissement quand il est choisi, cf. rendreAccueil).
+    { id: "panneau", nom: "Panneau", beta: true, description: "Créer un match et Mon compte au centre, les autres pages dans un panneau à gauche (bouton ☰ pour le plier)." },
+    { id: "cartes", nom: "Cartes", beta: true, description: "Toutes les pages au centre, en grille de cartes." }
   ];
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins"];
@@ -109,7 +111,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=23";
+    lien.href = "/commun/personnalisation.css?v=24";
     document.head.appendChild(lien);
   }
 
@@ -879,6 +881,12 @@
       bouton.innerHTML = `<span class="perso-schema" aria-hidden="true">${"<span></span>".repeat(8)}</span>`;
       const nom = document.createElement("strong");
       nom.textContent = affichage.nom;
+      if (affichage.beta) {
+        const badge = document.createElement("span");
+        badge.className = "perso-badge-beta";
+        badge.textContent = "Bêta";
+        nom.append(" ", badge);
+      }
       const description = document.createElement("span");
       description.className = "perso-schema-description";
       description.textContent = affichage.description;
@@ -886,6 +894,13 @@
       grille.appendChild(bouton);
     });
     conteneur.append(note, grille);
+    // Affichage en bêta choisi : prévenu qu'il peut être incomplet.
+    if (AFFICHAGES_ACCUEIL.find(affichage => affichage.id === brouillon.accueil)?.beta) {
+      const avertissement = document.createElement("p");
+      avertissement.className = "perso-avertissement-beta";
+      avertissement.textContent = "⚠️ Affichage en bêta : il peut être incomplet (pages, liens ou nouveautés pas encore adaptés). L'affichage Classique est le plus à jour.";
+      conteneur.appendChild(avertissement);
+    }
   }
 
   // Glisser-déposer d'une case pleine du flex (souris et doigt) : au-delà de
