@@ -238,6 +238,7 @@
         Box faible : ${nomRole(d.faible)} (top ${d.nb_top} : ${d.top_faible} pts) · box forte : ${nomRole(d.fort)} (top ${d.nb_top} : ${d.top_fort} pts).<br>
         ${(TEXTES_CAS[d.cas] || (() => ""))(d.limites)}${d.special ? " <b>Mode spécial</b> : autant de jokers que nécessaire." : ""}<br>
         ${htmlEssais(d)}
+        ${d.extreme ? `<b>Dernier recours</b> (aucun autre essai équilibrable) : quand le meilleur ban est refusé et qu'il n'y a plus de joker, ban non optimal (le retrait qui réduit le plus l'écart parmi ceux qui ne touchent que la box forte) ; pas équilibrable au-delà de ${d.tolerance}.<br>` : ""}
         Aucune box sous ${d.limites.min_persos} persos. Écart de points entre les box : ${Math.abs(d.ecart_points)}. Chaque arme ne compte qu'une fois : l'arme d'un perso banni (signature ou arme libre qu'il portait) ne revient sur aucun autre perso${Math.abs(d.ecart_points) >= 4000 ? " ; 4000 pts d'écart ou plus : elle sera aussi bannie pour le combat avec les vrais bans" : ""}.
       </p>`;
   }
@@ -248,7 +249,7 @@
   // n'est équilibrable, celui qui va le plus loin.
   function htmlEssais(d) {
     if (!d.essais || d.essais.length < 2) return d.armes_office ? "Armes support et signatures 5★ bannies d'office pour ce calcul.<br>" : "";
-    const libelle = e => `${e.armes_office ? "armes bannies d'office + " : ""}${e.max_jokers} joker${e.max_jokers > 1 ? "s" : ""}`;
+    const libelle = e => `${e.armes_office ? "armes bannies d'office + " : ""}${e.max_jokers} joker${e.max_jokers > 1 ? "s" : ""}${e.extreme ? " + bans non optimaux (tolérance 45)" : ""}`;
     const liste = d.essais.map(e => {
       const texte = `${libelle(e)} → écart <b>${e.ecart_apres}</b>${e.equilibrable ? " (équilibrable)" : ""}`;
       return e.montre ? `<span class="eq-essai-montre">${texte} : déroulé ci-dessous</span>` : texte;
@@ -327,8 +328,12 @@
       return `<div class="eq-decision eq-refus">Meilleur retrait : ${imagePerso(e.refus.id)} <b>${nomPerso(e.refus.id)}</b> (−${e.refus.gain}) refusé : ${(TEXTES_REFUS[e.refus.raison] || (() => ""))(d)}.</div>`;
     }
     const joker = e.type === "joker";
+    // Dernier recours : ban non optimal (cf. extreme, calculerEquilibrageFixe).
+    const nonOptimal = !joker && e.non_optimal && e.refus;
     return `<div class="eq-decision${joker ? " eq-joker" : ""}">
-      ${joker ? `Ban refusé (${imagePerso(e.refus.id)} ${nomPerso(e.refus.id)} : ${(TEXTES_REFUS[e.refus.raison] || (() => ""))(d)}) → <b>ban joker</b> : ` : "Ban : "}
+      ${joker ? `Ban refusé (${imagePerso(e.refus.id)} ${nomPerso(e.refus.id)} : ${(TEXTES_REFUS[e.refus.raison] || (() => ""))(d)}) → <b>ban joker</b> : `
+        : nonOptimal ? `Ban refusé (${imagePerso(e.refus.id)} ${nomPerso(e.refus.id)} : ${(TEXTES_REFUS[e.refus.raison] || (() => ""))(d)}), plus de joker → <b>ban non optimal</b> : `
+          : "Ban : "}
       <span class="eq-banni">${imagePerso(e.choix)}<b>${nomPerso(e.choix)}</b></span>
       ${joker ? "retiré de la box forte seulement (le petit joueur peut encore le picker)" : e.commun ? "retiré des 2 box (les 2 l'ont)" : "retiré de la box forte"}.
       Écart prévu : ${ecartAvant} → <b class="eq-gros" data-de="${ecartAvant}" data-vers="${e.ecart}">${e.ecart}</b> (−${e.gain}).

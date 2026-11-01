@@ -238,6 +238,9 @@ function horizontalite(modele) {
 // Écart prévu accepté en fin de calcul (objectif MARGE_FIXE) : au-delà, le
 // match n'est pas équilibrable.
 const TOLERANCE_FIXE = 30;
+// Dernier recours (essai "extreme", cf. evaluerEquilibrageFixe dans
+// _lib/boxes.js : tous les autres essais ont échoué) : tolérance relevée.
+const TOLERANCE_EXTREME = 45;
 
 // Cas du calcul selon le top 12 (somme des VERTICALITE_PERSOS meilleurs) des
 // 2 box au départ (limites : cf. getLimitesEquilibrage, _lib/personnages.js) :
@@ -276,7 +279,13 @@ function casEquilibrage(topFaible, topFort, limites) {
 // calcul y est ajoutée (cf. etapeTrace), pour la montrer aux joueurs.
 // maxJokers : jokers permis (1 ; 2 en second essai d'un match pas
 // équilibrable, cf. evaluerEquilibrageFixe dans _lib/boxes.js).
-function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false, trace = null, maxJokers = 1 } = {}) {
+// extreme (dernier recours, quand tous les autres essais ont échoué) :
+// meilleur ban refusé et plus de joker -> au lieu de s'arrêter, ban non
+// optimal : le retrait du top de la box forte qui réduit le plus l'écart
+// parmi ceux qui ne touchent que la box forte ; tolérance finale
+// TOLERANCE_EXTREME au lieu de TOLERANCE_FIXE.
+function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites, marge = MARGE_FIXE, { special = false, trace = null, maxJokers = 1, extreme = false } = {}) {
+  const tolerance = extreme ? TOLERANCE_EXTREME : TOLERANCE_FIXE;
   const bannisFort = new Set();
   const bannisFaible = new Set();
   // Armes libres consommées : portées par un perso au moment de son ban
@@ -382,6 +391,23 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
     // Ban impossible : joker (maxJokers fois au plus, si le cas le permet ;
     // mode spécial : autant que nécessaire), sinon fin.
     const refus = { id: ban.id, gain: ban.gain, raison: !ban.persosOk ? "min_persos" : resultat.jokers && ban.commun ? "apres_joker" : "limites" };
+    // Dernier recours : plus de joker -> ban non optimal (box forte seule).
+    if (extreme && (!jokerPermis || resultat.jokers >= maxJokers)) {
+      const candidatsNonOptimaux = trace ? [] : null;
+      const autre = mesure().fort.top
+        .map(id => essayer(id, false))
+        .map(r => { candidatsNonOptimaux?.push(r); return r; })
+        .filter(r => r.gain > 0 && r.valide && !r.commun)
+        .reduce((m, r) => (!m || r.gain > m.gain || (r.gain === m.gain && valeur(r.id) > valeur(m.id)) ? r : m), null);
+      if (autre) {
+        bannir(autre.id, false);
+        resultat.bans++;
+        resultat.suggestion.push(autre.id);
+        noterVerticaux(mesure());
+        etapeTrace("ban", { choix: autre.id, gain: autre.gain, commun: false, non_optimal: true, refus, candidats: candidatsNonOptimaux });
+        continue;
+      }
+    }
     if (!jokerPermis || (resultat.jokers >= maxJokers && !special)) {
       raisonFin = jokerPermis ? "joker_deja_pris" : "joker_interdit";
       if (trace) etapeTrace("refus", { refus, candidats: candidatsBan });
@@ -404,7 +430,7 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
   resultat.ecart_apres = prevu();
   resultat.top_faible_apres = top(fin.faible);
   resultat.top_fort_apres = top(fin.fort);
-  resultat.equilibrable = resultat.ecart_apres <= TOLERANCE_FIXE;
+  resultat.equilibrable = resultat.ecart_apres <= tolerance;
   // Armes des persos bannis : déjà comptées, jamais réattribuées aux persos
   // horizontaux non plus.
   consommeesFaible.forEach(cle => verticaux.faible.armes.add(cle));
@@ -413,7 +439,7 @@ function calculerEquilibrageFixe(modeleFaible, modeleFort, ecartPoints, limites,
   if (trace) {
     trace.push({ type: "fin", raison: raisonFin, ecart: resultat.ecart_apres, equilibrable: resultat.equilibrable });
     resultat.contexte = {
-      cas, limites, marge, tolerance: TOLERANCE_FIXE, taille_equipe: TAILLE_EQUIPE, nb_top: VERTICALITE_PERSOS,
+      cas, limites, marge, tolerance, extreme, taille_equipe: TAILLE_EQUIPE, nb_top: VERTICALITE_PERSOS,
       ecart_points: ecartPoints, joker_permis: jokerPermis, max_jokers: maxJokers, special
     };
   }

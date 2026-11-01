@@ -106,7 +106,7 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
       office: { [faible]: copiesArmesModele(modeles[faible], ids), [fort]: copiesArmesModele(modeles[fort], ids) }
     }
     : { modeles, office: null };
-  const calculer = (version, maxJokers, trace) => calculerEquilibrageFixe(version.modeles[faible], version.modeles[fort], ecart, getLimitesEquilibrage(palier), undefined, { ...options, trace, maxJokers });
+  const calculer = (version, maxJokers, trace, extreme = false) => calculerEquilibrageFixe(version.modeles[faible], version.modeles[fort], ecart, getLimitesEquilibrage(palier), undefined, { ...options, trace, maxJokers, extreme });
   const special = !!options.special;
   // Essais dans l'ordre : le premier équilibrable est retenu (sinon le
   // premier, pour l'affichage du non équilibrable).
@@ -116,13 +116,17 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
     essais.push({ version: versions[0], maxJokers: 2 });
     const toutes = sans(armesBanniesOffice(modeles[fort], armes, personnages, true));
     essais.push({ version: toutes, maxJokers: 1 }, { version: toutes, maxJokers: 2 });
+    // Dernier recours (aucun essai équilibrable) : 2 jokers et armes
+    // bannies d'office, puis bans non optimaux qui ne touchent que la box
+    // forte, tolérance 45 (cf. extreme, calculerEquilibrageFixe).
+    essais.push({ version: toutes, maxJokers: 2, extreme: true });
   }
   let retenu = null;
   let premier = null;
   const tentatives = [];
   for (const essai of essais) {
     const trace = options.trace ? [] : null;
-    const resultat = calculer(essai.version, essai.maxJokers, trace);
+    const resultat = calculer(essai.version, essai.maxJokers, trace, !!essai.extreme);
     const tentative = { ...essai, resultat, trace };
     premier ||= tentative;
     tentatives.push(tentative);
@@ -138,7 +142,7 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
   const detail = {
     resultat: { ...montre.resultat, deux_jokers: montre.maxJokers === 2, armes_office: montre.version.office },
     essais: tentatives.map(t => ({
-      max_jokers: t.maxJokers, armes_office: !!t.version.office,
+      max_jokers: t.maxJokers, armes_office: !!t.version.office, extreme: !!t.extreme,
       ecart_apres: t.resultat.ecart_apres, equilibrable: t.resultat.equilibrable, montre: t === montre
     }))
   };
