@@ -469,6 +469,38 @@ body::before {
   display: block;
 }
 
+/* Engrenage au bout de la bannière (à la place de la médaille et du rang) :
+   ouvre le menu des paramètres. */
+.compte-parametres {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.compte-lien .compte-parametres img {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0.1875rem rgba(0, 0, 0, 0.9));
+  transition: transform 0.2s ease;
+}
+
+.compte-parametres:hover img,
+.compte-parametres[aria-expanded="true"] img {
+  transform: rotate(30deg);
+}
+
+.compte-parametres:focus-visible {
+  outline: 2px solid var(--accent, #f5c542);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
 .menu-compte.cache {
   display: none;
 }

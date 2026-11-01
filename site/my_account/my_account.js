@@ -165,16 +165,8 @@ function initialiserMenuCompte() {
   // chargement du profil, cf. memoriserFondPourLeSite). Médaille du théâtre
   // après le pseudo, mise à jour au chargement et à l'enregistrement du
   // profil (FondEcran.memoriserTheatre).
+  // Plus de médaille du théâtre ni de rang (engrenage, comme ailleurs).
   window.FondEcran?.appliquerBanniere2(bouton, window.FondEcran.banniere2());
-  window.FondEcran?.appliquerMedaille(bouton, window.FondEcran.theatre());
-  document.addEventListener("theatre-change", event => {
-    window.FondEcran.appliquerMedaille(bouton, event.detail);
-  });
-  // Rang du classé (trophées de la saison), à côté de la médaille.
-  window.FondEcran?.appliquerRang(bouton, window.FondEcran.trophees());
-  document.addEventListener("trophees-change", event => {
-    window.FondEcran.appliquerRang(bouton, event.detail);
-  });
 
   bouton.addEventListener("click", () => {
     const ouvert = menu.classList.toggle("cache") === false;

@@ -96,6 +96,7 @@
   // Menu : champs remplis depuis le profil à la 1re ouverture ; Enregistrer
   // relit le profil (changements faits ailleurs entre-temps) et n'y change
   // que ces champs.
+  // photo : bouton qui ouvre le menu (l'engrenage de la bannière).
   function brancherMenu(zone, bouton, photo, menu) {
     let valeursChargees = null; // { id: valeur } à l'ouverture
     const champ = id => menu.querySelector(`#${id}`);
@@ -412,28 +413,28 @@
         const conteneur = document.createElement("div");
         conteneur.className = "compte-menu-zone";
 
-        // Bannière : mène à Mon compte (sauf la photo, qui ouvre le menu).
+        // Bannière : mène à Mon compte (sauf l'engrenage, qui ouvre le menu
+        // des paramètres).
         const bouton = document.createElement("div");
         bouton.className = "compte-lien";
         bouton.setAttribute("role", "link");
         bouton.tabIndex = 0;
         bouton.title = "Mon compte";
         bouton.addEventListener("click", event => {
-          if (!event.target.closest(".compte-photo")) window.location.href = PAGE_COMPTE;
+          if (!event.target.closest(".compte-parametres")) window.location.href = PAGE_COMPTE;
         });
         bouton.addEventListener("keydown", event => {
           if (event.key === "Enter" && event.target === bouton) window.location.href = PAGE_COMPTE;
         });
 
+        // Photo de profil : partie de la bannière (mène à Mon compte).
         const photo = document.createElement("button");
         photo.type = "button";
         photo.className = "compte-photo";
-        photo.title = "Paramètres du compte";
-        photo.setAttribute("aria-haspopup", "true");
-        photo.setAttribute("aria-expanded", "false");
+        photo.tabIndex = -1;
         const avatar = document.createElement("img");
         avatar.src = user.avatar || `${ICONES}Icon_Settings.webp`;
-        avatar.alt = "Paramètres du compte";
+        avatar.alt = "";
         photo.appendChild(avatar);
         bouton.appendChild(photo);
 
@@ -441,27 +442,32 @@
         texte.textContent = nom;
         bouton.appendChild(texte);
 
+        // Engrenage (à la place de la médaille du théâtre et du rang du
+        // classé) : ouvre le menu des paramètres.
+        const parametres = document.createElement("button");
+        parametres.type = "button";
+        parametres.className = "compte-parametres";
+        parametres.title = "Paramètres du compte";
+        parametres.setAttribute("aria-haspopup", "true");
+        parametres.setAttribute("aria-expanded", "false");
+        const engrenage = document.createElement("img");
+        engrenage.src = `${ICONES}Icon_Settings.webp`;
+        engrenage.alt = "Paramètres du compte";
+        parametres.appendChild(engrenage);
+        bouton.appendChild(parametres);
+
         const menu = creerMenu();
         // Zoom du site (ordinateur, cf. commun/zoom.js).
         window.ZoomSite?.inserer(menu);
         conteneur.append(bouton, menu);
         zone.appendChild(conteneur);
-        brancherMenu(conteneur, bouton, photo, menu);
+        brancherMenu(conteneur, bouton, parametres, menu);
 
-        // Deuxième bannière en fond du bouton et médaille du théâtre après le
-        // pseudo (cf. commun/fond.js).
+        // Deuxième bannière en fond du bouton (cf. commun/fond.js). Plus de
+        // médaille du théâtre ni de rang : engrenage à la place.
         window.FondEcran?.appliquerBanniere2(bouton, window.FondEcran.banniere2());
         document.addEventListener("banniere2-change", event => {
           window.FondEcran.appliquerBanniere2(bouton, event.detail);
-        });
-        window.FondEcran?.appliquerMedaille(bouton, window.FondEcran.theatre());
-        document.addEventListener("theatre-change", event => {
-          window.FondEcran.appliquerMedaille(bouton, event.detail);
-        });
-        // Rang du classé (trophées de la saison), à côté de la médaille.
-        window.FondEcran?.appliquerRang(bouton, window.FondEcran.trophees());
-        document.addEventListener("trophees-change", event => {
-          window.FondEcran.appliquerRang(bouton, event.detail);
         });
         return;
       }
