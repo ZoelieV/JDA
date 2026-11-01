@@ -2443,6 +2443,10 @@ body.page-equilibrage #tuiles-admin {
   background-color: rgba(62, 207, 106, 0.18);
 }
 
+.choix-cosmetique.choisi.est-cache::before {
+  right: 2rem;
+}
+
 .choix-cosmetique.choisi::after {
   content: "✓";
   position: absolute;
@@ -2458,11 +2462,13 @@ body.page-equilibrage #tuiles-admin {
 }
 
 /* Caché : pastille en haut à gauche. */
+/* En haut à droite (en haut à gauche : prix de la fenêtre des prix), à
+   gauche de la coche d'un cosmétique choisi. */
 .choix-cosmetique.est-cache::before {
   content: "caché";
   position: absolute;
   top: 0.375rem;
-  left: 0.375rem;
+  right: 0.375rem;
   padding: 0 0.375rem;
   border-radius: 0.5rem;
   background-color: rgba(10, 10, 10, 0.85);
