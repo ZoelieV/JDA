@@ -1160,7 +1160,19 @@ function pointsBoxJoueur(role, box) {
   return total;
 }
 
+// Mode « Full box » : une seule box possible, déjà sélectionnée à l'arrivée
+// (le joueur n'a plus qu'à valider). Une seule tentative par page : si le
+// serveur refuse, le joueur retrouve le bouton comme avant.
+let fullBoxPreselectionnee = false;
+function preselectionnerFullBox() {
+  if (fullBoxPreselectionnee || draft.phase !== "choix_box" || !monRole || draft.entrainement) return;
+  if (!estMatchmakingClassique() || draft[`box_${monRole}`] || nbPersosBox(monRole, "full") < NB_PERSOS_MIN_BOX) return;
+  fullBoxPreselectionnee = true;
+  postBox("full").catch(err => console.error(err));
+}
+
 function rendreChoixBox() {
+  preselectionnerFullBox();
   const enAnalyse = draft.phase === "analyse";
 
   document.getElementById("message-choix-box").textContent = enAnalyse
