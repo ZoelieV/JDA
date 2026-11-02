@@ -84,7 +84,7 @@ def categorie_fond(sous_dossier, nom):
         return categorie
     if nom.startswith("donjon"):
         return "donjons"
-    if nom.startswith(("personnage_", "pochita")):
+    if nom.startswith(("personnage_", "pochita", "skirk")):
         return "personnages"
     return "teyvat"
 
