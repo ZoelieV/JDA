@@ -2889,3 +2889,7 @@ body.page-equilibrage #tuiles-admin {
 #skin-prix {
   width: 10rem;
 }
+
+.formulaire-skin .cache {
+  display: none;
+}

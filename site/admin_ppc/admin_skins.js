@@ -9,6 +9,10 @@ const FORMATS_IMAGES_SKIN = ["image/png", "image/webp", "image/jpeg"];
 const POIDS_MAX_FICHIER_SKIN = 10 * 1024 * 1024;
 
 let nomsPersosSkins = new Map();
+// Skin en cours de modification dans le formulaire (id), ou null : ajout.
+let skinEnEdition = null;
+// Images de la liste rechargées après un remplacement (même adresse).
+let versionImagesSkins = Date.now();
 
 function messageSkin(texte, type = "") {
   const message = document.getElementById("message-skin");
@@ -81,18 +85,64 @@ function afficherSkinsAjoutes(skins, prix = {}) {
     const regle = Number.isInteger(prix?.[cosmetique]) ? prix[cosmetique] : "";
     return `
     <div class="skin-ajoute${skin.masque ? " masque" : ""}" data-id="${echapper(skin.id)}">
-      <img src="/DB/${echapper(imagesSkin(skin.id).item)}" alt="">
+      <img src="/DB/${echapper(imagesSkin(skin.id).item)}?t=${versionImagesSkins}" alt="">
       <span class="skin-ajoute-nom">${echapper(nomSkin(skin.id, nomsPersosSkins.get(skin.perso) || skin.perso))}</span>
       <span class="skin-ajoute-statut">${skin.masque ? "Masqué" : "Visible"}</span>
       <label class="champ-prix-skin">Prix <input type="number" class="texte-ajout" data-prix min="0" max="${PRIX_COSMETIQUE_MAX}" step="1" value="${regle}" placeholder="${prixParDefautCosmetique(cosmetique)}"${lectureSeule ? " disabled" : ""}></label>
       ${lectureSeule ? "" : `
+        <button type="button" class="btn-ouvrir-ajout" data-action="modifier">Modifier</button>
         <button type="button" class="btn-ouvrir-ajout" data-action="masque">${skin.masque ? "Afficher" : "Masquer"}</button>
-        ${skin.masque ? `<button type="button" class="btn-ouvrir-ajout" data-action="supprimer">Supprimer</button>` : ""}`}
+        <button type="button" class="btn-ouvrir-ajout" data-action="supprimer">Supprimer</button>`}
     </div>`;
   }).join("");
 }
 
+// Formulaire en mode modification (skin) ou ajout (null) : personnage figé
+// (il fait partie de l'id du skin), prix et masquage réglés dans la liste,
+// images facultatives (seules celles choisies sont remplacées).
+function preparerFormulaireSkin(skin) {
+  skinEnEdition = skin?.id || null;
+  const choix = document.getElementById("skin-perso");
+  choix.disabled = !!skin;
+  if (skin) choix.value = skin.perso;
+  document.getElementById("skin-nom").value = skin?.nom || "";
+  ["skin-image", "skin-side", "skin-item", "skin-prix"].forEach(champ => { document.getElementById(champ).value = ""; });
+  document.getElementById("skin-prix").closest("label").classList.toggle("cache", !!skin);
+  document.getElementById("skin-masque").closest("label").classList.toggle("cache", !!skin);
+  document.getElementById("creer-skin").textContent = skin ? "Enregistrer" : "Ajouter le skin";
+  document.getElementById("annuler-modif-skin").classList.toggle("cache", !skin);
+  document.getElementById("aide-modif-skin").classList.toggle("cache", !skin);
+  majPrixDefautSkin();
+}
+
+async function modifierSkin() {
+  const nom = document.getElementById("skin-nom").value.trim();
+  if (!nom) {
+    messageSkin("Nom obligatoire.", "erreur");
+    return;
+  }
+  const bouton = document.getElementById("creer-skin");
+  bouton.disabled = true;
+  messageSkin("Envoi…");
+  try {
+    const images = {};
+    for (const [cle, champ] of [["image", "skin-image"], ["side", "skin-side"], ["item", "skin-item"]]) {
+      const fichier = document.getElementById(champ).files[0];
+      if (fichier) images[cle] = await imageSkinEnWebp(fichier, TAILLES_IMAGES_SKIN[cle]);
+    }
+    versionImagesSkins = Date.now();
+    await envoyerSkin({ skin_modification: { id: skinEnEdition, nom, images } });
+    preparerFormulaireSkin(null);
+    messageSkin(Object.keys(images).length ? "Skin modifié. Les nouvelles images arrivent chez les joueurs sous quelques minutes." : "Skin modifié.", "succes");
+  } catch (erreur) {
+    console.error(erreur);
+    messageSkin(erreur.message, "erreur");
+  }
+  bouton.disabled = false;
+}
+
 async function creerSkin() {
+  if (skinEnEdition) return modifierSkin();
   const perso = document.getElementById("skin-perso").value;
   const nom = document.getElementById("skin-nom").value.trim();
   const fichierImage = document.getElementById("skin-image").files[0];
@@ -125,6 +175,7 @@ async function creerSkin() {
 
 async function ouvrirSkins() {
   document.getElementById("modal-skins").classList.add("active");
+  preparerFormulaireSkin(null);
   document.getElementById("formulaire-skin").classList.toggle("cache", document.body.classList.contains("lecture-seule"));
   messageSkin("Chargement…");
   try {
@@ -158,6 +209,10 @@ function initialiserSkins() {
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
   });
   document.getElementById("creer-skin").addEventListener("click", creerSkin);
+  document.getElementById("annuler-modif-skin").addEventListener("click", () => {
+    preparerFormulaireSkin(null);
+    messageSkin("");
+  });
   document.getElementById("skin-perso").addEventListener("change", majPrixDefautSkin);
   // Prix d'un skin de la liste : enregistré dès qu'il change (vide : défaut).
   document.getElementById("liste-skins").addEventListener("change", async event => {
@@ -176,13 +231,20 @@ function initialiserSkins() {
     if (!bouton) return;
     const id = bouton.closest(".skin-ajoute").dataset.id;
     const skin = SKINS_AJOUTES.find(s => s.id === id);
-    if (bouton.dataset.action === "supprimer" && !window.confirm(`Supprimer le skin « ${skin.nom} » ?`)) return;
+    if (bouton.dataset.action === "modifier") {
+      preparerFormulaireSkin(skin);
+      messageSkin("");
+      document.querySelector("#modal-skins .modal-apercu-contenu").scrollTo({ top: 0 });
+      return;
+    }
+    if (bouton.dataset.action === "supprimer" && !window.confirm(`Supprimer le skin « ${skin.nom} » ? Les joueurs qui l'ont le perdent, et ceux qui l'ont acheté sont remboursés. C'est définitif.`)) return;
     bouton.disabled = true;
     try {
       await envoyerSkin(bouton.dataset.action === "masque"
         ? { skin_masque: { id, masque: !skin.masque } }
         : { skin_suppression: { id } });
-      messageSkin("");
+      if (id === skinEnEdition && bouton.dataset.action === "supprimer") preparerFormulaireSkin(null);
+      messageSkin(bouton.dataset.action === "supprimer" ? "Skin supprimé." : "");
     } catch (erreur) {
       console.error(erreur);
       messageSkin(erreur.message, "erreur");

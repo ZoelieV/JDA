@@ -18,10 +18,12 @@ function idSkinAjoute(perso, nom) {
 }
 
 // { image, side, item } en data URL -> { tampons } ou { erreur }. Vrai WebP
-// seulement (en-tête vérifié), pas seulement annoncé comme tel.
-function decoderImagesSkin(brutes) {
+// seulement (en-tête vérifié), pas seulement annoncé comme tel. partiel :
+// images absentes permises (modification d'un skin).
+function decoderImagesSkin(brutes, { partiel = false } = {}) {
   const tampons = {};
   for (const cle of IMAGES) {
+    if (partiel && brutes?.[cle] == null) continue;
     const correspondance = typeof brutes?.[cle] === "string" && /^data:image\/webp;base64,([A-Za-z0-9+/=]+)$/.exec(brutes[cle]);
     if (!correspondance) return { erreur: "Images du skin invalides (WebP attendu)" };
     const tampon = Buffer.from(correspondance[1], "base64");
@@ -40,22 +42,44 @@ async function supprimerImagesSkin(id) {
   if (error) throw error;
 }
 
-// Une image refusée : celles déjà envoyées sont retirées.
-async function televerserImagesSkin(id, tampons) {
+// Nouveau skin : une image refusée, celles déjà envoyées sont retirées.
+// Modification (remplacement) : les images du skin restent en place.
+async function televerserImagesSkin(id, tampons, { remplacement = false } = {}) {
   const { supabase } = require("./supabase");
   try {
-    for (const cle of IMAGES) {
+    for (const cle of Object.keys(tampons)) {
       const { error } = await supabase.storage.from(DOSSIER).upload(`${id}/${cle}.webp`, tampons[cle], {
         contentType: "image/webp",
-        cacheControl: "86400",
+        // Court : une image remplacée garde la même adresse (cf. vercel.json).
+        cacheControl: "300",
         upsert: true
       });
       if (error) throw error;
     }
   } catch (erreur) {
-    await supprimerImagesSkin(id).catch(console.error);
+    if (!remplacement) await supprimerImagesSkin(id).catch(console.error);
     throw erreur;
   }
 }
 
-module.exports = { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin };
+// Retire le skin aux joueurs : plus porté, plus possédé, et achat annulé (le
+// solde étant la somme des mouvements, supprimer la ligne d'achat rembourse
+// le prix payé, et permet de racheter un skin recréé sous le même id). Rien à
+// rembourser pour un skin reçu en don ou au tirage.
+async function retirerSkinAuxJoueurs(id, cosmetique) {
+  const { supabase } = require("./supabase");
+  const { data: profils, error: erreurProfils } = await supabase.from("profiles")
+    .select("discord_id, data").contains("data", { parametres: { skins: [id] } });
+  if (erreurProfils) throw erreurProfils;
+  for (const { discord_id: discordId, data } of profils || []) {
+    const parametres = { ...data.parametres, skins: data.parametres.skins.filter(skin => skin !== id) };
+    const { error } = await supabase.from("profiles").update({ data: { ...data, parametres } }).eq("discord_id", discordId);
+    if (error) throw error;
+  }
+  const { error: erreurAchats } = await supabase.from("koyns_mouvements").delete().eq("raison", "achat").eq("ref", `achat:${cosmetique}`);
+  if (erreurAchats) throw erreurAchats;
+  const { error: erreurPossedes } = await supabase.from("cosmetiques_possedes").delete().eq("cosmetique", cosmetique);
+  if (erreurPossedes) throw erreurPossedes;
+}
+
+module.exports = { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin, retirerSkinAuxJoueurs };

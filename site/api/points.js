@@ -63,8 +63,11 @@
 //   { skin_prix: { id, prix } }      règle le prix d'un skin ajouté (null :
 //                                    retour au prix par défaut)
 //   { skin_masque: { id, masque } }  masque / affiche un skin ajouté
-//   { skin_suppression: { id } }     supprime un skin ajouté masqué et que
-//                                    personne ne possède
+//   { skin_modification: { id, nom, images? } }  renomme un skin ajouté et
+//                                    remplace les images envoyées (le
+//                                    personnage et l'id ne changent pas)
+//   { skin_suppression: { id } }     supprime un skin ajouté : retiré aux
+//                                    joueurs qui l'ont, achats remboursés
 //   { boss: { id: { nom, res, chrono, reco } } }  modifie des boss
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
@@ -115,7 +118,7 @@ const { lireStatistiques } = require("./_lib/statistiques");
 const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
 const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX, idCosmetique } = require("../commun/koyns.js");
 const { VARIANTES_PERSONNAGES } = require("../commun/variantes.js");
-const { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin } = require("./_lib/skins");
+const { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin, retirerSkinAuxJoueurs } = require("./_lib/skins");
 const { estCosmetique, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
@@ -548,12 +551,8 @@ module.exports = async (req, res) => {
         const skins = Array.isArray(ancienne.skins_ajoutes) ? ancienne.skins_ajoutes : [];
         const skin = skins.find(s => s.id === corps.skin_suppression.id);
         if (!skin) return res.status(404).json({ error: "Skin introuvable" });
-        if (!skin.masque) return res.status(409).json({ error: "Masque le skin avant de le supprimer" });
         const cosmetique = idCosmetique("skin", skin.id);
-        const { count, error: erreurPossedes } = await supabase.from("cosmetiques_possedes")
-          .select("discord_id", { count: "exact", head: true }).eq("cosmetique", cosmetique);
-        if (erreurPossedes) throw erreurPossedes;
-        if (count) return res.status(409).json({ error: `Skin possédé par ${count} joueur${count > 1 ? "s" : ""} : impossible de le supprimer` });
+        await retirerSkinAuxJoueurs(skin.id, cosmetique);
         await supprimerImagesSkin(skin.id);
         const prix = { ...(ancienne.prix_cosmetiques || {}) };
         delete prix[cosmetique];
@@ -564,6 +563,25 @@ module.exports = async (req, res) => {
           cosmetiques_tirage: (ancienne.cosmetiques_tirage || []).filter(id => id !== cosmetique),
           prix_cosmetiques: prix
         };
+        if (ancienne.bonus_connexion?.cosmetique === cosmetique) {
+          if (ancienne.bonus_connexion.koyns) config.bonus_connexion = { ...ancienne.bonus_connexion, cosmetique: null };
+          else delete config.bonus_connexion;
+        }
+      } else if (corps.skin_modification) {
+        const skins = Array.isArray(ancienne.skins_ajoutes) ? ancienne.skins_ajoutes : [];
+        const skin = skins.find(s => s.id === corps.skin_modification.id);
+        if (!skin) return res.status(404).json({ error: "Skin introuvable" });
+        const nom = typeof corps.skin_modification.nom === "string" ? corps.skin_modification.nom.trim() : "";
+        if (!nom || nom.length > LONGUEUR_NOM_SKIN) return res.status(400).json({ error: `Nom du skin : 1 à ${LONGUEUR_NOM_SKIN} caractères` });
+        const idNom = idSkinAjoute(skin.perso, nom);
+        if (!idNom) return res.status(400).json({ error: "Le nom du skin doit contenir des lettres ou des chiffres" });
+        if (skins.some(s => s.id !== skin.id && (s.id === idNom || idSkinAjoute(s.perso, s.nom) === idNom))) {
+          return res.status(409).json({ error: "Ce personnage a déjà un skin de ce nom" });
+        }
+        const { tampons, erreur } = decoderImagesSkin(corps.skin_modification.images, { partiel: true });
+        if (erreur) return res.status(400).json({ error: erreur });
+        await televerserImagesSkin(skin.id, tampons, { remplacement: true });
+        config = { ...ancienne, skins_ajoutes: skins.map(s => (s.id === skin.id ? { ...s, nom } : s)) };
       } else if (corps.boss) {
         const ids = new Set([...listeJSON("boss"), ...ajouts.boss].map(e => e.id));
         const modifs = { ...(ancienne.boss || {}) };

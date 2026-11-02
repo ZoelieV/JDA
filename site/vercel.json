@@ -340,6 +340,15 @@
       ]
     },
     {
+      "source": "/DB/images/skins_ajoutes/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    },
+    {
       "source": "/DB/fonts/(.*)",
       "headers": [
         {
