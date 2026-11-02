@@ -1338,6 +1338,7 @@ function calculerTotalArmes(armes, personnages, boxActive, profil) {
 // perso coché (la liste changerait de taille sous la souris).
 let reglesStuff = [];
 const NB_RECOMMANDATIONS = 5;
+const NB_PARTENAIRES_RECO = 5;
 let etatRecommandations = null;
 
 function rendreRecommandationsStuff(personnages, boxActive, profil) {
@@ -1349,17 +1350,18 @@ function rendreRecommandationsStuff(personnages, boxActive, profil) {
   const collection = collectionsEnregistrees()?.characters || profil.characters;
   const parId = new Map(personnages.map(p => [p.id, p]));
   const presents = idsDraftCollection(collection, personnages, "full");
-  // Poids d'un DPS : ses points dans la full box.
-  const pointsDps = id => {
+  // Points du perso dans la full box.
+  const pointsPerso = id => {
     const perso = parId.get(id);
     return perso ? pointsPersonnageBox(perso, collection.full[id], collection.niveaux?.[cleNiveau(perso)], presents) : 0;
   };
-  const { supports, dps } = calculerRecommandationsStuff(reglesStuff.filter(l => parId.has(l.dps)), collection, pointsDps);
+  const { supports, dps } = calculerRecommandationsStuff(reglesStuff.filter(l => parId.has(l.dps)), collection, personnages, pointsPerso);
 
-  const miniature = (id, titre = "") => {
+  // Partenaire pas encore monté : éteint.
+  const miniature = (id, titre = "", eteinte = false) => {
     const perso = parId.get(id);
     return perso
-      ? `<span class="reco-miniature ${classeFondRarete(perso.rarete)}" title="${echapperHtml(titre || perso.nom)}"><img src="../DB/${perso.image}" alt="${echapperHtml(perso.nom)}" loading="lazy"></span>`
+      ? `<span class="reco-miniature ${classeFondRarete(perso.rarete)}${eteinte ? " reco-non-monte" : ""}" title="${echapperHtml(titre || perso.nom)}"><img src="../DB/${perso.image}" alt="${echapperHtml(perso.nom)}" loading="lazy"></span>`
       : "";
   };
   const ligne = (id, legende, minis) => `
@@ -1368,23 +1370,29 @@ function rendreRecommandationsStuff(personnages, boxActive, profil) {
       <span class="reco-texte"><strong>${echapperHtml(parId.get(id)?.nom || id)}</strong><span class="reco-legende">${legende}</span></span>
       <span class="reco-minis">${minis}</span>
     </li>`;
-  const listeSupports = supports.slice(0, NB_RECOMMANDATIONS).map(s => ligne(s.id,
-    `Améliore ${s.dps.length} de tes DPS`,
-    s.dps.map(d => miniature(d.id, `${parId.get(d.id)?.nom || d.id} : prio ${d.rang}`)).join(""))).join("");
-  const listeDps = dps.slice(0, NB_RECOMMANDATIONS).map(d => ligne(d.id,
-    `${d.supports.length} de ses supports déjà montés`,
-    d.supports.map(id => miniature(id)).join(""))).join("");
+  // Avec qui d'autre le monter : les plus utiles possédés (éteints : pas
+  // encore montés).
+  const lignesReco = (liste, nomPartenaire) => liste.slice(0, NB_RECOMMANDATIONS).map(r => {
+    const montes = r.partenaires.filter(p => p.monte).length;
+    const detail = r.partenaires.length
+      ? ` · avec ${r.partenaires.length} ${nomPartenaire}${r.partenaires.length > 1 && nomPartenaire !== "DPS" ? "s" : ""}${montes ? ` (${montes} déjà monté${montes > 1 ? "s" : ""})` : ""}`
+      : "";
+    return ligne(r.id, `${r.points} pts${detail}`, r.partenaires.slice(0, NB_PARTENAIRES_RECO)
+      .map(p => miniature(p.id, `${parId.get(p.id)?.nom || p.id}${p.monte ? "" : " (pas encore monté)"}`, !p.monte)).join(""));
+  }).join("");
+  const listeSupports = lignesReco(supports, "DPS");
+  const listeDps = lignesReco(dps, "support");
 
   zone.innerHTML = `
     <div class="reco-bloc">
       <h3>Supports à monter</h3>
-      ${listeSupports ? `<ul class="reco-liste">${listeSupports}</ul>` : `<p class="reco-vide">Ajoute tes DPS montés dans cette box (et possède leurs supports) pour avoir des recommandations.</p>`}
+      ${listeSupports ? `<ul class="reco-liste">${listeSupports}</ul>` : `<p class="reco-vide">Tous tes supports possédés sont déjà montés.</p>`}
     </div>
     <div class="reco-bloc">
       <h3>DPS à monter</h3>
-      ${listeDps ? `<ul class="reco-liste">${listeDps}</ul>` : `<p class="reco-vide">Aucun DPS possédé non monté n'a encore de support monté.</p>`}
+      ${listeDps ? `<ul class="reco-liste">${listeDps}</ul>` : `<p class="reco-vide">Tous tes DPS possédés sont déjà montés.</p>`}
     </div>
-    <p class="reco-aide">Supports possédés pas encore montés qui complètent le plus les 5 meilleurs supports de tes DPS montés (les plus versatiles d'abord, les DPS qui valent le plus de points comptent plus). Mises à jour quand tu enregistres.</p>`;
+    <p class="reco-aide">Tes persos possédés pas encore montés qui valent le plus de points dans ta full box, et ceux qui vont le mieux avec les autres persos que tu possèdes. À droite, avec qui les monter (éteints : pas encore montés). Mises à jour quand tu enregistres.</p>`;
 }
 
 async function initialiserPage() {

@@ -6,18 +6,24 @@
 // Ids du catalogue (Voyageur : par élément, "traveler_cryo"...) ;
 // constellation_min : support pas compté sous cette constellation.
 //
-// Calcul (gain marginal) : l'équipe d'un DPS monté vaut la somme des poids
-// de ses NB_SUPPORTS_EQUIPE meilleurs supports montés (5 et non 3 : en
-// draft, les bans empêchent presque toujours la meilleure équipe), poids
-// d'un support = (L + 1 - rang) / L (L = longueur de la liste : prio 1 = 1).
-// Monter un support possédé rapporte, pour chaque DPS monté, ce que son
-// équipe gagne, multiplié par les points du DPS dans la full box ; on
-// additionne sur tous les DPS (un support versatile cumule). DPS à monter :
-// DPS possédés pas montés, valeur de leur équipe avec les supports déjà
-// montés, multipliée par leurs points.
+// Calcul : tout perso possédé pas encore monté est candidat, même si rien
+// n'est monté autour de lui. Les points du perso dans la full box pèsent le
+// plus : score = points x (1 + POIDS_SYNERGIE x synergie), synergie de 0 à 1.
+// Poids d'un support dans une ligne = (L + 1 - rang) / L (L = longueur de la
+// liste : prio 1 = 1) ; une équipe compte ses NB_SUPPORTS_EQUIPE meilleurs
+// supports (5 et non 3 : en draft, les bans empêchent presque toujours la
+// meilleure équipe). Un partenaire pas encore monté compte
+// FACTEUR_NON_MONTE : c'est ce qui casse le cercle « pas de support sans DPS
+// monté, pas de DPS sans support monté ».
+// - DPS d'une ligne : valeur de son équipe parmi ses supports possédés,
+//   rapportée à son équipe idéale.
+// - Support d'une ligne : ce qu'il apporte à ses 3 meilleurs DPS possédés
+//   (DPS forts d'abord), rien si l'équipe du DPS est déjà complète sans lui.
 // Partagé avec le serveur (validation, api/points.js).
 
 const NB_SUPPORTS_EQUIPE = 5;
+const POIDS_SYNERGIE = 0.5;
+const FACTEUR_NON_MONTE = 0.5;
 const CONSTELLATION_MAX = 6;
 
 // Règles enregistrées -> règles valides : DPS distincts, supports distincts
@@ -47,52 +53,65 @@ function lireRecommandationsStuff(brutes, idsConnus = null) {
 }
 
 // collection : profil.characters (full : constellations, selections.stuff) ;
-// pointsDps(id) : points du DPS dans la full box.
-// -> { supports: [{ id, gain, dps: [{ id, rang }] }], dps: [{ id, valeur,
-//      supports: [ids montés comptés] }] }, du plus utile au moins utile.
-function calculerRecommandationsStuff(regles, collection, pointsDps) {
+// personnages : catalogue { id, categorie } ; pointsPerso(id) : points du
+// perso dans la full box.
+// -> { dps: [...], supports: [...] }, du plus utile au moins utile :
+//    { id, points, score, partenaires: [{ id, monte, rang }] } (partenaires :
+//    avec qui d'autre le monter, les plus utiles d'abord).
+function calculerRecommandationsStuff(regles, collection, personnages, pointsPerso) {
   const full = collection?.full || {};
   const stuff = collection?.selections?.stuff || {};
   const possede = (id, constellation = 0) => typeof full[id] === "number" && full[id] >= constellation;
   const monte = id => possede(id) && !!stuff[id];
+  const points = id => Math.max(0, Number(pointsPerso(id)) || 0);
 
-  // Supports comptables d'une ligne, dans l'ordre : { id, poids, rang }.
-  const comptables = ligne => ligne.supports
-    .map((support, index) => ({ ...support, rang: index + 1, poids: (ligne.supports.length - index) / ligne.supports.length }))
-    .filter(support => possede(support.id, support.constellation_min || 0));
-  const valeurEquipe = (liste, estMonte) => liste.filter(s => estMonte(s.id))
-    .slice(0, NB_SUPPORTS_EQUIPE)
-    .reduce((somme, s) => somme + s.poids, 0);
+  // Supports d'une ligne, dans l'ordre : { id, poids, rang }.
+  const avecPoids = ligne => ligne.supports.map((support, index) => ({
+    ...support, rang: index + 1, poids: (ligne.supports.length - index) / ligne.supports.length
+  }));
+  const comptables = ligne => avecPoids(ligne).filter(support => possede(support.id, support.constellation_min || 0));
+  const valeur = (liste, facteur) => liste.map(s => s.poids * facteur(s.id))
+    .filter(v => v > 0).sort((a, b) => b - a).slice(0, NB_SUPPORTS_EQUIPE).reduce((somme, v) => somme + v, 0);
+  const facteurPartenaire = id => (monte(id) ? 1 : FACTEUR_NON_MONTE);
 
-  const gains = new Map();
-  const dpsAMonter = [];
-  regles.forEach(ligne => {
-    if (!possede(ligne.dps)) return;
-    const liste = comptables(ligne);
-    const poidsDps = Math.max(1, Number(pointsDps(ligne.dps)) || 0);
-    const actuelle = valeurEquipe(liste, monte);
-    if (!monte(ligne.dps)) {
-      if (actuelle > 0) {
-        dpsAMonter.push({
-          id: ligne.dps,
-          valeur: actuelle * poidsDps,
-          supports: liste.filter(s => monte(s.id)).slice(0, NB_SUPPORTS_EQUIPE).map(s => s.id)
-        });
-      }
-      return;
+  const lignesPossedees = regles.filter(ligne => possede(ligne.dps));
+  const pointsMax = Math.max(1, ...lignesPossedees.map(ligne => points(ligne.dps)));
+  const lignesDps = new Set(regles.map(ligne => ligne.dps));
+  const candidats = personnages.filter(p => possede(p.id) && !monte(p.id) && points(p.id) > 0);
+
+  const recommandation = perso => {
+    const ligne = regles.find(l => l.dps === perso.id);
+    let synergie = 0;
+    let partenaires = [];
+    if (ligne) {
+      const liste = comptables(ligne);
+      const ideale = valeur(avecPoids(ligne), () => 1);
+      synergie = ideale ? valeur(liste, facteurPartenaire) / ideale : 0;
+      partenaires = liste.map(s => ({ id: s.id, monte: monte(s.id), rang: s.rang }));
+    } else {
+      // Ce qu'il apporte à chaque DPS possédé dont il est un support.
+      const apports = lignesPossedees.flatMap(l => {
+        const liste = comptables(l);
+        const lui = liste.find(s => s.id === perso.id);
+        if (!lui) return [];
+        const sansLui = liste.filter(s => s.id !== perso.id && monte(s.id));
+        if (valeur([...sansLui, lui], () => 1) <= valeur(sansLui, () => 1)) return [];
+        return [{
+          id: l.dps, monte: monte(l.dps), rang: lui.rang,
+          apport: lui.poids * facteurPartenaire(l.dps) * points(l.dps) / pointsMax
+        }];
+      }).sort((a, b) => b.apport - a.apport);
+      synergie = apports.slice(0, 3).reduce((somme, a) => somme + a.apport, 0) / 3;
+      partenaires = apports.map(({ id, monte: m, rang }) => ({ id, monte: m, rang }));
     }
-    liste.filter(s => !monte(s.id)).forEach(support => {
-      const gain = valeurEquipe(liste, id => id === support.id || monte(id)) - actuelle;
-      if (gain <= 0) return;
-      const entree = gains.get(support.id) || { id: support.id, gain: 0, dps: [] };
-      entree.gain += gain * poidsDps;
-      entree.dps.push({ id: ligne.dps, rang: support.rang });
-      gains.set(support.id, entree);
-    });
-  });
+    return { id: perso.id, points: points(perso.id), score: points(perso.id) * (1 + POIDS_SYNERGIE * synergie), partenaires };
+  };
+
+  const parScore = (a, b) => b.score - a.score || b.partenaires.length - a.partenaires.length;
+  const estDps = perso => lignesDps.has(perso.id) || perso.categorie === "dps";
   return {
-    supports: [...gains.values()].sort((a, b) => b.gain - a.gain || b.dps.length - a.dps.length),
-    dps: dpsAMonter.sort((a, b) => b.valeur - a.valeur)
+    dps: candidats.filter(estDps).map(recommandation).sort(parScore),
+    supports: candidats.filter(perso => !estDps(perso)).map(recommandation).sort(parScore)
   };
 }
 

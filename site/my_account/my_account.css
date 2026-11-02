@@ -2091,3 +2091,9 @@ body {
 .rappel-alerte {
   color: #ff7b7b;
 }
+
+/* Recommandations : partenaire pas encore monté. */
+.reco-miniature.reco-non-monte {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
