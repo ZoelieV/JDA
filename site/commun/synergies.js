@@ -1,11 +1,14 @@
 // Synergies des personnages (config.synergies, réglées sur la page admin,
 // fenêtre "Synergie" d'un perso) : { id du perso: { persos: [ids de la
-// draft (Voyageur : "traveler")], malus } }.
+// draft (Voyageur : "traveler")], malus, par_absent? } }.
 // Dans une box qui contient le perso, chaque perso en synergie absent de
-// cette même box lui retire malus / nombre de persos en synergie (arrondi),
-// après les bonus niveau / théâtre, sans descendre sous 0 : sa valeur
-// alternative. Ex. Lauma (Nefer, Columbina), malus 20 : sans Columbina -10,
-// sans les 2 -20.
+// cette même box lui retire des points (arrondi), après les bonus niveau /
+// théâtre, sans descendre sous 0 : sa valeur alternative.
+// malus : points perdus quand tous sont absents. par_absent (facultatif) :
+// points par absent tant qu'il en reste au moins un, donc un saut au dernier
+// absent ; sans lui, malus réparti à parts égales. Ex. 6 persos, par_absent
+// 3, malus 20 : -3, -6, -9, -12, -15, puis -20. Lauma (Nefer, Columbina),
+// malus 20, sans par_absent : sans Columbina -10, sans les 2 -20.
 // Même fichier côté pages (commun/cartes.js, mon compte...) et serveur
 // (api/_lib/personnages.js). Contient aussi les valeurs alternatives des
 // armes (plus bas).
@@ -21,9 +24,25 @@ function lireSynergies(brutes) {
       : [];
     const malus = Math.round(Number(synergie?.malus));
     if (!persos.length || !Number.isFinite(malus) || malus < 0) return;
-    propres[id] = { persos, malus };
+    const parAbsent = Number(synergie?.par_absent);
+    propres[id] = {
+      persos, malus,
+      ...(synergie?.par_absent != null && Number.isFinite(parAbsent) && parAbsent >= 0 ? { par_absent: parAbsent } : {})
+    };
   });
   return propres;
+}
+
+// Total plus petit que la somme des absences : refusé à l'enregistrement.
+function synergieIncoherente(synergie) {
+  return synergie?.par_absent != null && synergie.par_absent * synergie.persos.length > synergie.malus + 1e-9;
+}
+
+// Points perdus pour ce nombre de persos en synergie absents.
+function malusSelonAbsents(synergie, absents) {
+  if (absents <= 0) return 0;
+  if (absents >= synergie.persos.length) return synergie.malus;
+  return Math.round(synergie.par_absent != null ? synergie.par_absent * absents : synergie.malus * absents / synergie.persos.length);
 }
 
 // Points retirés à ce perso dans une box (presents : Set des ids de la
@@ -32,8 +51,7 @@ function lireSynergies(brutes) {
 function malusSynergie(synergies, perso, presents) {
   const synergie = synergies?.[perso?.id];
   if (!synergie || !presents) return 0;
-  const absents = synergie.persos.filter(id => !presents.has(id)).length;
-  return Math.round(synergie.malus * absents / synergie.persos.length);
+  return malusSelonAbsents(synergie, synergie.persos.filter(id => !presents.has(id)).length);
 }
 
 function appliquerSynergie(points, synergies, perso, presents) {
@@ -100,6 +118,7 @@ function pourcentageAlternatifBox(alternative, typeArme, persos, exclue = null) 
 
 if (typeof module !== "undefined") {
   module.exports = {
+    synergieIncoherente,
     lireSynergies, malusSynergie, appliquerSynergie,
     POURCENTAGES_ALTERNATIFS, lireAlternativeArme, lireAlternativesArmes, pourcentageAlternatifPerso, pourcentageAlternatifBox
   };

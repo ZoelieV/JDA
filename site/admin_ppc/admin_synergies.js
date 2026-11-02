@@ -7,6 +7,8 @@ let persoSynergie = null;
 // Malus en cours de saisie : gardé même sans perso en synergie (la
 // synergie n'est enregistrée qu'avec au moins un perso).
 let malusSynergieSaisi = 0;
+// Malus par absent : null = malus réparti à parts égales.
+let parAbsentSynergieSaisi = null;
 
 // Persos proposables : ids de la draft (Voyageur : un seul, "traveler").
 function candidatsSynergie() {
@@ -22,6 +24,7 @@ function ouvrirSynergie(id) {
   persoSynergie = personnages.find(p => p.id === id);
   if (!persoSynergie) return;
   malusSynergieSaisi = synergies[id]?.malus ?? 0;
+  parAbsentSynergieSaisi = synergies[id]?.par_absent ?? null;
   document.getElementById("synergie-titre").textContent = persoSynergie.nom;
   document.getElementById("synergie-image").src = `../DB/${persoSynergie.image}`;
   document.getElementById("synergie-miniature").className = `apercu-miniature ${classeFondRarete(persoSynergie.rarete)}`;
@@ -42,7 +45,7 @@ function persosSynergie() {
 }
 
 function ecrireSynergie(persos) {
-  if (persos.length) synergies[persoSynergie.id] = { persos, malus: malusSynergieSaisi };
+  if (persos.length) synergies[persoSynergie.id] = { persos, malus: malusSynergieSaisi, ...(parAbsentSynergieSaisi != null ? { par_absent: parAbsentSynergieSaisi } : {}) };
   else delete synergies[persoSynergie.id];
   rendreSynergie();
   mettreAJourPied();
@@ -59,7 +62,9 @@ function rendreSynergie() {
   const arme = armeSignature(persoSynergie);
   const signa = arme ? valeurs.weapons[arme.id]?.[0] ?? 0 : 0;
   const alternative = points => Math.max(0, points - malusSynergieSaisi);
-  const parAbsent = persos.length ? Math.round(malusSynergieSaisi / persos.length) : 0;
+  const synergie = { persos, malus: malusSynergieSaisi, ...(parAbsentSynergieSaisi != null ? { par_absent: parAbsentSynergieSaisi } : {}) };
+  const detail = persos.map((_, i) => `${i + 1} absent${i ? "s" : ""} : −${malusSelonAbsents(synergie, i + 1)}`).join(" · ");
+  const repartition = persos.length ? Math.round(malusSynergieSaisi / persos.length * 100) / 100 : 0;
 
   document.getElementById("contenu-synergie").innerHTML = `
     <table class="apercu-tableau tableau-synergie">
@@ -69,10 +74,15 @@ function rendreSynergie() {
         <tr class="ligne-alternative"><th>Sans aucun perso en synergie</th><td>${alternative(c0)}</td><td>${alternative(c0) + signa}</td></tr>
       </tbody>
     </table>
-    <label class="malus-synergie">Malus (sans aucun perso en synergie) :
+    <label class="malus-synergie">Malus si tous sont absents :
       <input type="number" min="0" step="1" id="malus-synergie" value="${malusSynergieSaisi}">
     </label>
-    <h3 class="titre-section-ajout">Persos en synergie (${persos.length})${persos.length ? ` <span class="facultatif">−${parAbsent} par perso absent de la box</span>` : ""}</h3>
+    <label class="malus-synergie">Malus par perso absent :
+      <input type="number" min="0" step="0.01" id="par-absent-synergie" value="${parAbsentSynergieSaisi ?? ""}" placeholder="${repartition} (réparti)">
+    </label>
+    ${synergieIncoherente(synergie) ? `<p class="message-ajout erreur">Incohérent : ${parAbsentSynergieSaisi} × ${persos.length} persos dépasse le malus si tous sont absents (${malusSynergieSaisi}). L'enregistrement sera refusé.</p>` : ""}
+    ${persos.length ? `<p class="aide-apercu">${detail}</p>` : ""}
+    <h3 class="titre-section-ajout">Persos en synergie (${persos.length})</h3>
     <ul class="liste-synergie">
       ${persos.map(p => {
         const c = parId.get(p);
@@ -114,12 +124,19 @@ function initialiserSynergie() {
   });
   // Malus : entier positif, appliqué à la sortie du champ (ou Entrée).
   contenu.addEventListener("keydown", event => {
-    if (event.target.id === "malus-synergie" && event.key === "Enter") {
+    if ((event.target.id === "malus-synergie" || event.target.id === "par-absent-synergie") && event.key === "Enter") {
       event.preventDefault();
       event.target.blur();
     }
   });
   contenu.addEventListener("focusout", event => {
+    if (event.target.id === "par-absent-synergie" && persoSynergie) {
+      const texte = event.target.value.trim();
+      const parAbsent = Number(texte);
+      parAbsentSynergieSaisi = texte === "" ? null : Number.isFinite(parAbsent) && parAbsent >= 0 ? parAbsent : parAbsentSynergieSaisi;
+      ecrireSynergie(persosSynergie());
+      return;
+    }
     if (event.target.id !== "malus-synergie" || !persoSynergie) return;
     const malus = Math.round(Number(event.target.value));
     malusSynergieSaisi = Number.isFinite(malus) && malus >= 0 ? malus : malusSynergieSaisi;

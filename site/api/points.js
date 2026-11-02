@@ -114,7 +114,7 @@ const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
-const { lireSynergies, lireAlternativesArmes } = require("../commun/synergies.js");
+const { lireSynergies, lireAlternativesArmes, synergieIncoherente } = require("../commun/synergies.js");
 const { lireRecommandationsStuff } = require("../commun/recommandations_stuff.js");
 const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
@@ -701,6 +701,10 @@ module.exports = async (req, res) => {
         Object.keys(MODES_POINTS).forEach(cle => {
           modes[cle] = corps.modes?.[cle] === "multiplication" ? "multiplication" : "addition";
         });
+        const incoherente = Object.entries(lireSynergies(corps.synergies)).find(([, synergie]) => synergieIncoherente(synergie));
+        if (incoherente) {
+          return res.status(400).json({ error: `Synergie de ${incoherente[0]} : le malus si tous sont absents doit être au moins égal au malus par absent × le nombre de persos` });
+        }
         const ids = genre => new Set([...listeJSON(genre), ...ajouts[genre]].map(e => e.id));
         const anciensMasques = lireMasques(ancienne);
         config = {

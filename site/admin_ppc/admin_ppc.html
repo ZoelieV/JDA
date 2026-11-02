@@ -169,9 +169,9 @@
         <button type="button" id="fermer-synergie" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
       <p class="aide-apercu">
-        Dans une box qui contient ce perso, chaque perso en synergie absent de la box lui retire
-        <strong>malus / nombre de persos en synergie</strong> (arrondi) : sans aucun, il perd tout le malus.
-        Pris en compte partout (points des box, équilibrage), après les bonus niveau et théâtre.
+        Dans une box qui contient ce perso, chaque perso en synergie absent de la box lui retire le
+        <strong>malus par perso absent</strong> ; sans aucun, il perd le <strong>malus si tous sont absents</strong>
+        (le dernier absent peut donc coûter plus). Malus par absent vide : réparti à parts égales. Pris en compte partout (points des box, équilibrage), après les bonus niveau et théâtre.
       </p>
       <div id="contenu-synergie"></div>
     </div>
@@ -666,7 +666,7 @@
   </div>
 
   <script src="/commun/variantes.js?v=6"></script>
-  <script src="/commun/synergies.js?v=3"></script>
+  <script src="/commun/synergies.js?v=4"></script>
   <script src="/commun/cartes.js?v=36"></script>
   <script src="/commun/tri.js?v=21"></script>
   <script src="/admin_ppc/admin_ajout.js?v=8"></script>
@@ -687,7 +687,7 @@
   <script src="/admin_ppc/admin_visibilite.js?v=1"></script>
   <script src="/admin_ppc/admin_tutoriel.js?v=2"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
-  <script src="/admin_ppc/admin_synergies.js?v=1"></script>
+  <script src="/admin_ppc/admin_synergies.js?v=2"></script>
   <script src="/admin_ppc/admin_alternatives.js?v=1"></script>
   <script src="/commun/recommandations_stuff.js?v=1"></script>
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>

@@ -373,9 +373,9 @@ function htmlSynergieTc(perso) {
     return `<span class="valeur-alternative-tc" title="Sans ${noms[0]} dans la box : −${synergie.malus} pts">−${synergie.malus}</span> sans ${noms[0]}`;
   }
   const liste = `${noms.slice(0, -1).join(", ")} et ${noms[noms.length - 1]}`;
-  const parAbsent = Math.round(synergie.malus / total);
+  const parAbsent = synergie.par_absent ?? Math.round(synergie.malus / total);
   const detail = Array.from({ length: total }, (_, i) =>
-    `${i + 1} absent${i ? "s" : ""} : −${Math.round(synergie.malus * (i + 1) / total)}`).join(" · ");
+    `${i + 1} absent${i ? "s" : ""} : −${malusSelonAbsents(synergie, i + 1)}`).join(" · ");
   return `<span class="valeur-alternative-tc" title="Points perdus selon le nombre de ces persos absents de la box : ${detail}">−${parAbsent}</span> par perso absent parmi ${liste} (−${synergie.malus} s'il n'y en a aucun)`;
 }
 
