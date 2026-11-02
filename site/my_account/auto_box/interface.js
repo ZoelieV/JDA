@@ -2,8 +2,9 @@
 //
 // Dépôt (ou choix) d'une capture Hoyolab -> analyse dans le navigateur
 // (detection.js + Tesseract.js) -> les personnages sûrs sont prêts à être
-// importés, les incertains (et toujours Kokomi) sont affichés avec leurs
-// cases (- / +, stella) pour correction avant d'appliquer à la Full Box.
+// importés, les incertains (et toujours Kokomi et le Voyageur, jamais lu) sont
+// affichés avec leurs cases (- / +, stella) pour correction avant d'appliquer
+// à la Full Box. Sans aucun élément du Voyageur : rappel, rien n'est appliqué.
 //
 // Utilise les fonctions de my_account.js (creerCarteItem, creerCoinBasDroite,
 // afficherCollection, mettreAJourTotalBox, afficherToast).
@@ -113,6 +114,7 @@ function initialiserAutoBox(profil, personnages, armes) {
   const boutonRecommencer = document.getElementById("auto-box-recommencer");
 
   const persosParId = new Map(personnages.map(p => [p.id, p]));
+  const elementsVoyageur = personnages.filter(p => p.groupe === "traveler");
   const persosTries = [...personnages].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 
   // Analyse en cours : { sures, incertaines } (les incertaines sont
@@ -211,8 +213,9 @@ function initialiserAutoBox(profil, personnages, armes) {
     boutonAppliquer.disabled = false;
   }
 
-  // Les personnages toujours à vérifier (Kokomi) sont ajoutés aux
-  // incertains ; s'ils n'ont pas été détectés, avec leur valeur actuelle.
+  // Les personnages toujours à vérifier (Kokomi, chaque élément du Voyageur)
+  // sont ajoutés aux incertains ; s'ils n'ont pas été détectés, avec leur
+  // valeur actuelle.
   function preparerAnalyse(brut) {
     const collection = profil.characters;
     const incertaines = [...brut.incertaines];
@@ -236,6 +239,17 @@ function initialiserAutoBox(profil, personnages, armes) {
         constellation: collection.full[id] ?? -1,
         niveau: collection.niveaux?.[id] ?? null,
         raisons: [`Non détecté : ${AutoBox.PROBLEMES_CONNUS[id] || "à vérifier manuellement."}`]
+      });
+    });
+
+    // Voyageur : jamais lu sur l'image, tous ses éléments à renseigner à la
+    // main (niveau commun, cf. cleNiveau).
+    elementsVoyageur.forEach(personnage => {
+      incertaines.push({
+        personnage,
+        constellation: collection.full[personnage.id] ?? -1,
+        niveau: collection.niveaux?.[cleNiveau(personnage)] ?? null,
+        raisons: ["À renseigner à la main."]
       });
     });
 
@@ -304,6 +318,10 @@ function initialiserAutoBox(profil, personnages, armes) {
 
     if (event.target.classList.contains("niveau-select")) {
       entree.niveau = event.target.value ? Number(event.target.value) : null;
+      // Voyageur : niveau commun à tous ses éléments.
+      if (entree.personnage?.groupe) {
+        analyse.incertaines.filter(e => e.personnage?.groupe === entree.personnage.groupe).forEach(e => { e.niveau = entree.niveau; });
+      }
     } else if (event.target.classList.contains("auto-box-choix")) {
       entree.personnage = persosParId.get(event.target.value) || null;
     }
@@ -313,23 +331,31 @@ function initialiserAutoBox(profil, personnages, armes) {
   // ---- Application à la Full Box ----
 
   function appliquer() {
+    const toutes = [...analyse.sures, ...analyse.incertaines];
+    if (!toutes.some(entree => entree.personnage?.groupe === "traveler" && entree.constellation >= 0)) {
+      rappelVoyageur.classList.add("active");
+      return;
+    }
+
     const collection = profil.characters;
     collection.niveaux ??= {};
     let nb = 0;
 
-    [...analyse.sures, ...analyse.incertaines].forEach(entree => {
+    toutes.forEach(entree => {
       if (!entree.personnage) return;
       const id = entree.personnage.id;
+      const cle = cleNiveau(entree.personnage);
       collection.full[id] = entree.constellation;
-      nb++;
+      if (entree.constellation >= 0) nb++;
 
       if (entree.constellation < 0) {
-        delete collection.niveaux[id];
+        // Groupe : niveau commun, gardé tant qu'un de ses éléments reste.
+        if (!entree.personnage.groupe) delete collection.niveaux[cle];
         Object.keys(collection.selections).forEach(box => delete collection.selections[box][id]);
       } else if (entree.niveau === 95 || entree.niveau === 100) {
-        collection.niveaux[id] = entree.niveau;
+        collection.niveaux[cle] = entree.niveau;
       } else if (entree.niveau !== null && entree.niveau !== undefined) {
-        delete collection.niveaux[id];
+        delete collection.niveaux[cle];
       }
     });
 
@@ -339,6 +365,18 @@ function initialiserAutoBox(profil, personnages, armes) {
     afficherToast(`${nb} personnages importés : vérifie puis clique sur Enregistrer`);
     rappel.classList.add("active");
   }
+
+  // Aucun élément du Voyageur renseigné : rappel, on reste dans la fenêtre.
+  const rappelVoyageur = document.getElementById("modal-rappel-voyageur");
+  const fermerRappelVoyageur = () => rappelVoyageur.classList.remove("active");
+  document.getElementById("rappel-voyageur-ok").addEventListener("click", () => {
+    fermerRappelVoyageur();
+    const premier = analyse.incertaines.findIndex(entree => entree.personnage?.groupe === "traveler");
+    listeIncertains.querySelector(`.auto-box-ligne[data-index="${premier}"]`)?.scrollIntoView({ block: "center" });
+  });
+  rappelVoyageur.addEventListener("click", event => {
+    if (event.target === rappelVoyageur) fermerRappelVoyageur();
+  });
 
   // ---- Rappel après l'application : constellations des persos à chapeau
   // ou cheveux longs à revérifier, armes (et doublons) à renseigner. ----
@@ -376,6 +414,7 @@ function initialiserAutoBox(profil, personnages, armes) {
     if (event.target === modal) fermer();
   });
   document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && rappelVoyageur.classList.contains("active")) return fermerRappelVoyageur();
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
     if (event.key === "Escape" && rappel.classList.contains("active")) fermerRappel();
   });
