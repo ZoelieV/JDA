@@ -143,7 +143,7 @@
   color: var(--texte-doux);
 }
 
-/* Titre d'un mode (room, entraînement) : icône du palier (rond clair,
+/* Titre d'un mode (room, entraînement) : icône du palier (fine bordure,
    .medaille-theatre de commun/entete.css, crâne du carnage compris), puis
    le nom.
    Pas le style des descriptions (span). */
