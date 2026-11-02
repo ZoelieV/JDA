@@ -9,6 +9,7 @@
   <meta name="theme-color" content="#1e1e1e">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
+  <link rel="stylesheet" href="/regles.css?v=10">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/site.css?v=19">
   <link rel="stylesheet" href="/commun/tuto_hoyolab.css?v=1">
@@ -16,22 +17,118 @@
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
 <script src="/commun/compte.js?v=67" defer></script>
+<script src="/regles.js?v=4" defer></script>
   <link rel="stylesheet" href="/commun/listes.css?v=2">
 </head>
 <body>
   <a href="/" class="lien-accueil">Accueil</a>
   <h1 class="titre-page">Tutoriel</h1>
 
-  <main class="page-tutoriel">
-    <!-- Récupérer sa box sur HoYoLAB (étapes : commun/tuto_hoyolab.js), pour
-         la Détection auto de Mon compte. -->
-    <section class="panneau" id="hoyolab">
-      <h2>Récupérer ta box sur HoYoLAB</h2>
-      <p>La détection automatique de Mon compte remplit ta full box à partir de l'image de tous tes personnages, exportée depuis HoYoLAB (en français). Voici comment l'obtenir :</p>
-      <div data-tuto-hoyolab></div>
-      <p>Ensuite, dans <a href="/compte">Mon compte</a>, clique sur « Détection auto » et dépose l'image. Vérifie les constellations proposées, puis renseigne tes armes et leurs doublons à la main : la détection ne lit que les personnages.</p>
-    </section>
-  </main>
+  <!-- Mêmes contenus que le tutoriel d'accueil des nouveaux comptes
+       (commun/tutoriel.js) ; sections repliables comme les règles complètes
+       (regles.css, regles.js). Étapes HoYoLAB : commun/tuto_hoyolab.js. -->
+  <div class="page-regles">
+    <nav class="sommaire-regles panneau" aria-label="Sommaire">
+      <h2>Sommaire</h2>
+      <ol>
+      <li><a href="#tes-informations">Tes informations</a></li>
+      <li><a href="#ta-box">Ta box</a></li>
+      <li><a href="#hoyolab">Récupérer ta box sur HoYoLAB</a></li>
+      <li><a href="#tes-persos-montes">Tes persos montés</a></li>
+      <li><a href="#les-regles">Les règles</a></li>
+      <li><a href="#personnalisation">La personnalisation</a></li>
+      <li><a href="#boxes-des-joueurs">Les boxes des joueurs</a></li>
+      <li><a href="#lancer-un-match">Lancer un match</a></li>
+      <li><a href="#premier-match">Ton premier match</a></li>
+      </ol>
+      <div class="sommaire-actions">
+        <button type="button" class="btn-tout">Tout replier</button>
+      </div>
+    </nav>
+
+    <main class="sections-regles">
+    <details class="section-regles" id="tes-informations" open>
+      <summary><h2>Tes informations</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>Ouvre <a href="/compte">Mon compte</a>, puis clique sur ton compte en haut à droite.</li>
+          <li>Renseigne ton UID et ton niveau du monde, puis clique sur Enregistrer.</li>
+          <li>Attention : ton UID ne pourra plus être modifié.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="section-regles" id="ta-box" open>
+      <summary><h2>Ta box</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>Dans <a href="/compte">Mon compte</a>, renseigne tous tes personnages et tes armes dans ta Full box.</li>
+          <li>Tu peux le faire à la main, ou avec la Détection auto à partir d'une image de HoYoLAB (voir <a href="#hoyolab">Récupérer ta box sur HoYoLAB</a>).</li>
+          <li>Clique ensuite sur Enregistrer.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="section-regles" id="hoyolab" open>
+      <summary><h2>Récupérer ta box sur HoYoLAB</h2></summary>
+      <div class="section-regles-corps">
+        <p>La détection automatique de Mon compte remplit ta full box à partir de l'image de tous tes personnages, exportée depuis HoYoLAB (en français). Voici comment l'obtenir :</p>
+        <div data-tuto-hoyolab></div>
+        <p>Ensuite, dans <a href="/compte">Mon compte</a>, clique sur « Détection auto » et dépose l'image. Vérifie les constellations proposées, puis renseigne tes armes et leurs doublons à la main : la détection ne lit que les personnages.</p>
+      </div>
+    </details>
+    <details class="section-regles" id="tes-persos-montes" open>
+      <summary><h2>Tes persos montés</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>Dans ta Box stuff, coche les persos que tu as vraiment montés : niveau 70 ou plus, aptitudes utiles niveau 8 ou plus, un set d'artefacts.</li>
+          <li>Il en faut 3 pour jouer en Sardine, 8 en Carpe, 12 en Dauphin et 16 en Baleine.</li>
+          <li>Clique ensuite sur Enregistrer.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="section-regles" id="les-regles" open>
+      <summary><h2>Les règles</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>L'essentiel tient en quelques lignes : <a href="/regles/simplifiees">les règles simplifiées</a>.</li>
+          <li>Le détail existe aussi : <a href="/regles/completes">les règles complètes</a>, à lire avant tes premiers matchs classés.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="section-regles" id="personnalisation" open>
+      <summary><h2>La personnalisation</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>Le menu de ton compte contient la Personnalisation : fond d'écran, namecard, bannière, skins.</li>
+          <li>Tu gagnes des Rikoyns en jouant pour les débloquer.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="section-regles" id="boxes-des-joueurs" open>
+      <summary><h2>Les boxes des joueurs</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>Sur <a href="/comptes">la page Joueurs</a>, tu peux consulter les comptes et les boxes des autres joueurs, pour préparer tes matchs.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="section-regles" id="lancer-un-match" open>
+      <summary><h2>Lancer un match</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>Sur <a href="/match">la page Match</a>, tu lances tes matchs : classé, amical, entraînement, en équipe ou tournois.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="section-regles" id="premier-match" open>
+      <summary><h2>Ton premier match</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>Pendant la draft, trie les personnages par points avec le bouton de tri : tu verras tout de suite les plus forts à bannir ou à choisir.</li>
+        </ul>
+      </div>
+    </details>
+    </main>
+  </div>
   <script src="/commun/tuto_hoyolab.js?v=2"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=25"></script>

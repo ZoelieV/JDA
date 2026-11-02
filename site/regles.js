@@ -10,7 +10,7 @@ function ouvrirSection(id) {
   section.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-document.querySelectorAll(".sommaire-regles a[href^='#']").forEach(lien => {
+document.querySelectorAll(".page-regles a[href^='#']").forEach(lien => {
   lien.addEventListener("click", event => {
     event.preventDefault();
     const id = lien.getAttribute("href").slice(1);
