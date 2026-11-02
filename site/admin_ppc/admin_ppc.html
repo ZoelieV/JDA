@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=57">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=58">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -567,13 +567,13 @@
       </div>
       <div id="formulaire-skin" class="formulaire-skin">
         <p class="aide-apercu">
-          Un personnage peut avoir plusieurs skins ; le joueur en active un seul à la fois. Prix : celui des skins,
-          modifiable dans Rikoyns. Seul le portrait est obligatoire : l'icône et l'image du choix en sont tirées si tu n'en donnes pas.
+          Un personnage peut avoir plusieurs skins ; le joueur en active un seul à la fois. Seul le portrait est obligatoire : l'icône et l'image du choix en sont tirées si tu n'en donnes pas.
         </p>
         <label class="champ-compte">Personnage
           <select id="skin-perso" class="texte-ajout"><option value="">Choisir…</option></select>
         </label>
         <label class="champ-compte">Nom du skin <input type="text" id="skin-nom" class="texte-ajout" maxlength="30" placeholder="ex. Noël"></label>
+        <label class="champ-compte">Prix en Rikoyns <input type="number" id="skin-prix" class="texte-ajout" min="0" max="10000" step="1" placeholder="Par défaut"></label>
         <label class="champ-compte">Portrait <input type="file" id="skin-image" accept="image/png,image/webp,image/jpeg"></label>
         <label class="champ-compte">Icône de profil (facultatif) <input type="file" id="skin-side" accept="image/png,image/webp,image/jpeg"></label>
         <label class="champ-compte">Image du choix (facultatif) <input type="file" id="skin-item" accept="image/png,image/webp,image/jpeg"></label>
@@ -670,7 +670,7 @@
   <script src="/commun/koyns.js?v=15"></script>
   <script src="/admin_ppc/admin_choix_cosmetiques.js?v=5"></script>
   <script src="/admin_ppc/admin_koyns.js?v=10"></script>
-  <script src="/admin_ppc/admin_skins.js?v=1"></script>
+  <script src="/admin_ppc/admin_skins.js?v=2"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
   <script src="/admin_ppc/admin_alternatives.js?v=1"></script>

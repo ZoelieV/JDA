@@ -2875,3 +2875,17 @@ body.page-equilibrage #tuiles-admin {
 .skin-ajoute-statut {
   opacity: 0.75;
 }
+
+.champ-prix-skin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.champ-prix-skin input {
+  width: 5.5rem;
+}
+
+#skin-prix {
+  width: 10rem;
+}

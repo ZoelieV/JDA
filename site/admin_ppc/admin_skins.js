@@ -47,10 +47,28 @@ async function envoyerSkin(corps) {
   promessePointsAdmin = null;
   promesseCatalogueChoix = null;
   catalogueChoixCosmetiques = null;
-  afficherSkinsAjoutes(resultat.skins_ajoutes || []);
+  // Fenêtre Rikoyns : elle renvoie tous les prix en enregistrant.
+  prixKoyns = { ...(resultat.prix_cosmetiques || {}) };
+  afficherSkinsAjoutes(resultat.skins_ajoutes || [], resultat.prix_cosmetiques);
 }
 
-function afficherSkinsAjoutes(skins) {
+// Prix saisi : entier, ou null si le champ est vide (prix par défaut).
+function lirePrixSkin(champ) {
+  if (champ.value.trim() === "") return null;
+  const prix = Number(champ.value);
+  if (!Number.isInteger(prix) || prix < 0 || prix > PRIX_COSMETIQUE_MAX) throw new Error(`Prix : entier de 0 à ${PRIX_COSMETIQUE_MAX}.`);
+  return prix;
+}
+
+// Champ du prix du formulaire : prix par défaut du personnage choisi.
+function majPrixDefautSkin() {
+  const perso = document.getElementById("skin-perso").value;
+  document.getElementById("skin-prix").placeholder = perso
+    ? `Par défaut : ${prixParDefautCosmetique(idCosmetique("skin", `${perso}__skin`))}`
+    : "Par défaut";
+}
+
+function afficherSkinsAjoutes(skins, prix = {}) {
   definirSkinsAjoutes(skins);
   const lectureSeule = document.body.classList.contains("lecture-seule");
   const liste = document.getElementById("liste-skins");
@@ -58,15 +76,20 @@ function afficherSkinsAjoutes(skins) {
     liste.innerHTML = `<p class="aide-apercu">Aucun skin ajouté pour l'instant.</p>`;
     return;
   }
-  liste.innerHTML = [...skins].reverse().map(skin => `
+  liste.innerHTML = [...skins].reverse().map(skin => {
+    const cosmetique = idCosmetique("skin", skin.id);
+    const regle = Number.isInteger(prix?.[cosmetique]) ? prix[cosmetique] : "";
+    return `
     <div class="skin-ajoute${skin.masque ? " masque" : ""}" data-id="${echapper(skin.id)}">
       <img src="/DB/${echapper(imagesSkin(skin.id).item)}" alt="">
       <span class="skin-ajoute-nom">${echapper(nomSkin(skin.id, nomsPersosSkins.get(skin.perso) || skin.perso))}</span>
       <span class="skin-ajoute-statut">${skin.masque ? "Masqué" : "Visible"}</span>
+      <label class="champ-prix-skin">Prix <input type="number" class="texte-ajout" data-prix min="0" max="${PRIX_COSMETIQUE_MAX}" step="1" value="${regle}" placeholder="${prixParDefautCosmetique(cosmetique)}"${lectureSeule ? " disabled" : ""}></label>
       ${lectureSeule ? "" : `
         <button type="button" class="btn-ouvrir-ajout" data-action="masque">${skin.masque ? "Afficher" : "Masquer"}</button>
         ${skin.masque ? `<button type="button" class="btn-ouvrir-ajout" data-action="supprimer">Supprimer</button>` : ""}`}
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 async function creerSkin() {
@@ -87,8 +110,10 @@ async function creerSkin() {
       images[cle] = await imageSkinEnWebp(document.getElementById(champ).files[0] || fichierImage, TAILLES_IMAGES_SKIN[cle]);
     }
     const masque = document.getElementById("skin-masque").checked;
-    await envoyerSkin({ skin_ajout: { perso, nom, masque, images } });
+    const prix = lirePrixSkin(document.getElementById("skin-prix"));
+    await envoyerSkin({ skin_ajout: { perso, nom, masque, prix, images } });
     document.getElementById("skin-nom").value = "";
+    document.getElementById("skin-prix").value = "";
     ["skin-image", "skin-side", "skin-item"].forEach(champ => { document.getElementById(champ).value = ""; });
     messageSkin(masque ? "Skin ajouté, masqué : affiche-le le moment venu." : "Skin ajouté, visible par les joueurs.", "succes");
   } catch (erreur) {
@@ -112,7 +137,8 @@ async function ouvrirSkins() {
         .sort((a, b) => a.nom.localeCompare(b.nom, "fr"))
         .forEach(perso => choix.add(new Option(perso.nom, perso.id)));
     }
-    afficherSkinsAjoutes(points.skins_ajoutes || []);
+    majPrixDefautSkin();
+    afficherSkinsAjoutes(points.skins_ajoutes || [], points.prix_cosmetiques);
     messageSkin("");
   } catch (erreur) {
     console.error(erreur);
@@ -132,6 +158,19 @@ function initialiserSkins() {
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
   });
   document.getElementById("creer-skin").addEventListener("click", creerSkin);
+  document.getElementById("skin-perso").addEventListener("change", majPrixDefautSkin);
+  // Prix d'un skin de la liste : enregistré dès qu'il change (vide : défaut).
+  document.getElementById("liste-skins").addEventListener("change", async event => {
+    if (!event.target.matches("[data-prix]")) return;
+    try {
+      const prix = lirePrixSkin(event.target);
+      await envoyerSkin({ skin_prix: { id: event.target.closest(".skin-ajoute").dataset.id, prix } });
+      messageSkin("Prix enregistré.", "succes");
+    } catch (erreur) {
+      console.error(erreur);
+      messageSkin(erreur.message, "erreur");
+    }
+  });
   document.getElementById("liste-skins").addEventListener("click", async event => {
     const bouton = event.target.closest("[data-action]");
     if (!bouton) return;

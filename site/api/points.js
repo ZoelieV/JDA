@@ -56,9 +56,12 @@
 //                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
-//   { skin_ajout: { perso, nom, masque, images: { image, side, item } } }
+//   { skin_ajout: { perso, nom, masque, prix?, images: { image, side, item } } }
 //                                    ajoute un skin (images : data URL WebP,
-//                                    cf. _lib/skins.js)
+//                                    cf. _lib/skins.js ; sans prix : celui
+//                                    par défaut)
+//   { skin_prix: { id, prix } }      règle le prix d'un skin ajouté (null :
+//                                    retour au prix par défaut)
 //   { skin_masque: { id, masque } }  masque / affiche un skin ajouté
 //   { skin_suppression: { id } }     supprime un skin ajouté masqué et que
 //                                    personne ne possède
@@ -323,6 +326,8 @@ function versionPublique(config) {
   return publique;
 }
 
+const prixSkinValide = prix => Number.isInteger(prix) && prix >= 0 && prix <= PRIX_COSMETIQUE_MAX;
+
 function ajoutsVides() {
   return { characters: [], weapons: [], boss: [] };
 }
@@ -515,10 +520,23 @@ module.exports = async (req, res) => {
         const id = idSkinAjoute(perso.id, nom);
         if (!id) return res.status(400).json({ error: "Le nom du skin doit contenir des lettres ou des chiffres" });
         if (skins.some(skin => skin.id === id)) return res.status(409).json({ error: "Ce personnage a déjà un skin de ce nom" });
+        const prixSkin = corps.skin_ajout.prix ?? null;
+        if (prixSkin !== null && !prixSkinValide(prixSkin)) return res.status(400).json({ error: `Prix : entier de 0 à ${PRIX_COSMETIQUE_MAX}` });
         const { tampons, erreur } = decoderImagesSkin(brutes);
         if (erreur) return res.status(400).json({ error: erreur });
         await televerserImagesSkin(id, tampons);
         config = { ...ancienne, skins_ajoutes: [...skins, { id, perso: perso.id, nom, masque: corps.skin_ajout.masque !== false }] };
+        if (prixSkin !== null) config.prix_cosmetiques = { ...(ancienne.prix_cosmetiques || {}), [idCosmetique("skin", id)]: prixSkin };
+      } else if (corps.skin_prix) {
+        const skins = Array.isArray(ancienne.skins_ajoutes) ? ancienne.skins_ajoutes : [];
+        if (!skins.some(skin => skin.id === corps.skin_prix.id)) return res.status(404).json({ error: "Skin introuvable" });
+        const prixSkin = corps.skin_prix.prix ?? null;
+        if (prixSkin !== null && !prixSkinValide(prixSkin)) return res.status(400).json({ error: `Prix : entier de 0 à ${PRIX_COSMETIQUE_MAX}` });
+        const prix = { ...(ancienne.prix_cosmetiques || {}) };
+        const cosmetique = idCosmetique("skin", corps.skin_prix.id);
+        if (prixSkin === null) delete prix[cosmetique];
+        else prix[cosmetique] = prixSkin;
+        config = { ...ancienne, prix_cosmetiques: prix };
       } else if (corps.skin_masque) {
         const skins = Array.isArray(ancienne.skins_ajoutes) ? ancienne.skins_ajoutes : [];
         if (!skins.some(skin => skin.id === corps.skin_masque.id)) return res.status(404).json({ error: "Skin introuvable" });
