@@ -682,6 +682,34 @@ body::before {
   height: 2rem;
 }
 
+/* Bannières de Tous les comptes et du classement : pas de rond clair, fin
+   contour blanc qui suit la forme de l'icône (le poisson noir reste visible
+   sur un fond sombre). Épaisseur : --contour-icones-banniere. */
+.account-infos,
+.joueur-infos {
+  --contour-icones-banniere: 1px;
+}
+
+.account-infos .rang-trophees,
+.joueur-infos .rang-trophees,
+.account-infos .medaille-theatre,
+.joueur-infos .medaille-theatre {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.account-infos .rang-trophees img,
+.joueur-infos .rang-trophees img,
+.account-infos .medaille-theatre,
+.joueur-infos .medaille-theatre {
+  filter:
+    drop-shadow(var(--contour-icones-banniere) 0 0 #fff)
+    drop-shadow(calc(-1 * var(--contour-icones-banniere)) 0 0 #fff)
+    drop-shadow(0 var(--contour-icones-banniere) 0 #fff)
+    drop-shadow(0 calc(-1 * var(--contour-icones-banniere)) 0 #fff);
+}
+
 /* Rang puis médaille au bord opposé à la photo : l'espace libre passe
    avant le rang (la médaille reste la plus loin de la photo). */
 .avec-banniere2 > .rang-trophees {
