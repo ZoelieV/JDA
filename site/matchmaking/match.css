@@ -2611,12 +2611,12 @@ h1 {
 }
 
 /* ---- Médaille du théâtre à côté du pseudo (cf. htmlMedailleTheatre) ---- */
-/* Pas la photo des entêtes (règle .entete-joueur img) : taille et bordure
+/* Pas la photo des entêtes (règle .entete-joueur img) : taille et rond clair
    de commun/entete.css. */
 .entete-joueur .medaille-theatre {
   width: 1.3em;
   height: 1.3em;
-  background: none;
+  background-color: rgba(235, 235, 235, 0.92);
 }
 
 /* Tableaux : centrée sur la ligne du pseudo (hauteur de la photo). */
@@ -2717,11 +2717,11 @@ h1 {
   width: 1.5rem;
   height: 1.5rem;
   object-fit: contain;
-  /* Icône blanche du palier, fine bordure (comme .medaille-theatre). */
+  /* Icône noire du palier sur un rond clair (comme .medaille-theatre). */
   box-sizing: border-box;
   padding: 0.125rem;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  background-color: rgba(235, 235, 235, 0.92);
 }
 
 /* ---- Draft classée : chronos, pause, notifications ---- */

@@ -244,7 +244,7 @@
       if (avant) avant.after(medaille);
       else element.appendChild(medaille);
     }
-    medaille.src = `/DB/images/others/theatre_${infos.icone}.webp?v=4`;
+    medaille.src = `/DB/images/others/theatre_${infos.icone}.webp?v=3`;
     medaille.alt = infos.nom;
     medaille.title = infos.nom;
   }

@@ -77,14 +77,14 @@
   height: 1.8125rem;
 }
 
-/* Théâtre : la carpe des paliers (blanche), dans une fine bordure comme les
+/* Théâtre : la carpe des paliers (noire), sur un rond clair comme les
    médailles du théâtre (cf. .medaille-theatre, commun/entete.css). */
 .tri-logo-palier {
   box-sizing: border-box;
   width: 1.5rem;
   padding: 0.125rem;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  background-color: rgba(235, 235, 235, 0.92);
   object-fit: contain;
 }
 
