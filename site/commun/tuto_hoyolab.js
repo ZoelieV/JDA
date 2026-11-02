@@ -10,7 +10,7 @@
     "Clique sur ta photo de profil, en haut à droite.",
     "Clique sur « Profil ».",
     "Ton profil s'ouvre : fais défiler la page vers le bas.",
-    "Dans le bloc « Genshin Impact » à droite, clique sur ta carte de jeu (ton pseudo, ton serveur, tes personnages possédés) : ton Bilan des combats s'ouvre.",
+    "Clique sur Genshin Impact.",
     "Dans « Mes personnages », clique sur « Nouveaux personnages », à droite.",
     "Tous tes personnages s'affichent. Garde la langue en français (FR en haut à droite) et le tri par défaut.",
     "Clique sur le bouton de partage en haut à droite, puis sur l'icône image (la dernière) : HoYoLAB crée une image de toute ta liste. Enregistre-la, puis dépose-la dans « Détection auto » de Mon compte."
