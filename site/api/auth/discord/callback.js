@@ -103,6 +103,25 @@ module.exports = async (req, res) => {
       if (sourceError) console.error("Erreur source d'inscription :", sourceError);
     }
 
+    // Tutoriel obligatoire : compte créé à l'instant (profil encore vide) ;
+    // cookie lisible par la page, qui charge alors commun/tutoriel.js.
+    const { data: ligne, error: erreurLigne } = await supabase.from("profiles")
+      .select("data, tutoriel_etape, inscrit_le").eq("discord_id", user.id).maybeSingle();
+    if (erreurLigne) console.error("Erreur lecture du tutoriel :", erreurLigne);
+    const nouveau = ligne && ligne.tutoriel_etape == null && !Object.keys(ligne.data || {}).length
+      && Date.now() - Date.parse(ligne.inscrit_le) < 2 * 60 * 1000;
+    if (nouveau) {
+      const { error: erreurTutoriel } = await supabase.from("profiles").update({ tutoriel_etape: 0 }).eq("discord_id", user.id);
+      if (erreurTutoriel) console.error("Erreur début du tutoriel :", erreurTutoriel);
+    }
+    const tutorielActif = nouveau || ligne?.tutoriel_etape != null;
+    setCookie(res, "tutoriel_actif", tutorielActif ? "1" : "", {
+      secure: true,
+      sameSite: "Lax",
+      path: "/",
+      maxAge: tutorielActif ? 365 * 24 * 3600 : 0
+    });
+
     setCookie(res, "discord_oauth_state", "", {
       httpOnly: true,
       secure: true,

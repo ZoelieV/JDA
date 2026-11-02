@@ -652,7 +652,7 @@ async function routeRejoindre(req, res, roomId, user) {
   const classeEnCours = await matchClasseEnCours(supabase, user.id);
   if (classeEnCours) throw { ...erreur(409, ERREUR_MATCH_CLASSE), room_id: classeEnCours };
   // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
-  const incomplet = await erreurProfilIncomplet(supabase, user.id);
+  const incomplet = await erreurProfilIncomplet(supabase, user.id, { mode: "carpe" });
   if (incomplet) throw { ...erreur(409, incomplet), profil_incomplet: true };
 
   await actualiserPoints();

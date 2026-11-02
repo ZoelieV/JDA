@@ -368,17 +368,18 @@ function verifierInscriptionsOuvertes(tournoi) {
 
 // Joueur inscrit sur le site avec une full box jouable (1v1) : sinon
 // refusé.
-async function verifierJoueur(discordId) {
+async function verifierJoueur(discordId, idTournoi) {
   const data = await lireDonneesProprietaire(discordId);
   if (!data) throw erreur(409, "Crée d'abord ton compte (Mon compte).");
   // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
-  const incomplet = await require("./room").erreurProfilIncomplet(supabase, discordId);
+  const tournoi = await lireTournoi(idTournoi);
+  const incomplet = await require("./room").erreurProfilIncomplet(supabase, discordId, { mode: tournoi?.mode });
   if (incomplet) throw { ...erreur(409, incomplet), profil_incomplet: true };
   return data;
 }
 
 async function inscrire(id, user, inscrire = true) {
-  if (inscrire) await verifierJoueur(user.id);
+  if (inscrire) await verifierJoueur(user.id, id);
   return modifierTournoi(id, tournoi => {
     if (tournoi.format !== "1v1") throw erreur(400, "Tournoi en équipe : crée ou rejoins une équipe.");
     verifierInscriptionsOuvertes(tournoi);
@@ -396,7 +397,7 @@ async function inscrire(id, user, inscrire = true) {
 // Actions sur les équipes ({ action, equipe?, joueur?, nom? }).
 async function actionEquipe(id, user, corps) {
   const { action } = corps || {};
-  if (action === "creer" || action === "demander") await verifierJoueur(user.id);
+  if (action === "creer" || action === "demander") await verifierJoueur(user.id, id);
   return modifierTournoi(id, tournoi => {
     if (tournoi.format !== "equipe") throw erreur(400, "Ce tournoi n'est pas en équipe.");
     verifierInscriptionsOuvertes(tournoi);

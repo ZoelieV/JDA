@@ -125,7 +125,7 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
   // (cf. proposerAbandonClasse, commun/cartes.js).
   if (!room) {
     // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
-    const incomplet = await erreurProfilIncomplet(supabase, discordId);
+    const incomplet = await erreurProfilIncomplet(supabase, discordId, { mode: type === "classe" ? "12" : mode });
     if (incomplet) throw { status: 409, message: incomplet, profil_incomplet: true };
     const enCours = await matchClasseEnCours(supabase, discordId);
     if (enCours) throw { status: 409, message: ERREUR_MATCH_CLASSE, room_id: enCours };

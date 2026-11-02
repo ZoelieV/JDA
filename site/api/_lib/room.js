@@ -256,10 +256,11 @@ async function quitterRoom(supabase, room, discordId) {
 
 // ---- Profil complet avant de jouer ----
 // Match privé (créé ou rejoint), matchmaking, classé, mode en équipe et
-// inscription à un tournoi : box stuff (au moins un perso), niveau du monde
-// et UID renseignés dans Mon compte. Pas exigé pour l'entraînement ni le
-// Random world boss. Erreur 409 avec profil_incomplet: true (la page
-// propose d'aller dans Mon compte).
+// inscription à un tournoi : tutoriel terminé (nouveaux comptes), box stuff,
+// niveau du monde et UID renseignés dans Mon compte, et assez de persos
+// montés pour le type de match. Pas exigé pour l'entraînement ni le Random
+// world boss. Erreur 409 avec profil_incomplet: true (la page propose d'aller
+// dans Mon compte).
 function manquesProfil(data) {
   const manques = [];
   if (!Object.values(data?.characters?.selections?.stuff || {}).some(Boolean)) manques.push("ta box stuff");
@@ -268,17 +269,42 @@ function manquesProfil(data) {
   return manques;
 }
 
-// -> message d'erreur, ou null si le profil est complet.
-async function erreurProfilIncomplet(supabase, discordId) {
-  const { data } = await supabase.from("profiles").select("data").eq("discord_id", discordId).maybeSingle();
+// Persos montés (box stuff) exigés par palier de draft (mêmes valeurs :
+// MIN_PERSOS_MONTES de commun/tutoriel.js).
+const MIN_PERSOS_MONTES = { 1: 3, 2: 8, 3: 12, 4: 16 };
+const NOMS_PALIERS = { 1: "Sardine", 2: "Carpe", 3: "Dauphin", 4: "Baleine" };
+// Palier de draft d'un mode ("12" : mêlée, carnage : draft de la carpe, cf.
+// resoudreTheatre). "auto" : celui de l'adversaire n'est pas encore connu,
+// c'est celui du joueur qui compte.
+const PALIERS_MODES = { sardine: 1, carpe: 2, dauphin: 3, baleine: 4, carnage: 2, 12: 2 };
+const palierDuMatch = (mode, data) => PALIERS_MODES[mode] || Number(data?.theatre) || 1;
+
+// Voyageur : un seul perso, quels que soient ses éléments.
+function compterPersosMontes(data) {
+  const montes = Object.entries(data?.characters?.selections?.stuff || {}).filter(([, coche]) => coche).map(([id]) => id);
+  return new Set(montes.map(id => id.replace(/^traveler_.*/, "traveler"))).size;
+}
+
+// -> message d'erreur, ou null si le joueur peut lancer ce type de match
+// (mode : mode de la draft).
+async function erreurProfilIncomplet(supabase, discordId, { mode = null } = {}) {
+  const { data } = await supabase.from("profiles").select("data, tutoriel_etape").eq("discord_id", discordId).maybeSingle();
+  if (data?.tutoriel_etape != null) return "Avant de jouer, termine le tutoriel.";
   const manques = manquesProfil(data?.data);
-  if (!manques.length) return null;
+  if (!manques.length) {
+    const palier = palierDuMatch(mode, data?.data);
+    const montes = compterPersosMontes(data?.data);
+    if (montes >= MIN_PERSOS_MONTES[palier]) return null;
+    return `Pour jouer en ${NOMS_PALIERS[palier]}, il faut au moins ${MIN_PERSOS_MONTES[palier]} persos montés dans ta box stuff (tu en as ${montes}).`;
+  }
   const liste = manques.length > 1 ? `${manques.slice(0, -1).join(", ")} et ${manques[manques.length - 1]}` : manques[0];
   return `Avant de jouer, renseigne ${liste} dans Mon compte.`;
 }
 
 module.exports = {
   erreurProfilIncomplet,
+  compterPersosMontes,
+  palierDuMatch,
   ecrireDraft,
   ERREUR_MATCH_CLASSE,
   matchClasseEnCours,

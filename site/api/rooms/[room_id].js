@@ -118,7 +118,9 @@ module.exports = async (req, res) => {
       if (enCours) return res.status(409).json({ error: ERREUR_MATCH_CLASSE, room_id: enCours });
 
       // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
-      const incomplet = await erreurProfilIncomplet(supabase, user.id);
+      // Type de match : mode de la draft de cette room (minimum de persos montés).
+      const { data: avecDraft } = await supabase.from("rooms").select("draft").eq("room_id", roomId).maybeSingle();
+      const incomplet = await erreurProfilIncomplet(supabase, user.id, { mode: avecDraft?.draft?.mode_theatre });
       if (incomplet) return res.status(409).json({ error: incomplet, profil_incomplet: true });
 
       // Mise à jour conditionnelle : si deux personnes ouvrent le lien en

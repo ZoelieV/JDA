@@ -62,6 +62,8 @@ const ERREUR_LIEN_STREAM = "Lien de stream refusé : seuls les liens Twitch (twi
 // Enregistrements du profil : un toutes les 5 s au plus par compte (quota
 // Supabase protégé d'un envoi en boucle).
 const DELAI_ENREGISTREMENT_MS = 5 * 1000;
+// Étapes de commun/tutoriel.js.
+const NB_ETAPES_TUTORIEL = 8;
 
 // Profil envoyé : taille maximale (une box complète pèse quelques dizaines
 // de Ko).
@@ -308,6 +310,38 @@ module.exports = async (req, res) => {
     // GET : liste ; POST { boxes } : liste complète remplacée.
     if (new URL(req.url, "http://x").searchParams.get("action") === "boxes_entrainement") {
       return routeBoxesEntrainement(req, res, discordId);
+    }
+
+    // ---- TUTORIEL (?action=tutoriel, cf. commun/tutoriel.js) ----
+    // GET : { etape } (null : rien à faire) ; POST { etape } : étape atteinte ;
+    // POST { fini: true } : terminé. Seulement pour un tutoriel en cours.
+    if (new URL(req.url, "http://x").searchParams.get("action") === "tutoriel") {
+      const { data: ligne, error: erreurLecture } = await supabase.from("profiles").select("tutoriel_etape").eq("discord_id", discordId).maybeSingle();
+      if (erreurLecture) throw erreurLecture;
+      if (req.method === "GET") return res.status(200).json({ etape: ligne?.tutoriel_etape ?? null });
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "GET, POST");
+        return res.status(405).end();
+      }
+      if (ligne?.tutoriel_etape == null) return res.status(200).json({ etape: null });
+      let corps = "";
+      for await (const chunk of req) {
+        corps += chunk;
+        if (corps.length > 200) return res.status(413).end();
+      }
+      let demande;
+      try {
+        demande = JSON.parse(corps);
+      } catch {
+        return res.status(400).json({ error: "JSON invalide." });
+      }
+      if (demande?.fini !== true && !(Number.isInteger(demande?.etape) && demande.etape >= 0 && demande.etape < NB_ETAPES_TUTORIEL)) {
+        return res.status(400).json({ error: "Étape invalide." });
+      }
+      const etape = demande.fini === true ? null : demande.etape;
+      const { error } = await supabase.from("profiles").update({ tutoriel_etape: etape }).eq("discord_id", discordId);
+      if (error) throw error;
+      return res.status(200).json({ etape });
     }
 
     // ---- LECTURE DU PROFIL ----

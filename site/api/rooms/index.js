@@ -236,7 +236,8 @@ async function creerEntrainementEquipe(req, res, user) {
 // "choix", boss_id? } : lobby d'un match en équipe (cf. _lib/equipe.js),
 // même limite de création que les rooms privées.
 async function creerEquipe(req, res, user) {
-  const incomplet = await erreurProfilIncomplet(supabase, user.id);
+  // Modes en équipe : draft de la carpe.
+  const incomplet = await erreurProfilIncomplet(supabase, user.id, { mode: "carpe" });
   if (incomplet) return res.status(409).json({ error: incomplet, profil_incomplet: true });
   const { draft, erreur } = await preparerCreation(req.body, user);
   if (erreur) return res.status(400).json({ error: erreur });
@@ -376,8 +377,8 @@ module.exports = async (req, res) => {
 
     const mode = MODES_THEATRE.includes(req.body?.mode) ? req.body.mode : "auto";
 
-    // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
-    const incomplet = await erreurProfilIncomplet(supabase, user.id);
+    // Tutoriel, box stuff, niveau du monde, UID et persos montés (cf. _lib/room.js).
+    const incomplet = await erreurProfilIncomplet(supabase, user.id, { mode });
     if (incomplet) return res.status(409).json({ error: incomplet, profil_incomplet: true });
 
     // Boss et J1 choisis à la création (sinon au hasard au tirage).

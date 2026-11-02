@@ -18,6 +18,17 @@
   // Page affichée dans une fenêtre d'une autre page (Litiges dans
   // l'administration, cf. admin_litiges.js) : ni en-tête ni pied de page.
   if (window.self !== window.top) return;
+  // Tutoriel en cours (nouveau compte, test d'un admin) ou astuce du premier
+  // match : commun/tutoriel.js chargé seulement dans ces cas.
+  try {
+    const astuce = localStorage.getItem("tutoriel-astuce-tri") && new URLSearchParams(location.search).has("room");
+    if (/(^|; )tutoriel_actif=1/.test(document.cookie) || localStorage.getItem("tutoriel-test") !== null || astuce) {
+      const script = document.createElement("script");
+      script.src = "/commun/tutoriel.js?v=1";
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  } catch { /* stockage bloqué : pas de test ni d'astuce */ }
   const room = document.currentScript?.hasAttribute("data-room");
   if (document.documentElement.dataset.accueil !== "classique") {
     // Affichage changé depuis la personnalisation : page rechargée pour
