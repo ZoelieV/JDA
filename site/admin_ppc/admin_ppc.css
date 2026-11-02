@@ -2893,3 +2893,84 @@ body.page-equilibrage #tuiles-admin {
 .formulaire-skin .cache {
   display: none;
 }
+
+/* Aperçu d'un skin : tailles réelles du site (carte de perso, icône sur
+   l'arme signature, tuile de la Personnalisation). */
+.apercu-skin {
+  width: 100%;
+}
+
+.apercu-skin-liste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.apercu-skin-liste figure {
+  width: 8rem;
+  margin: 0;
+}
+
+.apercu-skin-liste figcaption {
+  margin-top: 0.375rem;
+  font-weight: bold;
+}
+
+.apercu-skin-liste small {
+  display: block;
+  font-weight: normal;
+  opacity: 0.75;
+}
+
+.apercu-skin-portrait,
+.apercu-skin-arme {
+  position: relative;
+  overflow: hidden;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 0.5rem;
+  background-size: cover;
+}
+
+.apercu-skin-portrait img,
+.apercu-skin-arme-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.apercu-skin-side {
+  position: absolute;
+  right: -0.375rem;
+  bottom: 2px;
+  width: 3.1875rem;
+  height: 3.1875rem;
+  object-fit: cover;
+}
+
+.apercu-skin-choix {
+  box-sizing: border-box;
+  width: 6.25rem;
+  height: 6.25rem;
+  border: 2px solid #f5c542;
+  border-radius: 0.625rem;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.apercu-skin-choix.eteint {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.apercu-skin-choix img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.apercu-skin-choix.eteint img {
+  opacity: 0.55;
+  filter: grayscale(0.5);
+}

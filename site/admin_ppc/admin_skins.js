@@ -7,6 +7,7 @@
 const TAILLES_IMAGES_SKIN = { image: 256, side: 128, item: 256 };
 const FORMATS_IMAGES_SKIN = ["image/png", "image/webp", "image/jpeg"];
 const POIDS_MAX_FICHIER_SKIN = 10 * 1024 * 1024;
+const APERCU_ARME_SKIN = "vesna_w";
 
 let nomsPersosSkins = new Map();
 // Skin en cours de modification dans le formulaire (id), ou null : ajout.
@@ -35,6 +36,66 @@ async function imageSkinEnWebp(fichier, taille) {
   const url = canvas.toDataURL("image/webp", 0.9);
   if (!url.startsWith("data:image/webp")) throw new Error("Ce navigateur ne sait pas créer de WebP : utilise Chrome, Firefox ou Edge.");
   return url;
+}
+
+// Aperçu du formulaire : les images telles qu'elles seront envoyées (même
+// conversion), aux tailles où elles apparaissent sur le site. Sans fichier :
+// image actuelle du skin modifié ; à l'ajout, tirée du portrait.
+let raretesPersosSkins = new Map();
+let numeroApercuSkin = 0;
+
+async function majApercuSkin() {
+  const numero = ++numeroApercuSkin;
+  const zone = document.getElementById("apercu-skin");
+  const portrait = document.getElementById("skin-image").files[0];
+  const urls = {};
+  const notes = {};
+  try {
+    for (const [cle, champ] of [["image", "skin-image"], ["side", "skin-side"], ["item", "skin-item"]]) {
+      const fichier = document.getElementById(champ).files[0];
+      if (fichier) {
+        urls[cle] = await imageSkinEnWebp(fichier, TAILLES_IMAGES_SKIN[cle]);
+      } else if (skinEnEdition) {
+        urls[cle] = `/DB/${imagesSkin(skinEnEdition)[cle]}?t=${versionImagesSkins}`;
+        notes[cle] = "image actuelle";
+      } else if (portrait) {
+        urls[cle] = await imageSkinEnWebp(portrait, TAILLES_IMAGES_SKIN[cle]);
+        notes[cle] = "tirée du portrait";
+      }
+    }
+  } catch (erreur) {
+    if (numero === numeroApercuSkin) messageSkin(erreur.message, "erreur");
+    return;
+  }
+  if (numero !== numeroApercuSkin) return; // un autre fichier a été choisi entre-temps
+  zone.classList.toggle("cache", !urls.image);
+  if (!urls.image) return;
+  const perso = document.getElementById("skin-perso").value;
+  const fond = classeFondRarete(raretesPersosSkins.get(perso) || "5");
+  const note = cle => (notes[cle] ? `<small>${notes[cle]}</small>` : "");
+  zone.innerHTML = `
+    <h3 class="titre-section-ajout">Aperçu</h3>
+    <div class="apercu-skin-liste">
+      <figure>
+        <div class="apercu-skin-portrait ${fond}"><img src="${echapper(urls.image)}" alt=""></div>
+        <figcaption>Portrait<small>carte du perso (box, draft)</small>${note("image")}</figcaption>
+      </figure>
+      <figure>
+        <div class="apercu-skin-arme fond-5">
+          <img class="apercu-skin-arme-image" src="/DB/images/weapons/${APERCU_ARME_SKIN}.webp" alt="">
+          <img class="apercu-skin-side" src="${echapper(urls.side)}" alt="">
+        </div>
+        <figcaption>Icône de profil<small>en bas à droite de son arme signature</small>${note("side")}</figcaption>
+      </figure>
+      <figure>
+        <div class="apercu-skin-choix"><img src="${echapper(urls.item)}" alt=""></div>
+        <figcaption>Image du choix<small>activé (Personnalisation)</small>${note("item")}</figcaption>
+      </figure>
+      <figure>
+        <div class="apercu-skin-choix eteint"><img src="${echapper(urls.item)}" alt=""></div>
+        <figcaption>Image du choix<small>pas activé</small></figcaption>
+      </figure>
+    </div>`;
 }
 
 // Toute modification : réponse = config complète ; caches de la page vidés
@@ -113,6 +174,7 @@ function preparerFormulaireSkin(skin) {
   document.getElementById("annuler-modif-skin").classList.toggle("cache", !skin);
   document.getElementById("aide-modif-skin").classList.toggle("cache", !skin);
   majPrixDefautSkin();
+  majApercuSkin();
 }
 
 async function modifierSkin() {
@@ -165,6 +227,7 @@ async function creerSkin() {
     document.getElementById("skin-nom").value = "";
     document.getElementById("skin-prix").value = "";
     ["skin-image", "skin-side", "skin-item"].forEach(champ => { document.getElementById(champ).value = ""; });
+    majApercuSkin();
     messageSkin(masque ? "Skin ajouté, masqué : affiche-le le moment venu." : "Skin ajouté, visible par les joueurs.", "succes");
   } catch (erreur) {
     console.error(erreur);
@@ -181,6 +244,7 @@ async function ouvrirSkins() {
   try {
     const [personnages, points] = await Promise.all([chargerPersonnages(true), chargerPointsAdmin()]);
     nomsPersosSkins = new Map(personnages.map(perso => [perso.id, perso.nom]));
+    raretesPersosSkins = new Map(personnages.map(perso => [perso.id, perso.rarete]));
     const choix = document.getElementById("skin-perso");
     if (choix.options.length <= 1) {
       // Voyageur et Manekin : variantes, pas de skins (cf. appliquerVariante).
@@ -213,7 +277,11 @@ function initialiserSkins() {
     preparerFormulaireSkin(null);
     messageSkin("");
   });
-  document.getElementById("skin-perso").addEventListener("change", majPrixDefautSkin);
+  document.getElementById("skin-perso").addEventListener("change", () => {
+    majPrixDefautSkin();
+    majApercuSkin();
+  });
+  ["skin-image", "skin-side", "skin-item"].forEach(champ => document.getElementById(champ).addEventListener("change", majApercuSkin));
   // Prix d'un skin de la liste : enregistré dès qu'il change (vide : défaut).
   document.getElementById("liste-skins").addEventListener("change", async event => {
     if (!event.target.matches("[data-prix]")) return;
