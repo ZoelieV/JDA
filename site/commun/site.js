@@ -24,7 +24,7 @@
     const astuce = localStorage.getItem("tutoriel-astuce-tri") && new URLSearchParams(location.search).has("room");
     if (/(^|; )tutoriel_actif=1/.test(document.cookie) || localStorage.getItem("tutoriel-test") !== null || astuce) {
       const script = document.createElement("script");
-      script.src = "/commun/tutoriel.js?v=3";
+      script.src = "/commun/tutoriel.js?v=4";
       script.defer = true;
       document.head.appendChild(script);
     }

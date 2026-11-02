@@ -50,11 +50,8 @@
     },
     {
       page: "/compte", titre: "Tes armes", cibles: ['.view-btn[data-view="weapons"]'], clic: ['[data-box="full"]', '.view-btn[data-view="weapons"]'],
-      texte: "La Détection auto ne renseigne pas les armes : on est passé sur la vue Armes pour ça. Renseigne au moins un exemplaire de chaque arme que tu possèdes, et leurs doublons, puis clique sur Enregistrer.",
-      verifier: profil => {
-        const nb = Object.values(profil.weapons?.full || {}).filter(valeur => valeur >= 0).length;
-        return { ok: nb > 0, detail: nb ? `${nb} armes enregistrées.` : "Aucune arme enregistrée pour l'instant (pense à Enregistrer)." };
-      }
+      texte: "La Détection auto ne renseigne pas les armes : on est passé sur la vue Armes pour ça. Renseigne au moins un exemplaire de chaque arme que tu possèdes, et leurs doublons, puis clique sur Enregistrer. Si tu n'en as pas encore, passe simplement à la suite.",
+      remplir: true
     },
     {
       page: "/compte", titre: "Tes persos montés", cibles: ['[data-box="stuff"]'], clic: ['[data-box="stuff"]', '.view-btn[data-view="characters"]'],
@@ -201,12 +198,12 @@
     };
 
     // Étapes à remplir : la bulle se réduit pour laisser voir la page.
-    if (etape.verifier) {
+    if (etape.verifier || etape.remplir) {
       const reduire = bouton(zone, "Réduire", "quitter", () => {
         reduire.textContent = element.classList.toggle("reduite") ? "Agrandir" : "Réduire";
       });
     }
-    if (test) bouton(zone, "Quitter le test", etape.verifier ? "" : "quitter", () => { retirerStockage(CLE_TEST); location.reload(); });
+    if (test) bouton(zone, "Quitter le test", etape.verifier || etape.remplir ? "" : "quitter", () => { retirerStockage(CLE_TEST); location.reload(); });
     if (numero > 0) bouton(zone, "Précédent", "", () => aller(numero - 1).catch(erreur => afficherEtat(erreur.message, false)));
 
     const derniere = numero === ETAPES.length - 1;
