@@ -98,6 +98,11 @@ const etatTri = creerEtatTri();
 // Draft : personnage sélectionné dans la grille, envoyé au clic sur
 // "Confirmer". { persoId, element, index (sequence_index) } ou null.
 let selectionDraft = null;
+// Présélections des joueurs : le serveur ne les envoie qu'aux spectateurs
+// ({ j1: perso, j2: perso }), jamais aux joueurs.
+let preselectionsVues = {};
+let preselectionEnvoyee = null;
+let minuteurPreselection = null;
 
 // ---- Animation de tirage du boss ----
 let dernierePhaseVue = null; // phase locale précédente, pour détecter une transition
@@ -764,6 +769,8 @@ function creerCarteItem(personnage, {
   refinementJ1 = null,
   refinementJ2 = null,
   selectionnee = false,
+  preselectionJ1 = false,
+  preselectionJ2 = false,
   titre = null,
   omni = false
 } = {}) {
@@ -773,7 +780,9 @@ function creerCarteItem(personnage, {
     (estMatchClasse() && aBonusSaisonPerso(personnage) ? " bonus-saison" : "") +
     (selectionnable ? " selectionnable" : "") +
     (indisponible ? " indisponible" : "") +
-    (selectionnee ? " selectionnee" : "");
+    (selectionnee ? " selectionnee" : "") +
+    (preselectionJ1 ? " preselection-j1" : "") +
+    (preselectionJ2 ? " preselection-j2" : "");
 
   const raffinementHtml = [["j1", refinementJ1], ["j2", refinementJ2]]
     .map(([role, r]) => htmlArmeSignature(personnage.arme, r, {
@@ -1169,6 +1178,32 @@ function preselectionnerFullBox() {
   if (!estMatchmakingClassique() || draft[`box_${monRole}`] || nbPersosBox(monRole, "full") < NB_PERSOS_MIN_BOX) return;
   fullBoxPreselectionnee = true;
   postBox("full").catch(err => console.error(err));
+}
+
+// Présélections reçues (spectateur) : la grille n'est redessinée que si elles
+// changent, même quand la draft n'a pas bougé.
+function definirPreselections(preselections = {}) {
+  if (JSON.stringify(preselections) === JSON.stringify(preselectionsVues)) return;
+  preselectionsVues = preselections;
+  if (draft?.phase === "draft") rendrePhase();
+}
+
+// Sélection du joueur envoyée pour les spectateurs (regroupée si le joueur
+// clique vite). Échec sans conséquence : rien ne dépend de cet envoi.
+function envoyerPreselection() {
+  if (!monRole || draft.entrainement) return;
+  const persoId = selectionDraft?.persoId || null;
+  if (persoId === preselectionEnvoyee) return;
+  preselectionEnvoyee = persoId;
+  clearTimeout(minuteurPreselection);
+  minuteurPreselection = setTimeout(() => {
+    fetch(`/api/rooms/${roomId}/preselection`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ perso_id: preselectionEnvoyee })
+    }).catch(console.error);
+  }, 400);
 }
 
 function rendreChoixBox() {
@@ -2101,7 +2136,8 @@ function rendreDraft(phasePrecedente) {
       // Pseudo dans la couleur de son rôle ; action sans couleur (pas mon tour).
       const nomAdversaire = pseudoColore(prochaine.joueur);
       const monAction = cible?.action.type === "ban" ? "ban" : "pick";
-      const textePreselection = !preselection ? ""
+      const textePreselection = !monRole ? `<br><small>Présélections entourées : <span class="legende-preselection-j1">bleu pour J1</span>, <span class="legende-preselection-j2">rouge pour J2</span>.</small>`
+        : !preselection ? ""
         : persoSelectionne
         ? `<br>Présélection pour ton ${monAction} : <strong>${persoSelectionne.nom}${selectionDraft.element ? ` ${NOMS_ELEMENTS[selectionDraft.element] || ""}` : ""}</strong> (à confirmer à ton tour).`
         : `<br>Tu peux présélectionner ton prochain ${monAction}.`;
@@ -2143,10 +2179,12 @@ function rendreDraft(phasePrecedente) {
       .finally(() => { btnAnnuler.disabled = false; });
   };
 
+  envoyerPreselection();
+
   const grille = document.getElementById("grille-pool-draft");
   const cleGrille = JSON.stringify([
     draft.actions, draft.sequence_index, draft.pool_disponible, draft.pool_j1, draft.pool_j2,
-    draft.discord_j1, draft.discord_j2, monRole, selectionDraft,
+    draft.discord_j1, draft.discord_j2, monRole, selectionDraft, preselectionsVues,
     ...cleFiltres()
   ]);
   if (!grilleAChange(grille, cleGrille)) return;
@@ -2163,6 +2201,8 @@ function rendreDraft(phasePrecedente) {
       selectionnable,
       indisponible: !!cible && !peutLePicker,
       selectionnee: selectionDraft?.persoId === personnage.id,
+      preselectionJ1: !monRole && preselectionsVues.j1 === personnage.id,
+      preselectionJ2: !monRole && preselectionsVues.j2 === personnage.id,
       // Clic : sélectionne (ou désélectionne) le personnage ; l'action n'est
       // envoyée qu'avec "Confirmer". Pick du Voyageur / Manekin : élément
       // choisi à la sélection. Action visée relue au clic, pas au rendu :
@@ -3743,6 +3783,7 @@ async function rafraichirEtatRoomEtJoueurs() {
     definirTypeRoom(donnees.type);
     afficherSpectateurs(donnees.nb_spectateurs);
     await definirDraft(donnees.draft);
+    definirPreselections(donnees.preselections);
     afficherPresences(donnees.presences);
   } else {
     definirTypeRoom(room.type);
@@ -3783,6 +3824,7 @@ async function tick() {
       definirTypeRoom(donnees.type);
       afficherSpectateurs(donnees.nb_spectateurs);
       await definirDraft(donnees.draft);
+      definirPreselections(donnees.preselections);
       afficherPresences(donnees.presences);
     }
   } catch (error) {

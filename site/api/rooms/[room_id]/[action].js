@@ -1299,6 +1299,57 @@ function presencesJoueurs(room, maintenant = Date.now()) {
   };
 }
 
+// ---- Présélections de la draft ----
+// Montrées aux spectateurs, jamais aux joueurs (ni à l'adversaire ni à
+// l'auteur) : table à part de rooms.draft, donc absente de tout ce que les
+// joueurs reçoivent, lue seulement quand le demandeur est spectateur.
+
+// Prochaine action d'un joueur dans la draft (la courante comprise) : index
+// dans la séquence, ou null.
+function indexProchaineAction(draft, joueur) {
+  const sequence = getSequence(draft);
+  for (let index = draft.sequence_index; index < sequence.length; index++) {
+    if (sequence[index].joueur === joueur) return index;
+  }
+  return null;
+}
+
+// POST { perso_id | null } : présélection du joueur, ou retrait.
+async function handlePreselection(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id);
+  const draft = room.draft;
+  const persoId = req.body?.perso_id ?? null;
+  if (draft?.phase !== "draft" || draft.entrainement || persoId === null) {
+    const { error } = await supabase.from("draft_preselections").delete().eq("room_id", roomId).eq("role", joueur);
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  }
+  const index = indexProchaineAction(draft, joueur);
+  if (index === null || !draft.pool_disponible?.includes(persoId)) return res.status(400).json({ error: "Présélection invalide" });
+  const { error } = await supabase.from("draft_preselections")
+    .upsert({ room_id: roomId, role: joueur, perso_id: persoId, sequence_index: index, updated_at: new Date().toISOString() });
+  if (error) throw error;
+  return res.status(200).json({ ok: true });
+}
+
+// { j1: perso, j2: perso } encore valables (action pas jouée, perso
+// disponible). À n'appeler que pour un spectateur.
+async function preselectionsPourSpectateur(roomId, draft) {
+  if (draft?.phase !== "draft" || draft.entrainement) return {};
+  const { data, error } = await supabase.from("draft_preselections").select("role, perso_id, sequence_index").eq("room_id", roomId);
+  if (error) {
+    console.error("Erreur lecture des présélections :", error);
+    return {};
+  }
+  return Object.fromEntries((data || [])
+    .filter(ligne => ligne.sequence_index === indexProchaineAction(draft, ligne.role) && draft.pool_disponible?.includes(ligne.perso_id))
+    .map(ligne => [ligne.role, ligne.perso_id]));
+}
+
 // ---- draft (lecture seule) ----
 async function handleDraftGet(req, res, roomId, user) {
   if (req.method !== "GET") {
@@ -1336,6 +1387,8 @@ async function handleDraftGet(req, res, roomId, user) {
     // "prive" | "matchmaking" | "classe" (trophées en fin de match).
     type: room.type || "prive",
     draft: vuePourJoueur(room.draft, joueur),
+    // Présélections : spectateurs seulement (joueur = null).
+    ...(joueur ? {} : { preselections: await preselectionsPourSpectateur(room.room_id, room.draft) }),
     // Heure du serveur : la page cale ses chronos dessus.
     maintenant: Date.now(),
     // Pastilles en ligne / afk des namecards (joueurs et spectateurs).
@@ -1367,7 +1420,7 @@ module.exports = async (req, res) => {
     user.agirEn = req.body?.agir_en || new URL(req.url, "http://x").searchParams.get("agir_en");
 
     // Personnages / boss ajoutés par les admins et points à jour (cache 30 s).
-    if (!["draft", "equipe_etat", "wb_etat", "wb_mm"].includes(action)) await actualiserPoints();
+    if (!["draft", "preselection", "equipe_etat", "wb_etat", "wb_mm"].includes(action)) await actualiserPoints();
 
     // Room modifiée par une autre requête pendant celle-ci (cf.
     // sauvegarderDraft) : route rejouée sur la room à jour, 3 essais.
@@ -1439,6 +1492,8 @@ function executerAction(action, req, res, roomId, user) {
       return handleMancheTournoi(req, res, roomId, user);
     case "draft":
       return handleDraftGet(req, res, roomId, user);
+    case "preselection":
+      return handlePreselection(req, res, roomId, user);
     default:
       return res.status(404).json({ error: "Route inconnue" });
   }

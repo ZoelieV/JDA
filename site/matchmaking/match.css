@@ -3428,3 +3428,25 @@ h1 {
     display: contents;
   }
 }
+
+/* Présélections des joueurs, vues par les spectateurs seulement : contour de
+   la couleur du joueur ; les deux sur le même perso : les deux contours. */
+.character-card.preselection-j1 .character-visuel {
+  box-shadow: 0 0 0 3px var(--couleur-j1);
+}
+
+.character-card.preselection-j2 .character-visuel {
+  box-shadow: 0 0 0 3px var(--couleur-j2);
+}
+
+.character-card.preselection-j1.preselection-j2 .character-visuel {
+  box-shadow: 0 0 0 3px var(--couleur-j1), 0 0 0 6px var(--couleur-j2);
+}
+
+.legende-preselection-j1 {
+  color: var(--couleur-j1);
+}
+
+.legende-preselection-j2 {
+  color: var(--couleur-j2);
+}
