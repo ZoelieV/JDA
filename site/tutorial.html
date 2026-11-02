@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/regles.css?v=10">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/site.css?v=19">
-  <link rel="stylesheet" href="/commun/tuto_hoyolab.css?v=1">
+  <link rel="stylesheet" href="/commun/tuto_hoyolab.css?v=2">
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
@@ -32,8 +32,9 @@
       <h2>Sommaire</h2>
       <ol>
       <li><a href="#tes-informations">Tes informations</a></li>
-      <li><a href="#ta-box">Ta box</a></li>
+      <li><a href="#ta-box">Tes personnages</a></li>
       <li><a href="#hoyolab">Récupérer ta box sur HoYoLAB</a></li>
+      <li><a href="#tes-armes">Tes armes</a></li>
       <li><a href="#tes-persos-montes">Tes persos montés</a></li>
       <li><a href="#les-regles">Les règles</a></li>
       <li><a href="#personnalisation">La personnalisation</a></li>
@@ -55,16 +56,19 @@
           <li>Renseigne ton UID et ton niveau du monde, puis clique sur Enregistrer.</li>
           <li>Attention : ton UID ne pourra plus être modifié.</li>
         </ul>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/infos.webp" aria-label="Agrandir : UID et niveau du monde dans le menu du compte"><img src="/DB/images/tuto/infos.webp" alt="UID et niveau du monde dans le menu du compte" loading="lazy" width="1280" height="820"></button>
       </div>
     </details>
     <details class="section-regles" id="ta-box" open>
-      <summary><h2>Ta box</h2></summary>
+      <summary><h2>Tes personnages</h2></summary>
       <div class="section-regles-corps">
         <ul>
-          <li>Dans <a href="/compte">Mon compte</a>, renseigne tous tes personnages et tes armes dans ta Full box.</li>
-          <li>Tu peux le faire à la main, ou avec la Détection auto à partir d'une image de HoYoLAB (voir <a href="#hoyolab">Récupérer ta box sur HoYoLAB</a>).</li>
-          <li>Clique ensuite sur Enregistrer.</li>
+          <li>Dans <a href="/compte">Mon compte</a>, renseigne tous tes personnages dans ta Full box.</li>
+          <li>On te conseille la <strong>Détection auto</strong> : elle lit une image de ta liste HoYoLAB et te fait gagner beaucoup de temps (voir <a href="#hoyolab">Récupérer ta box sur HoYoLAB</a>). Tu peux aussi tout remplir à la main.</li>
+          <li>Vérifie les constellations proposées, puis clique sur Enregistrer.</li>
         </ul>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/detection.webp" aria-label="Agrandir : Bouton Détection auto de Mon compte"><img src="/DB/images/tuto/detection.webp" alt="Bouton Détection auto de Mon compte" loading="lazy" width="1280" height="820"></button>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/detection_fenetre.webp" aria-label="Agrandir : Fenêtre de la Détection auto"><img src="/DB/images/tuto/detection_fenetre.webp" alt="Fenêtre de la Détection auto" loading="lazy" width="1280" height="820"></button>
       </div>
     </details>
     <details class="section-regles" id="hoyolab" open>
@@ -75,6 +79,16 @@
         <p>Ensuite, dans <a href="/compte">Mon compte</a>, clique sur « Détection auto » et dépose l'image. Vérifie les constellations proposées, puis renseigne tes armes et leurs doublons à la main : la détection ne lit que les personnages.</p>
       </div>
     </details>
+    <details class="section-regles" id="tes-armes" open>
+      <summary><h2>Tes armes</h2></summary>
+      <div class="section-regles-corps">
+        <ul>
+          <li>La Détection auto ne renseigne pas les armes : passe sur la vue Armes, avec le bouton encadré.</li>
+          <li>Renseigne au moins un exemplaire de chaque arme que tu possèdes, et leurs doublons, puis clique sur Enregistrer.</li>
+        </ul>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/armes.webp" aria-label="Agrandir : Vue Armes de Mon compte"><img src="/DB/images/tuto/armes.webp" alt="Vue Armes de Mon compte" loading="lazy" width="1280" height="820"></button>
+      </div>
+    </details>
     <details class="section-regles" id="tes-persos-montes" open>
       <summary><h2>Tes persos montés</h2></summary>
       <div class="section-regles-corps">
@@ -83,6 +97,7 @@
           <li>Il en faut 3 pour jouer en Sardine, 8 en Carpe, 12 en Dauphin et 16 en Baleine.</li>
           <li>Clique ensuite sur Enregistrer.</li>
         </ul>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/stuff.webp" aria-label="Agrandir : Box stuff de Mon compte"><img src="/DB/images/tuto/stuff.webp" alt="Box stuff de Mon compte" loading="lazy" width="1280" height="820"></button>
       </div>
     </details>
     <details class="section-regles" id="les-regles" open>
@@ -101,6 +116,8 @@
           <li>Le menu de ton compte contient la Personnalisation : fond d'écran, namecard, bannière, skins.</li>
           <li>Tu gagnes des Rikoyns en jouant pour les débloquer.</li>
         </ul>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/menu_compte.webp" aria-label="Agrandir : Personnalisation dans le menu du compte"><img src="/DB/images/tuto/menu_compte.webp" alt="Personnalisation dans le menu du compte" loading="lazy" width="1280" height="820"></button>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/personnalisation.webp" aria-label="Agrandir : Fenêtre de personnalisation"><img src="/DB/images/tuto/personnalisation.webp" alt="Fenêtre de personnalisation" loading="lazy" width="1280" height="820"></button>
       </div>
     </details>
     <details class="section-regles" id="boxes-des-joueurs" open>
@@ -109,6 +126,7 @@
         <ul>
           <li>Sur <a href="/comptes">la page Joueurs</a>, tu peux consulter les comptes et les boxes des autres joueurs, pour préparer tes matchs.</li>
         </ul>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/joueurs.webp" aria-label="Agrandir : Liste des joueurs"><img src="/DB/images/tuto/joueurs.webp" alt="Liste des joueurs" loading="lazy" width="1280" height="820"></button>
       </div>
     </details>
     <details class="section-regles" id="lancer-un-match" open>
@@ -117,6 +135,7 @@
         <ul>
           <li>Sur <a href="/match">la page Match</a>, tu lances tes matchs : classé, amical, entraînement, en équipe ou tournois.</li>
         </ul>
+        <button type="button" class="capture-hoyolab capture-tuto" data-capture="/DB/images/tuto/match.webp" aria-label="Agrandir : Page de création de match"><img src="/DB/images/tuto/match.webp" alt="Page de création de match" loading="lazy" width="1280" height="820"></button>
       </div>
     </details>
     <details class="section-regles" id="premier-match" open>

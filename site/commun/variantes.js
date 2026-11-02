@@ -49,6 +49,8 @@ const VARIANTES_PERSONNAGES = {
 // admin_ppc/admin_skins.js) : plusieurs possibles par personnage, id
 // "<perso>__<nom>" ; un seul skin actif par personnage. Images dans Supabase
 // Storage, servies sous /DB/images/skins_ajoutes/ (réécriture de vercel.json).
+// Voyageur : un skin par apparence (perso "traveler_aether" ou
+// "traveler_lumine"), affiché quand le joueur a choisi cette apparence.
 const SKINS_PERSONNAGES = [
   "ayaya", "barbara", "bennett", "charlotte", "citlali", "diluc", "fischl", "ganyu",
   "hutao", "jean", "kaeya", "keqing", "kirara", "klee", "lisa", "neuvillette",
@@ -59,6 +61,7 @@ const REGEX_SKIN_AJOUTE = /^[a-z0-9_]+?__[a-z0-9_]+$/;
 const estSkinAjoute = id => typeof id === "string" && REGEX_SKIN_AJOUTE.test(id);
 const estSkin = id => SKINS_PERSONNAGES.includes(id) || estSkinAjoute(id);
 const persoDuSkin = id => String(id).split("__")[0];
+const PERSOS_SKIN_VOYAGEUR = { traveler_aether: "Aether", traveler_lumine: "Lumine" };
 
 // Skins ajoutés connus de la page (lus dans /api/points : pas de requête ici).
 let SKINS_AJOUTES = [];
@@ -70,6 +73,7 @@ function definirSkinsAjoutes(liste) {
 // l'id si le skin n'est pas chargé, masqué par exemple).
 function nomSkin(id, nomPerso) {
   if (!estSkinAjoute(id)) return nomPerso;
+  nomPerso = PERSOS_SKIN_VOYAGEUR[persoDuSkin(id)] || nomPerso;
   const nom = SKINS_AJOUTES.find(skin => skin.id === id)?.nom
     || id.split("__")[1].replace(/_/g, " ").replace(/^./, lettre => lettre.toUpperCase());
   return `${nomPerso} (${nom})`;
@@ -108,8 +112,15 @@ function appliquerVariante(personnage, parametres) {
     const { image, side } = imagesSkin(skin);
     return { ...personnage, image, side };
   }
-  const choix = variante.options[parametres?.[variante.parametre]] || variante.options[variante.defaut];
+  const cle = variante.options[parametres?.[variante.parametre]] ? parametres[variante.parametre] : variante.defaut;
+  const choix = variante.options[cle];
   const nom = personnage.groupe ? `${choix.nom} ${NOMS_ELEMENTS[personnage.element] || ""}`.trim() : choix.nom;
+  // Voyageur : skin de l'apparence choisie (cf. PERSOS_SKIN_VOYAGEUR).
+  const skin = variante.parametre === "voyageur" ? skinActif(`traveler_${cle}`, parametres) : null;
+  if (skin) {
+    const { image, side } = imagesSkin(skin);
+    return { ...personnage, ...choix, nom, image, side };
+  }
   return { ...personnage, ...choix, nom };
 }
 
@@ -188,4 +199,4 @@ function membresGroupe(personnages, groupe) {
 }
 
 // Serveur (Node) : listes partagées (cf. api/auth/profile.js).
-if (typeof module !== "undefined") module.exports = { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES, estSkinAjoute, persoDuSkin, imagesSkin };
+if (typeof module !== "undefined") module.exports = { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES, PERSOS_SKIN_VOYAGEUR, estSkinAjoute, persoDuSkin, imagesSkin };

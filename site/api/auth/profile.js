@@ -63,7 +63,7 @@ const ERREUR_LIEN_STREAM = "Lien de stream refusé : seuls les liens Twitch (twi
 // Supabase protégé d'un envoi en boucle).
 const DELAI_ENREGISTREMENT_MS = 5 * 1000;
 // Étapes de commun/tutoriel.js.
-const NB_ETAPES_TUTORIEL = 8;
+const NB_ETAPES_TUTORIEL = 9;
 
 // Profil envoyé : taille maximale (une box complète pèse quelques dizaines
 // de Ko).

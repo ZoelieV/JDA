@@ -244,12 +244,16 @@ async function ouvrirSkins() {
   try {
     const [personnages, points] = await Promise.all([chargerPersonnages(true), chargerPointsAdmin()]);
     nomsPersosSkins = new Map(personnages.map(perso => [perso.id, perso.nom]));
+    Object.entries(PERSOS_SKIN_VOYAGEUR).forEach(([id, nom]) => nomsPersosSkins.set(id, nom));
     raretesPersosSkins = new Map(personnages.map(perso => [perso.id, perso.rarete]));
     const choix = document.getElementById("skin-perso");
     if (choix.options.length <= 1) {
-      // Voyageur et Manekin : variantes, pas de skins (cf. appliquerVariante).
-      personnages.filter(perso => !perso.groupe && !VARIANTES_PERSONNAGES[perso.id])
-        .sort((a, b) => a.nom.localeCompare(b.nom, "fr"))
+      // Voyageur : un skin par apparence ; Manekin : variantes seulement (cf.
+      // appliquerVariante).
+      [
+        ...personnages.filter(perso => !perso.groupe && !VARIANTES_PERSONNAGES[perso.id]),
+        ...Object.entries(PERSOS_SKIN_VOYAGEUR).map(([id, nom]) => ({ id, nom: `${nom} (Voyageur)` }))
+      ].sort((a, b) => a.nom.localeCompare(b.nom, "fr"))
         .forEach(perso => choix.add(new Option(perso.nom, perso.id)));
     }
     majPrixDefautSkin();

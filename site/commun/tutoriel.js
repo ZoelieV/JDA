@@ -41,15 +41,23 @@
       }
     },
     {
-      page: "/compte", titre: "Ta box", cibles: ["#btn-auto-box", '[data-box="full"]'], clic: '[data-box="full"]',
-      texte: "Renseigne tous tes personnages et tes armes dans ta Full box : à la main, ou avec la Détection auto à partir d'une image de HoYoLAB. Puis clique sur Enregistrer.",
+      page: "/compte", titre: "Tes personnages", cibles: ["#btn-auto-box"], clic: ['[data-box="full"]', '.view-btn[data-view="characters"]'],
+      texte: `Renseigne tous tes personnages dans ta Full box. On te conseille la <strong>Détection auto</strong> : elle lit une image de ta liste HoYoLAB et te fait gagner beaucoup de temps (<a href="/tutoriel#hoyolab" target="_blank" rel="noopener">comment obtenir l'image</a>). Vérifie les constellations proposées, puis clique sur Enregistrer.`,
       verifier: profil => {
         const nb = Object.values(profil.characters?.full || {}).filter(valeur => valeur >= 0).length;
         return { ok: nb > 0, detail: nb ? `${nb} personnages enregistrés.` : "Aucun personnage enregistré pour l'instant (pense à Enregistrer)." };
       }
     },
     {
-      page: "/compte", titre: "Tes persos montés", cibles: ['[data-box="stuff"]'], clic: '[data-box="stuff"]',
+      page: "/compte", titre: "Tes armes", cibles: ['.view-btn[data-view="weapons"]'], clic: ['[data-box="full"]', '.view-btn[data-view="weapons"]'],
+      texte: "La Détection auto ne renseigne pas les armes : on est passé sur la vue Armes pour ça. Renseigne au moins un exemplaire de chaque arme que tu possèdes, et leurs doublons, puis clique sur Enregistrer.",
+      verifier: profil => {
+        const nb = Object.values(profil.weapons?.full || {}).filter(valeur => valeur >= 0).length;
+        return { ok: nb > 0, detail: nb ? `${nb} armes enregistrées.` : "Aucune arme enregistrée pour l'instant (pense à Enregistrer)." };
+      }
+    },
+    {
+      page: "/compte", titre: "Tes persos montés", cibles: ['[data-box="stuff"]'], clic: ['[data-box="stuff"]', '.view-btn[data-view="characters"]'],
       texte: "Dans ta Box stuff, coche les persos que tu as vraiment montés (niveau 70 ou plus, aptitudes utiles niveau 8 ou plus, un set d'artefacts). Il en faut 3 pour jouer en Sardine, 8 en Carpe, 12 en Dauphin et 16 en Baleine. Puis clique sur Enregistrer.",
       verifier: profil => {
         const palier = Number(profil.theatre) || 1;
@@ -175,7 +183,7 @@
       document.body.appendChild(voile);
     }
     if (etape.cibles) suivreCibles(etape.cibles, etape.assombrir);
-    if (etape.clic) setTimeout(() => document.querySelector(etape.clic)?.click(), 800);
+    if (etape.clic) setTimeout(() => [].concat(etape.clic).forEach(selecteur => document.querySelector(selecteur)?.click()), 800);
 
     const element = bulle({ progression: `Étape ${numero + 1} / ${ETAPES.length}${test ? " · test admin" : ""}`, titre: etape.titre, texte: etape.texte });
     const zone = element.querySelector(".tutoriel-actions");

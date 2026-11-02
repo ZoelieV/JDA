@@ -121,7 +121,7 @@ const { lireStatistiques } = require("./_lib/statistiques");
 // modifiées, cf. commun/recommandations_stuff.js).
 const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
 const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX, idCosmetique } = require("../commun/koyns.js");
-const { VARIANTES_PERSONNAGES } = require("../commun/variantes.js");
+const { VARIANTES_PERSONNAGES, PERSOS_SKIN_VOYAGEUR } = require("../commun/variantes.js");
 const { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin, retirerSkinAuxJoueurs } = require("./_lib/skins");
 const { estCosmetique, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
@@ -522,8 +522,10 @@ module.exports = async (req, res) => {
         const { perso: idPerso, images: brutes } = corps.skin_ajout;
         const nom = typeof corps.skin_ajout.nom === "string" ? corps.skin_ajout.nom.trim() : "";
         if (!nom || nom.length > LONGUEUR_NOM_SKIN) return res.status(400).json({ error: `Nom du skin : 1 à ${LONGUEUR_NOM_SKIN} caractères` });
-        const perso = [...listeJSON("characters"), ...ajouts.characters].find(p => p.id === idPerso);
-        // Voyageur et Manekin : variantes, pas de skins (cf. appliquerVariante).
+        const perso = PERSOS_SKIN_VOYAGEUR[idPerso] ? { id: idPerso }
+          : [...listeJSON("characters"), ...ajouts.characters].find(p => p.id === idPerso);
+        // Voyageur : un skin par apparence ; Manekin : variantes seulement (cf.
+        // appliquerVariante).
         if (!perso || perso.groupe || VARIANTES_PERSONNAGES[perso.id]) return res.status(400).json({ error: "Personnage invalide" });
         const id = idSkinAjoute(perso.id, nom);
         if (!id) return res.status(400).json({ error: "Le nom du skin doit contenir des lettres ou des chiffres" });
