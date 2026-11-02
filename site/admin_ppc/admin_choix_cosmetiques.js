@@ -31,6 +31,7 @@ function chargerCatalogueChoix() {
   promesseCatalogueChoix ??= Promise.all([fetch("/DB/images/cosmetiques.json", { cache: "no-cache" }).then(reponse => reponse.json()), chargerPointsAdmin()])
     .then(([cosmetiques, points]) => {
       const caches = new Set(cosmetiques.caches || []);
+      Object.entries(points.cosmetiques_caches || {}).forEach(([id, cache]) => { if (cache) caches.add(id); else caches.delete(id); });
       definirSkinsAjoutes(points.skins_ajoutes);
       const infos = [
         ...cosmetiques.bannieres.map(chemin => ({ id: idCosmetique("banniere", chemin), onglet: "banniere", type: "Namecard", nom: nomNamecardAdmin(chemin), image: `/DB/images/${chemin}` })),
@@ -66,7 +67,7 @@ function htmlPastilleCosmetique(id) {
     `<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`;
 }
 
-function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, etiquette = null } = {}) {
+function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, exclure = null, etiquette = null } = {}) {
   return new Promise(async resoudre => {
     const catalogue = await chargerCatalogueChoix().catch(() => null);
     if (!catalogue) {
@@ -105,7 +106,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
 
     // Onglet Cachés : namecards puis bannières cachées ; les autres onglets
     // montrent aussi leurs cachés (pastille « caché »).
-    const visibles = () => [...catalogue.values()].filter(info => (onglet === "caches" ? info.cache : info.onglet === onglet) &&
+    const visibles = () => [...catalogue.values()].filter(info => !exclure?.(info.id) && (onglet === "caches" ? info.cache : info.onglet === onglet) &&
       (!recherche.value.trim() || `${info.nom} ${info.id}`.toLowerCase().includes(recherche.value.trim().toLowerCase())));
 
     const majCompte = () => {

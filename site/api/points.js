@@ -84,6 +84,10 @@
 //   { cosmetiques_tirage: [id...] }     Rikoyns : cosmétiques focus du
 //                                       tirage (obtenables seulement par
 //                                       tirage, cf. tirerCosmetique)
+//   { cosmetiques_caches: { id: bool } }  Rikoyns : cache (true) ou rend
+//                                    visible (false) des cosmétiques, par-dessus
+//                                    cosmetiques.json (les skins ajoutés ont
+//                                    leur propre masquage)
 //   { prix_cosmetiques: { id: prix } }  Rikoyns : prix réglés par
 //                                    cosmétique (remplacent le prix par
 //                                    défaut, cf. prixCosmetique)
@@ -245,6 +249,7 @@ const CALENDRIER_MAX_JOURS_SAISON = 400;
 const CALENDRIER_COURT_MAX = 30;
 const CALENDRIER_LONG_MAX = 2000;
 const BANNIERES_CALENDRIER = new Set(require("../DB/images/cosmetiques.json").bannieres2);
+const CACHES_JSON = new Set(require("../DB/images/cosmetiques.json").caches || []);
 const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
 
 // "AAAA-MM-JJ" valide -> nombre de jours depuis 1970, sinon null.
@@ -624,6 +629,18 @@ module.exports = async (req, res) => {
         const inconnus = corps.cosmetiques_tirage.filter(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
         if (inconnus.length) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnus[0]}` });
         config = { ...ancienne, cosmetiques_tirage: [...new Set(corps.cosmetiques_tirage)].sort() };
+      } else if (corps.cosmetiques_caches && typeof corps.cosmetiques_caches === "object" && !Array.isArray(corps.cosmetiques_caches)) {
+        const caches = { ...(ancienne.cosmetiques_caches || {}) };
+        const ajoutes = new Set((ancienne.skins_ajoutes || []).map(skin => idCosmetique("skin", skin.id)));
+        for (const [id, cache] of Object.entries(corps.cosmetiques_caches)) {
+          if (typeof cache !== "boolean" || !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id) || ajoutes.has(id)) {
+            return res.status(400).json({ error: `Cosmétique invalide : ${id}` });
+          }
+          // Gardé seulement s'il diffère de cosmetiques.json.
+          if (cache === CACHES_JSON.has(id)) delete caches[id];
+          else caches[id] = cache;
+        }
+        config = { ...ancienne, cosmetiques_caches: caches };
       } else if (corps.prix_cosmetiques && typeof corps.prix_cosmetiques === "object" && !Array.isArray(corps.prix_cosmetiques)) {
         const prix = {};
         for (const [id, valeur] of Object.entries(corps.prix_cosmetiques)) {

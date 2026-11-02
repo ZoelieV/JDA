@@ -187,7 +187,7 @@
   // ---- Rikoyns ----
 
   function lireEtatKoyns(etat) {
-    koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []) };
+    koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []), caches: etat.caches ? new Set(etat.caches) : null };
     // Prix réglés par les administrateurs (commun/koyns.js).
     definirPrixCosmetiques(etat.prix);
     // tirage : { prix, chance, garantie, focus: [ids], compteur }.
@@ -199,6 +199,8 @@
   // considéré comme possédé (le serveur vérifie de toute façon).
   const possede = id => !koyns || koyns.tout || COSMETIQUES_GRATUITS.has(id) || koyns.possedes.has(id);
   const estExclusif = id => !!koyns?.exclusifs.has(id);
+  // Cachés (réglés dans l'admin, sinon cosmetiques.json) : seulement une fois obtenus.
+  const estProposable = id => !(koyns?.caches ? koyns.caches.has(id) : cosmetiques?.caches?.includes(id)) || possede(id);
   const estFocusTirage = id => !!koyns?.tirage?.focus?.includes(id);
 
   // Choix enregistrés réduits aux cosmétiques possédés (comme le serveur).
@@ -728,7 +730,7 @@
     const nom = id => nomSkin(id, nomsPersos.get(persoDuSkin(id)) || persoDuSkin(id));
     const possedes = [...(koyns?.possedes || [])].filter(id => id.startsWith("skin:")).map(id => id.slice(5)).filter(estSkin);
     const skins = [...new Set([
-      ...SKINS_PERSONNAGES,
+      ...SKINS_PERSONNAGES.filter(id => estProposable(idCosmetique("skin", id))),
       ...SKINS_AJOUTES.filter(skin => !skin.masque).map(skin => skin.id),
       ...possedes,
       ...brouillon.skins
@@ -1087,7 +1089,7 @@
       // Fonds groupés par catégorie (cf. categorie_fond, scripts/generer_cosmetiques.py).
       [...new Set(cosmetiques.fonds.map(fond => fond.categorie))].forEach(categorie => {
         const fonds = cosmetiques.fonds.filter(fond =>
-          fond.categorie === categorie && (!recherche || nomFond(fond).toLowerCase().includes(recherche)));
+          fond.categorie === categorie && estProposable(idCosmetique("fond", fond.id)) && (!recherche || nomFond(fond).toLowerCase().includes(recherche)));
         if (!fonds.length) return;
         const grille = nouvelleGrille();
         fonds.forEach(fond => grille.appendChild(creerChoix(
@@ -1102,8 +1104,7 @@
     const grille = nouvelleGrille();
     [...liste]
       .sort((a, b) => (b === PARAMETRES_DEFAUT[ongletActif]) - (a === PARAMETRES_DEFAUT[ongletActif]))
-      // Cachés (cosmetiques.json, "caches") : seulement une fois obtenus.
-      .filter(chemin => !cosmetiques.caches?.includes(idCosmetique(ongletActif, chemin)) || possede(idCosmetique(ongletActif, chemin)))
+      .filter(chemin => estProposable(idCosmetique(ongletActif, chemin)))
       .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche))
       .forEach(chemin => grille.appendChild(creerChoix(
         urlImage(chemin), nomNamecard(chemin), brouillon[ongletActif] === chemin, choisir(chemin), "", idCosmetique(ongletActif, chemin))));

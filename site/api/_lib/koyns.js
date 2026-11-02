@@ -66,6 +66,9 @@ const estTirage = id => getConfigKoyns().tirage.includes(id);
 // Cosmétiques cachés (cosmetiques.json, "caches") : ni en vente ni dans le
 // tirage normal ; donnés par les administrateurs (dons, récompenses, focus).
 const CACHES = new Set(cosmetiques.caches || []);
+// Réglage de la page admin (config.cosmetiques_caches), sinon cosmetiques.json.
+const estCache = id => getConfigKoyns().caches[id] ?? CACHES.has(id);
+const listeCaches = () => [...new Set([...CACHES, ...Object.keys(getConfigKoyns().caches)])].filter(estCache);
 
 // Gains possibles d'un tirage hors focus : namecards, bannières et fonds
 // payants (ni gratuits, ni exclusifs, ni focus, ni Mon image).
@@ -75,7 +78,7 @@ function poolTirage() {
     ...cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id)),
     ...cosmetiques.bannieres.map(chemin => idCosmetique("banniere", chemin)),
     ...cosmetiques.bannieres2.map(chemin => idCosmetique("banniere2", chemin))
-  ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id) && !CACHES.has(id));
+  ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id) && !estCache(id));
 }
 const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 
@@ -92,7 +95,7 @@ function resumeFlex(flex) {
   return {
     flex: cases,
     flex_valeur: ids.reduce((total, id) => total + (COSMETIQUES_GRATUITS.has(id) ? 0 : prixCosmetique(id)), 0),
-    flex_exclusifs: ids.filter(id => exclusifs.has(id) || CACHES.has(id) || tirage.includes(id)).length
+    flex_exclusifs: ids.filter(id => exclusifs.has(id) || estCache(id) || tirage.includes(id)).length
   };
 }
 
@@ -153,6 +156,7 @@ async function etatKoyns(discordId) {
     tout: possedes === null,
     possedes: possedes ? [...possedes] : [],
     exclusifs: [...getConfigKoyns().exclusifs],
+    caches: listeCaches(),
     // Prix réglés par les administrateurs (cf. definirPrixCosmetiques).
     prix: getConfigKoyns().prix || {},
     tirage: {
@@ -228,7 +232,7 @@ async function acheterCosmetique(discordId, id) {
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant l'achat.
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
   if (estTirage(id)) return { status: 403, erreur: "Cosmétique focus du tirage : il ne s'obtient que par tirage." };
-  if (CACHES.has(id)) return { status: 403, erreur: "Ce cosmétique ne s'achète pas." };
+  if (estCache(id)) return { status: 403, erreur: "Ce cosmétique ne s'achète pas." };
   if (skinAjoute(id)?.masque) return { status: 403, erreur: "Ce skin n'est pas encore disponible." };
   // Mon image : payée à chaque import, enregistrée comme un achat à part
   // (même verrou du solde que les autres achats).
