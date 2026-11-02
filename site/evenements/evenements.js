@@ -67,8 +67,8 @@ function choisirCarte(carte) {
 // mois en bandeau, jours repères (débuts d'événements, aujourd'hui) en
 // pastilles avec leurs traits verticaux, puis chaque événement en barre
 // arrondie à sa bannière, du premier au dernier jour, avec ses dates et sa
-// description courte ; événement trop court pour son texte : pastille ronde
-// à sa bannière sur son premier jour, texte à côté. Rangés sur des lignes
+// description courte, qui dépasse de la barre si elle est trop courte ;
+// événement d'un seul jour : pastille ronde à sa bannière, texte à côté. Rangés sur des lignes
 // sans se chevaucher (texte compris). Clic : fenêtre de la description
 // longue.
 // Largeur d'un jour : la place disponible divisée par le nombre de jours,
@@ -107,19 +107,21 @@ function rangerEvenements(evenements, saison, jourRem) {
       const debut = Math.max(0, ecartJours(saison.debut, e.debut));
       const fin = Math.min(dernier, ecartJours(saison.debut, e.fin));
       const texte = Math.max([...e.court].length * 0.5, datesEvenement(e).length * 0.42) + 1.75;
-      const ponctuel = (fin - debut + 1) * jourRem < texte;
+      // Pastille pour un seul jour ; sinon barre sur toute sa durée.
+      const ponctuel = fin === debut;
       const largeur = Math.ceil((texte + (ponctuel ? PASTILLE_FRISE_REM : 0)) / jourRem);
-      // Pastille trop près de la fin de la saison : texte à sa gauche.
-      const aGauche = ponctuel && debut + largeur - 1 > dernier;
-      const [a, b] = !ponctuel ? [debut, Math.max(fin, Math.min(dernier, debut + largeur - 1))]
-        : aGauche ? [Math.max(0, debut - largeur + 1), debut] : [debut, debut + largeur - 1];
+      // Trop près de la fin de la saison : texte vers la gauche.
+      const aGauche = debut + largeur - 1 > dernier;
+      const [a, b] = aGauche
+        ? [Math.max(0, Math.min(debut, fin - largeur + 1)), fin]
+        : [debut, Math.max(fin, debut + largeur - 1)];
       let ligne = finsLignes.findIndex(finLigne => finLigne < a);
       if (ligne === -1) ligne = finsLignes.push(-1) - 1;
       finsLignes[ligne] = b;
       // Pastille : la case couvre aussi son texte.
       return ponctuel
         ? { ...e, colonne: a + 1, duree: b - a + 1, ligne, ponctuel, aGauche }
-        : { ...e, colonne: debut + 1, duree: fin - debut + 1, ligne };
+        : { ...e, colonne: debut + 1, duree: fin - debut + 1, ligne, aGauche, courte: (fin - debut + 1) * jourRem < 16 };
     });
 }
 
@@ -210,7 +212,7 @@ function dessinerFrise() {
       ${reperes.map(index => `<span class="trait-frise${index === indexAujourdhui ? " aujourdhui" : ""}" style="grid-column: ${index + 1}"></span>`).join("")}
       ${Array.from({ length: nbLignes }, (_, ligne) => `<span class="ligne-frise" style="grid-row: ${ligne + 3}"></span>`).join("")}
       ${evenements.map(e => `
-        <button type="button" class="evenement-frise${e.ponctuel ? " ponctuel" : ""}${e.aGauche ? " a-gauche" : ""}" data-evenement="${echapperCalendrier(e.id)}"
+        <button type="button" class="evenement-frise${e.ponctuel ? " ponctuel" : ""}${e.aGauche ? " a-gauche" : ""}${e.courte ? " courte" : ""}" data-evenement="${echapperCalendrier(e.id)}"
           style="grid-column: ${e.colonne} / span ${e.duree}; grid-row: ${e.ligne + 3}; --banniere: url(&quot;${echapperCalendrier(encodeURI(`/DB/images/${e.banniere}`))}&quot;)">
           ${e.ponctuel ? `<span class="pastille-evenement-frise"></span>` : ""}
           <span class="texte-evenement-frise">

@@ -135,8 +135,23 @@
   filter: brightness(1.1);
 }
 
-/* Événement trop court pour son texte : pastille ronde à sa bannière sur
-   son premier jour, texte à côté (sans barre). */
+/* Barre courte : le dégradé sombre du texte cacherait toute sa bannière. */
+.evenement-frise.courte {
+  background-image: linear-gradient(rgba(20, 18, 50, 0.25), rgba(20, 18, 50, 0.25)), var(--banniere);
+  background-position: center, 80% center;
+}
+
+/* Barre trop courte près de la fin de la saison : texte qui dépasse à gauche. */
+.evenement-frise.a-gauche:not(.ponctuel) {
+  justify-content: flex-end;
+}
+
+.evenement-frise.a-gauche:not(.ponctuel) .texte-evenement-frise {
+  align-items: flex-end;
+}
+
+/* Événement d'un seul jour : pastille ronde à sa bannière, texte à côté
+   (sans barre). */
 .evenement-frise.ponctuel {
   border: 0;
   background: none;
