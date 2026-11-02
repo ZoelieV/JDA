@@ -69,13 +69,13 @@
       ["Litiges", "/admin?litiges=1"]
     ] }
   ];
-  // Réseaux : chaînes de Laïna (Ko-fi : site officiel en attendant le lien).
+  // Réseaux : chaînes de Laïna, Ko-fi du site.
   const RESEAUX = [
     ["Discord", "https://discord.gg/aFj47jVGvT", "discord"],
     ["TikTok", "https://www.tiktok.com/@_laina_e", "tiktok"],
     ["Instagram", "https://www.instagram.com/_laina_e/", "instagram"],
     ["YouTube", "https://www.youtube.com/@laina_emyko", "youtube"],
-    ["Ko-fi", "https://ko-fi.com", "kofi"]
+    ["Ko-fi", "https://ko-fi.com/jugement_dev_archons", "kofi"]
   ];
   // Crédits : fenêtre du bouton Crédits du pied de page.
   const CREDITS = [
