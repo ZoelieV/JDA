@@ -72,7 +72,7 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
-//   { little_cup: { nom, public, trophees, boss: [ids] } }  event Little Cup
+//   { little_cup: { nom, public, trophees, boss: [ids], namecard? } }  event Little Cup
 //                                    (cf. commun/little_cup.js)
 //   { world_boss_public: true|false }  ouvre le mode Random world boss à
 //                                    tous / le réserve aux administrateurs
@@ -251,6 +251,7 @@ const CALENDRIER_MAX_JOURS_SAISON = 400;
 const CALENDRIER_COURT_MAX = 30;
 const CALENDRIER_LONG_MAX = 2000;
 const BANNIERES_CALENDRIER = new Set(require("../DB/images/cosmetiques.json").bannieres2);
+const NAMECARDS_SITE = new Set(require("../DB/images/cosmetiques.json").bannieres);
 const CACHES_JSON = new Set(require("../DB/images/cosmetiques.json").caches || []);
 const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
 
@@ -629,7 +630,9 @@ module.exports = async (req, res) => {
         if (!nom || nom.length > 30) return res.status(400).json({ error: "Nom de l'event : 1 à 30 caractères" });
         const permis = new Set([...listeJSON("boss"), ...ajouts.boss].filter(b => !b.world_boss_seulement).map(b => b.id));
         if (!Array.isArray(boss) || !boss.length || boss.some(id => !permis.has(id))) return res.status(400).json({ error: "Choisis au moins un boss valide" });
-        config = { ...ancienne, little_cup: { nom, public: ouvert === true, trophees: trophees === true, boss: [...new Set(boss)] } };
+        const namecard = corps.little_cup.namecard ?? null;
+        if (namecard !== null && !NAMECARDS_SITE.has(namecard)) return res.status(400).json({ error: "Namecard inconnue" });
+        config = { ...ancienne, little_cup: { nom, public: ouvert === true, trophees: trophees === true, boss: [...new Set(boss)], ...(namecard ? { namecard } : {}) } };
       } else if (typeof corps.world_boss_public === "boolean") {
         // Ancien interrupteur (world_boss_desactive) retiré.
         const { world_boss_desactive: _ancien, ...reste } = ancienne;

@@ -96,6 +96,9 @@ function refuserSiPause(res, draft) {
   return true;
 }
 
+// Relances du boss par match (mêmes valeur : match.js).
+const MAX_RELANCES_BOSS = 2;
+
 // Boss soumis au vote des joueurs (phase "boss") : hors classé et
 // entraînement, sans boss imposé à la création.
 function bossAVoter(draft, room) {
@@ -1121,6 +1124,9 @@ async function handleBossVote(req, res, roomId, user) {
   const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
   const draft = room.draft;
   if (draft.phase !== "boss") return res.status(409).json({ error: "Le boss n'est pas en cours de choix" });
+  if (vote === "relancer" && (draft.relances_boss || 0) >= MAX_RELANCES_BOSS) {
+    return res.status(409).json({ error: `Le boss a déjà été relancé ${MAX_RELANCES_BOSS} fois dans ce match : confirme-le.` });
+  }
 
   draft.votes_boss = { ...(draft.votes_boss || {}), [joueur]: vote };
   const { j1, j2 } = draft.votes_boss;

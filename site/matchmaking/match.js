@@ -2042,8 +2042,11 @@ function assurerBossAffiche() {
 }
 
 // ---- Choix du boss (matchmaking non classé, room privée sans boss imposé) ----
+// Relances du boss par match (même valeur : MAX_RELANCES_BOSS, serveur).
+const MAX_RELANCES_BOSS = 2;
+
 // Animation du tirage à chaque boss proposé, puis vote : confirmer ou
-// relancer (relancé si les 2 joueurs le veulent). Le tirage J1/J2 vient
+// relancer (relancé si les 2 joueurs le veulent, MAX_RELANCES_BOSS fois). Le tirage J1/J2 vient
 // ensuite, au début de la draft (annonces séparées).
 async function postVoteBoss(vote) {
   const data = await envoyerAction(`/api/rooms/${roomId}/boss_vote`, { vote });
@@ -2057,7 +2060,9 @@ function rendreChoixBoss() {
   const nom = role => pseudoColore(role); // couleur de son rôle
   const libelle = vote => vote === "relancer" ? "veut relancer 🎲" : "confirme le boss ✓";
   const message = document.getElementById("message-boss");
-  const relances = draft.relances_boss ? ` (${draft.relances_boss} relance${draft.relances_boss > 1 ? "s" : ""})` : "";
+  const nbRelances = draft.relances_boss || 0;
+  const plusDeRelance = nbRelances >= MAX_RELANCES_BOSS;
+  const relances = nbRelances ? ` (${nbRelances} / ${MAX_RELANCES_BOSS} relances)` : "";
 
   document.getElementById("choix-boss").classList.toggle("cache", !monRole);
   if (!monRole) {
@@ -2070,11 +2075,13 @@ function rendreChoixBoss() {
   ["confirmer", "relancer"].forEach(vote => {
     const bouton = document.getElementById(vote === "confirmer" ? "btn-confirmer-boss" : "btn-relancer-boss");
     bouton.classList.toggle("active", monVote === vote);
-    bouton.disabled = animationBossEnCours;
+    bouton.disabled = animationBossEnCours || (vote === "relancer" && plusDeRelance);
     bouton.onclick = () => postVoteBoss(vote).catch(err => alert(err.message));
   });
 
-  message.innerHTML = !monVote
+  message.innerHTML = !monVote && plusDeRelance
+    ? `Boss tiré${relances}. Plus de relance possible : confirme-le.`
+    : !monVote
     ? `Boss tiré${relances}. Confirme-le, ou propose de le relancer : il ne change que si vous voulez tous les deux le relancer.`
     : votes[autre]
       ? "…"

@@ -1,8 +1,12 @@
 // Administration : event Little Cup (config.little_cup, cf. api/points.js) :
-// nom, ouverture à tous, trophées à part, boss présents. Enregistré avec le
+// nom, namecard, ouverture à tous, trophées à part, boss présents. Enregistré avec le
 // bouton de la fenêtre ; le serveur refuse les mini admins.
 
+const NAMECARD_LITTLE_CUP_DEFAUT = "namecards/Namecard_Background_Achievement_Orbits.webp";
+
 function initialiserLittleCup() {
+  let namecard = NAMECARD_LITTLE_CUP_DEFAUT;
+  const majNamecard = () => { document.getElementById("cup-namecard").src = encodeURI(`/DB/images/${namecard}`); };
   const modal = document.getElementById("modal-little-cup");
   const zoneBoss = document.getElementById("cup-boss");
   const message = (texte, type = "") => {
@@ -25,6 +29,8 @@ function initialiserLittleCup() {
       document.getElementById("cup-nom").value = cup.nom || "Little Cup";
       document.getElementById("cup-public").checked = cup.public === true;
       document.getElementById("cup-trophees").checked = cup.trophees === true;
+      namecard = cup.namecard || NAMECARD_LITTLE_CUP_DEFAUT;
+      majNamecard();
       // Pas encore réglé : tous les boss cochés (ceux du tirage habituel).
       const coches = cup.boss ? new Set(cup.boss) : null;
       zoneBoss.innerHTML = boss.filter(b => !b.world_boss_seulement).map(b => `
@@ -51,7 +57,8 @@ function initialiserLittleCup() {
           nom: document.getElementById("cup-nom").value,
           public: document.getElementById("cup-public").checked,
           trophees: document.getElementById("cup-trophees").checked,
-          boss: cases().filter(c => c.checked).map(c => c.value)
+          boss: cases().filter(c => c.checked).map(c => c.value),
+          namecard
         }
       });
       promessePointsAdmin = null;
@@ -67,6 +74,13 @@ function initialiserLittleCup() {
   chargerPointsAdmin().then(config => {
     if (config?.little_cup?.nom) document.getElementById("titre-tuile-little-cup").textContent = config.little_cup.nom;
   }).catch(console.error);
+  document.getElementById("cup-choisir-namecard").addEventListener("click", async () => {
+    const choix = await choisirCosmetiques({ titre: "Namecard de l'event", multiple: false, onglets: ["banniere"], selection: [idCosmetique("banniere", namecard)] });
+    if (!choix?.length) return;
+    namecard = choix[0].replace(/^banniere:/, "");
+    majNamecard();
+    message("Namecard choisie : pense à enregistrer.");
+  });
   document.getElementById("ouvrir-little-cup").addEventListener("click", ouvrir);
   document.getElementById("fermer-little-cup").addEventListener("click", fermer);
   document.getElementById("enregistrer-cup").addEventListener("click", enregistrer);

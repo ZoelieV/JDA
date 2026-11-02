@@ -77,6 +77,7 @@ async function creerLittleCup(bouton, matchmaking) {
 async function afficherLittleCup(config) {
   const cup = config?.little_cup || {};
   document.querySelectorAll(".nom-little-cup").forEach(e => { e.textContent = cup.nom || "Little Cup"; });
+  if (cup.namecard) document.querySelector('.carte-match[data-detail="little-cup"] img').src = encodeURI(`/DB/images/${cup.namecard}`);
   document.getElementById("room-little-cup").classList.toggle("cache", !!cup.trophees);
   document.getElementById("regle-trophees-little-cup").classList.toggle("cache", !cup.trophees);
   document.getElementById("classement-little-cup").classList.toggle("cache", !cup.trophees);
