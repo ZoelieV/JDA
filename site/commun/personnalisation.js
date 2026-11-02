@@ -133,7 +133,7 @@
   }
 
   // Voyageur, Manekin et skins (commun/variantes.js).
-  const chargerVariantes = () => chargerScript("/commun/variantes.js?v=5",
+  const chargerVariantes = () => chargerScript("/commun/variantes.js?v=6",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
   const chargerKoyns = () => chargerScript("/commun/koyns.js?v=15",
