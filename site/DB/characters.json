@@ -614,7 +614,7 @@
     "nom": "Dori",
     "rarete": "4",
     "element": "electro",
-    "arme": "catalyst",
+    "arme": "claymore",
     "categorie": "support",
     "image": "images/characters/dori.webp",
     "PPC": [5, 5, 5, 5, 5, 5, 5, 0, 0, 0]
