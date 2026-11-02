@@ -102,6 +102,9 @@ let selectionDraft = null;
 // ({ j1: perso, j2: perso }), jamais aux joueurs.
 let preselectionsVues = {};
 let preselectionEnvoyee = null;
+// Nom de l'event Little Cup (réglé dans l'admin ; pas ouvert : nom par défaut).
+let nomLittleCup = "Little Cup";
+chargerPointsAdmin().then(config => { if (config?.little_cup?.nom) nomLittleCup = config.little_cup.nom; }).catch(() => {});
 let minuteurPreselection = null;
 
 // ---- Animation de tirage du boss ----
@@ -193,7 +196,8 @@ async function chargerJoueurDepuisId(discordId) {
     nom,
     pseudo: htmlPseudo(nom), // nom en HTML (échappé, police des pseudos)
     avatar: compte.discord_avatar_url,
-    data: compte.data
+    // Little Cup : box affichée sans les persos et armes interdits.
+    data: draft?.little_cup ? filtrerDonneesLittleCup(compte.data, personnagesBase, armesData, pointsPersonnage) : compte.data
   };
 }
 
@@ -1136,8 +1140,9 @@ const NB_PERSOS_MIN_BOX = 16;
 const BOX_MATCHMAKING_CLASSIQUE = ["full"];
 
 function estMatchmakingClassique() {
-  // Room privée « Full box » : draft.full_box_imposee.
-  if (draft?.full_box_imposee === true) return true;
+  // Room privée « Full box » : draft.full_box_imposee. Little Cup : full box
+  // filtrée seulement (cf. commun/little_cup.js).
+  if (draft?.full_box_imposee === true || draft?.little_cup === true) return true;
   return typeRoom === "matchmaking" && (draft?.mode_theatre || "auto") === "auto" && !draft?.box_libre;
 }
 function nbPersosBox(role, box) {
@@ -1955,7 +1960,8 @@ function htmlModeTheatre(theatre) {
   if (!infos) return "";
   // "auto" : palier du joueur au plus petit palier ; sinon choisi à la
   // création de la room, ou mêlée générale (matchmaking / classé).
-  const mode = draft.mode_theatre === "auto" ? "plus petit palier"
+  const mode = draft.little_cup ? nomLittleCup
+    : draft.mode_theatre === "auto" ? "plus petit palier"
     : draft.mode_theatre === "carnage" ? "no ban, sans équilibrage"
       : draft.mode_theatre === "12" ? "classé" : typeRoom === "matchmaking" ? "matchmaking" : "choisi pour la room";
   return `<span class="mode-theatre" title="Draft ${infos.nom} : 4 picks et ${infos.bans} bans par joueur (${mode})">` +

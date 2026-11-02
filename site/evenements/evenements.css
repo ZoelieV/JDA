@@ -281,3 +281,17 @@
   margin: 0;
   white-space: pre-line;
 }
+
+/* Event Little Cup : classement à part. */
+.classement-little-cup {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.classement-little-cup li {
+  padding: 0.25rem 0;
+}
+
+.classement-little-cup li > span {
+  margin-right: 0.75rem;
+}

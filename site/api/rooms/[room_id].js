@@ -1,6 +1,8 @@
 const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { TYPES_FILE } = require("../_lib/matchmaking");
+const { erreurLittleCup } = require("../_lib/little_cup");
+const { actualiserPoints } = require("../_lib/personnages");
 const { annulerAutresMatchs, matchClasseEnCours, erreurProfilIncomplet, ERREUR_MATCH_CLASSE } = require("../_lib/room");
 
 
@@ -120,6 +122,11 @@ module.exports = async (req, res) => {
       // Box stuff, niveau du monde et UID renseignés (cf. _lib/room.js).
       // Type de match : mode de la draft de cette room (minimum de persos montés).
       const { data: avecDraft } = await supabase.from("rooms").select("draft").eq("room_id", roomId).maybeSingle();
+      if (avecDraft?.draft?.little_cup) {
+        await actualiserPoints();
+        const refus = await erreurLittleCup(user.id);
+        if (refus) return res.status(refus.status).json({ error: refus.message });
+      }
       const incomplet = await erreurProfilIncomplet(supabase, user.id, { mode: avecDraft?.draft?.mode_theatre });
       if (incomplet) return res.status(409).json({ error: incomplet, profil_incomplet: true });
 

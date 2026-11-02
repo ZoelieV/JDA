@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=60">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=61">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -80,6 +80,11 @@
       <img src="/DB/images/others/Icon_Training_Guide.webp" alt="">
       <span class="tuile-admin-titre">Tutoriel</span>
       <span class="tuile-admin-texte">Te lancer le tutoriel des nouveaux comptes, sans rien changer à ton compte.</span>
+    </button>
+    <button type="button" id="ouvrir-little-cup" class="tuile-admin" title="Event à persos et armes limités : nom, ouverture, trophées, boss">
+      <img src="/DB/images/others/Icon_Events.webp" alt="">
+      <span class="tuile-admin-titre" id="titre-tuile-little-cup">Little Cup</span>
+      <span class="tuile-admin-texte">Nom de l'event, ouverture, trophées et boss présents.</span>
     </button>
     <button type="button" id="ouvrir-tournoitateurs" class="tuile-admin" title="Joueurs autorisés à créer des tournois">
       <img src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="">
@@ -568,6 +573,32 @@
     </div>
   </div>
 
+  <!-- Event Little Cup (cf. admin_little_cup.js, commun/little_cup.js). -->
+  <div id="modal-little-cup" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Little Cup</h2>
+        <button type="button" id="fermer-little-cup" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">Persos 5★ à 50 points au plus, 4★ libres ; armes 5★ interdites sauf celle du Voyageur et les permanentes (catégorie « Standard »).</p>
+      <div class="formulaire-skin">
+        <label class="champ-compte">Nom de l'event <input type="text" id="cup-nom" class="texte-ajout" maxlength="30"></label>
+        <label class="champ-skin-masque"><input type="checkbox" id="cup-public"> Ouvert à tous (sinon : équipe du site seulement)</label>
+        <label class="champ-skin-masque"><input type="checkbox" id="cup-trophees"> Trophées à part du classé (matchmaking seulement, plus de room)</label>
+      </div>
+      <h3 class="titre-section-ajout">Boss présents <span id="cup-compte" class="facultatif"></span></h3>
+      <div class="sommaire-actions-cup">
+        <button type="button" id="cup-tout" class="btn-ouvrir-ajout">Tout cocher</button>
+        <button type="button" id="cup-aucun" class="btn-ouvrir-ajout">Tout décocher</button>
+      </div>
+      <div id="cup-boss" class="cup-boss"></div>
+      <div class="actions-ajout">
+        <span id="message-cup" class="message-ajout"></span>
+        <button type="button" id="enregistrer-cup" class="bouton-creer">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Skins de personnages ajoutés (cf. admin_skins.js). -->
   <div id="modal-skins" class="modal-apercu">
     <div class="modal-apercu-contenu">
@@ -685,6 +716,7 @@
   <script src="/admin_ppc/admin_koyns.js?v=10"></script>
   <script src="/admin_ppc/admin_skins.js?v=5"></script>
   <script src="/admin_ppc/admin_visibilite.js?v=1"></script>
+  <script src="/admin_ppc/admin_little_cup.js?v=1"></script>
   <script src="/admin_ppc/admin_tutoriel.js?v=2"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=2"></script>

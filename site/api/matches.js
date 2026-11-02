@@ -13,7 +13,7 @@
 // fonctions serverless du plan Hobby de Vercel.
 const { supabase } = require("./_lib/supabase");
 const { memoriser } = require("./_lib/memo");
-const { infosPersoJoueur, palierTheatre, actualiserPoints, estWorldBossPublic } = require("./_lib/personnages");
+const { infosPersoJoueur, palierTheatre, actualiserPoints, estWorldBossPublic, getLittleCup } = require("./_lib/personnages");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { crediterMatchArchive } = require("./_lib/koyns");
@@ -260,6 +260,45 @@ async function leverBan(req, res) {
   return res.status(200).json({ ok: true });
 }
 
+// ---- GET ?little_cup=1 : classement de l'event Little Cup ----
+// Trophées à part du classé : gain du vainqueur, perte du perdant, jamais
+// sous 0, en rejouant les matchs dans l'ordre. Event pas ouvert : équipe
+// du site seulement.
+async function classementLittleCup(req, res) {
+  await actualiserPoints();
+  if (!getLittleCup().public) {
+    const user = await verifySessionToken(parseCookies(req).session);
+    if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+  }
+  const { data: matchs, error } = await supabase.from("match_history")
+    .select("player1_discord_id, player2_discord_id, vainqueur, trophees, created_at, litige")
+    .eq("little_cup", true).not("trophees", "is", null).order("created_at", { ascending: true });
+  if (error) throw error;
+  const scores = new Map();
+  const noter = (id, delta, gagne) => {
+    const score = scores.get(id) || { discord_id: id, trophees: 0, victoires: 0, matchs: 0 };
+    score.trophees = Math.max(0, score.trophees + delta);
+    score.matchs += 1;
+    if (gagne) score.victoires += 1;
+    scores.set(id, score);
+  };
+  (matchs || []).filter(m => !m.litige).forEach(m => {
+    const signe = { j1: 1, j2: -1 }[m.vainqueur] || 0;
+    noter(m.player1_discord_id, signe * m.trophees, signe === 1);
+    noter(m.player2_discord_id, -signe * m.trophees, signe === -1);
+  });
+  const ids = [...scores.keys()];
+  const { data: profils, error: erreurProfils } = ids.length
+    ? await supabase.from("profiles").select("discord_id, discord_username, discord_global_name").in("discord_id", ids)
+    : { data: [], error: null };
+  if (erreurProfils) throw erreurProfils;
+  const noms = new Map((profils || []).map(p => [p.discord_id, p.discord_global_name || p.discord_username || "Joueur inconnu"]));
+  return res.status(200).json({
+    classement: [...scores.values()].map(s => ({ ...s, nom: noms.get(s.discord_id) || "Joueur inconnu" }))
+      .sort((a, b) => b.trophees - a.trophees || b.victoires - a.victoires)
+  });
+}
+
 // ---- PATCH ?id= (administrateurs) : temps corrigés d'un litige ouvert,
 // vainqueur recalculé, match republié dans l'historique public ----
 async function republierLitige(req, res, user) {
@@ -288,7 +327,7 @@ async function republierLitige(req, res, user) {
   const { data, error } = await supabase
     .from("match_history")
     .update({
-      ...(litige?.classe ? { trophees: calculerTrophees(tempsJ1, tempsJ2, vainqueur, bossId) } : {}),
+      ...(litige?.classe || litige?.little_cup ? { trophees: calculerTrophees(tempsJ1, tempsJ2, vainqueur, bossId) } : {}),
       temps_j1_affiche: tempsJ1.affiche,
       temps_j1_secondes: tempsJ1.secondes,
       temps_j2_affiche: tempsJ2.affiche,
@@ -721,6 +760,16 @@ module.exports = async (req, res) => {
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Erreur chargement des parties Random world boss" });
+    }
+  }
+
+  // Classement à part de l'event Little Cup.
+  if (req.query?.little_cup === "1") {
+    try {
+      return await classementLittleCup(req, res);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Erreur du classement" });
     }
   }
 

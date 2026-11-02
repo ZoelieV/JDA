@@ -1138,6 +1138,9 @@ function etatRevanche(precedent) {
     ...(precedent.box_libre ? { box_libre: true } : {}),
     // Room privée « Full box » : full box imposée.
     ...(precedent.full_box_imposee ? { full_box_imposee: true } : {}),
+    // Little Cup : mêmes règles, avec ou sans trophées à part.
+    ...(precedent.little_cup ? { little_cup: true } : {}),
+    ...(precedent.cup_trophees ? { cup_trophees: true } : {}),
     chronometre: !!precedent.chronometre,
     // Chronos personnalisés (tournois) et match de tournoi gardés.
     chronos_config: precedent.chronos_config || null,

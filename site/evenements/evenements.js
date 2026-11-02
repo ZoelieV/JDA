@@ -46,6 +46,48 @@ async function creerWorldBoss(bouton, matchmaking = false) {
   }
 }
 
+// Event Little Cup : file de matchmaking ou room par lien (sans trophées).
+async function creerLittleCup(bouton, matchmaking) {
+  bouton.disabled = true;
+  try {
+    const reponse = await fetch("/api/rooms", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: matchmaking ? "matchmaking" : "prive", little_cup: true })
+    });
+    if (reponse.status === 401) {
+      alert("Tu dois être connecté avec Discord pour jouer.");
+      return;
+    }
+    const data = await reponse.json().catch(() => ({}));
+    if (!reponse.ok) {
+      alert(data.error || "Impossible de lancer le match.");
+      return;
+    }
+    window.location.href = `/match?room=${data.room_id}`;
+  } catch (erreur) {
+    console.error(erreur);
+    alert("Erreur lors de la création du match.");
+  } finally {
+    bouton.disabled = false;
+  }
+}
+
+async function afficherLittleCup(config) {
+  const cup = config?.little_cup || {};
+  document.querySelectorAll(".nom-little-cup").forEach(e => { e.textContent = cup.nom || "Little Cup"; });
+  document.getElementById("room-little-cup").classList.toggle("cache", !!cup.trophees);
+  document.getElementById("regle-trophees-little-cup").classList.toggle("cache", !cup.trophees);
+  document.getElementById("classement-little-cup").classList.toggle("cache", !cup.trophees);
+  if (!cup.trophees) return;
+  const reponse = await fetch("/api/matches?little_cup=1", { credentials: "include" });
+  const { classement = [] } = reponse.ok ? await reponse.json() : {};
+  document.getElementById("liste-classement-little-cup").innerHTML = classement.length
+    ? classement.map(j => `<li><span>${echapperCalendrier(j.nom)}</span><strong>${j.trophees} 🏆</strong></li>`).join("")
+    : "<li>Aucun match pour l'instant.</li>";
+}
+
 // Une seule carte ouverte à la fois ; un 2e clic referme ses détails.
 function choisirCarte(carte) {
   const dejaOuvert = carte.getAttribute("aria-expanded") === "true";
@@ -243,7 +285,8 @@ async function demarrer() {
   const admin = !!(utilisateur?.admin || utilisateur?.mini_admin);
   // { data-detail : activé pour tous } ; calendrier : dès que la saison a
   // ses dates.
-  const evenements = { "world-boss": config?.world_boss_public === true, calendrier: !!config?.calendrier?.saison };
+  const evenements = { "world-boss": config?.world_boss_public === true, "little-cup": config?.little_cup?.public === true, calendrier: !!config?.calendrier?.saison };
+  if (admin || evenements["little-cup"]) afficherLittleCup(config).catch(console.error);
   rendreCalendrier(config?.calendrier);
 
   for (const [nom, public_] of Object.entries(evenements)) {
@@ -259,6 +302,8 @@ async function demarrer() {
     carte.addEventListener("click", () => choisirCarte(carte));
   });
   document.getElementById("creer-world-boss").addEventListener("click", event => creerWorldBoss(event.currentTarget));
+  document.getElementById("mm-little-cup").addEventListener("click", event => creerLittleCup(event.currentTarget, true));
+  document.getElementById("room-little-cup").addEventListener("click", event => creerLittleCup(event.currentTarget, false));
   document.getElementById("mm-world-boss").addEventListener("click", event => creerWorldBoss(event.currentTarget, true));
 
   // evenements.html#world-boss : détails ouverts.

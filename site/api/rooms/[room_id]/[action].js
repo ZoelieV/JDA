@@ -10,12 +10,12 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft, quitterRoom } = require("../../_lib/room");
 const { estRouteEquipe, executerRouteEquipe } = require("../../_lib/equipe");
 const { estRouteWorldBoss, executerRouteWorldBoss } = require("../../_lib/world_boss");
-const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
+const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints, getLittleCup } = require("../../_lib/personnages");
 const { tirerBossAleatoire, bossCarnageExclus, DUREE_DEFI_SECONDES, estDefiEnnemis } = require("../../_lib/boss");
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserResultat, messageFormatInvalide, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
-const { calculerEquilibrage, combinaisonsEquilibrables, calculerModeSpecial, BOX_MATCH, erreurPointsBox, palierDraftRoom } = require("../../_lib/boxes");
+const { filtrerProfilDraft, calculerEquilibrage, combinaisonsEquilibrables, calculerModeSpecial, BOX_MATCH, erreurPointsBox, palierDraftRoom } = require("../../_lib/boxes");
 const { detecterTriche, detecterTempsSuspects } = require("../../_lib/sanctions");
 const { crediterMatch } = require("../../_lib/koyns");
 const { VICTOIRES_MAX, serieDraft } = require("../../_lib/serie_classe");
@@ -68,8 +68,9 @@ const BOX_AUTORISEES = new Set(BOX_MATCH);
 const BOX_MATCHMAKING_CLASSIQUE = new Set(["full"]);
 
 function estMatchmakingClassique(draft, room) {
-  // Room privée « Full box » : draft.full_box_imposee.
-  if (draft.full_box_imposee === true) return true;
+  // Room privée « Full box » : draft.full_box_imposee. Little Cup : full box
+  // filtrée seulement (cf. commun/little_cup.js).
+  if (draft.full_box_imposee === true || draft.little_cup === true) return true;
   return room?.type === "matchmaking" && (draft.mode_theatre || "auto") === "auto" && !draft.box_libre;
 }
 function getSegments(req) {
@@ -119,7 +120,9 @@ async function tireurBoss(draft, room) {
   const exclus = [...tuees, ...horsNiveau, ...carnage];
   if (exclus.includes(draft.boss_impose)) draft.boss_impose = null;
   if (exclus.includes(draft.entrainement?.boss_id)) draft.entrainement = { ...draft.entrainement, boss_id: null };
-  return exclureId => tirerBossAleatoire(exclureId, { classe, exclus });
+  // Little Cup : boss choisis dans la page admin.
+  const seulement = draft.little_cup && getLittleCup().boss?.length ? getLittleCup().boss : null;
+  return exclureId => tirerBossAleatoire(exclureId, { classe, exclus, seulement });
 }
 
 // Boss proposé au vote, ou directement tirage j1/j2 + boss, puis chronos de
@@ -250,7 +253,7 @@ async function sauvegarderApresArchivage(roomId, draft) {
 async function erreurBoxJoueur(discordId, box, draft) {
   // Catalogue déjà à jour (actualiserPoints dans le dispatch).
   const { data: profil } = await supabase.from("profiles").select("data").eq("discord_id", discordId).single();
-  const nbPersos = calculerPoolJoueur(profil?.data, getPersonnages(), box).length;
+  const nbPersos = calculerPoolJoueur(filtrerProfilDraft(draft, profil?.data), getPersonnages(), box).length;
   if (nbPersos < NB_PERSOS_MIN_BOX) {
     return `Une box doit contenir au moins ${NB_PERSOS_MIN_BOX} personnages pour être choisie (celle-ci en a ${nbPersos}).`;
   }
@@ -856,7 +859,7 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     // Rikoyns (cf. _lib/koyns.js).
     const triche = detecterTriche(draft);
     const suspicion = detecterTempsSuspects(draft);
-    if (classe && (triche || suspicion)) {
+    if ((classe || draft.cup_trophees) && (triche || suspicion)) {
       draft.phase = "litige";
       draft.litige_par = null;
       draft.vainqueur = null;

@@ -27,6 +27,7 @@
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 const { annulerAutresMatchs, matchClasseEnCours, erreurProfilIncomplet, ERREUR_MATCH_CLASSE } = require("./room");
+const { getLittleCup } = require("./personnages");
 const { banClasse, messageBan } = require("./sanctions");
 const { serieDuJour } = require("./serie_classe");
 
@@ -98,7 +99,7 @@ async function nonEquilibrables(discordId, autreId) {
 // « Full box » ("auto"), mais box opti permises (draft.box_libre).
 const MODE_AUTO_LIBRE = "auto_libre";
 
-async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "auto") {
+async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "auto", { littleCup = false } = {}) {
   // Joueur banni du classé (sanction d'un administrateur).
   if (type === "classe") {
     const ban = await banClasse(discordId);
@@ -136,13 +137,17 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     // Room d'attente déjà prise par un adversaire : match trouvé.
     if (room.player2_discord_id) return { room_id: room.room_id, trouve: true };
     // Même mode que la room d'attente (classé : toujours le mode "12").
+    // Rappel de la page d'attente : même file (event Little Cup ou non).
+    littleCup = !!room.draft?.little_cup;
     if (room.draft?.mode_theatre && type !== "classe") mode = room.draft.box_libre ? MODE_AUTO_LIBRE : room.draft.mode_theatre;
   }
 
   // Attente dans l'autre file abandonnée : une seule recherche à la fois.
   await supprimerRooms((await mesRoomsEnAttente(discordId, TYPES_FILE.filter(t => t !== type))).map(r => r.room_id));
 
-  const miennes = await mesRoomsEnAttente(discordId, [type]);
+  const enAttente = await mesRoomsEnAttente(discordId, [type]);
+  const miennes = enAttente.filter(r => !!r.draft?.little_cup === littleCup);
+  await supprimerRooms(enAttente.filter(r => !miennes.includes(r)).map(r => r.room_id));
   const maRoom = miennes[0] || null;
 
   // Rooms des autres, les plus anciennes d'abord (plus anciennes que la
@@ -162,6 +167,8 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     .limit(5);
   // Full box et Auto : même mode de théâtre, files séparées.
   if (modeTheatre === "auto") requete = boxLibre ? requete.eq("draft->>box_libre", "true") : requete.is("draft->>box_libre", null);
+  // Event Little Cup : file à part.
+  requete = littleCup ? requete.eq("draft->>little_cup", "true") : requete.is("draft->>little_cup", null);
   if (maRoom) requete = requete.lt("created_at", maRoom.created_at);
   const { data: candidates, error } = await requete;
   if (error) throw error;
@@ -191,7 +198,14 @@ async function chercher(discordId, roomIdAttente, type = "matchmaking", mode = "
     player1_discord_id: discordId,
     type,
     // Classé : draft chronométrée (cf. _lib/chronos.js).
-    draft: { mode_theatre: modeTheatre, ...(boxLibre ? { box_libre: true } : {}), chronometre: type === "classe" },
+    // Little Cup avec trophées : comme le classé, draft chronométrée.
+    draft: {
+      mode_theatre: modeTheatre,
+      ...(boxLibre ? { box_libre: true } : {}),
+      ...(littleCup ? { little_cup: true } : {}),
+      ...(littleCup && getLittleCup().trophees ? { cup_trophees: true } : {}),
+      chronometre: type === "classe" || (littleCup && getLittleCup().trophees)
+    },
     last_active_at: new Date().toISOString()
   });
   if (erreurCreation) throw erreurCreation;

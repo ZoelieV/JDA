@@ -75,6 +75,11 @@ async function archiverMatch(draft, { litige = false, classe = false, triche = n
     ...(litige && draft.litige_commentaire ? { litige_commentaire: draft.litige_commentaire } : {}),
     ...(triche ? { triche: true, duree_saisie: triche.duree_saisie, somme_temps: triche.somme_temps } : {}),
     ...(suspicion ? { triche: true, suspicion } : {}),
+    // Little Cup : à part du classé ; trophées si l'event en a à ce moment-là.
+    ...(draft.little_cup ? {
+      little_cup: true,
+      ...(draft.cup_trophees && !litige ? { trophees: calculerTrophees(draft.temps_j1, draft.temps_j2, draft.vainqueur, draft.boss_id) } : {})
+    } : {}),
     ...(classe ? {
       classe: true,
       // Persos de l'équipe avec le bonus de saison au moment du match (la

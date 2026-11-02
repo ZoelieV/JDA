@@ -45,6 +45,14 @@ let carnageDesactive = false;
 // admin) ; sinon réservé aux administrateurs (cf. _lib/world_boss.js).
 let worldBossPublic = false;
 
+// Event Little Cup (config.little_cup, page admin), cf. commun/little_cup.js.
+const LITTLE_CUP_DEFAUT = { nom: "Little Cup", public: false, trophees: false, boss: null };
+let littleCup = LITTLE_CUP_DEFAUT;
+
+function getLittleCup() {
+  return littleCup;
+}
+
 function estCarnageDesactive() {
   return carnageDesactive;
 }
@@ -243,6 +251,7 @@ async function actualiserPoints() {
     bonusSaison = new Set(Array.isArray(config.bonus_saison) ? config.bonus_saison : []);
     carnageDesactive = config.carnage_desactive === true;
     worldBossPublic = config.world_boss_public === true;
+    littleCup = { ...LITTLE_CUP_DEFAUT, ...(config.little_cup || {}) };
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     seuilHorizontal = lireSeuilHorizontal(config.seuil_horizontal);
@@ -429,6 +438,9 @@ function codeTheatre(profilData) {
 }
 
 module.exports = {
+  getLittleCup,
+  LITTLE_CUP_DEFAUT,
+  pointsPersonnage,
   getConfigKoyns,
   MODES_EQUILIBRAGE,
   LIMITES_EQUILIBRAGE_DEFAUT,

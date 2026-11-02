@@ -72,6 +72,8 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
+//   { little_cup: { nom, public, trophees, boss: [ids] } }  event Little Cup
+//                                    (cf. commun/little_cup.js)
 //   { world_boss_public: true|false }  ouvre le mode Random world boss à
 //                                    tous / le réserve aux administrateurs
 //                                    (cf. _lib/world_boss.js)
@@ -296,6 +298,8 @@ function versionPublique(config) {
   const masques = lireMasques(config);
   const ajouts = lireAjouts(config);
   const publique = { ...config, ajouts: { ...ajouts }, masques: {} };
+  // Event Little Cup pas encore ouvert : rien hors administrateurs.
+  if (publique.little_cup && !publique.little_cup.public) delete publique.little_cup;
   // Skins ajoutés masqués : ni leur nom ni leur existence hors administrateurs.
   if (Array.isArray(config.skins_ajoutes)) publique.skins_ajoutes = config.skins_ajoutes.filter(skin => !skin.masque);
   GENRES_MASQUABLES.forEach(genre => {
@@ -619,6 +623,13 @@ module.exports = async (req, res) => {
         config = { ...ancienne, calendrier };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
+      } else if (corps.little_cup && typeof corps.little_cup === "object") {
+        const { nom: brutNom, public: ouvert, trophees, boss } = corps.little_cup;
+        const nom = typeof brutNom === "string" ? brutNom.trim() : "";
+        if (!nom || nom.length > 30) return res.status(400).json({ error: "Nom de l'event : 1 à 30 caractères" });
+        const permis = new Set([...listeJSON("boss"), ...ajouts.boss].filter(b => !b.world_boss_seulement).map(b => b.id));
+        if (!Array.isArray(boss) || !boss.length || boss.some(id => !permis.has(id))) return res.status(400).json({ error: "Choisis au moins un boss valide" });
+        config = { ...ancienne, little_cup: { nom, public: ouvert === true, trophees: trophees === true, boss: [...new Set(boss)] } };
       } else if (typeof corps.world_boss_public === "boolean") {
         // Ancien interrupteur (world_boss_desactive) retiré.
         const { world_boss_desactive: _ancien, ...reste } = ancienne;

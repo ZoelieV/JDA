@@ -62,8 +62,9 @@ function auHasard(liste) {
 // classe : boss du mode classé seulement (estTirableEnClasse).
 // exclus : ids des légendes locales déjà tuées aujourd'hui par un des
 // joueurs (cf. legendesTueesAujourdhui), jamais tirées.
-function tirerBossAleatoire(exclureId = null, { classe = false, exclus = [] } = {}) {
-  const tirables = bossList.filter(b => !estReserveWorldBoss(b) && (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
+// seulement : ids permis (event Little Cup), sinon tous.
+function tirerBossAleatoire(exclureId = null, { classe = false, exclus = [], seulement = null } = {}) {
+  const tirables = bossList.filter(b => (!seulement || seulement.includes(b.id)) && !estReserveWorldBoss(b) && (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
   const candidats = tirables.filter(b => b.id !== exclureId);
   const liste = candidats.length > 0 ? candidats : tirables;
   if (classe) return auHasard(liste);

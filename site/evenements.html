@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
   <link rel="stylesheet" href="/matchmaking/matchmaking.css?v=38">
-  <link rel="stylesheet" href="/evenements/evenements.css?v=9">
+  <link rel="stylesheet" href="/evenements/evenements.css?v=10">
   <link rel="stylesheet" href="/commun/site.css?v=19">
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -37,6 +37,13 @@
       <div class="carte-section-texte">
         <h2>Random world boss <span class="badge-admin">Admin</span></h2>
         <p>Un boss et 4 persos au hasard, seul ou en co-op.</p>
+      </div>
+    </button>
+    <button type="button" class="carte-section carte-match cache" data-detail="little-cup" aria-expanded="false" aria-controls="detail-little-cup">
+      <img src="/DB/images/namecards/Namecard_Background_Achievement_Orbits.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2><span class="nom-little-cup">Little Cup</span> <span class="badge-admin">Admin</span></h2>
+        <p>Draft sans les persos et armes les plus chers.</p>
       </div>
     </button>
     <button type="button" class="carte-section carte-match cache" data-detail="calendrier" aria-expanded="false" aria-controls="detail-calendrier">
@@ -67,6 +74,28 @@
     </div>
   </section>
 
+  <!-- Event Little Cup (config.little_cup, réglé dans l'admin ; règles :
+       commun/little_cup.js). -->
+  <section id="detail-little-cup" class="panneau detail-match cache" data-detail="little-cup">
+    <h2><span class="nom-little-cup">Little Cup</span> <span class="badge-admin">Admin</span></h2>
+    <p>Une draft avec seulement les persos et armes accessibles : ta full box est filtrée automatiquement, rien à préparer.</p>
+    <ul class="regles-classe">
+      <li>Persos 5★ : 50 points au plus chez toi (selon ta constellation et ton niveau). Persos 4★ : tous autorisés.</li>
+      <li>Armes 5★ interdites, sauf celle du Voyageur et les armes permanentes.</li>
+      <li>Draft Carpe, sur ta full box filtrée : il faut au moins 16 persos autorisés et 8 persos montés.</li>
+      <li id="regle-trophees-little-cup" class="cache">Trophées à part du classé : classement ci-dessous.</li>
+      <li class="regle-admin">Mode en test : seuls les administrateurs le voient et peuvent y jouer.</li>
+    </ul>
+    <div class="modes-match">
+      <button type="button" id="mm-little-cup" class="mode-match">Matchmaking<span>trouve un adversaire dans la file de l'event</span></button>
+      <button type="button" id="room-little-cup" class="mode-match">Créer la room<span>un lien à envoyer à ton adversaire</span></button>
+    </div>
+    <div id="classement-little-cup" class="cache">
+      <h3>Classement</h3>
+      <ol id="liste-classement-little-cup" class="classement-little-cup"></ol>
+    </div>
+  </section>
+
   <!-- Calendrier de la saison de JDA (config.calendrier, réglé dans la
        fenêtre Événements de l'admin) : frise des jours de la saison,
        événements en barres à leur bannière ; clic : fenêtre de la
@@ -91,7 +120,7 @@
   <script src="/commun/variantes.js?v=6"></script>
   <script src="/commun/synergies.js?v=4"></script>
   <script src="/commun/cartes.js?v=36"></script>
-  <script src="/evenements/evenements.js?v=14"></script>
+  <script src="/evenements/evenements.js?v=15"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=28"></script>
 </body>

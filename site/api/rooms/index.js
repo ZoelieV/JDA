@@ -7,7 +7,8 @@ const { verifierFrequence, verifierFrequenceCompte } = require("../_lib/limites"
 const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur, resoudreTheatre, theatreProfil } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
-const { getPersonnages, actualiserPoints, migrerCollectionPersos } = require("../_lib/personnages");
+const { getPersonnages, actualiserPoints, migrerCollectionPersos, getLittleCup } = require("../_lib/personnages");
+const { erreurLittleCup } = require("../_lib/little_cup");
 const { getBossParId, bossCarnageExclus, estReserveWorldBoss, estHorsCoop, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation, creerEntrainementEquipe: creerRoomEntrainementEquipe } = require("../_lib/equipe");
@@ -358,6 +359,24 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    // Event Little Cup : accès et full box filtrée vérifiés ici ; avec
+    // trophées, matchmaking seulement.
+    if (req.body?.little_cup === true) {
+      await actualiserPoints();
+      const refus = await erreurLittleCup(user.id);
+      if (refus) return res.status(refus.status).json({ error: refus.message });
+      if (req.body.type === "matchmaking") {
+        try {
+          return res.status(200).json(await chercher(user.id, null, "matchmaking", "carpe", { littleCup: true }));
+        } catch (erreur) {
+          if (erreur?.status) return res.status(erreur.status).json({ error: erreur.message, ...(erreur.room_id ? { room_id: erreur.room_id } : {}), ...(erreur.profil_incomplet ? { profil_incomplet: true } : {}) });
+          throw erreur;
+        }
+      }
+      if (getLittleCup().trophees) return res.status(400).json({ error: `Avec trophées, ${getLittleCup().nom} se joue en matchmaking seulement.` });
+      req.body = { type: "prive", mode: "carpe", little_cup: true };
+    }
+
     if (req.body?.type === "entrainement" && req.body?.config?.equipe === true) return await creerEntrainementEquipe(req, res, user);
     if (req.body?.type === "entrainement") return await creerEntrainement(req, res, user);
     if (req.body?.type === "equipe") return await creerEquipe(req, res, user);
@@ -412,7 +431,7 @@ module.exports = async (req, res) => {
       room_id: roomId,
       player1_discord_id: user.id,
       type: "prive",
-      draft: { mode_theatre: mode, ...(fullBox ? { full_box_imposee: true } : {}), boss_impose: bossImpose, premier, createur: user.id }
+      draft: { mode_theatre: mode, ...(fullBox ? { full_box_imposee: true } : {}), ...(req.body?.little_cup === true ? { little_cup: true } : {}), boss_impose: bossImpose, premier, createur: user.id }
     });
 
     if (error) {

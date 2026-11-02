@@ -6,7 +6,8 @@
 // joueur, sans dévoiler ses box opti), ou une box fictive (cf.
 // _lib/boxes_fictives.js).
 const { lireDonneesProprietaire } = require("./boxes_fictives");
-const { getPersonnages, getArmes, actualiserPoints, getModeEquilibrage, getLimitesEquilibrage, getPointsMaxBox, getSeuilHorizontal } = require("./personnages");
+const { filtrerDonneesLittleCup } = require("../../commun/little_cup.js");
+const { pointsPersonnage, getPersonnages, getArmes, actualiserPoints, getModeEquilibrage, getLimitesEquilibrage, getPointsMaxBox, getSeuilHorizontal } = require("./personnages");
 const {
   calculerPointsBox,
   calculerPointsArmesBox,
@@ -150,6 +151,16 @@ function evaluerEquilibrageFixe(boxes, palier, options = {}) {
   return { faible, fort, modeles: choisi.version.modeles, resultat, detail };
 }
 
+// Profil d'un joueur pour une draft : filtré pour la Little Cup (cf.
+// commun/little_cup.js).
+function filtrerProfilDraft(draft, data) {
+  return draft?.little_cup ? filtrerDonneesLittleCup(data, getPersonnages(), getArmes(), pointsPersonnage) : data;
+}
+
+async function donneesDraft(draft, id) {
+  return filtrerProfilDraft(draft, await lireDonneesProprietaire(id));
+}
+
 // Box de match d'un joueur : la full box et ses box opti (la box "stuff"
 // n'est qu'une indication pour Tous les comptes, plus jouable).
 const BOX_MATCH = ["full", "opti1", "opti2", "opti3", "opti4", "opti5", "opti6", "opti7", "opti8"];
@@ -181,8 +192,8 @@ function erreurPointsBox(data, box, palier) {
 // la room et paliers des 2 joueurs (cf. resoudreTheatre).
 async function palierDraftRoom(draft) {
   const [dataJ1, dataJ2] = await Promise.all([
-    lireDonneesProprietaire(draft.discord_j1),
-    lireDonneesProprietaire(draft.discord_j2)
+    donneesDraft(draft, draft.discord_j1),
+    donneesDraft(draft, draft.discord_j2)
   ]);
   return resoudreTheatre(draft.mode_theatre, theatreProfil(dataJ1), theatreProfil(dataJ2));
 }
@@ -193,8 +204,8 @@ async function palierDraftRoom(draft) {
 // classique).
 async function combinaisonsEquilibrables(draft, boxesPermises = BOX_MATCH) {
   const [dataJ1, dataJ2] = await Promise.all([
-    lireDonneesProprietaire(draft.discord_j1),
-    lireDonneesProprietaire(draft.discord_j2)
+    donneesDraft(draft, draft.discord_j1),
+    donneesDraft(draft, draft.discord_j2)
   ]);
   const personnages = getPersonnages();
   const palier = resoudreTheatre(draft.mode_theatre, theatreProfil(dataJ1), theatreProfil(dataJ2));
@@ -290,8 +301,8 @@ function donneesBoxRole(profilData, source) {
 async function chargerDonneesBoxes(draft) {
   const sources = { j1: sourceBoxRole(draft, "j1"), j2: sourceBoxRole(draft, "j2") };
   const [profilJ1, profilJ2] = await Promise.all([
-    lireDonneesProprietaire(sources.j1.proprietaire),
-    lireDonneesProprietaire(sources.j2.proprietaire)
+    donneesDraft(draft, sources.j1.proprietaire),
+    donneesDraft(draft, sources.j2.proprietaire)
   ]);
   const profils = { j1: profilJ1, j2: profilJ2 };
   return Object.fromEntries(["j1", "j2"].map(role => [role, {
@@ -451,6 +462,7 @@ async function calculerEquilibrage(draft) {
 }
 
 module.exports = {
+  filtrerProfilDraft,
   coteEntrainement,
   sourceBoxRole,
   donneesBoxRole,
