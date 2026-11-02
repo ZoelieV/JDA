@@ -1064,7 +1064,7 @@
         conteneur.append(titreSection("Mon image"), note, grille);
       }
 
-      // Fonds groupés par sous-dossier de DB/images/bg.
+      // Fonds groupés par catégorie (cf. categorie_fond, scripts/generer_cosmetiques.py).
       [...new Set(cosmetiques.fonds.map(fond => fond.categorie))].forEach(categorie => {
         const fonds = cosmetiques.fonds.filter(fond =>
           fond.categorie === categorie && (!recherche || nomFond(fond).toLowerCase().includes(recherche)));

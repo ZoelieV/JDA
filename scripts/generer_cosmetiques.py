@@ -75,6 +75,20 @@ def generer_version(source, destination, largeur, qualite):
         image.save(destination, "WEBP", quality=qualite, method=6)
 
 
+def categorie_fond(sous_dossier, nom):
+    # Catégorie affichée : le sous-dossier, sauf "autres", réparti d'après le
+    # nom du fichier. Les fichiers ne changent pas de dossier : leur chemin
+    # est l'id enregistré dans les profils et les inventaires.
+    categorie = sous_dossier.as_posix() if sous_dossier.parts else ""
+    if categorie != "autres":
+        return categorie
+    if nom.startswith("donjon"):
+        return "donjons"
+    if nom.startswith(("personnage_", "pochita")):
+        return "personnages"
+    return "teyvat"
+
+
 def generer_fonds():
     # Sources des fonds absentes (dossier bg pas sur cette machine) : fonds
     # du manifeste actuel gardés tels quels, rien de supprimé.
@@ -101,7 +115,7 @@ def generer_fonds():
 
         fonds.append({
             "id": chemin_relatif(source),
-            "categorie": sous_dossier.as_posix() if sous_dossier.parts else "",
+            "categorie": categorie_fond(sous_dossier, nom),
             "image": chemin_relatif(web),
             "miniature": chemin_relatif(miniature)
         })
