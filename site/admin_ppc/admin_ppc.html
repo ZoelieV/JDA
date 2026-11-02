@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=56">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=57">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -21,7 +21,7 @@
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=65" defer></script>
+<script src="/commun/compte.js?v=66" defer></script>
   <link rel="stylesheet" href="/commun/listes.css?v=2">
 </head>
 <body>
@@ -65,6 +65,11 @@
       <img src="/DB/images/others/rikoyn.webp" alt="">
       <span class="tuile-admin-titre">Rikoyns</span>
       <span class="tuile-admin-texte">Dons aux joueurs, cosmétiques exclusifs, bonus de connexion.</span>
+    </button>
+    <button type="button" id="ouvrir-skins" class="tuile-admin" title="Ajouter des skins de personnages, les masquer ou les afficher">
+      <img src="/DB/images/characters/Item/hutao_skin_item.webp" alt="">
+      <span class="tuile-admin-titre">Skins</span>
+      <span class="tuile-admin-texte">Ajouter des skins de personnages, masqués jusqu'au jour voulu.</span>
     </button>
     <button type="button" id="ouvrir-tournoitateurs" class="tuile-admin" title="Joueurs autorisés à créer des tournois">
       <img src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="">
@@ -553,6 +558,34 @@
     </div>
   </div>
 
+  <!-- Skins de personnages ajoutés (cf. admin_skins.js). -->
+  <div id="modal-skins" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Skins</h2>
+        <button type="button" id="fermer-skins" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <div id="formulaire-skin" class="formulaire-skin">
+        <p class="aide-apercu">
+          Un personnage peut avoir plusieurs skins ; le joueur en active un seul à la fois. Prix : celui des skins,
+          modifiable dans Rikoyns. Seul le portrait est obligatoire : l'icône et l'image du choix en sont tirées si tu n'en donnes pas.
+        </p>
+        <label class="champ-compte">Personnage
+          <select id="skin-perso" class="texte-ajout"><option value="">Choisir…</option></select>
+        </label>
+        <label class="champ-compte">Nom du skin <input type="text" id="skin-nom" class="texte-ajout" maxlength="30" placeholder="ex. Noël"></label>
+        <label class="champ-compte">Portrait <input type="file" id="skin-image" accept="image/png,image/webp,image/jpeg"></label>
+        <label class="champ-compte">Icône de profil (facultatif) <input type="file" id="skin-side" accept="image/png,image/webp,image/jpeg"></label>
+        <label class="champ-compte">Image du choix (facultatif) <input type="file" id="skin-item" accept="image/png,image/webp,image/jpeg"></label>
+        <label class="champ-skin-masque"><input type="checkbox" id="skin-masque" checked> Masquer le skin : invisible et non achetable tant que tu ne l'affiches pas</label>
+        <button type="button" id="creer-skin" class="bouton-creer">Ajouter le skin</button>
+      </div>
+      <span id="message-skin" class="message-ajout"></span>
+      <h3 class="titre-section-ajout">Skins ajoutés</h3>
+      <div id="liste-skins" class="liste-skins"></div>
+    </div>
+  </div>
+
   <!-- Statistiques du site (cf. admin_statistiques.js, api/_lib/statistiques.js). -->
   <div id="modal-statistiques" class="modal-apercu">
     <div class="modal-apercu-contenu">
@@ -619,7 +652,7 @@
     <button type="button" id="enregistrer-admin" class="bouton-enregistrer" disabled>Enregistrer</button>
   </div>
 
-  <script src="/commun/variantes.js?v=4"></script>
+  <script src="/commun/variantes.js?v=5"></script>
   <script src="/commun/synergies.js?v=3"></script>
   <script src="/commun/cartes.js?v=36"></script>
   <script src="/commun/tri.js?v=21"></script>
@@ -634,9 +667,10 @@
   <script src="/admin_ppc/admin_evenements.js?v=6"></script>
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
   <script src="/admin_ppc/admin_litiges.js?v=1"></script>
-  <script src="/commun/koyns.js?v=14"></script>
-  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=4"></script>
+  <script src="/commun/koyns.js?v=15"></script>
+  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=5"></script>
   <script src="/admin_ppc/admin_koyns.js?v=10"></script>
+  <script src="/admin_ppc/admin_skins.js?v=1"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=1"></script>
   <script src="/admin_ppc/admin_alternatives.js?v=1"></script>

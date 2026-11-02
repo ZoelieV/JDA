@@ -56,6 +56,12 @@
 //                                    les valeurs alternatives des armes
 //   { ajout: { genre, entree } }     ajoute un personnage / une arme (masqué) / un boss
 //   { suppression: { genre, id } }   supprime un ajout (jamais une entrée des JSON)
+//   { skin_ajout: { perso, nom, masque, images: { image, side, item } } }
+//                                    ajoute un skin (images : data URL WebP,
+//                                    cf. _lib/skins.js)
+//   { skin_masque: { id, masque } }  masque / affiche un skin ajouté
+//   { skin_suppression: { id } }     supprime un skin ajouté masqué et que
+//                                    personne ne possède
 //   { boss: { id: { nom, res, chrono, reco } } }  modifie des boss
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
@@ -104,7 +110,9 @@ const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
 // modifiées, cf. commun/recommandations_stuff.js).
 const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json");
-const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX } = require("../commun/koyns.js");
+const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX, idCosmetique } = require("../commun/koyns.js");
+const { VARIANTES_PERSONNAGES } = require("../commun/variantes.js");
+const { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin } = require("./_lib/skins");
 const { estCosmetique, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
@@ -277,6 +285,8 @@ function versionPublique(config) {
   const masques = lireMasques(config);
   const ajouts = lireAjouts(config);
   const publique = { ...config, ajouts: { ...ajouts }, masques: {} };
+  // Skins ajoutés masqués : ni leur nom ni leur existence hors administrateurs.
+  if (Array.isArray(config.skins_ajoutes)) publique.skins_ajoutes = config.skins_ajoutes.filter(skin => !skin.masque);
   GENRES_MASQUABLES.forEach(genre => {
     const caches = new Set(masques[genre]);
     const idsAjouts = new Set(ajouts[genre].map(e => e.id));
@@ -494,6 +504,48 @@ module.exports = async (req, res) => {
           config.boss = { ...config.boss };
           delete config.boss[id];
         }
+      } else if (corps.skin_ajout) {
+        const skins = Array.isArray(ancienne.skins_ajoutes) ? ancienne.skins_ajoutes : [];
+        const { perso: idPerso, images: brutes } = corps.skin_ajout;
+        const nom = typeof corps.skin_ajout.nom === "string" ? corps.skin_ajout.nom.trim() : "";
+        if (!nom || nom.length > LONGUEUR_NOM_SKIN) return res.status(400).json({ error: `Nom du skin : 1 à ${LONGUEUR_NOM_SKIN} caractères` });
+        const perso = [...listeJSON("characters"), ...ajouts.characters].find(p => p.id === idPerso);
+        // Voyageur et Manekin : variantes, pas de skins (cf. appliquerVariante).
+        if (!perso || perso.groupe || VARIANTES_PERSONNAGES[perso.id]) return res.status(400).json({ error: "Personnage invalide" });
+        const id = idSkinAjoute(perso.id, nom);
+        if (!id) return res.status(400).json({ error: "Le nom du skin doit contenir des lettres ou des chiffres" });
+        if (skins.some(skin => skin.id === id)) return res.status(409).json({ error: "Ce personnage a déjà un skin de ce nom" });
+        const { tampons, erreur } = decoderImagesSkin(brutes);
+        if (erreur) return res.status(400).json({ error: erreur });
+        await televerserImagesSkin(id, tampons);
+        config = { ...ancienne, skins_ajoutes: [...skins, { id, perso: perso.id, nom, masque: corps.skin_ajout.masque !== false }] };
+      } else if (corps.skin_masque) {
+        const skins = Array.isArray(ancienne.skins_ajoutes) ? ancienne.skins_ajoutes : [];
+        if (!skins.some(skin => skin.id === corps.skin_masque.id)) return res.status(404).json({ error: "Skin introuvable" });
+        config = {
+          ...ancienne,
+          skins_ajoutes: skins.map(skin => (skin.id === corps.skin_masque.id ? { ...skin, masque: corps.skin_masque.masque === true } : skin))
+        };
+      } else if (corps.skin_suppression) {
+        const skins = Array.isArray(ancienne.skins_ajoutes) ? ancienne.skins_ajoutes : [];
+        const skin = skins.find(s => s.id === corps.skin_suppression.id);
+        if (!skin) return res.status(404).json({ error: "Skin introuvable" });
+        if (!skin.masque) return res.status(409).json({ error: "Masque le skin avant de le supprimer" });
+        const cosmetique = idCosmetique("skin", skin.id);
+        const { count, error: erreurPossedes } = await supabase.from("cosmetiques_possedes")
+          .select("discord_id", { count: "exact", head: true }).eq("cosmetique", cosmetique);
+        if (erreurPossedes) throw erreurPossedes;
+        if (count) return res.status(409).json({ error: `Skin possédé par ${count} joueur${count > 1 ? "s" : ""} : impossible de le supprimer` });
+        await supprimerImagesSkin(skin.id);
+        const prix = { ...(ancienne.prix_cosmetiques || {}) };
+        delete prix[cosmetique];
+        config = {
+          ...ancienne,
+          skins_ajoutes: skins.filter(s => s.id !== skin.id),
+          cosmetiques_exclusifs: (ancienne.cosmetiques_exclusifs || []).filter(id => id !== cosmetique),
+          cosmetiques_tirage: (ancienne.cosmetiques_tirage || []).filter(id => id !== cosmetique),
+          prix_cosmetiques: prix
+        };
       } else if (corps.boss) {
         const ids = new Set([...listeJSON("boss"), ...ajouts.boss].map(e => e.id));
         const modifs = { ...(ancienne.boss || {}) };

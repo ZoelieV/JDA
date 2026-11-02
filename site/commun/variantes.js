@@ -44,13 +44,45 @@ const VARIANTES_PERSONNAGES = {
 // (icône de profil), "Item/<id>_skin_item.webp" (choix dans Personnalisation).
 // Liste aussi utilisée par le serveur pour valider le profil
 // (api/auth/profile.js).
+//
+// Skins ajoutés depuis la page admin (config.skins_ajoutes, cf. api/points.js,
+// admin_ppc/admin_skins.js) : plusieurs possibles par personnage, id
+// "<perso>__<nom>" ; un seul skin actif par personnage. Images dans Supabase
+// Storage, servies sous /DB/images/skins_ajoutes/ (réécriture de vercel.json).
 const SKINS_PERSONNAGES = [
   "ayaya", "barbara", "bennett", "charlotte", "citlali", "diluc", "fischl", "ganyu",
   "hutao", "jean", "kaeya", "keqing", "kirara", "klee", "lisa", "neuvillette",
   "nilou", "ningguang", "shenhe", "xiangling", "xingqiu", "yaoyao", "yelan"
 ];
 
+const REGEX_SKIN_AJOUTE = /^[a-z0-9_]+?__[a-z0-9_]+$/;
+const estSkinAjoute = id => typeof id === "string" && REGEX_SKIN_AJOUTE.test(id);
+const estSkin = id => SKINS_PERSONNAGES.includes(id) || estSkinAjoute(id);
+const persoDuSkin = id => String(id).split("__")[0];
+
+// Skins ajoutés connus de la page (lus dans /api/points : pas de requête ici).
+let SKINS_AJOUTES = [];
+function definirSkinsAjoutes(liste) {
+  SKINS_AJOUTES = Array.isArray(liste) ? liste : [];
+}
+
+// Nom affiché : "Hu Tao", ou "Hu Tao (Noël)" pour un skin ajouté (nom tiré de
+// l'id si le skin n'est pas chargé, masqué par exemple).
+function nomSkin(id, nomPerso) {
+  if (!estSkinAjoute(id)) return nomPerso;
+  const nom = SKINS_AJOUTES.find(skin => skin.id === id)?.nom
+    || id.split("__")[1].replace(/_/g, " ").replace(/^./, lettre => lettre.toUpperCase());
+  return `${nomPerso} (${nom})`;
+}
+
 function imagesSkin(id) {
+  if (estSkinAjoute(id)) {
+    return {
+      image: `images/skins_ajoutes/${id}/image.webp`,
+      side: `images/skins_ajoutes/${id}/side.webp`,
+      item: `images/skins_ajoutes/${id}/item.webp`
+    };
+  }
   return {
     image: `images/characters/${id}_skin.webp`,
     side: `images/characters/side_char/${id}_skin_side.webp`,
@@ -58,8 +90,10 @@ function imagesSkin(id) {
   };
 }
 
-function aSkinActif(id, parametres) {
-  return SKINS_PERSONNAGES.includes(id) && Array.isArray(parametres?.skins) && parametres.skins.includes(id);
+// Skin actif d'un personnage (id du skin), ou null.
+function skinActif(id, parametres) {
+  if (!Array.isArray(parametres?.skins)) return null;
+  return parametres.skins.find(skin => estSkin(skin) && persoDuSkin(skin) === id) || null;
 }
 
 // Personnage tel que le joueur l'a choisi (copie ; les autres sont
@@ -69,8 +103,9 @@ function aSkinActif(id, parametres) {
 function appliquerVariante(personnage, parametres) {
   const variante = VARIANTES_PERSONNAGES[personnage.groupe || personnage.id];
   if (!variante) {
-    if (!aSkinActif(personnage.id, parametres)) return personnage;
-    const { image, side } = imagesSkin(personnage.id);
+    const skin = skinActif(personnage.id, parametres);
+    if (!skin) return personnage;
+    const { image, side } = imagesSkin(skin);
     return { ...personnage, image, side };
   }
   const choix = variante.options[parametres?.[variante.parametre]] || variante.options[variante.defaut];
@@ -153,4 +188,4 @@ function membresGroupe(personnages, groupe) {
 }
 
 // Serveur (Node) : listes partagées (cf. api/auth/profile.js).
-if (typeof module !== "undefined") module.exports = { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES };
+if (typeof module !== "undefined") module.exports = { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES, estSkinAjoute, persoDuSkin, imagesSkin };

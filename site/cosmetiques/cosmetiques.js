@@ -50,7 +50,7 @@
       return { type, nom: fond ? nomFond(fond) : valeur, image: fond && urlImage(fond.miniature) };
     }
     if (choix === "banniere" || choix === "banniere2") return { type, nom: nomNamecard(valeur), image: urlImage(valeur) };
-    if (choix === "skin") return { type, nom: nomsPersos.get(valeur) || valeur, image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")) };
+    if (choix === "skin") return { type, nom: nomSkin(valeur, nomsPersos.get(persoDuSkin(valeur)) || persoDuSkin(valeur)), image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")) };
     const option = Object.values(VARIANTES_PERSONNAGES).find(v => v.parametre === choix)?.options[valeur];
     return { type, nom: option?.nom || valeur, image: option && urlImage(option.image.replace(/^images\//, "")) };
   }

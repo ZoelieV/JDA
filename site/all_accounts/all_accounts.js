@@ -664,8 +664,9 @@ function infoCosmetiqueFlex(id) {
     const fond = cosmetiquesFlex?.fonds.find(f => f.id === valeur);
     return fond ? { type: "Fond d'écran", nom: majuscule(fond.image.split("/").pop().replace(/\.[a-z]+$/i, "").replace(/_/g, " ")), image: `/DB/images/${fond.miniature}` } : null;
   }
-  if (choix === "skin" && SKINS_PERSONNAGES.includes(valeur)) {
-    return { type: "Skin", nom: personnagesBase.find(p => p.id === valeur)?.nom || valeur, image: `/DB/${imagesSkin(valeur).item}` };
+  if (choix === "skin" && estSkin(valeur)) {
+    const perso = persoDuSkin(valeur);
+    return { type: "Skin", nom: nomSkin(valeur, personnagesBase.find(p => p.id === perso)?.nom || perso), image: `/DB/${imagesSkin(valeur).item}` };
   }
   const option = Object.values(VARIANTES_PERSONNAGES).find(variante => variante.parametre === choix)?.options[valeur];
   return option ? { type: choix === "voyageur" ? "Voyageur" : "Manekin", nom: option.nom, image: `/DB/${option.image}` } : null;

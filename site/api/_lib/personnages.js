@@ -219,7 +219,7 @@ let pointsLusA = 0;
 // aux classements ou aux événements) et bonus de connexion d'événement.
 // Tirage : cosmétiques obtenables seulement par tirage (focus, cf.
 // tirerCosmetique).
-let configKoyns = { exclusifs: new Set(), tirage: [], bonusConnexion: null, prix: {} };
+let configKoyns = { exclusifs: new Set(), tirage: [], bonusConnexion: null, prix: {}, skins: [] };
 
 function getConfigKoyns() {
   return configKoyns;
@@ -252,7 +252,9 @@ async function actualiserPoints() {
       exclusifs: new Set(Array.isArray(config.cosmetiques_exclusifs) ? config.cosmetiques_exclusifs : []),
       tirage: Array.isArray(config.cosmetiques_tirage) ? config.cosmetiques_tirage : [],
       bonusConnexion: config.bonus_connexion || null,
-      prix: config.prix_cosmetiques && typeof config.prix_cosmetiques === "object" ? config.prix_cosmetiques : {}
+      prix: config.prix_cosmetiques && typeof config.prix_cosmetiques === "object" ? config.prix_cosmetiques : {},
+      // Skins ajoutés depuis la page admin (cf. api/points.js).
+      skins: Array.isArray(config.skins_ajoutes) ? config.skins_ajoutes : []
     };
     // Prix réglés par les administrateurs (cf. prixCosmetique).
     definirPrixCosmetiques(configKoyns.prix);

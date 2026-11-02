@@ -2821,3 +2821,57 @@ body.page-equilibrage #tuiles-admin {
     justify-content: flex-start;
   }
 }
+
+/* ---- Skins de personnages ajoutés (cf. admin_skins.js) ---- */
+.formulaire-skin {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.formulaire-skin.cache {
+  display: none;
+}
+
+.champ-skin-masque {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.liste-skins {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skin-ajoute {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.625rem;
+}
+
+.skin-ajoute img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+}
+
+.skin-ajoute.masque img {
+  opacity: 0.5;
+}
+
+.skin-ajoute-nom {
+  flex: 1 1 8rem;
+  font-weight: bold;
+}
+
+.skin-ajoute-statut {
+  opacity: 0.75;
+}

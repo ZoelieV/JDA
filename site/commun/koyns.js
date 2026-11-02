@@ -27,7 +27,7 @@ const NAMECARDS_PRIX_DOUBLE = new RegExp(`/Namecard_(Background|Banner)_(${PERSO
 function estPrixDouble(id) {
   const [choix, ...reste] = String(id).split(":");
   const valeur = reste.join(":");
-  if (choix === "skin") return SKINS_PRIX_DOUBLE.has(valeur);
+  if (choix === "skin") return SKINS_PRIX_DOUBLE.has(valeur.split("__")[0]);
   return (choix === "banniere" || choix === "banniere2") && NAMECARDS_PRIX_DOUBLE.test(valeur);
 }
 

@@ -28,10 +28,10 @@ function nomNamecardAdmin(chemin) {
 }
 
 function chargerCatalogueChoix() {
-  promesseCatalogueChoix ??= fetch("/DB/images/cosmetiques.json", { cache: "no-cache" })
-    .then(reponse => reponse.json())
-    .then(cosmetiques => {
+  promesseCatalogueChoix ??= Promise.all([fetch("/DB/images/cosmetiques.json", { cache: "no-cache" }).then(reponse => reponse.json()), chargerPointsAdmin()])
+    .then(([cosmetiques, points]) => {
       const caches = new Set(cosmetiques.caches || []);
+      definirSkinsAjoutes(points.skins_ajoutes);
       const infos = [
         ...cosmetiques.bannieres.map(chemin => ({ id: idCosmetique("banniere", chemin), onglet: "banniere", type: "Namecard", nom: nomNamecardAdmin(chemin), image: `/DB/images/${chemin}` })),
         ...cosmetiques.bannieres2.map(chemin => ({ id: idCosmetique("banniere2", chemin), onglet: "banniere2", type: "Bannière", nom: nomNamecardAdmin(chemin), image: `/DB/images/${chemin}` })),
@@ -39,7 +39,8 @@ function chargerCatalogueChoix() {
         ...Object.values(VARIANTES_PERSONNAGES).flatMap(variante => Object.entries(variante.options).map(([valeur, option]) => ({
           id: idCosmetique(variante.parametre, valeur), onglet: "persos", type: "Variante", nom: option.nom, image: `/DB/${option.image}`
         }))),
-        ...SKINS_PERSONNAGES.map(id => ({ id: idCosmetique("skin", id), onglet: "persos", type: "Skin", nom: id, image: `/DB/${imagesSkin(id).item}` }))
+        ...SKINS_PERSONNAGES.map(id => ({ id: idCosmetique("skin", id), onglet: "persos", type: "Skin", nom: id, image: `/DB/${imagesSkin(id).item}` })),
+        ...SKINS_AJOUTES.map(skin => ({ id: idCosmetique("skin", skin.id), onglet: "persos", type: "Skin", nom: nomSkin(skin.id, skin.perso), image: `/DB/${imagesSkin(skin.id).item}` }))
       ].filter(info => !COSMETIQUES_GRATUITS.has(info.id))
         .map(info => ({ ...info, image: encodeURI(info.image), cache: caches.has(info.id) }));
       catalogueChoixCosmetiques = new Map(infos.map(info => [info.id, info]));

@@ -177,6 +177,10 @@
   ],
   "rewrites": [
     {
+      "source": "/DB/images/skins_ajoutes/:chemin*",
+      "destination": "https://vpqkvzojmrcttaywehpn.supabase.co/storage/v1/object/public/skins/:chemin*"
+    },
+    {
       "source": "/tournois",
       "destination": "/tournois/tournois"
     },

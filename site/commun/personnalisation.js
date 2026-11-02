@@ -133,10 +133,10 @@
   }
 
   // Voyageur, Manekin et skins (commun/variantes.js).
-  const chargerVariantes = () => chargerScript("/commun/variantes.js?v=4",
+  const chargerVariantes = () => chargerScript("/commun/variantes.js?v=5",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=14",
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=15",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=4",
@@ -148,6 +148,17 @@
     if (!reponse.ok) throw new Error("Impossible de charger DB/images/cosmetiques.json");
     cosmetiques = await reponse.json();
     return cosmetiques;
+  }
+
+  // Skins ajoutés depuis la page admin (cf. commun/variantes.js). Pas
+  // bloquant : sans eux, restent les skins de base et ceux déjà possédés.
+  async function chargerSkinsAjoutes() {
+    try {
+      const reponse = await fetch("/api/points", { cache: "no-cache" });
+      if (reponse.ok) definirSkinsAjoutes((await reponse.json()).skins_ajoutes);
+    } catch (erreur) {
+      console.error(erreur);
+    }
   }
 
   async function chargerNomsPersos() {
@@ -420,7 +431,7 @@
   function avecDefauts(parametres = {}) {
     return {
       ...Object.fromEntries(Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, parametres[cle] || defaut])),
-      skins: Array.isArray(parametres.skins) ? parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)) : [],
+      skins: Array.isArray(parametres.skins) ? parametres.skins.filter(estSkin) : [],
       filtres_draft: lireFiltresDraft(parametres.filtres_draft),
       // Namecards et fonds seulement (anciens flex : le reste retiré).
       flex: Array.from({ length: TAILLE_FLEX }, (_, i) => {
@@ -712,16 +723,25 @@
       conteneur.append(titreSection(titre), grille);
     });
 
-    const skins = SKINS_PERSONNAGES.filter(id => correspond(nomsPersos.get(id) || id));
+    // Skins de base, ajoutés (pas masqués), et ceux déjà possédés ou portés
+    // même masqués depuis.
+    const nom = id => nomSkin(id, nomsPersos.get(persoDuSkin(id)) || persoDuSkin(id));
+    const possedes = [...(koyns?.possedes || [])].filter(id => id.startsWith("skin:")).map(id => id.slice(5)).filter(estSkin);
+    const skins = [...new Set([
+      ...SKINS_PERSONNAGES,
+      ...SKINS_AJOUTES.filter(skin => !skin.masque).map(skin => skin.id),
+      ...possedes,
+      ...brouillon.skins
+    ])].filter(id => correspond(nom(id))).sort((a, b) => nom(a).localeCompare(nom(b), "fr"));
     if (!skins.length) return;
     const grille = nouvelleGrille("skins");
     skins.forEach(id => {
       const actif = brouillon.skins.includes(id);
       grille.appendChild(creerChoix(
         urlImage(imagesSkin(id).item.replace(/^images\//, "")),
-        `${nomsPersos.get(id) || id} : ${actif ? "skin activé (clic pour le retirer)" : "clic pour activer le skin"}`,
+        `${nom(id)} : ${actif ? "skin activé (clic pour le retirer)" : "clic pour activer le skin"}`,
         actif,
-        () => { brouillon.skins = actif ? brouillon.skins.filter(s => s !== id) : [...brouillon.skins, id]; },
+        () => { brouillon.skins = actif ? brouillon.skins.filter(s => s !== id) : [...brouillon.skins.filter(s => persoDuSkin(s) !== persoDuSkin(id)), id]; },
         "", actif ? null : idCosmetique("skin", id)));
     });
     conteneur.append(titreSection("Skins (clic pour activer / retirer)"), grille);
@@ -975,7 +995,7 @@
       return { choix, valeur, type, nom: fond ? nomFond(fond) : valeur, image: fond && urlImage(fond.miniature) };
     }
     if (choix === "banniere" || choix === "banniere2") return { choix, valeur, type, nom: nomNamecard(valeur), image: urlImage(valeur) };
-    if (choix === "skin") return { choix, valeur, type, nom: nomsPersos?.get(valeur) || valeur, image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")) };
+    if (choix === "skin") return { choix, valeur, type, nom: nomSkin(valeur, nomsPersos?.get(persoDuSkin(valeur)) || persoDuSkin(valeur)), image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")) };
     const option = Object.values(VARIANTES_PERSONNAGES).find(v => v.parametre === choix)?.options[valeur];
     return { choix, valeur, type, nom: option?.nom || valeur, image: option && urlImage(option.image.replace(/^images\//, "")) };
   }
@@ -984,7 +1004,7 @@
   function equiper(id) {
     const { choix, valeur } = infoCosmetique(id);
     if (choix === "skin") {
-      if (!brouillon.skins.includes(valeur)) brouillon.skins = [...brouillon.skins, valeur];
+      if (!brouillon.skins.includes(valeur)) brouillon.skins = [...brouillon.skins.filter(s => persoDuSkin(s) !== persoDuSkin(valeur)), valeur];
     } else {
       brouillon[choix] = valeur;
       if (choix === "fond") apercuFond(valeur);
@@ -1108,7 +1128,7 @@
     mettreAJourPied();
     try {
       const [{ profil, koyns: etatKoyns }, image] = await Promise.all([
-        lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes(), chargerFiltresDraft(), chargerNomsPersos(), chargerKoyns()
+        lireProfil(), window.FondEcran?.lireImagePerso() ?? null, chargerCosmetiques(), chargerVariantes().then(chargerSkinsAjoutes), chargerFiltresDraft(), chargerNomsPersos(), chargerKoyns()
       ]);
       if (etatKoyns) lireEtatKoyns(etatKoyns);
       imageEnregistree = imageBrouillon = image;

@@ -1,9 +1,9 @@
 const { parseCookies, verifySessionToken } = require("../_lib/session");
-const { codeTheatre, actualiserPoints } = require("../_lib/personnages");
+const { codeTheatre, actualiserPoints, getConfigKoyns } = require("../_lib/personnages");
 const { verifierFrequenceCompte } = require("../_lib/limites");
 const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, tirerCosmetique } = require("../_lib/koyns");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
-const { SKINS_PERSONNAGES } = require("../../commun/variantes.js");
+const { SKINS_PERSONNAGES, persoDuSkin } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
 const { TAILLE_FLEX } = require("../../commun/koyns.js");
 
@@ -113,9 +113,15 @@ function nettoyerParametres(parametres) {
   Object.entries(PARAMETRES_AUTORISES).forEach(([cle, valeurs]) => {
     if (valeurs.has(parametres[cle])) propres[cle] = parametres[cle];
   });
-  // Skins : ids connus seulement, sans doublon (cf. commun/variantes.js).
+  // Skins : ids connus seulement, un seul par personnage, le dernier choisi
+  // (cf. commun/variantes.js).
   if (Array.isArray(parametres.skins)) {
-    const skins = [...new Set(parametres.skins.filter(id => SKINS_PERSONNAGES.includes(id)))];
+    const ajoutes = new Set(getConfigKoyns().skins.map(skin => skin.id));
+    const parPerso = new Map();
+    parametres.skins
+      .filter(id => SKINS_PERSONNAGES.includes(id) || ajoutes.has(id))
+      .forEach(id => parPerso.set(persoDuSkin(id), id));
+    const skins = [...parPerso.values()];
     if (skins.length) propres.skins = skins;
   }
   // Filtres et tris de la draft affichés / figés : ids connus seulement (cf.

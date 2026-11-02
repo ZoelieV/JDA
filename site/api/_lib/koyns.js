@@ -31,7 +31,7 @@ const { debutJournee } = require("./journee");
 const { getConfigKoyns } = require("./personnages");
 const { prixCosmetique, FOND_IMPORTE, COSMETIQUES_GRATUITS, TAILLE_FLEX, idCosmetique, cosmetiquesParametres } = require("../../commun/koyns.js");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
-const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES } = require("../../commun/variantes.js");
+const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES, imagesSkin } = require("../../commun/variantes.js");
 
 const KOYNS_PAR_MATCH = 5;
 const KOYNS_ABANDON = 1;
@@ -59,7 +59,9 @@ const CATALOGUE = new Set([
   ...COSMETIQUES_GRATUITS
 ]);
 
-const estCosmetique = id => typeof id === "string" && CATALOGUE.has(id);
+// Skin ajouté depuis la page admin (config.skins_ajoutes), ou undefined.
+const skinAjoute = id => getConfigKoyns().skins.find(skin => idCosmetique("skin", skin.id) === id);
+const estCosmetique = id => typeof id === "string" && (CATALOGUE.has(id) || !!skinAjoute(id));
 const estTirage = id => getConfigKoyns().tirage.includes(id);
 // Cosmétiques cachés (cosmetiques.json, "caches") : ni en vente ni dans le
 // tirage normal ; donnés par les administrateurs (dons, récompenses, focus).
@@ -227,6 +229,7 @@ async function acheterCosmetique(discordId, id) {
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
   if (estTirage(id)) return { status: 403, erreur: "Cosmétique focus du tirage : il ne s'obtient que par tirage." };
   if (CACHES.has(id)) return { status: 403, erreur: "Ce cosmétique ne s'achète pas." };
+  if (skinAjoute(id)?.masque) return { status: 403, erreur: "Ce skin n'est pas encore disponible." };
   // Mon image : payée à chaque import, enregistrée comme un achat à part
   // (même verrou du solde que les autres achats).
   const achete = id === FOND_IMPORTE ? `${id}#${Date.now()}` : id;
@@ -478,7 +481,7 @@ function apercuCosmetique(id) {
   }
   if (choix === "banniere") return { id, type: "Namecard", image: `images/${valeur}` };
   if (choix === "banniere2") return { id, type: "Bannière", image: `images/${valeur}` };
-  if (choix === "skin") return { id, type: "Skin", image: `images/characters/${valeur}_skin.webp` };
+  if (choix === "skin") return { id, type: "Skin", image: imagesSkin(valeur).image };
   return { id, type: "Cosmétique", image: null };
 }
 
