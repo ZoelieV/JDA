@@ -278,18 +278,12 @@ html.site-classique .site-entete .avec-banniere2 {
 /* Ordinateur : hauteur d'une carte de Tous les comptes (.banniere-joueur :
    photo 3,5rem, bannière haute de la photo + 2 px), largeur réduite
    (19,625rem : photo, « Mon compte », engrenage), le zoom de l'en-tête
-   compensé. Engrenage au bord gauche, comme sur Mon compte (bouton en
-   miroir : la marge auto le pousse à gauche). */
+   compensé. */
 @media (min-width: 701px) {
   html.site-classique .site-entete .avec-banniere2 {
     --taille-avatar: calc(3.5rem / var(--zoom-barres));
     --hauteur-banniere: calc((3.5rem + 2px) / var(--zoom-barres));
     width: calc(19.625rem / var(--zoom-barres));
-  }
-
-  html.site-classique .site-entete .compte-parametres {
-    margin-left: 0;
-    margin-right: auto;
   }
 }
 

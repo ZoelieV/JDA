@@ -41,13 +41,6 @@
   .accueil-barre .zone-compte > * {
     pointer-events: auto;
   }
-
-  /* Engrenage au bord gauche de la bannière, comme sur ordinateur (bouton
-     en miroir : la marge auto le pousse à gauche). */
-  .accueil-barre .compte-parametres {
-    margin-left: 0;
-    margin-right: auto;
-  }
 }
 
 /* Nom du site "Jugement des Archons" : police propre (DB/fonts/true_title.ttf),

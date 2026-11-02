@@ -481,6 +481,13 @@ body::before {
   cursor: pointer;
 }
 
+/* Bannière : engrenage au bord gauche, comme sur Mon compte (bouton en
+   miroir : la marge auto le pousse à gauche). */
+.avec-banniere2 > .compte-parametres {
+  margin-left: 0;
+  margin-right: auto;
+}
+
 .compte-lien .compte-parametres img {
   width: 1.75rem;
   height: 1.75rem;
