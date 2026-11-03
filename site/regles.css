@@ -1,8 +1,9 @@
 /* Page Règles : cartes à namecard (style de l'accueil, commun/namecards.css),
-   toutes sur la même ligne (Règles, Règles simplifiées, Theorycraft,
-   Tutoriel), une par ligne sur téléphone. */
+   3 par ligne (Règles, Règles simplifiées, Theorycraft, puis Tutoriel), une
+   par ligne sur téléphone. */
 .cartes-regles {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 1.125rem;
   max-width: 70rem;
@@ -12,7 +13,9 @@
 }
 
 .cartes-regles .carte-section {
-  flex: 1 1 0;
+  /* Bordure comprise, sinon la 3e carte passe à la ligne. */
+  box-sizing: border-box;
+  flex: 0 1 calc((100% - 2 * 1.125rem) / 3);
   min-width: 0;
   max-width: 22rem;
 }
@@ -22,8 +25,8 @@
     flex-direction: column;
   }
 
-  /* En colonne, flex: 1 1 0 donnerait une hauteur de base nulle (cartes
-     écrasées, overflow caché) : hauteur de leur contenu. */
+  /* En colonne, une base en % de la largeur fausserait la hauteur : hauteur
+     de leur contenu. */
   .cartes-regles .carte-section {
     flex: none;
     max-width: none;
