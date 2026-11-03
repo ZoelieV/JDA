@@ -160,6 +160,7 @@
 
 .etapes-hoyolab-fermer {
   position: absolute;
+  z-index: 2; /* au-dessus du compteur d'étapes, qui prend toute la largeur */
   top: 0.625rem;
   right: 0.75rem;
   border: 0;
@@ -178,6 +179,7 @@
 .etapes-hoyolab-texte {
   margin: 0;
   padding-right: 1.5rem;
+  text-align: justify;
   font-size: 1.0625rem;
   line-height: 1.4;
 }
