@@ -84,7 +84,7 @@
 
   const css = document.createElement("style");
   css.textContent = `
-    .tutoriel-bulle { position: fixed; left: 50%; bottom: 1.25rem; z-index: 100001; box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: 60vh; overflow-y: auto; padding: 1.125rem 1.25rem; border: 1px solid #f5c542; border-radius: 0.875rem; background: rgba(14, 14, 20, 0.78); -webkit-backdrop-filter: blur(1.25rem); backdrop-filter: blur(1.25rem); color: #fff; box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6); transform: translateX(-50%); animation: tutoriel-arrivee 0.35s ease-out; }
+    .tutoriel-bulle { position: fixed; left: 50%; bottom: 1.25rem; z-index: 100001; box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: 60vh; overflow-y: auto; padding: 1.125rem 1.25rem; border: 1px solid #f5c542; border-radius: 0.875rem; background: rgba(10, 10, 14, 0.88); -webkit-backdrop-filter: blur(0.5rem); backdrop-filter: blur(0.5rem); color: #fff; box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6); transform: translateX(-50%); animation: tutoriel-arrivee 0.35s ease-out; }
     .tutoriel-bulle a { color: #f5c542; }
     .tutoriel-progression { margin: 0 0 0.25rem; font-size: 0.8125rem; opacity: 0.7; }
     .tutoriel-bulle h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
