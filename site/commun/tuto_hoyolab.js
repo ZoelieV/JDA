@@ -17,7 +17,7 @@
   ];
 
   function image(numero) {
-    return `/DB/images/tuto_hoyolab/etape_${numero}.webp`;
+    return `/DB/images/tuto_hoyolab/etape_${numero}.webp?v=2`;
   }
 
   function rendre(conteneur) {

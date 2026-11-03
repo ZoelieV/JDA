@@ -88,7 +88,7 @@
     .tutoriel-bulle a { color: #f5c542; }
     .tutoriel-progression { margin: 0 0 0.25rem; font-size: 0.8125rem; opacity: 0.7; }
     .tutoriel-bulle h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
-    .tutoriel-bulle p { margin: 0 0 0.625rem; line-height: 1.4; }
+    .tutoriel-bulle p { margin: 0 0 0.625rem; line-height: 1.4; text-align: justify; }
     .tutoriel-bulle.reduite h2, .tutoriel-bulle.reduite p:not(.tutoriel-progression) { display: none; }
     .tutoriel-etat { font-weight: bold; }
     .tutoriel-etat.fait { color: #5fd38d; }
