@@ -57,7 +57,7 @@
     },
     {
       page: "/compte", titre: "Tes persos montés", cibles: ['[data-box="stuff"]'], clic: ['[data-box="stuff"]', '.view-btn[data-view="characters"]'],
-      texte: "Dans ta Box stuff, coche les persos que tu as vraiment montés (niveau 70 ou plus, aptitudes utiles niveau 8 ou plus, un set d'artefacts). Il en faut 3 pour jouer en Sardine, 8 en Carpe, 12 en Dauphin et 16 en Baleine. Puis clique sur Enregistrer.",
+      texte: "Dans ta Box stuff, coche les persos que tu as vraiment montés (niveau 80 ou plus, sauf exceptions comme Sucrose : niveau 70 suffit ; aptitudes utiles niveau 8 ou plus, un set d'artefacts). Il en faut 3 pour jouer en Sardine, 8 en Carpe, 12 en Dauphin et 16 en Baleine. Puis clique sur Enregistrer.",
       verifier: profil => {
         const palier = Number(profil.theatre) || 1;
         const nb = montes(profil);
