@@ -125,7 +125,15 @@
 /* Captures de la page Tutoriel (tutorial.html) : même agrandissement au clic. */
 .capture-tuto {
   display: block;
+  /* Place réservée avant le chargement (images différées) : sans elle, le
+     bouton reste plat, la page s'allonge pendant le défilement et les liens
+     du sommaire s'arrêtent au mauvais endroit. */
+  width: 100%;
   margin-top: 0.75rem;
+}
+
+.capture-tuto img {
+  aspect-ratio: 1280 / 820;
 }
 
 /* Étapes une par une, en grande fenêtre (data-tuto-hoyolab-ouvrir). */
