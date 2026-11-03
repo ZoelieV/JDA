@@ -1,7 +1,7 @@
 // Tutoriel obligatoire des nouveaux comptes (chargé par commun/site.js).
 // Étape enregistrée sur le compte (?action=tutoriel, api/auth/profile.js) et
 // cookie tutoriel_actif (posé à la connexion Discord). Relancé par un joueur
-// (page Tutoriel, tuile de l'admin) : étape dans localStorage "tutoriel-test",
+// (page Tutoriel) : étape dans localStorage "tutoriel-test",
 // rien au serveur, et on peut le quitter.
 // Une étape déjà faite n'est jamais passée toute seule : l'animation se joue
 // et il faut cliquer pour continuer. Le serveur bloque les matchs tant que le
