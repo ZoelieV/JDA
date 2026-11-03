@@ -116,7 +116,8 @@
       ouvrirEtapes();
     }
     if (event.target.closest("[data-lancer-tutoriel]")) lancerTutoriel(event.target.closest("[data-lancer-tutoriel]"));
-  });
+    // En capture : la bulle du tutoriel arrête la propagation de ses clics.
+  }, true);
 
   // Page Tutoriel : relancer le tutoriel d'accueil (compte connecté).
   async function lancerTutoriel(bouton) {
