@@ -1,6 +1,6 @@
 /* Page Règles : cartes à namecard (style de l'accueil, commun/namecards.css),
-   les 3 sur la même ligne (Règles, Règles simplifiées, Theorycraft), une
-   par ligne sur téléphone. */
+   toutes sur la même ligne (Règles, Règles simplifiées, Theorycraft,
+   Tutoriel), une par ligne sur téléphone. */
 .cartes-regles {
   display: flex;
   justify-content: center;
