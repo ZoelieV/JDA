@@ -86,6 +86,7 @@
   css.textContent = `
     .tutoriel-bulle { position: fixed; left: 50%; bottom: 1.25rem; z-index: 100001; box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: 60vh; overflow-y: auto; padding: 1.125rem 1.25rem; border: 1px solid #f5c542; border-radius: 0.875rem; background: rgba(10, 10, 14, 0.3); -webkit-backdrop-filter: blur(1.25rem); backdrop-filter: blur(1.25rem); color: #fff; text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.9); box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6); transform: translateX(-50%); animation: tutoriel-arrivee 0.35s ease-out; }
     .tutoriel-bulle a { color: #f5c542; }
+    .tutoriel-bulle[hidden], .tutoriel-halo[hidden] { display: none; }
     .tutoriel-progression { margin: 0 0 0.25rem; font-size: 0.8125rem; opacity: 0.7; }
     .tutoriel-bulle h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
     .tutoriel-bulle p { margin: 0 0 0.625rem; line-height: 1.4; text-align: justify; }
@@ -108,6 +109,19 @@
     @media (prefers-reduced-motion: reduce) { .tutoriel-bulle, .tutoriel-voile, .tutoriel-halo::after { animation: none; } }`;
   document.head.appendChild(css);
 
+  // Fenêtre du site ouverte (Détection auto, Personnalisation, étapes
+  // HoYoLAB...) : cadre et bulle s'effacent, ils reviennent à sa fermeture.
+  const fenetreOuverte = () => !!document.querySelector(".modal-parametres.active, .modal-personnalisation.active, .etapes-hoyolab, .capture-hoyolab-agrandie");
+
+  function masquerBulleSousFenetre(element) {
+    const suivre = () => {
+      if (!element.isConnected) return;
+      element.hidden = fenetreOuverte();
+      requestAnimationFrame(suivre);
+    };
+    suivre();
+  }
+
   // Halo autour des cibles (suit le défilement ; laisse passer les clics).
   function suivreCibles(selecteurs, assombrir) {
     const halo = document.createElement("div");
@@ -118,7 +132,8 @@
     const suivre = () => {
       if (!halo.isConnected) return;
       const rects = selecteurs.map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width && r.height);
-      halo.hidden = !rects.length;
+      // Fenêtre ouverte par-dessus la page : pas de cadre au-dessus d'elle.
+      halo.hidden = !rects.length || fenetreOuverte();
       if (rects.length) {
         const haut = Math.min(...rects.map(r => r.top)), gauche = Math.min(...rects.map(r => r.left));
         Object.assign(halo.style, {
@@ -146,6 +161,7 @@
     element.innerHTML = `${progression ? `<p class="tutoriel-progression">${progression}</p>` : ""}<h2>${titre}</h2><p>${texte}</p>
       <p class="tutoriel-etat" hidden></p><div class="tutoriel-actions"></div>`;
     document.body.appendChild(element);
+    masquerBulleSousFenetre(element);
     return element;
   }
 
