@@ -1,7 +1,8 @@
 // Tutoriel obligatoire des nouveaux comptes (chargé par commun/site.js).
 // Étape enregistrée sur le compte (?action=tutoriel, api/auth/profile.js) et
-// cookie tutoriel_actif (posé à la connexion Discord). Test d'un admin (tuile
-// Tutoriel) : étape dans localStorage "tutoriel-test", rien au serveur.
+// cookie tutoriel_actif (posé à la connexion Discord). Relancé par un joueur
+// (page Tutoriel, tuile de l'admin) : étape dans localStorage "tutoriel-test",
+// rien au serveur, et on peut le quitter.
 // Une étape déjà faite n'est jamais passée toute seule : l'animation se joue
 // et il faut cliquer pour continuer. Le serveur bloque les matchs tant que le
 // tutoriel n'est pas fini (erreurProfilIncomplet, api/_lib/room.js).
@@ -12,6 +13,7 @@
   const NOMS_PALIERS = { 1: "Sardine", 2: "Carpe", 3: "Dauphin", 4: "Baleine" };
   const CLE_TEST = "tutoriel-test";
   const CLE_ASTUCE = "tutoriel-astuce-tri";
+  const PAGES_LIBRES = ["/regles/completes", "/tutoriel"];
 
   const lireStockage = cle => { try { return localStorage.getItem(cle); } catch { return null; } };
   const ecrireStockage = (cle, valeur) => { try { localStorage.setItem(cle, valeur); } catch { /* stockage bloqué */ } };
@@ -42,7 +44,7 @@
     },
     {
       page: "/compte", titre: "Tes personnages", cibles: ["#btn-auto-box"], clic: ['[data-box="full"]', '.view-btn[data-view="characters"]'],
-      texte: `Renseigne tous tes personnages dans ta Full box. On te conseille la <strong>Détection auto</strong> : elle lit une image de ta liste HoYoLAB et te fait gagner beaucoup de temps (<a href="/tutoriel#hoyolab" target="_blank" rel="noopener">comment obtenir l'image</a>). Vérifie les constellations proposées, puis clique sur Enregistrer.`,
+      texte: `Renseigne tous tes personnages dans ta Full box. On te conseille la <strong>Détection auto</strong> : elle lit une image de ta liste HoYoLAB et te fait gagner beaucoup de temps (<button type="button" class="tutoriel-lien" data-tuto-hoyolab-ouvrir>comment obtenir l'image</button>). Vérifie les constellations proposées, puis clique sur Enregistrer.`,
       verifier: profil => {
         const nb = Object.values(profil.characters?.full || {}).filter(valeur => valeur >= 0).length;
         return { ok: nb > 0, detail: nb ? `${nb} personnages enregistrés.` : "Aucun personnage enregistré pour l'instant (pense à Enregistrer)." };
@@ -67,8 +69,8 @@
       texte: `Voici l'essentiel. Le détail existe aussi : <a href="/regles/completes" target="_blank" rel="noopener">les règles complètes</a>, à lire avant tes premiers matchs classés.`
     },
     {
-      page: "/compte", titre: "Personnalisation", cibles: ["#compte-btn"], clic: "#compte-btn",
-      texte: "Ce bouton ouvre le menu de ton compte. La Personnalisation s'y trouve : fond d'écran, namecard, bannière, skins. Tu gagnes des Rikoyns en jouant pour les débloquer."
+      page: "/compte", titre: "Personnalisation", cibles: ["#btn-parametres"], clic: "#compte-btn",
+      texte: "Dans le menu de ton compte, ce bouton ouvre la Personnalisation : fond d'écran, namecard, bannière, skins. Tu gagnes des Rikoyns en jouant pour les débloquer."
     },
     {
       page: "/comptes", titre: "Les boxes des joueurs", cibles: ["#accounts-list"],
@@ -82,7 +84,7 @@
 
   const css = document.createElement("style");
   css.textContent = `
-    .tutoriel-bulle { position: fixed; left: 50%; bottom: 1.25rem; z-index: 100001; box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: 60vh; overflow-y: auto; padding: 1.125rem 1.25rem; border: 1px solid #f5c542; border-radius: 0.875rem; background: #1b1b22; color: #fff; box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6); transform: translateX(-50%); animation: tutoriel-arrivee 0.35s ease-out; }
+    .tutoriel-bulle { position: fixed; left: 50%; bottom: 1.25rem; z-index: 100001; box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: 60vh; overflow-y: auto; padding: 1.125rem 1.25rem; border: 1px solid #f5c542; border-radius: 0.875rem; background: rgba(14, 14, 20, 0.78); -webkit-backdrop-filter: blur(1.25rem); backdrop-filter: blur(1.25rem); color: #fff; box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6); transform: translateX(-50%); animation: tutoriel-arrivee 0.35s ease-out; }
     .tutoriel-bulle a { color: #f5c542; }
     .tutoriel-progression { margin: 0 0 0.25rem; font-size: 0.8125rem; opacity: 0.7; }
     .tutoriel-bulle h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
@@ -95,13 +97,15 @@
     .tutoriel-actions button { padding: 0.5rem 0.875rem; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 0.5rem; background: transparent; color: #fff; font: inherit; cursor: pointer; }
     .tutoriel-actions .principal { border-color: #f5c542; background: #f5c542; color: #1b1b22; font-weight: bold; }
     .tutoriel-actions .quitter { margin-right: auto; }
-    .tutoriel-halo { position: fixed; z-index: 100000; border: 2px solid #f5c542; border-radius: 0.625rem; pointer-events: none; animation: tutoriel-pulsation 1.4s ease-in-out infinite; }
+    .tutoriel-lien { padding: 0; border: 0; background: none; color: #f5c542; font: inherit; text-decoration: underline; cursor: pointer; }
+    .tutoriel-halo { position: fixed; z-index: 100000; box-sizing: border-box; border: 2px solid #f5c542; border-radius: 0.625rem; pointer-events: none; }
+    .tutoriel-halo::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; box-shadow: 0 0 1rem 0.1875rem rgba(245, 197, 66, 0.75); animation: tutoriel-lueur 1.8s ease-in-out infinite alternate; }
     .tutoriel-halo.assombri { box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6); }
     .tutoriel-voile { position: fixed; inset: 0; z-index: 100000; background: rgba(0, 0, 0, 0.6); pointer-events: none; animation: tutoriel-fondu 0.35s ease-out; }
     @keyframes tutoriel-arrivee { from { opacity: 0; transform: translate(-50%, 1rem); } }
     @keyframes tutoriel-fondu { from { opacity: 0; } }
-    @keyframes tutoriel-pulsation { 50% { outline: 6px solid rgba(245, 197, 66, 0.35); outline-offset: 3px; } }
-    @media (prefers-reduced-motion: reduce) { .tutoriel-bulle, .tutoriel-halo, .tutoriel-voile { animation: none; } }`;
+    @keyframes tutoriel-lueur { from { opacity: 0.25; } to { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .tutoriel-bulle, .tutoriel-voile, .tutoriel-halo::after { animation: none; } }`;
   document.head.appendChild(css);
 
   // Halo autour des cibles (suit le défilement ; laisse passer les clics).
@@ -155,6 +159,28 @@
     return element;
   }
 
+  // Clics de l'étape (onglet de la box, vue, menu du compte), répétés tant
+  // qu'ils n'ont pas pris effet : la page peut brancher ses boutons plus tard.
+  function preparerPage(etape) {
+    let essais = 0;
+    const visible = selecteur => !!document.querySelector(selecteur)?.getClientRects().length;
+    const faits = selecteur => (selecteur === "#compte-btn" ? etape.cibles.every(visible) : !!document.querySelector(selecteur)?.classList.contains("active"));
+    const essayer = () => {
+      if (essais++ > 20) return;
+      const clics = [].concat(etape.clic);
+      // Pas d'attente du chargement complet (images) : la liste suffit.
+      if (clics.some(selecteur => !document.querySelector(selecteur)) || document.querySelector("#liste-collection")?.children.length === 0) {
+        setTimeout(essayer, 300);
+        return;
+      }
+      const restants = clics.filter(selecteur => !faits(selecteur));
+      if (!restants.length) return;
+      restants.forEach(selecteur => document.querySelector(selecteur).click());
+      setTimeout(essayer, 500);
+    };
+    essayer();
+  }
+
   const chemin = () => (location.pathname.replace(/\.html$/, "").replace(/\/$/, "") || "/");
 
   function terminerCookie() {
@@ -170,6 +196,9 @@
 
   function lancer(numero, test) {
     const etape = ETAPES[numero];
+    // Pages ouvertes depuis le tutoriel (règles complètes, autre onglet) :
+    // consultables, sans bulle ni renvoi.
+    if (PAGES_LIBRES.includes(chemin())) return;
     if (chemin() !== etape.page) {
       location.replace(etape.page);
       return;
@@ -180,9 +209,9 @@
       document.body.appendChild(voile);
     }
     if (etape.cibles) suivreCibles(etape.cibles, etape.assombrir);
-    if (etape.clic) setTimeout(() => [].concat(etape.clic).forEach(selecteur => document.querySelector(selecteur)?.click()), 800);
+    if (etape.clic) preparerPage(etape);
 
-    const element = bulle({ progression: `Étape ${numero + 1} / ${ETAPES.length}${test ? " · test admin" : ""}`, titre: etape.titre, texte: etape.texte });
+    const element = bulle({ progression: `Étape ${numero + 1} / ${ETAPES.length}`, titre: etape.titre, texte: etape.texte });
     const zone = element.querySelector(".tutoriel-actions");
     const etat = element.querySelector(".tutoriel-etat");
     const afficherEtat = (texte, fait) => {
@@ -203,7 +232,7 @@
         reduire.textContent = element.classList.toggle("reduite") ? "Agrandir" : "Réduire";
       });
     }
-    if (test) bouton(zone, "Quitter le test", etape.verifier || etape.remplir ? "" : "quitter", () => { retirerStockage(CLE_TEST); location.reload(); });
+    if (test) bouton(zone, "Quitter le tutoriel", etape.verifier || etape.remplir ? "" : "quitter", () => { retirerStockage(CLE_TEST); location.reload(); });
     if (numero > 0) bouton(zone, "Précédent", "", () => aller(numero - 1).catch(erreur => afficherEtat(erreur.message, false)));
 
     const derniere = numero === ETAPES.length - 1;
