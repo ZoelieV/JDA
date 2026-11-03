@@ -175,6 +175,19 @@ h1, h2 {
   font-size: 0.8125rem;
 }
 
+/* Flex : logo et flèche côte à côte, le bouton s'élargit (le logo est en
+   display: block, cf. .tri-logo). */
+.tri-flex-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.tri-flex-btn .fleche {
+  font-size: 0.8125rem;
+}
+
 .liste-vide {
   opacity: 0.7;
   font-style: italic;
