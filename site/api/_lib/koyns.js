@@ -19,10 +19,11 @@
 // - Bonus de connexion pendant un événement (config.bonus_connexion) et
 //   dons des administrateurs (Rikoyns, cosmétiques exclusifs).
 // - Tirage (TIRAGE_PRIX par tirage, cf. tirerCosmetique) : une namecard,
-//   une bannière ou un fond d'écran pas encore possédé, au hasard ; ou, 1
-//   fois sur TIRAGE_CHANCE_FOCUS (garanti au TIRAGE_GARANTIE-ième tirage
-//   sans focus), un cosmétique focus (config.cosmetiques_tirage : obtenables
-//   seulement par tirage, pas en vente).
+//   une bannière ou un fond d'écran pas encore possédé, selon sa rareté
+//   (config.cosmetiques_raretes, commun par défaut ; chances :
+//   config.probas_tirage). Les cosmétiques focus (config.cosmetiques_tirage :
+//   obtenables seulement par tirage, pas en vente) tombent avec leur rareté,
+//   et sont garantis au TIRAGE_GARANTIE-ième tirage sans focus.
 // - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
 //   ils passent par l'achat comme tout le monde, cf. acheterCosmetique).
 const { supabase } = require("./supabase");
@@ -43,7 +44,7 @@ const DEPART_ADMIN = 10000;
 const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100", montant: DEPART_MINI_ADMIN - 30 }];
 const MAX_KOYNS_DON = 1000;
 const TIRAGE_PRIX = 10;
-const TIRAGE_CHANCE_FOCUS = 0.1;
+const PROBAS_TIRAGE_DEFAUT = { rare: 25, epique: 10 }; // en %, le reste : commun
 const TIRAGE_GARANTIE = 10;
 
 // Tous les cosmétiques existants (ids), gratuits compris. "fond:perso" :
@@ -69,6 +70,13 @@ const CACHES = new Set(cosmetiques.caches || []);
 // Réglage de la page admin (config.cosmetiques_caches), sinon cosmetiques.json.
 const estCache = id => getConfigKoyns().caches[id] ?? CACHES.has(id);
 const listeCaches = () => [...new Set([...CACHES, ...Object.keys(getConfigKoyns().caches)])].filter(estCache);
+// Fonds retirés par le tri de la page admin (config.cosmetiques_retires) :
+// inutilisables, même par ceux qui les possèdent. Rien n'est supprimé : les
+// remettre les rend à leurs propriétaires.
+const estRetire = id => getConfigKoyns().retires.has(id);
+const rareteCosmetique = id => getConfigKoyns().raretes[id] || "commun";
+const probasTirage = () => ({ ...PROBAS_TIRAGE_DEFAUT, ...getConfigKoyns().probas });
+const focusTirage = () => getConfigKoyns().tirage.filter(id => estCosmetique(id) && !estRetire(id));
 
 // Gains possibles d'un tirage hors focus : namecards, bannières et fonds
 // payants (ni gratuits, ni exclusifs, ni focus, ni Mon image).
@@ -78,7 +86,7 @@ function poolTirage() {
     ...cosmetiques.fonds.map(fond => idCosmetique("fond", fond.id)),
     ...cosmetiques.bannieres.map(chemin => idCosmetique("banniere", chemin)),
     ...cosmetiques.bannieres2.map(chemin => idCosmetique("banniere2", chemin))
-  ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id) && !estCache(id));
+  ].filter(id => !COSMETIQUES_GRATUITS.has(id) && !exclusifs.has(id) && !tirage.includes(id) && !estCache(id) && !estRetire(id));
 }
 const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 
@@ -88,7 +96,7 @@ const estExclusif = id => getConfigKoyns().exclusifs.has(id);
 // tirage) }.
 function resumeFlex(flex) {
   // Namecards et fonds seulement (anciens flex : le reste ignoré).
-  const cases = Array.isArray(flex) ? flex.slice(0, TAILLE_FLEX).map(id => (typeof id === "string" && /^(banniere|fond):/.test(id) && id !== "fond:perso" ? id : null)) : [];
+  const cases = Array.isArray(flex) ? flex.slice(0, TAILLE_FLEX).map(id => (typeof id === "string" && /^(banniere|fond):/.test(id) && id !== "fond:perso" && !estRetire(id) ? id : null)) : [];
   const ids = cases.filter(Boolean);
   if (!ids.length) return { flex: null, flex_valeur: 0, flex_exclusifs: 0 };
   const { exclusifs, tirage } = getConfigKoyns();
@@ -129,8 +137,8 @@ async function lirePossedes(discordId) {
     return new Set();
   }
   // Imports de Mon image ("fond:perso#<date>", cf. acheterCosmetique) : le
-  // fond "perso" est possédé.
-  return new Set((data || []).map(ligne => ligne.cosmetique.split("#")[0]));
+  // fond "perso" est possédé. Fonds retirés : plus utilisables.
+  return new Set((data || []).map(ligne => ligne.cosmetique.split("#")[0]).filter(id => !estRetire(id)));
 }
 
 const possede = (possedes, id) => possedes === null || COSMETIQUES_GRATUITS.has(id) || possedes.has(id);
@@ -157,27 +165,36 @@ async function etatKoyns(discordId) {
     possedes: possedes ? [...possedes] : [],
     exclusifs: [...getConfigKoyns().exclusifs],
     caches: listeCaches(),
+    retires: [...getConfigKoyns().retires],
     // Prix réglés par les administrateurs (cf. definirPrixCosmetiques).
     prix: getConfigKoyns().prix || {},
     tirage: {
       prix: TIRAGE_PRIX,
-      chance: TIRAGE_CHANCE_FOCUS,
+      probas: probasTirage(),
+      raretes: getConfigKoyns().raretes,
       garantie: TIRAGE_GARANTIE,
-      focus: getConfigKoyns().tirage,
+      focus: focusTirage(),
       compteur
     }
   };
 }
 
-// Un tirage. -> { cosmetique, focus, compteur } ou { erreur, status }.
+// Un tirage. -> { cosmetique, focus, rarete, compteur } ou { erreur, status }.
 async function tirerCosmetique(discordId) {
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant le tirage.
+  const focus = focusTirage();
+  const gains = [...new Set([...poolTirage(), ...focus])];
+  const deRarete = rarete => gains.filter(id => rareteCosmetique(id) === rarete);
+  const probas = probasTirage();
   const { data, error } = await supabase.rpc("tirer_cosmetique", {
     p_discord_id: discordId,
     p_prix: TIRAGE_PRIX,
-    p_normaux: poolTirage(),
-    p_focus: getConfigKoyns().tirage.filter(estCosmetique),
-    p_chance: TIRAGE_CHANCE_FOCUS,
+    p_communs: deRarete("commun"),
+    p_rares: deRarete("rare"),
+    p_epiques: deRarete("epique"),
+    p_focus: focus,
+    p_chance_rare: probas.rare / 100,
+    p_chance_epique: probas.epique / 100,
     p_garantie: TIRAGE_GARANTIE
   });
   if (error) {
@@ -186,7 +203,7 @@ async function tirerCosmetique(discordId) {
   }
   if (data?.statut === "solde") return { status: 409, erreur: `Il faut ${TIRAGE_PRIX} Rikoyns pour un tirage : joue des matchs pour en gagner.` };
   if (data?.statut === "vide") return { status: 409, erreur: "Tu as déjà tous les cosmétiques du tirage !" };
-  return { cosmetique: data.cosmetique, focus: !!data.focus, compteur: data.compteur };
+  return { cosmetique: data.cosmetique, focus: !!data.focus, rarete: rareteCosmetique(data.cosmetique), compteur: data.compteur };
 }
 
 // Paramètres de personnalisation réduits aux cosmétiques possédés : les
@@ -231,6 +248,7 @@ async function acheterCosmetique(discordId, id) {
   if (!estCosmetique(id) || COSMETIQUES_GRATUITS.has(id)) return { status: 400, erreur: "Cosmétique inconnu." };
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant l'achat.
   if (estExclusif(id)) return { status: 403, erreur: "Cosmétique exclusif : il ne s'achète pas, il se gagne (classements, événements)." };
+  if (estRetire(id)) return { status: 403, erreur: "Ce fond d'écran n'est plus disponible." };
   if (estTirage(id)) return { status: 403, erreur: "Cosmétique focus du tirage : il ne s'obtient que par tirage." };
   if (estCache(id)) return { status: 403, erreur: "Ce cosmétique ne s'achète pas." };
   if (skinAjoute(id)?.masque) return { status: 403, erreur: "Ce skin n'est pas encore disponible." };
@@ -580,6 +598,7 @@ module.exports = {
   MAX_KOYNS_DON,
   LONGUEUR_MESSAGE_DON,
   estCosmetique,
+  estRetire,
   lireHistoriqueDons,
   lireHistoriqueRetraits,
   noterInvalidation,

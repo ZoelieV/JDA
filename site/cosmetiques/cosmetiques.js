@@ -59,6 +59,10 @@
     window.Personnalisation?.ouvrir({ equiper: id });
   }
 
+  const NOMS_RARETES = { commun: "Commun", rare: "Rare", epique: "Épique" };
+  const pourcent = valeur => `${Math.round(valeur * 100) / 100} %`;
+  const htmlRarete = (rarete = "commun") => `<span class="rarete-texte rarete-${rarete}">${NOMS_RARETES[rarete] || NOMS_RARETES.commun}</span>`;
+
   function rendreTirage() {
     const conteneur = $("tirage-cosmetiques");
     conteneur.innerHTML = "";
@@ -73,7 +77,8 @@
     bloc.className = "perso-tirage";
     bloc.innerHTML = `
       <p class="perso-note">Pour ${texteRikoyns(tirage.prix)}, un cosmétique au hasard : une namecard, une bannière ou un fond d'écran que tu n'as pas encore.
-        ${tirage.focus.length ? `1 chance sur ${Math.round(1 / tirage.chance)} d'obtenir un <strong>cosmétique focus</strong> (seulement par tirage), garanti au ${tirage.garantie}e tirage sans focus.` : ""}</p>
+        Chances : <span class="rarete-texte rarete-commun">Commun ${pourcent(100 - tirage.probas.rare - tirage.probas.epique)}</span>, <span class="rarete-texte rarete-rare">Rare ${pourcent(tirage.probas.rare)}</span>, <span class="rarete-texte rarete-epique">Épique ${pourcent(tirage.probas.epique)}</span>.
+        ${tirage.focus.length ? `Les <strong>cosmétiques focus</strong> (seulement par tirage) sont garantis au ${tirage.garantie}e tirage sans focus.` : ""}</p>
       ${tirage.focus.length ? `
         <h3 class="perso-categorie">Focus</h3>
         <div class="perso-tirage-focus"></div>
@@ -91,7 +96,7 @@
       const info = infoCosmetique(id);
       const carte = document.createElement("figure");
       carte.className = `perso-tirage-carte${possede(id) ? " possede" : ""}`;
-      carte.innerHTML = `${info.image ? `<img src="${info.image}" alt="" loading="lazy">` : ""}<figcaption><strong></strong><small>${info.type}${possede(id) ? " · obtenu ✓" : ""}</small></figcaption>`;
+      carte.innerHTML = `${info.image ? `<img src="${info.image}" alt="" loading="lazy">` : ""}<figcaption><strong></strong><small>${info.type}${possede(id) ? " · obtenu ✓" : ""}</small>${htmlRarete(tirage.raretes?.[id])}</figcaption>`;
       carte.querySelector("strong").textContent = info.nom;
       vitrine?.appendChild(carte);
     });
@@ -141,17 +146,17 @@
 
   // Fenêtre du gain : carte retournée (dorée pour un focus), équiper,
   // retirer encore.
-  function revelerGain({ cosmetique, focus }) {
+  function revelerGain({ cosmetique, focus, rarete = "commun" }) {
     const info = infoCosmetique(cosmetique);
     const fenetre = document.createElement("dialog");
     fenetre.className = `perso-fenetre perso-fenetre-gain${focus ? " focus" : ""}`;
     fenetre.innerHTML = `
       <h3 class="perso-fenetre-titre">${focus ? "✨ Focus ! ✨" : "Tirage"}</h3>
-      <div class="perso-gain-carte">
+      <div class="perso-gain-carte contour-${rarete}">
         <div class="perso-gain-dos" aria-hidden="true">🎲</div>
         <div class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</div>
       </div>
-      <p class="perso-gain-nom"><strong></strong><small>${info.type}</small></p>
+      <p class="perso-gain-nom"><strong></strong><small>${info.type}</small>${htmlRarete(rarete)}</p>
       <div class="perso-fenetre-actions">
         <button type="button" data-action="fermer">Fermer</button>
         <button type="button" data-action="encore"></button>
@@ -191,11 +196,11 @@
         <button type="button" class="perso-fenetre-ok" data-action="encore"></button>
       </div>`;
     const grille = fenetre.querySelector(".perso-gains-grille");
-    tirages.forEach(({ cosmetique, focus }, i) => {
+    tirages.forEach(({ cosmetique, focus, rarete = "commun" }, i) => {
       const info = infoCosmetique(cosmetique);
       const carte = document.createElement("button");
       carte.type = "button";
-      carte.className = `perso-gains-carte${focus ? " focus" : ""}`;
+      carte.className = `perso-gains-carte contour-${rarete}${focus ? " focus" : ""}`;
       carte.style.setProperty("--delai", `${i * 0.15}s`);
       carte.dataset.id = cosmetique;
       carte.title = `${info.nom} (${info.type}) : clic pour l'équiper`;
@@ -204,7 +209,7 @@
           <span class="perso-gain-dos" aria-hidden="true">🎲</span>
           <span class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</span>
         </span>
-        <span class="perso-gains-nom"></span>`;
+        <span class="perso-gains-nom"></span>${htmlRarete(rarete)}`;
       carte.querySelector(".perso-gains-nom").textContent = info.nom;
       grille.appendChild(carte);
     });

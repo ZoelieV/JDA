@@ -227,7 +227,7 @@ let pointsLusA = 0;
 // aux classements ou aux événements) et bonus de connexion d'événement.
 // Tirage : cosmétiques obtenables seulement par tirage (focus, cf.
 // tirerCosmetique).
-let configKoyns = { exclusifs: new Set(), tirage: [], bonusConnexion: null, prix: {}, skins: [], caches: {} };
+let configKoyns = { exclusifs: new Set(), tirage: [], bonusConnexion: null, prix: {}, skins: [], caches: {}, raretes: {}, probas: {}, retires: new Set() };
 
 function getConfigKoyns() {
   return configKoyns;
@@ -266,7 +266,12 @@ async function actualiserPoints() {
       skins: Array.isArray(config.skins_ajoutes) ? config.skins_ajoutes : [],
       // Cachés / rendus visibles depuis la page admin, par-dessus
       // cosmetiques.json : { id: true (caché) | false (visible) }.
-      caches: config.cosmetiques_caches && typeof config.cosmetiques_caches === "object" ? config.cosmetiques_caches : {}
+      caches: config.cosmetiques_caches && typeof config.cosmetiques_caches === "object" ? config.cosmetiques_caches : {},
+      // Tirage : { id: "rare" | "epique" } (commun sinon) et { rare, epique } en %.
+      raretes: config.cosmetiques_raretes && typeof config.cosmetiques_raretes === "object" ? config.cosmetiques_raretes : {},
+      probas: config.probas_tirage && typeof config.probas_tirage === "object" ? config.probas_tirage : {},
+      // Fonds retirés par le tri de la page admin.
+      retires: new Set(Array.isArray(config.cosmetiques_retires) ? config.cosmetiques_retires : [])
     };
     // Prix réglés par les administrateurs (cf. prixCosmetique).
     definirPrixCosmetiques(configKoyns.prix);

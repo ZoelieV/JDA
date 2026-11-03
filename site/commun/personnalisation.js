@@ -111,7 +111,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=24";
+    lien.href = "/commun/personnalisation.css?v=25";
     document.head.appendChild(lien);
   }
 
@@ -200,7 +200,7 @@
   const possede = id => !koyns || koyns.tout || COSMETIQUES_GRATUITS.has(id) || koyns.possedes.has(id);
   const estExclusif = id => !!koyns?.exclusifs.has(id);
   // Cachés (réglés dans l'admin, sinon cosmetiques.json) : seulement une fois obtenus.
-  const estProposable = id => !(koyns?.caches ? koyns.caches.has(id) : cosmetiques?.caches?.includes(id)) || possede(id);
+  const estProposable = id => !koyns?.retires?.includes(id) && (!(koyns?.caches ? koyns.caches.has(id) : cosmetiques?.caches?.includes(id)) || possede(id));
   const estFocusTirage = id => !!koyns?.tirage?.focus?.includes(id);
 
   // Choix enregistrés réduits aux cosmétiques possédés (comme le serveur).

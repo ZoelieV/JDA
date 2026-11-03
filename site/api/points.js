@@ -86,6 +86,13 @@
 //   { cosmetiques_tirage: [id...] }     Rikoyns : cosmétiques focus du
 //                                       tirage (obtenables seulement par
 //                                       tirage, cf. tirerCosmetique)
+//   { cosmetiques_raretes: { niveau: "rare" | "epique", ids: [id...] } }
+//                                       Rikoyns : cosmétiques de cette rareté
+//                                       (les autres : commun par défaut)
+//   { probas_tirage: { rare, epique } }  Rikoyns : chances du tirage, en %
+//   { cosmetiques_retires: [id...] }    Rikoyns : fonds d'écran retirés,
+//                                       inutilisables même par leurs
+//                                       propriétaires (cf. estRetire)
 //   { cosmetiques_caches: { id: bool } }  Rikoyns : cache (true) ou rend
 //                                    visible (false) des cosmétiques, par-dessus
 //                                    cosmetiques.json (les skins ajoutés ont
@@ -125,7 +132,7 @@ const RECOMMANDATIONS_STUFF_DEFAUT = require("../DB/recommandations_stuff.json")
 const { COSMETIQUES_GRATUITS, PRIX_COSMETIQUE_MAX, idCosmetique } = require("../commun/koyns.js");
 const { VARIANTES_PERSONNAGES, PERSOS_SKIN_VOYAGEUR } = require("../commun/variantes.js");
 const { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin, retirerSkinAuxJoueurs } = require("./_lib/skins");
-const { estCosmetique, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
+const { estCosmetique, estRetire, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
@@ -573,6 +580,7 @@ module.exports = async (req, res) => {
           skins_ajoutes: skins.filter(s => s.id !== skin.id),
           cosmetiques_exclusifs: (ancienne.cosmetiques_exclusifs || []).filter(id => id !== cosmetique),
           cosmetiques_tirage: (ancienne.cosmetiques_tirage || []).filter(id => id !== cosmetique),
+          cosmetiques_raretes: Object.fromEntries(Object.entries(ancienne.cosmetiques_raretes || {}).filter(([id]) => id !== cosmetique)),
           prix_cosmetiques: prix
         };
         if (ancienne.bonus_connexion?.cosmetique === cosmetique) {
@@ -644,7 +652,28 @@ module.exports = async (req, res) => {
       } else if (Array.isArray(corps.cosmetiques_tirage)) {
         const inconnus = corps.cosmetiques_tirage.filter(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
         if (inconnus.length) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnus[0]}` });
-        config = { ...ancienne, cosmetiques_tirage: [...new Set(corps.cosmetiques_tirage)].sort() };
+        // Nouveau focus sans rareté choisie : épique.
+        const raretes = { ...(ancienne.cosmetiques_raretes || {}) };
+        const anciensFocus = new Set(ancienne.cosmetiques_tirage || []);
+        corps.cosmetiques_tirage.filter(id => !anciensFocus.has(id) && !raretes[id]).forEach(id => { raretes[id] = "epique"; });
+        config = { ...ancienne, cosmetiques_raretes: raretes, cosmetiques_tirage: [...new Set(corps.cosmetiques_tirage)].sort() };
+      } else if (corps.cosmetiques_raretes && typeof corps.cosmetiques_raretes === "object") {
+        const { niveau, ids } = corps.cosmetiques_raretes;
+        if (!["rare", "epique"].includes(niveau) || !Array.isArray(ids)) return res.status(400).json({ error: "Rareté invalide" });
+        const inconnu = ids.find(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
+        if (inconnu !== undefined) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnu}` });
+        const raretes = Object.fromEntries(Object.entries(ancienne.cosmetiques_raretes || {}).filter(([, rarete]) => rarete !== niveau));
+        ids.forEach(id => { raretes[id] = niveau; });
+        config = { ...ancienne, cosmetiques_raretes: raretes };
+      } else if (corps.probas_tirage && typeof corps.probas_tirage === "object") {
+        const rare = Number(corps.probas_tirage.rare);
+        const epique = Number(corps.probas_tirage.epique);
+        if (![rare, epique].every(p => Number.isFinite(p) && p >= 0) || rare + epique > 100) return res.status(400).json({ error: "Chances invalides : entre 0 et 100 %, 100 % au plus à elles deux" });
+        config = { ...ancienne, probas_tirage: { rare, epique } };
+      } else if (Array.isArray(corps.cosmetiques_retires)) {
+        const inconnu = corps.cosmetiques_retires.find(id => !estCosmetique(id) || !String(id).startsWith("fond:") || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
+        if (inconnu !== undefined) return res.status(400).json({ error: `Fond d'écran inconnu ou gratuit : ${inconnu}` });
+        config = { ...ancienne, cosmetiques_retires: [...new Set(corps.cosmetiques_retires)].sort() };
       } else if (corps.cosmetiques_caches && typeof corps.cosmetiques_caches === "object" && !Array.isArray(corps.cosmetiques_caches)) {
         const caches = { ...(ancienne.cosmetiques_caches || {}) };
         const ajoutes = new Set((ancienne.skins_ajoutes || []).map(skin => idCosmetique("skin", skin.id)));
@@ -692,6 +721,8 @@ module.exports = async (req, res) => {
         if (cosmetiques.length > 500) return res.status(400).json({ error: "500 cosmétiques au plus par don" });
         const inconnu = cosmetiques.find(id => !estCosmetique(id));
         if (inconnu) return res.status(400).json({ error: `Cosmétique inconnu : ${inconnu}` });
+        const retire = cosmetiques.find(estRetire);
+        if (retire) return res.status(400).json({ error: `Fond d'écran retiré : ${retire}` });
         if (!koyns && !cosmetiques.length) return res.status(400).json({ error: "Rien à donner" });
         // Message au joueur (facultatif).
         const message = typeof corps.don.message === "string" ? corps.don.message.trim() : "";

@@ -3019,3 +3019,8 @@ body.page-equilibrage #tuiles-admin {
   max-width: 100%;
   border-radius: 0.5rem;
 }
+
+/* Fenêtre Raretés du tirage : libellés des chances sur une ligne. */
+#modal-raretes .champ-compte {
+  white-space: nowrap;
+}

@@ -3,6 +3,7 @@
 // skins et variantes ; onglet Cachés en premier, ouvert par défaut :
 // cosmétiques cachés de cosmetiques.json, "caches", seulement donnés par les
 // administrateurs), recherche, un ou plusieurs choix à la fois.
+// Fonds retirés (config.cosmetiques_retires) : seulement avec avecRetires.
 // choisirCosmetiques({ titre, multiple, selection, onglets, etiquette }) ->
 // Promise<[ids] | null> (null : annulé ; onglets : ids des onglets proposés,
 // tous sinon ; etiquette(id) : texte affiché sur l'image, ex. son prix). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
@@ -33,6 +34,7 @@ function chargerCatalogueChoix() {
       const caches = new Set(cosmetiques.caches || []);
       Object.entries(points.cosmetiques_caches || {}).forEach(([id, cache]) => { if (cache) caches.add(id); else caches.delete(id); });
       definirSkinsAjoutes(points.skins_ajoutes);
+      const retires = new Set(points.cosmetiques_retires || []);
       const infos = [
         ...cosmetiques.bannieres.map(chemin => ({ id: idCosmetique("banniere", chemin), onglet: "banniere", type: "Namecard", nom: nomNamecardAdmin(chemin), image: `/DB/images/${chemin}` })),
         ...cosmetiques.bannieres2.map(chemin => ({ id: idCosmetique("banniere2", chemin), onglet: "banniere2", type: "Bannière", nom: nomNamecardAdmin(chemin), image: `/DB/images/${chemin}` })),
@@ -43,7 +45,7 @@ function chargerCatalogueChoix() {
         ...SKINS_PERSONNAGES.map(id => ({ id: idCosmetique("skin", id), onglet: "persos", type: "Skin", nom: id, image: `/DB/${imagesSkin(id).item}` })),
         ...SKINS_AJOUTES.map(skin => ({ id: idCosmetique("skin", skin.id), onglet: "persos", type: "Skin", nom: nomSkin(skin.id, skin.perso), image: `/DB/${imagesSkin(skin.id).item}` }))
       ].filter(info => !COSMETIQUES_GRATUITS.has(info.id))
-        .map(info => ({ ...info, image: encodeURI(info.image), cache: caches.has(info.id) }));
+        .map(info => ({ ...info, image: encodeURI(info.image), cache: caches.has(info.id), retire: retires.has(info.id) }));
       catalogueChoixCosmetiques = new Map(infos.map(info => [info.id, info]));
       return catalogueChoixCosmetiques;
     })
@@ -67,7 +69,7 @@ function htmlPastilleCosmetique(id) {
     `<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`;
 }
 
-function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, exclure = null, etiquette = null } = {}) {
+function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, exclure = null, etiquette = null, avecRetires = false } = {}) {
   return new Promise(async resoudre => {
     const catalogue = await chargerCatalogueChoix().catch(() => null);
     if (!catalogue) {
@@ -106,7 +108,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
 
     // Onglet Cachés : namecards puis bannières cachées ; les autres onglets
     // montrent aussi leurs cachés (pastille « caché »).
-    const visibles = () => [...catalogue.values()].filter(info => !exclure?.(info.id) && (onglet === "caches" ? info.cache : info.onglet === onglet) &&
+    const visibles = () => [...catalogue.values()].filter(info => (avecRetires || !info.retire) && !exclure?.(info.id) && (onglet === "caches" ? info.cache : info.onglet === onglet) &&
       (!recherche.value.trim() || `${info.nom} ${info.id}`.toLowerCase().includes(recherche.value.trim().toLowerCase())));
 
     const majCompte = () => {

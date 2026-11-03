@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=62">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=63">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -21,7 +21,7 @@
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/compte.js?v=68" defer></script>
+<script src="/commun/compte.js?v=69" defer></script>
   <link rel="stylesheet" href="/commun/listes.css?v=2">
 </head>
 <body>
@@ -75,6 +75,16 @@
       <img src="/DB/images/others/Icon_Settings.webp" alt="">
       <span class="tuile-admin-titre">Cosmétiques visibles</span>
       <span class="tuile-admin-texte" id="texte-visibilite">Cacher ou rendre visibles les fonds d'écran, namecards, bannières et skins.</span>
+    </button>
+    <button type="button" id="ouvrir-raretes" class="tuile-admin" title="Raretés des cosmétiques et chances de les obtenir au tirage">
+      <img src="/DB/images/others/Icon_Events.webp" alt="">
+      <span class="tuile-admin-titre">Raretés du tirage</span>
+      <span class="tuile-admin-texte">Commun, rare, épique : choisir les cosmétiques et régler leurs chances.</span>
+    </button>
+    <button type="button" id="ouvrir-tri-fonds" class="tuile-admin" title="Retirer les fonds d'écran en double : plus utilisables, même par ceux qui les possèdent">
+      <img src="/DB/images/others/Icon_Settings.webp" alt="">
+      <span class="tuile-admin-titre">Tri des fonds d'écran</span>
+      <span class="tuile-admin-texte" id="texte-tri-fonds">Retirer les doublons : plus utilisables, même par ceux qui les possèdent.</span>
     </button>
     <button type="button" id="ouvrir-little-cup" class="tuile-admin" title="Event à persos et armes limités : nom, ouverture, trophées, boss">
       <img src="/DB/images/others/Icon_Events.webp" alt="">
@@ -569,6 +579,30 @@
   </div>
 
   <!-- Event Little Cup (cf. admin_little_cup.js, commun/little_cup.js). -->
+  <div id="modal-raretes" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Raretés du tirage</h2>
+        <button type="button" id="fermer-raretes" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">Un cosmétique sans rareté choisie est commun. Si une rareté n'a plus rien à donner au joueur, le tirage passe à une autre. Le focus reste garanti au 10e tirage sans focus.</p>
+      <div class="formulaire-skin">
+        <label class="champ-compte">Rare (%) <input type="number" id="proba-rare" class="texte-ajout" min="0" max="100" step="0.5"></label>
+        <label class="champ-compte">Épique (%) <input type="number" id="proba-epique" class="texte-ajout" min="0" max="100" step="0.5"></label>
+        <p class="aide-apercu">Commun : <strong id="proba-commun"></strong></p>
+      </div>
+      <div class="actions-ajout">
+        <span id="message-raretes" class="message-ajout"></span>
+        <button type="button" id="enregistrer-probas" class="bouton-creer">Enregistrer les chances</button>
+      </div>
+      <h3 class="titre-section-ajout">Cosmétiques</h3>
+      <div class="sommaire-actions-cup">
+        <button type="button" id="choisir-rares" class="btn-ouvrir-ajout">Choisir les rares</button>
+        <button type="button" id="choisir-epiques" class="btn-ouvrir-ajout">Choisir les épiques</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-little-cup" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
@@ -711,10 +745,11 @@
   <script src="/admin_ppc/admin_feedback.js?v=2"></script>
   <script src="/admin_ppc/admin_litiges.js?v=1"></script>
   <script src="/commun/koyns.js?v=15"></script>
-  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=6"></script>
+  <script src="/admin_ppc/admin_choix_cosmetiques.js?v=7"></script>
   <script src="/admin_ppc/admin_koyns.js?v=10"></script>
   <script src="/admin_ppc/admin_skins.js?v=5"></script>
   <script src="/admin_ppc/admin_visibilite.js?v=1"></script>
+  <script src="/admin_ppc/admin_raretes.js?v=1"></script>
   <script src="/admin_ppc/admin_little_cup.js?v=2"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=2"></script>
