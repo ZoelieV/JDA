@@ -10,8 +10,8 @@ const { parseCookies, verifySessionToken } = require("../../_lib/session");
 const { chargerRoomAvecRole, getAutreJoueur, ecrireDraft, quitterRoom } = require("../../_lib/room");
 const { estRouteEquipe, executerRouteEquipe } = require("../../_lib/equipe");
 const { estRouteWorldBoss, executerRouteWorldBoss } = require("../../_lib/world_boss");
-const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints, getLittleCup } = require("../../_lib/personnages");
-const { tirerBossAleatoire, bossCarnageExclus, DUREE_DEFI_SECONDES, estDefiEnnemis } = require("../../_lib/boss");
+const { getPersonnages, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES, actualiserPoints } = require("../../_lib/personnages");
+const { tirerBossAleatoire, reglageBoss, listeBoss, TYPE_LEGENDE_JOUR, bossCarnageExclus, DUREE_DEFI_SECONDES, estDefiEnnemis } = require("../../_lib/boss");
 const { legendesTueesAujourdhui, legendesHorsNiveauMonde, enregistrerMorts } = require("../../_lib/legendes");
 const { TEMPS_ABANDON, parserResultat, messageFormatInvalide, determinerVainqueur } = require("../../_lib/temps");
 const { archiverMatch, resultatTrophees } = require("../../_lib/archive");
@@ -105,29 +105,37 @@ function bossAVoter(draft, room) {
   return room?.type !== "classe" && !draft.entrainement && !draft.boss_impose && !draft.chronometre && !draft.boss_valide;
 }
 
-// Tirage du boss de la room : classé = boss du mode classé seulement ;
-// sinon, sans les légendes locales "une fois par jour" déjà tuées
-// aujourd'hui par un des joueurs (entraînement : par le lanceur, seul à
-// saisir un temps). Deux joueurs à des niveaux du monde différents : aucune
-// légende locale (PV différents ; pas en entraînement, où seul le lanceur
-// joue le boss). Un boss imposé exclu est oublié (tiré au hasard, ou au
-// vote en room privée). Entraînement avec draft.entrainement.boss_classes :
-// même tirage qu'en classé (boss du carnage désactivés exclus aussi).
+// Mode dont la room suit les boss et les chances (cf. commun/boss_modes.js) :
+// entraînement avec la case « boss du mode classé » : réglage du classé.
+// Autres rooms (tournois) : null, cf. reglageBoss.
+function modeBossRoom(draft, room) {
+  if (draft.entrainement) return draft.entrainement.boss_classes === true ? "classe" : "entrainement";
+  if (draft.little_cup) return "little_cup";
+  return ["classe", "matchmaking", "prive"].includes(room?.type) ? room.type : null;
+}
+
+// Tirage du boss de la room, sans les légendes locales "une fois par jour"
+// déjà tuées aujourd'hui par un des joueurs (entraînement : par le lanceur,
+// seul à saisir un temps). Deux joueurs à des niveaux du monde différents :
+// aucune légende locale (PV différents ; pas en entraînement, où seul le
+// lanceur joue le boss). Boss du carnage désactivés exclus, sauf en
+// entraînement libre. Un boss imposé exclu est oublié (tiré au hasard, ou au
+// vote en room privée).
 async function tireurBoss(draft, room) {
-  const bossClasses = draft.entrainement?.boss_classes === true;
-  const classe = room?.type === "classe" || bossClasses;
+  await actualiserPoints();
+  const mode = modeBossRoom(draft, room);
+  const permis = new Set(reglageBoss(mode).boss);
+  const avecLegendesJour = listeBoss().some(b => b.type === TYPE_LEGENDE_JOUR && permis.has(b.id));
   const joueurs = draft.entrainement ? [draft.entrainement.lanceur] : [draft.discord_j1, draft.discord_j2];
   const [tuees, horsNiveau, carnage] = await Promise.all([
-    classe ? [] : legendesTueesAujourdhui(joueurs),
+    avecLegendesJour ? legendesTueesAujourdhui(joueurs) : [],
     draft.entrainement ? [] : legendesHorsNiveauMonde(draft.discord_j1, draft.discord_j2),
-    draft.entrainement && !bossClasses ? [] : bossCarnageExclus()
+    mode === "entrainement" ? [] : bossCarnageExclus()
   ]);
   const exclus = [...tuees, ...horsNiveau, ...carnage];
   if (exclus.includes(draft.boss_impose)) draft.boss_impose = null;
   if (exclus.includes(draft.entrainement?.boss_id)) draft.entrainement = { ...draft.entrainement, boss_id: null };
-  // Little Cup : boss choisis dans la page admin.
-  const seulement = draft.little_cup && getLittleCup().boss?.length ? getLittleCup().boss : null;
-  return exclureId => tirerBossAleatoire(exclureId, { classe, exclus, seulement });
+  return exclureId => tirerBossAleatoire(exclureId, { mode, exclus });
 }
 
 // Boss proposé au vote, ou directement tirage j1/j2 + boss, puis chronos de

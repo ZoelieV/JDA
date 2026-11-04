@@ -49,6 +49,14 @@ let worldBossPublic = false;
 const LITTLE_CUP_DEFAUT = { nom: "Little Cup", public: false, trophees: false, boss: null };
 let littleCup = LITTLE_CUP_DEFAUT;
 
+// Boss et chances de chaque mode (config.boss_modes, page admin), cf.
+// commun/boss_modes.js.
+let bossModes = {};
+
+function getBossModes() {
+  return bossModes;
+}
+
 function getLittleCup() {
   return littleCup;
 }
@@ -252,6 +260,7 @@ async function actualiserPoints() {
     carnageDesactive = config.carnage_desactive === true;
     worldBossPublic = config.world_boss_public === true;
     littleCup = { ...LITTLE_CUP_DEFAUT, ...(config.little_cup || {}) };
+    bossModes = config.boss_modes && typeof config.boss_modes === "object" ? config.boss_modes : {};
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     seuilHorizontal = lireSeuilHorizontal(config.seuil_horizontal);
@@ -443,6 +452,7 @@ function codeTheatre(profilData) {
 }
 
 module.exports = {
+  getBossModes,
   getLittleCup,
   LITTLE_CUP_DEFAUT,
   pointsPersonnage,

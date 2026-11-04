@@ -100,12 +100,11 @@ window.addEventListener("pageshow", event => {
 // Options d'un menu de choix du boss, par catégorie : boss hebdomadaires,
 // carnage chtonien, légendes locales (celles déjà tuées aujourd'hui sont
 // refusées par le serveur).
-// World boss et légendes "world_boss_seulement" : jamais dans les drafts
-// (mode Random world boss seulement, cf. estReserveWorldBoss, api/_lib/boss.js).
-function remplirSelectBoss(select, toutes) {
-  const liste = toutes.filter(b => b.type !== "world_boss" && b.world_boss_seulement !== true);
+// liste : boss du mode (cf. bossDuMode).
+function remplirSelectBoss(select, liste) {
   const groupes = [
-    ["Boss Hebdomadaires", liste.filter(b => !estLegendeLocale(b) && b.type !== "carnage_boss")],
+    ["Boss Hebdomadaires", liste.filter(b => !estLegendeLocale(b) && b.type !== "carnage_boss" && b.type !== "world_boss")],
+    ["World boss", liste.filter(b => b.type === "world_boss")],
     ["Carnage Chtonien", liste.filter(b => b.type === "carnage_boss")],
     ["Légendes locales", liste.filter(estLegendeLocale)]
   ];
@@ -122,6 +121,12 @@ function remplirSelectBoss(select, toutes) {
   });
 }
 
+// Boss du mode (page admin, cf. commun/boss_modes.js).
+function bossDuMode(mode, tous, points) {
+  const permis = new Set(reglageBossMode(mode, points?.boss_modes, tous).boss);
+  return tous.filter(b => permis.has(b.id));
+}
+
 // Room privée / en équipe : liste des boss, remplie à la 1re ouverture.
 const selectsBossCharges = new Set();
 async function remplirBossRoom(idSelect = "room-boss") {
@@ -131,7 +136,8 @@ async function remplirBossRoom(idSelect = "room-boss") {
     const [tous, points] = await Promise.all([chargerBoss(), chargerPointsAdmin()]);
     // Boss du carnage désactivés par les admins : seulement en entraînement
     // (cf. bossCarnageExclus, api/_lib/boss.js).
-    const liste = points.carnage_desactive === true ? tous.filter(b => b.type !== "carnage_boss") : tous;
+    const duMode = bossDuMode(idSelect === "equipe-boss" ? "equipe" : "prive", tous, points);
+    const liste = points.carnage_desactive === true ? duMode.filter(b => b.type !== "carnage_boss") : duMode;
     // En équipe : sans les boss pas faisables en co-op ("coop": false, cf.
     // estHorsCoop, api/_lib/boss.js).
     remplirSelectBoss(document.getElementById(idSelect), idSelect === "equipe-boss" ? liste.filter(b => b.coop !== false) : liste);
@@ -1043,7 +1049,7 @@ async function initialiserEntrainement() {
   }
 
   const selectBoss = document.getElementById("ent-boss");
-  remplirSelectBoss(selectBoss, boss);
+  remplirSelectBoss(selectBoss, bossDuMode("entrainement", boss, await chargerPointsAdmin().catch(() => null)));
   // Boss choisi à la main : plus de tirage, donc rien à limiter.
   selectBoss.addEventListener("change", () => {
     const caseBossClasses = document.getElementById("ent-boss-classes");

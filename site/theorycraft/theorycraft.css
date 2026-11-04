@@ -479,3 +479,8 @@
   font-weight: normal;
   color: #f5c542;
 }
+
+/* Boss : une colonne de probabilité par mode, sans retour à la ligne. */
+.proba-boss-tc {
+  white-space: nowrap;
+}

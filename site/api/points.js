@@ -72,7 +72,9 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
-//   { little_cup: { nom, public, trophees, boss: [ids], namecard? } }  event Little Cup
+//   { boss_modes: { <mode>: { boss: [ids], probas } | null } }  boss et chances
+//                                    de chaque mode (cf. commun/boss_modes.js)
+//   { little_cup: { nom, public, trophees, namecard? } }  event Little Cup
 //                                    (cf. commun/little_cup.js)
 //   { world_boss_public: true|false }  ouvre le mode Random world boss à
 //                                    tous / le réserve aux administrateurs
@@ -125,6 +127,7 @@ const { SEUIL_EQUILIBRAGE } = require("./_lib/draft");
 const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js");
 const { lireSynergies, lireAlternativesArmes, synergieIncoherente } = require("../commun/synergies.js");
 const { lireRecommandationsStuff } = require("../commun/recommandations_stuff.js");
+const { MODES_TIRAGE_BOSS, lireReglageBossMode } = require("../commun/boss_modes.js");
 const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
 // modifiées, cf. commun/recommandations_stuff.js).
@@ -308,6 +311,12 @@ function versionPublique(config) {
   const publique = { ...config, ajouts: { ...ajouts }, masques: {} };
   // Event Little Cup pas encore ouvert : rien hors administrateurs.
   if (publique.little_cup && !publique.little_cup.public) delete publique.little_cup;
+  // Boss des events pas encore ouverts : pareil.
+  if (config.boss_modes) {
+    publique.boss_modes = { ...config.boss_modes };
+    if (!config.little_cup?.public) delete publique.boss_modes.little_cup;
+    if (config.world_boss_public !== true) delete publique.boss_modes.world_boss;
+  }
   // Skins ajoutés masqués : ni leur nom ni leur existence hors administrateurs.
   if (Array.isArray(config.skins_ajoutes)) publique.skins_ajoutes = config.skins_ajoutes.filter(skin => !skin.masque);
   GENRES_MASQUABLES.forEach(genre => {
@@ -632,15 +641,30 @@ module.exports = async (req, res) => {
         config = { ...ancienne, calendrier };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
+      } else if (corps.boss_modes && typeof corps.boss_modes === "object") {
+        const tousBoss = [...listeJSON("boss"), ...ajouts.boss];
+        const bossModes = { ...(ancienne.boss_modes || {}) };
+        for (const [mode, brut] of Object.entries(corps.boss_modes)) {
+          const nomMode = MODES_TIRAGE_BOSS.find(m => m.id === mode)?.nom;
+          if (!nomMode) return res.status(400).json({ error: "Mode de jeu inconnu" });
+          if (brut === null) {
+            delete bossModes[mode];
+            continue;
+          }
+          const { reglage, erreur } = lireReglageBossMode(mode, brut, tousBoss);
+          if (erreur) return res.status(400).json({ error: `${nomMode} : ${erreur}` });
+          bossModes[mode] = reglage;
+        }
+        config = { ...ancienne, boss_modes: bossModes };
       } else if (corps.little_cup && typeof corps.little_cup === "object") {
-        const { nom: brutNom, public: ouvert, trophees, boss } = corps.little_cup;
+        const { nom: brutNom, public: ouvert, trophees } = corps.little_cup;
         const nom = typeof brutNom === "string" ? brutNom.trim() : "";
         if (!nom || nom.length > 30) return res.status(400).json({ error: "Nom de l'event : 1 à 30 caractères" });
-        const permis = new Set([...listeJSON("boss"), ...ajouts.boss].filter(b => !b.world_boss_seulement).map(b => b.id));
-        if (!Array.isArray(boss) || !boss.length || boss.some(id => !permis.has(id))) return res.status(400).json({ error: "Choisis au moins un boss valide" });
         const namecard = corps.little_cup.namecard ?? null;
         if (namecard !== null && !NAMECARDS_SITE.has(namecard)) return res.status(400).json({ error: "Namecard inconnue" });
-        config = { ...ancienne, little_cup: { nom, public: ouvert === true, trophees: trophees === true, boss: [...new Set(boss)], ...(namecard ? { namecard } : {}) } };
+        // Ancienne liste de boss (cf. reglageBossMode) gardée telle quelle.
+        const ancienBoss = ancienne.little_cup?.boss;
+        config = { ...ancienne, little_cup: { nom, public: ouvert === true, trophees: trophees === true, ...(ancienBoss ? { boss: ancienBoss } : {}), ...(namecard ? { namecard } : {}) } };
       } else if (typeof corps.world_boss_public === "boolean") {
         // Ancien interrupteur (world_boss_desactive) retiré.
         const { world_boss_desactive: _ancien, ...reste } = ancienne;

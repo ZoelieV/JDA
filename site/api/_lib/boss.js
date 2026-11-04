@@ -1,29 +1,17 @@
 // Hypothèse : DB/boss.json, comme characters.json / weapons.json.
 const bossList = require("../../DB/boss.json");
+const { chancesBoss, reglageBossMode } = require("../../commun/boss_modes.js");
 
 // Légende locale tuable une fois par jour (reset à 4 h, cf. _lib/legendes.js)
 // ou à l'infini.
 const TYPE_LEGENDE_JOUR = "legende_locale_jour";
 const TYPE_LEGENDE_INFINIE = "legende_locale_infinie";
-// Mode classé : boss hebdomadaires, légendes locales sans limite par jour et
-// boss de carnage (salles 1 à 3 du carnage chtonien en cours),
-// sauf ceux marqués "classe": false dans DB/boss.json (ex. Tartaglia, trop
-// dépendant des patterns).
-const TYPES_BOSS_CLASSE = ["weekly_boss", TYPE_LEGENDE_INFINIE, "carnage_boss"];
-
-// World boss : seulement dans le mode Random world boss (cf.
-// _lib/world_boss.js), jamais tirés ni imposés dans les drafts.
+// World boss : par défaut seulement dans le mode Random world boss (cf.
+// commun/boss_modes.js).
 const TYPE_WORLD_BOSS = "world_boss";
 
 function estWorldBoss(boss) {
   return boss?.type === TYPE_WORLD_BOSS;
-}
-
-// Réservé au mode Random world boss : les world boss et les légendes locales
-// marquées "world_boss_seulement": true dans DB/boss.json (jamais tirées ni
-// imposées en 1v1 ou en équipe).
-function estReserveWorldBoss(boss) {
-  return estWorldBoss(boss) || boss?.world_boss_seulement === true;
 }
 
 // Pas faisable en co-op ("coop": false dans DB/boss.json, ex. défis de
@@ -32,49 +20,45 @@ function estHorsCoop(boss) {
   return boss?.coop === false;
 }
 
-function estTirableEnClasse(boss) {
-  return TYPES_BOSS_CLASSE.includes(boss?.type) && boss.classe !== false;
-}
-
 function estLegendeLocale(boss) {
   return boss?.type === TYPE_LEGENDE_JOUR || boss?.type === TYPE_LEGENDE_INFINIE;
 }
-
-// Hors classé : catégorie de boss tirée d'abord (sur 30 : légendes locales
-// 10, boss de carnage 3, boss hebdomadaires et autres 17), puis un boss au
-// hasard dans la catégorie. Une catégorie vide (ex. légendes toutes exclues)
-// est ignorée, les autres se partagent sa probabilité.
-// En classé : tous les boss tirables sont équiprobables.
-// Mêmes poids dans theorycraft/theorycraft.js (POIDS_CATEGORIES_BOSS).
-const POIDS_CATEGORIES = [
-  { poids: 10, contient: estLegendeLocale },
-  { poids: 3, contient: estBossCarnage },
-  { poids: 17, contient: boss => !estLegendeLocale(boss) && !estBossCarnage(boss) }
-];
 
 function auHasard(liste) {
   return liste[Math.floor(Math.random() * liste.length)];
 }
 
+// Boss et chances d'un mode (config.boss_modes, cf. commun/boss_modes.js).
+// mode null (tournois) : valeurs par défaut de l'amical, jamais les réglages
+// de la page admin. Points à jour : actualiserPoints avant.
+function reglageBoss(mode) {
+  const { getBossModes, getLittleCup } = require("./personnages");
+  return mode ? reglageBossMode(mode, getBossModes(), bossList, getLittleCup()) : reglageBossMode("matchmaking", null, bossList);
+}
+
+// Tirage selon les chances (cf. chancesBoss) ; undefined si la liste est vide.
+function tirerSelonChances(liste, probas) {
+  const chances = chancesBoss(liste, probas);
+  let tirage = Math.random();
+  const gardes = liste.filter(b => chances.get(b.id) > 0);
+  return gardes.find(b => (tirage -= chances.get(b.id)) < 0) || gardes[gardes.length - 1];
+}
+
 // exclureId : boss de la manche précédente (revanche), jamais retiré deux
 // fois de suite. Seul le précédent est exclu, pas tout l'historique, pour
 // ne jamais épuiser la liste sur une longue série de revanches.
-// classe : boss du mode classé seulement (estTirableEnClasse).
-// exclus : ids des légendes locales déjà tuées aujourd'hui par un des
-// joueurs (cf. legendesTueesAujourdhui), jamais tirées.
-// seulement : ids permis (event Little Cup), sinon tous.
-function tirerBossAleatoire(exclureId = null, { classe = false, exclus = [], seulement = null } = {}) {
-  const tirables = bossList.filter(b => (!seulement || seulement.includes(b.id)) && !estReserveWorldBoss(b) && (!classe || estTirableEnClasse(b)) && !exclus.includes(b.id));
+// mode : cf. reglageBoss.
+// exclus : ids jamais tirés (légendes locales déjà tuées aujourd'hui, boss du
+// carnage désactivés...). Plus aucun boss du mode sans eux (ex. le mode n'a
+// que des légendes déjà tuées) : tirés quand même, plutôt qu'aucun boss.
+function tirerBossAleatoire(exclureId = null, { mode = null, exclus = [] } = {}) {
+  const { boss, probas } = reglageBoss(mode);
+  const permis = new Set(boss);
+  const duMode = bossList.filter(b => permis.has(b.id));
+  const sansExclus = duMode.filter(b => !exclus.includes(b.id));
+  const tirables = sansExclus.length ? sansExclus : duMode;
   const candidats = tirables.filter(b => b.id !== exclureId);
-  const liste = candidats.length > 0 ? candidats : tirables;
-  if (classe) return auHasard(liste);
-
-  const groupes = POIDS_CATEGORIES
-    .map(({ poids, contient }) => ({ poids, boss: liste.filter(contient) }))
-    .filter(groupe => groupe.boss.length > 0);
-  let tirage = Math.random() * groupes.reduce((total, groupe) => total + groupe.poids, 0);
-  const groupe = groupes.find(g => (tirage -= g.poids) < 0) || groupes[groupes.length - 1];
-  return groupe ? auHasard(groupe.boss) : undefined;
+  return tirerSelonChances(candidats.length ? candidats : tirables, probas);
 }
 
 function estBossCarnage(boss) {
@@ -115,7 +99,7 @@ function idsLegendesLocales() {
   return bossList.filter(estLegendeLocale).map(b => b.id);
 }
 
-const ERREUR_WORLD_BOSS = "Ce boss est réservé au mode Random world boss.";
+const ERREUR_BOSS_MODE = "Ce boss n'est pas disponible dans ce mode.";
 const ERREUR_CARNAGE_DESACTIVE = "Les boss du carnage sont désactivés en ce moment (plus disponibles dans le jeu).";
 
-module.exports = { bossCarnageExclus, DUREE_DEFI_SECONDES, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS, estDefiEnnemis, estHorsCoop, estReserveWorldBoss, estWorldBoss, listeBoss, TYPE_LEGENDE_JOUR, TYPES_BOSS_CLASSE, estTirableEnClasse, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, getBossParId };
+module.exports = { bossCarnageExclus, DUREE_DEFI_SECONDES, ERREUR_CARNAGE_DESACTIVE, ERREUR_BOSS_MODE, estDefiEnnemis, estHorsCoop, estWorldBoss, listeBoss, TYPE_LEGENDE_JOUR, estLegendeLocale, idsLegendesLocales, tirerBossAleatoire, reglageBoss, tirerSelonChances, getBossParId };

@@ -45,7 +45,7 @@ const { supabase } = require("./supabase");
 const { ecrireDraft, matchClasseEnCours, ERREUR_MATCH_CLASSE } = require("./room");
 const { actualiserPoints, getPersonnages, migrerCollectionPersos, estWorldBossPublic, ELEMENTS_LIBRES } = require("./personnages");
 const { estModerateur } = require("./admin");
-const { listeBoss, getBossParId, estWorldBoss, estHorsCoop, estLegendeLocale, bossCarnageExclus, TYPE_LEGENDE_JOUR } = require("./boss");
+const { listeBoss, getBossParId, estWorldBoss, estHorsCoop, estLegendeLocale, bossCarnageExclus, reglageBoss, tirerSelonChances, TYPE_LEGENDE_JOUR } = require("./boss");
 const { legendesTueesAujourdhui, legendesTueesParJoueur } = require("./legendes");
 const { saisonActuelle } = require("./saisons");
 const { crediterPartie } = require("./koyns");
@@ -126,20 +126,24 @@ async function sauvegarder(roomId, draft, colonnes = {}) {
 
 // ---- Tirage du boss ----
 
-// Boss du mode : world boss, boss hebdomadaires, légendes locales faisables
-// en co-op (réservées à ce mode comprises) et salles du carnage (sauf
-// désactivées), tous équiprobables ; jamais deux fois de suite le même. Seul : aussi les boss pas faisables en
-// co-op. Légende "une fois par jour" déjà tuée aujourd'hui par tous les
-// joueurs : exclue (personne ne peut l'héberger).
+// Boss et chances du mode : page admin (cf. commun/boss_modes.js), par défaut
+// tous les boss à chance égale ; jamais deux fois de suite le même. À plusieurs :
+// sans les boss pas faisables en co-op. Sans les boss du carnage désactivés.
+// Légende "une fois par jour" déjà tuée aujourd'hui par tous les joueurs :
+// exclue (personne ne peut l'héberger). Plus rien avec les boss cochés :
+// sans cette limite, puis parmi tous les boss, pour ne jamais lancer sans boss.
 async function tirerBoss(precedent, joueurs) {
   const carnageExclus = await bossCarnageExclus();
   const tuees = await legendesTueesParJoueur(joueurs);
+  const { boss, probas } = reglageBoss("world_boss");
+  const permis = new Set(boss);
   const hebergeable = b => b.type !== TYPE_LEGENDE_JOUR || joueurs.some(id => !tuees.get(id)?.has(b.id));
-  const candidats = listeBoss().filter(b =>
-    estWorldBoss(b) || b.type === "weekly_boss" || b.type === "carnage_boss" || estLegendeLocale(b))
-    .filter(b => (joueurs.length === 1 || !estHorsCoop(b)) && !carnageExclus.includes(b.id) && hebergeable(b));
+  const jouables = listeBoss().filter(b => (joueurs.length === 1 || !estHorsCoop(b)) && !carnageExclus.includes(b.id));
+  const duMode = jouables.filter(b => permis.has(b.id));
+  const hebergeables = duMode.filter(hebergeable);
+  const candidats = hebergeables.length ? hebergeables : duMode.length ? duMode : jouables.filter(hebergeable);
   const sansPrecedent = candidats.filter(b => b.id !== precedent);
-  return auHasard(sansPrecedent.length ? sansPrecedent : candidats)?.id || null;
+  return tirerSelonChances(sansPrecedent.length ? sansPrecedent : candidats, probas)?.id || null;
 }
 
 // ---- Full box et tirage des persos ----

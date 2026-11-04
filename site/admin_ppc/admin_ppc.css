@@ -3070,6 +3070,71 @@ body.page-equilibrage #tuiles-admin {
   object-fit: contain;
 }
 
+/* Boss par mode (cf. admin_boss_modes.js). */
+.bm-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.bm-mode {
+  padding: 0.25rem 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.bm-mode.actif {
+  border-color: #e0a860;
+  background-color: rgba(224, 168, 96, 0.15);
+}
+
+.bm-champs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.bm-champs .champ-compte {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.bm-champ {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.bm-champ input {
+  flex: 1;
+  min-width: 0;
+}
+
+.bm-total-faux {
+  color: #ff8a80;
+}
+
+#bm-boss .cup-boss {
+  max-height: none;
+  overflow: visible;
+}
+
+.bm-nom-boss {
+  flex: 1;
+  min-width: 0;
+}
+
+.bm-chance {
+  flex: none;
+  font-size: 0.8125rem;
+  opacity: 0.8;
+}
+
 .cup-namecard {
   display: flex;
   flex-wrap: wrap;

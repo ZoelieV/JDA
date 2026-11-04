@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=64">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=65">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -86,10 +86,15 @@
       <span class="tuile-admin-titre">Tri des fonds d'écran</span>
       <span class="tuile-admin-texte" id="texte-tri-fonds">Retirer les doublons : plus utilisables, même par ceux qui les possèdent.</span>
     </button>
-    <button type="button" id="ouvrir-little-cup" class="tuile-admin" title="Event à persos et armes limités : nom, ouverture, trophées, boss">
+    <button type="button" id="ouvrir-boss-modes" class="tuile-admin" title="Boss de chaque mode de jeu et probabilités par type de boss">
+      <img src="/DB/images/others/Icon_Settings.webp" alt="">
+      <span class="tuile-admin-titre">Boss par mode</span>
+      <span class="tuile-admin-texte">Boss cochés et probabilités par type, pour chaque mode de jeu.</span>
+    </button>
+    <button type="button" id="ouvrir-little-cup" class="tuile-admin" title="Event à persos et armes limités : nom, ouverture, trophées">
       <img src="/DB/images/others/Icon_Events.webp" alt="">
       <span class="tuile-admin-titre" id="titre-tuile-little-cup">Little Cup</span>
-      <span class="tuile-admin-texte">Nom de l'event, ouverture, trophées et boss présents.</span>
+      <span class="tuile-admin-texte">Nom de l'event, ouverture et trophées.</span>
     </button>
     <button type="button" id="ouvrir-tournoitateurs" class="tuile-admin" title="Joueurs autorisés à créer des tournois">
       <img src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="">
@@ -619,15 +624,33 @@
         <label class="champ-skin-masque"><input type="checkbox" id="cup-public"> Ouvert à tous (sinon : équipe du site seulement)</label>
         <label class="champ-skin-masque"><input type="checkbox" id="cup-trophees"> Trophées à part du classé (matchmaking seulement, plus de room)</label>
       </div>
-      <h3 class="titre-section-ajout">Boss présents <span id="cup-compte" class="facultatif"></span></h3>
-      <div class="sommaire-actions-cup">
-        <button type="button" id="cup-tout" class="btn-ouvrir-ajout">Tout cocher</button>
-        <button type="button" id="cup-aucun" class="btn-ouvrir-ajout">Tout décocher</button>
-      </div>
-      <div id="cup-boss" class="cup-boss"></div>
+      <p class="aide-apercu">Boss présents et probabilités : tuile « Boss par mode ».</p>
       <div class="actions-ajout">
         <span id="message-cup" class="message-ajout"></span>
         <button type="button" id="enregistrer-cup" class="bouton-creer">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boss et chances de chaque mode (cf. admin_boss_modes.js, commun/boss_modes.js). -->
+  <div id="modal-boss-modes" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Boss par mode</h2>
+        <button type="button" id="fermer-boss-modes" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">Coche un mode, puis ses boss. Les boss décochés ne sont ni tirés ni proposés quand on choisit le boss soi-même. Les tournois gardent leurs règles, et « Boss de carnage désactivés » reste prioritaire.</p>
+      <div id="bm-modes" class="bm-modes"></div>
+      <p class="aide-apercu"><span id="bm-etat"></span> <button type="button" id="bm-defaut" class="btn-ouvrir-ajout">Remettre les valeurs par défaut</button></p>
+      <label class="champ-skin-masque"><input type="checkbox" id="bm-par-type"> Régler les probabilités par type de boss (sinon : même chance pour chaque boss)</label>
+      <div id="bm-probas" hidden>
+        <div id="bm-champs" class="bm-champs"></div>
+        <p class="aide-apercu"><strong id="bm-total"></strong> · Un type sans boss coché laisse sa part aux autres, au prorata.</p>
+      </div>
+      <div id="bm-boss"></div>
+      <div class="actions-ajout">
+        <span id="message-bm" class="message-ajout"></span>
+        <button type="button" id="enregistrer-bm" class="bouton-creer">Enregistrer</button>
       </div>
     </div>
   </div>
@@ -750,7 +773,9 @@
   <script src="/admin_ppc/admin_skins.js?v=5"></script>
   <script src="/admin_ppc/admin_visibilite.js?v=1"></script>
   <script src="/admin_ppc/admin_raretes.js?v=2"></script>
-  <script src="/admin_ppc/admin_little_cup.js?v=2"></script>
+  <script src="/commun/boss_modes.js?v=1"></script>
+  <script src="/admin_ppc/admin_boss_modes.js?v=1"></script>
+  <script src="/admin_ppc/admin_little_cup.js?v=3"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=2"></script>
   <script src="/admin_ppc/admin_alternatives.js?v=1"></script>

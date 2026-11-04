@@ -35,7 +35,7 @@ const { supabase } = require("./supabase");
 const { ecrireDraft, matchClasseEnCours, erreurProfilIncomplet, ERREUR_MATCH_CLASSE } = require("./room");
 const { actualiserPoints, getPersonnages, getArmes, getPersonnageDraftParId, estGroupe, ELEMENTS_LIBRES } = require("./personnages");
 const { sequenceTheatre, calculerPointsBox, calculerPointsArmesBox, THEATRE_CARPE, MODE_MELEE } = require("./draft");
-const { tirerBossAleatoire, getBossParId, listeBoss, idsLegendesLocales, bossCarnageExclus, estHorsCoop, estReserveWorldBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("./boss");
+const { tirerBossAleatoire, getBossParId, listeBoss, idsLegendesLocales, bossCarnageExclus, estHorsCoop, reglageBoss, ERREUR_CARNAGE_DESACTIVE, ERREUR_BOSS_MODE } = require("./boss");
 const { legendesTueesParJoueur, enregistrerMorts } = require("./legendes");
 const { TEMPS_ABANDON, parserTempsMMSS, determinerVainqueur } = require("./temps");
 const { analyserVitrine, erreurVitrine, vitrineConforme, erreurAucuneVitrine, estBoxVitrine } = require("./vitrine");
@@ -364,6 +364,12 @@ function echangerEquipes(draft) {
   });
 }
 
+// Boss et chances suivis (cf. commun/boss_modes.js).
+function modeBossEquipe(draft) {
+  if (!draft.entrainement) return "equipe";
+  return draft.entrainement.boss_classes === true ? "classe" : "entrainement";
+}
+
 // Équipe qui commence (au hasard ; revanche : l'autre équipe), boss, hôtes
 // des mondes, pools et début de la draft.
 // Légendes locales : en co-op, seul le monde de l'hôte compte. Une légende
@@ -372,6 +378,7 @@ function echangerEquipes(draft) {
 // hôtes sont choisis après le tirage, parmi les paires qui peuvent jouer ce
 // boss (rotation d'une revanche à l'autre si les hôtes l'ont déjà tuée).
 async function lancerDraft(draft, { revanche = false } = {}) {
+  await actualiserPoints();
   if (revanche || Math.random() < 0.5) echangerEquipes(draft);
 
   const paires = pairesHotes(draft);
@@ -380,7 +387,7 @@ async function lancerDraft(draft, { revanche = false } = {}) {
   const legendes = idsLegendesLocales();
   const exclus = [...legendes.filter(id => !paires.some(paire => libre(paire, id))), ...listeBoss().filter(estHorsCoop).map(b => b.id), ...await bossCarnageExclus()];
   const impose = draft.boss_impose && getBossParId(draft.boss_impose) && !exclus.includes(draft.boss_impose) ? draft.boss_impose : null;
-  draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus, classe: draft.entrainement?.boss_classes === true })?.id || null;
+  draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus, mode: modeBossEquipe(draft) })?.id || null;
   draft.legendes = paires.length > 0;
 
   if (draft.taille !== 3) {
@@ -588,12 +595,12 @@ async function preparerCreation(body, user) {
   const formation = FORMATIONS.includes(body?.formation) ? body.formation : "equilibre";
   const bossImpose = body?.boss_id ? String(body.boss_id) : null;
   if (bossImpose && !getBossParId(bossImpose)) return { erreur: "Boss inconnu" };
-  if (estReserveWorldBoss(getBossParId(bossImpose))) return { erreur: ERREUR_WORLD_BOSS };
   // Boss pas faisables en co-op : jamais tirés ni imposés en équipe.
   if (estHorsCoop(getBossParId(bossImpose))) return { erreur: "Ce boss n'est pas faisable en co-op." };
   if ((await bossCarnageExclus()).includes(bossImpose)) return { erreur: ERREUR_CARNAGE_DESACTIVE };
 
   await actualiserPoints();
+  if (bossImpose && !reglageBoss("equipe").boss.includes(bossImpose)) return { erreur: ERREUR_BOSS_MODE };
   const profils = await lireProfils([user.id]);
   const profil = profils.get(user.id);
   const erreurV = erreurAucuneVitrine(profil?.data);

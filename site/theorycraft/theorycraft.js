@@ -36,8 +36,7 @@ const LIBELLES_MODES = { addition: "+ Addition", multiplication: "× Multiplicat
 const CATEGORIES = { dps: "DPS", subdps: "Sub-DPS", support: "Support" };
 const CATEGORIES_ARMES_FILTRE = { support: "Support", standard: "Perma", temporaire: "Temporaire" };
 
-// Types de boss (mêmes clés que TYPES_BOSS de api/points.js) ; classé :
-// TYPES_BOSS_CLASSE de api/_lib/boss.js.
+// Types de boss (mêmes clés que TYPES_BOSS de api/points.js).
 const TYPES_BOSS = {
   weekly_boss: "Boss hebdomadaire",
   legende_locale_jour: "Légende locale (1 fois par jour)",
@@ -45,10 +44,6 @@ const TYPES_BOSS = {
   world_boss: "World boss",
   carnage_boss: "Boss de carnage"
 };
-const TYPES_BOSS_CLASSE = ["weekly_boss", "legende_locale_infinie", "carnage_boss"];
-// Même règle que estTirableEnClasse (api/_lib/boss.js) : "classe": false
-// dans DB/boss.json = jamais en classé.
-const estTirableEnClasse = b => TYPES_BOSS_CLASSE.includes(b.type) && b.classe !== false;
 const ELEMENTS_RES = ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"];
 
 // Seuil par défaut si l'API ne le donne pas (SEUIL_EQUILIBRAGE).
@@ -60,6 +55,8 @@ let boss = [];
 // Boss du carnage désactivés par les admins (config.carnage_desactive) :
 // jamais tirés hors entraînement.
 let carnageDesactive = false;
+// Boss et chances de chaque mode (cf. commun/boss_modes.js).
+let configBossModes = {};
 let modes = {};
 let buffs = new Set();
 let bonusSaison = new Set();
@@ -117,6 +114,7 @@ async function chargerDonnees() {
   buffs = new Set(Array.isArray(config?.theatre) ? config.theatre : []);
   bonusSaison = new Set(Array.isArray(config?.bonus_saison) ? config.bonus_saison : []);
   carnageDesactive = config?.carnage_desactive === true;
+  configBossModes = { boss_modes: config?.boss_modes, little_cup: config?.little_cup, world_boss_public: config?.world_boss_public === true };
   if (Number(config?.seuil_equilibrage) > 0) seuil = Number(config.seuil_equilibrage);
   if (["fixe_joker", "fixe_horizontal"].includes(config?.equilibrage)) methodeEquilibrage = config.equilibrage;
   if (Number(config?.seuil_horizontal) > 0) seuilHorizontal = Number(config.seuil_horizontal);
@@ -661,45 +659,40 @@ function initialiserApercu() {
 }
 
 // ---- Boss : résistances et probabilités de tirage ----
-// Cf. tirerBossAleatoire (api/_lib/boss.js). Hors classé : catégorie tirée
-// d'abord (mêmes poids que POIDS_CATEGORIES), puis boss uniforme dans la
-// catégorie. Classé : tirage uniforme parmi les boss tirables.
-const POIDS_CATEGORIES_BOSS = [
-  { poids: 10, contient: estLegendeLocale },
-  { poids: 3, contient: b => b.type === "carnage_boss" },
-  { poids: 17, contient: b => !estLegendeLocale(b) && b.type !== "carnage_boss" }
-];
+// Une colonne par mode (cf. commun/boss_modes.js et tirerBossAleatoire,
+// api/_lib/boss.js) ; les events seulement une fois ouverts à tous.
+const COLONNES_BOSS = {
+  classe: "Classé", matchmaking: "Amical", prive: "Room", equipe: "Équipe",
+  entrainement: "Entraîn.", little_cup: "Little Cup", world_boss: "Random WB"
+};
 
 function pourcentage(p) {
   return p > 0 ? `${(100 * p).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %` : "—";
 }
 
-// Boss tirables (hors entraînement) : sans le carnage s'il est désactivé,
-// jamais les world boss ni les légendes "world_boss_seulement" (mode Random
-// world boss seulement).
-const estTirable = b => b.type !== "world_boss" && b.world_boss_seulement !== true && !(carnageDesactive && b.type === "carnage_boss");
-
-// Probabilité hors classé d'un boss (catégories vides ignorées).
-function probaHorsClasse(b) {
-  if (!estTirable(b)) return 0;
-  const groupes = POIDS_CATEGORIES_BOSS.map(({ poids, contient }) => ({ poids, nb: boss.filter(x => estTirable(x) && contient(x)).length }));
-  const total = groupes.filter(g => g.nb > 0).reduce((somme, g) => somme + g.poids, 0);
-  const i = POIDS_CATEGORIES_BOSS.findIndex(({ contient }) => contient(b));
-  return total > 0 ? groupes[i].poids / total / groupes[i].nb : 0;
+// Chances de chaque boss dans un mode : sans le carnage s'il est désactivé
+// (sauf en entraînement), en équipe sans les boss pas faisables en co-op.
+function chancesDuMode(mode) {
+  const { boss: ids, probas } = reglageBossMode(mode, configBossModes.boss_modes, boss, configBossModes.little_cup);
+  const permis = new Set(ids);
+  const liste = boss.filter(b => permis.has(b.id)
+    && !(carnageDesactive && mode !== "entrainement" && b.type === "carnage_boss")
+    && !(mode === "equipe" && b.coop === false));
+  return chancesBoss(liste, probas);
 }
 
 function rendreBoss() {
-  const nbClasse = boss.filter(b => estTirable(b) && estTirableEnClasse(b)).length;
+  const modesAffiches = Object.keys(COLONNES_BOSS).filter(mode =>
+    (mode !== "little_cup" || configBossModes.little_cup?.public === true) && (mode !== "world_boss" || configBossModes.world_boss_public));
+  const chances = Object.fromEntries(modesAffiches.map(mode => [mode, chancesDuMode(mode)]));
   const enTete = ELEMENTS_RES.map(element =>
     `<th title="Résistance ${element}"><img class="icone-element-tc" src="${ICONES_ELEMENTS_TRI[element]}" alt="${element}"></th>`).join("");
 
   document.getElementById("panneau-boss").innerHTML = `
     <p class="aide-theorycraft">
-      Résistances élémentaires en pourcentage (« Immunisé » : aucun dégât de cet élément). Le boss est tiré au hasard.
-      Hors classé (room, matchmaking, entraînement, équipe) : 1 chance sur 3 de tomber sur une légende locale, 1 sur 10 sur un boss de carnage,
-      le reste sur un boss hebdomadaire, puis chaque boss de la catégorie avec la même probabilité.
-      En classé : les <strong>${nbClasse}</strong> boss tirables (boss hebdomadaires sauf Tartaglia, légendes locales à l'infini et boss de carnage)
-      ont tous la même probabilité. Clic sur un titre de colonne pour trier.
+      Résistances élémentaires en pourcentage (« Immunisé » : aucun dégât de cet élément). Le boss est tiré au hasard :
+      les administrateurs choisissent les boss de chaque mode et leurs probabilités. Une colonne par mode, « — » : jamais tiré dans ce mode.
+      Clic sur un titre de colonne pour trier.
       ${carnageDesactive ? "<strong>Boss de carnage désactivés en ce moment</strong> (plus disponibles dans le jeu) : jamais tirés, sauf en entraînement." : ""}
     </p>
     <div class="tableau-conteneur">
@@ -708,8 +701,7 @@ function rendreBoss() {
           <tr>
             <th class="col-nom">Boss</th>
             ${enTete}
-            <th title="Room, matchmaking et entraînement">Proba. hors classé</th>
-            <th title="Matchmaking classé">Proba. classé</th>
+            ${modesAffiches.map(mode => `<th title="Probabilité de tirage : ${MODES_TIRAGE_BOSS.find(m => m.id === mode).nom}">${COLONNES_BOSS[mode]}</th>`).join("")}
           </tr>
         </thead>
         <tbody>
@@ -723,8 +715,7 @@ function rendreBoss() {
                 </span>
               </td>
               ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc" data-valeur-tri="${RES_IMMUNITE}"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}
-              <td>${pourcentage(probaHorsClasse(b))}</td>
-              <td>${estTirable(b) && estTirableEnClasse(b) ? pourcentage(1 / nbClasse) : "—"}</td>
+              ${modesAffiches.map(mode => `<td class="proba-boss-tc">${pourcentage(chances[mode].get(b.id) || 0)}</td>`).join("")}
             </tr>`).join("")}
         </tbody>
       </table>
@@ -734,7 +725,7 @@ function rendreBoss() {
       <li>Hors classé, le boss tiré est soumis au vote : il n'est relancé que si les deux joueurs veulent le relancer.</li>
       <li>Légendes locales « 1 fois par jour » : celles déjà tuées par l'un des deux joueurs depuis 4 h (heure de Paris) ne sont pas tirées, les autres légendes se partagent leur probabilité.</li>
       <li>Deux joueurs qui n'ont pas le même niveau du monde (ou dont l'un ne l'a pas renseigné) ne tombent jamais sur une légende locale : leurs PV dépendent du niveau du monde. Les boss de carnage et hebdomadaires se partagent alors leur probabilité (même rapport 3 / 17).</li>
-      <li>Room privée et entraînement : le créateur peut aussi imposer le boss.</li>
+      <li>Room privée, équipe et entraînement : le créateur peut aussi imposer un boss du mode.</li>${configBossModes.world_boss_public ? "<li>Random world boss : probabilités en jouant seul ; à plusieurs, sans les boss pas faisables en co-op.</li>" : ""}
     </ul>
   `;
   preparerTrisSimples(document.getElementById("panneau-boss"));

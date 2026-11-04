@@ -9,7 +9,7 @@ const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_li
 const { demarrerAnalyse } = require("../_lib/chronos");
 const { getPersonnages, actualiserPoints, migrerCollectionPersos, getLittleCup } = require("../_lib/personnages");
 const { erreurLittleCup } = require("../_lib/little_cup");
-const { getBossParId, bossCarnageExclus, estReserveWorldBoss, estHorsCoop, ERREUR_CARNAGE_DESACTIVE, ERREUR_WORLD_BOSS } = require("../_lib/boss");
+const { getBossParId, bossCarnageExclus, reglageBoss, estHorsCoop, ERREUR_CARNAGE_DESACTIVE, ERREUR_BOSS_MODE } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation, creerEntrainementEquipe: creerRoomEntrainementEquipe } = require("../_lib/equipe");
 const { analyserVitrine } = require("../_lib/vitrine");
@@ -24,14 +24,15 @@ const PREMIERS = ["moi", "adverse", "aleatoire"];
 // Room privée : J1 choisi par le créateur.
 const PREMIERS_ROOM = ["createur", "adversaire", "aleatoire"];
 
-// Boss imposé à la création : inconnu, légende locale déjà tuée
-// aujourd'hui par le créateur ou boss du carnage désactivé (sauf en
-// entraînement) -> message d'erreur ; null sinon.
-async function erreurBossImpose(bossId, discordId, { entrainement = false } = {}) {
+// Boss imposé à la création : inconnu, pas dans les boss du mode (cf.
+// commun/boss_modes.js), légende locale déjà tuée aujourd'hui par le créateur
+// ou boss du carnage désactivé (sauf en entraînement) -> message d'erreur ;
+// null sinon. Points à jour : actualiserPoints avant.
+async function erreurBossImpose(bossId, discordId, { entrainement = false, mode = entrainement ? "entrainement" : "prive" } = {}) {
   if (!bossId) return null;
   const boss = getBossParId(bossId);
   if (!boss) return "Boss inconnu";
-  if (estReserveWorldBoss(boss)) return ERREUR_WORLD_BOSS;
+  if (!reglageBoss(mode).boss.includes(bossId)) return ERREUR_BOSS_MODE;
   if (!entrainement && (await bossCarnageExclus()).includes(bossId)) return ERREUR_CARNAGE_DESACTIVE;
   if ((await legendesTueesAujourdhui([discordId])).includes(bossId)) {
     return `Tu as déjà tué ${boss.nom} aujourd'hui : cette légende locale revient demain à 4 h.`;
@@ -405,7 +406,7 @@ module.exports = async (req, res) => {
     // Boss et J1 choisis à la création (sinon au hasard au tirage).
     await actualiserPoints();
     const bossImpose = req.body?.boss_id ? String(req.body.boss_id) : null;
-    const erreurBoss = await erreurBossImpose(bossImpose, user.id);
+    const erreurBoss = await erreurBossImpose(bossImpose, user.id, { mode: req.body?.little_cup === true ? "little_cup" : "prive" });
     if (erreurBoss) return res.status(400).json({ error: erreurBoss });
     const premier = PREMIERS_ROOM.includes(req.body?.premier) ? req.body.premier : "aleatoire";
     // « Full box » : mode "auto" avec la full box imposée aux 2 joueurs.
