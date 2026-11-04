@@ -7,14 +7,51 @@ const FAMILLES_VN = Object.fromEntries(POLICES_VN.map(p => [p.id, p.famille]));
 let segmentVn = null;
 let indexVn = 0;
 let occupeVn = false;
+// Sous-chapitres finis et en cours, envoyés par le serveur.
+let sousChapitresVn = [];
 
 const imageVn = chemin => encodeURI(`/DB/images/${chemin}`);
 
-function afficherEcran(titre, texte, { recommencer = false } = {}) {
+function afficherEcran(titre, texte, { recommencer = false, reprendre = false, liste = false } = {}) {
   elementVn("vn-ecran-titre").textContent = titre;
   elementVn("vn-ecran-texte").textContent = texte;
   elementVn("vn-recommencer").hidden = !recommencer;
+  elementVn("vn-reprendre").hidden = !reprendre;
+  remplirSousChapitres(liste);
   elementVn("vn-ecran").hidden = false;
+}
+
+// Liste de l'écran : "Refaire" seulement sur les sous-chapitres déjà finis.
+function remplirSousChapitres(visible) {
+  const liste = elementVn("vn-sous-chapitres");
+  liste.hidden = !visible || !sousChapitresVn.length;
+  liste.replaceChildren(...(visible ? sousChapitresVn : []).map(sc => {
+    const ligne = document.createElement("li");
+    const titre = document.createElement("span");
+    titre.textContent = sc.titre;
+    ligne.append(titre);
+    if (sc.courant) {
+      const etat = document.createElement("em");
+      etat.textContent = "En cours";
+      ligne.append(etat);
+    }
+    if (sc.fini) {
+      const bouton = document.createElement("button");
+      bouton.type = "button";
+      bouton.className = "vn-bouton";
+      bouton.textContent = "Refaire";
+      bouton.addEventListener("click", () => appelerServeur({ action: "refaire", sous_chapitre: sc.id }));
+      ligne.append(bouton);
+    }
+    return ligne;
+  }));
+}
+
+function ouvrirMenuSousChapitres() {
+  const aucunFini = !sousChapitresVn.some(sc => sc.fini);
+  afficherEcran("Sous-chapitres", aucunFini
+    ? "Termine ce sous-chapitre pour pouvoir le refaire."
+    : "Refaire un sous-chapitre reprend l'histoire depuis son début : tu quittes ta position actuelle.", { reprendre: true, liste: true });
 }
 
 function afficherPanneau() {
@@ -69,17 +106,20 @@ function prechargerImages(segment) {
 
 function traiterReponse(data) {
   if (data.chapitre) document.title = data.chapitre;
+  sousChapitresVn = data.sous_chapitres || [];
   if (data.statut === "terminee") {
     segmentVn = null;
     const titre = data.fin ? `Fin : ${data.fin.nom}` : data.chapitre;
     const progression = `Chapitre terminé. Fins découvertes : ${data.fins_trouvees} sur ${data.fins_total}.`;
-    afficherEcran(titre, progression, { recommencer: true });
+    elementVn("vn-ouvrir-menu").hidden = true;
+    afficherEcran(titre, progression, { recommencer: true, liste: true });
     return;
   }
   segmentVn = data.segment;
   indexVn = 0;
   prechargerImages(segmentVn);
   elementVn("vn-ecran").hidden = true;
+  elementVn("vn-ouvrir-menu").hidden = false;
   afficherPanneau();
 }
 
@@ -126,6 +166,8 @@ document.addEventListener("keydown", event => {
   event.preventDefault();
   avancer();
 });
+elementVn("vn-ouvrir-menu").addEventListener("click", ouvrirMenuSousChapitres);
+elementVn("vn-reprendre").addEventListener("click", () => { elementVn("vn-ecran").hidden = true; });
 elementVn("vn-recommencer").addEventListener("click", () => appelerServeur({ action: "recommencer" }));
 
 if (chapitreVn) appelerServeur({ action: "ouvrir" });

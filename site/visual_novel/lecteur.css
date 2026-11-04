@@ -123,6 +123,10 @@ body.vn-page {
   cursor: pointer;
 }
 
+.vn-bouton[hidden] {
+  display: none;
+}
+
 .vn-bouton:hover,
 .vn-bouton:focus-visible {
   background: var(--accent-fond);
@@ -138,15 +142,21 @@ body.vn-page {
 }
 
 .vn-repere,
-.vn-quitter {
-  position: absolute;
-  top: 1.5cqh;
+.vn-action {
   margin: 0;
   padding: 0.5cqh 1.5cqh;
   color: #fff;
   background: rgba(0, 0, 0, 0.6);
+  border: 0;
   border-radius: 1cqh;
+  font-family: var(--police-texte);
   font-size: 2.6cqh;
+  line-height: 1.45;
+}
+
+.vn-repere {
+  position: absolute;
+  top: 1.5cqh;
 }
 
 .vn-repere {
@@ -157,9 +167,22 @@ body.vn-page {
   display: none;
 }
 
-.vn-quitter {
+.vn-actions {
+  position: absolute;
+  top: 1.5cqh;
   right: 1.5cqh;
+  z-index: 1;
+  display: flex;
+  gap: 1cqh;
+}
+
+.vn-action {
+  cursor: pointer;
   text-decoration: none;
+}
+
+.vn-action[hidden] {
+  display: none;
 }
 
 .vn-ecran {
@@ -168,9 +191,10 @@ body.vn-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 2cqh;
-  padding: 4cqh;
+  padding: 8cqh 4cqh 4cqh;
+  overflow-y: auto;
   box-sizing: border-box;
   text-align: center;
   background: rgba(0, 0, 0, 0.88);
@@ -196,7 +220,48 @@ body.vn-page {
   font-size: 3.6cqh;
 }
 
+.vn-sous-chapitres {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: 1cqh;
+  width: min(100%, 90cqh);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vn-sous-chapitres[hidden] {
+  display: none;
+}
+
+.vn-sous-chapitres li {
+  display: flex;
+  align-items: center;
+  gap: 2cqh;
+  padding: 1cqh 2cqh;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1cqh;
+  font-size: 3.2cqh;
+  text-align: left;
+}
+
+.vn-sous-chapitres span {
+  flex: 1;
+}
+
+.vn-sous-chapitres em {
+  color: var(--accent);
+}
+
+.vn-sous-chapitres .vn-bouton {
+  width: auto;
+  padding: 0.6cqh 2cqh;
+  font-size: 2.8cqh;
+}
+
 .vn-ecran-boutons {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -265,24 +330,43 @@ body.vn-page {
   }
 
   .vn-repere,
-  .vn-quitter {
-    top: 0.5rem;
+  .vn-action {
     padding: 0.2rem 0.6rem;
     border-radius: 0.5rem;
     font-size: 0.85rem;
   }
 
   .vn-repere {
+    top: 2.2rem;
     left: 0.5rem;
   }
 
-  .vn-quitter {
+  .vn-actions {
+    top: 0.5rem;
     right: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .vn-sous-chapitres {
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .vn-sous-chapitres li {
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .vn-sous-chapitres .vn-bouton {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.9rem;
   }
 
   .vn-ecran {
     gap: 1rem;
-    padding: 1.5rem;
+    padding: 3rem 1.5rem 1.5rem;
   }
 
   .vn-ecran h1 {

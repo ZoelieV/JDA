@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/site.css?v=19">
-  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=1">
+  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=2">
 </head>
 <body class="vn-page">
   <main id="vn-cadre" class="vn-cadre">
@@ -26,19 +26,24 @@
       <span id="vn-suite" class="vn-suite" aria-hidden="true" hidden>▼</span>
     </div>
     <p id="vn-repere" class="vn-repere"></p>
-    <a href="/evenements#visual-novel" class="vn-quitter">Quitter</a>
+    <div class="vn-actions">
+      <button type="button" id="vn-ouvrir-menu" class="vn-action" hidden>Sous-chapitres</button>
+      <a href="/evenements#visual-novel" class="vn-action">Quitter</a>
+    </div>
 
     <!-- Chargement, erreur ou fin du chapitre. -->
     <div id="vn-ecran" class="vn-ecran">
       <h1 id="vn-ecran-titre"></h1>
       <p id="vn-ecran-texte">Chargement…</p>
+      <ul id="vn-sous-chapitres" class="vn-sous-chapitres" hidden></ul>
       <div class="vn-ecran-boutons">
-        <button type="button" id="vn-recommencer" class="vn-bouton" hidden>Recommencer</button>
+        <button type="button" id="vn-reprendre" class="vn-bouton" hidden>Reprendre</button>
+        <button type="button" id="vn-recommencer" class="vn-bouton" hidden>Recommencer le chapitre</button>
         <a href="/evenements#visual-novel" class="vn-bouton">Retour aux événements</a>
       </div>
     </div>
   </main>
   <script src="/commun/vn_polices.js?v=1"></script>
-  <script src="/visual_novel/lecteur.js?v=1"></script>
+  <script src="/visual_novel/lecteur.js?v=2"></script>
 </body>
 </html>
