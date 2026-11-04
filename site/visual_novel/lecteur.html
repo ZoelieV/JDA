@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Visual novel</title>
+  <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
+  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/commun/theme.css?v=rem5">
+  <link rel="stylesheet" href="/commun/entete.css?v=rem48">
+  <link rel="stylesheet" href="/commun/site.css?v=19">
+  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=1">
+</head>
+<body class="vn-page">
+  <main id="vn-cadre" class="vn-cadre">
+    <!-- Calques : fond derrière, personnages dans l'ordre du panneau, texte devant. -->
+    <div id="vn-scene" class="vn-scene">
+      <img id="vn-fond" class="vn-fond" alt="" hidden>
+      <div id="vn-persos" class="vn-persos"></div>
+    </div>
+    <div id="vn-dialogue" class="vn-dialogue" hidden>
+      <p id="vn-nom" class="vn-nom"></p>
+      <p id="vn-texte" class="vn-texte" aria-live="polite"></p>
+      <div id="vn-choix" class="vn-choix"></div>
+      <span id="vn-suite" class="vn-suite" aria-hidden="true" hidden>▼</span>
+    </div>
+    <p id="vn-repere" class="vn-repere"></p>
+    <a href="/evenements#visual-novel" class="vn-quitter">Quitter</a>
+
+    <!-- Chargement, erreur ou fin du chapitre. -->
+    <div id="vn-ecran" class="vn-ecran">
+      <h1 id="vn-ecran-titre"></h1>
+      <p id="vn-ecran-texte">Chargement…</p>
+      <div class="vn-ecran-boutons">
+        <button type="button" id="vn-recommencer" class="vn-bouton" hidden>Recommencer</button>
+        <a href="/evenements#visual-novel" class="vn-bouton">Retour aux événements</a>
+      </div>
+    </div>
+  </main>
+  <script src="/commun/vn_polices.js?v=1"></script>
+  <script src="/visual_novel/lecteur.js?v=1"></script>
+</body>
+</html>

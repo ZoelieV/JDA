@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
   <link rel="stylesheet" href="/matchmaking/matchmaking.css?v=39">
-  <link rel="stylesheet" href="/evenements/evenements.css?v=10">
+  <link rel="stylesheet" href="/evenements/evenements.css?v=11">
   <link rel="stylesheet" href="/commun/site.css?v=19">
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -53,7 +53,22 @@
         <p>Draft sans les persos et armes les plus chers.</p>
       </div>
     </button>
+    <button type="button" class="carte-section carte-match cache" data-detail="visual-novel" aria-expanded="false" aria-controls="detail-visual-novel">
+      <img src="/DB/images/namecards/Namecard_Background_Achievement_Adeptal_Valley.webp" alt="" loading="lazy">
+      <div class="carte-section-texte">
+        <h2>Visual novel <span class="badge-admin">Admin</span></h2>
+        <p>Une histoire dont tes choix changent la suite.</p>
+      </div>
+    </button>
   </div>
+
+  <!-- Visual novel (cf. api/_lib/visual_novel.js) : vrais administrateurs
+       seulement tant que l'option de visibilité n'existe pas. -->
+  <section id="detail-visual-novel" class="panneau detail-match cache" data-detail="visual-novel">
+    <h2 id="nom-visual-novel">Visual novel <span class="badge-admin">Admin</span></h2>
+    <p class="regle-admin">Histoire d'essai : seuls les administrateurs la voient.</p>
+    <div id="chapitres-visual-novel" class="chapitres-vn"></div>
+  </section>
 
   <!-- Random world boss (cf. api/_lib/world_boss.js) : room par lien, seul
        ou de 2 à 4 joueurs, lancée par le chef (créateur). -->
@@ -120,7 +135,7 @@
   <script src="/commun/variantes.js?v=7"></script>
   <script src="/commun/synergies.js?v=5"></script>
   <script src="/commun/cartes.js?v=36"></script>
-  <script src="/evenements/evenements.js?v=16"></script>
+  <script src="/evenements/evenements.js?v=17"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=36"></script>
 </body>

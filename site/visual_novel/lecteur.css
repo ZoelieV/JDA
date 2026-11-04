@@ -1,0 +1,299 @@
+/* Lecteur du visual novel : scène 16:9 qui se réduit avec l'écran. Tailles du
+   texte en % de la hauteur de la scène (cqh). En portrait, le texte passe sous
+   la scène pour rester lisible. */
+@font-face { font-family: "VN Rubik"; src: url("/DB/fonts/RubikSupplement-Regular.woff") format("woff"); font-display: swap; }
+@font-face { font-family: "VN Rubik"; src: url("/DB/fonts/RubikSupplement-Bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "VN Rubik"; src: url("/DB/fonts/RubikSupplement-Italic.woff") format("woff"); font-style: italic; font-display: swap; }
+@font-face { font-family: "VN Rubik"; src: url("/DB/fonts/RubikSupplement-BoldItalic.woff") format("woff"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "VN Mermaid"; src: url("/DB/fonts/Mermaid_Font.font-sfnt"); font-display: swap; }
+@font-face { font-family: "VN Teyvat"; src: url("/DB/fonts/Script-Teyvat.woff2.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "VN Celestial"; src: url("/DB/fonts/Script-Celestial.woff2.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "VN Deshret"; src: url("/DB/fonts/Script-Deshret.woff2.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "VN Fontaine"; src: url("/DB/fonts/Script-Fontaine.woff2.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "VN Inazuma"; src: url("/DB/fonts/Script-Inazuma.woff2.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "VN Latin"; src: url("/DB/fonts/Script-Latin-Based.woff2.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "VN Sumeru"; src: url("/DB/fonts/Script-Sumeru.woff2.woff2") format("woff2"); font-display: swap; }
+
+body.vn-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  margin: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+.vn-cadre {
+  position: relative;
+  width: min(100vw, calc(100dvh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  container-type: size;
+  overflow: hidden;
+  cursor: pointer;
+  background: #111;
+  user-select: none;
+}
+
+.vn-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.vn-fond {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vn-persos {
+  position: absolute;
+  inset: 0;
+}
+
+.vn-perso {
+  position: absolute;
+  width: auto;
+  transform: translateX(-50%);
+}
+
+.vn-perso.vn-miroir {
+  transform: translateX(-50%) scaleX(-1);
+}
+
+.vn-dialogue {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 3%;
+  max-height: 60%;
+  box-sizing: border-box;
+  padding: 2cqh 3cqh 3cqh;
+  overflow-y: auto;
+  background: rgba(10, 12, 20, 0.84);
+  border: 1px solid var(--accent-bordure);
+  border-radius: 1.5cqh;
+}
+
+.vn-dialogue[hidden] {
+  display: none;
+}
+
+.vn-nom {
+  margin: 0 0 0.8cqh;
+  color: var(--accent);
+  font-family: var(--police-titre);
+  font-size: 3.6cqh;
+}
+
+.vn-texte {
+  margin: 0;
+  color: #fff;
+  font-size: calc(var(--taille-vn, 4) * 1cqh);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.vn-choix {
+  display: flex;
+  flex-direction: column;
+  gap: 1cqh;
+}
+
+.vn-choix:not(:empty) {
+  margin-top: 1.5cqh;
+}
+
+.vn-bouton {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1.2cqh 2cqh;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--bordure);
+  border-radius: 1cqh;
+  font-family: var(--police-texte);
+  font-size: 3.2cqh;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vn-bouton:hover,
+.vn-bouton:focus-visible {
+  background: var(--accent-fond);
+  border-color: var(--accent-bordure);
+}
+
+.vn-suite {
+  position: absolute;
+  right: 1.5cqh;
+  bottom: 0.8cqh;
+  color: var(--accent);
+  font-size: 2.4cqh;
+}
+
+.vn-repere,
+.vn-quitter {
+  position: absolute;
+  top: 1.5cqh;
+  margin: 0;
+  padding: 0.5cqh 1.5cqh;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 1cqh;
+  font-size: 2.6cqh;
+}
+
+.vn-repere {
+  left: 1.5cqh;
+}
+
+.vn-repere:empty {
+  display: none;
+}
+
+.vn-quitter {
+  right: 1.5cqh;
+  text-decoration: none;
+}
+
+.vn-ecran {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2cqh;
+  padding: 4cqh;
+  box-sizing: border-box;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.88);
+  cursor: default;
+}
+
+.vn-ecran[hidden] {
+  display: none;
+}
+
+.vn-ecran h1 {
+  margin: 0;
+  font-family: var(--police-titre);
+  font-size: 7cqh;
+}
+
+.vn-ecran h1:empty {
+  display: none;
+}
+
+.vn-ecran p {
+  margin: 0;
+  font-size: 3.6cqh;
+}
+
+.vn-ecran-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2cqh;
+}
+
+.vn-ecran-boutons .vn-bouton {
+  width: auto;
+}
+
+/* Téléphone en portrait : la scène en haut, le texte en dessous, en rem. */
+@media (max-aspect-ratio: 1 / 1) {
+  .vn-cadre {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100dvh;
+    aspect-ratio: auto;
+    container-type: normal;
+  }
+
+  .vn-scene {
+    position: relative;
+    inset: auto;
+    flex: none;
+    aspect-ratio: 16 / 9;
+  }
+
+  .vn-dialogue {
+    position: relative;
+    inset: auto;
+    flex: 1;
+    max-height: none;
+    padding: 0.75rem 1rem 2rem;
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
+
+  .vn-nom {
+    margin-bottom: 0.4rem;
+    font-size: 1.1rem;
+  }
+
+  .vn-texte {
+    font-size: calc(var(--taille-vn, 4) * 0.27rem);
+  }
+
+  .vn-choix {
+    gap: 0.5rem;
+  }
+
+  .vn-choix:not(:empty) {
+    margin-top: 0.75rem;
+  }
+
+  .vn-bouton {
+    padding: 0.7rem 0.9rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .vn-suite {
+    right: 0.75rem;
+    bottom: 0.4rem;
+    font-size: 1rem;
+  }
+
+  .vn-repere,
+  .vn-quitter {
+    top: 0.5rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .vn-repere {
+    left: 0.5rem;
+  }
+
+  .vn-quitter {
+    right: 0.5rem;
+  }
+
+  .vn-ecran {
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .vn-ecran h1 {
+    font-size: 1.6rem;
+  }
+
+  .vn-ecran p {
+    font-size: 1rem;
+  }
+
+  .vn-ecran-boutons {
+    gap: 0.75rem;
+  }
+}

@@ -138,6 +138,8 @@ const { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin
 const { estCosmetique, estRetire, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, lireHistoriqueDons, lireHistoriqueRetraits } = require("./_lib/koyns");
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
+const visualNovel = require("./_lib/visual_novel");
+
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
 
@@ -426,6 +428,18 @@ function nettoyer(valeurs, ids, taille) {
 module.exports = async (req, res) => {
   try {
     const user = await verifySessionToken(parseCookies(req).session);
+
+    // Visual novel (cf. _lib/visual_novel.js) : GET ?vn=1, résumé de l'histoire
+    // et avancement du joueur ; POST { vn: { action, chapitre, depuis, option } },
+    // lecture. Avant le contrôle admin du POST de la config.
+    if ((req.method === "GET" && req.query?.vn === "1") || (req.method === "POST" && req.body?.vn)) {
+      res.setHeader("Cache-Control", "no-store");
+      if (!user) return res.status(401).json({ error: "Non connecté" });
+      if (!visualNovel.peutLire(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+      if (req.method === "GET") return res.status(200).json(await visualNovel.lireResume(user.id));
+      const { status, corps } = await visualNovel.traiterAction(user.id, req.body.vn);
+      return res.status(status).json(corps);
+    }
 
     // Statistiques du site (inscriptions, connexions, activité ; cf.
     // _lib/statistiques.js) : administrateurs et mini admins.

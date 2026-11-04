@@ -89,6 +89,24 @@ async function afficherLittleCup(config) {
     : "<li>Aucun match pour l'instant.</li>";
 }
 
+// Visual novel : chapitres et avancement du joueur (cf.
+// api/_lib/visual_novel.js).
+async function afficherVisualNovel() {
+  const reponse = await fetch("/api/points?vn=1", { credentials: "include" });
+  if (!reponse.ok) return;
+  const histoire = await reponse.json();
+  document.querySelector("#nom-visual-novel").firstChild.textContent = `${histoire.nom} `;
+  const etats = { nouveau: "À lire", en_cours: "En cours", terminee: "Terminé" };
+  document.getElementById("chapitres-visual-novel").innerHTML = histoire.chapitres.map(c => `
+    <a class="chapitre-vn" href="/visual_novel/lecteur?chapitre=${encodeURIComponent(c.id)}">
+      <img src="${echapperCalendrier(encodeURI(`/DB/images/${c.namecard}`))}" alt="" loading="lazy">
+      <span class="texte-chapitre-vn">
+        <strong>${echapperCalendrier(c.titre)}</strong>
+        <span>${c.termine ? etats.terminee : etats[c.statut]} · ${c.fins_trouvees}/${c.fins_total} fins</span>
+      </span>
+    </a>`).join("");
+}
+
 // Une seule carte ouverte à la fois ; un 2e clic referme ses détails.
 function choisirCarte(carte) {
   const dejaOuvert = carte.getAttribute("aria-expanded") === "true";
@@ -293,6 +311,12 @@ async function demarrer() {
   for (const [nom, public_] of Object.entries(evenements)) {
     document.querySelector(`.carte-match[data-detail="${nom}"]`).classList.toggle("cache", !public_ && !admin);
     document.querySelectorAll(`[data-detail="${nom}"] .badge-admin, [data-detail="${nom}"] .regle-admin`).forEach(e => e.classList.toggle("cache", public_));
+  }
+
+  // Visual novel : vrais administrateurs seulement pour l'instant.
+  if (utilisateur?.admin) {
+    document.querySelector('.carte-match[data-detail="visual-novel"]').classList.remove("cache");
+    afficherVisualNovel().catch(console.error);
   }
 
   const visibles = document.querySelectorAll(".carte-match:not(.cache)").length;
