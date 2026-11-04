@@ -396,7 +396,7 @@ function rendreEntete() {
       ${vue === "characters" ? `<th class="col-synergie" title="Nombre de persos en synergie : sans eux dans la box, le perso perd des points (bouton Synergie)">Synergie</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Faction du perso (aucune ou une seule) : filtres des persos sur tout le site">Faction</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Rôles du perso (bouclier, soin ; aucun, un ou les deux) : filtres des persos sur tout le site">Rôles</th>` : ""}
-      ${vue === "weapons" ? `<th class="col-alternative" title="Part des points (0 à 200 %) comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box : par groupe de persos, et « le reste » (arrondi à l'entier)">Valeur alt.</th>` : ""}
+      ${vue === "weapons" ? `<th class="col-alternative" title="Part des points (0 à 400 %) comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box : par groupe de persos, et « le reste » (arrondi à l'entier)">Valeur alt.</th>` : ""}
     </tr>
     ${vue === "characters" ? `
       <tr class="ligne-modes">

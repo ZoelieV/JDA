@@ -376,7 +376,7 @@ async function lireConfig() {
 }
 
 // Valeurs alternatives des armes : ids connus, pourcentages permis (0 à
-// 200 %), persos connus (clés signature : id, ou groupe pour le Voyageur) ;
+// 400 %), persos connus (clés signature : id, ou groupe pour le Voyageur) ;
 // valeur par défaut (100 %, aucun groupe) pas gardée (cf.
 // lireAlternativesArmes, commun/synergies.js).
 function nettoyerAlternatives(valeurs, ids, persos) {
