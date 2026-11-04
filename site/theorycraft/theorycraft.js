@@ -761,7 +761,7 @@ function rendreEquilibrage() {
 
     <h2>2. Points d'une arme</h2>
     <p class="formule-tc">points = R<sub>raffinement</sub></p>
-    <p>Chaque copie d'une arme présente dans la box compte (onglet Armes). Certaines armes ont des <strong>valeurs alternatives</strong> (de 0 à 200 % de leurs points, arrondies à l'entier), qui remplacent leurs points dans 2 cas :</p>
+    <p>Chaque copie d'une arme présente dans la box compte (onglet Armes). Certaines armes ont des <strong>valeurs alternatives</strong> (de 0 à 400 % de leurs points, arrondies à l'entier), qui remplacent leurs points dans 2 cas :</p>
     <ul class="notes-theorycraft">
       <li>pour chaque copie en double (la meilleure copie compte en entier),</li>
       <li>et pour une arme signature quand son personnage n'est pas dans la box.</li>
