@@ -1914,6 +1914,15 @@ body {
   border-radius: 0.75rem;
 }
 
+.reco-titre {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--police-titre);
+  font-size: 1.5rem;
+  font-weight: normal;
+  text-align: center;
+}
+
 .reco-bloc h3 {
   margin: 0 0 0.5rem;
   font-size: 1rem;

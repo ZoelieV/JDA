@@ -1384,6 +1384,7 @@ function rendreRecommandationsStuff(personnages, boxActive, profil) {
   const listeDps = lignesReco(dps, "support");
 
   zone.innerHTML = `
+    <h2 class="reco-titre">Recommandations</h2>
     <div class="reco-bloc">
       <h3>Supports à monter</h3>
       ${listeSupports ? `<ul class="reco-liste">${listeSupports}</ul>` : `<p class="reco-vide">Tous tes supports possédés sont déjà montés.</p>`}
