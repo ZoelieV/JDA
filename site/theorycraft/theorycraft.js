@@ -70,7 +70,7 @@ let methodeEquilibrage = "ancien";
 
 let onglet = null;
 let filtres = creerFiltres();
-let tri = null; // { cle: "nom" | index de colonne, sens: 1 | -1 }
+let tri = null; // { cle: "nom" | index de colonne | clé de VALEURS_TRI, sens: 1 | -1 }
 
 function creerFiltres() {
   return {
@@ -181,7 +181,7 @@ function htmlMethodeEquilibrage(paliers) {
     <div class="tableau-conteneur tableau-paliers-tc">
       <table class="tableau-theorycraft">
         <thead><tr><th>Écart entre les box</th><th>Bans d'équilibrage</th></tr></thead>
-        <tbody>${paliers}<tr><td>…</td><td>+1 tous les ${seuil} pts</td></tr></tbody>
+        <tbody>${paliers}<tr data-fixe><td>…</td><td>+1 tous les ${seuil} pts</td></tr></tbody>
       </table>
     </div>`;
   }
@@ -291,13 +291,29 @@ function itemsAffiches() {
   return items
     .map((item, index) => ({ item, index, points: points(item, vue) }))
     .sort((a, b) => {
-      const ecart = tri.cle === "nom"
-        ? a.item.nom.localeCompare(b.item.nom, "fr", { sensitivity: "base" })
-        : b.points[tri.cle] - a.points[tri.cle];
-      return (ecart * tri.sens) || (a.index - b.index);
+      if (tri.cle === "nom") {
+        return (a.item.nom.localeCompare(b.item.nom, "fr", { sensitivity: "base" }) * tri.sens) || (a.index - b.index);
+      }
+      const valeur = VALEURS_TRI[tri.cle];
+      const va = valeur ? valeur(a.item) : a.points[tri.cle];
+      const vb = valeur ? valeur(b.item) : b.points[tri.cle];
+      // Case vide (null) : toujours en bas, dans les 2 sens.
+      if (va === null || vb === null) return ((va === null) - (vb === null)) || (a.index - b.index);
+      return ((vb - va) * tri.sens) || (a.index - b.index);
     })
     .map(e => e.item);
 }
+
+// Colonnes qui ne sont pas des points : bonus de saison, malus de synergie,
+// pourcentage de la valeur alternative d'une arme pour « le reste ».
+const VALEURS_TRI = {
+  bonusSaison: perso => (bonusSaison.has(perso.id) ? 1 : 0),
+  synergie: perso => synergiesPersos[perso.id]?.malus ?? null,
+  alternative: arme => {
+    const alternative = arme.alternative || { reste: arme.alternatif ?? 100, groupes: [] };
+    return alternative.reste === 100 && !alternative.groupes.length ? null : alternative.reste;
+  }
+};
 
 // Rôles, éléments et / ou armes filtrés, sans tri de colonne : groupés dans
 // l'ordre des filtres choisis, puis par rareté, puis dans l'ordre de sortie
@@ -409,8 +425,8 @@ function rendreEntete() {
     <tr>
       <th class="col-nom triable" data-tri="nom" title="Trier par nom">${persos ? "Personnage" : "Arme"}${fleche("nom")}</th>
       ${libelles.map((libelle, index) => `<th class="triable" data-tri="${index}" title="Trier par ${libelle}">${libelle}${fleche(index)}</th>`).join("")}
-      ${persos ? `<th class="col-bonus-saison" title="En match classé : +3 trophées par perso de l'équipe ayant le bonus (gain augmenté, perte réduite)">Bonus de saison</th>` : ""}
-      ${persos ? `<th class="col-alternative-tc" title="Points perdus dans une box sans ses persos en synergie">Synergie</th>` : `<th class="col-alternative-tc" title="Points d'une copie en double, ou d'une arme signature sans son perso dans la box">Valeur alt.</th>`}
+      ${persos ? `<th class="col-bonus-saison triable" data-tri="bonusSaison" title="En match classé : +3 trophées par perso de l'équipe ayant le bonus (gain augmenté, perte réduite)">Bonus de saison${fleche("bonusSaison")}</th>` : ""}
+      ${persos ? `<th class="col-alternative-tc triable" data-tri="synergie" title="Points perdus dans une box sans ses persos en synergie">Synergie${fleche("synergie")}</th>` : `<th class="col-alternative-tc triable" data-tri="alternative" title="Points d'une copie en double, ou d'une arme signature sans son perso dans la box">Valeur alt.${fleche("alternative")}</th>`}
     </tr>
     ${persos ? `
       <tr class="ligne-modes">
@@ -518,11 +534,69 @@ function initialiserTableau() {
   });
   document.getElementById("entete-theorycraft").addEventListener("click", event => {
     const titre = event.target.closest("[data-tri]");
-    if (titre) cyclerTriTc(titre.dataset.tri === "nom" ? "nom" : Number(titre.dataset.tri));
+    if (titre) cyclerTriTc(/^\d+$/.test(titre.dataset.tri) ? Number(titre.dataset.tri) : titre.dataset.tri);
   });
   document.getElementById("corps-theorycraft").addEventListener("click", event => {
     const bouton = event.target.closest(".btn-apercu-tc");
     if (bouton) ouvrirApercu(bouton.dataset.id);
+  });
+}
+
+// ---- Tri des autres tableaux (boss, équilibrage, aperçu) ----
+// Même cycle que les tableaux de points (décroissant, croissant, ordre de
+// départ), mais sur les lignes déjà affichées. Valeur d'une case :
+// data-valeur-tri, sinon son texte ; « — » reste en bas dans les 2 sens. Une
+// ligne data-fixe reste à la fin. L'état est sur le <thead>, refait à chaque
+// rendu du tableau.
+
+function preparerTrisSimples(racine) {
+  const tables = racine.matches("table") ? [racine] : racine.querySelectorAll("table");
+  tables.forEach(table => {
+    table.classList.add("tri-simple");
+    table.querySelectorAll("thead th").forEach(th => th.classList.add("triable"));
+    [...table.tBodies[0].rows].forEach((ligne, index) => { ligne.dataset.ordreTri = index; });
+  });
+}
+
+function valeurCaseTri(ligne, colonne) {
+  const texte = (ligne.cells[colonne].dataset.valeurTri ?? ligne.cells[colonne].textContent).trim();
+  if (!texte || texte === "—") return null;
+  const nombre = texte.match(/^-?\d+(?:[.,]\d+)?(?=\s|%|$)/);
+  return nombre ? Number(nombre[0].replace(",", ".")) : texte;
+}
+
+function comparerCasesTri(a, b, sens) {
+  if (a === null || b === null) return (a === null) - (b === null);
+  if (typeof a === "number" && typeof b === "number") return (b - a) * sens;
+  return String(a).localeCompare(String(b), "fr", { sensitivity: "base", numeric: true }) * sens;
+}
+
+function trierTableauSimple(th) {
+  const thead = th.closest("thead");
+  const corps = th.closest("table").tBodies[0];
+  const colonne = th.cellIndex;
+  let sens = 1;
+  if (Number(thead.dataset.colonneTri) === colonne) sens = thead.dataset.sensTri === "1" ? -1 : 0;
+  thead.querySelector(".fleche-tc")?.remove();
+  if (sens) {
+    thead.dataset.colonneTri = colonne;
+    thead.dataset.sensTri = sens;
+    th.insertAdjacentHTML("beforeend", `<span class="fleche-tc">${sens === 1 ? "▼" : "▲"}</span>`);
+  } else {
+    delete thead.dataset.colonneTri;
+    delete thead.dataset.sensTri;
+  }
+  const ordreDepart = (a, b) => Number(a.dataset.ordreTri) - Number(b.dataset.ordreTri);
+  const lignes = [...corps.rows].filter(ligne => !("fixe" in ligne.dataset));
+  const fixes = [...corps.rows].filter(ligne => "fixe" in ligne.dataset);
+  lignes.sort((a, b) => (sens && comparerCasesTri(valeurCaseTri(a, colonne), valeurCaseTri(b, colonne), sens)) || ordreDepart(a, b));
+  corps.append(...lignes, ...fixes);
+}
+
+function initialiserTrisSimples() {
+  document.addEventListener("click", event => {
+    const th = event.target.closest("table.tri-simple thead th");
+    if (th) trierTableauSimple(th);
   });
 }
 
@@ -558,7 +632,7 @@ function ouvrirApercu(id) {
   document.getElementById("apercu-tc-tableau").innerHTML = `
     <thead>
       <tr>
-        <th></th>
+        <th title="Trier par constellation">Const.</th>
         ${colonnes.map(([niveau, theatre]) => `<th>Niv. ${niveau}${theatre ? "<br><span class=\"avec-theatre\">+ théâtre</span>" : ""}</th>`).join("")}
       </tr>
     </thead>
@@ -570,6 +644,7 @@ function ouvrirApercu(id) {
         </tr>`).join("")}
     </tbody>
   `;
+  preparerTrisSimples(document.getElementById("apercu-tc-tableau"));
   document.getElementById("modal-apercu-tc").hidden = false;
 }
 
@@ -624,7 +699,7 @@ function rendreBoss() {
       Hors classé (room, matchmaking, entraînement, équipe) : 1 chance sur 3 de tomber sur une légende locale, 1 sur 10 sur un boss de carnage,
       le reste sur un boss hebdomadaire, puis chaque boss de la catégorie avec la même probabilité.
       En classé : les <strong>${nbClasse}</strong> boss tirables (boss hebdomadaires sauf Tartaglia, légendes locales à l'infini et boss de carnage)
-      ont tous la même probabilité.
+      ont tous la même probabilité. Clic sur un titre de colonne pour trier.
       ${carnageDesactive ? "<strong>Boss de carnage désactivés en ce moment</strong> (plus disponibles dans le jeu) : jamais tirés, sauf en entraînement." : ""}
     </p>
     <div class="tableau-conteneur">
@@ -640,14 +715,14 @@ function rendreBoss() {
         <tbody>
           ${boss.map(b => `
             <tr>
-              <td class="col-nom">
+              <td class="col-nom" data-valeur-tri="${echapper(b.nom)}">
                 <span class="images-boss-tc">${htmlImagesBoss(b, `loading="lazy"`)}</span>
                 <span class="infos-boss-tc">
                   <span class="nom-tc">${echapper(b.nom)}</span>
                   <span class="type-boss-tc">${TYPES_BOSS[b.type] || echapper(b.type || "")}${b.world_boss_seulement ? ` · Random world boss${b.coop === false ? " (seul)" : ""}` : ""}${b.res_par_semaine ? " · résistances de cette semaine" : ""}</span>
                 </span>
               </td>
-              ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}
+              ${ELEMENTS_RES.map((_, i) => `<td${estImmunise(b.res?.[i]) ? ` class="immunise-tc" data-valeur-tri="${RES_IMMUNITE}"` : ""}>${texteResistance(b.res?.[i] ?? 0)}</td>`).join("")}
               <td>${pourcentage(probaHorsClasse(b))}</td>
               <td>${estTirable(b) && estTirableEnClasse(b) ? pourcentage(1 / nbClasse) : "—"}</td>
             </tr>`).join("")}
@@ -662,6 +737,7 @@ function rendreBoss() {
       <li>Room privée et entraînement : le créateur peut aussi imposer le boss.</li>
     </ul>
   `;
+  preparerTrisSimples(document.getElementById("panneau-boss"));
 }
 
 // ---- Système d'équilibrage ----
@@ -713,6 +789,7 @@ function rendreEquilibrage() {
     <h2>4. Bans d'équilibrage</h2>
     ${htmlBansEquilibrage(paliers)}
   `;
+  preparerTrisSimples(document.getElementById("panneau-equilibrage"));
 }
 
 // ---- Démarrage ----
@@ -739,6 +816,7 @@ async function demarrer() {
   });
   initialiserTableau();
   initialiserApercu();
+  initialiserTrisSimples();
   const demande = location.hash.slice(1);
   ouvrirOnglet(ONGLETS.includes(demande) ? demande : "characters");
 }
