@@ -18,6 +18,9 @@ let estAdmin = false;
 // Random world boss (onglet et statistiques) : administrateurs et mini
 // admins, tout le monde une fois le mode activé (config.world_boss_public).
 let worldBossVisible = false;
+// Little Cup (onglet et statistiques) : pareil (config.little_cup.public) ; le
+// serveur refuse aussi ses matchs aux autres.
+let littleCupVisible = false;
 // Modération : colonne triée (décroissant) et joueur filtré dans les litiges.
 let triLitiges = "total";
 let joueurLitiges = null;
@@ -149,7 +152,7 @@ function matchsAffiches(source = matchs) {
     .filter(match => !categorieBossFiltre || bossDansCategorie(match.boss_id, categorieBossFiltre))
     .filter(match => !temps || match.j1.temps?.affiche === temps || match.j2.temps?.affiche === temps)
     .filter(match => !mesMatchsSeulement || joueDans(match, moiDiscordId))
-    .filter(match => !classesSeulement || match.classe || source === matchsEquipe)
+    .filter(match => !classesSeulement || match.classe || source !== matchs)
     .filter(match => saisonFiltre === "" || match.saison === Number(saisonFiltre))
     .filter(match => temps || !recherche || texteRecherche(match).includes(recherche))
     .map((match, index) => ({ match, index, v: tris.map(t => valeurTri(match, t.cle)) }))
@@ -193,7 +196,7 @@ function mettreAJourBoutons() {
 // web. Choix gardé sur cet appareil. ----
 const CHOIX_PAR_PAGE = ["10", "20", "50", "tout"];
 const CLE_PAR_PAGE = "historique-matchs-par-page";
-const pages = { matchs: 1, equipe: 1, world_boss: 1, entrainements: 1, litiges: 1, signalements: 1 };
+const pages = { matchs: 1, equipe: 1, little_cup: 1, world_boss: 1, entrainements: 1, litiges: 1, signalements: 1 };
 
 function lireParPage() {
   try {
@@ -572,6 +575,7 @@ function afficherMatchs() {
     .map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
   terminerRendu(liste);
   afficherMatchsEquipe();
+  afficherMatchsLittleCup();
 }
 
 // Onglet Matchs en équipe : mêmes filtres que l'onglet Matchs.
@@ -587,10 +591,44 @@ function afficherMatchsEquipe() {
   terminerRendu(liste);
 }
 
+// Onglet Little Cup (GET /api/matches?matchs_little_cup=1, chargé à la 1re
+// ouverture) : mêmes filtres que l'onglet Matchs.
+let matchsLittleCup = null;
+let chargementLittleCup = null;
+
+function ouvrirLittleCup() {
+  if (matchsLittleCup || chargementLittleCup) return;
+  chargementLittleCup = fetch("/api/matches?matchs_little_cup=1", { credentials: "include" })
+    .then(async reponse => {
+      if (!reponse.ok) throw new Error("Impossible de charger les matchs de l'event.");
+      matchsLittleCup = (await reponse.json()).termines || [];
+      afficherMatchsLittleCup();
+    })
+    .catch(erreur => {
+      console.error(erreur);
+      document.getElementById("etat-little_cup").textContent = erreur.message;
+    })
+    .finally(() => { chargementLittleCup = null; });
+}
+
+function afficherMatchsLittleCup() {
+  if (!matchsLittleCup) return;
+  const liste = document.getElementById("liste-little_cup");
+  const affiches = matchsAffiches(matchsLittleCup);
+  const etat = document.getElementById("etat-little_cup");
+  etat.textContent = matchsLittleCup.length === 0 ? "Aucun match joué pour l'instant."
+    : affiches.length === 0 ? "Aucun match trouvé." : "";
+  etat.classList.toggle("cache", !etat.textContent);
+  liste.replaceChildren(...paginer("little_cup", affiches, afficherMatchsLittleCup)
+    .map(match => obtenirCarte(liste, String(match.id), () => creerLigneMatch(match))));
+  terminerRendu(liste);
+}
+
 // Filtres, recherche ou tris changés : retour à la 1re page.
 function afficherMatchsDepuisPage1() {
   pages.matchs = 1;
   pages.equipe = 1;
+  pages.little_cup = 1;
   afficherMatchs();
 }
 
@@ -1135,7 +1173,7 @@ function ongletDisponible(nom) {
   if (PAGE_LITIGES) return nom === "litiges" && estAdmin;
   // Random world boss : comme le mode (cf. api/_lib/world_boss.js).
   return nom === "matchs" || nom === "equipe" ||
-    (nom === "world_boss" && worldBossVisible) || (nom === "entrainements" && !!moiDiscordId);
+    (nom === "world_boss" && worldBossVisible) || (nom === "little_cup" && littleCupVisible) || (nom === "entrainements" && !!moiDiscordId);
 }
 
 function choisirOnglet(nouveau) {
@@ -1157,12 +1195,13 @@ function choisirOnglet(nouveau) {
   // sur les autres listes ; rien sur Statistiques.
   document.querySelector(".barre-historique").classList.toggle("cache", onglet === "stats");
   document.querySelectorAll(".filtre-matchs").forEach(element => {
-    element.classList.toggle("masque-onglet", onglet !== "matchs" && onglet !== "equipe");
+    element.classList.toggle("masque-onglet", !["matchs", "equipe", "little_cup"].includes(onglet));
   });
   // Pas de classé en équipe : bouton Classés sur l'onglet Matchs seulement.
   document.getElementById("matchs-classes").classList.toggle("masque-onglet", onglet !== "matchs");
   if (onglet === "stats") ouvrirStatistiques();
   if (onglet === "world_boss") ouvrirWorldBoss();
+  if (onglet === "little_cup") ouvrirLittleCup();
 }
 
 function initialiserOnglets() {
@@ -1191,9 +1230,11 @@ let chargementStats = null;
 let saisonStats = null;
 const cacheStats = new Map();
 let categorieStats = "tous"; // "tous" | "classe" | "non_classe"
-// Matchs comptés : 1v1, en équipe (2v2, 3v3, 4v4) ou Random world boss,
-// séparés.
-let modeStats = "1v1"; // "1v1" | "equipe" | "world_boss"
+// Matchs comptés : 1v1, en équipe (2v2, 3v3, 4v4), Little Cup ou Random world
+// boss, séparés.
+let modeStats = "1v1"; // "1v1" | "equipe" | "little_cup" | "world_boss"
+// Pas de classé en équipe ni en Little Cup : pas de filtre Classés / Non classés.
+const modeSansClasse = () => modeStats === "equipe" || modeStats === "little_cup";
 const listesDepliees = new Set();
 
 async function ouvrirStatistiques() {
@@ -1201,8 +1242,8 @@ async function ouvrirStatistiques() {
   const etat = document.getElementById("etat-stats");
   const saison = saisonStats ?? "";
   const cle = `${saison}|${modeStats}`;
-  // Classés / non classés : matchs 1v1 seulement (pas de classé en équipe).
-  document.querySelector(".entete-stats .filtre-stats").classList.toggle("cache", modeStats === "equipe");
+  // Classés / non classés : matchs 1v1 seulement.
+  document.querySelector(".entete-stats .filtre-stats").classList.toggle("cache", modeSansClasse());
   if (cacheStats.has(cle)) {
     statistiques = cacheStats.get(cle);
     etat.classList.add("cache");
@@ -1213,7 +1254,7 @@ async function ouvrirStatistiques() {
   etat.classList.remove("cache");
   document.getElementById("contenu-stats").classList.add("cache");
   document.getElementById("contenu-stats-wb").classList.add("cache");
-  const filtreMode = modeStats === "equipe" ? "&equipe=1" : modeStats === "world_boss" ? "&world_boss=1" : "";
+  const filtreMode = { equipe: "&equipe=1", world_boss: "&world_boss=1", little_cup: "&little_cup=1" }[modeStats] || "";
   chargementStats = fetch(`/api/matches?stats=1${saison === "" ? "" : `&saison=${encodeURIComponent(saison)}`}${filtreMode}`, { credentials: "include" })
     .then(async reponse => {
       if (!reponse.ok) throw new Error("Impossible de charger les statistiques.");
@@ -1474,11 +1515,11 @@ function initialiserSaisonStats() {
 
   document.querySelectorAll(".mode-stats-bouton").forEach(bouton => {
     // Statistiques Random world boss : comme l'onglet.
-    bouton.classList.toggle("cache", bouton.dataset.mode === "world_boss" && !worldBossVisible);
+    bouton.classList.toggle("cache", (bouton.dataset.mode === "world_boss" && !worldBossVisible) || (bouton.dataset.mode === "little_cup" && !littleCupVisible));
     bouton.addEventListener("click", () => {
       modeStats = bouton.dataset.mode;
       document.querySelectorAll(".mode-stats-bouton").forEach(b => b.classList.toggle("active", b === bouton));
-      if (modeStats === "equipe") categorieStats = "tous";
+      if (modeSansClasse()) categorieStats = "tous";
       document.querySelectorAll(".filtre-stats-bouton").forEach(b => b.classList.toggle("active", b.dataset.categorie === categorieStats));
       statistiques = null;
       ouvrirStatistiques();
@@ -1636,6 +1677,11 @@ async function demarrer() {
     if (config?.world_boss_public === true) {
       document.querySelector('.onglet-historique[data-onglet="world_boss"] span').textContent = "seul ou en co-op";
     }
+    littleCupVisible = estAdmin || config?.little_cup?.public === true;
+    const ongletCup = document.querySelector('.onglet-historique[data-onglet="little_cup"]');
+    ongletCup.firstChild.textContent = config?.little_cup?.nom || "Little Cup";
+    document.querySelector('.mode-stats-bouton[data-mode="little_cup"]').textContent = config?.little_cup?.nom || "Little Cup";
+    if (config?.little_cup?.public === true) ongletCup.querySelector("span").textContent = "full box filtrée";
 
     initialiserBarre();
     initialiserParPage();

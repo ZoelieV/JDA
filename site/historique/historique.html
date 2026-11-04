@@ -34,6 +34,7 @@
     <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="entrainements">Mes entraînements<span>visibles par toi seul</span></button>
     <button type="button" class="onglet-historique active" role="tab" aria-selected="true" data-onglet="matchs">Matchs<span>en cours et terminés</span></button>
     <button type="button" class="onglet-historique" role="tab" aria-selected="false" data-onglet="equipe">Matchs en équipe<span>2v2, 3v3 et 4v4</span></button>
+    <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="little_cup">Little Cup<span>administrateurs</span></button>
     <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="world_boss">Random World Boss<span>administrateurs</span></button>
     <button type="button" class="onglet-historique cache" role="tab" aria-selected="false" data-onglet="stats">Statistiques<span>picks, bans et records</span></button>
   </div>
@@ -144,6 +145,17 @@
     </section>
   </div>
 
+  <!-- Little Cup (chargé à la 1re ouverture de l'onglet) : mêmes cartes que
+       les matchs ; caché tant que l'event n'est pas ouvert au public. -->
+  <div class="panneau-historique cache" data-panneau="little_cup">
+    <section class="section-matchs">
+      <h2 class="titre-section">Matchs terminés</h2>
+      <p id="etat-little_cup" class="etat-historique">Chargement…</p>
+      <div id="liste-little_cup" class="liste-matchs"></div>
+      <nav id="pages-little_cup" class="pagination cache" aria-label="Pages des matchs de l'event"></nav>
+    </section>
+  </div>
+
   <!-- Random world boss (chargé à la 1re ouverture de l'onglet) : joueurs,
        boss, persos joués et réussite (cf. creerLigneWorldBoss). -->
   <div class="panneau-historique cache" data-panneau="world_boss">
@@ -164,6 +176,7 @@
       <div class="filtre-stats" role="group" aria-label="Type de matchs">
         <button type="button" class="bouton-historique mode-stats-bouton active" data-mode="1v1">Matchs 1v1</button>
         <button type="button" class="bouton-historique mode-stats-bouton" data-mode="equipe">Matchs en équipe</button>
+        <button type="button" class="bouton-historique mode-stats-bouton cache" data-mode="little_cup">Little Cup</button>
         <button type="button" class="bouton-historique mode-stats-bouton" data-mode="world_boss">Random world boss</button>
       </div>
       <select id="saison-stats" class="filtre-boss-historique" title="Saison des statistiques" aria-label="Saison des statistiques">
@@ -279,7 +292,7 @@
   <script src="/commun/synergies.js?v=4"></script>
   <script src="/commun/cartes.js?v=36"></script>
   <script src="/commun/tri.js?v=21"></script>
-  <script src="/historique/historique.js?v=77"></script>
+  <script src="/historique/historique.js?v=78"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=36"></script>
 </body>

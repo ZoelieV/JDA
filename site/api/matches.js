@@ -39,12 +39,32 @@ const LITIGES_PUBLICS = "litige.is.null,litige.not.in.(ouvert,invalide)";
 
 const chargerMatchs = () => memoriser("matchs", 5000, () => lireMatchs());
 
+// Matchs de l'event Little Cup : onglet à part, jamais dans la liste générale.
+const chargerMatchsLittleCup = () => memoriser("matchs_little_cup", 5000, () => lireMatchsLittleCup());
+
+async function lireMatchsLittleCup() {
+  const { data, error } = await supabase.from("match_history").select("*")
+    .eq("little_cup", true)
+    .eq("entrainement", false)
+    .or(LITIGES_PUBLICS)
+    .order("created_at", { ascending: false })
+    .limit(NB_MATCHS_MAX);
+  if (error) throw error;
+  return data || [];
+}
+
+// Event pas ouvert au public : administrateurs et mini admins seulement.
+async function littleCupVisible(admin) {
+  await actualiserPoints();
+  return admin || getLittleCup().public === true;
+}
+
 async function lireMatchs() {
   // Colonnes optionnelles (id, created_at, actions, litige, entrainement) :
   // "*" les renvoie si elles existent. Litiges ouverts et entraînements
   // exclus, tri par date si possible ; sans ces colonnes, pas de litige ni
   // d'entraînement possible, ni de tri.
-  const requete = () => supabase.from("match_history").select("*");
+  const requete = () => supabase.from("match_history").select("*").eq("little_cup", false);
   let { data, error } = await requete()
     .or(LITIGES_PUBLICS)
     .eq("entrainement", false)
@@ -518,13 +538,14 @@ function persosDuMatch(match) {
 }
 
 // equipe : matchs en équipe seulement (sinon matchs 1v1 seulement : temps
-// d'équipe pas comparables aux records 1v1).
+// d'équipe pas comparables aux records 1v1). littleCup : matchs de l'event
+// seulement (sinon sans eux : full box filtrée, pas comparable non plus).
 // Records par boss : nombre de meilleurs temps renvoyés.
 const NB_RECORDS_BOSS = 5;
 
-async function statistiques(res, saison = null, equipe = false) {
+async function statistiques(res, saison = null, equipe = false, littleCup = false) {
   const matchs = (await chargerMatchsStats()).filter(match =>
-    (saison === null || saisonDuMatch(match) === saison) && !!match.mode_equipe === equipe);
+    (saison === null || saisonDuMatch(match) === saison) && !!match.mode_equipe === equipe && !!match.little_cup === littleCup);
   const nouvelleCategorie = () => ({ matchs: 0, matchs_bans: 0, picks: {}, bans: {}, bans_equilibrage: {}, bans_horizontaux: {} });
   const categories = { classe: nouvelleCategorie(), non_classe: nouvelleCategorie() };
   // Records : { boss_id: [{ match, role }, ...] }, les NB_RECORDS_BOSS
@@ -764,7 +785,7 @@ module.exports = async (req, res) => {
   }
 
   // Classement à part de l'event Little Cup.
-  if (req.query?.little_cup === "1") {
+  if (req.query?.little_cup === "1" && !req.query?.stats) {
     try {
       return await classementLittleCup(req, res);
     } catch (error) {
@@ -780,6 +801,11 @@ module.exports = async (req, res) => {
       const saison = /^\d+$/.test(String(req.query.saison ?? "")) ? Number(req.query.saison) : null;
       // ?world_boss=1 : parties Random world boss.
       if (req.query.world_boss === "1") return await statistiquesWorldBoss(res, saison);
+      // ?little_cup=1 : matchs de l'event Little Cup.
+      if (req.query.little_cup === "1") {
+        if (!await littleCupVisible(admin)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+        return await statistiques(res, saison, false, true);
+      }
       // ?equipe=1 : matchs en équipe (2v2, 3v3, 4v4).
       return await statistiques(res, saison, req.query.equipe === "1");
     } catch (error) {
@@ -789,19 +815,24 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // ?matchs_little_cup=1 : onglet Little Cup (chargé à sa 1re ouverture),
+    // ses matchs seulement, au même format que les autres.
+    const seulementLittleCup = req.query?.matchs_little_cup === "1";
+    const cupVisible = await littleCupVisible(admin);
+    if (seulementLittleCup && !cupVisible) return res.status(403).json({ error: "Réservé aux administrateurs" });
     const [matchs, rooms, { lignes: litiges, erreur: erreurLitiges }, statsLitiges, entrainements, signalements, etatSignalements] = await Promise.all([
-      chargerMatchs(),
-      chargerRoomsEnCours(),
-      admin ? chargerLitigesOuverts() : { lignes: [], erreur: null },
-      admin ? chargerStatsLitiges() : [],
-      user ? chargerEntrainements(user.id) : [],
-      admin ? chargerSignalementsOuverts() : { matchs: [], parMatch: new Map(), erreur: null },
-      user ? etatSignalementsJoueur(user.id) : null
+      seulementLittleCup ? chargerMatchsLittleCup() : chargerMatchs(),
+      seulementLittleCup ? [] : chargerRoomsEnCours(),
+      admin && !seulementLittleCup ? chargerLitigesOuverts() : { lignes: [], erreur: null },
+      admin && !seulementLittleCup ? chargerStatsLitiges() : [],
+      user && !seulementLittleCup ? chargerEntrainements(user.id) : [],
+      admin && !seulementLittleCup ? chargerSignalementsOuverts() : { matchs: [], parMatch: new Map(), erreur: null },
+      user && !seulementLittleCup ? etatSignalementsJoueur(user.id) : null
     ]);
 
     // Rooms en cours au même format que les matchs : j1/j2 de la manche,
     // actions de la draft jusqu'ici.
-    const enCours = rooms.map(room => ({
+    const enCours = rooms.filter(room => cupVisible || !room.draft?.little_cup).map(room => ({
       room_id: room.room_id,
       phase: room.draft.phase,
       classe: room.type === "classe",
