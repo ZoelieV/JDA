@@ -6,7 +6,8 @@
 // Fonds retirés (config.cosmetiques_retires) : seulement avec avecRetires.
 // choisirCosmetiques({ titre, multiple, selection, onglets, etiquette }) ->
 // Promise<[ids] | null> (null : annulé ; onglets : ids des onglets proposés,
-// tous sinon ; etiquette(id) : texte affiché sur l'image, ex. son prix). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
+// tous sinon ; etiquette(id) : texte affiché sur l'image, ex. son prix ;
+// apercu : bouton « Aperçu » sur chaque image, qui l'ouvre en grand). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
 // Utilise idCosmetique, COSMETIQUES_GRATUITS (commun/koyns.js), nomFond,
 // VARIANTES_PERSONNAGES, SKINS_PERSONNAGES et imagesSkin (commun/variantes.js).
 
@@ -38,7 +39,7 @@ function chargerCatalogueChoix() {
       const infos = [
         ...cosmetiques.bannieres.map(chemin => ({ id: idCosmetique("banniere", chemin), onglet: "banniere", type: "Namecard", nom: nomNamecardAdmin(chemin), image: `/DB/images/${chemin}` })),
         ...cosmetiques.bannieres2.map(chemin => ({ id: idCosmetique("banniere2", chemin), onglet: "banniere2", type: "Bannière", nom: nomNamecardAdmin(chemin), image: `/DB/images/${chemin}` })),
-        ...cosmetiques.fonds.map(fond => ({ id: idCosmetique("fond", fond.id), onglet: "fond", type: "Fond d'écran", nom: nomFond(fond), image: `/DB/images/${fond.miniature}` })),
+        ...cosmetiques.fonds.map(fond => ({ id: idCosmetique("fond", fond.id), onglet: "fond", type: "Fond d'écran", nom: nomFond(fond), image: `/DB/images/${fond.miniature}`, imageGrande: encodeURI(`/DB/images/${fond.image}`) })),
         ...Object.values(VARIANTES_PERSONNAGES).flatMap(variante => Object.entries(variante.options).map(([valeur, option]) => ({
           id: idCosmetique(variante.parametre, valeur), onglet: "persos", type: "Variante", nom: option.nom, image: `/DB/${option.image}`
         }))),
@@ -69,7 +70,7 @@ function htmlPastilleCosmetique(id) {
     `<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`;
 }
 
-function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, exclure = null, etiquette = null, avecRetires = false } = {}) {
+function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, exclure = null, etiquette = null, avecRetires = false, apercu = false } = {}) {
   return new Promise(async resoudre => {
     const catalogue = await chargerCatalogueChoix().catch(() => null);
     if (!catalogue) {
@@ -101,6 +102,16 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
           <button type="button" class="bouton-creer secondaire" data-action="annuler">Annuler</button>
           ${multiple ? `<button type="button" class="bouton-creer" data-action="valider">Valider</button>` : ""}
         </div>
+        ${apercu ? `<div class="apercu-choix-cosmetique" hidden>
+          <button type="button" class="bouton-creer secondaire fleche-apercu-choix" data-apercu="precedent" aria-label="Précédent">‹</button>
+          <img alt="">
+          <button type="button" class="bouton-creer secondaire fleche-apercu-choix" data-apercu="suivant" aria-label="Suivant">›</button>
+          <div class="pied-apercu-choix">
+            <span class="nom-apercu-choix"></span>
+            <button type="button" class="bouton-creer" data-apercu="basculer"></button>
+            <button type="button" class="bouton-creer secondaire" data-apercu="fermer">Fermer</button>
+          </div>
+        </div>` : ""}
       </div>`;
     fenetre.querySelector("h2").textContent = titre;
     const grille = fenetre.querySelector(".choix-cosmetiques-grille");
@@ -121,10 +132,49 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       grille.innerHTML = infos.length ? infos.map(info => `
         <button type="button" class="choix-cosmetique${choisis.has(info.id) ? " choisi" : ""}${info.cache ? " est-cache" : ""}" data-id="${echapper(info.id)}" title="${echapper(info.id)}">
           <img src="${echapper(info.image)}" alt="" loading="lazy">
+          ${apercu ? `<span class="loupe-choix-cosmetique" title="Voir en grand">Aperçu</span>` : ""}
           ${etiquette ? `<span class="etiquette-choix-cosmetique">${etiquette(info.id)}</span>` : ""}
           <span>${echapper(info.nom)}</span>
         </button>`).join("") : `<p class="aide-apercu">Aucun cosmétique.</p>`;
       majCompte();
+    };
+
+    // Aperçu en grand : parcourt les images affichées dans la grille, et permet
+    // de choisir sans revenir à la grille.
+    const zoneApercu = fenetre.querySelector(".apercu-choix-cosmetique");
+    let listeApercu = [];
+    let indexApercu = 0;
+    const apercuOuvert = () => zoneApercu && !zoneApercu.hidden;
+    const majApercu = () => {
+      const info = listeApercu[indexApercu];
+      zoneApercu.querySelector("img").src = info.imageGrande || info.image;
+      zoneApercu.querySelector(".nom-apercu-choix").textContent = `${info.nom} (${indexApercu + 1} / ${listeApercu.length})`;
+      const choisi = choisis.has(info.id);
+      const bouton = zoneApercu.querySelector("[data-apercu=basculer]");
+      bouton.textContent = choisi ? "Désélectionner" : "Sélectionner";
+      bouton.classList.toggle("secondaire", choisi);
+    };
+    const ouvrirApercu = id => {
+      listeApercu = visibles();
+      indexApercu = Math.max(0, listeApercu.findIndex(info => info.id === id));
+      zoneApercu.hidden = false;
+      majApercu();
+    };
+    const fermerApercu = () => {
+      zoneApercu.hidden = true;
+      zoneApercu.querySelector("img").removeAttribute("src");
+    };
+    const deplacerApercu = pas => {
+      indexApercu = (indexApercu + pas + listeApercu.length) % listeApercu.length;
+      majApercu();
+    };
+    const basculerApercu = () => {
+      const { id } = listeApercu[indexApercu];
+      if (choisis.has(id)) choisis.delete(id);
+      else choisis.add(id);
+      grille.querySelector(`[data-id="${CSS.escape(id)}"]`)?.classList.toggle("choisi", choisis.has(id));
+      majCompte();
+      majApercu();
     };
 
     const terminer = resultat => {
@@ -133,7 +183,18 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       resoudre(resultat);
     };
     const surTouche = event => {
+      if (apercuOuvert() && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
+        event.preventDefault();
+        event.stopPropagation();
+        deplacerApercu(event.key === "ArrowLeft" ? -1 : 1);
+        return;
+      }
       if (event.key !== "Escape") return;
+      if (apercuOuvert()) {
+        event.stopPropagation();
+        fermerApercu();
+        return;
+      }
       event.stopPropagation();
       terminer(null);
     };
@@ -141,6 +202,19 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
 
     fenetre.addEventListener("click", event => {
       if (event.target === fenetre) return terminer(null);
+      if (apercuOuvert() && zoneApercu.contains(event.target)) {
+        const action = event.target.closest("[data-apercu]")?.dataset.apercu;
+        if (action === "precedent") deplacerApercu(-1);
+        if (action === "suivant") deplacerApercu(1);
+        if (action === "basculer") basculerApercu();
+        if (action === "fermer" || event.target === zoneApercu) fermerApercu();
+        return;
+      }
+      const loupe = event.target.closest(".loupe-choix-cosmetique");
+      if (loupe) {
+        ouvrirApercu(loupe.closest(".choix-cosmetique").dataset.id);
+        return;
+      }
       const ongletBouton = event.target.closest("[data-onglet]");
       if (ongletBouton) {
         onglet = ongletBouton.dataset.onglet;

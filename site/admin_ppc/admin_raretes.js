@@ -92,7 +92,8 @@ function initialiserRaretes() {
       titre: "Sélectionne les fonds d'écran à retirer du site",
       selection: config.cosmetiques_retires || [],
       onglets: ["fond"],
-      avecRetires: true
+      avecRetires: true,
+      apercu: true
     });
     if (!choix) return;
     texteTri.textContent = "Enregistrement…";
