@@ -140,6 +140,8 @@ async function creerEntrainement(req, res, user) {
       cote_moi: "j1",
       boxes: { moi: moi.source, adverse: adverse.source },
       boss_id: bossId,
+      // Tirage limité aux boss du mode classé (cf. tireurBoss, [action].js).
+      ...(config.boss_classes === true ? { boss_classes: true } : {}),
       premier
     },
     box_j1: moi.source.box,
@@ -229,7 +231,7 @@ async function creerEntrainementEquipe(req, res, user) {
     return res.status(429).json({ error: `Un entraînement toutes les 10 s au maximum : réessaie dans ${Math.ceil(attente / 1000)} s.` });
   }
   const roomId = genererRoomId();
-  await creerRoomEntrainementEquipe(roomId, user.id, { taille, vitrines, bossId });
+  await creerRoomEntrainementEquipe(roomId, user.id, { taille, vitrines, bossId, bossClasses: config.boss_classes === true });
   return res.status(200).json({ room_id: roomId, equipe: true });
 }
 

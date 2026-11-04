@@ -1042,7 +1042,14 @@ async function initialiserEntrainement() {
     });
   }
 
-  remplirSelectBoss(document.getElementById("ent-boss"), boss);
+  const selectBoss = document.getElementById("ent-boss");
+  remplirSelectBoss(selectBoss, boss);
+  // Boss choisi à la main : plus de tirage, donc rien à limiter.
+  selectBoss.addEventListener("change", () => {
+    const caseBossClasses = document.getElementById("ent-boss-classes");
+    caseBossClasses.disabled = !!selectBoss.value;
+    if (selectBoss.value) caseBossClasses.checked = false;
+  });
 
   document.querySelectorAll("#ent-mode .choix-btn").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll("#ent-mode .choix-btn").forEach(b => b.classList.toggle("active", b === btn));
@@ -1064,7 +1071,8 @@ function lancerEntrainement() {
         equipe: true,
         taille: entrainement.taille,
         vitrines: entrainement.vitrines.map(v => ({ proprietaire: v.proprietaire, persos: [...v.persos], armes: [...v.armes] })),
-        boss_id: document.getElementById("ent-boss").value || null
+        boss_id: document.getElementById("ent-boss").value || null,
+        boss_classes: document.getElementById("ent-boss-classes").checked
       }
     });
     return;
@@ -1081,6 +1089,7 @@ function lancerEntrainement() {
       mode: document.querySelector("#ent-mode .choix-btn.active")?.dataset.valeur || "auto",
       boxes: { moi: cote("moi"), adverse: cote("adverse") },
       boss_id: document.getElementById("ent-boss").value || null,
+      boss_classes: document.getElementById("ent-boss-classes").checked,
       premier: document.getElementById("ent-premier").value
     }
   });

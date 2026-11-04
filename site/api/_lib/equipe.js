@@ -380,7 +380,7 @@ async function lancerDraft(draft, { revanche = false } = {}) {
   const legendes = idsLegendesLocales();
   const exclus = [...legendes.filter(id => !paires.some(paire => libre(paire, id))), ...listeBoss().filter(estHorsCoop).map(b => b.id), ...await bossCarnageExclus()];
   const impose = draft.boss_impose && getBossParId(draft.boss_impose) && !exclus.includes(draft.boss_impose) ? draft.boss_impose : null;
-  draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus })?.id || null;
+  draft.boss_id = impose || tirerBossAleatoire(draft.boss_precedent_id, { exclus, classe: draft.entrainement?.boss_classes === true })?.id || null;
   draft.legendes = paires.length > 0;
 
   if (draft.taille !== 3) {
@@ -1068,7 +1068,7 @@ async function creerRoomEquipeTournoi(roomId, tournoi, match, infos) {
 // après le vote des chefs (hôtes en 3v3, sinon la draft).
 // vitrines : [{ nom, avatar, niveau_monde, data }] (data : données de
 // profil, sélection "vitrine" = vitrine choisie).
-async function creerEntrainementEquipe(roomId, lanceur, { taille, vitrines, bossId = null }) {
+async function creerEntrainementEquipe(roomId, lanceur, { taille, vitrines, bossId = null, bossClasses = false }) {
   const membres = vitrines.map((_, i) => `ent_${i}`);
   const camps = Object.fromEntries(membres.map((id, i) => [id, i < taille ? "j1" : "j2"]));
   const infos = Object.fromEntries(vitrines.map((v, i) => [membres[i], {
@@ -1078,7 +1078,7 @@ async function creerEntrainementEquipe(roomId, lanceur, { taille, vitrines, boss
     taille, formation: "choix", createur: lanceur, bossImpose: bossId, membres, camps,
     vitrinesChoisies: Object.fromEntries(membres.map(id => [id, "vitrine"])), infos
   });
-  draft.entrainement = { lanceur };
+  draft.entrainement = { lanceur, ...(bossClasses ? { boss_classes: true } : {}) };
   const analyses = {};
   const fullBox = {};
   vitrines.forEach((v, i) => {

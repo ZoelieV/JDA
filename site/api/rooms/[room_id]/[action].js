@@ -111,14 +111,16 @@ function bossAVoter(draft, room) {
 // saisir un temps). Deux joueurs à des niveaux du monde différents : aucune
 // légende locale (PV différents ; pas en entraînement, où seul le lanceur
 // joue le boss). Un boss imposé exclu est oublié (tiré au hasard, ou au
-// vote en room privée).
+// vote en room privée). Entraînement avec draft.entrainement.boss_classes :
+// même tirage qu'en classé (boss du carnage désactivés exclus aussi).
 async function tireurBoss(draft, room) {
-  const classe = room?.type === "classe";
+  const bossClasses = draft.entrainement?.boss_classes === true;
+  const classe = room?.type === "classe" || bossClasses;
   const joueurs = draft.entrainement ? [draft.entrainement.lanceur] : [draft.discord_j1, draft.discord_j2];
   const [tuees, horsNiveau, carnage] = await Promise.all([
     classe ? [] : legendesTueesAujourdhui(joueurs),
     draft.entrainement ? [] : legendesHorsNiveauMonde(draft.discord_j1, draft.discord_j2),
-    draft.entrainement ? [] : bossCarnageExclus()
+    draft.entrainement && !bossClasses ? [] : bossCarnageExclus()
   ]);
   const exclus = [...tuees, ...horsNiveau, ...carnage];
   if (exclus.includes(draft.boss_impose)) draft.boss_impose = null;
