@@ -53,10 +53,12 @@
     { id: "cartes", nom: "Cartes", beta: true, description: "Toutes les pages au centre, en grille de cartes." }
   ];
   // Choix qui changent les images des personnages (rechargement).
-  const CLES_PERSOS = ["voyageur", "manekin", "skins"];
+  const CLES_PERSOS = ["voyageur", "manekin", "skins", "skins_test"];
   // Flex : emplacements (TAILLE_FLEX de commun/koyns.js).
   const TAILLE_FLEX = 12;
   let caseFlex = 0; // emplacement choisi dans l'onglet Flex
+  // Test des skins masqués : administrateurs (réponse de /api/auth/profile).
+  let skinsTestPermis = false;
   // Fond personnel : formats acceptés (pas de SVG ni de GIF), poids du
   // fichier importé, nombre de pixels décodés, taille gardée (largeur et
   // hauteur au plus).
@@ -96,7 +98,7 @@
   const valeurComparable = valeur => JSON.stringify(Array.isArray(valeur) ? [...valeur].sort() : valeur ?? null);
   // Flex : l'ordre des cases compte.
   const differe = (a, b, cle) => cle === "flex" ? JSON.stringify(a.flex) !== JSON.stringify(b.flex) : valeurComparable(a[cle]) !== valeurComparable(b[cle]);
-  const cles = () => [...Object.keys(PARAMETRES_DEFAUT), "skins", "filtres_draft", "flex"];
+  const cles = () => [...Object.keys(PARAMETRES_DEFAUT), "skins", "skins_test", "filtres_draft", "flex"];
 
   // "namecards/Namecard_Background_Hu_Tao_Lingering.webp" -> "Hu Tao Lingering"
   function nomNamecard(chemin) {
@@ -133,7 +135,7 @@
   }
 
   // Voyageur, Manekin et skins (commun/variantes.js).
-  const chargerVariantes = () => chargerScript("/commun/variantes.js?v=6",
+  const chargerVariantes = () => chargerScript("/commun/variantes.js?v=7",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
   const chargerKoyns = () => chargerScript("/commun/koyns.js?v=15",
@@ -181,6 +183,7 @@
     const reponse = await fetch("/api/auth/profile", { credentials: "include" });
     if (!reponse.ok) throw new Error("Impossible de charger le profil.");
     const donnees = await reponse.json();
+    skinsTestPermis = donnees.skins_test_permis === true;
     return { profil: donnees.profil || {}, koyns: donnees.koyns || null };
   }
 
@@ -486,6 +489,7 @@
     return {
       ...Object.fromEntries(Object.entries(PARAMETRES_DEFAUT).map(([cle, defaut]) => [cle, parametres[cle] || defaut])),
       skins: Array.isArray(parametres.skins) ? parametres.skins.filter(estSkin) : [],
+      skins_test: Array.isArray(parametres.skins_test) ? parametres.skins_test.filter(estSkin) : [],
       filtres_draft: lireFiltresDraft(parametres.filtres_draft),
       // Namecards et fonds seulement (anciens flex : le reste retiré).
       flex: Array.from({ length: TAILLE_FLEX }, (_, i) => {
@@ -500,6 +504,7 @@
     return {
       ...choix,
       skins: [...choix.skins],
+      skins_test: [...choix.skins_test],
       filtres_draft: { masques: [...choix.filtres_draft.masques], figes: [...choix.filtres_draft.figes] },
       flex: [...choix.flex]
     };
@@ -789,6 +794,22 @@
     // Skins de base, ajoutés (pas masqués), et ceux déjà possédés ou portés
     // même masqués depuis.
     const nom = id => nomSkin(id, nomsPersos.get(persoDuSkin(id)) || persoDuSkin(id));
+    // Test admin : skins masqués, gratuits, visibles par l'administrateur seul.
+    if (skinsTestPermis) {
+      const masques = SKINS_AJOUTES.filter(skin => skin.masque && correspond(nom(skin.id)));
+      if (masques.length) {
+        const grilleTest = nouvelleGrille("skins");
+        masques.forEach(({ id }) => {
+          const actif = brouillon.skins_test.includes(id);
+          grilleTest.appendChild(creerChoix(
+            urlImage(imagesSkin(id).item.replace(/^images\//, "")),
+            `${nom(id)} : ${actif ? "en test (clic pour le retirer)" : "clic pour le tester"}`,
+            actif,
+            () => { brouillon.skins_test = actif ? brouillon.skins_test.filter(s => s !== id) : [...brouillon.skins_test.filter(s => persoDuSkin(s) !== persoDuSkin(id)), id]; }));
+        });
+        conteneur.append(titreSection("Test admin : skins masqués (visibles par toi seul)"), grilleTest);
+      }
+    }
     const possedes = [...(koyns?.possedes || [])].filter(id => id.startsWith("skin:")).map(id => id.slice(5)).filter(estSkin);
     const skins = [...new Set([
       ...SKINS_PERSONNAGES.filter(id => estProposable(idCosmetique("skin", id))),

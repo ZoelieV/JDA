@@ -1,6 +1,7 @@
 const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
-const { estModerateur } = require("../_lib/admin");
+const { estAdmin, estModerateur } = require("../_lib/admin");
+const { parametresSkinsTest } = require("../_lib/skins");
 const { getPersonnages, getArmes, actualiserPoints, migrerCollectionPersos, codeTheatre } = require("../_lib/personnages");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { nettoyerProfil, uidValide, lienStreamAutorise, NIVEAUX_MONDE, ERREUR_UID, ERREUR_LIEN_STREAM } = require("../auth/profile");
@@ -239,6 +240,11 @@ module.exports = async (req, res) => {
     }
 
     const user = await verifySessionToken(parseCookies(req).session);
+    // Test des skins masqués : l'administrateur lui-même seulement.
+    if (data.data?.parametres) {
+      await actualiserPoints();
+      data.data.parametres = parametresSkinsTest(data.data.parametres, user?.id === data.discord_id && estAdmin(user.id));
+    }
     if (user?.id !== data.discord_id) {
       data.data = masquerBoxOpti(data.data, await boxOptiRevelees(url.searchParams.get("room"), data.discord_id));
     }

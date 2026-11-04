@@ -4,6 +4,9 @@
 // "skins" de Supabase Storage, servies sous /DB/images/skins_ajoutes/ (cf.
 // vercel.json, imagesSkin dans commun/variantes.js).
 
+const { getConfigKoyns } = require("./personnages");
+const { persoDuSkin } = require("../../commun/variantes.js");
+
 const DOSSIER = "skins";
 const IMAGES = ["image", "side", "item"];
 const POIDS_MAX_IMAGE = 400 * 1024;
@@ -82,4 +85,26 @@ async function retirerSkinAuxJoueurs(id, cosmetique) {
   if (erreurPossedes) throw erreurPossedes;
 }
 
-module.exports = { LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin, retirerSkinAuxJoueurs };
+// Test des skins masqués (parametres.skins_test) : un administrateur les voit
+// sur son compte, gratuitement et sans les posséder ; à part de
+// parametres.skins, jamais envoyé aux autres (cf. api/accounts/[discord_id].js,
+// api/matches.js n'envoie que parametres.skins). Skins encore masqués
+// seulement, un par personnage, le dernier choisi.
+function skinsTestValides(liste) {
+  if (!Array.isArray(liste)) return [];
+  const masques = new Set(getConfigKoyns().skins.filter(skin => skin.masque).map(skin => skin.id));
+  const parPerso = new Map();
+  liste.filter(id => masques.has(id)).forEach(id => parPerso.set(persoDuSkin(id), id));
+  return [...parPerso.values()];
+}
+
+// Paramètres à envoyer : skins_test retiré, sauf pour l'administrateur
+// lui-même (skin supprimé ou démasqué depuis : retiré aussi).
+function parametresSkinsTest(parametres, autorise) {
+  if (!parametres) return parametres;
+  const { skins_test: brut, ...reste } = parametres;
+  const valides = autorise ? skinsTestValides(brut) : [];
+  return valides.length ? { ...reste, skins_test: valides } : reste;
+}
+
+module.exports = { skinsTestValides, parametresSkinsTest, LONGUEUR_NOM_SKIN, idSkinAjoute, decoderImagesSkin, televerserImagesSkin, supprimerImagesSkin, retirerSkinAuxJoueurs };

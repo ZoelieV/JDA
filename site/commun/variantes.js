@@ -94,10 +94,12 @@ function imagesSkin(id) {
   };
 }
 
-// Skin actif d'un personnage (id du skin), ou null.
+// Skin actif d'un personnage (id du skin), ou null. Skin masqué en test
+// (parametres.skins_test, envoyé à l'administrateur lui-même seulement, cf.
+// api/_lib/skins.js) : passe avant son skin habituel.
 function skinActif(id, parametres) {
-  if (!Array.isArray(parametres?.skins)) return null;
-  return parametres.skins.find(skin => estSkin(skin) && persoDuSkin(skin) === id) || null;
+  const chercher = liste => (Array.isArray(liste) ? liste.find(skin => estSkin(skin) && persoDuSkin(skin) === id) : null) || null;
+  return chercher(parametres?.skins_test) || chercher(parametres?.skins);
 }
 
 // Personnage tel que le joueur l'a choisi (copie ; les autres sont

@@ -9,6 +9,8 @@ const { TAILLE_FLEX } = require("../../commun/koyns.js");
 
 const { fetchAvecReessai, supabase } = require("../_lib/supabase");
 const { memoriser } = require("../_lib/memo");
+const { estAdmin } = require("../_lib/admin");
+const { skinsTestValides, parametresSkinsTest } = require("../_lib/skins");
 const { rejouerClasse, chargerMatchsClasses, tropheesSaison } = require("../_lib/trophees");
 const { saisonActuelle } = require("../_lib/saisons");
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -373,7 +375,9 @@ module.exports = async (req, res) => {
       const matchsClasses = await memoriser("matchs_classes", 30 * 1000, () => chargerMatchsClasses(supabase));
       const trophees = tropheesSaison(rejouerClasse(matchsClasses).parSaison, await saisonActuelle()).get(discordId) ?? null;
       return res.status(200).json({
-        profil: data ? { ...data, theatre: codeTheatre(data), trophees } : null,
+        profil: data ? { ...data, parametres: parametresSkinsTest(data.parametres, estAdmin(discordId)), theatre: codeTheatre(data), trophees } : null,
+        // Test des skins masqués : administrateurs (pas les mini admins).
+        ...(estAdmin(discordId) ? { skins_test_permis: true } : {}),
         koyns: await etatKoyns(discordId)
       });
     }
@@ -454,6 +458,7 @@ module.exports = async (req, res) => {
       if (!uidValide(typeof profil.uid === "string" ? profil.uid.trim() : "")) {
         return res.status(400).json({ error: ERREUR_UID });
       }
+      const skinsTest = estAdmin(discordId) ? skinsTestValides(profil.parametres?.skins_test) : [];
       profil = nettoyerProfil(profil);
       // UID, stream, niveau du monde : cf. erreurChampsDefinitifs.
       const reponseAncien = await lireAncien();
@@ -468,6 +473,7 @@ module.exports = async (req, res) => {
       if (max) profil.niveau_monde_max = max;
       // Cosmétiques pas possédés : retirés (retour au choix par défaut).
       profil.parametres = filtrerParametresPossedes(profil.parametres, await lirePossedes(discordId));
+      if (skinsTest.length) profil.parametres = { ...profil.parametres, skins_test: skinsTest };
 
       // Profil valide seulement : un envoi refusé ne compte pas.
       const attente = await verifierFrequenceCompte(discordId, "profil", DELAI_ENREGISTREMENT_MS);
