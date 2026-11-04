@@ -66,7 +66,7 @@ function appliquerSynergie(points, synergies, perso, presents) {
 // signature sans son perso, cf. pointsCopiesArmes) ; persos d'un groupe : le
 // pourcentage du groupe (le plus haut s'il est dans plusieurs) ; les autres :
 // « le reste ». Ancien format (un nombre) : le reste seul. 100 % par défaut.
-const POURCENTAGES_ALTERNATIFS = [0, 25, 50, 75, 100, 125, 150, 175, 200];
+const POURCENTAGES_ALTERNATIFS = Array.from({ length: 17 }, (_, i) => i * 25); // 0 à 400 %, tous les 25
 const ALTERNATIVE_PAR_DEFAUT = { reste: 100, groupes: [] };
 
 const pourcentageValide = p => POURCENTAGES_ALTERNATIFS.includes(Number(p));
