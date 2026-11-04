@@ -111,7 +111,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=25";
+    lien.href = "/commun/personnalisation.css?v=26";
     document.head.appendChild(lien);
   }
 
@@ -298,6 +298,58 @@
       afficherEtat(erreur.message);
       return false;
     }
+  }
+
+  // ---- Aperçu en grand d'un cosmétique ----
+  // { nom, type, image, detail (HTML), action: { texte (HTML), surClic } } ;
+  // aussi utilisé par la page Cosmétiques (Personnalisation.apercu).
+  function ouvrirApercuCosmetique({ nom, type, image, detail = "", action = null }) {
+    chargerStyles();
+    const fenetre = document.createElement("dialog");
+    fenetre.className = "perso-fenetre perso-fenetre-apercu";
+    fenetre.innerHTML = `
+      <h3 class="perso-fenetre-titre"></h3>
+      <img class="perso-grand-image" alt="">
+      <p class="perso-grand-infos"><small></small>${detail}</p>
+      <div class="perso-fenetre-actions">
+        <button type="button" data-action="fermer">Fermer</button>
+        ${action ? `<button type="button" class="perso-fenetre-ok" data-action="ok">${action.texte}</button>` : ""}
+      </div>`;
+    fenetre.querySelector(".perso-fenetre-titre").textContent = nom;
+    fenetre.querySelector("small").textContent = type;
+    fenetre.querySelector(".perso-grand-image").src = image;
+    fenetre.addEventListener("click", event => {
+      const bouton = event.target.closest("[data-action]")?.dataset.action;
+      if (event.target === fenetre || bouton === "fermer") fenetre.close();
+      if (bouton === "ok") {
+        fenetre.close();
+        action.surClic();
+      }
+    });
+    // Échap : ferme cette fenêtre seulement (pas la personnalisation).
+    fenetre.addEventListener("keydown", event => { if (event.key === "Escape") event.stopPropagation(); });
+    fenetre.addEventListener("close", () => fenetre.remove());
+    document.body.appendChild(fenetre);
+    fenetre.showModal();
+  }
+
+  // Aperçu d'un cosmétique pas possédé : prix et panier, ou comment l'obtenir.
+  function apercuAchat(cosmetique, article) {
+    const exclusif = estExclusif(cosmetique);
+    const focus = estFocusTirage(cosmetique);
+    const dansPanier = panier.has(cosmetique);
+    const surClic = () => basculerPanier(cosmetique, article);
+    ouvrirApercuCosmetique({
+      nom: article.nom,
+      type: article.type,
+      image: infoCosmetique(cosmetique).imageGrande || article.image,
+      detail: exclusif ? "Exclusif : il se gagne aux classements et aux événements."
+        : focus ? "Focus du tirage : il se gagne seulement par tirage."
+        : texteRikoyns(prixCosmetique(cosmetique)),
+      action: exclusif ? null
+        : focus ? { texte: "🎲 Voir le tirage", surClic }
+        : { texte: dansPanier ? "Retirer du panier" : "🛒 Ajouter au panier", surClic }
+    });
   }
 
   // ---- Panier ----
@@ -682,11 +734,20 @@
       badge.innerHTML = exclusif ? "🔒 Exclusif" : focus ? "🎲 Tirage" : `${dansPanier ? "🛒" : "🔒"} ${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
       bouton.title = `${titre} — ${exclusif ? "exclusif" : focus ? "focus du tirage (page Cosmétiques)" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
+      if (image) {
+        const loupe = document.createElement("span");
+        loupe.className = "perso-loupe";
+        loupe.textContent = "🔍";
+        loupe.title = "Voir en grand";
+        bouton.appendChild(loupe);
+      }
     }
-    bouton.addEventListener("click", () => {
+    bouton.addEventListener("click", event => {
       if (!brouillon) return;
       if (verrouille) {
-        basculerPanier(cosmetique, { id: cosmetique, nom: titre.replace(/ : clic pour activer le skin$/, ""), image, type: TYPES_COSMETIQUES[cosmetique.split(":")[0]] || "Cosmétique", choisir });
+        const article = { id: cosmetique, nom: titre.replace(/ : clic pour activer le skin$/, ""), image, type: TYPES_COSMETIQUES[cosmetique.split(":")[0]] || "Cosmétique", choisir };
+        if (event.target.closest(".perso-loupe")) apercuAchat(cosmetique, article);
+        else basculerPanier(cosmetique, article);
         return;
       }
       choisir();
@@ -994,10 +1055,10 @@
     const type = TYPES_COSMETIQUES[choix] || "Cosmétique";
     if (choix === "fond") {
       const fond = getFond(valeur);
-      return { choix, valeur, type, nom: fond ? nomFond(fond) : valeur, image: fond && urlImage(fond.miniature) };
+      return { choix, valeur, type, nom: fond ? nomFond(fond) : valeur, image: fond && urlImage(fond.miniature), imageGrande: fond && urlImage(fond.image) };
     }
     if (choix === "banniere" || choix === "banniere2") return { choix, valeur, type, nom: nomNamecard(valeur), image: urlImage(valeur) };
-    if (choix === "skin") return { choix, valeur, type, nom: nomSkin(valeur, nomsPersos?.get(persoDuSkin(valeur)) || persoDuSkin(valeur)), image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")) };
+    if (choix === "skin") return { choix, valeur, type, nom: nomSkin(valeur, nomsPersos?.get(persoDuSkin(valeur)) || persoDuSkin(valeur)), image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")), imageGrande: urlImage(imagesSkin(valeur).image.replace(/^images\//, "")) };
     const option = Object.values(VARIANTES_PERSONNAGES).find(v => v.parametre === choix)?.options[valeur];
     return { choix, valeur, type, nom: option?.nom || valeur, image: option && urlImage(option.image.replace(/^images\//, "")) };
   }
@@ -1212,5 +1273,5 @@
     }
   }
 
-  window.Personnalisation = { ouvrir };
+  window.Personnalisation = { ouvrir, apercu: ouvrirApercuCosmetique };
 })();

@@ -47,10 +47,10 @@
     const type = TYPES_COSMETIQUES[choix] || "Cosmétique";
     if (choix === "fond") {
       const fond = cosmetiques?.fonds.find(f => f.id === valeur);
-      return { type, nom: fond ? nomFond(fond) : valeur, image: fond && urlImage(fond.miniature) };
+      return { type, nom: fond ? nomFond(fond) : valeur, image: fond && urlImage(fond.miniature), imageGrande: fond && urlImage(fond.image) };
     }
     if (choix === "banniere" || choix === "banniere2") return { type, nom: nomNamecard(valeur), image: urlImage(valeur) };
-    if (choix === "skin") return { type, nom: nomSkin(valeur, nomsPersos.get(persoDuSkin(valeur)) || persoDuSkin(valeur)), image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")) };
+    if (choix === "skin") return { type, nom: nomSkin(valeur, nomsPersos.get(persoDuSkin(valeur)) || persoDuSkin(valeur)), image: urlImage(imagesSkin(valeur).item.replace(/^images\//, "")), imageGrande: urlImage(imagesSkin(valeur).image.replace(/^images\//, "")) };
     const option = Object.values(VARIANTES_PERSONNAGES).find(v => v.parametre === choix)?.options[valeur];
     return { type, nom: option?.nom || valeur, image: option && urlImage(option.image.replace(/^images\//, "")) };
   }
@@ -98,6 +98,25 @@
       carte.className = `perso-tirage-carte${possede(id) ? " possede" : ""}`;
       carte.innerHTML = `${info.image ? `<img src="${info.image}" alt="" loading="lazy">` : ""}<figcaption><strong></strong><small>${info.type}${possede(id) ? " · obtenu ✓" : ""}</small>${htmlRarete(tirage.raretes?.[id])}</figcaption>`;
       carte.querySelector("strong").textContent = info.nom;
+      // Clic : le cosmétique en grand.
+      if (info.image) {
+        carte.tabIndex = 0;
+        carte.setAttribute("role", "button");
+        carte.title = "Voir en grand";
+        carte.classList.add("avec-apercu");
+        const ouvrirApercu = () => window.Personnalisation?.apercu({
+          nom: info.nom,
+          type: info.type,
+          image: info.imageGrande || info.image,
+          detail: `${possede(id) ? " · obtenu ✓ " : " "}${htmlRarete(tirage.raretes?.[id])}`
+        });
+        carte.addEventListener("click", ouvrirApercu);
+        carte.addEventListener("keydown", event => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          ouvrirApercu();
+        });
+      }
       vitrine?.appendChild(carte);
     });
     bloc.querySelectorAll(".perso-tirer").forEach(bouton => {

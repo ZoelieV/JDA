@@ -570,6 +570,53 @@
   transform: translateY(-50%);
 }
 
+/* Loupe d'un cosmétique pas possédé : aperçu en grand. */
+.perso-loupe {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  padding: 0 0.3125rem;
+  border-radius: 0.375rem;
+  background-color: rgba(10, 10, 10, 0.85);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.perso-loupe:hover {
+  background-color: #f5c542;
+}
+
+.perso-grille-banniere2 .perso-loupe {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Fenêtre de l'aperçu en grand. */
+.perso-fenetre.perso-fenetre-apercu {
+  width: min(64rem, calc(100vw - 2rem));
+  overflow: hidden;
+}
+
+/* Hauteur limitée pour garder le nom et les boutons à l'écran ; pas de
+   rétrécissement par le flex (l'image s'écraserait). */
+.perso-grand-image {
+  flex: none;
+  width: 100%;
+  height: auto;
+  max-height: calc(100dvh - 13rem);
+  border-radius: 0.625rem;
+  object-fit: contain;
+}
+
+.perso-grand-infos {
+  margin: 0.625rem 0 0;
+}
+
+.perso-grand-infos small {
+  margin-right: 0.5rem;
+  opacity: 0.75;
+}
+
 /* Icône du Rikoyn dans le prix : pas la taille ni l'assombrissement des
    images de cosmétiques (.perso-choix-image img). */
 .perso-choix-image .perso-prix .icone-koyn {
@@ -1003,6 +1050,14 @@
   border-radius: 0.75rem;
   background-color: rgba(245, 197, 66, 0.1);
   box-shadow: 0 0 1rem rgba(245, 197, 66, 0.3);
+}
+
+.perso-tirage-carte.avec-apercu {
+  cursor: zoom-in;
+}
+
+.perso-tirage-carte.avec-apercu:hover {
+  filter: brightness(1.15);
 }
 
 .perso-tirage-carte img {
