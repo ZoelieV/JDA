@@ -471,9 +471,10 @@
   box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.45);
 }
 
-.detail-match[data-detail="room"] {
-  --couleur-detail: #f0875a;
-  --couleur-detail-fond: rgba(240, 135, 90, 0.14);
+/* Amical : bleu clair de sa namecard (Balletica), distinct du bleu d'En équipe. */
+.detail-match[data-detail="amical"] {
+  --couleur-detail: #8cbcf2;
+  --couleur-detail-fond: rgba(140, 188, 242, 0.15);
 }
 
 /* Matchmaking (namecard du classé, classé compris) : doré. */
@@ -939,7 +940,7 @@
 /* Amical : blocs Matchmaking et Créer une room. */
 .detail-match .titre-bloc-match {
   margin: 0.5rem 0 0;
-  color: var(--accent, #f5c542);
+  color: var(--couleur-detail);
   font-family: var(--police-titre, inherit);
   font-weight: normal;
   font-size: 1.25rem;
