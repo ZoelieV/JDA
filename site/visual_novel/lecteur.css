@@ -95,6 +95,8 @@ body.vn-page {
   font-size: calc(var(--taille-vn, 4) * 1cqh);
   line-height: 1.35;
   overflow-wrap: anywhere;
+  /* Retours à la ligne écrits par l'admin gardés, espaces multiples fusionnés. */
+  white-space: pre-line;
 }
 
 .vn-barre {
