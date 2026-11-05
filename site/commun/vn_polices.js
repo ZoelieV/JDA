@@ -30,25 +30,39 @@ function lirePoliceVn(brut) {
   };
 }
 
-// Mise en forme d'un texte : **gras**, *italique*, ~~barré~~, combinables. Une
-// marque sans sa fermeture reste écrite telle quelle ; \* écrit une vraie
-// étoile. -> [{ texte, gras, italique, barre }]
+// Mise en forme d'un texte : **gras**, *italique*, ~~barré~~, combinables, et
+// {7}texte{/} pour une autre taille (même échelle que la taille du panneau).
+// Une marque sans sa fermeture reste écrite telle quelle ; \* ou \{ écrit le
+// vrai caractère. -> [{ texte, gras, italique, barre, taille (null = celle du panneau) }]
 function decouperTexteVn(texte) {
   const CHAMPS = { "**": "gras", "*": "italique", "~~": "barre" };
-  const morceaux = String(texte ?? "").split(/(\\[*~\\]|\*\*|\*|~~)/);
+  const morceaux = String(texte ?? "").split(/(\\[*~{\\]|\*\*|\*|~~|\{\d{1,2}(?:[.,]5)?\}|\{\/\})/);
   const restantes = {};
-  morceaux.forEach(m => { if (CHAMPS[m]) restantes[m] = (restantes[m] || 0) + 1; });
-  const etat = { gras: false, italique: false, barre: false };
+  morceaux.forEach(m => { if (CHAMPS[m] || m === "{/}") restantes[m] = (restantes[m] || 0) + 1; });
+  const etat = { gras: false, italique: false, barre: false, taille: null };
   const resultat = [];
   const ajouter = valeur => {
     if (!valeur) return;
     const dernier = resultat.at(-1);
-    if (dernier && dernier.gras === etat.gras && dernier.italique === etat.italique && dernier.barre === etat.barre) dernier.texte += valeur;
+    if (dernier && ["gras", "italique", "barre", "taille"].every(c => dernier[c] === etat[c])) dernier.texte += valeur;
     else resultat.push({ texte: valeur, ...etat });
   };
   morceaux.forEach(m => {
+    if (m === "{/}") {
+      restantes[m]--;
+      if (etat.taille === null) return ajouter(m);
+      etat.taille = null;
+      return;
+    }
+    if (/^\{[\d.,]+\}$/.test(m)) {
+      // Taille sans {/} plus loin : écrite telle quelle.
+      if (!restantes["{/}"]) return ajouter(m);
+      const taille = Number(m.slice(1, -1).replace(",", "."));
+      etat.taille = Math.min(TAILLE_TEXTE_VN.max, Math.max(TAILLE_TEXTE_VN.min, taille));
+      return;
+    }
     const champ = CHAMPS[m];
-    if (!champ) return ajouter(/^\\[*~\\]$/.test(m) ? m[1] : m);
+    if (!champ) return ajouter(/^\\[*~{\\]$/.test(m) ? m[1] : m);
     // Dernière marque d'un nombre impair : pas de fermeture, écrite telle quelle.
     if (restantes[m] === 1 && !etat[champ]) return ajouter(m);
     restantes[m]--;

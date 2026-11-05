@@ -284,6 +284,34 @@ function appliquerMarque(marque) {
   rendreArbre();
 }
 
+// Donne une taille à la sélection : {7}texte{/}. Déjà entourée d'une taille :
+// remplacée, ou retirée si c'est la même.
+function appliquerTaille() {
+  const zone = edEl("ed-texte");
+  const champ = edEl("ed-taille-selection");
+  const taille = Math.min(TAILLE_TEXTE_VN.max, Math.max(TAILLE_TEXTE_VN.min, Number(champ.value) || TAILLE_TEXTE_VN.defaut));
+  champ.value = taille;
+  const { selectionStart: debut, selectionEnd: fin, value } = zone;
+  const choisi = value.slice(debut, fin);
+  const avant = value.slice(0, debut).match(/\{(\d{1,2}(?:[.,]5)?)\}$/);
+  const autour = avant && value.slice(fin, fin + 3) === "{/}";
+  const marque = `{${taille}}`;
+  let gauche = value.slice(0, debut), droite = value.slice(fin), ouverture = marque;
+  if (autour) {
+    gauche = gauche.slice(0, -avant[0].length);
+    droite = droite.slice(3);
+    if (Number(avant[1].replace(",", ".")) === taille) ouverture = "";
+  }
+  const fermeture = ouverture ? "{/}" : "";
+  zone.value = gauche + ouverture + choisi + fermeture + droite;
+  zone.setSelectionRange(gauche.length + ouverture.length, gauche.length + ouverture.length + choisi.length);
+  zone.focus();
+  panneauChoisi().texte = zone.value;
+  marquerModifie();
+  rendreApercu();
+  rendreArbre();
+}
+
 // ---- Panneau : personnages ----
 const nomImage = chemin => chemin.split("/").pop().replace(/\.\w+$/, "");
 
@@ -890,6 +918,9 @@ function brancherFormulaire() {
   edEl("ed-taille").min = TAILLE_TEXTE_VN.min;
   edEl("ed-taille").max = TAILLE_TEXTE_VN.max;
 
+  edEl("ed-taille-selection").min = TAILLE_TEXTE_VN.min;
+  edEl("ed-taille-selection").max = TAILLE_TEXTE_VN.max;
+  edEl("ed-appliquer-taille").addEventListener("click", appliquerTaille);
   document.querySelectorAll("[data-marque]").forEach(bouton => {
     bouton.addEventListener("click", () => appliquerMarque(bouton.dataset.marque));
   });

@@ -9,8 +9,8 @@
   <meta name="robots" content="noindex, nofollow">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
-  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=6">
-  <link rel="stylesheet" href="/visual_novel/editeur.css?v=4">
+  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=7">
+  <link rel="stylesheet" href="/visual_novel/editeur.css?v=5">
 </head>
 <body class="ed-page">
   <p id="ed-chargement">Chargement…</p>
@@ -54,7 +54,9 @@
           <button type="button" class="ed-bouton" data-marque="**" title="Mettre la sélection en gras"><strong>G</strong></button>
           <button type="button" class="ed-bouton" data-marque="*" title="Mettre la sélection en italique"><em>I</em></button>
           <button type="button" class="ed-bouton" data-marque="~~" title="Barrer la sélection"><s>S</s></button>
-          <span class="ed-aide">Sélectionne un mot puis clique. Dans le texte : **gras**, *italique*, ~~barré~~.</span>
+          <label class="ed-champ" title="Même échelle que la taille du panneau">Taille <input type="number" id="ed-taille-selection" step="0.5" value="6"></label>
+          <button type="button" id="ed-appliquer-taille" class="ed-bouton" title="Donner cette taille à la sélection (cliquer à nouveau avec la même taille la retire)">Appliquer à la sélection</button>
+          <span class="ed-aide">Sélectionne un mot puis clique. Dans le texte : **gras**, *italique*, ~~barré~~, {6}taille{/}.</span>
         </div>
         <textarea id="ed-texte" rows="4" maxlength="2000" aria-label="Texte du panneau"></textarea>
         <div class="ed-ligne">
@@ -126,8 +128,8 @@
     <div id="ed-images-grille" class="ed-images-grille"></div>
   </dialog>
 
-  <script src="/commun/vn_polices.js?v=2"></script>
-  <script src="/visual_novel/scene.js?v=2"></script>
-  <script src="/visual_novel/editeur.js?v=6"></script>
+  <script src="/commun/vn_polices.js?v=3"></script>
+  <script src="/visual_novel/scene.js?v=3"></script>
+  <script src="/visual_novel/editeur.js?v=7"></script>
 </body>
 </html>

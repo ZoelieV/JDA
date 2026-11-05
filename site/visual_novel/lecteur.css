@@ -99,6 +99,11 @@ body.vn-page {
   white-space: pre-line;
 }
 
+/* Partie du texte à une autre taille ({7}texte{/}). */
+.vn-texte .vn-taille {
+  font-size: calc(var(--taille-vn) * 1cqh);
+}
+
 .vn-barre {
   text-decoration: line-through;
 }
@@ -489,7 +494,8 @@ body.vn-page {
     font-size: 1.1rem;
   }
 
-  .vn-texte {
+  .vn-texte,
+  .vn-texte .vn-taille {
     font-size: calc(var(--taille-vn, 4) * 0.27rem);
   }
 

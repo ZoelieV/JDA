@@ -213,7 +213,8 @@ body.ed-page {
   font-size: 3.6cqh;
 }
 
-.ed-apercu .vn-texte {
+.ed-apercu .vn-texte,
+.ed-apercu .vn-texte .vn-taille {
   font-size: calc(var(--taille-vn, 4) * 1cqh);
 }
 
@@ -492,4 +493,8 @@ body.ed-page {
   .ed-centre {
     order: -1;
   }
+}
+
+#ed-taille-selection {
+  width: 4.5rem;
 }

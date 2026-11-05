@@ -4,7 +4,7 @@
 const FAMILLES_VN = Object.fromEntries(POLICES_VN.map(p => [p.id, p.famille]));
 const imageVn = chemin => encodeURI(`/DB/images/${chemin}`);
 
-// **gras**, *italique*, ~~barré~~ (cf. decouperTexteVn).
+// **gras**, *italique*, ~~barré~~, {7}taille{/} (cf. decouperTexteVn).
 function remplirTexteVn(element, texte) {
   element.replaceChildren(...decouperTexteVn(texte).map(morceau => {
     const span = document.createElement("span");
@@ -12,6 +12,10 @@ function remplirTexteVn(element, texte) {
     if (morceau.gras) span.classList.add("vn-gras");
     if (morceau.italique) span.style.fontStyle = "italic";
     if (morceau.barre) span.classList.add("vn-barre");
+    if (morceau.taille !== null) {
+      span.classList.add("vn-taille");
+      span.style.setProperty("--taille-vn", morceau.taille);
+    }
     return span;
   }));
 }
