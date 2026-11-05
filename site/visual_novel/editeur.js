@@ -312,7 +312,11 @@ function listeDestinations(valeur, { libelleVide, avecNouveau = true, onChange }
     creer("option", { value: "", textContent: libelleVide }),
     avecNouveau ? creer("option", { value: "__nouveau", textContent: "+ Nouveau panneau" }) : null,
     ...chapitre.sous_chapitres.map(sc => creer("optgroup", { label: sc.titre },
-      ...sc.panneaux.map((p, i) => creer("option", { value: p.id, textContent: resumePanneau(p, i + 1).slice(0, 60) }))
+      // Fins et game over repérables d'un coup d'œil, pour choisir le bon.
+      ...sc.panneaux.map((p, i) => creer("option", {
+        value: p.id,
+        textContent: `${p.ensuite?.type === "game_over" ? `[Game over : ${p.ensuite.nom}] ` : p.ensuite?.type === "fin" ? `[Fin : ${p.ensuite.nom}] ` : ""}${resumePanneau(p, i + 1)}`.slice(0, 80)
+      }))
     ))
   );
   liste.value = valeur || "";
@@ -425,6 +429,21 @@ function editeurOption(ensuite, option, i, apres) {
       return liste;
     })(),
     option.objet ? creer("label", {}, creer("input", { type: "checkbox", checked: option.consomme, onchange: e => { option.consomme = e.target.checked; marquerModifie(); } }), " L'objet est consommé") : null,
+    histoire.etats.length || option.etat ? (() => {
+      const liste = creer("select", { ariaLabel: "Condition d'état", onchange: e => {
+        const valeur = e.target.value;
+        option.etat = valeur ? valeur.slice(1) : null;
+        option.sans_etat = valeur.startsWith("-");
+        apres();
+      } },
+        creer("option", { value: "", textContent: "Aucune condition d'état" }),
+        ...histoire.etats.flatMap(etat => [
+          creer("option", { value: `+${etat.id}`, textContent: `Seulement si : ${etat.nom}` }),
+          creer("option", { value: `-${etat.id}`, textContent: `Sauf si : ${etat.nom}` })
+        ]));
+      liste.value = option.etat ? `${option.sans_etat ? "-" : "+"}${option.etat}` : "";
+      return liste;
+    })() : null,
     creer("label", {}, creer("input", { type: "checkbox", checked: !!option.de, onchange: e => {
       if (e.target.checked) option.de = { resultats: [creerResultatDe(11, null), creerResultatDe(null, 10)] };
       else delete option.de;
@@ -468,7 +487,7 @@ function rendreSuite() {
         choix: () => ({ type, options: [nouvelleOption(), nouvelleOption()] }),
         texte: () => ({ type, consigne: "", reponses: [nouvelleReponse()], defaut: { ...nouvelleConsequence(), message: "Ce n'est pas la bonne réponse." } }),
         fin: () => ({ type, id: nouvelId("f"), nom: "Fin" }),
-        game_over: () => ({ type, id: nouvelId("f"), nom: "Game over", est_fin: false }),
+        game_over: () => ({ type, id: nouvelId("f"), nom: "Game over", est_fin: false, message: "" }),
         suite: () => ({ type })
       };
       panneau.ensuite = creations[type]();
@@ -486,6 +505,7 @@ function rendreSuite() {
       creer("input", { type: "text", maxLength: 60, value: ensuite.nom, oninput: e => { ensuite.nom = e.target.value; marquerModifie(); } })
     ));
     if (ensuite.type === "game_over") {
+      contenu.push(creer("input", { type: "text", maxLength: 500, value: ensuite.message || "", placeholder: "Texte de l'écran (sinon : « Ta partie s'arrête ici. »)", ariaLabel: "Texte de l'écran de game over", oninput: e => { ensuite.message = e.target.value; marquerModifie(); } }));
       contenu.push(creer("label", {}, creer("input", { type: "checkbox", checked: ensuite.est_fin, onchange: e => { ensuite.est_fin = e.target.checked; marquerModifie(); } }), " Compte comme une fin du chapitre (100 %)"));
       contenu.push(creer("p", { classe: "ed-aide", textContent: "Le joueur reprend au dernier point de sauvegarde, avec l'inventaire de ce moment-là, ou recommence le chapitre." }));
     }
@@ -513,7 +533,7 @@ function rendreSuite() {
   edEl("ed-suite").replaceChildren(...contenu);
 }
 
-const nouvelleOption = () => ({ id: nouvelId("o"), texte: "", ...nouvelleConsequence(), objet: null, consomme: false });
+const nouvelleOption = () => ({ id: nouvelId("o"), texte: "", ...nouvelleConsequence(), objet: null, consomme: false, etat: null, sans_etat: false });
 const nouvelleReponse = () => ({ id: nouvelId("o"), valeurs: [], exact: false, ...nouvelleConsequence() });
 
 // ---- Panneau : sauvegarde, timer, effets à l'arrivée, sons ----

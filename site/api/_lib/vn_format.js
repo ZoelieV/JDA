@@ -67,12 +67,15 @@ function lireOption(brut, lieu, idsOption) {
   exiger(ID.test(brut?.id) && !idsOption.has(brut.id), `${lieu} : réponse invalide.`);
   idsOption.add(brut.id);
   exiger(brut.objet == null || brut.objet === "" || ID.test(brut.objet), `${lieu} : objet requis invalide.`);
+  exiger(brut.etat == null || brut.etat === "" || ID.test(brut.etat), `${lieu} : condition d'état invalide.`);
   return {
     id: brut.id,
     texte: texteDe(brut.texte, MAX.option),
     ...lireConsequence(brut, lieu),
     objet: brut.objet || null,
     consomme: brut.consomme === true,
+    etat: brut.etat || null,
+    sans_etat: !!brut.etat && brut.sans_etat === true,
     ...(brut.de ? { de: lireDe(brut.de, lieu) } : {})
   };
 }
@@ -103,7 +106,7 @@ function lireEnsuite(brut, lieu, idsOption) {
   if (brut?.type === "fin" || brut?.type === "game_over") {
     exiger(ID.test(brut.id), `${lieu} : fin invalide.`);
     const commun = { type: brut.type, id: brut.id, nom: texteDe(brut.nom, MAX.nom).trim() || (brut.type === "fin" ? "Fin" : "Game over") };
-    return brut.type === "fin" ? commun : { ...commun, est_fin: brut.est_fin === true };
+    return brut.type === "fin" ? commun : { ...commun, est_fin: brut.est_fin === true, message: texteDe(brut.message, MAX.message).trim() };
   }
   if (brut?.type === "choix") {
     const options = liste(brut.options);
@@ -323,10 +326,11 @@ function avertissementsVn(histoire) {
       });
       if (ensuite.type === "choix") {
         if (!ensuite.options.length) avertissements.push(`${lieu} : choix sans réponse.`);
-        if (ensuite.options.length && ensuite.options.every(o => o.objet)) avertissements.push(`${lieu} : toutes les réponses demandent un objet, le joueur peut rester bloqué.`);
+        if (ensuite.options.length && ensuite.options.every(o => o.objet || o.etat)) avertissements.push(`${lieu} : toutes les réponses ont une condition (objet ou état), le joueur peut rester bloqué.`);
         ensuite.options.forEach((o, i) => {
           if (!o.texte.trim()) avertissements.push(`${lieu} : réponse ${i + 1} sans texte.`);
           if (o.objet && !objets.has(o.objet)) avertissements.push(`${lieu} : réponse ${i + 1} demande un objet supprimé.`);
+          if (o.etat && !etats.has(o.etat)) avertissements.push(`${lieu} : réponse ${i + 1} dépend d'un état supprimé.`);
           if (o.de) {
             const manquants = scoresSansResultat(histoire, o.de);
             if (manquants.length) avertissements.push(`${lieu} : réponse ${i + 1}, aucun résultat pour le score ${manquants[0]}${manquants.length > 1 ? ` et ${manquants.length - 1} autre(s)` : ""}.`);

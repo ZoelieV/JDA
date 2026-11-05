@@ -220,7 +220,7 @@ function afficherPanneau({ sansSon = false } = {}) {
     bouton.type = "button";
     bouton.className = "vn-bouton";
     remplirTexteVn(bouton, option.texte);
-    const precisions = [option.de ? "lancer de dé" : "", option.objet ? `objet : ${option.objet}` : ""].filter(Boolean);
+    const precisions = [option.de ? "lancer de dé" : "", option.objet ? `objet : ${option.objet}` : "", option.etat ? `état : ${option.etat}` : ""].filter(Boolean);
     if (precisions.length) {
       const mention = document.createElement("span");
       mention.className = "vn-mention";
@@ -288,7 +288,7 @@ function traiterReponse(data) {
     elementVn("vn-ouvrir-inventaire").hidden = true;
     if (data.statut === "game_over") {
       const fins = data.fins_total ? ` Fins découvertes : ${data.fins_trouvees} sur ${data.fins_total}.` : "";
-      afficherEcran(data.fin ? `Game over : ${data.fin.nom}` : "Game over", `Ta partie s'arrête ici.${fins}`, { recommencer: true, point: data.reprise, liste: true });
+      afficherEcran(data.fin ? `Game over : ${data.fin.nom}` : "Game over", `${data.fin?.message || "Ta partie s'arrête ici."}${fins}`, { recommencer: true, point: data.reprise, liste: true });
       return;
     }
     const titre = data.fin ? `Fin : ${data.fin.nom}` : data.chapitre;

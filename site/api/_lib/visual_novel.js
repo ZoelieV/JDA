@@ -23,13 +23,16 @@
 //     absent ou { type: "suite", vers? }  panneau suivant dans l'ordre, ou "vers"
 //     { type: "choix", options: [{ id, texte, vers, effets, message,
 //        objet, consomme,                 (réponse montrée à qui possède l'objet)
+//        etat, sans_etat,                 (montrée si l'état est actif, ou s'il
+//                                          ne l'est pas avec sans_etat)
 //        de: { resultats: [{ min, max, vers, effets, message }] } }] }
 //     { type: "texte", consigne, reponses: [{ id, valeurs: [texte], exact, vers,
 //        effets, message }], defaut: { vers?, effets, message } }
 //        (réponses jamais envoyées au navigateur ; sans "vers", une mauvaise
 //         réponse laisse sur place)
 //     { type: "fin", id, nom }            une fin du chapitre
-//     { type: "game_over", id, nom, est_fin }  (est_fin : compte comme une fin)
+//     { type: "game_over", id, nom, est_fin, message }  (est_fin : compte comme
+//        une fin ; message : texte de l'écran de game over, sinon celui par défaut)
 //   Au niveau de l'histoire :
 //     objets: [{ id, nom, description, image, limite }]
 //     etats: [{ id, nom, description, valeur, fin_chapitre }]  (bonus ou malus aux dés)
@@ -117,17 +120,22 @@ function calculerSegment(chapitre, depart) {
 
 // Ce que voit le navigateur : ni les destinations, ni les réponses attendues,
 // ni le nom de la fin avant de l'avoir atteinte.
+// Réponse proposée au joueur : objet possédé, état actif (ou inactif avec sans_etat).
+const optionPermise = (option, jeu) => (!option.objet || !!jeu.inventaire[option.objet]) &&
+  (!option.etat || jeu.etats.includes(option.etat) !== option.sans_etat);
+
 function arretPublic(histoire, arret, jeu) {
   if (arret.type === "choix") {
-    const options = arret.options.filter(o => !o.objet || jeu.inventaire[o.objet]);
+    const options = arret.options.filter(o => optionPermise(o, jeu));
     if (!options.length) return { type: "incomplet" };
     return {
       type: "choix",
-      options: options.map(({ id, texte, de, objet }) => ({
+      options: options.map(({ id, texte, de, objet, etat, sans_etat }) => ({
         id,
         texte,
         de: !!de,
-        objet: objet ? (histoire.objets || []).find(o => o.id === objet)?.nom || null : null
+        objet: objet ? (histoire.objets || []).find(o => o.id === objet)?.nom || null : null,
+        etat: etat && !sans_etat ? (histoire.etats || []).find(e => e.id === etat)?.nom || null : null
       }))
     };
   }
@@ -479,7 +487,7 @@ async function traiterAction(discordId, brut) {
       champs.termine_le = partie.termine_le || new Date().toISOString();
     }
     partie = await ecrire(champs);
-    return envoyerArret({ nom: arret.nom });
+    return envoyerArret({ nom: arret.nom, ...(arret.message ? { message: arret.message } : {}) });
   }
 
   const INCOMPLET = { status: 409, corps: { error: "La suite de ce passage n'est pas encore écrite." } };
@@ -502,7 +510,7 @@ async function traiterAction(discordId, brut) {
 
   // Choix : la réponse, et son dé s'il y en a un.
   const option = estId(brut.option) ? arret.options.find(o => o.id === brut.option) : null;
-  if (!option || (option.objet && !jeu.inventaire[option.objet])) return { status: 400, corps: { error: "Choix invalide" } };
+  if (!option || !optionPermise(option, jeu)) return { status: 400, corps: { error: "Choix invalide" } };
   const effets = [...(option.effets || [])];
   if (option.objet && option.consomme) effets.push({ genre: "objet", id: option.objet, quantite: -1 });
 
