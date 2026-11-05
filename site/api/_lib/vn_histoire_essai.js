@@ -14,6 +14,13 @@ module.exports = {
   id: "essai",
   nom: "Le pari des Archons (essai)",
   namecard: "namecards/Namecard_Background_Achievement_Adeptal_Valley.webp",
+  objets: [
+    { id: "cle", nom: "Clé ancienne", description: "Elle ouvre quelque chose, quelque part.", limite: 2 }
+  ],
+  etats: [
+    { id: "mouille", nom: "Mouillé", description: "Tes vêtements trempés te rendent plus lourd.", valeur: -1 },
+    { id: "benediction", nom: "Bénédiction de Nahida", description: "Elle ne dure que ce chapitre.", valeur: 2, fin_chapitre: true }
+  ],
   chapitres: [
     {
       id: "c1",
@@ -96,6 +103,51 @@ module.exports = {
           panneaux: [
             { id: "c2c", fond: NEIGE, nom: "Nahida", texte: "Cette fois, personne ne parie. Enfin, c'est ce qu'ils ont promis.", persos: [nahida()] },
             { id: "c2d", fond: NEIGE, nom: "Venti", texte: "À suivre !", persos: [venti(50, false)], ensuite: { type: "fin", id: "suite", nom: "À suivre" } }
+          ]
+        }
+      ]
+    },
+    {
+      id: "c3",
+      titre: "Chapitre 3 : Les épreuves",
+      namecard: "namecards/Namecard_Background_Achievement_Orbits.webp",
+      sous_chapitres: [
+        {
+          id: "marais",
+          titre: "Le marais",
+          panneaux: [
+            { id: "c3a", fond: OASIS, nom: "Narration", texte: "Ce chapitre montre les interactions. Ce panneau est un point de sauvegarde : un game over te ramènera ici.", sauvegarde: true },
+            { id: "c3b", fond: OASIS, nom: "Nahida", texte: "Tiens, prends cette clé. Oh, et tu es tombé dans l'eau : te voilà **mouillé**. Regarde ton inventaire en haut à droite.", persos: [nahida()],
+              effets: [{ genre: "objet", id: "cle", quantite: 1 }, { genre: "etat", id: "mouille", actif: true }] },
+            { id: "c3c", fond: OASIS, nom: "Narration", texte: "Un ravin te barre la route. Comment passes-tu ?",
+              ensuite: { type: "choix", options: [
+                { id: "sauter", texte: "Sauter par-dessus", de: { resultats: [
+                  { min: 11, vers: "c3d", message: "Tu atterris de l'autre côté." },
+                  { max: 10, vers: "c3g", message: "Tu n'as pas sauté assez loin." }
+                ] } },
+                { id: "cle", texte: "Ouvrir la vieille porte du pont", objet: "cle", consomme: true, vers: "c3d", message: "La clé casse dans la serrure, mais la porte s'ouvre." }
+              ] } },
+            { id: "c3g", fond: OASIS, nom: "Narration", texte: "Tu tombes dans le ravin. Ni ton inventaire ni ta fierté ne s'en remettront.", ensuite: { type: "game_over", id: "ravin", nom: "Le ravin" } }
+          ]
+        },
+        {
+          id: "enigme",
+          titre: "L'énigme",
+          panneaux: [
+            { id: "c3d", fond: TEMPLE, nom: "Zhongli", texte: "Une énigme, pour commencer. Quel est mon véritable nom ?", persos: [zhongli(50)], police: { famille: "titre", taille: 5 },
+              ensuite: { type: "texte", consigne: "Écris ta réponse", reponses: [
+                { id: "morax", valeurs: ["MORAX"], exact: true, vers: "c3m", message: "Tu l'as écrit comme il se doit." },
+                { id: "morax2", valeurs: ["Morax", "Rex Lapis"], vers: "c3e" }
+              ], defaut: { message: "Bien essayé, mais ton personnage ne connaît pas encore ce nom.", effets: [{ genre: "etat", id: "benediction", actif: true }] } } },
+            { id: "c3m", fond: TEMPLE, nom: "Zhongli", texte: "En lettres capitales, comme sur les anciens contrats. Tu as trouvé une fin cachée.", persos: [zhongli(50)], ensuite: { type: "fin", id: "capitales", nom: "Les lettres capitales" } },
+            { id: "c3e", fond: MER, nom: "Venti", texte: "Bravo ! Maintenant, vite : la mer monte. Tu as 20 secondes pour répondre, même si tu recharges la page.", persos: [venti(50, false)],
+              timer: { duree: 20, vers: "c3t", message: "Trop tard !" } },
+            { id: "c3f", fond: MER, nom: "Venti", texte: "Alors, on court ?", persos: [venti(50, false)],
+              ensuite: { type: "choix", options: [
+                { id: "courir", texte: "Je cours !", vers: "c3h" }
+              ] } },
+            { id: "c3h", fond: MER, nom: "Narration", texte: "Tu t'en sors, mouillé mais vivant.", ensuite: { type: "fin", id: "sauve", nom: "Sain et sauf" } },
+            { id: "c3t", fond: MER, nom: "Narration", texte: "La mer t'a rattrapé. Ce game over compte comme une fin.", ensuite: { type: "game_over", id: "maree", nom: "La marée", est_fin: true } }
           ]
         }
       ]

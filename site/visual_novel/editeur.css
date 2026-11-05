@@ -167,6 +167,7 @@ body.ed-page {
 
 .ed-champ input[type="text"] {
   flex: 1;
+  min-width: 0;
 }
 
 .ed-outils {
@@ -345,6 +346,60 @@ body.ed-page {
 #ed-suite select,
 #ed-suite input[type="text"] {
   width: 100%;
+}
+
+.ed-nombre {
+  width: 4.2rem;
+  padding: 0.3rem;
+  color: var(--texte);
+  background: #2a2a2a;
+  border: 1px solid var(--bordure);
+  border-radius: 0.3rem;
+  font: inherit;
+}
+
+.ed-page .ed-carte-haut select,
+#ed-suite .ed-carte-haut select {
+  width: auto;
+  min-width: 0;
+}
+
+.ed-effets,
+#ed-panneau-options,
+#ed-suite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+#ed-panneau-options select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Objets, états et sons. */
+.ed-catalogue-contenu {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-color: var(--bordure) transparent;
+}
+
+.ed-catalogue-contenu h3 {
+  margin: 0.9rem 0 0.2rem;
+  font-family: var(--police-titre);
+  font-size: 1rem;
+}
+
+.ed-catalogue-contenu h3:first-child {
+  margin-top: 0;
+}
+
+.ed-catalogue-contenu > .ed-bouton {
+  margin-top: 0.4rem;
+}
+
+.ed-son {
+  margin-top: 0.3rem;
 }
 
 /* Fenêtre des images. */

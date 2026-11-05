@@ -9,8 +9,8 @@
   <meta name="robots" content="noindex, nofollow">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
-  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=4">
-  <link rel="stylesheet" href="/visual_novel/editeur.css?v=2">
+  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=5">
+  <link rel="stylesheet" href="/visual_novel/editeur.css?v=3">
 </head>
 <body class="ed-page">
   <p id="ed-chargement">Chargement…</p>
@@ -20,6 +20,7 @@
       <label class="ed-nom-histoire">Nom de l'event <input type="text" id="ed-nom-histoire" maxlength="80"></label>
       <span class="ed-image-event"><img id="ed-namecard-event" alt=""><button type="button" id="ed-choisir-namecard-event" class="ed-bouton">Namecard de l'event</button></span>
       <span id="ed-etat" class="ed-etat"></span>
+      <button type="button" id="ed-ouvrir-catalogue" class="ed-bouton">Objets, états et sons</button>
       <button type="button" id="ed-reinitialiser" class="ed-bouton" title="Efface ta progression de lecture, pour tout relire comme un nouveau joueur">Effacer ma progression</button>
       <button type="button" id="ed-tester" class="ed-bouton">Tester ce panneau</button>
       <button type="button" id="ed-enregistrer" class="ed-bouton ed-principal">Enregistrer</button>
@@ -74,11 +75,38 @@
         <p class="ed-aide">Le dernier de la liste passe devant les autres.</p>
         <div id="ed-persos"></div>
         <button type="button" id="ed-ajouter-perso" class="ed-bouton ed-large">+ Personnage</button>
+        <h2>Sur ce panneau</h2>
+        <div id="ed-panneau-options"></div>
         <h2>Ensuite</h2>
         <div id="ed-suite"></div>
       </aside>
     </div>
   </div>
+
+  <!-- Objets, états et sons de l'histoire. -->
+  <dialog id="ed-catalogue" class="ed-images">
+    <div class="ed-images-entete">
+      <h2>Objets, états et sons</h2>
+      <button type="button" id="ed-catalogue-fermer" class="ed-bouton" aria-label="Fermer">×</button>
+    </div>
+    <div class="ed-catalogue-contenu">
+      <h3>Objets</h3>
+      <p class="ed-aide">Conservés de chapitre en chapitre. Limite : quantité maximale que le joueur peut avoir.</p>
+      <div id="ed-objets"></div>
+      <button type="button" id="ed-ajouter-objet" class="ed-bouton">+ Objet</button>
+      <h3>États (bonus et malus)</h3>
+      <p class="ed-aide">Ajoutés au score des dés tant qu'ils sont actifs : -1 pour « Mouillé », par exemple.</p>
+      <div id="ed-etats"></div>
+      <button type="button" id="ed-ajouter-etat" class="ed-bouton">+ État</button>
+      <h3>Sons et musiques</h3>
+      <p class="ed-aide">MP3 ou OGG, 3 Mo au plus : environ 4 minutes en MP3 à 96 kb/s.</p>
+      <div id="ed-sons"></div>
+      <label class="ed-bouton">Importer un son
+        <input type="file" id="ed-sons-import" accept=".mp3,.ogg,.oga,audio/mpeg,audio/ogg" hidden>
+      </label>
+      <span id="ed-sons-etat" class="ed-aide"></span>
+    </div>
+  </dialog>
 
   <!-- Choix d'une image : du site ou importée. -->
   <dialog id="ed-images" class="ed-images">
@@ -99,6 +127,6 @@
 
   <script src="/commun/vn_polices.js?v=2"></script>
   <script src="/visual_novel/scene.js?v=2"></script>
-  <script src="/visual_novel/editeur.js?v=2"></script>
+  <script src="/visual_novel/editeur.js?v=3"></script>
 </body>
 </html>

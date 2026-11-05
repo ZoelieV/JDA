@@ -54,6 +54,11 @@ function creerPanneau(modele) {
     texte: "",
     persos: structuredClone(modele?.persos || []),
     police: structuredClone(modele?.police || lirePoliceVn()),
+    effets: [],
+    sauvegarde: false,
+    timer: null,
+    musique: null,
+    son: null,
     ensuite: { type: "suite" }
   };
 }
@@ -155,13 +160,15 @@ function rendreSousChapitre(chapitre, sc) {
   );
 }
 
-const BADGES = { choix: "choix", fin: "fin" };
+const BADGES = { choix: "choix", texte: "texte", fin: "fin", game_over: "game over" };
 
 function rendrePanneauArbre(chapitre, sc, panneau, i) {
   const resume = resumePanneau(panneau, i + 1);
   const badge = BADGES[panneau.ensuite.type];
   return creer("div", { classe: "ed-noeud" },
     creer("button", { type: "button", classe: `ed-noeud-nom${panneau.id === selection.panneau ? " ed-actif" : ""}`, textContent: resume, title: resume, onclick: () => choisir(chapitre.id, sc.id, panneau.id) }),
+    panneau.sauvegarde ? creer("span", { classe: "ed-badge", textContent: "sauv." }) : null,
+    panneau.timer ? creer("span", { classe: "ed-badge", textContent: "timer" }) : null,
     badge ? creer("span", { classe: "ed-badge", textContent: badge }) : null,
     ...boutonsDeplacement(sc.panneaux, panneau, {
       confirmation: () => (panneau.texte ? "Supprimer ce panneau ?" : null),
@@ -187,8 +194,8 @@ function ajouterPanneau(chapitre, sc) {
 function dupliquerPanneau(chapitre, sc) {
   const reference = panneauChoisi();
   // La copie ne reprend pas la suite : deux fois la même fin ou les mêmes
-  // réponses n'auraient pas de sens.
-  const panneau = { ...structuredClone(reference), id: nouvelId("p"), ensuite: { type: "suite" } };
+  // réponses n'auraient pas de sens, ni le même timer ou les mêmes effets.
+  const panneau = { ...structuredClone(reference), id: nouvelId("p"), ensuite: { type: "suite" }, effets: [], sauvegarde: false, timer: null, musique: null, son: null };
   insererApres(sc, panneau, reference);
   choisir(chapitre.id, sc.id, panneau.id);
 }
@@ -311,8 +318,130 @@ function destination(valeur) {
 const TYPES_SUITE = [
   ["suite", "Passer à un panneau"],
   ["choix", "Choix du joueur"],
-  ["fin", "Fin du chapitre"]
+  ["texte", "Texte libre du joueur"],
+  ["fin", "Fin du chapitre"],
+  ["game_over", "Game over"]
 ];
+
+// Effets d'une conséquence : donner ou retirer un objet, activer ou retirer un état.
+function editeurEffets(effets, apres) {
+  const valeurs = [
+    ...histoire.objets.flatMap(o => [[`objet+:${o.id}`, `Donner : ${o.nom}`], [`objet-:${o.id}`, `Retirer : ${o.nom}`]]),
+    ...histoire.etats.flatMap(e => [[`etat+:${e.id}`, `Activer : ${e.nom}`], [`etat-:${e.id}`, `Retirer : ${e.nom}`]])
+  ];
+  const valeurDe = effet => (effet.genre === "objet" ? `objet${effet.quantite < 0 ? "-" : "+"}:${effet.id}` : `etat${effet.actif ? "+" : "-"}:${effet.id}`);
+  const appliquer = (effet, valeur) => {
+    const [, genre, sens, id] = /^(objet|etat)([+-]):(.+)$/.exec(valeur);
+    const taille = Math.abs(effet.quantite) || 1;
+    for (const cle of Object.keys(effet)) delete effet[cle];
+    Object.assign(effet, genre === "objet" ? { genre, id, quantite: sens === "+" ? taille : -taille } : { genre, id, actif: sens === "+" });
+  };
+  return creer("div", { classe: "ed-effets" },
+    ...effets.map((effet, i) => creer("div", { classe: "ed-carte-haut" },
+      (() => {
+        const liste = creer("select", { ariaLabel: "Effet", classe: "ed-pousse", onchange: e => { appliquer(effet, e.target.value); apres(); } },
+          ...valeurs.map(([value, textContent]) => creer("option", { value, textContent })));
+        if (!valeurs.some(([v]) => v === valeurDe(effet))) liste.prepend(creer("option", { value: "", textContent: "(supprimé)" }));
+        liste.value = valeurs.some(([v]) => v === valeurDe(effet)) ? valeurDe(effet) : "";
+        return liste;
+      })(),
+      effet.genre === "objet" ? creer("input", { type: "number", min: 1, max: 999, value: Math.abs(effet.quantite), ariaLabel: "Quantité", classe: "ed-nombre", oninput: e => {
+        const taille = Math.max(1, Number(e.target.value) || 1);
+        effet.quantite = effet.quantite < 0 ? -taille : taille;
+        marquerModifie();
+      } }) : null,
+      creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Retirer", onclick: () => { effets.splice(i, 1); apres(); } })
+    )),
+    valeurs.length
+      ? creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "+ Effet", disabled: effets.length >= 8, onclick: () => {
+        const effet = {};
+        appliquer(effet, valeurs[0][0]);
+        effets.push(effet);
+        apres();
+      } })
+      : creer("p", { classe: "ed-aide", textContent: "Pas d'effet possible : crée d'abord un objet ou un état." })
+  );
+}
+
+// Destination, message et effets : pour une réponse, un résultat de dé, un timer...
+function editeurConsequence(consequence, apres, { libelleVide = "Destination à choisir", placeholder = "Message affiché (facultatif)" } = {}) {
+  return [
+    listeDestinations(consequence.vers, { libelleVide, onChange: valeur => { consequence.vers = destination(valeur); apres(); } }),
+    creer("input", { type: "text", maxLength: 500, value: consequence.message || "", placeholder, ariaLabel: "Message", oninput: e => { consequence.message = e.target.value; marquerModifie(); } }),
+    editeurEffets(consequence.effets, apres)
+  ];
+}
+
+const nouvelleConsequence = () => ({ vers: null, effets: [], message: "" });
+
+const creerResultatDe = (min, max) => ({ min, max, ...nouvelleConsequence() });
+
+function editeurResultatDe(de, resultat, i, apres) {
+  const borne = (cle, placeholder) => creer("input", {
+    type: "number",
+    min: -100,
+    max: 200,
+    value: resultat[cle] ?? "",
+    placeholder,
+    ariaLabel: placeholder,
+    classe: "ed-nombre",
+    oninput: e => { resultat[cle] = e.target.value === "" ? null : Number(e.target.value); marquerModifie(); }
+  });
+  return creer("div", { classe: "ed-carte" },
+    creer("div", { classe: "ed-carte-haut" },
+      creer("span", { textContent: "Score" }), borne("min", "min"), creer("span", { textContent: "à" }), borne("max", "max"),
+      creer("span", { classe: "ed-pousse" }),
+      creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Retirer", onclick: () => { de.resultats.splice(i, 1); apres(); } })
+    ),
+    ...editeurConsequence(resultat, apres)
+  );
+}
+
+function editeurOption(ensuite, option, i, apres) {
+  return creer("div", { classe: "ed-carte" },
+    creer("div", { classe: "ed-carte-haut" },
+      creer("span", { classe: "ed-pousse", textContent: `Réponse ${i + 1}` }),
+      creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Retirer", onclick: () => { ensuite.options.splice(i, 1); apres(); } })
+    ),
+    creer("input", { type: "text", maxLength: 300, value: option.texte, placeholder: "Texte de la réponse", ariaLabel: `Texte de la réponse ${i + 1}`, oninput: e => { option.texte = e.target.value; marquerModifie(); } }),
+    (() => {
+      const liste = creer("select", { ariaLabel: "Objet requis", onchange: e => { option.objet = e.target.value || null; apres(); } },
+        creer("option", { value: "", textContent: "Aucun objet requis" }),
+        ...histoire.objets.map(o => creer("option", { value: o.id, textContent: `Requiert : ${o.nom}` })));
+      liste.value = option.objet || "";
+      return liste;
+    })(),
+    option.objet ? creer("label", {}, creer("input", { type: "checkbox", checked: option.consomme, onchange: e => { option.consomme = e.target.checked; marquerModifie(); } }), " L'objet est consommé") : null,
+    creer("label", {}, creer("input", { type: "checkbox", checked: !!option.de, onchange: e => {
+      if (e.target.checked) option.de = { resultats: [creerResultatDe(11, null), creerResultatDe(null, 10)] };
+      else delete option.de;
+      apres();
+    } }), " Lancer un dé (d20)"),
+    ...(option.de
+      ? [
+        creer("p", { classe: "ed-aide", textContent: "Sur le score final (dé et états). Laisse min ou max vide pour une plage ouverte : « 20 et plus »." }),
+        ...option.de.resultats.map((resultat, n) => editeurResultatDe(option.de, resultat, n, apres)),
+        creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "+ Résultat", disabled: option.de.resultats.length >= 10, onclick: () => { option.de.resultats.push(creerResultatDe(null, null)); apres(); } }),
+        editeurEffets(option.effets, apres)
+      ]
+      : editeurConsequence(option, apres))
+  );
+}
+
+function editeurReponseAttendue(ensuite, reponse, i, apres) {
+  return creer("div", { classe: "ed-carte" },
+    creer("div", { classe: "ed-carte-haut" },
+      creer("span", { classe: "ed-pousse", textContent: `Réponse attendue ${i + 1}` }),
+      creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Retirer", onclick: () => { ensuite.reponses.splice(i, 1); apres(); } })
+    ),
+    creer("textarea", { rows: 2, value: reponse.valeurs.join("\n"), placeholder: "Une écriture acceptée par ligne", ariaLabel: `Écritures de la réponse ${i + 1}`, oninput: e => {
+      reponse.valeurs = e.target.value.split("\n").map(v => v.trim()).filter(Boolean).slice(0, 20);
+      marquerModifie();
+    } }),
+    creer("label", {}, creer("input", { type: "checkbox", checked: reponse.exact, onchange: e => { reponse.exact = e.target.checked; marquerModifie(); } }), " Exiger l'écriture exacte (majuscules et accents)"),
+    ...editeurConsequence(reponse, apres)
+  );
+}
 
 function rendreSuite() {
   const panneau = panneauChoisi();
@@ -322,9 +451,14 @@ function rendreSuite() {
     ariaLabel: "Ce qui suit ce panneau",
     onchange: e => {
       const type = e.target.value;
-      panneau.ensuite = type === "choix"
-        ? { type, options: [{ id: nouvelId("o"), texte: "", vers: null }, { id: nouvelId("o"), texte: "", vers: null }] }
-        : type === "fin" ? { type, id: nouvelId("f"), nom: "Fin" } : { type };
+      const creations = {
+        choix: () => ({ type, options: [nouvelleOption(), nouvelleOption()] }),
+        texte: () => ({ type, consigne: "", reponses: [nouvelleReponse()], defaut: { ...nouvelleConsequence(), message: "Ce n'est pas la bonne réponse." } }),
+        fin: () => ({ type, id: nouvelId("f"), nom: "Fin" }),
+        game_over: () => ({ type, id: nouvelId("f"), nom: "Game over", est_fin: false }),
+        suite: () => ({ type })
+      };
+      panneau.ensuite = creations[type]();
       apres();
     }
   }, ...TYPES_SUITE.map(([value, textContent]) => creer("option", { value, textContent, selected: value === ensuite.type })))];
@@ -334,30 +468,167 @@ function rendreSuite() {
       libelleVide: "Panneau suivant dans la liste",
       onChange: valeur => { const vers = destination(valeur); if (vers) ensuite.vers = vers; else delete ensuite.vers; apres(); }
     }));
-  } else if (ensuite.type === "fin") {
-    contenu.push(creer("label", {}, "Nom de la fin",
+  } else if (ensuite.type === "fin" || ensuite.type === "game_over") {
+    contenu.push(creer("label", {}, ensuite.type === "fin" ? "Nom de la fin" : "Nom du game over",
       creer("input", { type: "text", maxLength: 60, value: ensuite.nom, oninput: e => { ensuite.nom = e.target.value; marquerModifie(); } })
     ));
+    if (ensuite.type === "game_over") {
+      contenu.push(creer("label", {}, creer("input", { type: "checkbox", checked: ensuite.est_fin, onchange: e => { ensuite.est_fin = e.target.checked; marquerModifie(); } }), " Compte comme une fin du chapitre (100 %)"));
+      contenu.push(creer("p", { classe: "ed-aide", textContent: "Le joueur reprend au dernier point de sauvegarde, avec l'inventaire de ce moment-là, ou recommence le chapitre." }));
+    }
+  } else if (ensuite.type === "texte") {
+    contenu.push(
+      creer("input", { type: "text", maxLength: 200, value: ensuite.consigne, placeholder: "Consigne dans le champ (facultatif)", ariaLabel: "Consigne", oninput: e => { ensuite.consigne = e.target.value; marquerModifie(); } }),
+      creer("p", { classe: "ed-aide", textContent: "Par défaut, accents, majuscules et petites fautes sont tolérés. Le joueur ne voit jamais les réponses attendues." }),
+      ...ensuite.reponses.map((reponse, i) => editeurReponseAttendue(ensuite, reponse, i, apres)),
+      creer("button", { type: "button", classe: "ed-bouton ed-large", textContent: "+ Réponse attendue", disabled: ensuite.reponses.length >= 10, onclick: () => { ensuite.reponses.push(nouvelleReponse()); apres(); } }),
+      creer("div", { classe: "ed-carte" },
+        creer("span", { textContent: "Toute autre réponse" }),
+        ...editeurConsequence(ensuite.defaut, apres, { libelleVide: "Rester sur ce panneau", placeholder: "Message pour une mauvaise réponse" })
+      )
+    );
   } else {
-    ensuite.options.forEach((option, i) => {
-      contenu.push(creer("div", { classe: "ed-carte" },
-        creer("div", { classe: "ed-carte-haut" },
-          creer("span", { classe: "ed-pousse", textContent: `Réponse ${i + 1}` }),
-          creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Retirer", onclick: () => { ensuite.options.splice(i, 1); apres(); } })
-        ),
-        creer("input", { type: "text", maxLength: 300, value: option.texte, placeholder: "Texte de la réponse", ariaLabel: `Texte de la réponse ${i + 1}`, oninput: e => { option.texte = e.target.value; marquerModifie(); } }),
-        listeDestinations(option.vers, { libelleVide: "Destination à choisir", onChange: valeur => { option.vers = destination(valeur); apres(); } })
-      ));
-    });
+    ensuite.options.forEach((option, i) => contenu.push(editeurOption(ensuite, option, i, apres)));
     contenu.push(creer("button", {
       type: "button",
       classe: "ed-bouton ed-large",
       textContent: "+ Réponse",
       disabled: ensuite.options.length >= 8,
-      onclick: () => { ensuite.options.push({ id: nouvelId("o"), texte: "", vers: null }); apres(); }
+      onclick: () => { ensuite.options.push(nouvelleOption()); apres(); }
     }));
   }
   edEl("ed-suite").replaceChildren(...contenu);
+}
+
+const nouvelleOption = () => ({ id: nouvelId("o"), texte: "", ...nouvelleConsequence(), objet: null, consomme: false });
+const nouvelleReponse = () => ({ id: nouvelId("o"), valeurs: [], exact: false, ...nouvelleConsequence() });
+
+// ---- Panneau : sauvegarde, timer, effets à l'arrivée, sons ----
+function listeSons(valeur, premiers, surChoix) {
+  const liste = creer("select", { onchange: e => surChoix(e.target.value) },
+    ...premiers.map(([value, textContent]) => creer("option", { value, textContent })),
+    ...histoire.sons.map(son => creer("option", { value: son.chemin, textContent: son.nom })));
+  liste.value = valeur || "";
+  return liste;
+}
+
+function rendreOptionsPanneau() {
+  const panneau = panneauChoisi();
+  const apres = () => { marquerModifie(); rendreOptionsPanneau(); rendreSuite(); rendreArbre(); };
+  edEl("ed-panneau-options").replaceChildren(...[
+    creer("label", {}, creer("input", { type: "checkbox", id: "ed-sauvegarde", checked: panneau.sauvegarde, onchange: e => { panneau.sauvegarde = e.target.checked; apres(); } }), " Point de sauvegarde"),
+    creer("div", {},
+      creer("label", {}, creer("input", { type: "checkbox", id: "ed-timer", checked: !!panneau.timer, onchange: e => {
+        panneau.timer = e.target.checked ? { duree: 30, ...nouvelleConsequence(), message: "Le temps est écoulé." } : null;
+        apres();
+      } }), " Timer à partir de ce panneau")
+    ),
+    panneau.timer ? creer("div", { classe: "ed-carte" },
+      creer("label", { classe: "ed-champ" }, "Durée (secondes)",
+        creer("input", { type: "number", min: 1, max: 3600, value: panneau.timer.duree, classe: "ed-nombre", oninput: e => { panneau.timer.duree = Math.max(1, Number(e.target.value) || 1); marquerModifie(); } })),
+      creer("p", { classe: "ed-aide", textContent: "S'arrête à la prochaine réponse du joueur et continue si la page est rechargée. Quand le temps est écoulé :" }),
+      ...editeurConsequence(panneau.timer, apres, { libelleVide: "Rester sur place", placeholder: "Message quand le temps est écoulé" })
+    ) : null,
+    creer("p", { classe: "ed-aide", textContent: "En arrivant sur ce panneau :" }),
+    editeurEffets(panneau.effets, apres),
+    creer("label", { classe: "ed-champ" }, "Musique",
+      listeSons(panneau.musique, [["", "Ne change pas"], ["stop", "Arrêter la musique"]], valeur => { panneau.musique = valeur || null; marquerModifie(); })),
+    creer("label", { classe: "ed-champ" }, "Son",
+      listeSons(panneau.son, [["", "Aucun"]], valeur => { panneau.son = valeur || null; marquerModifie(); })),
+    histoire.sons.length ? null : creer("p", { classe: "ed-aide", textContent: "Importe des sons avec le bouton « Objets, états et sons »." })
+  ].filter(Boolean));
+}
+
+// ---- Objets, états et sons ----
+let sonEcoute = null;
+
+function rendreCatalogue() {
+  const retirer = (liste, element, utilise, message) => {
+    if (utilise && !confirm(message)) return;
+    liste.splice(liste.indexOf(element), 1);
+    marquerModifie();
+    rendreCatalogue();
+  };
+  const estUtilise = id => JSON.stringify(histoire.chapitres).includes(`"${id}"`);
+
+  edEl("ed-objets").replaceChildren(...histoire.objets.map(objet => creer("div", { classe: "ed-carte" },
+    creer("div", { classe: "ed-carte-haut" },
+      objet.image ? creer("img", { src: imageVn(objet.image), alt: "" }) : null,
+      creer("input", { type: "text", maxLength: 60, value: objet.nom, classe: "ed-pousse", ariaLabel: "Nom de l'objet", oninput: e => { objet.nom = e.target.value; marquerModifie(); } }),
+      creer("label", { classe: "ed-champ" }, "Limite", creer("input", { type: "number", min: 1, max: 999, value: objet.limite, classe: "ed-nombre", oninput: e => { objet.limite = Math.max(1, Number(e.target.value) || 1); marquerModifie(); } })),
+      creer("button", { type: "button", classe: "ed-bouton", textContent: "Image", onclick: () => ouvrirImages("objet", chemin => { objet.image = chemin; marquerModifie(); rendreCatalogue(); }) }),
+      creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Supprimer", onclick: () => retirer(histoire.objets, objet, estUtilise(objet.id), `L'histoire se sert de « ${objet.nom} ». Le supprimer quand même ?`) })
+    ),
+    creer("input", { type: "text", maxLength: 300, value: objet.description, placeholder: "Description (facultative)", ariaLabel: "Description de l'objet", oninput: e => { objet.description = e.target.value; marquerModifie(); } })
+  )));
+
+  edEl("ed-etats").replaceChildren(...histoire.etats.map(etat => creer("div", { classe: "ed-carte" },
+    creer("div", { classe: "ed-carte-haut" },
+      creer("input", { type: "text", maxLength: 60, value: etat.nom, classe: "ed-pousse", ariaLabel: "Nom de l'état", oninput: e => { etat.nom = e.target.value; marquerModifie(); } }),
+      creer("label", { classe: "ed-champ" }, "Aux dés", creer("input", { type: "number", min: -20, max: 20, value: etat.valeur, classe: "ed-nombre", oninput: e => { etat.valeur = Number(e.target.value) || 0; marquerModifie(); } })),
+      creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Supprimer", onclick: () => retirer(histoire.etats, etat, estUtilise(etat.id), `L'histoire se sert de « ${etat.nom} ». Le supprimer quand même ?`) })
+    ),
+    creer("input", { type: "text", maxLength: 300, value: etat.description, placeholder: "Description (facultative)", ariaLabel: "Description de l'état", oninput: e => { etat.description = e.target.value; marquerModifie(); } }),
+    creer("label", {}, creer("input", { type: "checkbox", checked: etat.fin_chapitre, onchange: e => { etat.fin_chapitre = e.target.checked; marquerModifie(); } }), " S'arrête à la fin du chapitre")
+  )));
+
+  edEl("ed-sons").replaceChildren(...histoire.sons.map(son => creer("div", { classe: "ed-carte-haut ed-son" },
+    creer("input", { type: "text", maxLength: 60, value: son.nom, classe: "ed-pousse", ariaLabel: "Nom du son", oninput: e => { son.nom = e.target.value; marquerModifie(); } }),
+    creer("button", { type: "button", classe: "ed-bouton", textContent: "Écouter", onclick: () => {
+      sonEcoute?.pause();
+      sonEcoute = new Audio(imageVn(son.chemin));
+      sonEcoute.play().catch(afficherErreurSons);
+    } }),
+    creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Supprimer du stockage", onclick: () => supprimerSon(son) })
+  )));
+}
+
+function afficherErreurSons(erreur) {
+  console.error(erreur);
+  edEl("ed-sons-etat").textContent = erreur.message || "Erreur";
+}
+
+async function supprimerSon(son) {
+  if (JSON.stringify(histoire.chapitres).includes(son.chemin)) {
+    edEl("ed-sons-etat").textContent = `Un panneau se sert de « ${son.nom} ».`;
+    return;
+  }
+  if (!confirm(`Supprimer « ${son.nom} » du stockage ?`)) return;
+  if (!await envoyer({ vn_image_suppression: { chemin: son.chemin } })) return;
+  histoire.sons.splice(histoire.sons.indexOf(son), 1);
+  marquerModifie();
+  rendreCatalogue();
+}
+
+const POIDS_MAX_SON = 3 * 1024 * 1024;
+
+function lireEnBase64(fichier) {
+  return new Promise((resoudre, rejeter) => {
+    const lecteur = new FileReader();
+    lecteur.onload = () => resoudre(lecteur.result.slice(lecteur.result.indexOf(",") + 1));
+    lecteur.onerror = () => rejeter(new Error("Lecture du fichier impossible."));
+    lecteur.readAsDataURL(fichier);
+  });
+}
+
+async function importerSon(fichier) {
+  const etat = edEl("ed-sons-etat");
+  const type = /\.mp3$/i.test(fichier.name) || fichier.type === "audio/mpeg" ? "mpeg" : /\.og[ga]$/i.test(fichier.name) || fichier.type === "audio/ogg" ? "ogg" : null;
+  if (!type) { etat.textContent = "Formats acceptés : MP3, OGG."; return; }
+  if (fichier.size > POIDS_MAX_SON) { etat.textContent = "Son trop lourd (3 Mo au plus) : réduis sa durée ou sa qualité."; return; }
+  etat.textContent = "Envoi…";
+  try {
+    const reponse = await envoyer({ vn_import_son: { data: `data:audio/${type};base64,${await lireEnBase64(fichier)}` } });
+    if (!reponse) { etat.textContent = "Envoi refusé."; return; }
+    if (!histoire.sons.some(son => son.chemin === reponse.chemin)) {
+      histoire.sons.push({ chemin: reponse.chemin, nom: fichier.name.replace(/\.\w+$/, "").slice(0, 60) });
+      marquerModifie();
+    }
+    etat.textContent = "";
+    rendreCatalogue();
+  } catch (erreur) {
+    afficherErreurSons(erreur);
+  }
 }
 
 function rendreEntete() {
@@ -370,6 +641,7 @@ function rendreTout() {
   rendreFormulaire();
   rendreApercu();
   rendrePersos();
+  rendreOptionsPanneau();
   rendreSuite();
 }
 
@@ -401,7 +673,8 @@ async function chargerImportees() {
 const IMPORTS = {
   fond: { titre: "Choisir un fond", onglets: [["fonds", "Fonds du site"], ["namecards", "Namecards"], ["importees", "Images importées"]], largeur: 1920, hauteur: 1080 },
   perso: { titre: "Choisir un personnage", onglets: [["persos", "Personnages du site"], ["importees", "Images importées"]], largeur: 1600, hauteur: 1600 },
-  namecard: { titre: "Choisir une namecard", onglets: [["namecards", "Namecards"], ["importees", "Images importées"]], largeur: 1200, hauteur: 600 }
+  namecard: { titre: "Choisir une namecard", onglets: [["namecards", "Namecards"], ["importees", "Images importées"]], largeur: 1200, hauteur: 600 },
+  objet: { titre: "Choisir l'image de l'objet", onglets: [["importees", "Images importées"], ["persos", "Personnages du site"]], largeur: 400, hauteur: 400 }
 };
 const POIDS_MAX_IMPORT = 3 * 1024 * 1024;
 
@@ -597,6 +870,28 @@ function brancherFormulaire() {
   edEl("ed-reinitialiser").addEventListener("click", async () => {
     if (!confirm("Effacer ta progression de lecture sur tous les chapitres ?")) return;
     if (await envoyer({ vn_reinitialiser: true })) edEl("ed-etat").textContent = "Progression effacée";
+  });
+  edEl("ed-ouvrir-catalogue").addEventListener("click", () => {
+    rendreCatalogue();
+    edEl("ed-catalogue").showModal();
+  });
+  edEl("ed-catalogue-fermer").addEventListener("click", () => edEl("ed-catalogue").close());
+  // Les noms et listes ont pu changer : les menus des panneaux aussi.
+  edEl("ed-catalogue").addEventListener("close", () => { sonEcoute?.pause(); rendreOptionsPanneau(); rendreSuite(); });
+  edEl("ed-ajouter-objet").addEventListener("click", () => {
+    histoire.objets.push({ id: nouvelId("i"), nom: "Nouvel objet", description: "", image: null, limite: 1 });
+    marquerModifie();
+    rendreCatalogue();
+  });
+  edEl("ed-ajouter-etat").addEventListener("click", () => {
+    histoire.etats.push({ id: nouvelId("e"), nom: "Nouvel état", description: "", valeur: -1, fin_chapitre: false });
+    marquerModifie();
+    rendreCatalogue();
+  });
+  edEl("ed-sons-import").addEventListener("change", event => {
+    const [fichier] = event.target.files;
+    event.target.value = "";
+    if (fichier) importerSon(fichier);
   });
   edEl("ed-images-fermer").addEventListener("click", () => edEl("ed-images").close());
   edEl("ed-images-recherche").addEventListener("input", () => rendreImages().catch(afficherErreurImages));

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/site.css?v=19">
-  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=4">
+  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=5">
 </head>
 <body class="vn-page">
   <main id="vn-cadre" class="vn-cadre">
@@ -23,21 +23,34 @@
       <p id="vn-nom" class="vn-nom"></p>
       <p id="vn-texte" class="vn-texte" aria-live="polite"></p>
       <div id="vn-choix" class="vn-choix"></div>
+      <form id="vn-saisie" class="vn-saisie" hidden>
+        <input type="text" id="vn-reponse" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Ta réponse">
+        <button type="submit" class="vn-bouton">Valider</button>
+      </form>
+      <p id="vn-refus" class="vn-refus" role="status" hidden></p>
       <span id="vn-suite" class="vn-suite" aria-hidden="true" hidden>▼</span>
     </div>
     <p id="vn-repere" class="vn-repere"></p>
+    <!-- Temps restant du timer, tenu par le serveur. -->
+    <div id="vn-timer" class="vn-timer" role="timer" hidden><span id="vn-timer-barre"></span><strong id="vn-timer-texte"></strong></div>
+    <ul id="vn-annonces" class="vn-annonces" role="status" hidden></ul>
     <div class="vn-actions">
+      <button type="button" id="vn-couper-son" class="vn-action" aria-pressed="false" hidden>Son activé</button>
+      <button type="button" id="vn-ouvrir-inventaire" class="vn-action" hidden>Inventaire</button>
       <button type="button" id="vn-ouvrir-menu" class="vn-action" hidden>Sous-chapitres</button>
       <a href="/evenements#visual-novel" class="vn-action">Quitter</a>
     </div>
 
-    <!-- Chargement, erreur ou fin du chapitre. -->
+    <!-- Chargement, erreur, dé, inventaire ou fin du chapitre. -->
     <div id="vn-ecran" class="vn-ecran">
       <h1 id="vn-ecran-titre"></h1>
+      <div id="vn-de" class="vn-de" hidden><strong id="vn-de-valeur"></strong><span id="vn-de-detail"></span></div>
       <p id="vn-ecran-texte">Chargement…</p>
+      <ul id="vn-inventaire" class="vn-inventaire" hidden></ul>
       <ul id="vn-sous-chapitres" class="vn-sous-chapitres" hidden></ul>
       <div class="vn-ecran-boutons">
         <button type="button" id="vn-reprendre" class="vn-bouton" hidden>Reprendre</button>
+        <button type="button" id="vn-point" class="vn-bouton" hidden>Reprendre au dernier point</button>
         <button type="button" id="vn-recommencer" class="vn-bouton" hidden>Recommencer le chapitre</button>
         <a href="/evenements#visual-novel" class="vn-bouton">Retour aux événements</a>
       </div>
@@ -45,6 +58,6 @@
   </main>
   <script src="/commun/vn_polices.js?v=2"></script>
   <script src="/visual_novel/scene.js?v=2"></script>
-  <script src="/visual_novel/lecteur.js?v=3"></script>
+  <script src="/visual_novel/lecteur.js?v=4"></script>
 </body>
 </html>

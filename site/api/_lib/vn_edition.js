@@ -4,11 +4,14 @@
 //   POST { vn_sauvegarde: { histoire, maj } }  enregistre ; refusé si un autre
 //                      admin a enregistré depuis la version chargée (maj)
 //   POST { vn_import: { data } }  image WebP en data URL -> { chemin }
-//   POST { vn_image_suppression: { chemin } }  refusé si l'histoire s'en sert
+//   POST { vn_import_son: { data } }  MP3 ou OGG en data URL -> { chemin }
+//   POST { vn_image_suppression: { chemin } }  image ou son ; refusé si
+//                      l'histoire s'en sert
 //   POST { vn_reinitialiser: true }  efface sa propre progression
 // Images dans le dossier public "visual_novel" de Supabase Storage, servies
 // sous /DB/images/vn/ (cf. vercel.json), nommées d'après leur contenu : la même
-// image importée deux fois ne prend qu'une place.
+// image importée deux fois ne prend qu'une place. Sons limités à 3 Mo comme les
+// images : une requête Vercel ne dépasse pas 4,5 Mo, base64 compris.
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 const { ID_HISTOIRE } = require("./visual_novel");
@@ -21,7 +24,7 @@ const POIDS_MAX_IMAGE = 3 * 1024 * 1024;
 const POIDS_MAX_TOTAL = 300 * 1024 * 1024;
 const PREFIXE = "vn/";
 
-const REQUETES_POST = ["vn_sauvegarde", "vn_import", "vn_image_suppression", "vn_reinitialiser"];
+const REQUETES_POST = ["vn_sauvegarde", "vn_import", "vn_import_son", "vn_image_suppression", "vn_reinitialiser"];
 
 function estRequeteEdition(req) {
   if (req.method === "GET") return req.query?.vn_edition === "1" || req.query?.vn_images === "1";
@@ -37,9 +40,9 @@ async function lireLigne() {
 async function listerImages() {
   const { data, error } = await supabase.storage.from(DOSSIER).list("", { limit: 1000 });
   if (error) throw error;
-  const fichiers = (data || []).filter(f => f.name.endsWith(".webp"));
+  const fichiers = (data || []).filter(f => /\.(webp|mp3|ogg)$/.test(f.name));
   return {
-    images: fichiers.map(f => `${PREFIXE}${f.name}`),
+    images: fichiers.filter(f => f.name.endsWith(".webp")).map(f => `${PREFIXE}${f.name}`),
     poids: fichiers.reduce((total, f) => total + (f.metadata?.size || 0), 0),
     poids_max: POIDS_MAX_TOTAL
   };
@@ -68,11 +71,26 @@ async function importerImage({ data }) {
   if (tampon.toString("latin1", 0, 4) !== "RIFF" || tampon.toString("latin1", 8, 12) !== "WEBP") {
     return { status: 400, corps: { error: "Image invalide (WebP attendu)" } };
   }
+  return televerser(tampon, "webp", "image/webp");
+}
+
+async function importerSon({ data }) {
+  const correspondance = typeof data === "string" && /^data:audio\/(mpeg|ogg);base64,([A-Za-z0-9+/=]+)$/.exec(data);
+  if (!correspondance) return { status: 400, corps: { error: "Son invalide (MP3 ou OGG attendu)" } };
+  const tampon = Buffer.from(correspondance[2], "base64");
+  if (tampon.length > POIDS_MAX_IMAGE) return { status: 400, corps: { error: "Son trop lourd (3 Mo au plus)" } };
+  const estMp3 = tampon.toString("latin1", 0, 3) === "ID3" || (tampon[0] === 0xff && (tampon[1] & 0xe0) === 0xe0);
+  const estOgg = tampon.toString("latin1", 0, 4) === "OggS";
+  if (correspondance[1] === "mpeg" ? !estMp3 : !estOgg) return { status: 400, corps: { error: "Son invalide (MP3 ou OGG attendu)" } };
+  return correspondance[1] === "mpeg" ? televerser(tampon, "mp3", "audio/mpeg") : televerser(tampon, "ogg", "audio/ogg");
+}
+
+async function televerser(tampon, extension, contentType) {
   const { poids } = await listerImages();
   if (poids + tampon.length > POIDS_MAX_TOTAL) return { status: 400, corps: { error: "Plus de place : supprime des images importées qui ne servent plus." } };
-  const nom = `${crypto.createHash("sha256").update(tampon).digest("hex").slice(0, 24)}.webp`;
+  const nom = `${crypto.createHash("sha256").update(tampon).digest("hex").slice(0, 24)}.${extension}`;
   const { error } = await supabase.storage.from(DOSSIER).upload(nom, tampon, {
-    contentType: "image/webp",
+    contentType,
     // Adresse tirée du contenu : elle ne change jamais d'image.
     cacheControl: "31536000",
     upsert: true
@@ -82,9 +100,11 @@ async function importerImage({ data }) {
 }
 
 async function supprimerImage({ chemin }) {
-  if (typeof chemin !== "string" || !/^vn\/[a-f0-9]{24}\.webp$/.test(chemin)) return { status: 400, corps: { error: "Image invalide" } };
+  if (typeof chemin !== "string" || !/^vn\/[a-f0-9]{24}\.(?:webp|mp3|ogg)$/.test(chemin)) return { status: 400, corps: { error: "Fichier invalide" } };
   const ligne = await lireLigne();
-  if (JSON.stringify(ligne?.data || {}).includes(chemin)) return { status: 409, corps: { error: "L'histoire enregistrée se sert de cette image." } };
+  // Sans la liste des sons de l'histoire, qui n'est qu'un catalogue.
+  const { sons, ...utilise } = ligne?.data || {};
+  if (JSON.stringify(utilise).includes(chemin)) return { status: 409, corps: { error: "L'histoire enregistrée se sert de ce fichier." } };
   const { error } = await supabase.storage.from(DOSSIER).remove([chemin.slice(PREFIXE.length)]);
   if (error) throw error;
   return { status: 200, corps: { ok: true } };
@@ -101,6 +121,7 @@ async function traiterEdition(req, discordId) {
   const corps = req.body;
   if (corps.vn_sauvegarde) return sauvegarder(discordId, corps.vn_sauvegarde);
   if (corps.vn_import) return importerImage(corps.vn_import);
+  if (corps.vn_import_son) return importerSon(corps.vn_import_son);
   if (corps.vn_image_suppression) return supprimerImage(corps.vn_image_suppression);
   const { error } = await supabase.from("vn_parties").delete().eq("discord_id", discordId);
   if (error) throw error;
