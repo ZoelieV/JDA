@@ -30,4 +30,31 @@ function lirePoliceVn(brut) {
   };
 }
 
-if (typeof module !== "undefined") module.exports = { POLICES_VN, TAILLE_TEXTE_VN, lirePoliceVn };
+// Mise en forme d'un texte : **gras**, *italique*, ~~barré~~, combinables. Une
+// marque sans sa fermeture reste écrite telle quelle ; \* écrit une vraie
+// étoile. -> [{ texte, gras, italique, barre }]
+function decouperTexteVn(texte) {
+  const CHAMPS = { "**": "gras", "*": "italique", "~~": "barre" };
+  const morceaux = String(texte ?? "").split(/(\\[*~\\]|\*\*|\*|~~)/);
+  const restantes = {};
+  morceaux.forEach(m => { if (CHAMPS[m]) restantes[m] = (restantes[m] || 0) + 1; });
+  const etat = { gras: false, italique: false, barre: false };
+  const resultat = [];
+  const ajouter = valeur => {
+    if (!valeur) return;
+    const dernier = resultat.at(-1);
+    if (dernier && dernier.gras === etat.gras && dernier.italique === etat.italique && dernier.barre === etat.barre) dernier.texte += valeur;
+    else resultat.push({ texte: valeur, ...etat });
+  };
+  morceaux.forEach(m => {
+    const champ = CHAMPS[m];
+    if (!champ) return ajouter(/^\\[*~\\]$/.test(m) ? m[1] : m);
+    // Dernière marque d'un nombre impair : pas de fermeture, écrite telle quelle.
+    if (restantes[m] === 1 && !etat[champ]) return ajouter(m);
+    restantes[m]--;
+    etat[champ] = !etat[champ];
+  });
+  return resultat;
+}
+
+if (typeof module !== "undefined") module.exports = { POLICES_VN, TAILLE_TEXTE_VN, lirePoliceVn, decouperTexteVn };

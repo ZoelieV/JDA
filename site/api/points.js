@@ -139,6 +139,7 @@ const { estCosmetique, estRetire, donner, MAX_KOYNS_DON, LONGUEUR_MESSAGE_DON, l
 const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES, ELEMENTS, estAjout, lireLimitesEquilibrage, lireSeuilHorizontal } = require("./_lib/personnages");
 
 const visualNovel = require("./_lib/visual_novel");
+const vnEdition = require("./_lib/vn_edition");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -437,7 +438,16 @@ module.exports = async (req, res) => {
       if (!user) return res.status(401).json({ error: "Non connecté" });
       if (!visualNovel.peutLire(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
       if (req.method === "GET") return res.status(200).json(await visualNovel.lireResume(user.id));
-      const { status, corps } = await visualNovel.traiterAction(user.id, req.body.vn);
+      const { status, corps } = await visualNovel.traiterAction(user.id, req.body.vn, { admin: estAdmin(user.id) });
+      return res.status(status).json(corps);
+    }
+
+    // Éditeur du visual novel (cf. _lib/vn_edition.js) : vrais administrateurs.
+    if (vnEdition.estRequeteEdition(req)) {
+      res.setHeader("Cache-Control", "no-store");
+      if (!user) return res.status(401).json({ error: "Non connecté" });
+      if (!estAdmin(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+      const { status, corps } = await vnEdition.traiterEdition(req, user.id);
       return res.status(status).json(corps);
     }
 

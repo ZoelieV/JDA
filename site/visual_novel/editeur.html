@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Éditeur du visual novel</title>
+  <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
+  <meta name="theme-color" content="#1e1e1e">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/commun/theme.css?v=rem5">
+  <link rel="stylesheet" href="/commun/entete.css?v=rem48">
+  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=4">
+  <link rel="stylesheet" href="/visual_novel/editeur.css?v=2">
+</head>
+<body class="ed-page">
+  <p id="ed-chargement">Chargement…</p>
+  <div id="ed-zone" hidden>
+    <header class="ed-barre">
+      <a href="/admin_ppc/admin_ppc" class="ed-bouton">← Admin</a>
+      <label class="ed-nom-histoire">Nom de l'event <input type="text" id="ed-nom-histoire" maxlength="80"></label>
+      <span class="ed-image-event"><img id="ed-namecard-event" alt=""><button type="button" id="ed-choisir-namecard-event" class="ed-bouton">Namecard de l'event</button></span>
+      <span id="ed-etat" class="ed-etat"></span>
+      <button type="button" id="ed-reinitialiser" class="ed-bouton" title="Efface ta progression de lecture, pour tout relire comme un nouveau joueur">Effacer ma progression</button>
+      <button type="button" id="ed-tester" class="ed-bouton">Tester ce panneau</button>
+      <button type="button" id="ed-enregistrer" class="ed-bouton ed-principal">Enregistrer</button>
+    </header>
+    <p id="ed-essai" class="ed-note" hidden>Voici l'histoire d'essai, comme modèle : enregistrer la remplace par ta version, et la progression de lecture repart de zéro.</p>
+    <ul id="ed-avertissements" class="ed-avertissements" hidden></ul>
+
+    <div class="ed-colonnes">
+      <!-- Chapitres, sous-chapitres et panneaux. -->
+      <nav class="ed-colonne" aria-label="Plan de l'histoire">
+        <div id="ed-arbre"></div>
+        <button type="button" id="ed-ajouter-chapitre" class="ed-bouton ed-large">+ Chapitre</button>
+      </nav>
+
+      <!-- Aperçu et texte du panneau. -->
+      <main class="ed-centre">
+        <div class="vn-cadre ed-apercu" id="ed-apercu">
+          <div class="vn-scene">
+            <img id="vn-fond" class="vn-fond" alt="" hidden>
+            <div id="vn-persos" class="vn-persos"></div>
+          </div>
+          <div class="vn-dialogue">
+            <p id="vn-nom" class="vn-nom"></p>
+            <p id="vn-texte" class="vn-texte"></p>
+          </div>
+        </div>
+        <p class="ed-aide">Fais glisser un personnage dans l'aperçu pour le placer.</p>
+        <label class="ed-champ">Nom affiché <input type="text" id="ed-nom" maxlength="60" placeholder="Narration, Venti…"></label>
+        <div class="ed-outils" role="toolbar" aria-label="Mise en forme de la sélection">
+          <button type="button" class="ed-bouton" data-marque="**" title="Mettre la sélection en gras"><strong>G</strong></button>
+          <button type="button" class="ed-bouton" data-marque="*" title="Mettre la sélection en italique"><em>I</em></button>
+          <button type="button" class="ed-bouton" data-marque="~~" title="Barrer la sélection"><s>S</s></button>
+          <span class="ed-aide">Sélectionne un mot puis clique. Dans le texte : **gras**, *italique*, ~~barré~~.</span>
+        </div>
+        <textarea id="ed-texte" rows="4" maxlength="2000" aria-label="Texte du panneau"></textarea>
+        <div class="ed-ligne">
+          <label class="ed-champ">Police <select id="ed-police"></select></label>
+          <label class="ed-champ">Taille <input type="range" id="ed-taille" step="0.5"></label>
+          <label><input type="checkbox" id="ed-gras"> Tout en gras</label>
+          <label><input type="checkbox" id="ed-italique"> Tout en italique</label>
+        </div>
+      </main>
+
+      <!-- Fond, personnages et suite du panneau. -->
+      <aside class="ed-colonne">
+        <h2>Fond</h2>
+        <div class="ed-ligne">
+          <button type="button" id="ed-choisir-fond" class="ed-bouton">Choisir</button>
+          <button type="button" id="ed-retirer-fond" class="ed-bouton">Retirer</button>
+        </div>
+        <h2>Personnages</h2>
+        <p class="ed-aide">Le dernier de la liste passe devant les autres.</p>
+        <div id="ed-persos"></div>
+        <button type="button" id="ed-ajouter-perso" class="ed-bouton ed-large">+ Personnage</button>
+        <h2>Ensuite</h2>
+        <div id="ed-suite"></div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Choix d'une image : du site ou importée. -->
+  <dialog id="ed-images" class="ed-images">
+    <div class="ed-images-entete">
+      <h2 id="ed-images-titre"></h2>
+      <button type="button" id="ed-images-fermer" class="ed-bouton" aria-label="Fermer">×</button>
+    </div>
+    <div id="ed-images-onglets" class="ed-ligne"></div>
+    <div class="ed-ligne">
+      <input type="search" id="ed-images-recherche" placeholder="Rechercher…" aria-label="Rechercher une image">
+      <label class="ed-bouton">Importer une image
+        <input type="file" id="ed-images-import" accept="image/png,image/webp,image/jpeg" hidden>
+      </label>
+      <span id="ed-images-etat" class="ed-aide"></span>
+    </div>
+    <div id="ed-images-grille" class="ed-images-grille"></div>
+  </dialog>
+
+  <script src="/commun/vn_polices.js?v=2"></script>
+  <script src="/visual_novel/scene.js?v=2"></script>
+  <script src="/visual_novel/editeur.js?v=2"></script>
+</body>
+</html>

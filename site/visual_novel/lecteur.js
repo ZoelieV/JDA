@@ -2,15 +2,14 @@
 // (cf. api/_lib/visual_novel.js) et lui demande la suite à chaque arrêt.
 const chapitreVn = new URLSearchParams(location.search).get("chapitre");
 const elementVn = id => document.getElementById(id);
-const FAMILLES_VN = Object.fromEntries(POLICES_VN.map(p => [p.id, p.famille]));
+// Passé par le bouton Tester de l'éditeur.
+const panneauTestVn = new URLSearchParams(location.search).get("panneau");
 
 let segmentVn = null;
 let indexVn = 0;
 let occupeVn = false;
 // Sous-chapitres finis et en cours, envoyés par le serveur.
 let sousChapitresVn = [];
-
-const imageVn = chemin => encodeURI(`/DB/images/${chemin}`);
 
 function afficherEcran(titre, texte, { recommencer = false, reprendre = false, liste = false } = {}) {
   elementVn("vn-ecran-titre").textContent = titre;
@@ -58,37 +57,14 @@ function afficherPanneau() {
   const panneau = segmentVn.panneaux[indexVn];
   const dernier = indexVn === segmentVn.panneaux.length - 1;
 
-  const fond = elementVn("vn-fond");
-  fond.hidden = !panneau.fond;
-  if (panneau.fond && fond.getAttribute("src") !== imageVn(panneau.fond)) fond.src = imageVn(panneau.fond);
-
-  elementVn("vn-persos").replaceChildren(...panneau.persos.map(perso => {
-    const image = document.createElement("img");
-    image.className = "vn-perso";
-    image.alt = "";
-    image.src = imageVn(perso.image);
-    image.style.left = `${perso.x}%`;
-    image.style.bottom = `${perso.y}%`;
-    image.style.height = `${perso.hauteur}%`;
-    image.classList.toggle("vn-miroir", perso.miroir);
-    return image;
-  }));
-
-  elementVn("vn-nom").textContent = panneau.nom;
-  elementVn("vn-nom").hidden = !panneau.nom;
-  const texte = elementVn("vn-texte");
-  texte.textContent = panneau.texte;
-  texte.style.fontFamily = `"${FAMILLES_VN[panneau.police.famille]}", var(--police-texte)`;
-  texte.style.setProperty("--taille-vn", panneau.police.taille);
-  texte.style.fontWeight = panneau.police.gras ? "700" : "400";
-  texte.style.fontStyle = panneau.police.italique ? "italic" : "normal";
+  dessinerSceneVn(panneau);
 
   const options = dernier && segmentVn.arret.type === "choix" ? segmentVn.arret.options : [];
   elementVn("vn-choix").replaceChildren(...options.map(option => {
     const bouton = document.createElement("button");
     bouton.type = "button";
     bouton.className = "vn-bouton";
-    bouton.textContent = option.texte;
+    remplirTexteVn(bouton, option.texte);
     bouton.addEventListener("click", () => avancerServeur(option.id));
     return bouton;
   }));
@@ -153,6 +129,8 @@ function avancer() {
   if (indexVn < segmentVn.panneaux.length - 1) {
     indexVn++;
     afficherPanneau();
+  } else if (segmentVn.arret.type === "incomplet") {
+    afficherEcran("À suivre", "La suite de ce passage n'est pas encore écrite.", { reprendre: true });
   } else if (segmentVn.arret.type !== "choix") {
     avancerServeur();
   }
@@ -170,5 +148,9 @@ elementVn("vn-ouvrir-menu").addEventListener("click", ouvrirMenuSousChapitres);
 elementVn("vn-reprendre").addEventListener("click", () => { elementVn("vn-ecran").hidden = true; });
 elementVn("vn-recommencer").addEventListener("click", () => appelerServeur({ action: "recommencer" }));
 
-if (chapitreVn) appelerServeur({ action: "ouvrir" });
+if (chapitreVn) {
+  appelerServeur({ action: "ouvrir", ...(panneauTestVn ? { panneau: panneauTestVn } : {}) });
+  // Recharger la page reprend la partie, sans revenir au panneau testé.
+  if (panneauTestVn) history.replaceState(null, "", `?chapitre=${encodeURIComponent(chapitreVn)}`);
+}
 else afficherEcran("Chapitre introuvable", "Choisis un chapitre depuis la page Événements.");

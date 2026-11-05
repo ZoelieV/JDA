@@ -2,10 +2,11 @@
 // panneaux jusqu'au prochain arrêt (choix, fin), sans les destinations ni les
 // suites possibles, et n'appelle le serveur qu'à ces arrêts.
 //
-// Format d'une histoire (cf. vn_histoire_essai.js) :
-//   { id, nom, chapitres: [{ id, titre, namecard, sous_chapitres: [{ id, titre,
+// Format d'une histoire (cf. vn_format.js, vn_histoire_essai.js) :
+//   { id, nom, namecard, chapitres: [{ id, titre, namecard, sous_chapitres: [{ id, titre,
 //     panneaux: [panneau] }] }] }
-//   panneau : { id (unique dans le chapitre), fond, nom, texte,
+//   panneau : { id (unique dans le chapitre), fond, nom,
+//     texte  (mise en forme : decouperTexteVn de commun/vn_polices.js),
 //     persos: [{ image, x, y, hauteur, miroir }]  (calques : le dernier devant ;
 //                x : milieu, y : bas, hauteur : en % de la scène),
 //     police: { famille, taille, gras, italique },  (cf. commun/vn_polices.js)
@@ -14,6 +15,8 @@
 //     absent ou { type: "suite", vers? }  panneau suivant dans l'ordre, ou "vers"
 //     { type: "choix", options: [{ id, texte, vers }] }
 //     { type: "fin", id, nom }            une fin du chapitre
+//   Histoire en cours d'écriture : un panneau sans suite ou un choix sans
+//   destination arrête la lecture sur un message, sans erreur.
 //
 // Partie d'un joueur (table vn_parties) : "panneau" est le début du segment
 // en cours, le reste s'en déduit. Recharger la page redonne donc le même
@@ -26,6 +29,24 @@ const { supabase } = require("./supabase");
 const { estAdmin } = require("./admin");
 const { lirePoliceVn } = require("../../commun/vn_polices.js");
 const HISTOIRE_ESSAI = require("./vn_histoire_essai");
+
+const ID_HISTOIRE = "principale";
+
+// Histoire enregistrée dans l'éditeur (table vn_histoires), sinon celle
+// d'essai. Relue seulement si elle a changé : la date est bien plus légère
+// que l'histoire entière.
+let histoireEnCache = null;
+async function histoireActive() {
+  const { data: ligne, error } = await supabase.from("vn_histoires").select("maj").eq("id", ID_HISTOIRE).maybeSingle();
+  if (error) throw error;
+  if (!ligne) return HISTOIRE_ESSAI;
+  if (histoireEnCache?.maj !== ligne.maj) {
+    const { data, error: erreur } = await supabase.from("vn_histoires").select("data, maj").eq("id", ID_HISTOIRE).single();
+    if (erreur) throw erreur;
+    histoireEnCache = { maj: data.maj, histoire: data.data };
+  }
+  return histoireEnCache.histoire;
+}
 
 // Segment trop long ou boucle de panneaux : arrêt, puis appel au serveur.
 const MAX_PANNEAUX_SEGMENT = 40;
@@ -50,9 +71,10 @@ function calculerSegment(chapitre, depart) {
     vus.add(courant);
     entrees.push(entree);
     const ensuite = entree.panneau.ensuite || { type: "suite" };
+    if (ensuite.type === "choix" && !ensuite.options?.length) return { entrees, arret: { type: "incomplet" } };
     if (ensuite.type !== "suite") return { entrees, arret: ensuite };
     const cible = ensuite.vers || entree.suivant;
-    if (!cible) throw new Error(`Visual novel : panneau sans suite (${courant}, chapitre ${chapitre.id})`);
+    if (!cible || !index.has(cible)) return { entrees, arret: { type: "incomplet" } };
     if (vus.has(cible) || index.get(cible)?.sc !== entree.sc || entrees.length >= MAX_PANNEAUX_SEGMENT) return { entrees, arret: { type: "continuer", vers: cible } };
     courant = cible;
   }
@@ -127,11 +149,13 @@ async function ecrirePartie(discordId, histoireId, chapitreId, champs) {
 }
 
 // Page Événements : histoire et avancement du joueur, sans aucun panneau.
-async function lireResume(discordId, histoire = HISTOIRE_ESSAI) {
+async function lireResume(discordId) {
+  const histoire = await histoireActive();
   const parties = new Map((await lireParties(discordId, histoire.id)).map(p => [p.chapitre_id, p]));
   return {
     id: histoire.id,
     nom: histoire.nom,
+    namecard: histoire.namecard || null,
     chapitres: histoire.chapitres.map(chapitre => {
       const partie = parties.get(chapitre.id);
       const fins = finsDuChapitre(chapitre);
@@ -150,9 +174,11 @@ async function lireResume(discordId, histoire = HISTOIRE_ESSAI) {
 
 // Actions du lecteur : "ouvrir" (début ou reprise), "avancer" (choix, suite,
 // fin atteinte), "recommencer" (seulement une fois le chapitre fini),
-// "refaire" (un sous-chapitre déjà fini, depuis son début).
+// "refaire" (un sous-chapitre déjà fini, depuis son début). admin : "ouvrir"
+// avec "panneau" place la partie sur ce panneau (bouton Tester de l'éditeur).
 // -> { status, corps }
-async function traiterAction(discordId, brut, histoire = HISTOIRE_ESSAI) {
+async function traiterAction(discordId, brut, { admin = false } = {}) {
+  const histoire = await histoireActive();
   const chapitre = histoire.chapitres.find(c => c.id === brut?.chapitre);
   if (!chapitre) return { status: 404, corps: { error: "Chapitre introuvable" } };
   const titres = { chapitre: chapitre.titre };
@@ -177,6 +203,11 @@ async function traiterAction(discordId, brut, histoire = HISTOIRE_ESSAI) {
   let partie = lue;
   const index = indexerChapitre(chapitre);
   if (!partie || !index.has(partie.panneau)) partie = await ecrire({ panneau: premierPanneau(chapitre) });
+
+  if (admin && brut.action === "ouvrir" && estId(brut.panneau) && index.has(brut.panneau)) {
+    partie = await ecrire({ panneau: brut.panneau });
+    return envoyerSegment();
+  }
 
   if (brut.action === "recommencer") {
     if (partie.statut !== "terminee") return { status: 409, corps: { error: "Termine d'abord cette partie pour recommencer." } };
@@ -207,15 +238,19 @@ async function traiterAction(discordId, brut, histoire = HISTOIRE_ESSAI) {
     return { status: 200, corps: { ...titres, ...reponseTerminee(chapitre, partie, { nom: arret.nom }) } };
   }
 
+  const INCOMPLET = { status: 409, corps: { error: "La suite de ce passage n'est pas encore écrite." } };
+  if (arret.type === "incomplet") return INCOMPLET;
+
   let cible = arret.vers;
   if (arret.type === "choix") {
     const option = estId(brut.option) ? arret.options.find(o => o.id === brut.option) : null;
     if (!option) return { status: 400, corps: { error: "Choix invalide" } };
     cible = option.vers;
+    if (!index.has(cible)) return INCOMPLET;
   }
   const sort = index.get(cible)?.sc.id !== scCourant;
   partie = await ecrire({ panneau: cible, sous_chapitres_finis: sort ? finisAvec() : partie.sous_chapitres_finis });
   return envoyerSegment();
 }
 
-module.exports = { peutLire, lireResume, traiterAction, calculerSegment, segmentPublic };
+module.exports = { ID_HISTOIRE, peutLire, lireResume, traiterAction, calculerSegment, segmentPublic };

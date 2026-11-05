@@ -96,6 +96,7 @@ async function afficherVisualNovel() {
   if (!reponse.ok) return;
   const histoire = await reponse.json();
   document.querySelector("#nom-visual-novel").firstChild.textContent = `${histoire.nom} `;
+  if (histoire.namecard) document.querySelector('.carte-match[data-detail="visual-novel"] img').src = encodeURI(`/DB/images/${histoire.namecard}`);
   const etats = { nouveau: "À lire", en_cours: "En cours", terminee: "Terminé" };
   document.getElementById("chapitres-visual-novel").innerHTML = histoire.chapitres.map(c => `
     <a class="chapitre-vn" href="/visual_novel/lecteur?chapitre=${encodeURIComponent(c.id)}">

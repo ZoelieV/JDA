@@ -97,6 +97,21 @@ body.vn-page {
   overflow-wrap: anywhere;
 }
 
+.vn-barre {
+  text-decoration: line-through;
+}
+
+.vn-gras {
+  font-weight: 700;
+}
+
+/* Polices Titre : une seule graisse dans le fichier, et le navigateur ne
+   l'épaissit pas lui-même. */
+[data-famille^="titre"].vn-gras,
+[data-famille^="titre"] .vn-gras {
+  -webkit-text-stroke: 0.035em currentColor;
+}
+
 .vn-choix {
   display: flex;
   flex-direction: column;

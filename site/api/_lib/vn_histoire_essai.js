@@ -13,6 +13,7 @@ const OASIS = "bg_web/autres/oasis_eternelle.webp";
 module.exports = {
   id: "essai",
   nom: "Le pari des Archons (essai)",
+  namecard: "namecards/Namecard_Background_Achievement_Adeptal_Valley.webp",
   chapitres: [
     {
       id: "c1",
@@ -26,7 +27,7 @@ module.exports = {
             { id: "c1a", fond: TEMPLE, nom: "Narration", texte: "Ceci est une histoire d'essai. Clique, ou appuie sur Espace, pour avancer.", police: { italique: true } },
             { id: "c1b", fond: TEMPLE, nom: "Venti", texte: "Dis-moi, vieil ami, tu paries combien que le prochain joueur tombe sur le carnage ?", persos: [venti()] },
             { id: "c1c", fond: TEMPLE, nom: "Zhongli", texte: "Un contrat ne se signe pas à la légère.", persos: [venti(), zhongli()], police: { famille: "titre", taille: 5 } },
-            { id: "c1d", fond: TEMPLE, nom: "Nahida", texte: "Si vous êtes deux à parler, je peux bien passer devant vous, non ?", persos: [venti(60), zhongli(40), nahida()] },
+            { id: "c1d", fond: TEMPLE, nom: "Nahida", texte: "Si vous êtes ~~deux à parler~~ *si bavards*, je peux bien passer **devant** vous, non ?", persos: [venti(60), zhongli(40), nahida()] },
             { id: "c1e", fond: TEMPLE, nom: "Inscription ancienne", texte: "Le jugement attend celui qui lit", persos: [nahida(82)], police: { famille: "teyvat", taille: 6 } },
             { id: "c1f", fond: TEMPLE, nom: "Nahida", texte: "Cette inscription est écrite en teyvat. Et toi, tu suis qui ?", persos: [nahida()], police: { gras: true },
               ensuite: { type: "choix", options: [
