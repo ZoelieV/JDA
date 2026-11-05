@@ -64,6 +64,8 @@ let seuil = SEUIL_PAR_DEFAUT;
 // Méthode des bans d'équilibrage choisie par les administrateurs (cf.
 // getModeEquilibrage, api/_lib/personnages.js).
 let methodeEquilibrage = "ancien";
+// Patchs d'équilibrage, plus récent d'abord (cf. api/_lib/patchs.js).
+let patchsEquilibrage = [];
 
 let onglet = null;
 let filtres = creerFiltres();
@@ -101,12 +103,24 @@ async function verifierAcces() {
   }
 }
 
+// Pas bloquant : sans les patchs, le reste de la page reste utilisable.
+async function chargerPatchs() {
+  try {
+    const reponse = await fetch("/api/points?patchs=1", { credentials: "include", cache: "no-store" });
+    return reponse.ok ? (await reponse.json()).patchs : [];
+  } catch (erreur) {
+    console.error(erreur);
+    return [];
+  }
+}
+
 async function chargerDonnees() {
   // Points du JSON + modifications des admins, masqués exclus (cf.
   // commun/cartes.js).
-  const [listePersos, listeArmes, listeBoss, config] = await Promise.all([
-    chargerPersonnages(), chargerArmes(), chargerBoss(), chargerPointsAdmin()
+  const [listePersos, listeArmes, listeBoss, config, listePatchs] = await Promise.all([
+    chargerPersonnages(), chargerArmes(), chargerBoss(), chargerPointsAdmin(), chargerPatchs()
   ]);
+  patchsEquilibrage = listePatchs;
   personnages = listePersos;
   armes = listeArmes;
   boss = listeBoss;
@@ -227,9 +241,9 @@ function sommesPerso(perso) {
 // ---- Onglets ----
 
 // Onglet ouvert gardé dans l'adresse (#characters, #weapons, #sommes,
-// #boss, #equilibrage) : lien direct et retour au même onglet au
+// #boss, #equilibrage, #patchs) : lien direct et retour au même onglet au
 // rechargement.
-const ONGLETS = ["characters", "weapons", "sommes", "boss", "equilibrage"];
+const ONGLETS = ["characters", "weapons", "sommes", "boss", "equilibrage", "patchs"];
 
 function ouvrirOnglet(nom) {
   onglet = nom;
@@ -243,6 +257,7 @@ function ouvrirOnglet(nom) {
   document.getElementById("panneau-points").hidden = !tableau;
   document.getElementById("panneau-boss").hidden = nom !== "boss";
   document.getElementById("panneau-equilibrage").hidden = nom !== "equilibrage";
+  document.getElementById("panneau-patchs").hidden = nom !== "patchs";
   if (tableau) {
     filtres = creerFiltres();
     tri = null;
@@ -250,6 +265,8 @@ function ouvrirOnglet(nom) {
     rendreTableau();
   } else if (nom === "boss") {
     rendreBoss();
+  } else if (nom === "patchs") {
+    rendrePatchs();
   } else {
     rendreEquilibrage();
   }
@@ -783,6 +800,60 @@ function rendreEquilibrage() {
   preparerTrisSimples(document.getElementById("panneau-equilibrage"));
 }
 
+// ---- Patchs d'équilibrage ----
+
+function dateLisiblePatch(date) {
+  return new Date(`${date}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+
+// Lignes des persos connus de cette page (perso supprimé depuis : ligne retirée).
+function patchsAffiches() {
+  const parId = new Map(personnages.map(p => [p.id, p]));
+  return patchsEquilibrage
+    .map(patch => ({
+      date: patch.date,
+      lignes: patch.lignes.filter(l => parId.has(l.perso)).map(l => ({ ...l, perso: parId.get(l.perso) }))
+    }))
+    .filter(patch => patch.lignes.length);
+}
+
+function rendreEncartPatch() {
+  const encart = document.getElementById("encart-patch");
+  const dernier = patchsAffiches()[0];
+  encart.hidden = !dernier;
+  if (!dernier) return;
+  const nombre = dernier.lignes.length;
+  encart.innerHTML = `
+    <span><strong>Dernier patch d'équilibrage : ${dateLisiblePatch(dernier.date)}</strong> · ${nombre} personnage${nombre > 1 ? "s" : ""} modifié${nombre > 1 ? "s" : ""}</span>
+    <button type="button" class="filtre-tc filtre-texte" id="voir-patchs">Voir les patchs</button>`;
+  document.getElementById("voir-patchs").addEventListener("click", () => ouvrirOnglet("patchs"));
+}
+
+function rendrePatchs() {
+  const panneau = document.getElementById("panneau-patchs");
+  const patchs = patchsAffiches();
+  panneau.innerHTML = patchs.length ? patchs.map(patch => `
+    <h2 class="titre-patch">Patch du ${dateLisiblePatch(patch.date)}</h2>
+    <div class="tableau-conteneur">
+      <table class="tableau-theorycraft tableau-patch-tc">
+        <thead><tr><th class="col-nom">Personnage</th><th>Points avant</th><th>Points après</th><th>Explication</th></tr></thead>
+        <tbody>
+          ${patch.lignes.map(l => `
+            <tr>
+              <td class="col-nom" data-valeur-tri="${echapper(l.perso.nom)}">
+                <span class="miniature-tc ${classeFondRarete(l.perso.rarete)}"><img src="../DB/${echapper(l.perso.image)}" alt="" loading="lazy"></span>
+                <span class="nom-tc">${echapper(l.perso.nom)}</span>
+              </td>
+              <td>${echapper(l.avant) || "—"}</td>
+              <td>${echapper(l.apres) || "—"}</td>
+              <td class="explication-patch-tc">${echapper(l.explication) || "—"}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`).join("") : `<p class="aide-theorycraft">Aucun patch d'équilibrage pour l'instant.</p>`;
+  preparerTrisSimples(panneau);
+}
+
 // ---- Démarrage ----
 
 async function demarrer() {
@@ -801,6 +872,7 @@ async function demarrer() {
     return;
   }
   etat.hidden = true;
+  rendreEncartPatch();
 
   document.querySelectorAll(".onglet-theorycraft").forEach(bouton => {
     bouton.addEventListener("click", () => ouvrirOnglet(bouton.dataset.onglet));

@@ -12,14 +12,47 @@
 .zone-theorycraft[hidden],
 .panneau-theorycraft[hidden],
 .etat-theorycraft[hidden],
-.modal-tc[hidden] {
+.modal-tc[hidden],
+.encart-patch[hidden] {
   display: none;
+}
+
+/* ---- Encart du dernier patch d'équilibrage ---- */
+.encart-patch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--accent-bordure);
+  border-radius: 0.75rem;
+  background-color: var(--accent-fond);
+}
+
+/* ---- Onglet Patchs ---- */
+.titre-patch {
+  margin: 1.25rem 0 0.5rem;
+  font-family: var(--police-titre);
+  font-size: 1.25rem;
+}
+
+/* Sur téléphone, le tableau défile seul plutôt que d'élargir la page. */
+#panneau-patchs .tableau-conteneur {
+  overflow-x: auto;
+}
+
+.tableau-patch-tc .explication-patch-tc {
+  min-width: 10rem;
+  text-align: left;
+  white-space: pre-line;
 }
 
 /* ---- Onglets des thèmes (même style que Classement et Historique) ---- */
 .onglets-theorycraft {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
 }
 

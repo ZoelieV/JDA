@@ -120,6 +120,10 @@
 //                                    fenêtre de l'événement ; banniere : chemin
 //                                    d'une bannière de DB/images/cosmetiques.json),
 //                                    cf. lireCalendrier
+//   { patch: { id?, date, lignes } } | { patch_suppression: id }  patchs
+//                                    d'équilibrage (ligne à part, cf. _lib/patchs.js)
+// GET ?patchs=1 : patchs d'équilibrage (page Theorycraft) : { patchs } ; hors
+//          administrateurs et mini admins, sans les persos masqués.
 const { supabase } = require("./_lib/supabase");
 const { parseCookies, verifySessionToken } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
@@ -140,6 +144,7 @@ const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES
 
 const visualNovel = require("./_lib/visual_novel");
 const vnEdition = require("./_lib/vn_edition");
+const { lirePatchs, patchsPublics, modifierPatchs } = require("./_lib/patchs");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -474,6 +479,13 @@ module.exports = async (req, res) => {
       return res.status(200).json(retraits ? { retraits: dons, joueurs } : { dons, joueurs });
     }
 
+    // Patchs d'équilibrage (cf. _lib/patchs.js).
+    if (req.method === "GET" && req.query?.patchs === "1") {
+      res.setHeader("Cache-Control", "no-store");
+      const [patchs, config, moderateur] = await Promise.all([lirePatchs(), lireConfig(), user ? estModerateur(user.id) : false]);
+      return res.status(200).json({ patchs: moderateur ? patchs : patchsPublics(patchs, lireMasques(config).characters) });
+    }
+
     if (req.method === "GET") {
       res.setHeader("Cache-Control", "no-store");
       const config = await lireConfig();
@@ -506,6 +518,12 @@ module.exports = async (req, res) => {
       const ancienne = await lireConfig();
       const ajouts = lireAjouts(ancienne);
       let config;
+
+      if (corps.patch || corps.patch_suppression) {
+        const idsPersos = new Set([...listeJSON("characters"), ...ajouts.characters].map(e => e.id));
+        const { status, corps: reponse } = await modifierPatchs(corps, idsPersos, user.id);
+        return res.status(status).json(reponse);
+      }
 
       if (corps.ajout) {
         const genre = corps.ajout.genre;

@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=65">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=66">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -135,6 +135,7 @@
         <button type="button" id="ouvrir-categories" class="btn-ouvrir-ajout" title="Catégories des armes : support, standard">Catégories d'armes</button>
         <button type="button" id="ouvrir-comparateur" class="btn-ouvrir-ajout" title="Comparer des combos personnage + arme">Comparateur</button>
         <button type="button" id="ouvrir-equilibrage" class="btn-ouvrir-ajout" title="Méthode des bans d'équilibrage des drafts">Équilibrage</button>
+        <button type="button" id="ouvrir-patchs" class="btn-ouvrir-ajout" title="Noter les changements d'équilibrage : les joueurs les voient dans Theorycraft">Patchs</button>
         <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
         <button type="button" id="ouvrir-recommandations" class="btn-ouvrir-ajout" title="Recommandations de la box stuff : supports de chaque DPS, par priorité">Recommandations</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="/DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
@@ -552,6 +553,24 @@
     </div>
   </div>
 
+  <!-- Patchs d'équilibrage (cf. admin_patchs.js, api/_lib/patchs.js). -->
+  <div id="modal-patchs" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Patchs d'équilibrage</h2>
+        <button type="button" id="fermer-patchs" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Affichés aux joueurs dans l'onglet Patchs de Theorycraft dès l'enregistrement. Ils n'appliquent aucun changement :
+        les points se modifient toujours dans le tableau. Un perso masqué n'apparaît aux joueurs qu'une fois affiché.
+      </p>
+      <div id="contenu-patchs"></div>
+      <div class="actions-ajout">
+        <span id="message-patchs" class="message-ajout"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Box fictives : faux profils remplis sur Mon compte, choisissables en
        entraînement par les administrateurs et mini admins seulement. -->
   <!-- Recommandations de la box stuff (cf. admin_recommandations.js,
@@ -788,7 +807,8 @@
   <script src="/admin_ppc/admin_recommandations.js?v=1"></script>
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
-  <script src="/admin_ppc/admin_ppc.js?v=42"></script>
+  <script src="/admin_ppc/admin_patchs.js?v=1"></script>
+  <script src="/admin_ppc/admin_ppc.js?v=43"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=36"></script>
 </body>

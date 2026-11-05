@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/cartes.css?v=4">
-  <link rel="stylesheet" href="/theorycraft/theorycraft.css?v=11">
+  <link rel="stylesheet" href="/theorycraft/theorycraft.css?v=12">
   <link rel="stylesheet" href="/commun/site.css?v=19">
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -27,6 +27,9 @@
 
   <!-- Affiché seulement aux connectés qui y ont accès (cf. theorycraft.js). -->
   <main id="zone-theorycraft" class="zone-theorycraft" hidden>
+    <!-- Dernier patch d'équilibrage, s'il y en a un (cf. rendreEncartPatch). -->
+    <aside id="encart-patch" class="encart-patch" hidden></aside>
+
     <!-- Un onglet par thème (même style que Classement et Historique) :
          son contenu s'affiche en dessous, un seul à la fois. -->
     <div class="onglets-theorycraft" role="tablist">
@@ -35,6 +38,7 @@
       <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="sommes">Perso + signa<span>personnage + arme signature R1</span></button>
       <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="boss">Boss<span>résistances et probabilités</span></button>
       <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="equilibrage">Système d'équilibrage<span>points des box et bans d'équilibrage</span></button>
+      <button type="button" class="onglet-theorycraft" role="tab" aria-selected="false" data-onglet="patchs">Patchs<span>changements d'équilibrage</span></button>
     </div>
 
     <p id="etat-theorycraft" class="etat-theorycraft">Chargement…</p>
@@ -59,6 +63,7 @@
 
     <section id="panneau-boss" class="panneau-theorycraft" hidden></section>
     <section id="panneau-equilibrage" class="panneau-theorycraft texte-theorycraft" hidden></section>
+    <section id="panneau-patchs" class="panneau-theorycraft" hidden></section>
   </main>
 
   <!-- Aperçu d'un personnage : toutes les combinaisons de points. -->
@@ -81,7 +86,7 @@
   <script src="/commun/cartes.js?v=36"></script>
   <script src="/commun/tri.js?v=21"></script>
   <script src="/commun/boss_modes.js?v=1"></script>
-  <script src="/theorycraft/theorycraft.js?v=35"></script>
+  <script src="/theorycraft/theorycraft.js?v=36"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=36"></script>
 </body>

@@ -1701,6 +1701,94 @@ select.texte-ajout optgroup {
   text-align: center;
 }
 
+/* Patchs d'équilibrage (cf. admin_patchs.js). */
+.date-patch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.date-patch input,
+.tableau-patch select,
+.tableau-patch input,
+.tableau-patch textarea {
+  box-sizing: border-box;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.375rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: inherit;
+  font: inherit;
+  color-scheme: dark;
+}
+
+.tableau-patch-conteneur {
+  overflow-x: auto;
+}
+
+.tableau-patch {
+  width: 100%;
+  min-width: 38rem;
+  border-collapse: collapse;
+}
+
+.tableau-patch th {
+  padding: 0.25rem;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.tableau-patch td {
+  padding: 0.25rem;
+  vertical-align: top;
+}
+
+.tableau-patch select {
+  width: 11rem;
+}
+
+.tableau-patch input {
+  width: 6.5rem;
+}
+
+.tableau-patch textarea {
+  display: block;
+  width: 100%;
+  min-width: 12rem;
+  resize: vertical;
+}
+
+.tableau-patch .btn-masquer {
+  margin: 0.25rem 0 0;
+}
+
+.actions-patch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.liste-patchs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liste-patchs li {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.infos-patch {
+  flex: 1;
+  min-width: 0;
+}
+
 .limites-equilibrage .bouton-creer {
   margin-top: 0.5rem;
 }

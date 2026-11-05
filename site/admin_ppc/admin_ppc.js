@@ -1049,8 +1049,8 @@ async function demarrer() {
 // boutons qui modifient désactivés (y compris dans ce qui est redessiné plus
 // tard), ajouts et enregistrements cachés. Le serveur refuse de toute façon
 // les enregistrements (api/points.js, administrateurs seulement).
-const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage", "contenu-synergie", "modal-recommandations", "calendrier-admin", "contenu-alternative"];
-const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button, .action-synergie, .action-reco, .choix-faction, .action-calendrier, .action-alternative";
+const ZONES_MODIFIABLES = ["corps-admin", "entete-admin", "apercu-modificateurs", "apercu-tableau", "liste-boss", "option-carnage", "option-world-boss", "liste-feedbacks", "liste-categories", "liste-equilibrage", "limites-equilibrage", "contenu-synergie", "modal-recommandations", "calendrier-admin", "contenu-alternative", "contenu-patchs"];
+const ELEMENTS_MODIFIANTS = "input, select, textarea, .btn-masquer, .copie-suite, .retirer-buffs, .retirer-bonus-saison, .mode-modificateur, .choix-categorie, .action-feedback, #limites-equilibrage button, .action-synergie, .action-reco, .choix-faction, .action-calendrier, .action-alternative, .action-patch";
 
 function passerEnLectureSeule() {
   document.body.classList.add("lecture-seule");
