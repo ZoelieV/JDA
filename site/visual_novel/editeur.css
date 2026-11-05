@@ -306,6 +306,17 @@ body.ed-page {
   border-radius: 0.2rem;
 }
 
+.ed-reglages input[type="datetime-local"] {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem;
+  color: var(--texte);
+  background: #2a2a2a;
+  border: 1px solid var(--bordure);
+  border-radius: 0.3rem;
+  font: inherit;
+}
+
 /* Personnages et réponses. */
 .ed-carte {
   display: flex;

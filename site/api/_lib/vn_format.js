@@ -192,6 +192,14 @@ function lireSons(brut) {
   return sons.filter(son => estSon(son?.chemin)).map(son => ({ chemin: son.chemin, nom: texteDe(son.nom, MAX.nom).trim() || "Son" }));
 }
 
+// Date de sortie d'un chapitre : ISO, ou null pour "dès qu'il est public".
+function lireSortie(valeur, titre) {
+  if (valeur == null || valeur === "") return null;
+  const date = typeof valeur === "string" && valeur.length <= 40 ? new Date(valeur) : null;
+  exiger(date && Number.isFinite(date.getTime()), `${titre} : date de sortie invalide.`);
+  return date.toISOString();
+}
+
 function lireChapitre(brut, numero, idsVus) {
   exiger(ID.test(brut?.id) && !idsVus.has(brut.id), `Chapitre ${numero} : identifiant invalide.`);
   idsVus.add(brut.id);
@@ -220,7 +228,7 @@ function lireChapitre(brut, numero, idsVus) {
       })
     };
   });
-  return { id: brut.id, titre, namecard: brut.namecard || null, sous_chapitres: sousChapitres };
+  return { id: brut.id, titre, namecard: brut.namecard || null, public: brut.public === true, sortie: lireSortie(brut.sortie, titre), sous_chapitres: sousChapitres };
 }
 
 // -> { histoire } ou { erreur }
@@ -235,6 +243,7 @@ function lireHistoireVn(brut, id) {
       id,
       nom: texteDe(brut.nom, MAX.titre).trim() || "Visual novel",
       namecard: brut.namecard || null,
+      public: brut.public === true,
       objets: lireObjets(brut.objets),
       etats: lireEtats(brut.etats),
       sons: lireSons(brut.sons),
@@ -286,6 +295,7 @@ function consequencesDe({ ensuite, timer }) {
 // Ce qui manque encore pour qu'un joueur puisse lire l'histoire jusqu'au bout.
 function avertissementsVn(histoire) {
   const avertissements = [];
+  if (histoire.public && !histoire.chapitres.some(c => c.public)) avertissements.push("L'event est visible par tout le monde, mais aucun chapitre ne l'est : les joueurs ne verront rien.");
   const objets = new Set(histoire.objets.map(o => o.id));
   const etats = new Set(histoire.etats.map(e => e.id));
   const effetsConnus = (effets, lieu) => effets.forEach(effet => {

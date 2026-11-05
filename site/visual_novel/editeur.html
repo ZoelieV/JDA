@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/visual_novel/lecteur.css?v=5">
-  <link rel="stylesheet" href="/visual_novel/editeur.css?v=3">
+  <link rel="stylesheet" href="/visual_novel/editeur.css?v=4">
 </head>
 <body class="ed-page">
   <p id="ed-chargement">Chargement…</p>
@@ -19,6 +19,7 @@
       <a href="/admin_ppc/admin_ppc" class="ed-bouton">← Admin</a>
       <label class="ed-nom-histoire">Nom de l'event <input type="text" id="ed-nom-histoire" maxlength="80"></label>
       <span class="ed-image-event"><img id="ed-namecard-event" alt=""><button type="button" id="ed-choisir-namecard-event" class="ed-bouton">Namecard de l'event</button></span>
+      <label title="Sinon, seuls les vrais admins voient l'event"><input type="checkbox" id="ed-public-event"> Event visible par tout le monde</label>
       <span id="ed-etat" class="ed-etat"></span>
       <button type="button" id="ed-ouvrir-catalogue" class="ed-bouton">Objets, états et sons</button>
       <button type="button" id="ed-reinitialiser" class="ed-bouton" title="Efface ta progression de lecture, pour tout relire comme un nouveau joueur">Effacer ma progression</button>
@@ -127,6 +128,6 @@
 
   <script src="/commun/vn_polices.js?v=2"></script>
   <script src="/visual_novel/scene.js?v=2"></script>
-  <script src="/visual_novel/editeur.js?v=3"></script>
+  <script src="/visual_novel/editeur.js?v=4"></script>
 </body>
 </html>

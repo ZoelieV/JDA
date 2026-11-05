@@ -77,6 +77,15 @@ function choisirPremier(chapitre) {
 }
 
 // ---- Plan de l'histoire ----
+// Date ISO <-> valeur d'un champ datetime-local, à l'heure de l'admin.
+function dateVersChamp(iso) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+const champVersDate = valeur => (valeur ? new Date(valeur).toISOString() : null);
+
 function boutonsDeplacement(liste, element, { apresSuppression, confirmation }) {
   return [
     creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "↑", title: "Monter", onclick: () => { deplacer(liste, element, -1); rendreArbre(); } }),
@@ -105,6 +114,7 @@ function rendreArbre() {
     return creer("div", { classe: "ed-chapitre" },
       creer("div", { classe: "ed-noeud" },
         creer("button", { type: "button", classe: `ed-noeud-nom${actif ? " ed-actif" : ""}`, textContent: chapitre.titre, title: chapitre.titre, onclick: () => choisirPremier(chapitre) }),
+        chapitre.public ? creer("span", { classe: "ed-badge", textContent: "public" }) : null,
         ...boutonsDeplacement(histoire.chapitres, chapitre, {
           confirmation: () => `Supprimer « ${chapitre.titre} » et ses ${nbPanneaux} panneaux ?`,
           apresSuppression: () => choisirPremier(histoire.chapitres[0])
@@ -120,7 +130,10 @@ function rendreChapitre(chapitre) {
     creer("div", { classe: "ed-reglages" },
       creer("input", { type: "text", maxLength: 80, value: chapitre.titre, ariaLabel: "Titre du chapitre", oninput: e => { chapitre.titre = e.target.value; marquerModifie(); }, onchange: rendreArbre }),
       chapitre.namecard ? creer("img", { src: imageVn(chapitre.namecard), alt: "" }) : null,
-      creer("button", { type: "button", classe: "ed-bouton", textContent: "Namecard du chapitre", onclick: () => ouvrirImages("namecard", chemin => { chapitre.namecard = chemin; marquerModifie(); rendreArbre(); }) })
+      creer("button", { type: "button", classe: "ed-bouton", textContent: "Namecard du chapitre", onclick: () => ouvrirImages("namecard", chemin => { chapitre.namecard = chemin; marquerModifie(); rendreArbre(); }) }),
+      creer("label", {}, creer("input", { type: "checkbox", checked: chapitre.public === true, onchange: e => { chapitre.public = e.target.checked; marquerModifie(); rendreArbre(); } }), " Chapitre visible par tout le monde"),
+      creer("label", { classe: "ed-champ" }, "Sortie", creer("input", { type: "datetime-local", value: dateVersChamp(chapitre.sortie), ariaLabel: "Date de sortie du chapitre", onchange: e => { chapitre.sortie = champVersDate(e.target.value); marquerModifie(); } })),
+      creer("p", { classe: "ed-aide", textContent: "Sans date : dès qu'il est visible. Avant sa sortie, les joueurs ne le voient pas ; les vrais admins peuvent déjà le tester." })
     ),
     ...chapitre.sous_chapitres.map(sc => rendreSousChapitre(chapitre, sc)),
     creer("button", {
@@ -848,9 +861,10 @@ function brancherFormulaire() {
     bouton.addEventListener("click", () => appliquerMarque(bouton.dataset.marque));
   });
   edEl("ed-nom-histoire").addEventListener("input", e => { histoire.nom = e.target.value; marquerModifie(); });
+  edEl("ed-public-event").addEventListener("change", e => { histoire.public = e.target.checked; marquerModifie(); });
   edEl("ed-choisir-namecard-event").addEventListener("click", () => ouvrirImages("namecard", chemin => { histoire.namecard = chemin; marquerModifie(); rendreEntete(); }));
   edEl("ed-ajouter-chapitre").addEventListener("click", () => {
-    const chapitre = { id: nouvelId("c"), titre: `Chapitre ${histoire.chapitres.length + 1}`, namecard: null, sous_chapitres: [creerSousChapitre("Sous-chapitre 1")] };
+    const chapitre = { id: nouvelId("c"), titre: `Chapitre ${histoire.chapitres.length + 1}`, namecard: null, public: false, sortie: null, sous_chapitres: [creerSousChapitre("Sous-chapitre 1")] };
     histoire.chapitres.push(chapitre);
     marquerModifie();
     choisirPremier(chapitre);
@@ -923,6 +937,7 @@ async function demarrerEditeur() {
     edEl("ed-essai").hidden = data.maj !== null;
     afficherAvertissements(data.avertissements);
     edEl("ed-nom-histoire").value = histoire.nom;
+    edEl("ed-public-event").checked = histoire.public === true;
     brancherFormulaire();
     rendreEntete();
     chargement.hidden = true;

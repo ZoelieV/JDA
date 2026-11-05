@@ -43,4 +43,4 @@ async function estModerateur(discordId) {
   return estAdmin(discordId) || await estMiniAdmin(discordId);
 }
 
-module.exports = { estAdmin, estMiniAdmin, estModerateur, estShadowban };
+module.exports = { getIdsAdmins, estAdmin, estMiniAdmin, estModerateur, estShadowban };

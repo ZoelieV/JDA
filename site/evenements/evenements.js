@@ -90,22 +90,55 @@ async function afficherLittleCup(config) {
 }
 
 // Visual novel : chapitres et avancement du joueur (cf.
-// api/_lib/visual_novel.js).
+// api/_lib/visual_novel.js). -> visible par ce compte (ou ce visiteur) ?
+const MESSAGE_CHAPITRE_VERROUILLE = "Ce chapitre nécessite d'avoir terminé les chapitres précédents.";
+
+const texteJoueursVn = nombre => (nombre > 1 ? `${nombre} joueurs l'ont terminé` : nombre === 1 ? "1 joueur l'a terminé" : "Personne ne l'a encore terminé");
+
+// Réglages qui s'appliquent aux joueurs : les vrais admins passent outre.
+function reperesAdminVn(c) {
+  if (c.public === undefined) return "";
+  const reperes = [];
+  if (!c.public) reperes.push("réservé aux admins");
+  if (c.sortie && Date.parse(c.sortie) > Date.now()) reperes.push(`sort le ${new Date(c.sortie).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}`);
+  if (c.verrou_joueurs) reperes.push("verrouillé pour un joueur à ton stade");
+  return reperes.length ? `<span class="repere-chapitre-vn">Admin : ${echapperCalendrier(reperes.join(", "))}</span>` : "";
+}
+
 async function afficherVisualNovel() {
   const reponse = await fetch("/api/points?vn=1", { credentials: "include" });
-  if (!reponse.ok) return;
+  if (!reponse.ok) return false;
   const histoire = await reponse.json();
+  if (!histoire.visible) return false;
   document.querySelector("#nom-visual-novel").firstChild.textContent = `${histoire.nom} `;
+  document.querySelector('.carte-match[data-detail="visual-novel"] h2').firstChild.textContent = `${histoire.nom} `;
   if (histoire.namecard) document.querySelector('.carte-match[data-detail="visual-novel"] img').src = encodeURI(`/DB/images/${histoire.namecard}`);
+  document.querySelectorAll('[data-detail="visual-novel"] .badge-admin, [data-detail="visual-novel"] .regle-admin').forEach(e => e.classList.toggle("cache", histoire.public));
   const etats = { nouveau: "À lire", en_cours: "En cours", terminee: "Terminé", game_over: "Game over" };
-  document.getElementById("chapitres-visual-novel").innerHTML = histoire.chapitres.map(c => `
-    <a class="chapitre-vn" href="/visual_novel/lecteur?chapitre=${encodeURIComponent(c.id)}">
-      <img src="${echapperCalendrier(encodeURI(`/DB/images/${c.namecard}`))}" alt="" loading="lazy">
+  document.getElementById("chapitres-visual-novel").innerHTML = histoire.chapitres.map(c => {
+    const contenu = `
+      ${c.namecard ? `<img src="${echapperCalendrier(encodeURI(`/DB/images/${c.namecard}`))}" alt="" loading="lazy">` : ""}
       <span class="texte-chapitre-vn">
         <strong>${echapperCalendrier(c.titre)}</strong>
-        <span>${c.termine ? etats.terminee : etats[c.statut]} · ${c.fins_trouvees}/${c.fins_total} fins</span>
-      </span>
-    </a>`).join("");
+        <span>${c.verrouille ? "Verrouillé" : c.termine ? etats.terminee : etats[c.statut]} · ${c.fins_trouvees}/${c.fins_total} fins</span>
+        <span>${texteJoueursVn(c.joueurs)}</span>
+        ${reperesAdminVn(c)}
+      </span>`;
+    return c.verrouille
+      ? `<button type="button" class="chapitre-vn chapitre-vn-verrouille" data-verrou>${contenu}</button>`
+      : `<a class="chapitre-vn" href="/visual_novel/lecteur?chapitre=${encodeURIComponent(c.id)}">${contenu}</a>`;
+  }).join("");
+  return true;
+}
+
+// Clic sur un chapitre verrouillé : le joueur doit savoir pourquoi.
+function brancherChapitresVn() {
+  document.getElementById("chapitres-visual-novel").addEventListener("click", event => {
+    if (!event.target.closest("[data-verrou]")) return;
+    const message = document.getElementById("message-chapitres-vn");
+    message.textContent = MESSAGE_CHAPITRE_VERROUILLE;
+    message.classList.remove("cache");
+  });
 }
 
 // Une seule carte ouverte à la fois ; un 2e clic referme ses détails.
@@ -298,9 +331,10 @@ function dessinerFrise() {
 
 async function demarrer() {
   const etat = document.getElementById("etat-evenements");
-  const [utilisateur, config] = await Promise.all([
+  const [utilisateur, config, visualNovelVisible] = await Promise.all([
     chargerUtilisateur(),
-    chargerPointsAdmin().catch(erreur => { console.error(erreur); return {}; })
+    chargerPointsAdmin().catch(erreur => { console.error(erreur); return {}; }),
+    afficherVisualNovel().catch(erreur => { console.error(erreur); return false; })
   ]);
   const admin = !!(utilisateur?.admin || utilisateur?.mini_admin);
   // { data-detail : activé pour tous } ; calendrier : dès que la saison a
@@ -314,11 +348,8 @@ async function demarrer() {
     document.querySelectorAll(`[data-detail="${nom}"] .badge-admin, [data-detail="${nom}"] .regle-admin`).forEach(e => e.classList.toggle("cache", public_));
   }
 
-  // Visual novel : vrais administrateurs seulement pour l'instant.
-  if (utilisateur?.admin) {
-    document.querySelector('.carte-match[data-detail="visual-novel"]').classList.remove("cache");
-    afficherVisualNovel().catch(console.error);
-  }
+  document.querySelector('.carte-match[data-detail="visual-novel"]').classList.toggle("cache", !visualNovelVisible);
+  brancherChapitresVn();
 
   const visibles = document.querySelectorAll(".carte-match:not(.cache)").length;
   etat.textContent = visibles ? "" : "Contenu à venir...";

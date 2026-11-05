@@ -317,6 +317,29 @@
   border-color: var(--accent-bordure);
 }
 
+.chapitre-vn-verrouille {
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: not-allowed;
+}
+
+.chapitre-vn-verrouille img {
+  filter: grayscale(1) brightness(0.6);
+}
+
+.message-chapitres-vn {
+  margin: 0 0 0.75rem;
+  color: var(--texte);
+  padding: 0.5rem 0.75rem;
+  background: var(--accent-fond);
+  border: 1px solid var(--accent-bordure);
+  border-radius: 0.3rem;
+}
+
 .chapitre-vn img {
   display: block;
   width: 100%;
@@ -334,4 +357,8 @@
 .texte-chapitre-vn span {
   color: var(--texte-doux);
   font-size: 0.875rem;
+}
+
+.texte-chapitre-vn .repere-chapitre-vn {
+  color: var(--accent);
 }

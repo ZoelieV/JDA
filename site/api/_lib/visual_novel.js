@@ -3,8 +3,10 @@
 // suites possibles, et n'appelle le serveur qu'à ces arrêts.
 //
 // Format d'une histoire (cf. vn_format.js, vn_histoire_essai.js) :
-//   { id, nom, namecard, chapitres: [{ id, titre, namecard, sous_chapitres: [{ id, titre,
-//     panneaux: [panneau] }] }] }
+//   { id, nom, namecard, public, chapitres: [{ id, titre, namecard, public, sortie,
+//     sous_chapitres: [{ id, titre, panneaux: [panneau] }] }] }
+//   public : visible par tout le monde, l'event et le chapitre (sinon vrais admins)
+//   sortie : date ISO à partir de laquelle le chapitre apparaît, ou null
 //   panneau : { id (unique dans le chapitre), fond, nom,
 //     texte  (mise en forme : decouperTexteVn de commun/vn_polices.js),
 //     persos: [{ image, x, y, hauteur, miroir }]  (calques : le dernier devant ;
@@ -43,8 +45,12 @@
 // sous-chapitre, et un sous-chapitre fini une fois peut être refait depuis
 // son début (jamais avant, pour ne pas pouvoir relancer un dé ou refaire un
 // choix en cours de route). L'état de jeu (inventaire, timer...) : cf. vn_jeu.js.
+//
+// Accès : les vrais admins voient tout, à tout moment. Un joueur voit un chapitre
+// public et sorti, jouable une fois terminés les chapitres précédents qu'il peut
+// voir. Un chapitre déjà commencé reste jouable.
 const { supabase } = require("./supabase");
-const { estAdmin } = require("./admin");
+const { estAdmin, getIdsAdmins } = require("./admin");
 const { lirePoliceVn } = require("../../commun/vn_polices.js");
 const HISTOIRE_ESSAI = require("./vn_histoire_essai");
 const jeuVn = require("./vn_jeu");
@@ -52,13 +58,14 @@ const jeuVn = require("./vn_jeu");
 const ID_HISTOIRE = "principale";
 
 // Histoire enregistrée dans l'éditeur (table vn_histoires), sinon celle
-// d'essai. Relue seulement si elle a changé : la date est bien plus légère
-// que l'histoire entière.
+// d'essai, réservée aux admins. null : pas ouverte à ce compte. Relue seulement
+// si elle a changé : la date est bien plus légère que l'histoire entière.
 let histoireEnCache = null;
-async function histoireActive() {
-  const { data: ligne, error } = await supabase.from("vn_histoires").select("maj").eq("id", ID_HISTOIRE).maybeSingle();
+async function histoirePour(admin) {
+  const { data: ligne, error } = await supabase.from("vn_histoires").select("maj, public").eq("id", ID_HISTOIRE).maybeSingle();
   if (error) throw error;
-  if (!ligne) return HISTOIRE_ESSAI;
+  if (!ligne) return admin ? HISTOIRE_ESSAI : null;
+  if (!admin && !ligne.public) return null;
   if (histoireEnCache?.maj !== ligne.maj) {
     const { data, error: erreur } = await supabase.from("vn_histoires").select("data, maj").eq("id", ID_HISTOIRE).single();
     if (erreur) throw erreur;
@@ -71,6 +78,8 @@ async function histoireActive() {
 const MAX_PANNEAUX_SEGMENT = 40;
 // Retard accepté sur le timer pour une réponse envoyée à la dernière seconde.
 const MARGE_TIMER_MS = 1500;
+// Sauts d'un même "passer" : une boucle de panneaux ne le retient pas sans fin.
+const MAX_SAUTS = 200;
 
 const estId = valeur => typeof valeur === "string" && valeur.length > 0 && valeur.length <= 60;
 
@@ -177,13 +186,27 @@ function reponseArretee(chapitre, partie, fin = null) {
   };
 }
 
-// Tant que l'option de visibilité n'existe pas : vrais admins seulement.
-const peutLire = discordId => estAdmin(discordId);
+// Public et sorti : ce qu'un joueur a le droit de voir.
+const chapitreOuvert = (chapitre, maintenant = Date.now()) => chapitre.public === true && (!chapitre.sortie || Date.parse(chapitre.sortie) <= maintenant);
 
-async function lireParties(discordId, histoireId) {
-  const { data, error } = await supabase.from("vn_parties").select("*").eq("discord_id", discordId).eq("histoire_id", histoireId);
+// Un chapitre qu'un joueur ne peut pas voir ne peut pas lui être demandé.
+function estVerrouille(histoire, chapitre, parties) {
+  const finis = new Set(parties.filter(p => p.termine_le).map(p => p.chapitre_id));
+  const rang = histoire.chapitres.indexOf(chapitre);
+  return histoire.chapitres.slice(0, rang).some(c => chapitreOuvert(c) && !finis.has(c.id));
+}
+
+async function lireParties(discordId, histoireId, colonnes = "*") {
+  const { data, error } = await supabase.from("vn_parties").select(colonnes).eq("discord_id", discordId).eq("histoire_id", histoireId);
   if (error) throw error;
   return data || [];
+}
+
+// { id du chapitre : joueurs l'ayant terminé }, sans les vrais admins, qui testent.
+async function lireCompteurs(histoireId) {
+  const { data, error } = await supabase.rpc("vn_compteurs", { p_histoire: histoireId, p_exclus: getIdsAdmins() });
+  if (error) throw error;
+  return new Map((data || []).map(ligne => [ligne.chapitre_id, Number(ligne.joueurs)]));
 }
 
 async function ecrirePartie(discordId, histoireId, chapitreId, champs) {
@@ -196,16 +219,28 @@ async function ecrirePartie(discordId, histoireId, chapitreId, champs) {
 }
 
 // Page Événements : histoire et avancement du joueur, sans aucun panneau.
+// Sans compte (discordId null) : ce que voit un joueur qui n'a encore rien lu.
+// { visible: false } : rien à montrer à ce compte.
 async function lireResume(discordId) {
-  const histoire = await histoireActive();
-  const parties = new Map((await lireParties(discordId, histoire.id)).map(p => [p.chapitre_id, p]));
+  const admin = estAdmin(discordId);
+  const histoire = await histoirePour(admin);
+  const visibles = (histoire?.chapitres || []).filter(c => admin || chapitreOuvert(c));
+  if (!visibles.length) return { visible: false };
+  const [lignes, compteurs] = await Promise.all([
+    discordId ? lireParties(discordId, histoire.id, "chapitre_id, statut, fins, termine_le") : [],
+    lireCompteurs(histoire.id)
+  ]);
+  const parties = new Map(lignes.map(p => [p.chapitre_id, p]));
   return {
+    visible: true,
     id: histoire.id,
     nom: histoire.nom,
     namecard: histoire.namecard || null,
-    chapitres: histoire.chapitres.map(chapitre => {
+    public: histoire.public === true,
+    chapitres: visibles.map(chapitre => {
       const partie = parties.get(chapitre.id);
       const fins = finsDuChapitre(chapitre);
+      const verrou = !partie && estVerrouille(histoire, chapitre, lignes);
       return {
         id: chapitre.id,
         titre: chapitre.titre,
@@ -213,7 +248,11 @@ async function lireResume(discordId) {
         statut: partie?.statut || "nouveau",
         termine: !!partie?.termine_le,
         fins_trouvees: fins.filter(f => partie?.fins?.includes(f.id)).length,
-        fins_total: fins.length
+        fins_total: fins.length,
+        joueurs: compteurs.get(chapitre.id) || 0,
+        verrouille: verrou && !admin,
+        // Ce qui s'applique aux joueurs : les admins passent outre, mais doivent le savoir.
+        ...(admin ? { public: chapitre.public === true, sortie: chapitre.sortie || null, verrou_joueurs: verrou } : {})
       };
     })
   };
@@ -222,18 +261,24 @@ async function lireResume(discordId) {
 // Actions du lecteur : "ouvrir" (début ou reprise), "avancer" (choix, dé, texte,
 // suite, fin atteinte, timer écoulé avec expire: true), "reprendre" (au dernier
 // point après un game over), "recommencer" (après un game over ou une fin),
-// "refaire" (un sous-chapitre déjà fini, depuis son début). admin : "ouvrir"
-// avec "panneau" place la partie sur ce panneau (bouton Tester de l'éditeur).
+// "refaire" (un sous-chapitre déjà fini, depuis son début), "passer" (chapitre
+// déjà terminé : jusqu'au prochain embranchement). admin : "ouvrir" avec
+// "panneau" place la partie sur ce panneau (bouton Tester de l'éditeur).
 // Le texte saisi n'est ni enregistré, ni renvoyé. -> { status, corps }
-async function traiterAction(discordId, brut, { admin = false } = {}) {
-  const histoire = await histoireActive();
-  const chapitre = histoire.chapitres.find(c => c.id === brut?.chapitre);
-  if (!chapitre) return { status: 404, corps: { error: "Chapitre introuvable" } };
+async function traiterAction(discordId, brut) {
+  const admin = estAdmin(discordId);
+  const histoire = await histoirePour(admin);
+  const chapitre = histoire?.chapitres.find(c => c.id === brut?.chapitre);
+  // Même réponse pour un chapitre caché que pour un chapitre qui n'existe pas.
+  if (!chapitre || (!admin && !chapitreOuvert(chapitre))) return { status: 404, corps: { error: "Chapitre introuvable" } };
   const titres = { chapitre: chapitre.titre };
 
   const { data: lue, error } = await supabase.from("vn_parties").select("*")
     .eq("discord_id", discordId).eq("histoire_id", histoire.id).eq("chapitre_id", chapitre.id).maybeSingle();
   if (error) throw error;
+  if (!lue && !admin && estVerrouille(histoire, chapitre, await lireParties(discordId, histoire.id, "chapitre_id, termine_le"))) {
+    return { status: 403, corps: { titre: "Chapitre verrouillé", error: "Ce chapitre nécessite d'avoir terminé les chapitres précédents." } };
+  }
 
   let partie = lue;
   let jeu = jeuVn.lireJeu(partie?.jeu);
@@ -249,7 +294,7 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
     ...champs
   });
 
-  const envoyerSegment = ({ annonces = [], message = null, reste = false } = {}) => ({
+  const envoyerSegment = ({ annonces = [], message = null, reste = false, passe = false } = {}) => ({
     status: 200,
     corps: {
       ...titres,
@@ -262,7 +307,9 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
       ...jeuVn.jeuPublic(histoire, jeu),
       annonces,
       message,
-      reste
+      reste,
+      passable: !!partie.termine_le,
+      passe
     }
   });
   const envoyerArret = fin => ({
@@ -287,11 +334,13 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
   }
 
   // Début du chapitre : avec ce que la dernière partie terminée du chapitre
-  // précédent a transmis.
+  // précédent le plus proche a transmis (un chapitre caché n'a pas été joué).
   async function demarrer() {
     const rang = histoire.chapitres.indexOf(chapitre);
-    const precedent = rang > 0 ? (await lireParties(discordId, histoire.id)).find(p => p.chapitre_id === histoire.chapitres[rang - 1].id) : null;
-    const transmis = jeuVn.lireJeu(precedent?.jeu).sortie;
+    const parties = rang > 0 ? await lireParties(discordId, histoire.id) : [];
+    const transmis = histoire.chapitres.slice(0, rang).reverse()
+      .map(c => jeuVn.lireJeu(parties.find(p => p.chapitre_id === c.id)?.jeu).sortie)
+      .find(Boolean);
     jeu = jeuVn.lireJeu({ ...transmis, sortie: jeu.sortie });
     const premier = premierPanneau(chapitre);
     const annonces = entrer(premier, null);
@@ -304,8 +353,8 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
     return [...new Set([...partie.sous_chapitres_finis, scId])];
   };
 
-  // Quitte le segment en cours pour "cible".
-  async function partir(cible, { effets = [], repondu = false, message = null, lancer = null } = {}) {
+  // Quitte le segment en cours pour "cible", sans encore enregistrer.
+  function deplacer(cible, { effets = [], repondu = false, lancer = null } = {}) {
     const { entrees } = calculerSegment(chapitre, partie.panneau);
     const scCourant = entrees[0].sc.id;
     entrees.forEach(({ panneau }) => {
@@ -316,8 +365,28 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
     const annonces = jeuVn.appliquerEffets(histoire, jeu, effets);
     const finis = scDe(cible) !== scCourant ? finirSousChapitre(scCourant) : partie.sous_chapitres_finis;
     annonces.push(...entrer(cible, scCourant));
-    partie = await ecrire({ panneau: cible, sous_chapitres_finis: finis });
+    partie = { ...partie, panneau: cible, sous_chapitres_finis: finis };
+    return annonces;
+  }
+
+  async function partir(cible, { message = null, ...reglages } = {}) {
+    const annonces = deplacer(cible, reglages);
+    partie = await ecrire({ panneau: cible });
     return envoyerSegment({ annonces, message });
+  }
+
+  // Chapitre déjà terminé : jusqu'au prochain embranchement ou à la fin, en
+  // appliquant les effets traversés. Un timer arrête le saut : il faut y répondre.
+  async function passer() {
+    if (!partie.termine_le) return { status: 409, corps: { error: "Termine d'abord ce chapitre pour pouvoir passer les dialogues." } };
+    const annonces = [];
+    for (let saut = 0; saut < MAX_SAUTS && !jeu.timer; saut++) {
+      const { arret } = calculerSegment(chapitre, partie.panneau);
+      if (arret.type !== "continuer") break;
+      annonces.push(...deplacer(arret.vers));
+    }
+    partie = await ecrire({ panneau: partie.panneau });
+    return envoyerSegment({ annonces, passe: true });
   }
 
   // Timer écoulé : ses conséquences, à la place de la réponse du joueur.
@@ -381,7 +450,7 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
     if (jeu.timer && Date.now() > jeu.timer.fin) return expirer();
     return envoyerSegment({ annonces: annoncesDepart });
   }
-  if (brut.action !== "avancer") return { status: 400, corps: { error: "Action inconnue" } };
+  if (brut.action !== "avancer" && brut.action !== "passer") return { status: 400, corps: { error: "Action inconnue" } };
 
   // Double clic ou 2e onglet : la partie a déjà avancé, on renvoie où elle en est.
   if (brut.depuis !== partie.panneau) return envoyerSegment();
@@ -392,6 +461,7 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
     return envoyerSegment({ reste: true });
   }
   if (jeu.timer && maintenant > jeu.timer.fin + MARGE_TIMER_MS) return expirer();
+  if (brut.action === "passer") return passer();
 
   const { arret, entrees } = calculerSegment(chapitre, partie.panneau);
   const scCourant = entrees[0].sc.id;
@@ -419,6 +489,7 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
   if (arret.type === "texte") {
     const saisie = typeof brut.reponse === "string" ? brut.reponse.trim() : "";
     if (!saisie || saisie.length > jeuVn.LONGUEUR_REPONSE) return { status: 400, corps: { error: "Réponse invalide" } };
+    if (!jeuVn.compterEssai(jeu, maintenant)) return envoyerSegment({ message: "Trop d'essais : attends une minute avant de réessayer.", reste: true });
     const reponse = jeuVn.trouverReponse(arret.reponses, saisie);
     const suite = reponse || arret.defaut || {};
     if (index.has(suite.vers)) return partir(suite.vers, { effets: suite.effets, message: suite.message || null, repondu: true });
@@ -451,4 +522,4 @@ async function traiterAction(discordId, brut, { admin = false } = {}) {
   return partir(option.vers, { effets, repondu: true, message: option.message || null });
 }
 
-module.exports = { ID_HISTOIRE, peutLire, lireResume, traiterAction, calculerSegment, segmentPublic };
+module.exports = { ID_HISTOIRE, lireResume, traiterAction, calculerSegment, segmentPublic };

@@ -56,7 +56,7 @@ async function sauvegarder(discordId, { histoire: brute, maj }) {
     return { status: 409, corps: { error: "Un autre administrateur a enregistré depuis : recharge la page pour récupérer sa version." } };
   }
   const { data, error } = await supabase.from("vn_histoires")
-    .upsert({ id: ID_HISTOIRE, data: histoire, maj: new Date().toISOString(), maj_par: discordId })
+    .upsert({ id: ID_HISTOIRE, data: histoire, public: histoire.public, maj: new Date().toISOString(), maj_par: discordId })
     .select("maj")
     .single();
   if (error) throw error;

@@ -13,6 +13,8 @@ let sousChapitresVn = [];
 // Ce que le joueur possède, envoyé par le serveur.
 let inventaireVn = [];
 let etatsVn = [];
+// Chapitre déjà terminé : le joueur peut passer les dialogues.
+let passableVn = false;
 
 function afficherEcran(titre, texte, { recommencer = false, reprendre = false, point = false, liste = false, libelleReprendre = "Reprendre" } = {}) {
   elementVn("vn-ecran-titre").textContent = titre;
@@ -239,6 +241,29 @@ function afficherPanneau({ sansSon = false } = {}) {
   elementVn("vn-suite").hidden = options.length > 0 || !!saisie;
   elementVn("vn-repere").textContent = panneau.sous_chapitre;
   elementVn("vn-dialogue").hidden = false;
+  afficherBoutonPasser();
+}
+
+// ---- Passer ----
+// Un timer en cours retient le joueur dans le segment : le serveur n'ira pas plus loin.
+function afficherBoutonPasser() {
+  const reste = indexVn < segmentVn.panneaux.length - 1;
+  const auDela = segmentVn.arret.type === "continuer" && horlogeTimerVn === null;
+  elementVn("vn-passer").hidden = !passableVn || !(reste || auDela);
+}
+
+function allerAuDernierPanneau() {
+  // La musique des panneaux sautés compte : le serveur la retient aussi.
+  segmentVn.panneaux.slice(indexVn + 1).forEach(panneau => { if (panneau.musique) changerMusique(panneau.musique); });
+  indexVn = segmentVn.panneaux.length - 1;
+  afficherPanneau({ sansSon: true });
+}
+
+// La suite du segment est déjà là ; au-delà, seul le serveur la connaît.
+function passer() {
+  if (!segmentVn || occupeVn) return;
+  if (segmentVn.arret.type === "continuer" && horlogeTimerVn === null) appelerServeur({ action: "passer", depuis: segmentVn.depuis });
+  else allerAuDernierPanneau();
 }
 
 // Images du segment chargées d'avance, pour ne pas voir de trou en avançant.
@@ -253,10 +278,12 @@ function traiterReponse(data) {
   sousChapitresVn = data.sous_chapitres || [];
   inventaireVn = data.inventaire || [];
   etatsVn = data.etats || [];
+  passableVn = data.passable === true;
   if (data.statut !== "en_cours") {
     segmentVn = null;
     arreterTimer();
     afficherAnnonces([]);
+    elementVn("vn-passer").hidden = true;
     elementVn("vn-ouvrir-menu").hidden = true;
     elementVn("vn-ouvrir-inventaire").hidden = true;
     if (data.statut === "game_over") {
@@ -284,11 +311,16 @@ function traiterReponse(data) {
     // ce détour, elle redémarrerait pour rien.
     changerMusique(segmentVn.panneaux[0].musique || data.musique);
   }
-  afficherPanneau({ sansSon: surPlace });
+  if (data.passe) {
+    allerAuDernierPanneau();
+  } else {
+    afficherPanneau({ sansSon: surPlace });
+  }
   const refus = elementVn("vn-refus");
   refus.hidden = !(data.reste && data.message);
   refus.textContent = data.reste ? data.message || "" : "";
   lancerTimer(data.timer);
+  afficherBoutonPasser();
   afficherAnnonces(data.annonces);
   if (data.lancer) afficherLancer(data.lancer, data.message);
   else if (data.message && !data.reste) afficherEcran("", data.message, { reprendre: true, libelleReprendre: "Continuer" });
@@ -310,7 +342,7 @@ async function appelerServeur(corps, { reessai = false } = {}) {
     });
     const data = await reponse.json().catch(() => ({}));
     if (reponse.status === 401) return afficherEcran("Connexion nécessaire", "Connecte-toi avec Discord pour lire cette histoire.");
-    if (!reponse.ok) return afficherEcran("Lecture impossible", data.error || "Réessaie dans un instant.");
+    if (!reponse.ok) return afficherEcran(data.titre || "Lecture impossible", data.error || "Réessaie dans un instant.");
     traiterReponse(data);
   } catch (erreur) {
     console.error(erreur);
@@ -350,6 +382,7 @@ elementVn("vn-saisie").addEventListener("submit", event => {
   const reponse = elementVn("vn-reponse").value.trim();
   if (reponse) appelerServeur({ action: "avancer", depuis: segmentVn.depuis, reponse });
 });
+elementVn("vn-passer").addEventListener("click", passer);
 elementVn("vn-ouvrir-menu").addEventListener("click", ouvrirMenuSousChapitres);
 elementVn("vn-ouvrir-inventaire").addEventListener("click", ouvrirInventaire);
 elementVn("vn-couper-son").addEventListener("click", basculerSon);

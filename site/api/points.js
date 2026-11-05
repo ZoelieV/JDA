@@ -431,14 +431,13 @@ module.exports = async (req, res) => {
     const user = await verifySessionToken(parseCookies(req).session);
 
     // Visual novel (cf. _lib/visual_novel.js) : GET ?vn=1, résumé de l'histoire
-    // et avancement du joueur ; POST { vn: { action, chapitre, depuis, option } },
-    // lecture. Avant le contrôle admin du POST de la config.
+    // et avancement du joueur, même sans compte ; POST { vn: { action, chapitre,
+    // depuis, option } }, lecture. Avant le contrôle admin du POST de la config.
     if ((req.method === "GET" && req.query?.vn === "1") || (req.method === "POST" && req.body?.vn)) {
       res.setHeader("Cache-Control", "no-store");
+      if (req.method === "GET") return res.status(200).json(await visualNovel.lireResume(user?.id ?? null));
       if (!user) return res.status(401).json({ error: "Non connecté" });
-      if (!visualNovel.peutLire(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
-      if (req.method === "GET") return res.status(200).json(await visualNovel.lireResume(user.id));
-      const { status, corps } = await visualNovel.traiterAction(user.id, req.body.vn, { admin: estAdmin(user.id) });
+      const { status, corps } = await visualNovel.traiterAction(user.id, req.body.vn);
       return res.status(status).json(corps);
     }
 

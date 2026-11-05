@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
   <link rel="stylesheet" href="/matchmaking/matchmaking.css?v=39">
-  <link rel="stylesheet" href="/evenements/evenements.css?v=11">
+  <link rel="stylesheet" href="/evenements/evenements.css?v=12">
   <link rel="stylesheet" href="/commun/site.css?v=19">
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -62,11 +62,12 @@
     </button>
   </div>
 
-  <!-- Visual novel (cf. api/_lib/visual_novel.js) : vrais administrateurs
-       seulement tant que l'option de visibilité n'existe pas. -->
+  <!-- Visual novel (cf. api/_lib/visual_novel.js) : visibilité réglée dans
+       l'éditeur, par event et par chapitre. -->
   <section id="detail-visual-novel" class="panneau detail-match cache" data-detail="visual-novel">
     <h2 id="nom-visual-novel">Visual novel <span class="badge-admin">Admin</span></h2>
     <p class="regle-admin">Seuls les vrais administrateurs voient cet event pour l'instant.</p>
+    <p id="message-chapitres-vn" class="message-chapitres-vn cache" role="status"></p>
     <div id="chapitres-visual-novel" class="chapitres-vn"></div>
   </section>
 
@@ -135,7 +136,7 @@
   <script src="/commun/variantes.js?v=7"></script>
   <script src="/commun/synergies.js?v=5"></script>
   <script src="/commun/cartes.js?v=36"></script>
-  <script src="/evenements/evenements.js?v=19"></script>
+  <script src="/evenements/evenements.js?v=20"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=36"></script>
 </body>

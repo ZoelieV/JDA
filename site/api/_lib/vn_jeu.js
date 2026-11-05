@@ -11,9 +11,12 @@
 //   lancer: dernier lancer, réaffiché si la page est rechargée
 //   sortie: { inventaire, etats } de la dernière partie terminée, pour le
 //     chapitre suivant
+//   essais: { debut (ms), nombre } réponses en texte libre de la dernière minute
 const crypto = require("crypto");
 
 const LONGUEUR_REPONSE = 100;
+// Pour ne pas pouvoir essayer toutes les réponses à la chaîne.
+const ESSAIS_PAR_MINUTE = 10;
 
 function lireJeu(brut) {
   return {
@@ -25,7 +28,8 @@ function lireJeu(brut) {
     timer: brut?.timer || null,
     des: brut?.des || {},
     lancer: brut?.lancer || null,
-    sortie: brut?.sortie || null
+    sortie: brut?.sortie || null,
+    essais: brut?.essais || null
   };
 }
 
@@ -97,6 +101,14 @@ function lancerDe(histoire, jeu, de, cle, scFini, scId) {
 }
 
 // ---- Texte libre ----
+// Compte un essai. false : trop d'essais dans la dernière minute.
+function compterEssai(jeu, maintenant) {
+  if (!jeu.essais || maintenant - jeu.essais.debut >= 60000) jeu.essais = { debut: maintenant, nombre: 0 };
+  if (jeu.essais.nombre >= ESSAIS_PAR_MINUTE) return false;
+  jeu.essais.nombre++;
+  return true;
+}
+
 // Sans accents, sans casse, sans ponctuation.
 function normaliserTexte(texte) {
   return String(texte ?? "")
@@ -154,4 +166,4 @@ function trouverReponse(reponses, saisie) {
   return meilleure;
 }
 
-module.exports = { LONGUEUR_REPONSE, lireJeu, instantane, restaurer, appliquerEffets, jeuPublic, sortieDe, lancerDe, normaliserTexte, distanceTexte, trouverReponse };
+module.exports = { LONGUEUR_REPONSE, lireJeu, instantane, restaurer, appliquerEffets, jeuPublic, sortieDe, lancerDe, compterEssai, normaliserTexte, distanceTexte, trouverReponse };
