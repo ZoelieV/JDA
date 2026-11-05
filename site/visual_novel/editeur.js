@@ -560,7 +560,20 @@ function rendreOptionsPanneau() {
       creer("label", { classe: "ed-champ" }, "Durée (secondes)",
         creer("input", { type: "number", min: 1, max: 3600, value: panneau.timer.duree, classe: "ed-nombre", oninput: e => { panneau.timer.duree = Math.max(1, Number(e.target.value) || 1); marquerModifie(); } })),
       creer("p", { classe: "ed-aide", textContent: "S'arrête à la prochaine réponse du joueur et continue si la page est rechargée. Quand le temps est écoulé :" }),
-      ...editeurConsequence(panneau.timer, apres, { libelleVide: "Rester sur place", placeholder: "Message quand le temps est écoulé" })
+      creer("label", {}, creer("input", { type: "checkbox", checked: !!panneau.timer.de, onchange: e => {
+        if (e.target.checked) panneau.timer.de = { resultats: [creerResultatDe(11, null), creerResultatDe(null, 10)] };
+        else delete panneau.timer.de;
+        apres();
+      } }), " Lancer un dé (d20)"),
+      ...(panneau.timer.de
+        ? [
+          creer("input", { type: "text", maxLength: 500, value: panneau.timer.message || "", placeholder: "Message quand le temps est écoulé", ariaLabel: "Message", oninput: e => { panneau.timer.message = e.target.value; marquerModifie(); } }),
+          creer("p", { classe: "ed-aide", textContent: "Le dé décide de la suite, comme pour une réponse. Un résultat sans destination laisse le joueur sur place." }),
+          ...panneau.timer.de.resultats.map((resultat, n) => editeurResultatDe(panneau.timer.de, resultat, n, apres)),
+          creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "+ Résultat", disabled: panneau.timer.de.resultats.length >= 10, onclick: () => { panneau.timer.de.resultats.push(creerResultatDe(null, null)); apres(); } }),
+          editeurEffets(panneau.timer.effets, apres)
+        ]
+        : editeurConsequence(panneau.timer, apres, { libelleVide: "Rester sur place", placeholder: "Message quand le temps est écoulé" }))
     ) : null,
     creer("p", { classe: "ed-aide", textContent: "En arrivant sur ce panneau :" }),
     editeurEffets(panneau.effets, apres),

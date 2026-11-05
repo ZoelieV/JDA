@@ -14,7 +14,7 @@
 //     police: { famille, taille, gras, italique },  (cf. commun/vn_polices.js)
 //     effets,             appliqués en arrivant sur le panneau
 //     sauvegarde,         point de reprise après un game over
-//     timer: { duree (s), vers, effets, message },  lancé en arrivant sur le
+//     timer: { duree (s), vers, effets, message, de? },  (de : comme une réponse à dé)  lancé en arrivant sur le
 //                         panneau, arrêté par la prochaine réponse du joueur
 //     musique,            chemin, ou "stop" ; absente : celle en cours continue
 //     son,                joué une fois
@@ -398,13 +398,28 @@ async function traiterAction(discordId, brut) {
   }
 
   // Timer écoulé : ses conséquences, à la place de la réponse du joueur.
+  // Avec un dé : comme une réponse à dé (même résultat tant que le
+  // sous-chapitre n'est pas fini) ; un résultat sans destination laisse sur place.
   async function expirer() {
-    const reglage = index.get(jeu.timer.panneau)?.panneau.timer;
+    const depart = jeu.timer.panneau;
+    const reglage = index.get(depart)?.panneau.timer;
     jeu.timer = null;
     const message = reglage?.message || "Le temps est écoulé.";
-    if (index.has(reglage?.vers)) return partir(reglage.vers, { effets: reglage.effets, message });
-    const annonces = jeuVn.appliquerEffets(histoire, jeu, reglage?.effets);
-    jeu.lancer = null;
+    let suite = reglage;
+    let effets = reglage?.effets || [];
+    let lancer = null;
+    if (reglage?.de) {
+      const sc = scDe(partie.panneau);
+      const cle = `${depart}:timer`;
+      const tirage = jeuVn.lancerDe(histoire, jeu, reglage.de, cle, partie.sous_chapitres_finis.includes(sc), sc);
+      if (tirage.garder) jeu.des[cle] = tirage.garder;
+      suite = tirage.resultat;
+      effets = [...effets, ...(tirage.resultat?.effets || [])];
+      lancer = { base: tirage.base, modificateurs: tirage.modificateurs, total: tirage.total, message: tirage.resultat?.message || "" };
+    }
+    if (index.has(suite?.vers)) return partir(suite.vers, { effets, message, lancer });
+    const annonces = jeuVn.appliquerEffets(histoire, jeu, effets);
+    jeu.lancer = lancer;
     partie = await ecrire({ panneau: partie.panneau });
     return envoyerSegment({ annonces, message, reste: true });
   }

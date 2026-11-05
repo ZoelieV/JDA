@@ -146,7 +146,12 @@ function lirePanneau(brut, lieu) {
     police: lirePoliceVn(brut.police),
     effets: lireEffets(brut.effets, lieu),
     sauvegarde: brut.sauvegarde === true,
-    timer: brut.timer ? { duree: entier(brut.timer.duree, 1, MAX.dureeTimer, 30), ...lireConsequence(brut.timer, lieu) } : null,
+    // de : quand le temps est écoulé, un lancer décide de la suite (comme une réponse à dé).
+    timer: brut.timer ? {
+      duree: entier(brut.timer.duree, 1, MAX.dureeTimer, 30),
+      ...lireConsequence(brut.timer, lieu),
+      ...(brut.timer.de ? { de: lireDe(brut.timer.de, `${lieu}, timer`) } : {})
+    } : null,
     musique: brut.musique === "stop" ? "stop" : lireSon(brut.musique, `${lieu} : musique invalide.`),
     son: lireSon(brut.son, `${lieu} : son invalide.`),
     ensuite: lireEnsuite(brut.ensuite, lieu, new Set())
@@ -282,7 +287,8 @@ function scoresSansResultat(histoire, de) {
 // Toutes les suites possibles d'un panneau : [{ vers, effets, nom }].
 function consequencesDe({ ensuite, timer }) {
   const consequences = [];
-  if (timer) consequences.push({ ...timer, nom: "timer", facultative: true });
+  if (timer?.de) timer.de.resultats.forEach((r, n) => consequences.push({ ...r, nom: `timer, résultat de dé ${n + 1}`, facultative: true }));
+  else if (timer) consequences.push({ ...timer, nom: "timer", facultative: true });
   if (ensuite.type === "choix") {
     ensuite.options.forEach((o, i) => {
       if (o.de) o.de.resultats.forEach((r, n) => consequences.push({ ...r, nom: `réponse ${i + 1}, résultat de dé ${n + 1}` }));
@@ -320,6 +326,11 @@ function avertissementsVn(histoire) {
     liste.forEach(({ panneau, lieu }) => {
       const { ensuite } = panneau;
       effetsConnus(panneau.effets, lieu);
+      if (panneau.timer?.de) {
+        effetsConnus(panneau.timer.effets, `${lieu}, timer`);
+        const manquants = scoresSansResultat(histoire, panneau.timer.de);
+        if (manquants.length) avertissements.push(`${lieu} : timer, aucun résultat pour le score ${manquants[0]}${manquants.length > 1 ? ` et ${manquants.length - 1} autre(s)` : ""}.`);
+      }
       consequencesDe(panneau).forEach(c => {
         effetsConnus(c.effets, `${lieu}, ${c.nom}`);
         if (!c.facultative && !index.has(c.vers)) avertissements.push(`${lieu} : ${c.nom} sans destination.`);
