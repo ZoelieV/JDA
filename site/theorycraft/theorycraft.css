@@ -517,3 +517,9 @@
 .proba-boss-tc {
   white-space: nowrap;
 }
+
+/* Patchs : petits tableaux, en-tête à sa place (pas figé : il se
+   retrouvait par-dessus la 2e ligne). */
+#panneau-patchs .tableau-theorycraft thead {
+  position: static;
+}

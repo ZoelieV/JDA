@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Problèmes connus</title>
+  <link rel="icon" type="image/webp" href="/DB/images/others/logo_site.webp">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
+  <meta name="theme-color" content="#1e1e1e">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/commun/theme.css?v=rem5">
+  <link rel="stylesheet" href="/regles.css?v=12">
+  <link rel="stylesheet" href="/commun/entete.css?v=rem48">
+  <link rel="stylesheet" href="/commun/site.css?v=19">
+<script src="/commun/fond.js?v=18"></script>
+<script src="/commun/appli.js?v=1" defer></script>
+<script src="/commun/zoom.js?v=3"></script>
+<script src="/commun/compte.js?v=71" defer></script>
+  <link rel="stylesheet" href="/commun/listes.css?v=2">
+</head>
+<body>
+  <a href="/regles" class="lien-accueil">Règles</a>
+  <h1 class="titre-page">Problèmes connus</h1>
+
+  <!-- Problèmes connus du site et leurs solutions (menu Règles). -->
+  <div class="page-regles">
+    <main class="sections-regles">
+
+    <details class="section-regles" id="animations" open>
+      <summary><h2>Les animations ne s'affichent pas (surtout sur Firefox)</h2></summary>
+      <div class="section-regles-corps">
+        <p>
+          Le site respecte le réglage <strong>« réduire les animations »</strong> de ton système : quand il est activé,
+          les animations (tirage du boss, tirage des cosmétiques, effets des pages) sont remplacées par un affichage direct.
+          Firefox suit ce réglage plus strictement que les autres navigateurs, d'où le problème surtout sur Firefox.
+        </p>
+        <p>Pour retrouver les animations, réactive-les dans ton système, puis recharge la page :</p>
+        <ul>
+          <li><strong>Windows 11</strong> : Paramètres → Accessibilité → Effets visuels → active <em>Effets d'animation</em>.</li>
+          <li><strong>Windows 10</strong> : Paramètres → Options d'ergonomie → Affichage → active <em>Afficher les animations dans Windows</em>.</li>
+          <li><strong>macOS</strong> : Réglages Système → Accessibilité → Affichage → désactive <em>Réduire les animations</em>.</li>
+          <li><strong>Linux (GNOME, Ubuntu)</strong> : Paramètres → Accessibilité → active <em>Animations</em> (ou désactive <em>Réduire les animations</em>).</li>
+          <li><strong>Android</strong> : Paramètres → Accessibilité → désactive <em>Supprimer les animations</em>.</li>
+          <li><strong>iPhone</strong> : Réglages → Accessibilité → Mouvement → désactive <em>Réduire les animations</em>.</li>
+        </ul>
+        <p>
+          <strong>Seulement pour Firefox</strong>, sans toucher au réglage du système : tape <code>about:config</code>
+          dans la barre d'adresse, accepte l'avertissement, cherche <code>ui.prefersReducedMotion</code>, crée-le en
+          <em>Nombre</em> s'il n'existe pas, mets-le à <code>0</code>, puis recharge la page.
+        </p>
+        <p>
+          Le tirage du boss est une vidéo avec du son : si Firefox est réglé pour <em>bloquer l'audio et la vidéo</em> en
+          lecture automatique, autorise-la pour le site (cadenas à gauche de l'adresse → Lecture automatique →
+          <em>Autoriser l'audio et la vidéo</em>).
+        </p>
+      </div>
+    </details>
+
+    <details class="section-regles" id="kokomi" open>
+      <summary><h2>Kokomi mal détectée par la détection automatique de box</h2></summary>
+      <div class="section-regles-corps">
+        <p>
+          La détection automatique lit, sur ta capture Hoyolab, la zone à droite du portrait de chaque personnage : son nom
+          et son niveau. Le nom <strong>« Sangonomiya Kokomi »</strong> est le seul trop long pour son cadre : il déborde
+          sur la gauche (le « S » touche le bord de la zone lue, et il est coupé sur les écrans plus étroits) et il tient
+          sur deux lignes, ce qui pousse son niveau tout en bas de la zone, où il est coupé.
+        </p>
+        <img class="image-regles" src="/DB/images/tuto/kokomi_detection.webp" alt="Case de Tighnari et case de Kokomi dans la liste Hoyolab : chez Kokomi, le nom déborde de la zone lue et le niveau est coupé en bas." loading="lazy">
+        <p>
+          Kokomi est donc toujours signalée <em>à vérifier</em> après la détection : contrôle sa constellation et son niveau
+          à la main avant d'enregistrer ta box.
+        </p>
+      </div>
+    </details>
+
+    </main>
+  </div>
+  <script src="/commun/listes.js?v=1"></script>
+  <script src="/commun/site.js?v=37"></script>
+</body>
+</html>

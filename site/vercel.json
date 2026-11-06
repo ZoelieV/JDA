@@ -125,6 +125,16 @@
       "permanent": true
     },
     {
+      "source": "/problemes_connus",
+      "destination": "/regles/problemes-connus",
+      "permanent": true
+    },
+    {
+      "source": "/problemes_connus.html",
+      "destination": "/regles/problemes-connus",
+      "permanent": true
+    },
+    {
       "source": "/regles_completes.html",
       "destination": "/regles/completes",
       "permanent": true
@@ -241,6 +251,10 @@
     {
       "source": "/regles/simplifiees",
       "destination": "/regles_simplifiees"
+    },
+    {
+      "source": "/regles/problemes-connus",
+      "destination": "/problemes_connus"
     },
     {
       "source": "/regles/completes",

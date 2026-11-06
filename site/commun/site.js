@@ -67,6 +67,7 @@
     { titre: "Règles", href: "/regles", menu: [
       ["Règles simplifiées", "/regles/simplifiees"],
       ["Règles complètes", "/regles/completes"],
+      ["Problèmes connus", "/regles/problemes-connus"],
       // Connectés seulement, sauf shadowbans (affiché par commun/compte.js).
       ["Theorycraft", "/theorycraft", "carte-theorycraft"],
       ["Tutoriel", "/tutoriel"]
