@@ -3,9 +3,9 @@
 // par-dessus, le boss en silhouette noire zoomée qui rétrécit jusqu'à
 // l'arrêt sur image, puis ses couleurs, le logo de son type, son nom et ses
 // étoiles (une par tintement de la fin du son).
-// Clip : bleu (3★) pour les boss hebdomadaires et les world boss, violet
-// (4★) pour les légendes locales, doré (5★) pour le carnage. Étoiles
-// affichées : 2 pour un world boss, sinon celles du clip.
+// Clip : bleu (3★) pour les boss hebdomadaires, violet (4★) pour les
+// légendes locales, doré (5★) pour le carnage ; world boss : clip bleu sans
+// le 3e tintement (tirage_boss_2.mp4), 2 étoiles.
 // TirageBoss.jouer(boss) -> promesse résolue à la fermeture (fin, « Passer »,
 // clic ou Échap). Rien d'animé si le système demande moins d'animations.
 
@@ -13,6 +13,7 @@ const TirageBoss = (() => {
   // debut : début de l'obtention dans le clip ; fige : arrêt sur image après
   // ce début ; pics : tintements (une étoile chacun), en secondes.
   const CLIPS = {
+    2: { src: "/DB/videos/tirage_boss_2.mp4?v=1", debut: 5.933, fige: 1.033, pics: [1.98, 2.15] },
     3: { src: "/DB/videos/tirage_boss_3.mp4?v=1", debut: 5.933, fige: 1.033, pics: [1.98, 2.15, 2.32] },
     4: { src: "/DB/videos/tirage_boss_4.mp4?v=1", debut: 5.933, fige: 1.017, pics: [2.03, 2.20, 2.37, 2.52] },
     5: { src: "/DB/videos/tirage_boss_5.mp4?v=1", debut: 5.883, fige: 1.083, pics: [2.05, 2.20, 2.32, 2.54, 2.69] }
@@ -30,14 +31,10 @@ const TirageBoss = (() => {
   const MOUVEMENT_REDUIT = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   function rarete(boss) {
+    if (boss?.type === "world_boss") return 2;
     if (boss?.type === "carnage_boss") return 5;
     if (boss?.type === "legende_locale_jour" || boss?.type === "legende_locale_infinie") return 4;
     return 3;
-  }
-
-  // Étoiles affichées (les premiers tintements du clip) : 2 pour un world boss.
-  function nbEtoiles(boss) {
-    return boss?.type === "world_boss" ? 2 : rarete(boss);
   }
 
   function imageBoss(boss) {
@@ -61,7 +58,7 @@ const TirageBoss = (() => {
     const n = rarete(boss);
     const clip = CLIPS[n];
     const logo = LOGOS[boss.type];
-    const pics = clip.pics.slice(0, nbEtoiles(boss));
+    const pics = clip.pics;
 
     const ecran = document.createElement("div");
     ecran.id = "tirage-boss";
