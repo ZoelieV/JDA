@@ -477,6 +477,34 @@
     "image": "images/boss/legend_local/churin_ll.webp"
   },
   {
+    "id": "elder_blighttree_ll",
+    "nom": "Elder Blighttree",
+    "type": "legende_locale_jour",
+    "res": [-20, 10, 10, 10, 10, 30, 30],
+    "image": "images/boss/legend_local/elder_blighttree_ll.webp"
+  },
+  {
+    "id": "verkhovensky_ll",
+    "nom": "Verkhovensky",
+    "type": "legende_locale_jour",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/verkhovensky_ll.webp"
+  },
+  {
+    "id": "varvara_ll",
+    "nom": "Varvara",
+    "type": "legende_locale_jour",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/varvara_ll.webp"
+  },
+  {
+    "id": "stavrogin_ll",
+    "nom": "Stavrogin",
+    "type": "legende_locale_jour",
+    "res": [10, 10, 10, 10, 10, 10, 10],
+    "image": "images/boss/legend_local/stavrogin_ll.webp"
+  },
+  {
     "id": "boss_1",
     "nom": "Carnage 4 : Salle 1",
     "type": "carnage_boss",
