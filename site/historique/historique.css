@@ -346,6 +346,32 @@
   margin-right: auto;
 }
 
+/* Poisson du théâtre et rang du classé : comme les bannières du classement
+   et de Tous les comptes (commun/entete.css), sans rond clair, avec un fin
+   contour blanc qui suit la forme de l'icône. */
+.match-banniere,
+.match-theatre {
+  --contour-icones-banniere: 1px;
+}
+
+.match-banniere > .rang-trophees,
+.match-banniere > .medaille-theatre,
+.match-theatre img {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.match-banniere > .rang-trophees img,
+.match-banniere > .medaille-theatre,
+.match-theatre img {
+  filter:
+    drop-shadow(var(--contour-icones-banniere) 0 0 #fff)
+    drop-shadow(calc(-1 * var(--contour-icones-banniere)) 0 0 #fff)
+    drop-shadow(0 var(--contour-icones-banniere) 0 #fff)
+    drop-shadow(0 calc(-1 * var(--contour-icones-banniere)) 0 #fff);
+}
+
 .match-joueur .match-banniere > .medaille-theatre ~ .match-temps,
 .match-j2 .match-banniere > .medaille-theatre ~ .match-temps,
 .match-joueur .match-banniere > .rang-trophees ~ .match-temps,
@@ -631,11 +657,7 @@ img.arme-mini {
   width: 1.375rem;
   height: 1.375rem;
   object-fit: contain;
-  /* Icône noire du palier sur un rond clair (comme .medaille-theatre). */
-  box-sizing: border-box;
-  padding: 0.125rem;
-  border-radius: 50%;
-  background-color: rgba(235, 235, 235, 0.92);
+  /* Icône noire du palier, contour blanc (cf. .match-banniere plus haut). */
 }
 
 .etiquette-resultat.trophees.gain {
