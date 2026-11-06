@@ -8,7 +8,11 @@ const LONGUEUR_EXPLICATION_PATCH = 500;
 
 let patchsAdmin = [];
 
-const ligneVidePatch = () => ({ perso: "", avant: "", apres: "", explication: "" });
+// Ligne : un personnage (perso) ou une arme (arme), constellation ou
+// raffinement changé (niveau, "" : tous), points avant / après, explication.
+const ligneVidePatch = () => ({ perso: "", niveau: "", avant: "", apres: "", explication: "" });
+const NIVEAUX_PATCH = { perso: ["C0", "C1", "C2", "C3", "C4", "C5", "C6"], arme: ["R1", "R2", "R3", "R4", "R5"] };
+const cibleLigne = ligne => (ligne.arme ? `a:${ligne.arme}` : ligne.perso ? `p:${ligne.perso}` : "");
 
 function jourLocal() {
   const maintenant = new Date();
@@ -29,25 +33,37 @@ function afficherMessagePatch(texte, type = "") {
   message.textContent = texte;
 }
 
-function optionsPersosPatch(choisi) {
-  const tries = [...personnages].sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }));
-  const masquesPersos = new Set(masques.characters || []);
-  return `<option value="">Choisir…</option>${tries.map(p =>
-    `<option value="${echapperHtml(p.id)}"${p.id === choisi ? " selected" : ""}>${echapperHtml(p.nom)}${masquesPersos.has(p.id) ? " (masqué)" : ""}</option>`).join("")}`;
+// Personnages puis armes, chacun par ordre alphabétique ; valeur "p:<id>"
+// ou "a:<id>".
+function optionsCiblesPatch(choisie) {
+  const groupe = (liste, prefixe, caches) => [...liste]
+    .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }))
+    .map(e => `<option value="${prefixe}:${echapperHtml(e.id)}"${`${prefixe}:${e.id}` === choisie ? " selected" : ""}>${echapperHtml(e.nom)}${caches.has(e.id) ? " (masqué)" : ""}</option>`).join("");
+  return `<option value="">Choisir…</option>
+    <optgroup label="Personnages">${groupe(personnages, "p", new Set(masques.characters || []))}</optgroup>
+    <optgroup label="Armes">${groupe(armes, "a", new Set(masques.weapons || []))}</optgroup>`;
+}
+
+function optionsNiveauPatch(ligne) {
+  const genre = ligne.arme ? "arme" : "perso";
+  const tous = ligne.arme ? "Tous les raffinements" : "Toutes les constellations";
+  return `<option value="">${ligne.perso || ligne.arme ? tous : "—"}</option>${NIVEAUX_PATCH[genre].map(n =>
+    `<option value="${n}"${n === ligne.niveau ? " selected" : ""}>${n}</option>`).join("")}`;
 }
 
 function rendrePatchsAdmin() {
-  const nomPerso = id => personnages.find(p => p.id === id)?.nom || id;
+  const nomLigne = l => (l.arme ? armes.find(a => a.id === l.arme)?.nom || l.arme : personnages.find(p => p.id === l.perso)?.nom || l.perso) + (l.niveau ? ` ${l.niveau}` : "");
   document.getElementById("contenu-patchs").innerHTML = `
     <h3 class="titre-section-ajout">${patchSaisi.id ? "Modifier le patch" : "Nouveau patch"}</h3>
     <label class="date-patch">Date du patch : <input type="date" id="patch-date" value="${echapperHtml(patchSaisi.date)}"></label>
     <div class="tableau-patch-conteneur">
       <table class="tableau-patch">
-        <thead><tr><th>Personnage</th><th>Points avant</th><th>Points après</th><th>Explication</th><th></th></tr></thead>
+        <thead><tr><th>Personnage ou arme</th><th>Constellation / raffinement</th><th>Points avant</th><th>Points après</th><th>Explication</th><th></th></tr></thead>
         <tbody>
           ${patchSaisi.lignes.map((ligne, i) => `
             <tr data-ligne="${i}">
-              <td><select data-champ="perso" aria-label="Personnage">${optionsPersosPatch(ligne.perso)}</select></td>
+              <td><select data-champ="cible" aria-label="Personnage ou arme">${optionsCiblesPatch(cibleLigne(ligne))}</select></td>
+              <td><select data-champ="niveau" aria-label="Constellation ou raffinement changé"${ligne.perso || ligne.arme ? "" : " disabled"}>${optionsNiveauPatch(ligne)}</select></td>
               <td><input type="text" data-champ="avant" maxlength="${LONGUEUR_POINTS_PATCH}" value="${echapperHtml(ligne.avant)}" aria-label="Points avant"></td>
               <td><input type="text" data-champ="apres" maxlength="${LONGUEUR_POINTS_PATCH}" value="${echapperHtml(ligne.apres)}" aria-label="Points après"></td>
               <td><textarea data-champ="explication" rows="1" maxlength="${LONGUEUR_EXPLICATION_PATCH}" aria-label="Explication">${echapperHtml(ligne.explication)}</textarea></td>
@@ -57,7 +73,7 @@ function rendrePatchsAdmin() {
       </table>
     </div>
     <div class="actions-patch">
-      <button type="button" id="ajouter-ligne-patch" class="bouton-creer secondaire action-patch">+ Personnage</button>
+      <button type="button" id="ajouter-ligne-patch" class="bouton-creer secondaire action-patch">+ Ligne</button>
       <button type="button" id="enregistrer-patch" class="bouton-creer action-patch">${patchSaisi.id ? "Enregistrer les modifications" : "Publier le patch"}</button>
       ${patchSaisi.id ? `<button type="button" id="abandonner-patch" class="bouton-creer secondaire action-patch">Annuler</button>` : ""}
     </div>
@@ -65,7 +81,7 @@ function rendrePatchsAdmin() {
     <ul class="liste-patchs">
       ${patchsAdmin.map(patch => `
         <li>
-          <span class="infos-patch"><strong>${dateLisiblePatch(patch.date)}</strong> · ${patch.lignes.map(l => echapperHtml(nomPerso(l.perso))).join(", ")}</span>
+          <span class="infos-patch"><strong>${dateLisiblePatch(patch.date)}</strong> · ${patch.lignes.map(l => echapperHtml(nomLigne(l))).join(", ")}</span>
           <button type="button" class="btn-masquer action-patch modifier-patch" data-id="${echapperHtml(patch.id)}">Modifier</button>
           <button type="button" class="btn-masquer action-patch supprimer-patch" data-id="${echapperHtml(patch.id)}">Supprimer</button>
         </li>`).join("") || `<li class="aucune-synergie">Aucun patch pour l'instant.</li>`}
@@ -92,9 +108,9 @@ async function chargerPatchsAdmin() {
 
 // Lignes entièrement vides ignorées ; une ligne remplie sans perso est signalée.
 async function enregistrerPatch() {
-  const lignes = patchSaisi.lignes.filter(l => l.perso || l.avant.trim() || l.apres.trim() || l.explication.trim());
-  const sansPerso = lignes.findIndex(l => !l.perso);
-  if (sansPerso >= 0) return afficherMessagePatch(`Ligne ${sansPerso + 1} : choisis un personnage.`, "erreur");
+  const lignes = patchSaisi.lignes.filter(l => l.perso || l.arme || l.avant.trim() || l.apres.trim() || l.explication.trim());
+  const sansCible = lignes.findIndex(l => !l.perso && !l.arme);
+  if (sansCible >= 0) return afficherMessagePatch(`Ligne ${sansCible + 1} : choisis un personnage ou une arme.`, "erreur");
   afficherMessagePatch("Enregistrement…");
   try {
     await envoyerPatchs({ patch: { ...patchSaisi, lignes } });
@@ -156,7 +172,25 @@ function initialiserPatchs() {
       return;
     }
     const champ = event.target.dataset.champ;
-    if (champ) patchSaisi.lignes[Number(event.target.closest("tr").dataset.ligne)][champ] = event.target.value;
+    if (!champ) return;
+    const ligne = patchSaisi.lignes[Number(event.target.closest("tr").dataset.ligne)];
+    if (champ === "cible") {
+      // Personnage <-> arme : niveau remis à « tous » (C et R différents).
+      const [type, id] = [event.target.value.slice(0, 1), event.target.value.slice(2)];
+      const etaitArme = !!ligne.arme;
+      delete ligne.perso;
+      delete ligne.arme;
+      if (type === "a") ligne.arme = id;
+      else if (type === "p") ligne.perso = id;
+      if (etaitArme !== !!ligne.arme || !id) ligne.niveau = "";
+      if (event.type === "change") {
+        const niveau = event.target.closest("tr").querySelector('[data-champ="niveau"]');
+        niveau.innerHTML = optionsNiveauPatch(ligne);
+        niveau.disabled = !id;
+      }
+      return;
+    }
+    ligne[champ] = event.target.value;
   };
   contenu.addEventListener("input", saisir);
   contenu.addEventListener("change", saisir);
@@ -179,7 +213,8 @@ function initialiserPatchs() {
       if (!patchSaisi.lignes.length) patchSaisi.lignes.push(ligneVidePatch());
       rendrePatchsAdmin();
     } else if (bouton.classList.contains("modifier-patch")) {
-      patchSaisi = structuredClone(patchsAdmin.find(p => p.id === bouton.dataset.id));
+      patchSaisi = JSON.parse(JSON.stringify(patchsAdmin.find(p => p.id === bouton.dataset.id)));
+      patchSaisi.lignes.forEach(l => { l.niveau = l.niveau || ""; });
       rendrePatchsAdmin();
       afficherMessagePatch("");
       contenu.closest(".modal-apercu-contenu").scrollTop = 0;

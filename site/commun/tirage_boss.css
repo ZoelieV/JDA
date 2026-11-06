@@ -55,7 +55,7 @@
   flex: none;
   height: 10vh;
   width: auto;
-  filter: drop-shadow(0 0.2vh 0.4vh rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 0.2vh 0.6vh rgba(0, 0, 0, 0.85));
 }
 
 .tb-texte {
@@ -70,7 +70,11 @@
   font-family: var(--police-titre);
   font-size: 4.4vh;
   line-height: 1.1;
-  text-shadow: 0 0.3vh 0.6vh rgba(0, 0, 0, 0.75);
+  /* Ombre marquée : lisible sur les fonds clairs du clip. */
+  text-shadow:
+    0 0 0.3vh rgba(0, 0, 0, 0.95),
+    0 0.2vh 0.6vh rgba(0, 0, 0, 0.9),
+    0 0 1.6vh rgba(0, 0, 0, 0.7);
   overflow-wrap: break-word;
 }
 
@@ -82,6 +86,7 @@
 
 .tb-etoiles img {
   height: 100%;
+  filter: drop-shadow(0 0.15vh 0.4vh rgba(0, 0, 0, 0.85));
   width: auto;
   opacity: 0;
   transform: scale(1.8);

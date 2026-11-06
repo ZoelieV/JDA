@@ -489,7 +489,7 @@ module.exports = async (req, res) => {
     if (req.method === "GET" && req.query?.patchs === "1") {
       res.setHeader("Cache-Control", "no-store");
       const [patchs, config, moderateur] = await Promise.all([lirePatchs(), lireConfig(), user ? estModerateur(user.id) : false]);
-      return res.status(200).json({ patchs: moderateur ? patchs : patchsPublics(patchs, lireMasques(config).characters) });
+      return res.status(200).json({ patchs: moderateur ? patchs : patchsPublics(patchs, lireMasques(config)) });
     }
 
     if (req.method === "GET") {
@@ -527,7 +527,8 @@ module.exports = async (req, res) => {
 
       if (corps.patch || corps.patch_suppression) {
         const idsPersos = new Set([...listeJSON("characters"), ...ajouts.characters].map(e => e.id));
-        const { status, corps: reponse } = await modifierPatchs(corps, idsPersos, user.id);
+        const idsArmes = new Set([...listeJSON("weapons"), ...ajouts.weapons].map(e => e.id));
+        const { status, corps: reponse } = await modifierPatchs(corps, idsPersos, idsArmes, user.id);
         return res.status(status).json(reponse);
       }
 

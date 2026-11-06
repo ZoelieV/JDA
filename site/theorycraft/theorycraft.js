@@ -807,12 +807,17 @@ function dateLisiblePatch(date) {
 }
 
 // Lignes des persos connus de cette page (perso supprimé depuis : ligne retirée).
+// Lignes d'un personnage ou d'une arme (cible) connus ; niveau : constellation
+// ou raffinement changé ("" : tous).
 function patchsAffiches() {
-  const parId = new Map(personnages.map(p => [p.id, p]));
+  const persos = new Map(personnages.map(p => [p.id, p]));
+  const lesArmes = new Map(armes.map(a => [a.id, a]));
   return patchsEquilibrage
     .map(patch => ({
       date: patch.date,
-      lignes: patch.lignes.filter(l => parId.has(l.perso)).map(l => ({ ...l, perso: parId.get(l.perso) }))
+      lignes: patch.lignes
+        .map(l => ({ ...l, cible: l.arme ? lesArmes.get(l.arme) : persos.get(l.perso) }))
+        .filter(l => l.cible)
     }))
     .filter(patch => patch.lignes.length);
 }
@@ -824,7 +829,7 @@ function rendreEncartPatch() {
   if (!dernier) return;
   const nombre = dernier.lignes.length;
   encart.innerHTML = `
-    <span><strong>Dernier patch d'équilibrage : ${dateLisiblePatch(dernier.date)}</strong> · ${nombre} personnage${nombre > 1 ? "s" : ""} modifié${nombre > 1 ? "s" : ""}</span>
+    <span><strong>Dernier patch d'équilibrage : ${dateLisiblePatch(dernier.date)}</strong> · ${nombre} changement${nombre > 1 ? "s" : ""}</span>
     <button type="button" class="filtre-tc filtre-texte" id="voir-patchs">Voir les patchs</button>`;
   document.getElementById("voir-patchs").addEventListener("click", () => ouvrirOnglet("patchs"));
 }
@@ -836,13 +841,14 @@ function rendrePatchs() {
     <h2 class="titre-patch">Patch du ${dateLisiblePatch(patch.date)}</h2>
     <div class="tableau-conteneur">
       <table class="tableau-theorycraft tableau-patch-tc">
-        <thead><tr><th class="col-nom">Personnage</th><th>Points avant</th><th>Points après</th><th>Explication</th></tr></thead>
+        <thead><tr><th class="col-nom">Personnage ou arme</th><th>Points avant</th><th>Points après</th><th>Explication</th></tr></thead>
         <tbody>
           ${patch.lignes.map(l => `
             <tr>
-              <td class="col-nom" data-valeur-tri="${echapper(l.perso.nom)}">
-                <span class="miniature-tc ${classeFondRarete(l.perso.rarete)}"><img src="../DB/${echapper(l.perso.image)}" alt="" loading="lazy"></span>
-                <span class="nom-tc">${echapper(l.perso.nom)}</span>
+              <td class="col-nom" data-valeur-tri="${echapper(l.cible.nom)}">
+                <span class="miniature-tc ${classeFondRarete(l.cible.rarete)}"><img src="../DB/${echapper(l.cible.image)}" alt="" loading="lazy"></span>
+                <span class="nom-tc">${echapper(l.cible.nom)}</span>
+                ${l.niveau ? `<span class="niveau-patch-tc" title="${l.arme ? "Raffinement" : "Constellation"} changé">${echapper(l.niveau)}</span>` : ""}
               </td>
               <td>${echapper(l.avant) || "—"}</td>
               <td>${echapper(l.apres) || "—"}</td>
