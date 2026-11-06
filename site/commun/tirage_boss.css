@@ -98,6 +98,44 @@
   transform: scale(1);
 }
 
+/* Modes où l'on peut relancer : boutons (et message du vote) sur l'image
+   figée de fin, en bas au centre. */
+.tb-choix {
+  position: absolute;
+  left: 50%;
+  bottom: 5vh;
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  text-align: center;
+}
+
+.tirage-boss.tb-avec-choix .tb-choix {
+  display: flex;
+}
+
+.tb-choix .bandeau-info {
+  margin: 0;
+  padding: 0.625rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(20, 20, 20, 0.85);
+  color: #fff;
+}
+
+.tb-choix .bandeau-info:empty {
+  display: none;
+}
+
+.tb-choix .choix-boss {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .tb-passer {
   position: absolute;
   top: 1.5rem;
@@ -127,6 +165,10 @@
   .tb-bloc {
     top: auto;
     bottom: 8vh;
+  }
+
+  .tirage-boss.tb-avec-choix .tb-bloc {
+    bottom: 22vh;
   }
 
   .tb-nom {

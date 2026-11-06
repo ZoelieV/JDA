@@ -311,6 +311,20 @@ async function postRelancerBoss() {
   }
 }
 
+// Boutons de l'image de fin du tirage en entraînement : garder le boss
+// (ferme l'écran) ou en relancer un autre (nouvelle animation).
+function initialiserChoixBossEntrainement() {
+  const garder = document.getElementById("btn-garder-boss-entrainement");
+  const relancer = document.getElementById("btn-relancer-boss-entrainement");
+  garder.addEventListener("click", fermerChoixTirage);
+  relancer.addEventListener("click", () => {
+    garder.disabled = relancer.disabled = true;
+    postRelancerBoss()
+      .catch(err => alert(err.message))
+      .finally(() => { garder.disabled = relancer.disabled = false; });
+  });
+}
+
 // joker : ban joker choisi tout de suite (cf. modeJokerBonus).
 async function postBonusToggle(persoId, joker = false) {
   const data = await envoyerAction(`/api/rooms/${roomId}/bonus_toggle`, { perso_id: persoId, ...(joker ? { joker: true } : {}) });
@@ -2004,15 +2018,37 @@ function afficherBossFinal(bossId) {
 // Tirage du boss : animation plein écran façon vœu de Genshin (cf.
 // commun/tirage_boss.js), puis le boss affiché dans la page. Boss déjà
 // déterminé côté serveur : l'animation n'est que du spectacle.
-function jouerAnimationBoss(bossIdFinal) {
+// choix : "vote" (phase "boss") ou "entrainement" (relance pendant la
+// draft) : image de fin figée avec les boutons, jusqu'à la décision (cf.
+// fermerChoixTirage).
+let choixTirageOuvert = null;
+let numeroTirage = 0;
+function elementsChoixTirage(choix) {
+  if (choix === "vote") return [document.getElementById("message-boss"), document.getElementById("choix-boss")];
+  if (choix === "entrainement") return [document.getElementById("choix-boss-entrainement")];
+  return null;
+}
+
+function fermerChoixTirage() {
+  if (!choixTirageOuvert) return;
+  choixTirageOuvert = null;
+  TirageBoss.fermer();
+}
+
+function jouerAnimationBoss(bossIdFinal, choix = null) {
   animationBossEnCours = true;
+  const numero = ++numeroTirage;
   const container = document.getElementById("boss-affiche");
   const bossFinal = bossData.find(b => b.id === bossIdFinal);
   container.classList.remove("boss-revele", "boss-tirage");
   container.innerHTML = "";
-  const animation = bossIdFinal === bossAuChargement ? Promise.resolve() : TirageBoss.jouer(bossFinal);
+  const sansAnimation = bossIdFinal === bossAuChargement;
+  choixTirageOuvert = sansAnimation ? null : choix;
+  const animation = sansAnimation ? Promise.resolve() : TirageBoss.jouer(bossFinal, { choix: elementsChoixTirage(choix) });
   bossAuChargement = null;
   animation.then(() => {
+    // Tirage remplacé par un autre (relance) : rien à faire.
+    if (numero !== numeroTirage) return;
     container.innerHTML = htmlBossTire(bossFinal);
     container.classList.add("boss-revele");
     setTimeout(() => container.classList.remove("boss-revele"), 700);
@@ -2046,7 +2082,7 @@ async function postVoteBoss(vote) {
 }
 
 function rendreChoixBoss() {
-  if (draft.boss_id !== bossAnimeId && !animationBossEnCours) jouerAnimationBoss(draft.boss_id);
+  if (draft.boss_id !== bossAnimeId && !animationBossEnCours) jouerAnimationBoss(draft.boss_id, monRole ? "vote" : null);
 
   const votes = draft.votes_boss || {};
   const nom = role => pseudoColore(role); // couleur de son rôle
@@ -2086,7 +2122,7 @@ function rendreDraft(phasePrecedente) {
 
   if (nouveauBoss && !animationBossEnCours) {
     if (justeTransitionne || relanceBossDemandee) {
-      jouerAnimationBoss(draft.boss_id);
+      jouerAnimationBoss(draft.boss_id, draft.entrainement && monRole ? "entrainement" : null);
     } else {
       afficherBossFinal(draft.boss_id);
       bossAnimeId = draft.boss_id;
@@ -2182,17 +2218,6 @@ function rendreDraft(phasePrecedente) {
     postAnnulerCoup()
       .catch(err => alert(err.message))
       .finally(() => { btnAnnuler.disabled = false; });
-  };
-
-  // Entraînement : boss relancé au hasard, à tout moment de la draft.
-  const btnRelancerBoss = document.getElementById("btn-relancer-boss-entrainement");
-  btnRelancerBoss.classList.toggle("cache", !draft.entrainement || !monRole);
-  btnRelancerBoss.disabled = animationBossEnCours;
-  btnRelancerBoss.onclick = () => {
-    btnRelancerBoss.disabled = true;
-    postRelancerBoss()
-      .catch(err => alert(err.message))
-      .finally(() => { btnRelancerBoss.disabled = animationBossEnCours; });
   };
 
   envoyerPreselection();
@@ -3626,7 +3651,6 @@ const BULLES_PAR_PHASE = {
   "message-equilibrage": ["bans_bonus"],
   "btn-confirmer-action": ["draft"],
   "btn-annuler-coup": ["draft"],
-  "btn-relancer-boss-entrainement": ["draft"],
   "tour-actuel": ["draft"],
   "etat-temps": ["temps", "verification"],
   "saisie-arbitre": ["temps", "verification"],
@@ -3694,6 +3718,9 @@ function appliquerFondRoom() {
 }
 
 function rendrePhase() {
+  // Image de fin du tirage figée tant que le choix est possible.
+  if ((choixTirageOuvert === "vote" && draft.phase !== "boss") ||
+    (choixTirageOuvert === "entrainement" && draft.phase !== "draft")) fermerChoixTirage();
   appliquerFondRoom();
   afficherModeTheatre();
 
@@ -3978,6 +4005,7 @@ async function demarrer() {
     initialiserFiltresTri();
     initialiserGrillesPersos();
     initialiserResBoss();
+    initialiserChoixBossEntrainement();
     initialiserCarteLegende();
     initialiserFenetreLitige();
 

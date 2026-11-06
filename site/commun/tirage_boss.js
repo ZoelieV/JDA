@@ -8,6 +8,12 @@
 // le 3e tintement (tirage_boss_2.mp4), 2 étoiles.
 // TirageBoss.jouer(boss) -> promesse résolue à la fermeture (fin, « Passer »,
 // clic ou Échap). Rien d'animé si le système demande moins d'animations.
+// TirageBoss.jouer(boss, { choix: [éléments] }) : modes où l'on peut relancer
+// le boss. À la fin (ou « Passer »), l'image reste figée et les éléments
+// (boutons garder / relancer) sont déplacés dessus ; promesse résolue dès
+// cette fin, écran fermé seulement par TirageBoss.fermer() (ou un nouveau
+// tirage), les éléments remis à leur place. Moins d'animations : écran de
+// fin directement, sans la vidéo.
 
 const TirageBoss = (() => {
   // debut : début de l'obtention dans le clip ; fige : arrêt sur image après
@@ -52,9 +58,11 @@ const TirageBoss = (() => {
     });
   }
 
-  function jouer(boss) {
-    if (!boss || MOUVEMENT_REDUIT.matches) return Promise.resolve();
+  function jouer(boss, { choix = null } = {}) {
+    const avecChoix = Array.isArray(choix) && choix.length > 0;
+    if (!boss || (MOUVEMENT_REDUIT.matches && !avecChoix)) return Promise.resolve();
     fermer();
+    const sansVideo = MOUVEMENT_REDUIT.matches;
     const n = rarete(boss);
     const clip = CLIPS[n];
     const logo = LOGOS[boss.type];
@@ -67,7 +75,7 @@ const TirageBoss = (() => {
     ecran.setAttribute("aria-modal", "true");
     ecran.setAttribute("aria-label", "Tirage du boss");
     ecran.innerHTML = `
-      <video class="tb-video" playsinline preload="auto" src="${clip.src}"></video>
+      ${sansVideo ? "" : `<video class="tb-video" playsinline preload="auto" src="${clip.src}"></video>`}
       <img class="tb-boss" alt="" src="/DB/${encodeURI(imageBoss(boss))}">
       <div class="tb-bloc">
         ${logo ? `<img class="tb-logo" alt="" src="/DB/images/others/${logo}.webp">` : ""}
@@ -76,6 +84,7 @@ const TirageBoss = (() => {
           <span class="tb-etoiles">${pics.map(() => `<img alt="" src="/DB/images/others/etoile_tirage.webp">`).join("")}</span>
         </div>
       </div>
+      <div class="tb-choix"></div>
       <button type="button" class="tb-passer">Passer</button>`;
     ecran.querySelector(".tb-nom").textContent = boss.nom;
     ecran.querySelector(".tb-etoiles").setAttribute("aria-label", `${pics.length} étoiles`);
@@ -85,27 +94,69 @@ const TirageBoss = (() => {
     const image = ecran.querySelector(".tb-boss");
     const bloc = ecran.querySelector(".tb-bloc");
     const etoiles = [...ecran.querySelectorAll(".tb-etoiles img")];
+    const zoneChoix = ecran.querySelector(".tb-choix");
+    const passer = ecran.querySelector(".tb-passer");
 
     return new Promise(resolve => {
       let image_raf = 0;
       let minuteur = 0;
       let termine = false;
+      let finAffichee = false;
+      // Éléments du choix : marque à leur place d'origine, pour les y remettre.
+      const marques = [];
       const finir = () => {
         if (termine) return;
         termine = true;
         cancelAnimationFrame(image_raf);
         clearTimeout(minuteur);
         document.removeEventListener("keydown", touche);
-        video.pause();
+        video?.pause();
+        marques.forEach(([marque, element]) => marque.replaceWith(element));
         ecran.classList.add("tb-ferme");
         setTimeout(() => ecran.remove(), 300);
         resolve();
       };
-      const touche = event => { if (event.key === "Escape") finir(); };
+      // Fin du son (ou « Passer » avec un choix) : tout est affiché, image
+      // figée ; sans choix, fermeture peu après.
+      const afficherFin = () => {
+        if (finAffichee || termine) return;
+        finAffichee = true;
+        cancelAnimationFrame(image_raf);
+        image.style.opacity = "1";
+        image.style.filter = "none";
+        image.style.transform = "translate(-50%, -50%) scale(1)";
+        bloc.style.opacity = "1";
+        etoiles.forEach(etoile => etoile.classList.add("tb-visible"));
+        if (!avecChoix) {
+          minuteur = setTimeout(finir, FERMETURE_APRES_FIN_MS);
+          return;
+        }
+        // « Passer » : image figée de la fin du clip.
+        if (video && !video.ended) {
+          video.pause();
+          if (Number.isFinite(video.duration)) video.currentTime = Math.max(0, video.duration - 0.05);
+        }
+        passer.remove();
+        choix.forEach(element => {
+          const marque = document.createComment("");
+          element.before(marque);
+          marques.push([marque, element]);
+          zoneChoix.appendChild(element);
+        });
+        ecran.classList.add("tb-avec-choix");
+        resolve();
+      };
+      const sauter = () => (avecChoix ? afficherFin() : finir());
+      const touche = event => { if (event.key === "Escape" && !finAffichee) sauter(); };
       ecran._finir = finir;
-      ecran.querySelector(".tb-passer").addEventListener("click", event => { event.stopPropagation(); finir(); });
-      ecran.addEventListener("click", () => { if (video.ended) finir(); });
+      passer.addEventListener("click", event => { event.stopPropagation(); sauter(); });
+      ecran.addEventListener("click", () => { if (finAffichee && !avecChoix) finir(); });
       document.addEventListener("keydown", touche);
+
+      if (sansVideo) {
+        afficherFin();
+        return;
+      }
 
       // Une image par rafraîchissement, calée sur le temps de la vidéo.
       const animer = () => {
@@ -122,22 +173,15 @@ const TirageBoss = (() => {
           bloc.style.opacity = String(couleurs);
           etoiles.forEach((etoile, i) => etoile.classList.toggle("tb-visible", t >= pics[i]));
         }
-        if (!termine && !video.ended) image_raf = requestAnimationFrame(animer);
+        if (!termine && !finAffichee && !video.ended) image_raf = requestAnimationFrame(animer);
       };
-      video.addEventListener("ended", () => {
-        // Fin du son : tout est affiché, fermeture peu après.
-        image.style.filter = "none";
-        image.style.transform = "translate(-50%, -50%) scale(1)";
-        bloc.style.opacity = "1";
-        etoiles.forEach(etoile => etoile.classList.add("tb-visible"));
-        minuteur = setTimeout(finir, FERMETURE_APRES_FIN_MS);
-      });
-      video.addEventListener("error", finir);
+      video.addEventListener("ended", afficherFin);
+      video.addEventListener("error", sauter);
       video.addEventListener("playing", () => { image_raf = requestAnimationFrame(animer); }, { once: true });
       // Son refusé par le navigateur (aucun clic sur la page) : sans le son.
       video.play().catch(() => {
         video.muted = true;
-        video.play().catch(finir);
+        video.play().catch(sauter);
       });
     });
   }
