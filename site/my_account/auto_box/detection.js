@@ -35,6 +35,18 @@
     RIGHT_CELL_X: [0.515, 0.955],
     LEFT_VECTOR_X_RATIO: 0.257,
     RIGHT_VECTOR_X_RATIO: 0.73,
+    // 2e ligne de chaque côté, un peu plus à gauche : le cadre du nom de
+    // « Sangonomiya Kokomi », trop long, décale sa case d'environ 1 % de la
+    // largeur et passe sur la 1re ligne (gris interrompu, case coupée ou
+    // perdue). Ici, seule la bande grise de Kokomi est sous la ligne : celle
+    // des autres cases commence plus à droite (la ligne tombe dans leur
+    // portrait).
+    LEFT_VECTOR_X_RATIO_DECALE: 0.244,
+    RIGHT_VECTOR_X_RATIO_DECALE: 0.717,
+    // Case de la 2e ligne qui recouvre une case de la 1re : la remplace si
+    // elle est plus haute d'au moins ce ratio (case de la 1re ligne coupée),
+    // sinon c'est la même case (doublon ignoré).
+    RATIO_REMPLACEMENT_CASE: 1.2,
     // Découpe d'une case (image_splitter.py)
     SPLIT_X_RATIO: 0.5,
     SPLIT_Y_RATIO: 0.5,
@@ -222,6 +234,22 @@
     return runs;
   }
 
+  // Cases de la 2e ligne (décalée) ajoutées à celles de la 1re : seule, une
+  // case est ajoutée ; si elle en recouvre d'autres plus courtes (case coupée
+  // par le cadre de Kokomi), elle les remplace ; sinon doublon, ignorée.
+  function fusionnerRuns(principaux, decales) {
+    let runs = principaux.slice();
+    decales.forEach(run => {
+      const recouverts = runs.filter(r => r.debut <= run.fin && run.debut <= r.fin);
+      const hauteur = r => r.fin - r.debut + 1;
+      if (!recouverts.length) runs.push(run);
+      else if (recouverts.every(r => hauteur(run) >= hauteur(r) * CONFIG.RATIO_REMPLACEMENT_CASE)) {
+        runs = runs.filter(r => !recouverts.includes(r)).concat(run);
+      }
+    });
+    return runs.sort((a, b) => a.debut - b.debut);
+  }
+
   function detecterCases(image) {
     const { width, height } = image;
     const hautY = arrondiPython(width * CONFIG.HEADER_RATIO);
@@ -232,17 +260,17 @@
 
     const longueurMin = Math.max(1, arrondiPython(width * CONFIG.MIN_RUN_LENGTH_RATIO));
     const colonnes = [
-      { cote: "gauche", sonde: CONFIG.LEFT_VECTOR_X_RATIO, x: CONFIG.LEFT_CELL_X },
-      { cote: "droite", sonde: CONFIG.RIGHT_VECTOR_X_RATIO, x: CONFIG.RIGHT_CELL_X }
+      { cote: "gauche", sonde: CONFIG.LEFT_VECTOR_X_RATIO, decale: CONFIG.LEFT_VECTOR_X_RATIO_DECALE, x: CONFIG.LEFT_CELL_X },
+      { cote: "droite", sonde: CONFIG.RIGHT_VECTOR_X_RATIO, decale: CONFIG.RIGHT_VECTOR_X_RATIO_DECALE, x: CONFIG.RIGHT_CELL_X }
     ];
+    const runsLigne = ratio => extraireRuns(
+      reboucherTrous(masqueColonne(image, arrondiPython(width * ratio), hautY, basY), CONFIG.MAX_HOLE_SIZE),
+      hautY, longueurMin);
 
     const cases = [];
-    colonnes.forEach(({ cote, sonde, x }) => {
-      const masque = reboucherTrous(
-        masqueColonne(image, arrondiPython(width * sonde), hautY, basY),
-        CONFIG.MAX_HOLE_SIZE
-      );
-      extraireRuns(masque, hautY, longueurMin).forEach((run, index) => {
+    colonnes.forEach(({ cote, sonde, decale, x }) => {
+      const runs = fusionnerRuns(runsLigne(sonde), runsLigne(decale));
+      runs.forEach((run, index) => {
         cases.push({
           colonne: cote,
           index: index + 1,
@@ -555,6 +583,10 @@
     redimensionnerGris,
     binariser,
     detecterCases,
+    fusionnerRuns,
+    masqueColonne,
+    reboucherTrous,
+    extraireRuns,
     decouperCase,
     predireConstellation,
     lireNiveau,
