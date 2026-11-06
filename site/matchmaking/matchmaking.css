@@ -945,3 +945,15 @@
   font-weight: normal;
   font-size: 1.25rem;
 }
+
+/* Entraînement : Boss et J1 sur la même ligne (ordinateur) ; liste des boss
+   à largeur bornée, sinon un nom long fait passer J1 à la ligne. */
+@media (min-width: 701px) {
+  .ligne-boss-j1 {
+    flex-wrap: nowrap;
+  }
+
+  .ligne-boss-j1 #ent-boss {
+    width: 16rem;
+  }
+}

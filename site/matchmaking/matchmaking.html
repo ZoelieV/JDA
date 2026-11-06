@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/namecards.css?v=3">
-<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=39">
+<link rel="stylesheet" href="/matchmaking/matchmaking.css?v=40">
   <link rel="stylesheet" href="/commun/site.css?v=19">
 <script src="/commun/fond.js?v=18"></script>
 <script src="/commun/appli.js?v=1" defer></script>
@@ -219,7 +219,9 @@
 
     <div class="etape-entrainement">
       <h3><span class="ent-1v1">4. Boss et J1</span><span class="ent-equipe cache">2. Boss</span></h3>
-      <div class="ligne-entrainement">
+      <!-- Tirage aléatoire seulement : décochée quand un boss est choisi. -->
+      <label class="case-entrainement"><input type="checkbox" id="ent-boss-classes" title="Boss aléatoire tiré parmi ceux du mode classé, tous avec la même chance"> Boss classés uniquement</label>
+      <div class="ligne-entrainement ligne-boss-j1">
         <label>Boss <select id="ent-boss"><option value="">Aléatoire</option></select></label>
         <label class="ent-1v1">J1 (commence la draft)
           <select id="ent-premier">
@@ -229,8 +231,6 @@
           </select>
         </label>
       </div>
-      <!-- Tirage aléatoire seulement : décochée quand un boss est choisi. -->
-      <label class="case-entrainement"><input type="checkbox" id="ent-boss-classes" title="Boss aléatoire tiré parmi ceux du mode classé, tous avec la même chance"> Seulement les boss du mode classé</label>
     </div>
 
     <button type="button" id="lancer-entrainement" class="btn-principal">Lancer l'entraînement</button>
