@@ -3,7 +3,9 @@
 // par-dessus, le boss en silhouette noire zoomée qui rétrécit jusqu'à
 // l'arrêt sur image, puis ses couleurs, le logo de son type, son nom et ses
 // étoiles (une par tintement de la fin du son).
-// Boss hebdomadaire et world boss : 3★ ; légende locale : 4★ ; carnage : 5★.
+// Clip : bleu (3★) pour les boss hebdomadaires et les world boss, violet
+// (4★) pour les légendes locales, doré (5★) pour le carnage. Étoiles
+// affichées : 2 pour un world boss, sinon celles du clip.
 // TirageBoss.jouer(boss) -> promesse résolue à la fermeture (fin, « Passer »,
 // clic ou Échap). Rien d'animé si le système demande moins d'animations.
 
@@ -33,6 +35,11 @@ const TirageBoss = (() => {
     return 3;
   }
 
+  // Étoiles affichées (les premiers tintements du clip) : 2 pour un world boss.
+  function nbEtoiles(boss) {
+    return boss?.type === "world_boss" ? 2 : rarete(boss);
+  }
+
   function imageBoss(boss) {
     return Array.isArray(boss.images) && boss.images.length ? boss.images[0] : boss.image;
   }
@@ -54,6 +61,7 @@ const TirageBoss = (() => {
     const n = rarete(boss);
     const clip = CLIPS[n];
     const logo = LOGOS[boss.type];
+    const pics = clip.pics.slice(0, nbEtoiles(boss));
 
     const ecran = document.createElement("div");
     ecran.id = "tirage-boss";
@@ -68,12 +76,12 @@ const TirageBoss = (() => {
         ${logo ? `<img class="tb-logo" alt="" src="/DB/images/others/${logo}.webp">` : ""}
         <div class="tb-texte">
           <span class="tb-nom"></span>
-          <span class="tb-etoiles">${clip.pics.map(() => `<img alt="" src="/DB/images/others/etoile_tirage.webp">`).join("")}</span>
+          <span class="tb-etoiles">${pics.map(() => `<img alt="" src="/DB/images/others/etoile_tirage.webp">`).join("")}</span>
         </div>
       </div>
       <button type="button" class="tb-passer">Passer</button>`;
     ecran.querySelector(".tb-nom").textContent = boss.nom;
-    ecran.querySelector(".tb-etoiles").setAttribute("aria-label", `${n} étoiles`);
+    ecran.querySelector(".tb-etoiles").setAttribute("aria-label", `${pics.length} étoiles`);
     document.body.appendChild(ecran);
 
     const video = ecran.querySelector("video");
@@ -115,7 +123,7 @@ const TirageBoss = (() => {
           image.style.transform = `translate(-50%, -50%) scale(${echelle})`;
           image.style.filter = couleurs < 1 ? `brightness(${couleurs})` : "none";
           bloc.style.opacity = String(couleurs);
-          etoiles.forEach((etoile, i) => etoile.classList.toggle("tb-visible", t >= clip.pics[i]));
+          etoiles.forEach((etoile, i) => etoile.classList.toggle("tb-visible", t >= pics[i]));
         }
         if (!termine && !video.ended) image_raf = requestAnimationFrame(animer);
       };
