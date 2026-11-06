@@ -47,6 +47,13 @@
     // elle est plus haute d'au moins ce ratio (case de la 1re ligne coupée),
     // sinon c'est la même case (doublon ignoré).
     RATIO_REMPLACEMENT_CASE: 1.2,
+    // Case de la 2e ligne gardée seulement si elle fait au moins ce ratio de
+    // la hauteur médiane des cases de la 1re (celle de Kokomi est plus
+    // haute) : pas de bout de case pris pour une case entière.
+    RATIO_HAUTEUR_MIN_DECALE: 0.9,
+    // ... et au moins ce ratio de la largeur de l'image (case normale : ~0,23 ;
+    // Kokomi : ~0,25), même si les cases de la 1re ligne sont mal coupées.
+    HAUTEUR_MIN_DECALE_LARGEUR: 0.2,
     // Découpe d'une case (image_splitter.py)
     SPLIT_X_RATIO: 0.5,
     SPLIT_Y_RATIO: 0.5,
@@ -237,11 +244,14 @@
   // Cases de la 2e ligne (décalée) ajoutées à celles de la 1re : seule, une
   // case est ajoutée ; si elle en recouvre d'autres plus courtes (case coupée
   // par le cadre de Kokomi), elle les remplace ; sinon doublon, ignorée.
-  function fusionnerRuns(principaux, decales) {
+  function fusionnerRuns(principaux, decales, hauteurMin = 0) {
     let runs = principaux.slice();
+    const hauteur = r => r.fin - r.debut + 1;
+    const hauteurs = principaux.map(hauteur).sort((a, b) => a - b);
+    const mediane = hauteurs.length ? hauteurs[Math.floor(hauteurs.length / 2)] : 0;
     decales.forEach(run => {
+      if (hauteur(run) < Math.max(mediane * CONFIG.RATIO_HAUTEUR_MIN_DECALE, hauteurMin)) return;
       const recouverts = runs.filter(r => r.debut <= run.fin && run.debut <= r.fin);
-      const hauteur = r => r.fin - r.debut + 1;
       if (!recouverts.length) runs.push(run);
       else if (recouverts.every(r => hauteur(run) >= hauteur(r) * CONFIG.RATIO_REMPLACEMENT_CASE)) {
         runs = runs.filter(r => !recouverts.includes(r)).concat(run);
@@ -269,7 +279,7 @@
 
     const cases = [];
     colonnes.forEach(({ cote, sonde, decale, x }) => {
-      const runs = fusionnerRuns(runsLigne(sonde), runsLigne(decale));
+      const runs = fusionnerRuns(runsLigne(sonde), runsLigne(decale), width * CONFIG.HAUTEUR_MIN_DECALE_LARGEUR);
       runs.forEach((run, index) => {
         cases.push({
           colonne: cote,
