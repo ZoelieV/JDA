@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=67">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=69">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -124,6 +124,50 @@
   </section>
 
   <div id="zone-admin" class="zone-admin cache">
+    <!-- Outils de l'équilibrage : mêmes tuiles que la page Administration. -->
+    <div id="tuiles-equilibrage" class="tuiles-admin tuiles-equilibrage">
+      <button type="button" id="ouvrir-ajout" class="tuile-admin" title="Ajouter un personnage, une arme ou un boss">
+        <img src="/DB/images/others/Icon_Party_Setup.webp" alt="">
+        <span class="tuile-admin-titre">+ Ajouter</span>
+        <span class="tuile-admin-texte">Un personnage, une arme ou un boss.</span>
+      </button>
+      <button type="button" id="ouvrir-boss" class="tuile-admin" title="Consulter et modifier les boss">
+        <img src="/DB/images/others/carnage_inverse.webp" alt="">
+        <span class="tuile-admin-titre">Boss</span>
+        <span class="tuile-admin-texte">Consulter et modifier les boss : noms, résistances, chronos.</span>
+      </button>
+      <button type="button" id="ouvrir-categories" class="tuile-admin" title="Catégories des armes : support, standard">
+        <img src="/DB/images/others/Icon_Inventory_Weapons.webp" alt="">
+        <span class="tuile-admin-titre">Catégories d'armes</span>
+        <span class="tuile-admin-texte">Support ou standard, pour chaque arme.</span>
+      </button>
+      <button type="button" id="ouvrir-comparateur" class="tuile-admin" title="Comparer des combos personnage + arme">
+        <img src="/DB/images/others/Icon_Co-Op_Mode.webp" alt="">
+        <span class="tuile-admin-titre">Comparateur</span>
+        <span class="tuile-admin-texte">Comparer des combos personnage + arme.</span>
+      </button>
+      <button type="button" id="ouvrir-equilibrage" class="tuile-admin" title="Méthode des bans d'équilibrage des drafts">
+        <img src="/DB/images/others/scale.webp" alt="">
+        <span class="tuile-admin-titre">Équilibrage</span>
+        <span class="tuile-admin-texte">Méthode des bans d'équilibrage des drafts.</span>
+      </button>
+      <button type="button" id="ouvrir-patchs" class="tuile-admin" title="Noter les changements d'équilibrage : les joueurs les voient dans Theorycraft">
+        <img src="/DB/images/others/Icon_Mail.webp" alt="">
+        <span class="tuile-admin-titre">Patchs</span>
+        <span class="tuile-admin-texte">Noter les changements d'équilibrage, visibles dans Theorycraft.</span>
+      </button>
+      <button type="button" id="ouvrir-fictives" class="tuile-admin" title="Faux profils pour l'entraînement">
+        <img src="/DB/images/others/Icon_Training_Guide.webp" alt="">
+        <span class="tuile-admin-titre">Box fictives</span>
+        <span class="tuile-admin-texte">Faux profils pour l'entraînement.</span>
+      </button>
+      <button type="button" id="ouvrir-recommandations" class="tuile-admin" title="Recommandations de la box stuff : supports de chaque DPS, par priorité">
+        <img src="/DB/images/others/Icon_Adventurer_Handbook.webp" alt="">
+        <span class="tuile-admin-titre">Recommandations</span>
+        <span class="tuile-admin-texte">Supports de chaque DPS pour la box stuff, par priorité.</span>
+      </button>
+    </div>
+
     <!-- Personnages / Armes, recherche, filtres : figés en haut au
          défilement. -->
     <div class="barre-admin">
@@ -135,14 +179,6 @@
         </div>
         <input type="text" id="recherche-admin" class="recherche-admin" placeholder="Rechercher…">
         <span id="compte-admin" class="compte-admin"></span>
-        <button type="button" id="ouvrir-ajout" class="btn-ouvrir-ajout" title="Ajouter un personnage, une arme ou un boss">+ Ajouter</button>
-        <button type="button" id="ouvrir-boss" class="btn-ouvrir-ajout" title="Consulter et modifier les boss">Boss</button>
-        <button type="button" id="ouvrir-categories" class="btn-ouvrir-ajout" title="Catégories des armes : support, standard">Catégories d'armes</button>
-        <button type="button" id="ouvrir-comparateur" class="btn-ouvrir-ajout" title="Comparer des combos personnage + arme">Comparateur</button>
-        <button type="button" id="ouvrir-equilibrage" class="btn-ouvrir-ajout" title="Méthode des bans d'équilibrage des drafts">Équilibrage</button>
-        <button type="button" id="ouvrir-patchs" class="btn-ouvrir-ajout" title="Noter les changements d'équilibrage : les joueurs les voient dans Theorycraft">Patchs</button>
-        <button type="button" id="ouvrir-fictives" class="btn-ouvrir-ajout" title="Faux profils pour l'entraînement (administrateurs seulement)">Box fictives</button>
-        <button type="button" id="ouvrir-recommandations" class="btn-ouvrir-ajout" title="Recommandations de la box stuff : supports de chaque DPS, par priorité">Recommandations</button>
         <button type="button" id="clear-admin" class="btn-clear-filtres" title="Réinitialiser les filtres et le tri"><img src="/DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
       </div>
       <div id="filtres-admin" class="filtres-admin"></div>
@@ -839,7 +875,7 @@
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
   <script src="/admin_ppc/admin_patchs.js?v=1"></script>
-  <script src="/admin_ppc/admin_ppc.js?v=44"></script>
+  <script src="/admin_ppc/admin_ppc.js?v=45"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=36"></script>
 </body>

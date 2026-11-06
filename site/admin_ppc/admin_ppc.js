@@ -391,7 +391,7 @@ function rendreEntete() {
   document.getElementById("entete-admin").innerHTML = `
     <tr>
       <th class="col-nom triable" data-tri="nom" title="Trier par nom">${vue === "characters" ? "Personnage" : "Arme"}${fleche("nom")}</th>
-      ${libelles.map((libelle, index) => `<th class="triable" data-tri="${index}" title="Trier par ${libelle}">${libelle}${fleche(index)}</th>`).join("")}
+      ${libelles.map((libelle, index) => `<th class="triable${index >= 1 && index <= COLONNES[vue].derniereChaine ? " avec-ecart" : ""}" data-tri="${index}" title="Trier par ${libelle}">${libelle}${fleche(index)}</th>`).join("")}
       ${vue === "characters" ? `<th class="col-bonus-saison" title="En match classé : +3 trophées par perso coché dans l'équipe (gain augmenté, perte réduite)">Bonus de saison</th>` : ""}
       ${vue === "characters" ? `<th class="col-synergie" title="Nombre de persos en synergie : sans eux dans la box, le perso perd des points (bouton Synergie)">Synergie</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Faction du perso (aucune ou une seule) : filtres des persos sur tout le site">Faction</th>` : ""}
@@ -405,14 +405,14 @@ function rendreEntete() {
           const bonus = modeBonus(index);
           return bonus ? `<th>
             <select class="mode-bonus" data-cle="${bonus.cle}" title="Ajouté ou multiplié aux points de constellation">
-              <option value="addition" ${modes[bonus.cle] === "addition" ? "selected" : ""}>+ Addition</option>
-              <option value="multiplication" ${modes[bonus.cle] === "multiplication" ? "selected" : ""}>× Multiplication</option>
+              <option value="addition" ${modes[bonus.cle] === "addition" ? "selected" : ""}>+ Add.</option>
+              <option value="multiplication" ${modes[bonus.cle] === "multiplication" ? "selected" : ""}>× Mult.</option>
             </select>
-            ${bonus.cle === "theatre" ? `<button type="button" class="retirer-buffs" ${buffs.length ? "" : "disabled"} title="Décocher tous les personnages (nouveau théâtre du mois)">Tout retirer (${buffs.length})</button>` : ""}
+            ${bonus.cle === "theatre" ? `<button type="button" class="retirer-buffs" ${buffs.length ? "" : "disabled"} title="Décocher tous les personnages (nouveau théâtre du mois)">Retirer (${buffs.length})</button>` : ""}
           </th>` : "<th></th>";
         }).join("")}
         <th class="col-bonus-saison">
-          <button type="button" class="retirer-bonus-saison" ${bonusSaison.length ? "" : "disabled"} title="Décocher tous les personnages (nouvelle saison)">Tout décocher (${bonusSaison.length})</button>
+          <button type="button" class="retirer-bonus-saison" ${bonusSaison.length ? "" : "disabled"} title="Décocher tous les personnages (nouvelle saison)">Décocher (${bonusSaison.length})</button>
         </th>
         <th class="col-synergie"></th>
         <th class="col-faction"></th>
@@ -432,17 +432,19 @@ function rendreCorps() {
   corps.innerHTML = items
     .map(item => `
       <tr class="${estMasque(item.id) ? "ligne-masquee" : ""}">
-        <td class="col-nom">
+        <td class="col-nom"><div class="cellule-nom">
           <span class="miniature ${classeFondRarete(item.rarete)}"><img src="../DB/${item.image}" alt="" loading="lazy"></span>
           <span class="nom-admin"></span>
           ${item.ajout ? `<span class="tag-ajout" title="Ajouté depuis cette page (pas dans le JSON)">Ajouté</span>` : ""}
           ${estMasque(item.id) ? `<span class="tag-masque" title="Invisible sur le reste du site">Masqué</span>` : ""}
-          ${vue === "characters" ? `<button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points">Aperçu</button>` : ""}
-          ${vue === "characters" ? `<button type="button" class="btn-apercu btn-synergie" data-id="${item.id}" title="Persos en synergie et malus sans eux">Synergie</button>` : ""}
-          <button type="button" class="btn-masquer" data-id="${item.id}" title="${estMasque(item.id)
-            ? "Rendre visible sur tout le site"
-            : "Cacher partout sauf ici (pas encore sorti dans le jeu)"}">${estMasque(item.id) ? "Afficher" : "Masquer"}</button>
-        </td>
+          <span class="actions-nom">
+            ${vue === "characters" ? `<button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points">Aperçu</button>` : ""}
+            ${vue === "characters" ? `<button type="button" class="btn-apercu btn-synergie" data-id="${item.id}" title="Persos en synergie et malus sans eux">Synergie</button>` : ""}
+            <button type="button" class="btn-masquer" data-id="${item.id}" title="${estMasque(item.id)
+              ? "Rendre visible sur tout le site"
+              : "Cacher partout sauf ici (pas encore sorti dans le jeu)"}">${estMasque(item.id) ? "Afficher" : "Masquer"}</button>
+          </span>
+        </div></td>
         ${valeurs[vue][item.id].map((valeur, index) => `
           <td class="${index >= 1 && index <= COLONNES[vue].derniereChaine ? "avec-ecart" : ""}${index === INDEX_THEATRE && vue === "characters" && estBuffe(item.id) ? " avec-buff" : ""}">
             ${index >= 1 && index <= COLONNES[vue].derniereChaine
@@ -515,12 +517,12 @@ function rendreCorpsSommes(corps, items) {
     const arme = armeSignature(item);
     return `
       <tr class="${estMasque(item.id) ? "ligne-masquee" : ""}">
-        <td class="col-nom">
+        <td class="col-nom"><div class="cellule-nom">
           <span class="miniature ${classeFondRarete(item.rarete)}"><img src="../DB/${item.image}" alt="" loading="lazy"></span>
           <span class="nom-admin"></span>
           ${estMasque(item.id) ? `<span class="tag-masque" title="Invisible sur le reste du site">Masqué</span>` : ""}
-          <button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points (perso + signature R1)">Aperçu</button>
-        </td>
+          <span class="actions-nom"><button type="button" class="btn-apercu" data-id="${item.id}" title="Voir toutes les combinaisons de points (perso + signature R1)">Aperçu</button></span>
+        </div></td>
         <td class="col-signa">
           ${arme ? `<span class="signa-somme"><span class="miniature ${classeFondRarete(arme.rarete)}"><img src="../DB/${arme.image}" alt="" loading="lazy"></span><span class="nom-signa"></span><strong>${sommes[NB_SOMMES]}</strong></span>` : `<span class="sans-signa" title="Pas d'arme signature">—</span>`}
         </td>

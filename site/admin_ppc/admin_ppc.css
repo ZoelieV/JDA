@@ -3306,3 +3306,135 @@ body.page-equilibrage #tuiles-admin {
     width: 5.5rem;
   }
 }
+
+/* ---- Équilibrage : tuiles des outils, colonne des noms, colonnes de
+   points ---- */
+
+/* Mêmes tuiles que la page Administration, en plus compact. */
+body.page-administration #tuiles-equilibrage {
+  display: none;
+}
+
+.tuiles-equilibrage {
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.tuiles-equilibrage .tuile-admin {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.125rem 0.75rem;
+  padding: 0.875rem 1rem;
+}
+
+.tuiles-equilibrage .tuile-admin img {
+  grid-row: span 2;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.tuiles-equilibrage .tuile-admin-titre {
+  font-size: 1.0625rem;
+}
+
+.tuiles-equilibrage .tuile-admin-texte {
+  font-size: 0.8125rem;
+}
+
+.lecture-seule #tuiles-equilibrage #ouvrir-ajout {
+  display: none;
+}
+
+/* Nom, tags, puis Aperçu / Synergie / Masquer alignés à droite de la
+   colonne. */
+.cellule-nom {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.cellule-nom .miniature {
+  flex: none;
+  margin-right: 0.125rem;
+}
+
+.actions-nom {
+  display: flex;
+  gap: 0.375rem;
+  margin-left: auto;
+  padding-left: 0.75rem;
+}
+
+.actions-nom .btn-apercu,
+.actions-nom .btn-masquer {
+  margin-left: 0;
+}
+
+/* Colonnes serrées sur leur contenu ; la place en trop va aux
+   constellations C1 à C6 (écart entre les cases, pour les pourcentages). */
+.tableau-admin tbody td:not(.avec-ecart),
+.tableau-admin thead th:not(.avec-ecart) {
+  width: 1%;
+}
+
+/* Constellations : pourcentage d'écart avec la précédente sous la
+   séparation des deux cases, à hauteur des flèches de copie (place libre
+   entre elles), plutôt qu'entre les champs. */
+.tableau-admin td.avec-ecart,
+.tableau-admin th.avec-ecart {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.tableau-admin td.avec-ecart .ecart-points {
+  top: auto;
+  bottom: 0.3125rem;
+}
+
+.case-points {
+  width: 3.5rem;
+}
+
+.mode-bonus {
+  min-width: 0;
+  max-width: 4.75rem;
+}
+
+.tableau-admin .col-nom {
+  white-space: normal;
+}
+
+.cellule-nom .nom-admin {
+  min-width: 5rem;
+}
+
+.actions-nom {
+  flex: none;
+  white-space: nowrap;
+}
+
+
+
+.actions-nom .btn-apercu,
+.actions-nom .btn-masquer {
+  padding: 0.0625rem 0.375rem;
+  font-size: 0.6875rem;
+}
+
+.tableau-admin th,
+.tableau-admin td {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.tableau-admin td.avec-ecart,
+.tableau-admin th.avec-ecart {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.actions-nom {
+  padding-left: 0.5rem;
+}
