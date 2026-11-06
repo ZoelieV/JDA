@@ -37,7 +37,8 @@
   pointer-events: none;
 }
 
-/* Logo du type (de 40 % au milieu de la hauteur), nom, étoiles. */
+/* Logo du type (de 40 % au milieu de la hauteur), nom, étoiles ; le nom
+   passe à la ligne au milieu de l'écran. */
 .tb-bloc {
   position: absolute;
   top: 40%;
@@ -45,7 +46,7 @@
   display: flex;
   align-items: center;
   gap: 1.2vh;
-  max-width: 94vw;
+  max-width: 47vw;
   opacity: 0;
   pointer-events: none;
 }
@@ -67,16 +68,16 @@
 .tb-nom {
   color: #fff;
   font-family: var(--police-titre);
-  font-size: 6.2vh;
-  line-height: 1;
+  font-size: 4.4vh;
+  line-height: 1.1;
   text-shadow: 0 0.3vh 0.6vh rgba(0, 0, 0, 0.75);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .tb-etoiles {
   display: flex;
-  gap: 0.35vh;
-  height: 4.2vh;
+  gap: 0.25vh;
+  height: 3vh;
 }
 
 .tb-etoiles img {
@@ -124,7 +125,7 @@
   }
 
   .tb-nom {
-    font-size: 4.5vh;
+    font-size: 3.2vh;
   }
 
   .tb-logo {
@@ -132,6 +133,6 @@
   }
 
   .tb-etoiles {
-    height: 3.2vh;
+    height: 2.3vh;
   }
 }
