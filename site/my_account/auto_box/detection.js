@@ -73,7 +73,6 @@
 
   // Personnages connus pour être mal détectés : toujours à vérifier.
   const PROBLEMES_CONNUS = {
-    kokomi: "Sangonomiya Kokomi est mal détectée : vérifie-la manuellement."
   };
 
   // Noms affichés par Hoyolab (FR) différents de characters.json.

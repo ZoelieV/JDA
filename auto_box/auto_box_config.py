@@ -34,6 +34,4 @@ RARE_LEVELS = {95, 100}
 # PROBLEMES CONNUS
 # ============================================================
 
-KNOWN_ISSUES = {
-    "kokomi": "Sangonomiya Kokomi est mal détectée par le pipeline actuel : vérifie-la manuellement.",
-}
+KNOWN_ISSUES = {}

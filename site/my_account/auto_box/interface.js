@@ -2,7 +2,7 @@
 //
 // Dépôt (ou choix) d'une capture Hoyolab -> analyse dans le navigateur
 // (detection.js + Tesseract.js) -> les personnages sûrs sont prêts à être
-// importés, les incertains (et toujours Kokomi et le Voyageur, jamais lu) sont
+// importés, les incertains (et toujours le Voyageur, jamais lu) sont
 // affichés avec leurs cases (- / +, stella) pour correction avant d'appliquer
 // à la Full Box. Sans aucun élément du Voyageur : rappel, rien n'est appliqué.
 //
@@ -24,7 +24,10 @@ const AUTO_BOX_TESSERACT_CHEMINS = {
 const AUTO_BOX_TESSERACT_SRI = "sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F";
 const AUTO_BOX_MODELE_URL = "/my_account/auto_box/modele_constellations.json";
 const AUTO_BOX_NB_WORKERS = 3;
-const AUTO_BOX_TOUJOURS_VERIFIER = ["kokomi"];
+// Personnages toujours à vérifier, même détectés sans doute (aucun
+// aujourd'hui : Kokomi, mal détectée avant, l'est maintenant correctement,
+// cf. la 2e ligne de détection dans detection.js).
+const AUTO_BOX_TOUJOURS_VERIFIER = [];
 
 let autoBoxModele = null;
 
@@ -201,7 +204,7 @@ function initialiserAutoBox(profil, personnages, armes) {
   }
 
   function rendreResultat() {
-    // Cases réellement lues sur la capture (hors Kokomi ajoutée d'office).
+    // Cases réellement lues sur la capture (hors personnages ajoutés d'office).
     const nbSures = analyse.sures.length;
     const nbLues = nbSures + analyse.incertaines.filter(e => e.caseImage).length;
     resume.textContent = `${nbLues} personnages détectés, dont ${nbSures} sans doute. ` +
@@ -213,7 +216,7 @@ function initialiserAutoBox(profil, personnages, armes) {
     boutonAppliquer.disabled = false;
   }
 
-  // Les personnages toujours à vérifier (Kokomi, chaque élément du Voyageur)
+  // Les personnages toujours à vérifier (chaque élément du Voyageur)
   // sont ajoutés aux incertains ; s'ils n'ont pas été détectés, avec leur
   // valeur actuelle.
   function preparerAnalyse(brut) {
