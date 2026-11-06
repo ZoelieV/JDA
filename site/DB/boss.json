@@ -180,7 +180,7 @@
     "nom": "Griffe de fer et Chèvre de bataille",
     "type": "legende_locale_jour",
     "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/griffe_chevre_ll.png"
+    "image": "images/boss/legend_local/griffe_chevre_ll.webp"
   },
   {
     "id": "infinitesimal_ll",
