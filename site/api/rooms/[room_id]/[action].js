@@ -1,6 +1,6 @@
-// Fusion de 18 routes (box, ready, equilibrage_vote, action, bonus_toggle,
+// Fusion de 19 routes (box, ready, equilibrage_vote, action, bonus_toggle,
 // bonus_echanger, bonus_confirmer, temps, temps_entrainement, confirmer_temps, litige, rejouer, expirer,
-// boss_vote, crash, abandonner_classe, annuler_action, draft) en un seul fichier, pour rester sous la limite de
+// boss_vote, crash, abandonner_classe, annuler_action, relancer_boss, draft) en un seul fichier, pour rester sous la limite de
 // fonctions serverless du plan Hobby de Vercel. Le nom de fichier dynamique
 // [action].js capte tous les segments d'URL /api/rooms/{room_id}/{quoi que
 // ce soit} qui ne correspondent à aucun autre fichier plus spécifique dans
@@ -518,6 +518,34 @@ async function handleAnnulerAction(req, res, roomId, user) {
   }
   draft.sequence_index -= 1;
   if (draft.chrono) draft.chrono.tour_debut = Date.now();
+
+  await sauvegarderDraft(roomId, draft);
+  return repondreDraft(res, draft, joueur);
+}
+
+// ---- relancer_boss : entraînement, nouveau boss au hasard ----
+// Pendant la draft seulement (à la fin, l'entraînement est archivé avec son
+// boss). Différent du boss actuel, mêmes règles que le tirage (boss du mode,
+// légendes du jour déjà tuées exclues), même s'il avait été choisi à la main.
+async function handleRelancerBoss(req, res, roomId, user) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { room, joueur } = await chargerRoomAvecRole(supabase, roomId, user.id, { agirEn: user.agirEn });
+  const draft = room.draft;
+  if (!draft.entrainement) {
+    return res.status(403).json({ error: "Relance du boss : en entraînement seulement" });
+  }
+  if (draft.phase !== "draft") {
+    return res.status(409).json({ error: "Le boss se relance pendant la draft" });
+  }
+  if (refuserSiPause(res, draft)) return;
+
+  draft.entrainement = { ...draft.entrainement, boss_id: null };
+  const tirer = await tireurBoss(draft, room);
+  draft.boss_id = tirer(draft.boss_id).id;
 
   await sauvegarderDraft(roomId, draft);
   return repondreDraft(res, draft, joueur);
@@ -1505,6 +1533,8 @@ function executerAction(action, req, res, roomId, user) {
       return handleAbandonnerClasse(req, res, roomId, user);
     case "annuler_action":
       return handleAnnulerAction(req, res, roomId, user);
+    case "relancer_boss":
+      return handleRelancerBoss(req, res, roomId, user);
     case "mode_special":
       return handleModeSpecial(req, res, roomId, user);
     case "temps_arbitre":

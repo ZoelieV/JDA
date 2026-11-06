@@ -299,6 +299,18 @@ async function postAnnulerCoup() {
   await definirDraft(data.draft);
 }
 
+// Entraînement : nouveau boss au hasard pendant la draft, avec l'animation.
+let relanceBossDemandee = false;
+async function postRelancerBoss() {
+  const data = await envoyerAction(`/api/rooms/${roomId}/relancer_boss`, {});
+  relanceBossDemandee = true;
+  try {
+    await definirDraft(data.draft);
+  } finally {
+    relanceBossDemandee = false;
+  }
+}
+
 // joker : ban joker choisi tout de suite (cf. modeJokerBonus).
 async function postBonusToggle(persoId, joker = false) {
   const data = await envoyerAction(`/api/rooms/${roomId}/bonus_toggle`, { perso_id: persoId, ...(joker ? { joker: true } : {}) });
@@ -2073,7 +2085,7 @@ function rendreDraft(phasePrecedente) {
   const justeTransitionne = !!phasePrecedente && phasePrecedente !== "draft";
 
   if (nouveauBoss && !animationBossEnCours) {
-    if (justeTransitionne) {
+    if (justeTransitionne || relanceBossDemandee) {
       jouerAnimationBoss(draft.boss_id);
     } else {
       afficherBossFinal(draft.boss_id);
@@ -2170,6 +2182,17 @@ function rendreDraft(phasePrecedente) {
     postAnnulerCoup()
       .catch(err => alert(err.message))
       .finally(() => { btnAnnuler.disabled = false; });
+  };
+
+  // Entraînement : boss relancé au hasard, à tout moment de la draft.
+  const btnRelancerBoss = document.getElementById("btn-relancer-boss-entrainement");
+  btnRelancerBoss.classList.toggle("cache", !draft.entrainement || !monRole);
+  btnRelancerBoss.disabled = animationBossEnCours;
+  btnRelancerBoss.onclick = () => {
+    btnRelancerBoss.disabled = true;
+    postRelancerBoss()
+      .catch(err => alert(err.message))
+      .finally(() => { btnRelancerBoss.disabled = animationBossEnCours; });
   };
 
   envoyerPreselection();
@@ -3603,6 +3626,7 @@ const BULLES_PAR_PHASE = {
   "message-equilibrage": ["bans_bonus"],
   "btn-confirmer-action": ["draft"],
   "btn-annuler-coup": ["draft"],
+  "btn-relancer-boss-entrainement": ["draft"],
   "tour-actuel": ["draft"],
   "etat-temps": ["temps", "verification"],
   "saisie-arbitre": ["temps", "verification"],
