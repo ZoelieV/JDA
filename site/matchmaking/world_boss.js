@@ -419,19 +419,16 @@ function appliquerFond() {
 // ---- Animation du tirage ----
 // Par-dessus la page, chez chaque joueur qui voit le tirage arriver (passage
 // du lobby à la partie, ou page ouverte moins de FENETRE_ANIMATION_MS après
-// le tirage, cf. draft.tire_le) : roulette des noms de boss qui ralentit,
-// carte du boss retournée, puis les 4 persos qui défilent et s'arrêtent un à
-// un. Noms de boss plutôt que leurs images (lourdes) ; portraits des persos
-// (légers) préchargés au lobby. "Passer" ferme tout de suite ; rien
-// d'animé si le système demande moins d'animations.
-const DUREE_ROULETTE_BOSS_MS = 2600;
+// le tirage, cf. draft.tire_le) : boss en plein écran façon vœu (cf.
+// commun/tirage_boss.js), puis les 4 persos qui défilent et s'arrêtent un à
+// un. Portraits des persos (légers) préchargés au lobby. "Passer" ferme tout
+// de suite ; rien d'animé si le système demande moins d'animations.
 const PAUSE_APRES_BOSS_MS = 900;
 const DUREE_PREMIER_PERSO_MS = 1100;
 const ECART_PERSOS_MS = 550;
 const FERMETURE_AUTO_MS = 2600;
 const FENETRE_ANIMATION_MS = 12000;
 const NB_LEURRES = 16;
-const TYPES_BOSS_TIRAGE = ["world_boss", "weekly_boss", "carnage_boss", "legende_locale_jour", "legende_locale_infinie"];
 const MOUVEMENT_REDUIT = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let tirageAnime = null; // tire_le du dernier tirage animé (ou ignoré)
@@ -470,14 +467,21 @@ function roulette(debut, duree, tick, fin) {
 
 const auHasard = liste => liste[Math.floor(Math.random() * liste.length)];
 
+// Boss : animation plein écran façon vœu (cf. commun/tirage_boss.js), puis
+// l'écran du tirage des persos, boss déjà révélé.
 function animerTirage() {
   fermerTirage(true);
   preparerLeurres();
   const boss = bossParId.get(draft.boss_id);
-  // En co-op : sans les boss pas faisables en co-op (jamais tirés).
-  const nomsBoss = [...bossParId.values()].filter(b => TYPES_BOSS_TIRAGE.includes(b.type) && b.id !== boss.id && (enSolo() || b.coop !== false)).map(b => b.nom);
+  const tirage = draft.tire_le;
+  TirageBoss.jouer(boss).then(() => {
+    if (draft.tire_le === tirage) animerPersos(boss);
+  });
+}
+
+function animerPersos(boss) {
   const persos = (draft.persos || []).map(perso => ({ perso, personnage: personnagesDraftParId.get(perso.perso_id) }));
-  // Images finales chargées pendant la roulette.
+  // Images finales chargées pendant l'animation.
   (Array.isArray(boss.images) && boss.images.length ? boss.images : [boss.image]).forEach(image => { new Image().src = `../DB/${image}`; });
   persos.forEach(({ personnage }) => { if (personnage?.image) new Image().src = `../DB/${personnage.image}`; });
 
@@ -489,8 +493,8 @@ function animerTirage() {
   fond.setAttribute("aria-label", "Tirage du boss et des persos");
   fond.innerHTML = `
     <div class="fenetre-tirage">
-      <p class="etape-tirage">Tirage du boss…</p>
-      <div class="carte-boss-tirage">
+      <p class="etape-tirage">Boss tiré !</p>
+      <div class="carte-boss-tirage revelee">
         <div class="interieur-carte-boss">
           <div class="face-cachee"><span class="roulette-boss"></span></div>
           <div class="face-boss">${htmlImagesBoss(boss)}<span class="nom-boss-tirage">${echapperHtml(boss.nom)}</span></div>
@@ -507,22 +511,7 @@ function animerTirage() {
   bouton.focus();
 
   const etape = fond.querySelector(".etape-tirage");
-  const nomRoulette = fond.querySelector(".roulette-boss");
-  let dernierNom = "";
-  roulette(0, DUREE_ROULETTE_BOSS_MS, () => {
-    let nom = auHasard(nomsBoss) || boss.nom;
-    if (nom === dernierNom && nomsBoss.length > 1) nom = auHasard(nomsBoss);
-    dernierNom = nom;
-    nomRoulette.textContent = nom;
-    nomRoulette.classList.remove("tic");
-    void nomRoulette.offsetWidth; // relance l'animation du tick
-    nomRoulette.classList.add("tic");
-  }, () => {
-    fond.querySelector(".carte-boss-tirage").classList.add("revelee");
-    etape.textContent = "Boss tiré !";
-  });
-
-  const debutPersos = DUREE_ROULETTE_BOSS_MS + PAUSE_APRES_BOSS_MS;
+  const debutPersos = PAUSE_APRES_BOSS_MS;
   planifier(debutPersos, () => {
     fond.querySelector(".persos-tirage").classList.remove("masque");
     etape.textContent = "Tirage des persos…";

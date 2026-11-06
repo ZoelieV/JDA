@@ -111,6 +111,7 @@ let minuteurPreselection = null;
 let dernierePhaseVue = null; // phase locale précédente, pour détecter une transition
 let animationBossEnCours = false;
 let bossAnimeId = null; // boss_id pour lequel l'animation a déjà été jouée (ou sautée)
+let bossAuChargement = null; // boss déjà tiré à l'ouverture de la page : sans animation
 
 function getRoomIdDepuisUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -412,6 +413,9 @@ async function definirDraft(nouveauDraft) {
   if (draft && joueur1 && joueur2 && JSON.stringify(nouveauDraft) === JSON.stringify(draft)) return;
 
   const nbActionsAvant = draft?.actions?.length ?? null;
+  // Page ouverte (ou rechargée) avec un boss déjà tiré : pas d'animation
+  // du tirage, le boss s'affiche directement.
+  if (!draft && nouveauDraft?.boss_id) bossAuChargement = nouveauDraft.boss_id;
   draft = nouveauDraft;
   if (nbActionsAvant !== null) annoncerChoixAleatoires((draft.actions || []).slice(nbActionsAvant));
 
@@ -1985,51 +1989,27 @@ function afficherBossFinal(bossId) {
   container.innerHTML = htmlBossTire(boss);
 }
 
-// Petite animation "roue" : fait défiler des boss aléatoires de plus en
-// plus lentement avant de révéler le vrai boss tiré (déjà déterminé côté
-// serveur — l'aléatoire ici est purement visuel/théâtral).
+// Tirage du boss : animation plein écran façon vœu de Genshin (cf.
+// commun/tirage_boss.js), puis le boss affiché dans la page. Boss déjà
+// déterminé côté serveur : l'animation n'est que du spectacle.
 function jouerAnimationBoss(bossIdFinal) {
   animationBossEnCours = true;
-
   const container = document.getElementById("boss-affiche");
-  container.classList.remove("boss-revele");
-  container.classList.add("boss-tirage");
-
   const bossFinal = bossData.find(b => b.id === bossIdFinal);
-  const autresBoss = bossData.filter(b => b.id !== bossIdFinal);
-  const nbTours = 12;
-  let tour = 0;
-
-  function etape() {
-    const propose = autresBoss.length > 0
-      ? autresBoss[Math.floor(Math.random() * autresBoss.length)]
-      : bossFinal;
-
-    container.innerHTML = propose
-      ? `${htmlImagesBoss(propose)}<span class="nom-boss">?</span>`
-      : "";
-
-    tour += 1;
-
-    if (tour < nbTours) {
-      // Ralentit progressivement, comme une roue qui perd de la vitesse.
-      setTimeout(etape, 80 + tour * 15);
-    } else {
-      container.classList.remove("boss-tirage");
-      container.classList.add("boss-revele");
-      container.innerHTML = htmlBossTire(bossFinal);
-
-      setTimeout(() => container.classList.remove("boss-revele"), 700);
-
-      animationBossEnCours = false;
-      bossAnimeId = bossIdFinal;
-      appliquerFondRoom();
-      // Choix du boss : boutons de vote actifs une fois le boss révélé.
-      if (draft?.phase === "boss") rendreChoixBoss();
-    }
-  }
-
-  etape();
+  container.classList.remove("boss-revele", "boss-tirage");
+  container.innerHTML = "";
+  const animation = bossIdFinal === bossAuChargement ? Promise.resolve() : TirageBoss.jouer(bossFinal);
+  bossAuChargement = null;
+  animation.then(() => {
+    container.innerHTML = htmlBossTire(bossFinal);
+    container.classList.add("boss-revele");
+    setTimeout(() => container.classList.remove("boss-revele"), 700);
+    animationBossEnCours = false;
+    bossAnimeId = bossIdFinal;
+    appliquerFondRoom();
+    // Choix du boss : boutons de vote actifs une fois le boss révélé.
+    if (draft?.phase === "boss") rendreChoixBoss();
+  });
 }
 
 // Affiche le boss (sans animation) s'il n'est pas déjà à l'écran et

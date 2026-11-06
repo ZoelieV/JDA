@@ -106,6 +106,7 @@ function secondesRestantes(fin) {
 // ---- Rendu général ----
 
 function definirDraft(nouveau) {
+  if (!nouveau?.boss_id) bossAttendu = true;
   draft = nouveau;
   const cle = JSON.stringify(draft);
   if (cle === derniereCle) return;
@@ -655,6 +656,9 @@ const FOND_DEFAUT = "/DB/images/bg_web/autres/default_bg.webp";
 let fondsBoss = [];
 let fondApplique = null;
 let bossAffiche = null;
+// Draft vue sans boss sur cette page (lobby) : le boss tiré ensuite a droit
+// à l'animation du tirage (cf. commun/tirage_boss.js), sauf boss imposé.
+let bossAttendu = false;
 
 // Image cliquable (résistances et recommandations), nom, et localisation
 // d'une légende locale.
@@ -663,6 +667,8 @@ function rendreBoss() {
   $("zone-boss").classList.toggle("cache", !boss);
   if (!boss || bossAffiche === boss.id) return;
   bossAffiche = boss.id;
+  if (bossAttendu && !draft.boss_impose) TirageBoss.jouer(boss);
+  bossAttendu = false;
   $("boss-equipe").innerHTML = `
     ${htmlImageInfosBoss(boss, false)}
     <span class="nom-boss">${echapperHtml(boss.nom)}</span>
