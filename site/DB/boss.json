@@ -825,5 +825,12 @@
     "type": "world_boss",
     "res": [10, 10, 10, 50, 10, 10, 10],
     "image": "images/boss/world_boss/lame_gardienne_neige_wb.webp"
+  },
+  {
+    "id": "ancravague_wb",
+    "nom": "Ancravague",
+    "type": "world_boss",
+    "res": [10, 70, -10, 10, 10, 10, 10],
+    "image": "images/boss/world_boss/ancravague_wb.webp"
   }
 ]
