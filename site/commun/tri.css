@@ -77,15 +77,17 @@
   height: 1.8125rem;
 }
 
-/* Théâtre : la carpe des paliers (noire), sur un rond clair comme les
-   médailles du théâtre (cf. .medaille-theatre, commun/entete.css). */
-.tri-logo-palier {
-  box-sizing: border-box;
+/* Poissons du théâtre (noirs : carpe des paliers, baleine des C6) : sans
+   rond clair, fin contour blanc qui suit la forme, comme sur les bannières
+   du classement et de Tous les comptes (commun/entete.css). */
+.tri-logo-poisson {
   width: 1.5rem;
-  padding: 0.125rem;
-  border-radius: 50%;
-  background-color: rgba(235, 235, 235, 0.92);
   object-fit: contain;
+  filter:
+    drop-shadow(1px 0 0 #fff)
+    drop-shadow(-1px 0 0 #fff)
+    drop-shadow(0 1px 0 #fff)
+    drop-shadow(0 -1px 0 #fff);
 }
 
 /* Rareté : étoile seule, plus grande. */
