@@ -88,8 +88,8 @@
             <span class="perso-tirage-jauge"><span style="width: ${Math.min(100, tirage.compteur / (tirage.garantie - 1) * 100)}%"></span></span>
           </div>` : `<p class="perso-note">Tu as tous les cosmétiques focus !</p>`}` : ""}
       <div class="perso-tirer-boutons">
-        <button type="button" class="perso-tirer" data-nombre="1">🎲 Tirer · ${texteRikoyns(tirage.prix)}</button>
-        <button type="button" class="perso-tirer" data-nombre="10">🎲 Tirer ×10 · ${texteRikoyns(tirage.prix * 10)}</button>
+        <button type="button" class="perso-tirer bouton-voeu" data-nombre="1"><span class="voeu-titre">Faire 1 vœu</span><span class="voeu-cout">${ICONE_KOYN} x ${tirage.prix.toLocaleString("fr-FR")}</span></button>
+        <button type="button" class="perso-tirer bouton-voeu" data-nombre="10"><span class="voeu-titre">Faire 10 vœux</span><span class="voeu-cout">${ICONE_KOYN} x ${(tirage.prix * 10).toLocaleString("fr-FR")}</span></button>
       </div>`;
     const vitrine = bloc.querySelector(".perso-tirage-focus");
     tirage.focus.forEach(id => {
