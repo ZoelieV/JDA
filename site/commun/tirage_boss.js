@@ -3,7 +3,7 @@
 // par-dessus, le boss en silhouette noire zoomée qui rétrécit jusqu'à
 // l'arrêt sur image, puis ses couleurs, le logo de son type, son nom et ses
 // étoiles (une par tintement de la fin du son).
-// Boss hebdomadaire (et world boss) : 3★ ; légende locale : 4★ ; carnage : 5★.
+// Boss hebdomadaire et world boss : 3★ ; légende locale : 4★ ; carnage : 5★.
 // TirageBoss.jouer(boss) -> promesse résolue à la fermeture (fin, « Passer »,
 // clic ou Échap). Rien d'animé si le système demande moins d'animations.
 
@@ -16,6 +16,7 @@ const TirageBoss = (() => {
     5: { src: "/DB/videos/tirage_boss_5.mp4?v=1", debut: 5.883, fige: 1.083, pics: [2.05, 2.20, 2.32, 2.54, 2.69] }
   };
   const LOGOS = {
+    world_boss: "logo_world_boss",
     weekly_boss: "logo_boss_hebdo",
     legende_locale_jour: "logo_legende_locale",
     legende_locale_infinie: "logo_legende_locale",
