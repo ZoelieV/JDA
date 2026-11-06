@@ -72,6 +72,9 @@
 //   { categoriesArmes: { id: [...] } }  modifie les catégories d'armes
 //   { carnage_desactive: true|false }   désactive / réactive les boss du
 //                                    carnage (hors entraînement, cf. _lib/boss.js)
+//   { temps_suspects: { <boss>: { suspect, triche } } | null }  anti-triche :
+//                                    temps minimum de chaque boss, null = valeurs
+//                                    par défaut (cf. commun/temps_suspects.js)
 //   { boss_modes: { <mode>: { boss: [ids], probas } | null } }  boss et chances
 //                                    de chaque mode (cf. commun/boss_modes.js)
 //   { little_cup: { nom, public, trophees, namecard? } }  event Little Cup
@@ -132,6 +135,7 @@ const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js")
 const { lireSynergies, lireAlternativesArmes, synergieIncoherente } = require("../commun/synergies.js");
 const { lireRecommandationsStuff } = require("../commun/recommandations_stuff.js");
 const { MODES_TIRAGE_BOSS, lireReglageBossMode } = require("../commun/boss_modes.js");
+const { lireReglageTempsSuspects } = require("../commun/temps_suspects.js");
 const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
 // modifiées, cf. commun/recommandations_stuff.js).
@@ -319,6 +323,8 @@ function versionPublique(config) {
   const publique = { ...config, ajouts: { ...ajouts }, masques: {} };
   // Event Little Cup pas encore ouvert : rien hors administrateurs.
   if (publique.little_cup && !publique.little_cup.public) delete publique.little_cup;
+  // Anti-triche : seuils jamais montrés aux joueurs.
+  delete publique.temps_suspects;
   // Boss des events pas encore ouverts : pareil.
   if (config.boss_modes) {
     publique.boss_modes = { ...config.boss_modes };
@@ -682,6 +688,16 @@ module.exports = async (req, res) => {
         config = { ...ancienne, calendrier };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
+      } else if ("temps_suspects" in corps) {
+        if (corps.temps_suspects === null) {
+          const { temps_suspects: _ancien, ...reste } = ancienne;
+          config = reste;
+        } else {
+          const nomsBoss = new Map([...listeJSON("boss"), ...ajouts.boss].map(b => [b.id, ancienne.boss?.[b.id]?.nom || b.nom]));
+          const { reglage, erreur } = lireReglageTempsSuspects(corps.temps_suspects, nomsBoss);
+          if (erreur) return res.status(400).json({ error: erreur });
+          config = { ...ancienne, temps_suspects: reglage };
+        }
       } else if (corps.boss_modes && typeof corps.boss_modes === "object") {
         const tousBoss = [...listeJSON("boss"), ...ajouts.boss];
         const bossModes = { ...(ancienne.boss_modes || {}) };

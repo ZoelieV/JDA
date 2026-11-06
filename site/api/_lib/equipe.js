@@ -919,6 +919,7 @@ async function routeConfirmer(req, res, roomId, user) {
   draft.vainqueur = determinerVainqueur(draft.temps_j1, draft.temps_j2);
   draft.phase = "termine";
   // Anti-triche (cf. _lib/sanctions.js) : match terminé, mais sans Rikoyns.
+  await actualiserPoints();
   const suspect = !!(detecterTriche(draft) || detecterTempsSuspects(draft));
   await sauvegarder(roomId, draft);
   draft.id_match = await archiverEquipe(draft);

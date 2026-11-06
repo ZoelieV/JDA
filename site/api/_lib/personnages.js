@@ -10,6 +10,7 @@ const armes = require("../../DB/weapons.json");
 const bossList = require("../../DB/boss.json"); // même tableau que _lib/boss.js
 const { lireSynergies, appliquerSynergie, lireAlternativeArme, POURCENTAGES_ALTERNATIFS } = require("../../commun/synergies.js");
 const { definirPrixCosmetiques } = require("../../commun/koyns.js");
+const { TEMPS_SUSPECTS_DEFAUT, reglageTempsSuspects } = require("../../commun/temps_suspects.js");
 
 // ---- Groupes (Voyageur) ----
 // Un personnage par élément dans les comptes ("traveler_pyro"...,
@@ -55,6 +56,14 @@ let bossModes = {};
 
 function getBossModes() {
   return bossModes;
+}
+
+// Anti-triche : temps minimum de chaque boss (config.temps_suspects, page
+// admin), cf. commun/temps_suspects.js et _lib/sanctions.js.
+let tempsSuspects = TEMPS_SUSPECTS_DEFAUT;
+
+function getTempsSuspects() {
+  return tempsSuspects;
 }
 
 function getLittleCup() {
@@ -261,6 +270,7 @@ async function actualiserPoints() {
     worldBossPublic = config.world_boss_public === true;
     littleCup = { ...LITTLE_CUP_DEFAUT, ...(config.little_cup || {}) };
     bossModes = config.boss_modes && typeof config.boss_modes === "object" ? config.boss_modes : {};
+    tempsSuspects = reglageTempsSuspects(config);
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     seuilHorizontal = lireSeuilHorizontal(config.seuil_horizontal);
@@ -453,6 +463,7 @@ function codeTheatre(profilData) {
 
 module.exports = {
   getBossModes,
+  getTempsSuspects,
   getLittleCup,
   LITTLE_CUP_DEFAUT,
   pointsPersonnage,

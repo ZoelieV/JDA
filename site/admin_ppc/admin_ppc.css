@@ -3240,3 +3240,69 @@ body.page-equilibrage #tuiles-admin {
 #modal-raretes .champ-compte {
   white-space: nowrap;
 }
+
+/* Temps anti-triche (cf. admin_temps_suspects.js). */
+.ts-outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ts-outils input[type="search"] {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.tableau-ts {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+.tableau-ts th,
+.tableau-ts td {
+  padding: 0.25rem 0.375rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.tableau-ts th:not(:first-child),
+.tableau-ts td:not(:first-child) {
+  width: 8.5rem;
+}
+
+.tableau-ts input {
+  width: 100%;
+  min-width: 0;
+}
+
+.ts-boss {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ts-boss img {
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  object-fit: contain;
+}
+
+.ts-defaut {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.tableau-ts input.ts-invalide {
+  border-color: #ff8a80;
+}
+
+@media (max-width: 600px) {
+  .tableau-ts th:not(:first-child),
+  .tableau-ts td:not(:first-child) {
+    width: 5.5rem;
+  }
+}

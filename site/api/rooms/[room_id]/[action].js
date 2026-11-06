@@ -866,10 +866,12 @@ async function handleConfirmerTemps(req, res, roomId, user) {
     const classe = room.type === "classe";
     // Anti-triche : somme des temps supérieure au temps écoulé depuis
     // l'affichage de la saisie = impossible ; temps sous les meilleurs
-    // temps connus de ce boss (danger 1 ou 2, cf. TEMPS_SUSPECTS). Classé :
+    // temps réglés par les administrateurs pour ce boss (danger 1 ou 2, cf.
+    // commun/temps_suspects.js), lus par actualiserPoints. Classé :
     // match invalidé et transmis aux administrateurs (cf.
     // _lib/sanctions.js) ; autres matchs : terminés normalement, mais sans
     // Rikoyns (cf. _lib/koyns.js).
+    await actualiserPoints();
     const triche = detecterTriche(draft);
     const suspicion = detecterTempsSuspects(draft);
     if ((classe || draft.cup_trophees) && (triche || suspicion)) {

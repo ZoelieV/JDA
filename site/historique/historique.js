@@ -711,12 +711,13 @@ function htmlCorrectionLitige(match) {
   const triche = match.triche && match.triche.duree_saisie != null
     ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft">⚠️ Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
     : "";
-  // Temps sous les meilleurs temps connus du boss : danger 1 (sous le temps
-  // limite) ou 2 (sous le temps minimum), preuve vidéo à demander.
+  // Temps sous les seuils du boss (tuile « Temps anti-triche » de l'admin) :
+  // danger 1 (sous le temps suspect, "limite") ou 2 (sous le temps de triche
+  // confirmée, "minimum"), preuve vidéo à demander.
   const suspects = ["j1", "j2"].filter(role => match.suspicion?.[role]).map(role => {
     const s = match.suspicion[role];
-    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? "⚠️⚠️ Danger 2" : "⚠️ Danger 1"} : ` +
-      `${echapperHtml(match[role].nom)} en ${fmt(s.secondes)}, sous le temps ${s.niveau === 2 ? `minimum (${fmt(s.minimum)})` : `limite (${fmt(s.limite)})`}. Preuve vidéo à demander.</span>`;
+    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? "⚠️⚠️ Danger 2 (triche confirmée)" : "⚠️ Danger 1 (temps suspect)"} : ` +
+      `${echapperHtml(match[role].nom)} en ${fmt(s.secondes)}, sous le temps ${s.niveau === 2 ? `de triche confirmée (${fmt(s.minimum)})` : `suspect (${fmt(s.limite)})`}. Preuve vidéo à demander.</span>`;
   }).join("");
   // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
   const sanction = htmlSanction;

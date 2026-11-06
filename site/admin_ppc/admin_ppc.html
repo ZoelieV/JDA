@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=66">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=67">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=4">
 <link rel="stylesheet" href="/commun/tri.css?v=7">
@@ -90,6 +90,11 @@
       <img src="/DB/images/others/Icon_Settings.webp" alt="">
       <span class="tuile-admin-titre">Boss par mode</span>
       <span class="tuile-admin-texte">Boss cochés et probabilités par type, pour chaque mode de jeu.</span>
+    </button>
+    <button type="button" id="ouvrir-temps-suspects" class="tuile-admin" title="Anti-triche : temps minimum de chaque boss, suspect ou triche confirmée">
+      <img src="/DB/images/others/Icon_Clock.webp" alt="">
+      <span class="tuile-admin-titre">Temps anti-triche</span>
+      <span class="tuile-admin-texte">Temps minimum de chaque boss : suspect ou triche confirmée.</span>
     </button>
     <a href="/visual_novel/editeur" class="tuile-admin" title="Écrire l'histoire du visual novel : chapitres, panneaux, choix et images">
       <img src="/DB/images/others/Icon_Adventurer_Handbook.webp" alt="">
@@ -679,6 +684,30 @@
     </div>
   </div>
 
+  <!-- Anti-triche : temps minimum par boss (cf. admin_temps_suspects.js, commun/temps_suspects.js). -->
+  <div id="modal-temps-suspects" class="modal-apercu">
+    <div class="modal-apercu-contenu">
+      <div class="modal-apercu-entete">
+        <h2>Temps anti-triche</h2>
+        <button type="button" id="fermer-temps-suspects" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">Un temps <strong>en dessous</strong> du temps suspect déclenche un « Danger 1 », en dessous du temps de triche confirmée un « Danger 2 ». En classé et en Little Cup, le match est alors envoyé aux litiges (preuve vidéo à demander) ; dans les autres modes, il compte mais ne rapporte pas de Rikoyns. Case vide : pas de contrôle. Temps en secondes ou en minutes:secondes (« 1:40 »). Les joueurs ne voient jamais ces temps.</p>
+      <div id="contenu-temps-suspects">
+        <div class="ts-outils">
+          <input type="search" id="ts-recherche" class="texte-ajout" placeholder="Rechercher un boss…" aria-label="Rechercher un boss">
+          <label class="champ-skin-masque"><input type="checkbox" id="ts-seulement-regles"> Seulement les boss avec un temps</label>
+          <span id="ts-etat" class="facultatif"></span>
+          <button type="button" id="ts-defaut" class="btn-ouvrir-ajout action-ts">Remettre les valeurs par défaut</button>
+        </div>
+        <div id="ts-liste"></div>
+      </div>
+      <div class="actions-ajout">
+        <span id="message-ts" class="message-ajout"></span>
+        <button type="button" id="enregistrer-ts" class="bouton-creer">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Skins de personnages ajoutés (cf. admin_skins.js). -->
   <div id="modal-skins" class="modal-apercu">
     <div class="modal-apercu-contenu">
@@ -799,6 +828,8 @@
   <script src="/admin_ppc/admin_raretes.js?v=2"></script>
   <script src="/commun/boss_modes.js?v=1"></script>
   <script src="/admin_ppc/admin_boss_modes.js?v=1"></script>
+  <script src="/commun/temps_suspects.js?v=1"></script>
+  <script src="/admin_ppc/admin_temps_suspects.js?v=1"></script>
   <script src="/admin_ppc/admin_little_cup.js?v=3"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=2"></script>
@@ -808,7 +839,7 @@
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
   <script src="/admin_ppc/admin_patchs.js?v=1"></script>
-  <script src="/admin_ppc/admin_ppc.js?v=43"></script>
+  <script src="/admin_ppc/admin_ppc.js?v=44"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=36"></script>
 </body>
