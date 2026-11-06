@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/matchmaking/match.css?v=rem77">
-<link rel="stylesheet" href="/commun/tirage_boss.css?v=4">
+<link rel="stylesheet" href="/commun/tirage_boss.css?v=5">
 <link rel="stylesheet" href="/matchmaking/equilibrage.css?v=4">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/site.css?v=19">
@@ -82,15 +82,15 @@
            les 2 joueurs le veulent. -->
       <div id="choix-boss" class="choix-boss">
         <button id="btn-confirmer-boss" type="button" class="btn-vote-boss">Confirmer le boss</button>
-        <button id="btn-relancer-boss" type="button" class="btn-vote-boss relancer">Relancer 🎲</button>
+        <button id="btn-relancer-boss" type="button" class="btn-vote-boss relancer"><span class="voeu-titre">Relancer</span><span class="voeu-cout"><img class="icone-voeu" src="/DB/images/others/Item_Acquaint_Fate.webp" alt=""> x 1</span></button>
       </div>
       <div id="message-boss" class="bandeau-info"></div>
       <!-- Entraînement : boutons déplacés sur l'image de fin du tirage du
            boss (cf. jouerAnimationBoss), rangés ici (cachés) sinon. -->
       <div id="reserve-tirage" class="cache">
         <div id="choix-boss-entrainement" class="choix-boss">
-          <button id="btn-garder-boss-entrainement" type="button" class="btn-vote-boss">Garder ce boss</button>
-          <button id="btn-relancer-boss-entrainement" type="button" class="btn-vote-boss relancer" title="Tire un autre boss au hasard">Relancer 🎲</button>
+          <button id="btn-garder-boss-entrainement" type="button" class="btn-vote-boss"><span class="voeu-titre">Garder ce boss</span></button>
+          <button id="btn-relancer-boss-entrainement" type="button" class="btn-vote-boss relancer" title="Tire un autre boss au hasard"><span class="voeu-titre">Relancer</span><span class="voeu-cout"><img class="icone-voeu" src="/DB/images/others/Item_Acquaint_Fate.webp" alt=""> x 1</span></button>
         </div>
       </div>
       <div id="etat-temps" class="bandeau-info"></div>
@@ -322,8 +322,8 @@
   <script src="/commun/filtres_draft.js?v=4"></script>
   <script src="/commun/recommandations_boss.js?v=1"></script>
   <script src="/commun/koyns.js?v=15"></script>
-  <script src="/commun/tirage_boss.js?v=5"></script>
-  <script src="/matchmaking/match.js?v=148"></script>
+  <script src="/commun/tirage_boss.js?v=6"></script>
+  <script src="/matchmaking/match.js?v=149"></script>
   <script src="/matchmaking/equilibrage.js?v=7"></script>
 </body>
 </html>

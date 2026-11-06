@@ -34,6 +34,8 @@ const TirageBoss = (() => {
   const ZOOM = 2.2;
   const FONDU = 0.35;
   const FERMETURE_APRES_FIN_MS = 1800;
+  // Clips très forts : moitié du volume.
+  const VOLUME = 0.5;
   const MOUVEMENT_REDUIT = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   function rarete(boss) {
@@ -178,6 +180,7 @@ const TirageBoss = (() => {
       video.addEventListener("ended", afficherFin);
       video.addEventListener("error", sauter);
       video.addEventListener("playing", () => { image_raf = requestAnimationFrame(animer); }, { once: true });
+      video.volume = VOLUME;
       // Son refusé par le navigateur (aucun clic sur la page) : sans le son.
       video.play().catch(() => {
         video.muted = true;
