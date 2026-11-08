@@ -161,24 +161,49 @@ async function estRevoquee(jti) {
 
 // Joueurs bannis du site (sanction de type "site", en cours : fin nulle =
 // définitive) : plus de connexion (cf. api/auth/discord/callback.js) et
-// leurs sessions ne valent plus rien, donc aucun match possible. Relus au
-// plus toutes les 30 s, comme les révocations.
+// leurs sessions ne valent plus rien, donc aucun match possible. Un ban vise
+// un compte Discord (discord_id) ou un UID Genshin (uid) : tous les comptes
+// dont le profil porte cet UID sont bannis, et un compte qui essaie de le
+// renseigner l'est aussi (cf. api/auth/profile.js). Relus au plus toutes les
+// 30 s, comme les révocations ; en cas d'erreur de lecture, la liste
+// précédente reste en place (un ban ne saute pas sur une panne).
 let cacheBannis = null;
 
-async function estBanniSite(discordId) {
-  if (!cacheBannis || Date.now() - cacheBannis.lu > CACHE_REVOCATIONS_MS) {
-    const { data, error } = await supabase
-      .from("sanctions")
-      .select("discord_id, fin")
-      .eq("type", "site");
-    if (error) console.error("Erreur lecture des bans du site :", error);
-    const maintenant = Date.now();
-    cacheBannis = {
-      ids: new Set((data || []).filter(s => s.fin === null || Date.parse(s.fin) > maintenant).map(s => String(s.discord_id))),
-      lu: Date.now()
-    };
+async function lireBannis() {
+  if (cacheBannis && Date.now() - cacheBannis.lu <= CACHE_REVOCATIONS_MS) return cacheBannis;
+  const { data, error } = await supabase
+    .from("sanctions")
+    .select("discord_id, uid, fin")
+    .eq("type", "site");
+  if (error) {
+    console.error("Erreur lecture des bans du site :", error);
+    if (cacheBannis) return cacheBannis;
   }
-  return cacheBannis.ids.has(String(discordId));
+  const maintenant = Date.now();
+  const actifs = (data || []).filter(s => s.fin === null || Date.parse(s.fin) > maintenant);
+  const ids = new Set(actifs.filter(s => s.discord_id).map(s => String(s.discord_id)));
+  const uids = new Set(actifs.filter(s => s.uid).map(s => String(s.uid)));
+  if (uids.size) {
+    const { data: profils, error: erreurProfils } = await supabase.from("profiles").select("discord_id").in("data->>uid", [...uids]);
+    if (erreurProfils) console.error("Erreur lecture des comptes aux UID bannis :", erreurProfils);
+    (profils || []).forEach(p => ids.add(String(p.discord_id)));
+  }
+  cacheBannis = { ids, uids, lu: Date.now() };
+  return cacheBannis;
+}
+
+async function estBanniSite(discordId) {
+  return (await lireBannis()).ids.has(String(discordId));
+}
+
+async function estUidBanni(uid) {
+  return !!uid && (await lireBannis()).uids.has(String(uid));
+}
+
+// Après un nouveau ban : relu à la prochaine demande (sur cette instance),
+// l'ancienne liste restant en secours si la lecture échoue.
+function oublierBannis() {
+  if (cacheBannis) cacheBannis.lu = 0;
 }
 
 // Utilisateur de la session (cookie "session"), ou null si absente,
@@ -214,5 +239,7 @@ module.exports = {
   createSessionToken,
   verifySessionToken,
   revoquerSession,
-  estBanniSite
+  estBanniSite,
+  estUidBanni,
+  oublierBannis
 };

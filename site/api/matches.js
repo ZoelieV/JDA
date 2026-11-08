@@ -14,7 +14,7 @@
 const { supabase } = require("./_lib/supabase");
 const { memoriser } = require("./_lib/memo");
 const { infosPersoJoueur, palierTheatre, actualiserPoints, estWorldBossPublic, getLittleCup } = require("./_lib/personnages");
-const { parseCookies, verifySessionToken } = require("./_lib/session");
+const { parseCookies, verifySessionToken, estUidBanni, oublierBannis } = require("./_lib/session");
 const { estAdmin, estModerateur } = require("./_lib/admin");
 const { crediterMatchArchive } = require("./_lib/koyns");
 const { parserTempsOuAbandon, messageFormatInvalide, determinerVainqueur } = require("./_lib/temps");
@@ -229,13 +229,14 @@ async function sanctionnerLitige(req, res, user) {
   return res.status(200).json({ ok: true });
 }
 
-// ---- Bans du classé (administrateurs, page admin) ----
-// GET ?bans=1 : bans en cours (semaine, saison, définitif encore actifs),
-// avec pseudo et photo des joueurs et de l'administrateur.
+// ---- Bans (administrateurs, page admin) ----
+// GET ?bans=1 : bans en cours (classé : semaine, saison, définitif ; site),
+// avec pseudo et photo des joueurs et de l'administrateur. Ban d'un UID
+// (discord_id vide) : comptes qui portent cet UID, s'il y en a.
 async function listerBans(res) {
   const { data, error } = await supabase
     .from("sanctions")
-    .select("id, discord_id, type, fin, match_id, admin, created_at")
+    .select("id, discord_id, uid, type, fin, match_id, admin, created_at")
     .neq("type", "aucune")
     .order("created_at", { ascending: false });
   if (error) {
@@ -244,16 +245,28 @@ async function listerBans(res) {
   }
   const maintenant = Date.now();
   const actifs = (data || []).filter(s => s.fin === null || Date.parse(s.fin) > maintenant);
-  const joueurs = await chargerJoueurs([...new Set(actifs.flatMap(s => [s.discord_id, s.admin]).filter(Boolean))]);
+  const uids = [...new Set(actifs.filter(s => s.uid && !s.discord_id).map(s => s.uid))];
+  const { data: porteurs, error: erreurPorteurs } = uids.length
+    ? await supabase.from("profiles").select("discord_id, data->>uid").in("data->>uid", uids)
+    : { data: [] };
+  if (erreurPorteurs) throw erreurPorteurs;
+  const comptesUid = uid => (porteurs || []).filter(p => p.uid === uid).map(p => p.discord_id);
+  const joueurs = await chargerJoueurs([...new Set([...actifs.flatMap(s => [s.discord_id, s.admin]), ...(porteurs || []).map(p => p.discord_id)].filter(Boolean))]);
   const nom = id => {
     const profil = joueurs.get(id);
     return profil?.discord_global_name || profil?.discord_username || "Joueur inconnu";
+  };
+  const nomBan = s => {
+    if (s.discord_id) return nom(s.discord_id);
+    const comptes = comptesUid(s.uid);
+    return comptes.length ? `UID ${s.uid} (${comptes.map(nom).join(", ")})` : `UID ${s.uid}`;
   };
   return res.status(200).json({
     bans: actifs.map(s => ({
       id: s.id,
       discord_id: s.discord_id,
-      nom: nom(s.discord_id),
+      uid: s.uid || null,
+      nom: nomBan(s),
       avatar: joueurs.get(s.discord_id)?.discord_avatar_url || null,
       type: s.type,
       fin: s.fin,
@@ -262,6 +275,20 @@ async function listerBans(res) {
       admin: s.admin ? nom(s.admin) : null
     }))
   });
+}
+
+// PATCH { action: "bannir_uid", uid } : ban du site définitif d'un UID Genshin
+// (cf. estBanniSite, _lib/session.js) : tous les comptes qui le portent, et
+// ceux qui essaieront de le renseigner.
+async function bannirUid(req, res, user) {
+  const uid = typeof req.body?.uid === "string" ? req.body.uid.trim() : "";
+  if (!/^\d{9}$/.test(uid)) return res.status(400).json({ error: "UID invalide : 9 chiffres attendus." });
+  if (await estUidBanni(uid)) return res.status(409).json({ error: "Cet UID est déjà banni." });
+  const { error } = await supabase.from("sanctions").insert({ uid, type: "site", fin: null, admin: user.id });
+  if (error) throw error;
+  oublierBannis();
+  console.log(`UID ${uid} banni du site par ${user.id}`);
+  return res.status(200).json({ ok: true });
 }
 
 // PATCH { action: "lever_ban", sanction_id } : ban levé tout de suite (fin =
@@ -277,6 +304,7 @@ async function leverBan(req, res) {
     .select("id");
   if (error) throw error;
   if (!data || data.length === 0) return res.status(404).json({ error: "Ban introuvable" });
+  oublierBannis();
   return res.status(200).json({ ok: true });
 }
 
@@ -736,6 +764,7 @@ module.exports = async (req, res) => {
       if (req.body?.action === "sanction") return await sanctionnerLitige(req, res, user);
       if (req.body?.action === "clore_equilibrage") return await cloreLitigeEquilibrage(req, res, user);
       if (req.body?.action === "lever_ban") return await leverBan(req, res);
+      if (req.body?.action === "bannir_uid") return await bannirUid(req, res, user);
       if (req.body?.action === "signalement") return await traiterSignalement(req, res, user);
       return await republierLitige(req, res, user);
     } catch (error) {

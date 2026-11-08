@@ -1,4 +1,4 @@
-const { parseCookies, verifySessionToken } = require("../_lib/session");
+const { parseCookies, verifySessionToken, estUidBanni, oublierBannis } = require("../_lib/session");
 const { codeTheatre, actualiserPoints, getConfigKoyns } = require("../_lib/personnages");
 const { verifierFrequenceCompte } = require("../_lib/limites");
 const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, tirerCosmetique } = require("../_lib/koyns");
@@ -469,6 +469,14 @@ module.exports = async (req, res) => {
       const ancien = (await reponseAncien.json())[0]?.data || null;
       const erreurDefinitif = erreurChampsDefinitifs(ancien, profil);
       if (erreurDefinitif) return res.status(400).json({ error: erreurDefinitif });
+      // UID banni du site (cf. estBanniSite) : profil refusé et compte banni à son tour.
+      if (profil.uid && profil.uid !== ancien?.uid && await estUidBanni(profil.uid)) {
+        const { error: erreurBan } = await supabase.from("sanctions").insert({ discord_id: discordId, uid: profil.uid, type: "site", fin: null });
+        if (erreurBan) console.error("Erreur ban d'un compte à l'UID banni :", erreurBan);
+        oublierBannis();
+        console.log(`Compte ${discordId} banni du site : UID banni ${profil.uid}`);
+        return res.status(403).json({ error: "Cet UID est banni du Jugement des Archons." });
+      }
       const max = Math.max(niveauMondeMax(ancien), Number(profil.niveau_monde) || 0);
       if (max) profil.niveau_monde_max = max;
       // Cosmétiques pas possédés : retirés (retour au choix par défaut).

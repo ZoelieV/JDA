@@ -1,6 +1,8 @@
-// Bans du mode classé en cours (sanctions décidées dans la section
-// Litiges de l'historique, cf. api/_lib/sanctions.js) : liste, recherche et
-// levée d'un ban (api/matches.js, ?bans=1 et action "lever_ban").
+// Bans en cours : du mode classé (sanctions décidées dans la section
+// Litiges de l'historique, cf. api/_lib/sanctions.js) et du site (compte ou
+// UID Genshin, cf. estBanniSite dans api/_lib/session.js) : liste,
+// recherche, ban d'un UID et levée d'un ban (api/matches.js, ?bans=1,
+// actions "bannir_uid" et "lever_ban").
 // Utilise echapper (admin_ajout.js).
 
 const LIBELLES_BANS = {
@@ -25,7 +27,7 @@ function afficherMessageBans(texte, type = "") {
 
 function rendreBans() {
   const recherche = document.getElementById("recherche-bans").value.trim().toLowerCase();
-  const liste = bansEnCours.filter(ban => !recherche || ban.nom.toLowerCase().includes(recherche));
+  const liste = bansEnCours.filter(ban => !recherche || ban.nom.toLowerCase().includes(recherche) || (ban.uid || "").includes(recherche));
   document.getElementById("compte-bans").textContent = `${liste.length} ban${liste.length > 1 ? "s" : ""} en cours`;
   const zone = document.getElementById("liste-bans");
   if (!liste.length) {
@@ -71,8 +73,32 @@ async function chargerBans() {
   rendreBans();
 }
 
+async function bannirUid(event) {
+  event.preventDefault();
+  const champ = document.getElementById("uid-ban");
+  const uid = champ.value.trim();
+  if (!/^\d{9}$/.test(uid)) return afficherMessageBans("UID invalide : 9 chiffres attendus.", "erreur");
+  if (!confirm(`Bannir définitivement l'UID ${uid} du site ? Tous les comptes qui le portent ne pourront plus se connecter.`)) return;
+  try {
+    const reponse = await fetch("/api/matches", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "bannir_uid", uid })
+    });
+    const data = await reponse.json().catch(() => ({}));
+    if (!reponse.ok) throw new Error(data.error || "Impossible de bannir cet UID.");
+    champ.value = "";
+    await chargerBans();
+    afficherMessageBans(`UID ${uid} banni du site.`, "succes");
+  } catch (erreur) {
+    console.error(erreur);
+    afficherMessageBans(erreur.message, "erreur");
+  }
+}
+
 async function leverBan(id, nom) {
-  if (!confirm(`Lever le ban de ${nom} ? Il pourra rejouer en classé tout de suite.`)) return;
+  if (!confirm(`Lever le ban de ${nom} ? Il pourra rejouer tout de suite.`)) return;
   try {
     const reponse = await fetch("/api/matches", {
       method: "PATCH",
@@ -106,6 +132,7 @@ function initialiserBans() {
     if (event.key === "Escape" && modal.classList.contains("active")) fermer();
   });
   document.getElementById("recherche-bans").addEventListener("input", rendreBans);
+  document.getElementById("form-ban-uid").addEventListener("submit", bannirUid);
   document.getElementById("liste-bans").addEventListener("click", event => {
     const bouton = event.target.closest(".lever-ban");
     if (bouton) leverBan(bouton.dataset.id, bouton.dataset.nom);

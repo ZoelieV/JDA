@@ -1,5 +1,5 @@
 const { supabase } = require("../_lib/supabase");
-const { parseCookies, verifySessionToken } = require("../_lib/session");
+const { parseCookies, verifySessionToken, estUidBanni } = require("../_lib/session");
 const { estAdmin, estModerateur } = require("../_lib/admin");
 const { parametresSkinsTest } = require("../_lib/skins");
 const { getPersonnages, getArmes, actualiserPoints, migrerCollectionPersos, codeTheatre } = require("../_lib/personnages");
@@ -196,6 +196,7 @@ async function modifierCompte(req, res, discordId, user) {
   if (!uidValide(uid)) return res.status(400).json({ error: ERREUR_UID });
   if (stream === null) return res.status(400).json({ error: ERREUR_LIEN_STREAM });
   if (!NIVEAUX_MONDE.has(niveau)) return res.status(400).json({ error: "Niveau du monde : 1 à 9, ou vide." });
+  if (await estUidBanni(uid)) return res.status(400).json({ error: "Cet UID est banni du site : lève d'abord son ban (tuile Bans en cours)." });
 
   const { data: profil, error } = await supabase.from("profiles").select("data").eq("discord_id", discordId).maybeSingle();
   if (error) throw error;

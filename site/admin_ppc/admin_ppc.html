@@ -41,10 +41,10 @@
   <!-- Administration : une tuile par outil (ouvre sa fenêtre, mêmes boutons
        qu'avant, cf. admin_bans.js, admin_feedback.js...). -->
   <section id="tuiles-admin" class="tuiles-admin cache">
-    <button type="button" id="ouvrir-bans" class="tuile-admin" title="Joueurs bannis du mode classé">
+    <button type="button" id="ouvrir-bans" class="tuile-admin" title="Joueurs bannis du mode classé ou du site, ban d'un UID">
       <img src="/DB/images/others/Icon_Quit_Game.webp" alt="">
       <span class="tuile-admin-titre">Bans en cours</span>
-      <span class="tuile-admin-texte">Joueurs bannis du mode classé et levée des bans.</span>
+      <span class="tuile-admin-texte">Bans du classé et du site, ban d'un UID, levée des bans.</span>
     </button>
     <button type="button" id="ouvrir-litiges" class="tuile-admin" title="Matchs invalidés par un litige et matchs signalés">
       <img src="/DB/images/others/Icon_Archive.webp" alt="">
@@ -552,7 +552,7 @@
   <div id="modal-bans" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
-        <h2>Bans du classé en cours</h2>
+        <h2>Bans en cours</h2>
         <button type="button" id="fermer-bans" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
       <div class="barre-categories">
@@ -560,6 +560,11 @@
         <span id="compte-bans" class="compte-admin"></span>
       </div>
       <div id="liste-bans" class="liste-boss"></div>
+      <form id="form-ban-uid" class="barre-categories" autocomplete="off">
+        <input type="text" id="uid-ban" class="texte-ajout" inputmode="numeric" maxlength="9" placeholder="UID Genshin (9 chiffres)" aria-label="UID à bannir">
+        <button type="submit" class="bouton-annuler">Bannir cet UID du site</button>
+      </form>
+      <p class="aide-apercu">Ban définitif : tout compte qui porte cet UID ne peut plus se connecter, et un compte qui essaie de le renseigner est banni à son tour.</p>
       <div class="actions-ajout">
         <span id="message-bans" class="message-ajout"></span>
       </div>
@@ -849,7 +854,7 @@
   <script src="/commun/recommandations_boss.js?v=1"></script>
   <script src="/admin_ppc/admin_boss.js?v=6"></script>
   <script src="/admin_ppc/admin_categories.js?v=1"></script>
-  <script src="/admin_ppc/admin_bans.js?v=2"></script>
+  <script src="/admin_ppc/admin_bans.js?v=3"></script>
   <script src="/admin_ppc/admin_equilibrage.js?v=8"></script>
   <script src="/admin_ppc/admin_comparateur.js?v=2"></script>
   <script src="/admin_ppc/admin_fictives.js?v=5"></script>
