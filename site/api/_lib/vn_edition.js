@@ -3,7 +3,12 @@
 //   GET ?vn_images=1   images importées et place occupée
 //   POST { vn_sauvegarde: { histoire, maj } }  enregistre ; refusé si un autre
 //                      admin a enregistré depuis la version chargée (maj)
-//   POST { vn_import: { data } }  image WebP en data URL -> { chemin }
+//   POST { vn_televersement: { taille, empreinte } }  image WebP (SHA-256 en hex) :
+//                      adresse signée où le navigateur l'envoie lui-même, sans
+//                      passer par Vercel (limité à 4,5 Mo par requête)
+//                      -> { url, chemin, existe }
+//   POST { vn_verification: { chemin } }  après l'envoi : supprimée si ce n'est
+//                      pas un WebP ou si elle est trop lourde
 //   POST { vn_import_son: { data } }  MP3 ou OGG en data URL -> { chemin }
 //   POST { vn_import_police: { data } }  WOFF2, WOFF, TTF ou OTF en data URL -> { chemin }
 //   POST { vn_image_suppression: { chemin } }  image, son ou police ; refusé si
@@ -11,8 +16,10 @@
 //   POST { vn_reinitialiser: true }  efface sa propre progression
 // Images dans le dossier public "visual_novel" de Supabase Storage, servies
 // sous /DB/images/vn/ (cf. vercel.json), nommées d'après leur contenu : la même
-// image importée deux fois ne prend qu'une place. Sons limités à 3 Mo comme les
-// images : une requête Vercel ne dépasse pas 4,5 Mo, base64 compris.
+// image importée deux fois ne prend qu'une place. Images en pleine résolution,
+// 15 Mo au plus ; sons et polices limités à 3 Mo : ils passent par Vercel, dont
+// une requête ne dépasse pas 4,5 Mo, base64 compris. Le dossier Supabase limite
+// lui aussi chaque fichier à 15 Mo.
 const crypto = require("crypto");
 const { supabase } = require("./supabase");
 const { ID_HISTOIRE } = require("./visual_novel");
@@ -20,12 +27,13 @@ const { lireHistoireVn, avertissementsVn } = require("./vn_format");
 const HISTOIRE_ESSAI = require("./vn_histoire_essai");
 
 const DOSSIER = "visual_novel";
-const POIDS_MAX_IMAGE = 3 * 1024 * 1024;
+const POIDS_MAX_IMAGE = 15 * 1024 * 1024;
+const POIDS_MAX_FICHIER = 3 * 1024 * 1024;
 // Forfait gratuit : 1 Go de stockage pour tout le site.
 const POIDS_MAX_TOTAL = 300 * 1024 * 1024;
 const PREFIXE = "vn/";
 
-const REQUETES_POST = ["vn_sauvegarde", "vn_import", "vn_import_son", "vn_import_police", "vn_image_suppression", "vn_reinitialiser"];
+const REQUETES_POST = ["vn_sauvegarde", "vn_televersement", "vn_verification", "vn_import_son", "vn_import_police", "vn_image_suppression", "vn_reinitialiser"];
 
 // Polices : reconnues à leurs premiers octets, quel que soit le nom du fichier.
 const POLICES = {
@@ -72,22 +80,39 @@ async function sauvegarder(discordId, { histoire: brute, maj }) {
   return { status: 200, corps: { maj: data.maj, avertissements: avertissementsVn(histoire) } };
 }
 
-async function importerImage({ data }) {
-  const correspondance = typeof data === "string" && /^data:image\/webp;base64,([A-Za-z0-9+/=]+)$/.exec(data);
-  if (!correspondance) return { status: 400, corps: { error: "Image invalide (WebP attendu)" } };
-  const tampon = Buffer.from(correspondance[1], "base64");
-  if (tampon.length > POIDS_MAX_IMAGE) return { status: 400, corps: { error: "Image trop lourde (3 Mo au plus)" } };
-  if (tampon.toString("latin1", 0, 4) !== "RIFF" || tampon.toString("latin1", 8, 12) !== "WEBP") {
-    return { status: 400, corps: { error: "Image invalide (WebP attendu)" } };
-  }
-  return televerser(tampon, "webp", "image/webp");
+async function preparerTeleversement({ taille, empreinte }) {
+  const poids = Number(taille);
+  if (!Number.isInteger(poids) || poids <= 0 || typeof empreinte !== "string" || !/^[a-f0-9]{64}$/.test(empreinte)) return { status: 400, corps: { error: "Image invalide" } };
+  if (poids > POIDS_MAX_IMAGE) return { status: 400, corps: { error: "Image trop lourde (15 Mo au plus)" } };
+  const nom = `${empreinte.slice(0, 24)}.webp`;
+  const { data: deja, error: erreurListe } = await supabase.storage.from(DOSSIER).list("", { search: nom, limit: 1 });
+  if (erreurListe) throw erreurListe;
+  if (deja?.some(f => f.name === nom)) return { status: 200, corps: { chemin: `${PREFIXE}${nom}`, existe: true } };
+  const { poids: occupe } = await listerImages();
+  if (occupe + poids > POIDS_MAX_TOTAL) return { status: 400, corps: { error: "Plus de place : supprime des images importées qui ne servent plus." } };
+  const { data, error } = await supabase.storage.from(DOSSIER).createSignedUploadUrl(nom, { upsert: true });
+  if (error) throw error;
+  return { status: 200, corps: { url: data.signedUrl, chemin: `${PREFIXE}${nom}`, existe: false } };
+}
+
+// Le navigateur a envoyé le fichier lui-même : on vérifie que c'est bien un WebP.
+async function verifierImage({ chemin }) {
+  if (typeof chemin !== "string" || !/^vn\/[a-f0-9]{24}\.webp$/.test(chemin)) return { status: 400, corps: { error: "Image invalide" } };
+  const nom = chemin.slice(PREFIXE.length);
+  const { data, error } = await supabase.storage.from(DOSSIER).download(nom);
+  if (error) return { status: 400, corps: { error: "Image introuvable dans le stockage : réessaie." } };
+  const tampon = Buffer.from(await data.arrayBuffer());
+  const valide = tampon.length <= POIDS_MAX_IMAGE && tampon.toString("latin1", 0, 4) === "RIFF" && tampon.toString("latin1", 8, 12) === "WEBP";
+  if (valide) return { status: 200, corps: { chemin } };
+  await supabase.storage.from(DOSSIER).remove([nom]);
+  return { status: 400, corps: { error: "Image invalide (WebP attendu)" } };
 }
 
 async function importerSon({ data }) {
   const correspondance = typeof data === "string" && /^data:audio\/(mpeg|ogg);base64,([A-Za-z0-9+/=]+)$/.exec(data);
   if (!correspondance) return { status: 400, corps: { error: "Son invalide (MP3 ou OGG attendu)" } };
   const tampon = Buffer.from(correspondance[2], "base64");
-  if (tampon.length > POIDS_MAX_IMAGE) return { status: 400, corps: { error: "Son trop lourd (3 Mo au plus)" } };
+  if (tampon.length > POIDS_MAX_FICHIER) return { status: 400, corps: { error: "Son trop lourd (3 Mo au plus)" } };
   const estMp3 = tampon.toString("latin1", 0, 3) === "ID3" || (tampon[0] === 0xff && (tampon[1] & 0xe0) === 0xe0);
   const estOgg = tampon.toString("latin1", 0, 4) === "OggS";
   if (correspondance[1] === "mpeg" ? !estMp3 : !estOgg) return { status: 400, corps: { error: "Son invalide (MP3 ou OGG attendu)" } };
@@ -98,7 +123,7 @@ async function importerPolice({ data }) {
   const correspondance = typeof data === "string" && /^data:[\w/.+-]*;base64,([A-Za-z0-9+/=]+)$/.exec(data);
   if (!correspondance) return { status: 400, corps: { error: "Police invalide (WOFF2, WOFF, TTF ou OTF attendu)" } };
   const tampon = Buffer.from(correspondance[1], "base64");
-  if (tampon.length > POIDS_MAX_IMAGE) return { status: 400, corps: { error: "Police trop lourde (3 Mo au plus)" } };
+  if (tampon.length > POIDS_MAX_FICHIER) return { status: 400, corps: { error: "Police trop lourde (3 Mo au plus)" } };
   const extension = tampon.length >= 12 && Object.keys(POLICES).find(ext => POLICES[ext].signature(tampon));
   if (!extension) return { status: 400, corps: { error: "Police invalide (WOFF2, WOFF, TTF ou OTF attendu)" } };
   return televerser(tampon, extension, POLICES[extension].type);
@@ -142,7 +167,8 @@ async function traiterEdition(req, discordId) {
   }
   const corps = req.body;
   if (corps.vn_sauvegarde) return sauvegarder(discordId, corps.vn_sauvegarde);
-  if (corps.vn_import) return importerImage(corps.vn_import);
+  if (corps.vn_televersement) return preparerTeleversement(corps.vn_televersement);
+  if (corps.vn_verification) return verifierImage(corps.vn_verification);
   if (corps.vn_import_son) return importerSon(corps.vn_import_son);
   if (corps.vn_import_police) return importerPolice(corps.vn_import_police);
   if (corps.vn_image_suppression) return supprimerImage(corps.vn_image_suppression);

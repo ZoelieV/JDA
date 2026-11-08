@@ -861,14 +861,15 @@ async function chargerImportees() {
   return data;
 }
 
-// Réduction selon l'usage de l'image, pour ménager le stockage.
 const IMPORTS = {
-  fond: { titre: "Choisir un fond", onglets: [["fonds", "Fonds du site"], ["namecards", "Namecards"], ["importees", "Images importées"]], largeur: 1920, hauteur: 1080 },
-  perso: { titre: "Choisir un personnage", onglets: [["persos", "Personnages du site"], ["importees", "Images importées"]], largeur: 1600, hauteur: 1600 },
-  namecard: { titre: "Choisir une namecard", onglets: [["namecards", "Namecards"], ["importees", "Images importées"]], largeur: 1200, hauteur: 600 },
-  objet: { titre: "Choisir l'image de l'objet", onglets: [["importees", "Images importées"], ["persos", "Personnages du site"]], largeur: 400, hauteur: 400 }
+  fond: { titre: "Choisir un fond", onglets: [["fonds", "Fonds du site"], ["namecards", "Namecards"], ["importees", "Images importées"]] },
+  perso: { titre: "Choisir un personnage", onglets: [["persos", "Personnages du site"], ["importees", "Images importées"]] },
+  namecard: { titre: "Choisir une namecard", onglets: [["namecards", "Namecards"], ["importees", "Images importées"]] },
+  objet: { titre: "Choisir l'image de l'objet", onglets: [["importees", "Images importées"], ["persos", "Personnages du site"]] }
 };
-const POIDS_MAX_IMPORT = 3 * 1024 * 1024;
+// Images importées : même résolution, WebP qualité 100 % (envoyées directement
+// au stockage, cf. vn_televersement dans api/_lib/vn_edition.js).
+const POIDS_MAX_IMPORT = 15 * 1024 * 1024;
 
 let fenetreImages = { genre: null, onglet: null, surChoix: null };
 
@@ -930,28 +931,50 @@ async function supprimerImportee(chemin) {
   if (reponse) await rendreImages().catch(afficherErreurImages);
 }
 
-async function imageEnWebp(fichier, { largeur, hauteur }) {
+// Un WebP est gardé tel quel ; un PNG ou un JPEG est converti en WebP à la
+// même résolution, qualité 100 %.
+async function imageEnWebp(fichier) {
   if (!["image/png", "image/webp", "image/jpeg"].includes(fichier.type)) throw new Error("Formats acceptés : PNG, WebP, JPEG.");
-  if (fichier.size > 20 * 1024 * 1024) throw new Error("Image trop lourde (20 Mo au plus).");
+  if (fichier.type === "image/webp") return fichier;
+  if (fichier.size > 60 * 1024 * 1024) throw new Error("Image trop lourde (60 Mo au plus).");
   const bitmap = await createImageBitmap(fichier);
-  const echelle = Math.min(1, largeur / bitmap.width, hauteur / bitmap.height);
-  const canvas = creer("canvas", { width: Math.round(bitmap.width * echelle), height: Math.round(bitmap.height * echelle) });
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const canvas = creer("canvas", { width: bitmap.width, height: bitmap.height });
+  canvas.getContext("2d").drawImage(bitmap, 0, 0);
   bitmap.close();
-  for (const qualite of [0.85, 0.7, 0.5]) {
-    const url = canvas.toDataURL("image/webp", qualite);
-    if (!url.startsWith("data:image/webp")) throw new Error("Ce navigateur ne sait pas créer de WebP : utilise Chrome, Firefox ou Edge.");
-    if (url.length * 0.75 <= POIDS_MAX_IMPORT) return url;
+  const webp = await new Promise(resoudre => canvas.toBlob(resoudre, "image/webp", 1));
+  if (!webp || webp.type !== "image/webp") throw new Error("Ce navigateur ne sait pas créer de WebP : utilise Chrome, Firefox ou Edge.");
+  return webp;
+}
+
+async function empreinteDe(blob) {
+  const octets = new Uint8Array(await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()));
+  return [...octets].map(o => o.toString(16).padStart(2, "0")).join("");
+}
+
+// -> chemin de l'image dans le stockage, ou null si refusée.
+async function televerserImage(webp) {
+  if (webp.size > POIDS_MAX_IMPORT) throw new Error(`Image trop lourde une fois en WebP (${(webp.size / 1048576).toFixed(1)} Mo, 15 Mo au plus) : réduis sa taille avant de l'importer.`);
+  const adresse = await envoyer({ vn_televersement: { taille: webp.size, empreinte: await empreinteDe(webp) } });
+  if (!adresse) return null;
+  if (!adresse.existe) {
+    const reponse = await fetch(adresse.url, {
+      method: "PUT",
+      headers: { "content-type": "image/webp", "cache-control": "max-age=31536000", "x-upsert": "true" },
+      body: webp
+    });
+    if (!reponse.ok) throw new Error("Envoi au stockage refusé.");
   }
-  throw new Error("Image trop lourde, même réduite.");
+  const verifiee = await envoyer({ vn_verification: { chemin: adresse.chemin } });
+  return verifiee ? adresse.chemin : null;
 }
 
 async function importerFichier(fichier) {
-  edEl("ed-images-etat").textContent = "Envoi…";
+  edEl("ed-images-etat").textContent = "Conversion…";
   try {
-    const data = await imageEnWebp(fichier, IMPORTS[fenetreImages.genre]);
-    const reponse = await envoyer({ vn_import: { data } });
-    if (reponse) choisirImage(reponse.chemin);
+    const webp = await imageEnWebp(fichier);
+    edEl("ed-images-etat").textContent = `Envoi (${(webp.size / 1048576).toFixed(1)} Mo)…`;
+    const chemin = await televerserImage(webp);
+    if (chemin) choisirImage(chemin);
     else edEl("ed-images-etat").textContent = "Envoi refusé.";
   } catch (erreur) {
     afficherErreurImages(erreur);
