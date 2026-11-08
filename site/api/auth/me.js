@@ -1,7 +1,7 @@
 const { supabase } = require("../_lib/supabase");
 const { parseCookies, verifySessionToken } = require("../_lib/session");
 const { estAdmin, estMiniAdmin, estShadowban } = require("../_lib/admin");
-const { actualiserPoints, estWorldBossPublic } = require("../_lib/personnages");
+const { actualiserPoints, estWorldBossPublic, estEquilibrageMiniAdmins } = require("../_lib/personnages");
 const { reclamerBonusConnexion, lireNouveautes } = require("../_lib/koyns");
 const { noterConnexion } = require("../_lib/statistiques");
 // Match de tournoi en cours du joueur (room "tournoi" en 1v1, room
@@ -67,6 +67,8 @@ module.exports = async (req, res) => {
         ...user,
         admin: estAdmin(user.id),
         mini_admin: !estAdmin(user.id) && await estMiniAdmin(user.id),
+        // Mode Équilibrage de l'entraînement : vrais admins, mini admins si permis.
+        equilibrage_entrainement: estAdmin(user.id) || (estEquilibrageMiniAdmins() && await estMiniAdmin(user.id)),
         theorycraft: !await estShadowban(user.id)
       },
       world_boss: estWorldBossPublic() || estAdmin(user.id) || await estMiniAdmin(user.id)

@@ -102,6 +102,14 @@ function getModeEquilibrage() {
   return modeEquilibrage;
 }
 
+// Mode Équilibrage de l'entraînement : vrais admins, et mini admins si
+// coché dans la fenêtre Équilibrage de l'admin (config.equilibrage_mini_admins).
+let equilibrageMiniAdmins = false;
+
+function estEquilibrageMiniAdmins() {
+  return equilibrageMiniAdmins;
+}
+
 // Points d'écart entre les sommes horizontales par ban horizontal
 // ("fixe_horizontal"), réglable sur la page admin (config.seuil_horizontal).
 const SEUIL_HORIZONTAL_DEFAUT = 200;
@@ -272,6 +280,7 @@ async function actualiserPoints() {
     bossModes = config.boss_modes && typeof config.boss_modes === "object" ? config.boss_modes : {};
     tempsSuspects = reglageTempsSuspects(config);
     modeEquilibrage = MODES_EQUILIBRAGE.includes(config.equilibrage) ? config.equilibrage : "ancien";
+    equilibrageMiniAdmins = config.equilibrage_mini_admins === true;
     limitesEquilibrage = lireLimitesEquilibrage(config.limites_equilibrage);
     seuilHorizontal = lireSeuilHorizontal(config.seuil_horizontal);
     synergies = lireSynergies(config.synergies);
@@ -476,6 +485,7 @@ module.exports = {
   ALTERNATIVES_ARMES,
   MODES_POINTS,
   getModeEquilibrage,
+  estEquilibrageMiniAdmins,
   lireSeuilHorizontal,
   getSeuilHorizontal,
   codeTheatre,

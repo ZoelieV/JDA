@@ -116,6 +116,8 @@
 //   { recommandations_stuff: [{ dps, supports: [{ id, constellation_min? }] }] }
 //                                    recommandations de la box stuff (cf.
 //                                    commun/recommandations_stuff.js)
+//   { equilibrage_mini_admins: bool } mode Équilibrage de l'entraînement
+//                                    ouvert aux mini admins (sinon vrais admins)
 //   { equilibrage: méthode }         méthode des bans d'équilibrage des
 //                                    prochaines drafts (cf. _lib/personnages.js)
 //   { calendrier: { saison: { debut, fin }, evenements: [{ id, debut, fin,
@@ -691,6 +693,8 @@ module.exports = async (req, res) => {
         // ajouts compris).
         const persos = new Set([...listeJSON("characters"), ...ajouts.characters].map(e => e.id));
         config = { ...ancienne, recommandations_stuff: lireRecommandationsStuff(corps.recommandations_stuff, persos) };
+      } else if (typeof corps.equilibrage_mini_admins === "boolean") {
+        config = { ...ancienne, equilibrage_mini_admins: corps.equilibrage_mini_admins };
       } else if (typeof corps.equilibrage === "string") {
         if (!MODES_EQUILIBRAGE.includes(corps.equilibrage)) return res.status(400).json({ error: "Méthode d'équilibrage inconnue" });
         config = { ...ancienne, equilibrage: corps.equilibrage };

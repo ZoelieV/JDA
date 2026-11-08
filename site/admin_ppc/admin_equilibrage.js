@@ -70,6 +70,7 @@ function initialiserEquilibrage() {
   let actuelle = null;
   let limites = null;
   let seuilHorizontal = null;
+  let miniAdmins = false;
   const fermer = () => modal.classList.remove("active");
 
   document.getElementById("ouvrir-equilibrage").addEventListener("click", async () => {
@@ -81,6 +82,7 @@ function initialiserEquilibrage() {
         actuelle = METHODES_EQUILIBRAGE.some(m => m.valeur === config?.equilibrage) ? config.equilibrage : "ancien";
         limites = config?.limites_equilibrage || null;
         seuilHorizontal = config?.seuil_horizontal ?? null;
+        miniAdmins = config?.equilibrage_mini_admins === true;
       } catch (erreur) {
         console.error(erreur);
         actuelle = "ancien";
@@ -88,6 +90,24 @@ function initialiserEquilibrage() {
     }
     rendreEquilibrage(actuelle);
     rendreLimites(limites, seuilHorizontal);
+    document.getElementById("equilibrage-mini-admins").checked = miniAdmins;
+  });
+
+  // Mode Équilibrage de l'entraînement ouvert aux mini admins, enregistré dès le clic.
+  document.getElementById("equilibrage-mini-admins").addEventListener("change", async event => {
+    const caseMini = event.target;
+    caseMini.disabled = true;
+    afficherMessageEquilibrage("Enregistrement…");
+    try {
+      const config = await envoyerAjout({ equilibrage_mini_admins: caseMini.checked });
+      miniAdmins = config?.equilibrage_mini_admins === true;
+      afficherMessageEquilibrage(miniAdmins ? "Mode Équilibrage ouvert aux mini admins." : "Mode Équilibrage réservé aux vrais admins.", "succes");
+    } catch (erreur) {
+      console.error(erreur);
+      afficherMessageEquilibrage(erreur.message, "erreur");
+    }
+    caseMini.checked = miniAdmins;
+    caseMini.disabled = false;
   });
   document.getElementById("fermer-equilibrage").addEventListener("click", fermer);
   modal.addEventListener("click", event => {

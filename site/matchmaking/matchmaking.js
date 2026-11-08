@@ -1037,9 +1037,9 @@ async function initialiserEntrainement() {
   entrainement.cotes.moi.proprietaire = entrainement.moi.id;
   entrainement.cotes.adverse.proprietaire = entrainement.moi.id;
 
-  // Mode Équilibrage (administrateurs et mini admins) : sans chronos, donc
-  // pas en draft classée.
-  if (entrainement.moi.admin || entrainement.moi.mini_admin) {
+  // Mode Équilibrage (vrais admins ; mini admins si l'admin l'a permis,
+  // cf. api/auth/me.js) : sans chronos, donc pas en draft classée.
+  if (entrainement.moi.equilibrage_entrainement) {
     document.getElementById("ligne-ent-equilibrage").classList.remove("cache");
     const caseClasse = document.getElementById("ent-classe");
     document.getElementById("ent-equilibrage").addEventListener("change", e => {
