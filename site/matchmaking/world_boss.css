@@ -335,9 +335,27 @@
   50% { opacity: 0.45; }
 }
 
-#btn-pret.actif {
+/* Boutons « Prêt » bien visibles (fond vert presque plein). */
+#btn-pret,
+#btn-lancer {
   border-color: #3ecf6a;
-  background-color: rgba(62, 207, 106, 0.2);
+  background-color: rgba(62, 207, 106, 0.8);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+#btn-pret:hover,
+#btn-lancer:hover:not(:disabled) {
+  background-color: rgba(62, 207, 106, 0.95);
+}
+
+#btn-lancer:disabled {
+  opacity: 0.75;
+}
+
+#btn-pret.actif {
+  border-color: #6fe398;
+  background-color: rgb(46, 168, 84);
 }
 
 @media (prefers-reduced-motion: reduce) {
