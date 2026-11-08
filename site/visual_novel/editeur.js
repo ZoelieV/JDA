@@ -703,6 +703,7 @@ function rendreCatalogue() {
     creer("button", { type: "button", classe: "ed-bouton", textContent: "Écouter", onclick: () => {
       sonEcoute?.pause();
       sonEcoute = new Audio(imageVn(son.chemin));
+      if (window.VolumeSite) VolumeSite.appliquer(sonEcoute);
       sonEcoute.play().catch(afficherErreurSons);
     } }),
     creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Supprimer du stockage", onclick: () => supprimerSon(son) })

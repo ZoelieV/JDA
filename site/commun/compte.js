@@ -459,6 +459,8 @@
         const menu = creerMenu();
         // Zoom du site (ordinateur, cf. commun/zoom.js).
         window.ZoomSite?.inserer(menu);
+        // Volume du site (cf. commun/volume.js), juste sous le zoom.
+        window.VolumeSite?.inserer(menu);
         conteneur.append(bouton, menu);
         zone.appendChild(conteneur);
         brancherMenu(conteneur, bouton, parametres, menu);

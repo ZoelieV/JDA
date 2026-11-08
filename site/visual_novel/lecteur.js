@@ -98,6 +98,8 @@ let sonCoupeVn = false;
 try { sonCoupeVn = localStorage.getItem(CLE_SON_COUPE) === "1"; } catch { /* stockage indisponible */ }
 const musiqueVn = new Audio();
 musiqueVn.loop = true;
+// Volume du site (menu des paramètres des autres pages, cf. commun/volume.js).
+VolumeSite.appliquer(musiqueVn);
 let cheminMusiqueVn = null;
 let musiqueEnAttenteVn = false;
 
@@ -118,7 +120,7 @@ function changerMusique(chemin) {
 }
 
 function jouerSon(chemin) {
-  if (!sonCoupeVn) new Audio(imageVn(chemin)).play().catch(() => {});
+  if (!sonCoupeVn) VolumeSite.appliquer(new Audio(imageVn(chemin))).play().catch(() => {});
 }
 
 function afficherBoutonSon() {

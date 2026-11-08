@@ -180,7 +180,9 @@ const TirageBoss = (() => {
       video.addEventListener("ended", afficherFin);
       video.addEventListener("error", sauter);
       video.addEventListener("playing", () => { image_raf = requestAnimationFrame(animer); }, { once: true });
-      video.volume = VOLUME;
+      // Volume du site (menu des paramètres, cf. commun/volume.js).
+      if (window.VolumeSite) VolumeSite.appliquer(video, VOLUME);
+      else video.volume = VOLUME;
       // Son refusé par le navigateur (aucun clic sur la page) : sans le son.
       video.play().catch(() => {
         video.muted = true;
