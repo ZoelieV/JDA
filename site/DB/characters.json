@@ -1227,7 +1227,7 @@
     "nom": "Prune",
     "rarete": "4",
     "element": "anemo",
-    "arme": "claymore",
+    "arme": "catalyst",
     "categorie": "support",
     "image": "images/characters/prune.webp",
     "PPC": [60, 60, 60, 60, 60, 60, 65, 0, 0, 0]
