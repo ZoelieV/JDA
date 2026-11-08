@@ -384,7 +384,7 @@ document.addEventListener("click", async event => {
   const equipeAction = cible.closest("[data-equipe-action]");
   if (equipeAction) {
     const action = equipeAction.dataset.equipeAction;
-    if (["quitter", "exclure", "refuser"].includes(action) && !confirm(action === "quitter" ? "Sûr ?" : "Confirmer ?")) return;
+    if (["quitter", "exclure", "refuser"].includes(action) && !await confirmerSite({ titre: { quitter: "Quitter l'équipe ?", exclure: "Exclure ce joueur ?", refuser: "Refuser ce joueur ?" }[action], ok: { quitter: "Quitter", exclure: "Exclure", refuser: "Refuser" }[action], danger: true })) return;
     return agirTournoi("equipe", {
       action,
       equipe: equipeAction.dataset.equipe,
@@ -397,12 +397,12 @@ document.addEventListener("click", async event => {
   if (lancer) return agirTournoi("lancer", { match: lancer.dataset.lancer }, vue.moi?.gestionnaire ? "message-gestion" : "message-moi");
   const relancer = cible.closest("[data-relancer]");
   if (relancer) {
-    if (!confirm("Remettre ce match à jouer ? La room en cours ne comptera plus.")) return;
+    if (!await confirmerSite({ titre: "Remettre ce match à jouer ?", texte: "La room en cours ne comptera plus.", ok: "Remettre à jouer", danger: true })) return;
     return agirTournoi("relancer", { match: relancer.dataset.relancer });
   }
   const forfait = cible.closest("[data-forfait]");
   if (forfait) {
-    if (!confirm("Déclarer la victoire par forfait ?")) return;
+    if (!await confirmerSite({ titre: "Déclarer la victoire par forfait ?", ok: "Déclarer le forfait" })) return;
     return agirTournoi("forfait", { match: forfait.dataset.forfait, vainqueur: forfait.dataset.vainqueur });
   }
 
@@ -425,7 +425,7 @@ document.addEventListener("click", async event => {
     return ouvrirFormulaireTournoi({ config: vue.tournoi, id: ID_TOURNOI, surSucces: () => chargerTournoi() });
   }
   if (gestion === "supprimer") {
-    if (!confirm("Supprimer définitivement ce tournoi ?")) return;
+    if (!await confirmerSite({ titre: "Supprimer définitivement ce tournoi ?", ok: "Supprimer", danger: true })) return;
     try {
       await appelTournoi("supprimer", { id: ID_TOURNOI, corps: {} });
       window.location.href = "/tournois";
@@ -441,7 +441,7 @@ document.addEventListener("click", async event => {
       terminer_qualifs: "Terminer les qualifications ? Les meilleurs vont en phase finale.",
       annuler: "Annuler le tournoi ?"
     };
-    if (confirmations[gestion] && !confirm(confirmations[gestion])) return;
+    if (confirmations[gestion] && !await confirmerSite({ titre: confirmations[gestion], danger: gestion === "annuler" })) return;
     return agirTournoi(gestion);
   }
 

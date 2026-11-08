@@ -447,7 +447,7 @@ async function creerAjout() {
 
 async function supprimerAjout(genre, id) {
   const entree = ajouts[genre].find(e => e.id === id);
-  if (!entree || !confirm(`Supprimer « ${entree.nom} » (${id}) ? Ses points seront perdus.`)) return;
+  if (!entree || !await confirmerSite({ titre: `Supprimer « ${entree.nom} » (${id}) ?`, texte: "Ses points seront perdus.", ok: "Supprimer", danger: true })) return;
   try {
     await envoyerAjout({ suppression: { genre, id } });
     const liste = listeDuGenre(genre);
@@ -462,7 +462,7 @@ async function supprimerAjout(genre, id) {
     majAjout(); // l'id redevient libre
   } catch (erreur) {
     console.error(erreur);
-    alert(erreur.message);
+    alerterSite(erreur.message);
   }
 }
 

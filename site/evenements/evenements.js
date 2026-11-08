@@ -29,18 +29,18 @@ async function creerWorldBoss(bouton, matchmaking = false) {
       body: JSON.stringify({ type: "world_boss", ...(matchmaking ? { matchmaking: true } : {}) })
     });
     if (reponse.status === 401) {
-      alert("Tu dois être connecté avec Discord pour créer une room.");
+      alerterSite("Tu dois être connecté avec Discord pour créer une room.");
       return;
     }
     const data = await reponse.json().catch(() => ({}));
     if (!reponse.ok) {
-      alert(data.error || "Échec de la création de la room.");
+      alerterSite(data.error || "Échec de la création de la room.");
       return;
     }
     window.location.href = `/world-boss?room=${data.room_id}`;
   } catch (erreur) {
     console.error(erreur);
-    alert("Erreur lors de la création de la room.");
+    alerterSite("Erreur lors de la création de la room.");
   } finally {
     bouton.disabled = false;
   }
@@ -57,18 +57,18 @@ async function creerLittleCup(bouton, matchmaking) {
       body: JSON.stringify({ type: matchmaking ? "matchmaking" : "prive", little_cup: true })
     });
     if (reponse.status === 401) {
-      alert("Tu dois être connecté avec Discord pour jouer.");
+      alerterSite("Tu dois être connecté avec Discord pour jouer.");
       return;
     }
     const data = await reponse.json().catch(() => ({}));
     if (!reponse.ok) {
-      alert(data.error || "Impossible de lancer le match.");
+      alerterSite(data.error || "Impossible de lancer le match.");
       return;
     }
     window.location.href = `/match?room=${data.room_id}`;
   } catch (erreur) {
     console.error(erreur);
-    alert("Erreur lors de la création du match.");
+    alerterSite("Erreur lors de la création du match.");
   } finally {
     bouton.disabled = false;
   }

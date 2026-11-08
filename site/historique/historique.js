@@ -755,7 +755,7 @@ function brancherSanctionLitige(ligne, match) {
   formulaire.addEventListener("submit", async event => {
     event.preventDefault();
     const libelle = role => formulaire.elements[`sanction_${role}`].selectedOptions[0].textContent;
-    if (!confirm(`Clore ce dossier ?\n${match.j1.nom} : ${libelle("j1")}\n${match.j2.nom} : ${libelle("j2")}\nLe match reste invalidé.`)) return;
+    if (!await confirmerSite({ titre: "Clore ce dossier ?", texte: `${match.j1.nom} : ${libelle("j1")}\n${match.j2.nom} : ${libelle("j2")}\nLe match reste invalidé.`, ok: "Clore le dossier" })) return;
     const bouton = formulaire.querySelector(".bouton-sanction");
     bouton.disabled = true;
     try {
@@ -773,7 +773,7 @@ function brancherSanctionLitige(ligne, match) {
       if (!reponse.ok) throw new Error(data.error || "Erreur lors de l'application des sanctions.");
       await rafraichir();
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
       bouton.disabled = false;
     }
   });
@@ -809,7 +809,7 @@ function brancherLitigeEquilibrage(ligne, match) {
       if (!reponse.ok) throw new Error(data.error || "Erreur lors de la clôture.");
       await rafraichir();
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
       bouton.disabled = false;
     }
   });
@@ -830,7 +830,7 @@ function brancherCorrectionLitige(ligne, match) {
   formulaire.addEventListener("submit", async event => {
     event.preventDefault();
     const temps = role => lireTempsCorrige(formulaire, role);
-    if (!confirm(`Republier ce match avec les temps ${temps("j1")} (${match.j1.nom}) et ${temps("j2")} (${match.j2.nom}) ?`)) return;
+    if (!await confirmerSite({ titre: "Republier ce match ?", texte: `Avec les temps ${temps("j1")} (${match.j1.nom}) et ${temps("j2")} (${match.j2.nom}).`, ok: "Republier" })) return;
 
     const bouton = formulaire.querySelector(".bouton-republier");
     bouton.disabled = true;
@@ -845,7 +845,7 @@ function brancherCorrectionLitige(ligne, match) {
       if (!reponse.ok) throw new Error(data.error || "Erreur lors de la republication.");
       await rafraichir();
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
       bouton.disabled = false;
     }
   });
@@ -942,7 +942,7 @@ function initialiserFenetreSignalement() {
       // Administrateur : le match arrive dans ses signalements.
       if (estAdmin) await rafraichir();
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
       mettreAJourBoutonsSignaler();
       bouton.disabled = false;
     }
@@ -1007,7 +1007,7 @@ function brancherTraitementSignalement(ligne, match) {
     const decision = valeur("decision");
     const temps = role => lireTempsCorrige(formulaire, role);
     const details = decision === "corrige" ? `\nTemps : ${temps("j1")} (${match.j1.nom}) et ${temps("j2")} (${match.j2.nom})` : "";
-    if (!confirm(`Clore ce signalement ?\n${libelle("decision")}${details}\n${match.j1.nom} : ${libelle("sanction_j1")}\n${match.j2.nom} : ${libelle("sanction_j2")}`)) return;
+    if (!await confirmerSite({ titre: "Clore ce signalement ?", texte: `${libelle("decision")}${details}\n${match.j1.nom} : ${libelle("sanction_j1")}\n${match.j2.nom} : ${libelle("sanction_j2")}`, ok: "Clore le signalement" })) return;
     const bouton = formulaire.querySelector(".bouton-traiter-signalement");
     bouton.disabled = true;
     try {
@@ -1028,7 +1028,7 @@ function brancherTraitementSignalement(ligne, match) {
       if (!reponse.ok) throw new Error(data.error || "Erreur lors du traitement du signalement.");
       await rafraichir();
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
       bouton.disabled = false;
     }
   });

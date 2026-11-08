@@ -77,8 +77,8 @@ function ouvrirCategories() {
   document.getElementById("modal-categories").classList.add("active");
 }
 
-function fermerCategories() {
-  if (etatCategories() !== categoriesEnregistrees && !confirm("Abandonner les modifications des catégories ?")) return;
+async function fermerCategories() {
+  if (etatCategories() !== categoriesEnregistrees && !await confirmerSite({ titre: "Abandonner les modifications des catégories ?", ok: "Abandonner", annuler: "Continuer", danger: true })) return;
   document.getElementById("modal-categories").classList.remove("active");
 }
 

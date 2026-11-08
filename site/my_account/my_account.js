@@ -90,7 +90,7 @@ async function chargerSessionDiscord() {
   });
 
   logoutBtn.addEventListener("click", async () => {
-    if (!confirm("Se déconnecter ?")) return;
+    if (!await confirmerSite({ titre: "Se déconnecter ?", ok: "Se déconnecter" })) return;
     // Plus de fond personnalisé une fois déconnecté.
     window.FondEcran?.memoriser(null, null);
     window.FondEcran?.memoriserTheatre(null);
@@ -1196,12 +1196,12 @@ function mettreAJourCopieBox() {
   document.getElementById("menu-copie-box").classList.add("cache");
 }
 
-function copierBox(source) {
+async function copierBox(source) {
   const { personnages, armes, profil } = contexteCopie;
   const cible = getBoxActive();
   const enregistre = collectionsEnregistrees();
   const remplie = ["characters", "weapons"].some(vue => Object.keys(profil[vue].selections[cible] || {}).length > 0);
-  if (remplie && !confirm(`Remplacer le contenu de « ${nomBox(profil, cible)} » par celui de « ${nomBox(profil, source)} » ?`)) return;
+  if (remplie && !await confirmerSite({ titre: "Remplacer le contenu de la box ?", texte: `« ${nomBox(profil, cible)} » prendra le contenu de « ${nomBox(profil, source)} ».`, ok: "Remplacer" })) return;
   ["characters", "weapons"].forEach(vue => {
     const selection = enregistre[vue]?.selections?.[source] || {};
     profil[vue].selections[cible] = Object.fromEntries(Object.keys(selection)
@@ -1746,7 +1746,7 @@ async function initialiserPage() {
     }
   } catch (erreur) {
     console.error(erreur);
-    alert(ID_BOX_FICTIVE ? `Box fictive : ${erreur.message}` : "Erreur lors du chargement de la page.");
+    alerterSite(ID_BOX_FICTIVE ? `Box fictive : ${erreur.message}` : "Erreur lors du chargement de la page.");
   }
 }
 

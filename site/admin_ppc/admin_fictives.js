@@ -99,7 +99,7 @@ async function creerFictive(event) {
 
 async function renommerFictive(id) {
   const box = boxesFictives.find(b => b.id === id);
-  const nom = prompt("Nouveau nom de la box :", box?.nom || "")?.trim();
+  const nom = (await demanderTexteSite({ titre: "Renommer la box fictive", texte: "Nouveau nom de la box :", valeur: box?.nom || "", ok: "Renommer" }))?.trim();
   if (!nom || nom === box?.nom) return;
   try {
     await requeteFictives(`/api/accounts/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ nom }) });
@@ -113,7 +113,7 @@ async function renommerFictive(id) {
 
 async function supprimerFictive(id) {
   const box = boxesFictives.find(b => b.id === id);
-  if (!confirm(`Supprimer la box fictive « ${box?.nom || id} » ? Elle ne sera plus choisissable en entraînement.`)) return;
+  if (!await confirmerSite({ titre: `Supprimer la box fictive « ${box?.nom || id} » ?`, texte: "Elle ne sera plus choisissable en entraînement.", ok: "Supprimer", danger: true })) return;
   try {
     await requeteFictives(`/api/accounts/${encodeURIComponent(id)}`, { method: "DELETE" });
     await chargerFictives();

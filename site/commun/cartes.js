@@ -619,47 +619,6 @@ function viderCacheCartes(grille) {
 // faire autre chose.
 // -> true si le match a été abandonné (l'appelant relance sa demande) ;
 // sinon, retour à ce match.
-// ---- Fenêtres du site à la place de confirm() et alert() ----
-// Même look que les fenêtres de la personnalisation (.fenetre-site, cf.
-// commun/cartes.css). texte : texte brut (jamais interprété).
-// danger : bouton de validation rouge (quitter, abandonner...).
-// -> Promise<boolean> (true : validé ; Échap ou clic à côté : false).
-function confirmerSite({ titre, texte = "", ok = "Confirmer", annuler = "Annuler", danger = false }) {
-  return new Promise(resoudre => {
-    const fenetre = document.createElement("dialog");
-    fenetre.className = "fenetre-site";
-    fenetre.innerHTML = `
-      <h3 class="fenetre-site-titre"></h3>
-      <p class="fenetre-site-texte"></p>
-      <div class="fenetre-site-actions">
-        ${annuler ? `<button type="button" class="fenetre-site-annuler"></button>` : ""}
-        <button type="button" class="fenetre-site-ok${danger ? " danger" : ""}"></button>
-      </div>`;
-    fenetre.querySelector(".fenetre-site-titre").textContent = titre;
-    fenetre.querySelector(".fenetre-site-titre").hidden = !titre;
-    fenetre.querySelector(".fenetre-site-texte").textContent = texte;
-    fenetre.querySelector(".fenetre-site-texte").hidden = !texte;
-    fenetre.querySelector(".fenetre-site-ok").textContent = ok;
-    if (annuler) fenetre.querySelector(".fenetre-site-annuler").textContent = annuler;
-    let reponse = false;
-    fenetre.querySelector(".fenetre-site-annuler")?.addEventListener("click", () => fenetre.close());
-    fenetre.querySelector(".fenetre-site-ok").addEventListener("click", () => { reponse = true; fenetre.close(); });
-    fenetre.addEventListener("click", event => { if (event.target === fenetre) fenetre.close(); });
-    fenetre.addEventListener("close", () => {
-      fenetre.remove();
-      resoudre(reponse);
-    });
-    document.body.appendChild(fenetre);
-    fenetre.showModal();
-    fenetre.querySelector(danger && annuler ? ".fenetre-site-annuler" : ".fenetre-site-ok").focus();
-  });
-}
-
-// Message simple, un seul bouton.
-function alerterSite(texte, titre = "") {
-  return confirmerSite({ titre, texte, ok: "OK", annuler: null });
-}
-
 function proposerAbandonClasse(roomEnCours) {
   const allerAuMatch = () => { window.location.href = `/match?room=${encodeURIComponent(roomEnCours)}`; };
   // Styles en ligne : page du match sans commun/theme.css.

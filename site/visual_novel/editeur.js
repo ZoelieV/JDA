@@ -97,9 +97,9 @@ function boutonsDeplacement(liste, element, { apresSuppression, confirmation }) 
       textContent: "×",
       title: liste.length > 1 ? "Supprimer" : "Il en faut au moins un",
       disabled: liste.length <= 1,
-      onclick: () => {
+      onclick: async () => {
         const message = confirmation();
-        if (message && !confirm(message)) return;
+        if (message && !await confirmerSite({ titre: message, ok: "Supprimer", danger: true })) return;
         liste.splice(liste.indexOf(element), 1);
         marquerModifie();
         apresSuppression();
@@ -669,8 +669,8 @@ function rendreOptionsPanneau() {
 let sonEcoute = null;
 
 function rendreCatalogue() {
-  const retirer = (liste, element, utilise, message) => {
-    if (utilise && !confirm(message)) return;
+  const retirer = async (liste, element, utilise, message) => {
+    if (utilise && !await confirmerSite({ titre: message, ok: "Supprimer", danger: true })) return;
     liste.splice(liste.indexOf(element), 1);
     marquerModifie();
     rendreCatalogue();
@@ -729,7 +729,7 @@ async function supprimerPolice(police) {
     edEl("ed-polices-etat").textContent = `Un panneau se sert de « ${police.nom} ».`;
     return;
   }
-  if (!confirm(`Supprimer « ${police.nom} » du stockage ?`)) return;
+  if (!await confirmerSite({ titre: `Supprimer « ${police.nom} » du stockage ?`, ok: "Supprimer", danger: true })) return;
   // L'histoire enregistrée la liste peut-être encore : on la retire d'abord.
   histoire.polices.splice(histoire.polices.indexOf(police), 1);
   marquerModifie();
@@ -785,7 +785,7 @@ async function supprimerSon(son) {
     edEl("ed-sons-etat").textContent = `Un panneau se sert de « ${son.nom} ».`;
     return;
   }
-  if (!confirm(`Supprimer « ${son.nom} » du stockage ?`)) return;
+  if (!await confirmerSite({ titre: `Supprimer « ${son.nom} » du stockage ?`, ok: "Supprimer", danger: true })) return;
   if (!await envoyer({ vn_image_suppression: { chemin: son.chemin } })) return;
   histoire.sons.splice(histoire.sons.indexOf(son), 1);
   marquerModifie();
@@ -921,7 +921,7 @@ function choisirImage(chemin) {
 }
 
 async function supprimerImportee(chemin) {
-  if (!confirm("Supprimer cette image du stockage ?")) return;
+  if (!await confirmerSite({ titre: "Supprimer cette image du stockage ?", ok: "Supprimer", danger: true })) return;
   // Un panneau pas encore enregistré peut s'en servir : l'enregistré est vérifié par le serveur.
   if (JSON.stringify(histoire).includes(chemin)) {
     edEl("ed-images-etat").textContent = "Cette histoire se sert de cette image.";
@@ -991,7 +991,7 @@ async function envoyer(corps) {
   });
   const data = await reponse.json().catch(() => ({}));
   if (!reponse.ok) {
-    alert(data.error || "Échec de l'enregistrement.");
+    alerterSite(data.error || "Échec de l'enregistrement.");
     return null;
   }
   return data;
@@ -1087,7 +1087,7 @@ function brancherFormulaire() {
   edEl("ed-enregistrer").addEventListener("click", enregistrer);
   edEl("ed-tester").addEventListener("click", tester);
   edEl("ed-reinitialiser").addEventListener("click", async () => {
-    if (!confirm("Effacer ta progression de lecture sur tous les chapitres ?")) return;
+    if (!await confirmerSite({ titre: "Effacer ta progression de lecture ?", texte: "Sur tous les chapitres.", ok: "Effacer", danger: true })) return;
     if (await envoyer({ vn_reinitialiser: true })) edEl("ed-etat").textContent = "Progression effacée";
   });
   edEl("ed-ouvrir-catalogue").addEventListener("click", () => {

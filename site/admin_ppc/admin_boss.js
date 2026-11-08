@@ -169,8 +169,8 @@ function ouvrirBoss() {
   document.getElementById("modal-boss").classList.add("active");
 }
 
-function fermerBoss() {
-  if (etatBoss() !== bossEnregistres && !confirm("Abandonner les modifications des boss ?")) return;
+async function fermerBoss() {
+  if (etatBoss() !== bossEnregistres && !await confirmerSite({ titre: "Abandonner les modifications des boss ?", ok: "Abandonner", annuler: "Continuer", danger: true })) return;
   document.getElementById("modal-boss").classList.remove("active");
 }
 

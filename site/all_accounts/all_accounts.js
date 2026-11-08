@@ -857,7 +857,7 @@ async function ouvrirProfil(discordId, nom) {
     document.getElementById("modal").classList.add("active");
   } catch (error) {
     console.error(error);
-    alert("Erreur lors du chargement du profil.");
+    alerterSite("Erreur lors du chargement du profil.");
   }
 }
 
@@ -895,7 +895,7 @@ async function demarrer() {
     initialiserGrille();
   } catch (error) {
     console.error(error);
-    alert("Erreur lors du chargement des comptes.");
+    alerterSite("Erreur lors du chargement des comptes.");
   }
 }
 

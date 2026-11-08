@@ -125,14 +125,14 @@
     try {
       const reponse = await fetch("/api/auth/me", { credentials: "include" });
       if (!reponse.ok) {
-        alert("Connecte-toi avec Discord pour lancer le tutoriel.");
+        alerterSite("Connecte-toi avec Discord pour lancer le tutoriel.");
         return;
       }
       localStorage.setItem("tutoriel-test", "0");
       window.location.href = "/";
     } catch (erreur) {
       console.error(erreur);
-      alert("Impossible de lancer le tutoriel.");
+      alerterSite("Impossible de lancer le tutoriel.");
     } finally {
       bouton.disabled = false;
     }

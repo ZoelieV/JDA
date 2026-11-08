@@ -309,7 +309,7 @@ function initialiserSkins() {
       document.querySelector("#modal-skins .modal-apercu-contenu").scrollTo({ top: 0 });
       return;
     }
-    if (bouton.dataset.action === "supprimer" && !window.confirm(`Supprimer le skin « ${skin.nom} » ? Les joueurs qui l'ont le perdent, et ceux qui l'ont acheté sont remboursés. C'est définitif.`)) return;
+    if (bouton.dataset.action === "supprimer" && !await confirmerSite({ titre: `Supprimer le skin « ${skin.nom} » ?`, texte: "Les joueurs qui l'ont le perdent, et ceux qui l'ont acheté sont remboursés. C'est définitif.", ok: "Supprimer", danger: true })) return;
     bouton.disabled = true;
     try {
       await envoyerSkin(bouton.dataset.action === "masque"

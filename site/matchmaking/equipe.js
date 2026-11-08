@@ -75,7 +75,7 @@ async function agir(action, corps = {}) {
     const data = await appel(action, corps);
     if (data.draft) definirDraft(data.draft);
   } catch (erreur) {
-    alert(erreur.message);
+    alerterSite(erreur.message);
   } finally {
     envoiEnCours = false;
   }
@@ -621,13 +621,13 @@ function rendreTemps() {
       $(`arbitre-abandon-${role}`).checked = saisiesArbitre[role].abandon;
     }
   });
-  $("btn-temps-arbitre")?.addEventListener("click", () => {
+  $("btn-temps-arbitre")?.addEventListener("click", async () => {
     const corps = {};
     for (const role of ROLES) {
       corps[`abandon_${role}`] = $(`arbitre-abandon-${role}`).checked;
       corps[`temps_${role}`] = $(`arbitre-temps-${role}`).value.trim().replace(/[.,]/, ":");
     }
-    if (!confirm(`Valider ${ROLES.map(role => `${NOMS_EQUIPES[role]} : ${corps[`abandon_${role}`] ? "abandon" : corps[`temps_${role}`]}`).join(", ")} ?`)) return;
+    if (!await confirmerSite({ titre: "Valider ces temps ?", texte: ROLES.map(role => `${NOMS_EQUIPES[role]} : ${corps[`abandon_${role}`] ? "abandon" : corps[`temps_${role}`]}`).join("\n"), ok: "Valider" })) return;
     agir("equipe_temps_arbitre", corps);
   });
   $("btn-manche-tournoi")?.addEventListener("click", () => agir("equipe_manche_tournoi", {}));
@@ -637,8 +637,8 @@ function rendreTemps() {
   $("input-temps-equipe")?.addEventListener("keydown", event => {
     if (event.key === "Enter") agir("equipe_temps", { temps: event.target.value });
   });
-  $("btn-abandon")?.addEventListener("click", () => {
-    if (confirm("Abandonner à la place d'un temps ?")) agir("equipe_temps", { abandon: true });
+  $("btn-abandon")?.addEventListener("click", async () => {
+    if (await confirmerSite({ titre: "Abandonner à la place d'un temps ?", ok: "Abandonner", danger: true })) agir("equipe_temps", { abandon: true });
   });
   $("btn-confirmer-temps")?.addEventListener("click", () => agir("equipe_confirmer", {}));
   $("btn-litige")?.addEventListener("click", () => $("fenetre-litige").classList.remove("cache"));
@@ -831,7 +831,7 @@ function initialiserLitige() {
   $("annuler-litige").addEventListener("click", () => $("fenetre-litige").classList.add("cache"));
   $("envoyer-litige").addEventListener("click", async () => {
     const commentaire = $("commentaire-litige").value.trim();
-    if (!commentaire) return alert("Explique la raison du litige.");
+    if (!commentaire) return alerterSite("Explique la raison du litige.");
     $("fenetre-litige").classList.add("cache");
     await agir("equipe_litige", { commentaire });
   });
@@ -852,8 +852,8 @@ async function rejoindre() {
   } catch (erreur) {
     if (erreur.roomEnCours) roomEnCours = erreur.roomEnCours;
     else if (erreur.profilIncomplet) {
-      if (confirm(`${erreur.message}\n\nAller dans Mon compte ?`)) window.location.href = "/compte";
-    } else alert(erreur.message);
+      if (await confirmerSite({ titre: "Profil incomplet", texte: erreur.message, ok: "Aller dans Mon compte" })) window.location.href = "/compte";
+    } else alerterSite(erreur.message);
   } finally {
     envoiEnCours = false;
   }
@@ -868,18 +868,18 @@ async function rejoindre() {
 function initialiserBoutons() {
   $("btn-rejoindre").addEventListener("click", rejoindre);
   $("btn-quitter").addEventListener("click", async () => {
-    if (!confirm("Quitter le lobby ?")) return;
+    if (!await confirmerSite({ titre: "Quitter le lobby ?", ok: "Quitter", annuler: "Rester", danger: true })) return;
     try {
       await appel("equipe_quitter", {});
       window.location.href = "/match";
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
     }
   });
   $("btn-lancer").addEventListener("click", () => agir("equipe_lancer", {}));
   $("btn-confirmer").addEventListener("click", confirmerAction);
-  $("btn-rejouer").addEventListener("click", () => {
-    if (confirm("Retourner au lobby (pour changer les équipes) ?")) agir("equipe_rejouer", {});
+  $("btn-rejouer").addEventListener("click", async () => {
+    if (await confirmerSite({ titre: "Retourner au lobby ?", texte: "Pour changer les équipes.", ok: "Retourner au lobby" })) agir("equipe_rejouer", {});
   });
   $("btn-revanche").addEventListener("click", () => agir("equipe_revanche", { rejouer: !draft[`revanche_${monCamp()}`] }));
 
@@ -892,7 +892,7 @@ function initialiserBoutons() {
       partager.querySelector(".texte-partager").textContent = "Lien copié";
       partager.classList.add("copie");
     } catch {
-      window.prompt("Copie ce lien et envoie-le aux autres joueurs :", lien);
+      copierLienSite(lien, "Copie ce lien et envoie-le aux autres joueurs :");
     }
     setTimeout(() => {
       partager.innerHTML = texte;

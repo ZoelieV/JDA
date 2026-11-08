@@ -157,7 +157,7 @@ async function rejoindreOuConsulterRoom(id) {
       await proposerAbandonClasse(matchEnCours);
       return rejoindreOuConsulterRoom(id);
     }
-    alert(error || "Impossible de rejoindre cette room.");
+    await alerterSite(error || "Impossible de rejoindre cette room.");
     window.location.href = "/compte";
     throw new Error(error || "Impossible de rejoindre cette room.");
   }
@@ -320,7 +320,7 @@ function initialiserChoixBossEntrainement() {
   relancer.addEventListener("click", () => {
     garder.disabled = relancer.disabled = true;
     postRelancerBoss()
-      .catch(err => alert(err.message))
+      .catch(err => alerterSite(err.message))
       .finally(() => { garder.disabled = relancer.disabled = false; });
   });
 }
@@ -357,9 +357,9 @@ async function postAbandon() {
 }
 
 // Abandon à la place d'un temps, après confirmation.
-function declarerAbandon() {
-  if (!confirm(`Déclarer un abandon ? Si ton adversaire a ${motsResultat().un}, il gagne ; s'il abandonne aussi, c'est une égalité.`)) return;
-  postAbandon().catch(err => alert(err.message));
+async function declarerAbandon() {
+  if (!await confirmerSite({ titre: "Déclarer un abandon ?", texte: `Si ton adversaire a ${motsResultat().un}, il gagne ; s'il abandonne aussi, c'est une égalité.`, ok: "Abandonner", danger: true })) return;
+  postAbandon().catch(err => alerterSite(err.message));
 }
 
 async function postConfirmerTemps() {
@@ -416,7 +416,7 @@ function initialiserFenetreLitige() {
       await postLitige(commentaire);
       fermerFenetreLitige();
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
       bouton.disabled = false;
     }
   });
@@ -1313,7 +1313,7 @@ function rendreChoixBox() {
       else if (tropChere) btn.title = `Hors full box, une box jouable en draft ${PALIERS_THEATRE[theatreDeLaDraft()]?.nom.toLowerCase() || "carpe"} vaut ${maxBox} points au plus`;
       btn.disabled = !peutChoisir || tropPetite || tropChere;
       if (peutChoisir && !tropPetite && !tropChere) {
-        btn.addEventListener("click", () => postBox(valeur).catch(err => alert(err.message)));
+        btn.addEventListener("click", () => postBox(valeur).catch(err => alerterSite(err.message)));
       }
       conteneur.appendChild(btn);
     });
@@ -1342,7 +1342,7 @@ function rendreChoixBox() {
       }
       btnPret.classList.toggle("active", !!pret);
       btnPret.disabled = !draft[`box_${role}`];
-      btnPret.onclick = () => postReady(!pret).catch(err => alert(err.message));
+      btnPret.onclick = () => postReady(!pret).catch(err => alerterSite(err.message));
     } else {
       btnPret.classList.add("cache");
     }
@@ -1435,7 +1435,7 @@ function rendreEchangeJoker(cEstMonTour, nbNormaux) {
     ? "Rend les bans échangés et retire le joker obtenu"
     : `Une seule fois : ${BANS_PAR_JOKER} bans d'équilibrage en moins, 1 ban joker en plus (personnage de la box adverse, interdit à l'adversaire seulement)`;
   bouton.disabled = monTempsEcoule();
-  bouton.onclick = () => postBonusEchanger(!!draft.echange_joker).catch(err => alert(err.message));
+  bouton.onclick = () => postBonusEchanger(!!draft.echange_joker).catch(err => alerterSite(err.message));
 }
 
 // Étape des bans horizontaux : persos horizontaux de l'adversaire
@@ -1470,7 +1470,7 @@ function rendreBansHorizontaux() {
       `;
       if (cEstMonTour) {
         slot.title = "Ban horizontal — cliquer pour retirer";
-        slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alert(err.message)));
+        slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alerterSite(err.message)));
       }
     }
     slots.appendChild(slot);
@@ -1481,7 +1481,7 @@ function rendreBansHorizontaux() {
   btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
   btnConfirmer.classList.toggle("pret", cEstMonTour && termine);
   btnConfirmer.disabled = !cEstMonTour || !termine || monTempsEcoule();
-  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
+  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alerterSite(err.message));
 
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
@@ -1505,7 +1505,7 @@ function rendreBansHorizontaux() {
     return obtenirCarteItem(grille, personnage, {
       selectionnable: peutCliquer,
       indisponible: dejaChoisi || !ciblable,
-      onClick: () => postBonusToggle(id).catch(err => alert(err.message)),
+      onClick: () => postBonusToggle(id).catch(err => alerterSite(err.message)),
       ...getInfosCarte(id)
     });
   }));
@@ -1567,7 +1567,7 @@ function rendreBansBonus() {
       `;
       if (cEstMonTour) {
         slot.title = "Cliquer pour retirer";
-        slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alert(err.message)));
+        slot.addEventListener("click", () => postBonusToggle(persoId).catch(err => alerterSite(err.message)));
       }
     } else {
       slot.className = "slot-bonus";
@@ -1599,7 +1599,7 @@ function rendreBansBonus() {
   btnConfirmer.classList.toggle("a-mon-tour", cEstMonTour);
   btnConfirmer.classList.toggle("pret", cEstMonTour && tousChoisis);
   btnConfirmer.disabled = !cEstMonTour || !tousChoisis || monTempsEcoule();
-  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alert(err.message));
+  btnConfirmer.onclick = () => postBonusConfirmer().catch(err => alerterSite(err.message));
 
   const grille = document.getElementById("grille-bans-bonus");
   const cleGrille = JSON.stringify([
@@ -1630,7 +1630,7 @@ function rendreBansBonus() {
       onClick: () => {
         const enJoker = modeJokerBonus && !dejaChoisi;
         if (enJoker) modeJokerBonus = false;
-        postBonusToggle(id, enJoker).catch(err => alert(err.message));
+        postBonusToggle(id, enJoker).catch(err => alerterSite(err.message));
       },
       ...getInfosCarte(id)
     });
@@ -2104,7 +2104,7 @@ function rendreChoixBoss() {
     const bouton = document.getElementById(vote === "confirmer" ? "btn-confirmer-boss" : "btn-relancer-boss");
     bouton.classList.toggle("active", monVote === vote);
     bouton.disabled = animationBossEnCours || (vote === "relancer" && plusDeRelance);
-    bouton.onclick = () => postVoteBoss(vote).catch(err => alert(err.message));
+    bouton.onclick = () => postVoteBoss(vote).catch(err => alerterSite(err.message));
   });
 
   message.innerHTML = !monVote && plusDeRelance
@@ -2206,7 +2206,7 @@ function rendreDraft(phasePrecedente) {
       .then(() => { selectionDraft = null; })
       .catch(err => {
         btnConfirmer.disabled = false;
-        alert(err.message);
+        alerterSite(err.message);
       });
   };
 
@@ -2216,7 +2216,7 @@ function rendreDraft(phasePrecedente) {
   btnAnnuler.onclick = () => {
     btnAnnuler.disabled = true;
     postAnnulerCoup()
-      .catch(err => alert(err.message))
+      .catch(err => alerterSite(err.message))
       .finally(() => { btnAnnuler.disabled = false; });
   };
 
@@ -3000,19 +3000,19 @@ function envoyerTempsSaisi() {
   if (defiEnCours()) {
     const ennemis = document.getElementById("input-temps").value.trim();
     if (!/^[0-9]{1,4}$/.test(ennemis)) {
-      alert("Nombre invalide. Entre le nombre d'ennemis tués, par exemple 42.");
+      alerterSite("Nombre invalide. Entre le nombre d'ennemis tués, par exemple 42.");
       return;
     }
-    (draft.entrainement ? postTempsEntrainement : postTemps)(ennemis).catch(err => alert(err.message));
+    (draft.entrainement ? postTempsEntrainement : postTemps)(ennemis).catch(err => alerterSite(err.message));
     return;
   }
   // "7,32" et "7.32" (clavier numérique du téléphone) valent "7:32".
   const valeur = document.getElementById("input-temps").value.trim().replace(/[.,]/, ":");
   if (!/^[0-9]{1,3}:[0-5][0-9]$/.test(valeur)) {
-    alert("Format invalide. Entre les minutes puis les secondes sur 2 chiffres, par exemple 7:32, 7,32 ou 7.32.");
+    alerterSite("Format invalide. Entre les minutes puis les secondes sur 2 chiffres, par exemple 7:32, 7,32 ou 7.32.");
     return;
   }
-  (draft.entrainement ? postTempsEntrainement : postTemps)(valeur).catch(err => alert(err.message));
+  (draft.entrainement ? postTempsEntrainement : postTemps)(valeur).catch(err => alerterSite(err.message));
 }
 
 // ---- Phase 4 bis : vérification des temps ----
@@ -3059,7 +3059,7 @@ function rendreVerification() {
   btnConfirmer.disabled = jaiConfirme;
   btnConfirmer.classList.toggle("active", jaiConfirme);
   btnConfirmer.textContent = jaiConfirme ? `${mots.Les} confirmés ✓` : `Les ${mots.les} sont corrects`;
-  btnConfirmer.onclick = () => postConfirmerTemps().catch(err => alert(err.message));
+  btnConfirmer.onclick = () => postConfirmerTemps().catch(err => alerterSite(err.message));
 
   document.getElementById("btn-litige").onclick = ouvrirFenetreLitige;
 
@@ -3212,14 +3212,14 @@ function rendreArbitre() {
   document.getElementById("btn-valider-arbitre").onclick = envoyerTempsArbitre;
 }
 
-function envoyerTempsArbitre() {
+async function envoyerTempsArbitre() {
   const corps = {};
   for (const role of ["j1", "j2"]) {
     const abandon = document.getElementById(`arbitre-abandon-${role}`).checked;
     const brut = document.getElementById(`arbitre-temps-${role}`).value.trim();
     const valeur = defiEnCours() ? brut : brut.replace(/[.,]/, ":");
     if (!abandon && !(defiEnCours() ? /^[0-9]{1,4}$/ : /^[0-9]{1,3}:[0-5][0-9]$/).test(valeur)) {
-      alert(`${role === "j1" ? "J1" : "J2"} : ${defiEnCours() ? "nombre d'ennemis invalide (ex : 42)" : "temps invalide (ex : 7:32)"}.`);
+      alerterSite(`${role === "j1" ? "J1" : "J2"} : ${defiEnCours() ? "nombre d'ennemis invalide (ex : 42)" : "temps invalide (ex : 7:32)"}.`);
       return;
     }
     corps[`abandon_${role}`] = abandon;
@@ -3227,10 +3227,10 @@ function envoyerTempsArbitre() {
   }
   // Pseudos en texte (joueurX.pseudo est du HTML).
   const texte = html => { const el = document.createElement("span"); el.innerHTML = html; return el.textContent; };
-  if (!confirm(`Valider ${texte(joueur1.pseudo)} : ${corps.abandon_j1 ? "abandon" : corps.temps_j1} et ${texte(joueur2.pseudo)} : ${corps.abandon_j2 ? "abandon" : corps.temps_j2} ?`)) return;
+  if (!await confirmerSite({ titre: "Valider ces temps ?", texte: `${texte(joueur1.pseudo)} : ${corps.abandon_j1 ? "abandon" : corps.temps_j1}\n${texte(joueur2.pseudo)} : ${corps.abandon_j2 ? "abandon" : corps.temps_j2}`, ok: "Valider" })) return;
   envoyerAction(`/api/rooms/${roomId}/temps_arbitre`, corps)
     .then(data => definirDraft(data.draft))
-    .catch(err => alert(err.message));
+    .catch(err => alerterSite(err.message));
 }
 
 // Fin d'une manche de tournoi : score (bo3), manche suivante (arbitre),
@@ -3253,7 +3253,7 @@ function rendreFinMancheTournoi() {
   document.getElementById("btn-manche-tournoi")?.addEventListener("click", () => {
     envoyerAction(`/api/rooms/${roomId}/tournoi_manche`, {})
       .then(data => definirDraft(data.draft))
-      .catch(err => alert(err.message));
+      .catch(err => alerterSite(err.message));
   });
 }
 
@@ -3334,7 +3334,7 @@ function rendreRejouer() {
   btn.textContent = dejaOk ? "Annuler la demande de revanche"
     : draft.entrainement ? "Relancer l'entraînement (mêmes box, rôles inversés)" : "Rejouer (mêmes box, rôles inversés)";
   btn.classList.toggle("active", dejaOk);
-  btn.onclick = () => postRejouer(!dejaOk).catch(err => alert(err.message));
+  btn.onclick = () => postRejouer(!dejaOk).catch(err => alerterSite(err.message));
 
   const etat = document.getElementById("etat-rejouer");
   if (dejaOk && !autreOk) {
@@ -3425,9 +3425,9 @@ function rendreNonEquilibrable() {
   [revenir, annuler].forEach(b => b.classList.toggle("cache", !monRole));
   revenir.disabled = votes[monRole] === "revenir";
   revenir.textContent = votes[monRole] === "revenir" ? "En attente de ton adversaire…" : "Revenir au choix des box";
-  revenir.onclick = () => postEquilibrageVote("revenir").catch(err => alert(err.message));
-  annuler.onclick = () => {
-    if (confirm("Annuler le match ? Il ne comptera pas.")) postEquilibrageVote("annuler").catch(err => alert(err.message));
+  revenir.onclick = () => postEquilibrageVote("revenir").catch(err => alerterSite(err.message));
+  annuler.onclick = async () => {
+    if (await confirmerSite({ titre: "Annuler le match ?", texte: "Il ne comptera pas.", ok: "Annuler le match", annuler: "Retour", danger: true })) postEquilibrageVote("annuler").catch(err => alerterSite(err.message));
   };
   document.getElementById("etat-non-equilibrable").innerHTML = autre && votes[autre] === "revenir"
     ? `${nom(autre)} veut revenir au choix des box.`
@@ -3450,7 +3450,7 @@ function afficherAlerteEquilibrage() {
   document.getElementById("btn-continuer-equilibrage").onclick = () => {
     envoyerAction(`/api/rooms/${roomId}/mode_special`, {})
       .then(data => definirDraft(data.draft))
-      .catch(err => alert(err.message));
+      .catch(err => alerterSite(err.message));
   };
 }
 
@@ -3632,11 +3632,11 @@ function majPause() {
 }
 
 function initialiserCrash() {
-  document.getElementById("btn-crash").addEventListener("click", () => {
-    if (!confirm("Ton adversaire a crash ? La draft est mise en pause jusqu'à son retour (annulée après 10 minutes sans retour).")) return;
+  document.getElementById("btn-crash").addEventListener("click", async () => {
+    if (!await confirmerSite({ titre: "Ton adversaire a crash ?", texte: "La draft est mise en pause jusqu'à son retour (annulée après 10 minutes sans retour).", ok: "Mettre en pause" })) return;
     envoyerAction(`/api/rooms/${roomId}/crash`, {})
       .then(data => definirDraft(data.draft))
-      .catch(err => alert(err.message));
+      .catch(err => alerterSite(err.message));
   });
 }
 
@@ -3962,7 +3962,7 @@ function initialiserPartage() {
       bouton.classList.add("copie");
     } catch {
       // Presse-papiers indisponible : on affiche le lien à copier à la main.
-      window.prompt("Copie ce lien et envoie-le à ton adversaire :", lien);
+      copierLienSite(lien, "Copie ce lien et envoie-le à ton adversaire :");
     }
     setTimeout(() => {
       bouton.innerHTML = texteInitial;
@@ -3976,13 +3976,13 @@ async function demarrer() {
     roomId = getRoomIdDepuisUrl();
 
     if (!roomId) {
-      alert("Aucune room spécifiée dans le lien.");
+      alerterSite("Aucune room spécifiée dans le lien.");
       return;
     }
 
     const user = await chargerSessionUtilisateur();
     if (!user) {
-      alert("Tu dois être connecté avec Discord.");
+      alerterSite("Tu dois être connecté avec Discord.");
       return;
     }
     moiDiscordId = user.id;
@@ -4028,7 +4028,7 @@ async function demarrer() {
     });
   } catch (error) {
     console.error(error);
-    alert(error.message || "Erreur lors du chargement du match.");
+    alerterSite(error.message || "Erreur lors du chargement du match.");
   }
 }
 

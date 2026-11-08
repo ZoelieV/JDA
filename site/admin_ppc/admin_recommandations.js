@@ -81,8 +81,8 @@ async function ouvrirReco() {
   rendreReco();
 }
 
-function fermerReco() {
-  if (recoModifiees() && !confirm("Fermer sans enregistrer les recommandations ?")) return;
+async function fermerReco() {
+  if (recoModifiees() && !await confirmerSite({ titre: "Fermer sans enregistrer les recommandations ?", ok: "Fermer", annuler: "Continuer", danger: true })) return;
   if (recoModifiees()) reglesReco = JSON.parse(reglesRecoEnregistrees);
   document.getElementById("modal-recommandations").classList.remove("active");
 }
@@ -107,14 +107,14 @@ function initialiserReco() {
     else dpsRecoOuverts.delete(ligne.dps);
   }, true);
 
-  liste.addEventListener("click", event => {
+  liste.addEventListener("click", async event => {
     const bouton = event.target.closest(".action-reco");
     if (!bouton) return;
     event.preventDefault();
     const ligne = reglesReco[Number(bouton.closest(".ligne-reco").dataset.ligne)];
     const j = Number(bouton.closest("[data-support]")?.dataset.support);
     if (bouton.classList.contains("retirer-dps-reco")) {
-      if (!confirm(`Retirer ${nomPersoReco(ligne.dps)} et ses supports ?`)) return;
+      if (!await confirmerSite({ titre: `Retirer ${nomPersoReco(ligne.dps)} et ses supports ?`, ok: "Retirer", danger: true })) return;
       reglesReco = reglesReco.filter(l => l !== ligne);
     } else if (bouton.classList.contains("ajouter-support-reco")) {
       const id = bouton.parentElement.querySelector(".choix-support-reco").value;
@@ -148,7 +148,7 @@ function initialiserReco() {
   });
 
   document.getElementById("defaut-recommandations").addEventListener("click", async () => {
-    if (!confirm("Remplacer par les valeurs par défaut (feuille « box stuff ») ? Rien n'est enregistré avant « Enregistrer ».")) return;
+    if (!await confirmerSite({ titre: "Remplacer par les valeurs par défaut ?", texte: "Feuille « box stuff ». Rien n'est enregistré avant « Enregistrer ».", ok: "Remplacer" })) return;
     try {
       const reponse = await fetch("../DB/recommandations_stuff.json", { cache: "no-store" });
       reglesReco = lireRecommandationsStuff(await reponse.json());

@@ -23,7 +23,7 @@ async function creerMatch(corps) {
     });
 
     if (reponse.status === 401) {
-      alert("Tu dois être connecté avec Discord pour créer un match.");
+      alerterSite("Tu dois être connecté avec Discord pour créer un match.");
       return;
     }
 
@@ -35,7 +35,7 @@ async function creerMatch(corps) {
       // Box stuff, niveau du monde ou UID manquant (cf. erreurProfilIncomplet,
       // api/_lib/room.js) : direction Mon compte si le joueur le veut.
       if (profilIncomplet) {
-        if (confirm(`${error}\n\nAller dans Mon compte ?`)) {
+        if (await confirmerSite({ titre: "Profil incomplet", texte: error, ok: "Aller dans Mon compte" })) {
           ouverture = true;
           window.location.href = "/compte";
         }
@@ -45,7 +45,7 @@ async function creerMatch(corps) {
       // le lanceur confirme (comme une box non équilibrable).
       if (nonConformes?.length) {
         const detail = nonConformes.map(v => `• ${v.libelle} (${v.nom}) : ${v.erreurs.join(", ")}`).join("\n");
-        if (confirm(`Vitrines non conformes aux règles des modes en équipe :\n${detail}\n\nLancer l'entraînement quand même ?`)) {
+        if (await confirmerSite({ titre: "Vitrines non conformes aux règles des modes en équipe", texte: `${detail}\n\nLancer l'entraînement quand même ?`, ok: "Lancer quand même" })) {
           creationEnCours = false;
           ouverture = true;
           return creerMatch({ ...corps, config: { ...corps.config, forcer: true } });
@@ -61,20 +61,20 @@ async function creerMatch(corps) {
         ouverture = true; // creationEnCours tenu par la nouvelle demande
         return creerMatch(corps);
       }
-      alert(error || "Impossible de lancer ce mode.");
+      alerterSite(error || "Impossible de lancer ce mode.");
       return;
     }
 
     // Match privé : une room par minute au maximum (message du serveur).
     if (reponse.status === 429) {
       const { error } = await reponse.json().catch(() => ({}));
-      alert(error || "Trop de rooms créées : réessaie dans une minute.");
+      alerterSite(error || "Trop de rooms créées : réessaie dans une minute.");
       return;
     }
 
     if (!reponse.ok) {
       const { error } = await reponse.json().catch(() => ({}));
-      alert(error || "Échec de la création du match.");
+      alerterSite(error || "Échec de la création du match.");
       return;
     }
 
@@ -85,7 +85,7 @@ async function creerMatch(corps) {
     window.location.href = `/${data.equipe ? "equipe" : data.world_boss ? "world-boss" : "match"}?room=${data.room_id}`;
   } catch (error) {
     console.error(error);
-    alert("Erreur lors de la création du match.");
+    alerterSite("Erreur lors de la création du match.");
   } finally {
     if (!ouverture) creationEnCours = false;
   }
@@ -728,7 +728,7 @@ function brancherBoxesEnregistrees(zone, cote, possedes, copies) {
 
   zone.querySelector(".ent-supprimer-box").addEventListener("click", async () => {
     const box = trouver(liste.value);
-    if (!box || !confirm(`Supprimer la box enregistrée « ${box.nom} » ?`)) return;
+    if (!box || !await confirmerSite({ titre: `Supprimer la box enregistrée « ${box.nom} » ?`, ok: "Supprimer", danger: true })) return;
     try {
       await envoyerBoxesEnregistrees(entrainement.enregistrees.filter(b => b !== box));
       if (etat.enregistree === box.id) etat.enregistree = null;
@@ -749,7 +749,7 @@ function brancherBoxesEnregistrees(zone, cote, possedes, copies) {
     }
     const boxes = [...(entrainement.enregistrees || [])];
     const existante = boxes.findIndex(b => b.type !== "vitrine" && b.nom.toLowerCase() === nom.toLowerCase());
-    if (existante >= 0 && !confirm(`Remplacer la box enregistrée « ${boxes[existante].nom} » ?`)) return;
+    if (existante >= 0 && !await confirmerSite({ titre: `Remplacer la box enregistrée « ${boxes[existante].nom} » ?`, ok: "Remplacer" })) return;
     if (existante < 0 && boxes.length >= MAX_BOXES_ENT) {
       message.textContent = `${MAX_BOXES_ENT} box enregistrées au plus : supprimes-en une.`;
       return;
@@ -957,7 +957,7 @@ function brancherVitrinesEnregistrees(carte, vitrine, profil) {
     const enregistree = trouver(liste.value);
     if (!enregistree) return;
     if (enregistree.proprietaire !== entrainement.moi.id && !entrainement.comptes.some(c => c.discord_id === enregistree.proprietaire) && !entrainement.fictives.some(b => b.id === enregistree.proprietaire)) {
-      alert("Joueur introuvable.");
+      alerterSite("Joueur introuvable.");
       liste.value = "";
       return;
     }
@@ -970,13 +970,13 @@ function brancherVitrinesEnregistrees(carte, vitrine, profil) {
 
   carte.querySelector(".ent-supprimer-vitrine").addEventListener("click", async () => {
     const enregistree = trouver(liste.value);
-    if (!enregistree || !confirm(`Supprimer la vitrine enregistrée « ${enregistree.nom} » ?`)) return;
+    if (!enregistree || !await confirmerSite({ titre: `Supprimer la vitrine enregistrée « ${enregistree.nom} » ?`, ok: "Supprimer", danger: true })) return;
     try {
       await envoyerBoxesEnregistrees(entrainement.enregistrees.filter(b => b !== enregistree));
       entrainement.vitrines.forEach(v => { if (v.enregistree === enregistree.id) v.enregistree = null; });
       rendreVitrinesEntrainement();
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message);
     }
   });
 
@@ -989,7 +989,7 @@ function brancherVitrinesEnregistrees(carte, vitrine, profil) {
     }
     const boxes = [...(entrainement.enregistrees || [])];
     const existante = boxes.findIndex(b => b.type === "vitrine" && b.nom.toLowerCase() === nom.toLowerCase());
-    if (existante >= 0 && !confirm(`Remplacer la vitrine enregistrée « ${boxes[existante].nom} » ?`)) return;
+    if (existante >= 0 && !await confirmerSite({ titre: `Remplacer la vitrine enregistrée « ${boxes[existante].nom} » ?`, ok: "Remplacer" })) return;
     if (existante < 0 && boxes.length >= MAX_BOXES_ENT) {
       message.textContent = `${MAX_BOXES_ENT} box et vitrines enregistrées au plus : supprimes-en une.`;
       return;
@@ -1017,7 +1017,7 @@ function brancherVitrinesEnregistrees(carte, vitrine, profil) {
 async function initialiserEntrainement() {
   const reponseMoi = await fetch("/api/auth/me", { credentials: "include" });
   if (!reponseMoi.ok) {
-    alert("Tu dois être connecté avec Discord pour t'entraîner.");
+    alerterSite("Tu dois être connecté avec Discord pour t'entraîner.");
     return false;
   }
   entrainement.moi = (await reponseMoi.json()).user;
@@ -1115,7 +1115,7 @@ const PREPARATIONS = {
       return await initialiserEntrainement();
     } catch (erreur) {
       console.error(erreur);
-      alert("Impossible de charger le mode entraînement.");
+      alerterSite("Impossible de charger le mode entraînement.");
       return false;
     }
   }

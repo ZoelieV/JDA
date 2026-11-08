@@ -639,7 +639,7 @@ function initialiserBoutons() {
       partager.querySelector(".texte-partager").textContent = "Lien copié";
       partager.classList.add("copie");
     } catch {
-      window.prompt("Copie ce lien et envoie-le aux autres joueurs :", lien);
+      copierLienSite(lien, "Copie ce lien et envoie-le aux autres joueurs :");
     }
     setTimeout(() => {
       partager.innerHTML = texte;

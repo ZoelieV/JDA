@@ -125,7 +125,7 @@ async function enregistrerPatch() {
 
 async function supprimerPatch(id) {
   const patch = patchsAdmin.find(p => p.id === id);
-  if (!patch || !confirm(`Supprimer le patch du ${dateLisiblePatch(patch.date)} ? Les joueurs ne le verront plus.`)) return;
+  if (!patch || !await confirmerSite({ titre: `Supprimer le patch du ${dateLisiblePatch(patch.date)} ?`, texte: "Les joueurs ne le verront plus.", ok: "Supprimer", danger: true })) return;
   afficherMessagePatch("Suppression…");
   try {
     await envoyerPatchs({ patch_suppression: id });

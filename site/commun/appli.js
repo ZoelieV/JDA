@@ -42,7 +42,7 @@
       await evenement.prompt();
       rafraichir();
     } else if (apple) {
-      alert("Pour installer l'appli : touche le bouton Partager du navigateur (carré avec une flèche vers le haut), puis « Sur l'écran d'accueil ».");
+      alerterSite("Pour installer l'appli : touche le bouton Partager du navigateur (carré avec une flèche vers le haut), puis « Sur l'écran d'accueil ».");
     }
   });
 

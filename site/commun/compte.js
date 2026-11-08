@@ -212,12 +212,12 @@
         if (!reponse.ok) throw new Error();
         window.location.href = redirection || "/";
       } catch {
-        alert("Erreur lors de la déconnexion : réessaie.");
+        alerterSite("Erreur lors de la déconnexion : réessaie.");
       }
     }
 
-    menu.querySelector('[data-action="deconnexion"]').addEventListener("click", () => {
-      if (!confirm("Se déconnecter ?")) return;
+    menu.querySelector('[data-action="deconnexion"]').addEventListener("click", async () => {
+      if (!await confirmerSite({ titre: "Se déconnecter ?", ok: "Se déconnecter" })) return;
       // Plus de fond personnalisé une fois déconnecté (comme sur Mon compte).
       window.FondEcran?.memoriser(null, null);
       window.FondEcran?.memoriserTheatre(null);

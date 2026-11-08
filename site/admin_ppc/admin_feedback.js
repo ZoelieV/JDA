@@ -84,7 +84,7 @@ async function chargerFeedbacks() {
 async function modifierFeedback(bouton) {
   const id = Number(bouton.dataset.id);
   const supprimer = bouton.dataset.supprimer === "1";
-  if (supprimer && !confirm("Supprimer ce feedback ? Il ne pourra pas être récupéré.")) return;
+  if (supprimer && !await confirmerSite({ titre: "Supprimer ce feedback ?", texte: "Il ne pourra pas être récupéré.", ok: "Supprimer", danger: true })) return;
   bouton.disabled = true;
   try {
     const reponse = await fetch("/api/matches", {

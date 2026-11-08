@@ -78,7 +78,7 @@ async function bannirUid(event) {
   const champ = document.getElementById("uid-ban");
   const uid = champ.value.trim();
   if (!/^\d{9}$/.test(uid)) return afficherMessageBans("UID invalide : 9 chiffres attendus.", "erreur");
-  if (!confirm(`Bannir définitivement l'UID ${uid} du site ? Tous les comptes qui le portent ne pourront plus se connecter.`)) return;
+  if (!await confirmerSite({ titre: `Bannir définitivement l'UID ${uid} ?`, texte: "Tous les comptes qui le portent ne pourront plus se connecter au site.", ok: "Bannir", danger: true })) return;
   try {
     const reponse = await fetch("/api/matches", {
       method: "PATCH",
@@ -98,7 +98,7 @@ async function bannirUid(event) {
 }
 
 async function leverBan(id, nom) {
-  if (!confirm(`Lever le ban de ${nom} ? Il pourra rejouer tout de suite.`)) return;
+  if (!await confirmerSite({ titre: `Lever le ban de ${nom} ?`, texte: "Il pourra rejouer tout de suite.", ok: "Lever le ban" })) return;
   try {
     const reponse = await fetch("/api/matches", {
       method: "PATCH",

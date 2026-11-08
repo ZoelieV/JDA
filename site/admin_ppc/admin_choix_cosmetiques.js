@@ -74,7 +74,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
   return new Promise(async resoudre => {
     const catalogue = await chargerCatalogueChoix().catch(() => null);
     if (!catalogue) {
-      alert("Impossible de charger les cosmétiques.");
+      alerterSite("Impossible de charger les cosmétiques.");
       resoudre(null);
       return;
     }
