@@ -650,6 +650,16 @@
     "PPW": [0, 0, 0, 0, 0]
   },
   {
+    "id": "jadevista_w",
+    "nom": "Vue de jade",
+    "element": "all",
+    "type": "bow",
+    "image": "images/weapons/jadevista_w.webp",
+    "rarete": "4",
+    "categories": [],
+    "PPW": [0, 0, 0, 0, 0]
+  },
+  {
     "id": "vodyanitsa_w",
     "nom": "Hymne dans le maelström",
     "element": "hydro",
