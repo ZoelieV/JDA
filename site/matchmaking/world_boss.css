@@ -335,9 +335,47 @@
   50% { opacity: 0.45; }
 }
 
+/* Boutons du lobby et de relance : fonds pleins, bien visibles (les
+   boutons .btn-equipe du mode en équipe restent discrets). */
+#btn-rejoindre {
+  border-color: #f5c542;
+  background-color: rgba(245, 197, 66, 0.75);
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+#btn-rejoindre:hover {
+  background-color: rgba(245, 197, 66, 0.95);
+}
+
+#btn-quitter {
+  opacity: 1;
+  border-color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.75);
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+#btn-quitter:hover {
+  background-color: rgba(231, 76, 60, 0.95);
+}
+
+#btn-rejouer {
+  border-color: rgba(255, 255, 255, 0.6);
+  background-color: rgba(70, 70, 80, 0.95);
+  font-weight: bold;
+}
+
+#btn-rejouer:hover {
+  background-color: rgba(100, 100, 115, 0.95);
+}
+
 /* Boutons « Prêt » bien visibles (fond vert presque plein). */
 #btn-pret,
-#btn-lancer {
+#btn-lancer,
+#btn-relancer {
   border-color: #3ecf6a;
   background-color: rgba(62, 207, 106, 0.8);
   color: #fff;
@@ -345,6 +383,7 @@
 }
 
 #btn-pret:hover,
+#btn-relancer:hover,
 #btn-lancer:hover:not(:disabled) {
   background-color: rgba(62, 207, 106, 0.95);
 }

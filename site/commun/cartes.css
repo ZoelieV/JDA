@@ -32,3 +32,83 @@
 .duo-boss > img {
   min-width: 0;
 }
+
+/* ---- Fenêtres du site (confirmerSite, alerterSite : commun/cartes.js),
+   même look que celles de la personnalisation ---- */
+.fenetre-site {
+  box-sizing: border-box;
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 1.25rem 1.25rem 1rem;
+  border: 2px solid rgba(245, 197, 66, 0.85);
+  border-radius: 1rem;
+  background: radial-gradient(circle at 50% 0%, rgba(245, 197, 66, 0.16), transparent 60%), rgba(18, 18, 24, 0.97);
+  color: white;
+  text-align: center;
+  box-shadow: 0 0 2rem rgba(245, 197, 66, 0.35);
+  animation: fenetre-site-entree 0.3s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.fenetre-site::backdrop {
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+@keyframes fenetre-site-entree {
+  from { opacity: 0; transform: scale(0.88); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fenetre-site {
+    animation: none;
+  }
+}
+
+.fenetre-site-titre {
+  margin: 0 0 0.75rem;
+  color: #f5c542;
+  font-size: 1.375rem;
+}
+
+.fenetre-site-texte {
+  margin: 0 0 0.625rem;
+  line-height: 1.4;
+}
+
+.fenetre-site-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.fenetre-site-actions button {
+  padding: 0.5rem 1.125rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5625rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.fenetre-site-actions .fenetre-site-ok {
+  border-color: #f5c542;
+  background-color: rgba(245, 197, 66, 0.25);
+  font-weight: bold;
+}
+
+.fenetre-site-actions .fenetre-site-ok.danger {
+  border-color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.45);
+}
+
+.fenetre-site-actions button:hover {
+  background-color: rgba(245, 197, 66, 0.4);
+}
+
+.fenetre-site-actions .fenetre-site-ok.danger:hover {
+  background-color: rgba(231, 76, 60, 0.7);
+}

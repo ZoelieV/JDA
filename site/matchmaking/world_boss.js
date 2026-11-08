@@ -63,7 +63,7 @@ async function agir(action, corps = {}) {
     if (data.draft) definirDraft(data.draft);
     return true;
   } catch (erreur) {
-    alert(erreur.message);
+    alerterSite(erreur.message, "Action impossible");
     return false;
   } finally {
     envoiEnCours = false;
@@ -588,7 +588,7 @@ async function rejoindre() {
     if (data.draft) definirDraft(data.draft);
   } catch (erreur) {
     if (erreur.roomEnCours) roomEnCours = erreur.roomEnCours;
-    else alert(erreur.message);
+    else alerterSite(erreur.message, "Impossible de rejoindre");
   } finally {
     envoiEnCours = false;
   }
@@ -603,12 +603,12 @@ async function rejoindre() {
 function initialiserBoutons() {
   $("btn-rejoindre").addEventListener("click", rejoindre);
   $("btn-quitter").addEventListener("click", async () => {
-    if (!confirm("Quitter la room ?")) return;
+    if (!await confirmerSite({ titre: "Quitter la room ?", texte: "Tu sors du matchmaking du Random world boss.", ok: "Quitter", annuler: "Rester", danger: true })) return;
     try {
       await appel("wb_quitter", {});
       window.location.href = "/evenements";
     } catch (erreur) {
-      alert(erreur.message);
+      alerterSite(erreur.message, "Impossible de quitter");
     }
   });
   $("btn-lancer").addEventListener("click", () => agir("wb_lancer", {}));
@@ -622,12 +622,12 @@ function initialiserBoutons() {
   $("btn-echec").addEventListener("click", () => agir("wb_resultat", { reussite: false }));
   $("btn-hote").addEventListener("click", () => agir("wb_hote", { hote: draft.hote !== moi.id }));
   // Partie en cours : confirmation (elle ne sera pas enregistrée).
-  const abandon = () => draft.phase !== "jeu" || confirm("Abandonner ce tirage ? La partie ne sera pas enregistrée.");
-  $("btn-relancer").addEventListener("click", () => {
-    if (abandon()) agir("wb_rejouer", { relancer: true });
+  const abandon = async () => draft.phase !== "jeu" || confirmerSite({ titre: "Abandonner ce tirage ?", texte: "La partie ne sera pas enregistrée.", ok: "Abandonner", annuler: "Continuer la partie", danger: true });
+  $("btn-relancer").addEventListener("click", async () => {
+    if (await abandon()) agir("wb_rejouer", { relancer: true });
   });
-  $("btn-rejouer").addEventListener("click", () => {
-    if (abandon()) agir("wb_rejouer", {});
+  $("btn-rejouer").addEventListener("click", async () => {
+    if (await abandon()) agir("wb_rejouer", {});
   });
 
   const partager = $("btn-partager");
