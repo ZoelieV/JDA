@@ -4,6 +4,10 @@
 // { <boss_id>: { suspect, triche } } en secondes, chacun facultatif :
 //   temps < suspect -> danger 1 (temps suspect) ;
 //   temps < triche  -> danger 2 (triche confirmée), triche <= suspect.
+// Défis (score "ennemis" dans DB/boss.json, ex. Mer d'Antan) : nombre
+// d'ennemis éliminés, où le plus grand gagne ; mêmes champs, mais ce sont des
+// maximums : au-dessus de suspect -> danger 1, au-dessus de triche -> danger
+// 2 (triche >= suspect).
 // Classé et Little Cup : match transmis aux administrateurs ; autres
 // matchs : sans Rikoyns (cf. api/_lib/sanctions.js). Réglage jamais
 // enregistré : valeurs par défaut ci-dessous (boss hebdomadaires).
@@ -23,6 +27,7 @@ const TEMPS_SUSPECTS_DEFAUT = {
 };
 
 const TEMPS_SUSPECT_MAX = 3600;
+const ENNEMIS_SUSPECT_MAX = 9999;
 
 // Seuils de tous les boss (enregistrés, sinon par défaut).
 function reglageTempsSuspects(config) {
@@ -40,15 +45,18 @@ function seuilsTempsSuspects(bossId, reglage) {
 }
 
 // Danger d'un temps (secondes) : 0, 1 (suspect) ou 2 (triche confirmée).
-function dangerTemps(secondes, seuils) {
+// ennemis : défi, la valeur est un nombre d'ennemis et les seuils des maximums.
+function dangerTemps(secondes, seuils, { ennemis = false } = {}) {
   if (!seuils || typeof secondes !== "number") return 0;
-  if (seuils.triche !== null && secondes < seuils.triche) return 2;
-  if (seuils.suspect !== null && secondes < seuils.suspect) return 1;
+  const franchi = seuil => seuil !== null && (ennemis ? secondes > seuil : secondes < seuil);
+  if (franchi(seuils.triche)) return 2;
+  if (franchi(seuils.suspect)) return 1;
   return 0;
 }
 
 // Réglage envoyé par la page admin -> { reglage } ou { erreur }.
-function lireReglageTempsSuspects(brut, nomsBoss) {
+// defis : Set des ids des défis (seuils en nombre d'ennemis).
+function lireReglageTempsSuspects(brut, nomsBoss, defis = new Set()) {
   if (!brut || typeof brut !== "object" || Array.isArray(brut)) return { erreur: "Réglage invalide." };
   const reglage = {};
   for (const [id, valeurs] of Object.entries(brut)) {
@@ -57,13 +65,17 @@ function lireReglageTempsSuspects(brut, nomsBoss) {
     const lire = v => (v === null || v === undefined || v === "" ? null : Number(v));
     const suspect = lire(valeurs?.suspect);
     const triche = lire(valeurs?.triche);
+    const defi = defis.has(id);
+    const max = defi ? ENNEMIS_SUSPECT_MAX : TEMPS_SUSPECT_MAX;
     for (const v of [suspect, triche]) {
-      if (v !== null && !(Number.isInteger(v) && v >= 1 && v <= TEMPS_SUSPECT_MAX)) return { erreur: `${nom} : temps entre 1 s et ${TEMPS_SUSPECT_MAX} s.` };
+      if (v !== null && !(Number.isInteger(v) && v >= 1 && v <= max)) return { erreur: defi ? `${nom} : nombre d'ennemis entre 1 et ${max}.` : `${nom} : temps entre 1 s et ${max} s.` };
     }
-    if (suspect !== null && triche !== null && triche > suspect) return { erreur: `${nom} : le temps de triche confirmée doit être inférieur ou égal au temps suspect.` };
+    if (suspect !== null && triche !== null && (defi ? triche < suspect : triche > suspect)) {
+      return { erreur: defi ? `${nom} : le seuil de triche confirmée doit être supérieur ou égal au seuil suspect.` : `${nom} : le temps de triche confirmée doit être inférieur ou égal au temps suspect.` };
+    }
     if (suspect !== null || triche !== null) reglage[id] = { ...(suspect !== null ? { suspect } : {}), ...(triche !== null ? { triche } : {}) };
   }
   return { reglage };
 }
 
-if (typeof module !== "undefined") module.exports = { TEMPS_SUSPECTS_DEFAUT, TEMPS_SUSPECT_MAX, reglageTempsSuspects, seuilsTempsSuspects, dangerTemps, lireReglageTempsSuspects };
+if (typeof module !== "undefined") module.exports = { TEMPS_SUSPECTS_DEFAUT, TEMPS_SUSPECT_MAX, ENNEMIS_SUSPECT_MAX, reglageTempsSuspects, seuilsTempsSuspects, dangerTemps, lireReglageTempsSuspects };

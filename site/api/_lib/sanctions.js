@@ -39,18 +39,22 @@ function detecterTriche(draft, maintenant = Date.now()) {
 // match classé est alors transmis aux administrateurs (preuve vidéo), comme
 // une triche détectée. Seuils lus par actualiserPoints (_lib/personnages.js),
 // à appeler avant.
+// Défi (nombre d'ennemis) : seuils en maximum (cf. dangerTemps), ennemis: true.
 // -> null si aucun temps suspect, sinon { niveau (1 | 2, le plus haut),
-// j1, j2 : { secondes, niveau, limite (suspect), minimum (triche) } | null }
+// j1, j2 : { secondes, niveau, limite (suspect), minimum (triche), ennemis? } | null }
 // (noms gardés pour les archives déjà écrites, cf. historique.js).
 function detecterTempsSuspects(draft) {
   const seuils = seuilsTempsSuspects(draft.boss_id, getTempsSuspects());
   if (!seuils) return null;
+  const ennemis = estDefiEnnemis(draft.boss_id);
   const suspicion = { niveau: 0, j1: null, j2: null };
   ["j1", "j2"].forEach(role => {
-    const secondes = draft[`temps_${role}`]?.secondes;
-    const niveau = dangerTemps(secondes, seuils);
+    const temps = draft[`temps_${role}`];
+    if (temps?.abandon) return;
+    const secondes = temps?.secondes;
+    const niveau = dangerTemps(secondes, seuils, { ennemis });
     if (!niveau) return;
-    suspicion[role] = { secondes, niveau, limite: seuils.suspect ?? seuils.triche, minimum: seuils.triche };
+    suspicion[role] = { secondes, niveau, limite: seuils.suspect ?? seuils.triche, minimum: seuils.triche, ...(ennemis ? { ennemis: true } : {}) };
     suspicion.niveau = Math.max(suspicion.niveau, niveau);
   });
   return suspicion.niveau ? suspicion : null;

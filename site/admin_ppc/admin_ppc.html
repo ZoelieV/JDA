@@ -94,7 +94,7 @@
     <button type="button" id="ouvrir-temps-suspects" class="tuile-admin" title="Anti-triche : temps minimum de chaque boss, suspect ou triche confirmée">
       <img src="/DB/images/others/Icon_Clock.webp" alt="">
       <span class="tuile-admin-titre">Temps anti-triche</span>
-      <span class="tuile-admin-texte">Temps minimum de chaque boss : suspect ou triche confirmée.</span>
+      <span class="tuile-admin-texte">Temps minimum de chaque boss, score maximum des défis : suspect ou triche confirmée.</span>
     </button>
     <a href="/visual_novel/editeur" class="tuile-admin" title="Écrire l'histoire du visual novel : chapitres, panneaux, choix et images">
       <img src="/DB/images/others/Icon_Adventurer_Handbook.webp" alt="">
@@ -727,7 +727,7 @@
         <h2>Temps anti-triche</h2>
         <button type="button" id="fermer-temps-suspects" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
-      <p class="aide-apercu">Un temps <strong>en dessous</strong> du temps suspect déclenche un « Danger 1 », en dessous du temps de triche confirmée un « Danger 2 ». En classé et en Little Cup, le match est alors envoyé aux litiges (preuve vidéo à demander) ; dans les autres modes, il compte mais ne rapporte pas de Rikoyns. Case vide : pas de contrôle. Temps en secondes ou en minutes:secondes (« 1:40 »). Les joueurs ne voient jamais ces temps.</p>
+      <p class="aide-apercu">Un temps <strong>en dessous</strong> du temps suspect déclenche un « Danger 1 », en dessous du temps de triche confirmée un « Danger 2 ». En classé et en Little Cup, le match est alors envoyé aux litiges (preuve vidéo à demander) ; dans les autres modes, il compte mais ne rapporte pas de Rikoyns. Case vide : pas de contrôle. Temps en secondes ou en minutes:secondes (« 1:40 »). Défis (Mer d'Antan…) : en bas, en nombre d'ennemis éliminés, et c'est <strong>au-dessus</strong> du seuil que le score est suspect. Les joueurs ne voient jamais ces seuils.</p>
       <div id="contenu-temps-suspects">
         <div class="ts-outils">
           <input type="search" id="ts-recherche" class="texte-ajout" placeholder="Rechercher un boss…" aria-label="Rechercher un boss">
@@ -864,8 +864,8 @@
   <script src="/admin_ppc/admin_raretes.js?v=2"></script>
   <script src="/commun/boss_modes.js?v=1"></script>
   <script src="/admin_ppc/admin_boss_modes.js?v=1"></script>
-  <script src="/commun/temps_suspects.js?v=1"></script>
-  <script src="/admin_ppc/admin_temps_suspects.js?v=1"></script>
+  <script src="/commun/temps_suspects.js?v=2"></script>
+  <script src="/admin_ppc/admin_temps_suspects.js?v=2"></script>
   <script src="/admin_ppc/admin_little_cup.js?v=3"></script>
   <script src="/admin_ppc/admin_tournoitateurs.js?v=1"></script>
   <script src="/admin_ppc/admin_synergies.js?v=2"></script>

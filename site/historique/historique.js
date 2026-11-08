@@ -716,8 +716,11 @@ function htmlCorrectionLitige(match) {
   // confirmée, "minimum"), preuve vidéo à demander.
   const suspects = ["j1", "j2"].filter(role => match.suspicion?.[role]).map(role => {
     const s = match.suspicion[role];
-    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? "⚠️⚠️ Danger 2 (triche confirmée)" : "⚠️ Danger 1 (temps suspect)"} : ` +
-      `${echapperHtml(match[role].nom)} en ${fmt(s.secondes)}, sous le temps ${s.niveau === 2 ? `de triche confirmée (${fmt(s.minimum)})` : `suspect (${fmt(s.limite)})`}. Preuve vidéo à demander.</span>`;
+    // Défi : nombre d'ennemis au-dessus des seuils.
+    const detail = s.ennemis
+      ? `${echapperHtml(match[role].nom)} avec ${s.secondes} ennemis éliminés, au-dessus du seuil ${s.niveau === 2 ? `de triche confirmée (${s.minimum})` : `suspect (${s.limite})`}`
+      : `${echapperHtml(match[role].nom)} en ${fmt(s.secondes)}, sous le temps ${s.niveau === 2 ? `de triche confirmée (${fmt(s.minimum)})` : `suspect (${fmt(s.limite)})`}`;
+    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? "⚠️⚠️ Danger 2 (triche confirmée)" : `⚠️ Danger 1 (${s.ennemis ? "score suspect" : "temps suspect"})`} : ${detail}. Preuve vidéo à demander.</span>`;
   }).join("");
   // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
   const sanction = htmlSanction;

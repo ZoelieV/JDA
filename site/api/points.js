@@ -695,7 +695,8 @@ module.exports = async (req, res) => {
           config = reste;
         } else {
           const nomsBoss = new Map([...listeJSON("boss"), ...ajouts.boss].map(b => [b.id, ancienne.boss?.[b.id]?.nom || b.nom]));
-          const { reglage, erreur } = lireReglageTempsSuspects(corps.temps_suspects, nomsBoss);
+          const defis = new Set([...listeJSON("boss"), ...ajouts.boss].filter(b => b.score === "ennemis").map(b => b.id));
+          const { reglage, erreur } = lireReglageTempsSuspects(corps.temps_suspects, nomsBoss, defis);
           if (erreur) return res.status(400).json({ error: erreur });
           config = { ...ancienne, temps_suspects: reglage };
         }

@@ -1,6 +1,8 @@
 // Administration : temps minimum de chaque boss pour l'anti-triche
 // (config.temps_suspects, cf. commun/temps_suspects.js). Temps suspect ->
 // danger 1, triche confirmée -> danger 2. Le serveur refuse les mini admins.
+// Défis (score "ennemis", ex. Mer d'Antan) dans une section à part : seuils en
+// nombre d'ennemis éliminés, au-dessus desquels le score est suspect.
 
 function initialiserTempsSuspects() {
   const modal = document.getElementById("modal-temps-suspects");
@@ -28,7 +30,17 @@ function initialiserTempsSuspects() {
     if (!m || (m[1] && Number(m[2]) > 59)) return NaN;
     return Number(m[1] || 0) * 60 + Number(m[2]);
   }
-  const versSaisie = reglage => Object.fromEntries(Object.entries(reglage).map(([id, s]) => [id, { suspect: enTexte(s.suspect), triche: enTexte(s.triche) }]));
+  const estDefi = id => tous.some(b => b.id === id && b.score === "ennemis");
+  // Défi : un nombre entier d'ennemis, jamais de minutes.
+  const lireValeur = (id, texte) => {
+    if (!estDefi(id)) return enSecondes(texte);
+    const t = String(texte ?? "").trim();
+    if (!t) return null;
+    return /^\d+$/.test(t) ? Number(t) : NaN;
+  };
+  const versSaisie = reglage => Object.fromEntries(Object.entries(reglage).map(([id, s]) => [id, estDefi(id)
+    ? { suspect: s.suspect != null ? String(s.suspect) : "", triche: s.triche != null ? String(s.triche) : "" }
+    : { suspect: enTexte(s.suspect), triche: enTexte(s.triche) }]));
   const aUnTemps = id => !!(saisie[id]?.suspect || saisie[id]?.triche);
 
   function rendreEtat() {
@@ -38,8 +50,22 @@ function initialiserTempsSuspects() {
   function rendre() {
     const filtre = recherche.value.trim().toLocaleLowerCase("fr");
     const visibles = tous.filter(b => (!filtre || b.nom.toLocaleLowerCase("fr").includes(filtre)) && (!seulementRegles.checked || aUnTemps(b.id)));
+    const defis = visibles.filter(b => b.score === "ennemis");
+    const htmlDefis = defis.length ? `
+        <h3 class="titre-section-ajout">Défis (nombre d'ennemis éliminés)</h3>
+        <p class="aide-apercu">Le plus grand score gagne : au-dessus du seuil, le score est suspect.</p>
+        <table class="tableau-ts">
+          <thead><tr><th>Défi</th><th title="Danger 1">Suspect au-dessus de</th><th title="Danger 2">Triche confirmée au-dessus de</th></tr></thead>
+          <tbody>
+            ${defis.map(b => `
+              <tr>
+                <td><span class="ts-boss"><img src="/DB/${echapper(b.image)}" alt="" loading="lazy"><span>${echapper(b.nom)}</span></span></td>
+                ${["suspect", "triche"].map(champ => `<td><input type="text" inputmode="numeric" class="texte-ajout" data-boss="${echapper(b.id)}" data-champ="${champ}" value="${echapper(saisie[b.id]?.[champ] || "")}" placeholder="—" aria-label="${echapper(b.nom)} : ${champ === "suspect" ? "ennemis, seuil suspect" : "ennemis, triche confirmée"}"></td>`).join("")}
+              </tr>`).join("")}
+          </tbody>
+        </table>` : "";
     liste.innerHTML = TYPES_TIRAGE_BOSS.map(({ id: type, nom }) => {
-      const boss = visibles.filter(b => typeTirageBoss(b) === type);
+      const boss = visibles.filter(b => typeTirageBoss(b) === type && b.score !== "ennemis");
       if (!boss.length) return "";
       return `
         <h3 class="titre-section-ajout">${echapper(nom)}</h3>
@@ -56,18 +82,21 @@ function initialiserTempsSuspects() {
             }).join("")}
           </tbody>
         </table>`;
-    }).join("") || `<p class="aide-apercu">Aucun boss.</p>`;
+    }).join("") + htmlDefis || `<p class="aide-apercu">Aucun boss.</p>`;
     liste.querySelectorAll("input").forEach(marquerInvalide);
     rendreEtat();
   }
 
   function marquerInvalide(champ) {
-    const v = enSecondes(champ.value);
-    const ligne = saisie[champ.dataset.boss] || {};
-    const suspect = enSecondes(ligne.suspect);
-    const triche = enSecondes(ligne.triche);
-    const invalide = Number.isNaN(v) || (v !== null && (v < 1 || v > TEMPS_SUSPECT_MAX))
-      || (Number.isInteger(suspect) && Number.isInteger(triche) && triche > suspect);
+    const id = champ.dataset.boss;
+    const defi = estDefi(id);
+    const v = lireValeur(id, champ.value);
+    const ligne = saisie[id] || {};
+    const suspect = lireValeur(id, ligne.suspect);
+    const triche = lireValeur(id, ligne.triche);
+    const max = defi ? ENNEMIS_SUSPECT_MAX : TEMPS_SUSPECT_MAX;
+    const invalide = Number.isNaN(v) || (v !== null && (v < 1 || v > max))
+      || (Number.isInteger(suspect) && Number.isInteger(triche) && (defi ? triche < suspect : triche > suspect));
     champ.classList.toggle("ts-invalide", invalide);
   }
 
@@ -76,8 +105,7 @@ function initialiserTempsSuspects() {
     message("Chargement…");
     try {
       const [config, boss] = await Promise.all([chargerPointsAdmin(), chargerBoss()]);
-      // Défi (nombre d'ennemis tués) : pas de temps à contrôler.
-      tous = boss.filter(b => b.score !== "ennemis");
+      tous = boss;
       personnalise = !!config?.temps_suspects;
       saisie = versSaisie(reglageTempsSuspects(config));
       remisAZero = false;
@@ -96,11 +124,11 @@ function initialiserTempsSuspects() {
     if (!remisAZero) {
       temps_suspects = {};
       for (const [id, ligne] of Object.entries(saisie)) {
-        const suspect = enSecondes(ligne.suspect);
-        const triche = enSecondes(ligne.triche);
+        const suspect = lireValeur(id, ligne.suspect);
+        const triche = lireValeur(id, ligne.triche);
         if (Number.isNaN(suspect) || Number.isNaN(triche)) {
           const nom = tous.find(b => b.id === id)?.nom || id;
-          return message(`${nom} : temps illisible (ex. 45 ou 1:40).`, "erreur");
+          return message(estDefi(id) ? `${nom} : nombre d'ennemis illisible (ex. 35).` : `${nom} : temps illisible (ex. 45 ou 1:40).`, "erreur");
         }
         if (suspect !== null || triche !== null) temps_suspects[id] = { suspect, triche };
       }
