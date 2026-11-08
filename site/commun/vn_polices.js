@@ -1,5 +1,7 @@
 // Polices du visual novel : toutes celles de DB/fonts (déclarées dans
-// visual_novel/lecteur.css, téléchargées seulement si un panneau s'en sert).
+// visual_novel/lecteur.css, téléchargées seulement si un panneau s'en sert),
+// et celles importées par l'admin (histoire.polices : [{ id, nom, chemin }],
+// id commençant par "police_", chargées par visual_novel/scene.js).
 // Taille : en % de la hauteur de la scène, pour rester proportionnée à tous
 // les écrans.
 const POLICES_VN = [
@@ -20,10 +22,12 @@ const POLICES_VN = [
 const TAILLE_TEXTE_VN = { min: 2, defaut: 4, max: 12 };
 
 // Police d'un panneau, valeurs inconnues remplacées par celles par défaut.
-function lirePoliceVn(brut) {
+// importees : histoire.polices (une police importée puis supprimée redevient Classic).
+function lirePoliceVn(brut, importees = []) {
   const taille = Number(brut?.taille);
+  const connue = POLICES_VN.some(p => p.id === brut?.famille) || (importees || []).some(p => p.id === brut?.famille);
   return {
-    famille: POLICES_VN.some(p => p.id === brut?.famille) ? brut.famille : POLICES_VN[0].id,
+    famille: connue ? brut.famille : POLICES_VN[0].id,
     taille: Number.isFinite(taille) ? Math.min(TAILLE_TEXTE_VN.max, Math.max(TAILLE_TEXTE_VN.min, taille)) : TAILLE_TEXTE_VN.defaut,
     gras: brut?.gras === true,
     italique: brut?.italique === true

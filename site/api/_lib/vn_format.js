@@ -3,12 +3,13 @@
 // qui n'est pas encore écrit (panneau sans suite, choix sans destination) est
 // accepté et signalé par des avertissements, pour pouvoir enregistrer en cours
 // de route. Seuls les champs connus sont gardés.
-const { lirePoliceVn } = require("../../commun/vn_polices.js");
+const { POLICES_VN, lirePoliceVn } = require("../../commun/vn_polices.js");
 
 const MAX = {
   chapitres: 50, sousChapitres: 60, panneaux: 3000, persos: 12, options: 8, texte: 2000, nom: 60, titre: 80, option: 300,
   effets: 8, resultats: 10, reponses: 10, valeurs: 20, valeur: 100, message: 500, consigne: 200,
-  objets: 200, etats: 100, sons: 200, description: 300, limiteObjet: 999, valeurEtat: 20, dureeTimer: 3600
+  objets: 200, etats: 100, sons: 200, polices: 30, description: 300, limiteObjet: 999, valeurEtat: 20, dureeTimer: 3600,
+  lectureMin: 60
 };
 
 const ID = /^[a-z0-9_-]{1,40}$/;
@@ -18,6 +19,9 @@ const IMAGE = /^(?:bg_web|characters|namecards|vn)\/(?:[^/\\?#"<>]+\/)*[^/\\?#"<
 // Sons importés seulement (cf. vn_edition.js).
 const SON = /^vn\/[a-f0-9]{24}\.(?:mp3|ogg)$/;
 const estSon = valeur => typeof valeur === "string" && SON.test(valeur);
+// Polices importées (cf. vn_edition.js) ; id distinct de celles du site.
+const POLICE = /^vn\/[a-f0-9]{24}\.(?:woff2|woff|ttf|otf)$/;
+const ID_POLICE = /^police_[a-z0-9]{1,30}$/;
 const estImage = valeur => typeof valeur === "string" && valeur.length <= 200 && IMAGE.test(valeur) && !valeur.includes("..");
 const texteDe = (valeur, max) => (typeof valeur === "string" ? valeur.slice(0, max) : "");
 const borne = (valeur, min, max, defaut) => {
@@ -123,7 +127,10 @@ function lireSon(valeur, erreur) {
   return valeur;
 }
 
-function lirePanneau(brut, lieu) {
+// Temps de lecture minimal (s) : null sur un panneau = celui de l'histoire.
+const lireLectureMin = (valeur, defaut) => (valeur == null || valeur === "" ? defaut : entier(valeur, 0, MAX.lectureMin, defaut));
+
+function lirePanneau(brut, lieu, polices) {
   exiger(ID.test(brut?.id), `${lieu} : identifiant invalide.`);
   const persos = Array.isArray(brut.persos) ? brut.persos : [];
   exiger(persos.length <= MAX.persos, `${lieu} : ${MAX.persos} personnages au plus.`);
@@ -140,10 +147,13 @@ function lirePanneau(brut, lieu) {
         x: borne(perso.x, -30, 130, 50),
         y: borne(perso.y, -100, 100, 30),
         hauteur: borne(perso.hauteur, 5, 250, 42),
-        miroir: perso.miroir === true
+        miroir: perso.miroir === true,
+        gris: entier(perso.gris, 0, 100, 0),
+        ombre: entier(perso.ombre, 0, 100, 0)
       };
     }),
-    police: lirePoliceVn(brut.police),
+    police: lirePoliceVn(brut.police, polices),
+    lecture_min: lireLectureMin(brut.lecture_min, null),
     effets: lireEffets(brut.effets, lieu),
     sauvegarde: brut.sauvegarde === true,
     // de : quand le temps est écoulé, un lancer décide de la suite (comme une réponse à dé).
@@ -208,7 +218,18 @@ function lireSortie(valeur, titre) {
   return date.toISOString();
 }
 
-function lireChapitre(brut, numero, idsVus) {
+function lirePolices(brut) {
+  const polices = liste(brut);
+  exiger(polices.length <= MAX.polices, `${MAX.polices} polices importées au plus.`);
+  const ids = new Set();
+  return polices.filter(p => typeof p?.chemin === "string" && POLICE.test(p.chemin)).map((police, i) => {
+    exiger(ID_POLICE.test(police.id) && !ids.has(police.id) && !POLICES_VN.some(p => p.id === police.id), `Police importée ${i + 1} : identifiant invalide.`);
+    ids.add(police.id);
+    return { id: police.id, nom: texteDe(police.nom, MAX.nom).trim() || "Police", chemin: police.chemin };
+  });
+}
+
+function lireChapitre(brut, numero, idsVus, polices) {
   exiger(ID.test(brut?.id) && !idsVus.has(brut.id), `Chapitre ${numero} : identifiant invalide.`);
   idsVus.add(brut.id);
   const titre = texteDe(brut.titre, MAX.titre).trim() || `Chapitre ${numero}`;
@@ -229,7 +250,7 @@ function lireChapitre(brut, numero, idsVus) {
       id: sc.id,
       titre: titreSc,
       panneaux: panneaux.map((p, n) => {
-        const panneau = lirePanneau(p, `${titre}, ${titreSc}, panneau ${n + 1}`);
+        const panneau = lirePanneau(p, `${titre}, ${titreSc}, panneau ${n + 1}`, polices);
         exiger(!idsPanneaux.has(panneau.id), `${titre}, ${titreSc}, panneau ${n + 1} : identifiant en double.`);
         idsPanneaux.add(panneau.id);
         return panneau;
@@ -247,6 +268,7 @@ function lireHistoireVn(brut, id) {
     exiger(chapitres.length <= MAX.chapitres, `${MAX.chapitres} chapitres au plus.`);
     exiger(brut.namecard == null || brut.namecard === "" || estImage(brut.namecard), "Namecard de l'event invalide.");
     const idsVus = new Set();
+    const polices = lirePolices(brut.polices);
     const histoire = {
       id,
       nom: texteDe(brut.nom, MAX.titre).trim() || "Visual novel",
@@ -255,7 +277,9 @@ function lireHistoireVn(brut, id) {
       objets: lireObjets(brut.objets),
       etats: lireEtats(brut.etats),
       sons: lireSons(brut.sons),
-      chapitres: chapitres.map((c, i) => lireChapitre(c, i + 1, idsVus))
+      polices,
+      lecture_min: lireLectureMin(brut.lecture_min, 0),
+      chapitres: chapitres.map((c, i) => lireChapitre(c, i + 1, idsVus, polices))
     };
     const total = histoire.chapitres.flatMap(c => c.sous_chapitres).flatMap(sc => sc.panneaux).length;
     exiger(total <= MAX.panneaux, `${MAX.panneaux} panneaux au plus (${total} ici).`);

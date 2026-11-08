@@ -206,7 +206,29 @@ function afficherLancer(lancer, message) {
   }, 70);
 }
 
-function afficherPanneau({ sansSon = false } = {}) {
+// ---- Temps de lecture minimal ----
+// Avancer et répondre restent bloqués tant que le délai du panneau n'est pas
+// écoulé (lecture_min, en secondes). Le ▼ s'allume quand on peut avancer.
+let finLectureVn = 0;
+let attenteLectureVn = null;
+const lectureFinieVn = () => Date.now() >= finLectureVn;
+
+function appliquerLecture() {
+  const attente = !lectureFinieVn();
+  elementVn("vn-suite").classList.toggle("vn-attente", attente);
+  document.querySelectorAll("#vn-choix button, #vn-saisie button").forEach(bouton => { bouton.disabled = attente; });
+}
+
+function bloquerLecture(secondes) {
+  clearTimeout(attenteLectureVn);
+  finLectureVn = Date.now() + Math.max(0, secondes || 0) * 1000;
+  appliquerLecture();
+  if (!lectureFinieVn()) attenteLectureVn = setTimeout(appliquerLecture, finLectureVn - Date.now() + 20);
+}
+
+// lecture : true = le délai du panneau repart, false = aucun délai (Passer),
+// null = celui en cours continue (on reste sur le même panneau).
+function afficherPanneau({ sansSon = false, lecture = true } = {}) {
   const panneau = segmentVn.panneaux[indexVn];
   const dernier = indexVn === segmentVn.panneaux.length - 1;
 
@@ -241,6 +263,8 @@ function afficherPanneau({ sansSon = false } = {}) {
   elementVn("vn-suite").hidden = options.length > 0 || !!saisie;
   elementVn("vn-repere").textContent = panneau.sous_chapitre;
   elementVn("vn-dialogue").hidden = false;
+  if (lecture === null) appliquerLecture();
+  else bloquerLecture(lecture ? panneau.lecture_min : 0);
   afficherBoutonPasser();
 }
 
@@ -256,7 +280,7 @@ function allerAuDernierPanneau() {
   // La musique des panneaux sautés compte : le serveur la retient aussi.
   segmentVn.panneaux.slice(indexVn + 1).forEach(panneau => { if (panneau.musique) changerMusique(panneau.musique); });
   indexVn = segmentVn.panneaux.length - 1;
-  afficherPanneau({ sansSon: true });
+  afficherPanneau({ sansSon: true, lecture: false });
 }
 
 // La suite du segment est déjà là ; au-delà, seul le serveur la connaît.
@@ -314,7 +338,7 @@ function traiterReponse(data) {
   if (data.passe) {
     allerAuDernierPanneau();
   } else {
-    afficherPanneau({ sansSon: surPlace });
+    afficherPanneau({ sansSon: surPlace, lecture: surPlace ? null : true });
   }
   const refus = elementVn("vn-refus");
   refus.hidden = !(data.reste && data.message);
@@ -356,7 +380,7 @@ const avancerServeur = option => appelerServeur({ action: "avancer", depuis: seg
 
 // Panneau suivant, ou serveur à la fin du segment (sauf choix : boutons).
 function avancer() {
-  if (!segmentVn || occupeVn) return;
+  if (!segmentVn || occupeVn || !lectureFinieVn()) return;
   if (indexVn < segmentVn.panneaux.length - 1) {
     indexVn++;
     afficherPanneau();
@@ -380,7 +404,7 @@ document.addEventListener("keydown", event => {
 elementVn("vn-saisie").addEventListener("submit", event => {
   event.preventDefault();
   const reponse = elementVn("vn-reponse").value.trim();
-  if (reponse) appelerServeur({ action: "avancer", depuis: segmentVn.depuis, reponse });
+  if (reponse && lectureFinieVn()) appelerServeur({ action: "avancer", depuis: segmentVn.depuis, reponse });
 });
 elementVn("vn-passer").addEventListener("click", passer);
 elementVn("vn-ouvrir-menu").addEventListener("click", ouvrirMenuSousChapitres);

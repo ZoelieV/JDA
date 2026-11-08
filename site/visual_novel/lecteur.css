@@ -330,6 +330,17 @@ body.vn-page {
   font-size: 2.4cqh;
 }
 
+/* Temps de lecture minimal pas encore écoulé. */
+.vn-suite.vn-attente {
+  opacity: 0.2;
+}
+
+.vn-choix .vn-bouton:disabled,
+.vn-saisie .vn-bouton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
 .vn-repere,
 .vn-action {
   margin: 0;

@@ -9,9 +9,11 @@
 //   sortie : date ISO à partir de laquelle le chapitre apparaît, ou null
 //   panneau : { id (unique dans le chapitre), fond, nom,
 //     texte  (mise en forme : decouperTexteVn de commun/vn_polices.js),
-//     persos: [{ image, x, y, hauteur, miroir }]  (calques : le dernier devant ;
-//                x : milieu, y : bas, hauteur : en % de la scène),
+//     persos: [{ image, x, y, hauteur, miroir, gris, ombre }]  (calques : le dernier
+//                devant ; x : milieu, y : bas, hauteur : en % de la scène ;
+//                gris, ombre : de 0 à 100, ombre 100 = silhouette noire),
 //     police: { famille, taille, gras, italique },  (cf. commun/vn_polices.js)
+//     lecture_min,        secondes avant de pouvoir avancer (null : celle de l'histoire)
 //     effets,             appliqués en arrivant sur le panneau
 //     sauvegarde,         point de reprise après un game over
 //     timer: { duree (s), vers, effets, message, de? },  (de : comme une réponse à dé)  lancé en arrivant sur le
@@ -37,6 +39,8 @@
 //     objets: [{ id, nom, description, image, limite }]
 //     etats: [{ id, nom, description, valeur, fin_chapitre }]  (bonus ou malus aux dés)
 //     sons: [{ chemin, nom }]             (sons importés, pour l'éditeur)
+//     polices: [{ id, nom, chemin }]      (polices importées)
+//     lecture_min                         temps de lecture minimal par défaut (s)
 //   effet : { genre: "objet", id, quantite } ou { genre: "etat", id, actif }
 //   Histoire en cours d'écriture : un panneau sans suite ou un choix sans
 //   destination arrête la lecture sur un message, sans erreur.
@@ -144,6 +148,13 @@ function arretPublic(histoire, arret, jeu) {
   return { type: arret.type };
 }
 
+// Police importée : le navigateur reçoit son fichier avec elle.
+function policePublique(histoire, brut) {
+  const police = lirePoliceVn(brut, histoire.polices);
+  const importee = (histoire.polices || []).find(p => p.id === police.famille);
+  return importee ? { ...police, fichier: importee.chemin } : police;
+}
+
 function segmentPublic(histoire, chapitre, depart, jeu) {
   const { entrees, arret } = calculerSegment(chapitre, depart);
   return {
@@ -153,8 +164,10 @@ function segmentPublic(histoire, chapitre, depart, jeu) {
       fond: panneau.fond,
       nom: panneau.nom || "",
       texte: panneau.texte || "",
-      persos: (panneau.persos || []).map(({ image, x, y, hauteur, miroir }) => ({ image, x, y, hauteur, miroir: miroir === true })),
-      police: lirePoliceVn(panneau.police),
+      persos: (panneau.persos || []).map(({ image, x, y, hauteur, miroir, gris, ombre }) => ({ image, x, y, hauteur, miroir: miroir === true, gris: gris || 0, ombre: ombre || 0 })),
+      police: policePublique(histoire, panneau.police),
+      // Tenu par le navigateur seulement : il n'empêche que de cliquer trop vite.
+      lecture_min: panneau.lecture_min ?? histoire.lecture_min ?? 0,
       musique: panneau.musique || null,
       son: panneau.son || null
     })),

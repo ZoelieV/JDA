@@ -5,7 +5,8 @@
 //                      admin a enregistré depuis la version chargée (maj)
 //   POST { vn_import: { data } }  image WebP en data URL -> { chemin }
 //   POST { vn_import_son: { data } }  MP3 ou OGG en data URL -> { chemin }
-//   POST { vn_image_suppression: { chemin } }  image ou son ; refusé si
+//   POST { vn_import_police: { data } }  WOFF2, WOFF, TTF ou OTF en data URL -> { chemin }
+//   POST { vn_image_suppression: { chemin } }  image, son ou police ; refusé si
 //                      l'histoire s'en sert
 //   POST { vn_reinitialiser: true }  efface sa propre progression
 // Images dans le dossier public "visual_novel" de Supabase Storage, servies
@@ -24,7 +25,15 @@ const POIDS_MAX_IMAGE = 3 * 1024 * 1024;
 const POIDS_MAX_TOTAL = 300 * 1024 * 1024;
 const PREFIXE = "vn/";
 
-const REQUETES_POST = ["vn_sauvegarde", "vn_import", "vn_import_son", "vn_image_suppression", "vn_reinitialiser"];
+const REQUETES_POST = ["vn_sauvegarde", "vn_import", "vn_import_son", "vn_import_police", "vn_image_suppression", "vn_reinitialiser"];
+
+// Polices : reconnues à leurs premiers octets, quel que soit le nom du fichier.
+const POLICES = {
+  woff2: { type: "font/woff2", signature: t => t.toString("latin1", 0, 4) === "wOF2" },
+  woff: { type: "font/woff", signature: t => t.toString("latin1", 0, 4) === "wOFF" },
+  ttf: { type: "font/ttf", signature: t => t.readUInt32BE(0) === 0x00010000 || t.toString("latin1", 0, 4) === "true" },
+  otf: { type: "font/otf", signature: t => t.toString("latin1", 0, 4) === "OTTO" }
+};
 
 function estRequeteEdition(req) {
   if (req.method === "GET") return req.query?.vn_edition === "1" || req.query?.vn_images === "1";
@@ -40,7 +49,7 @@ async function lireLigne() {
 async function listerImages() {
   const { data, error } = await supabase.storage.from(DOSSIER).list("", { limit: 1000 });
   if (error) throw error;
-  const fichiers = (data || []).filter(f => /\.(webp|mp3|ogg)$/.test(f.name));
+  const fichiers = (data || []).filter(f => /\.(webp|mp3|ogg|woff2|woff|ttf|otf)$/.test(f.name));
   return {
     images: fichiers.filter(f => f.name.endsWith(".webp")).map(f => `${PREFIXE}${f.name}`),
     poids: fichiers.reduce((total, f) => total + (f.metadata?.size || 0), 0),
@@ -85,6 +94,16 @@ async function importerSon({ data }) {
   return correspondance[1] === "mpeg" ? televerser(tampon, "mp3", "audio/mpeg") : televerser(tampon, "ogg", "audio/ogg");
 }
 
+async function importerPolice({ data }) {
+  const correspondance = typeof data === "string" && /^data:[\w/.+-]*;base64,([A-Za-z0-9+/=]+)$/.exec(data);
+  if (!correspondance) return { status: 400, corps: { error: "Police invalide (WOFF2, WOFF, TTF ou OTF attendu)" } };
+  const tampon = Buffer.from(correspondance[1], "base64");
+  if (tampon.length > POIDS_MAX_IMAGE) return { status: 400, corps: { error: "Police trop lourde (3 Mo au plus)" } };
+  const extension = tampon.length >= 12 && Object.keys(POLICES).find(ext => POLICES[ext].signature(tampon));
+  if (!extension) return { status: 400, corps: { error: "Police invalide (WOFF2, WOFF, TTF ou OTF attendu)" } };
+  return televerser(tampon, extension, POLICES[extension].type);
+}
+
 async function televerser(tampon, extension, contentType) {
   const { poids } = await listerImages();
   if (poids + tampon.length > POIDS_MAX_TOTAL) return { status: 400, corps: { error: "Plus de place : supprime des images importées qui ne servent plus." } };
@@ -100,11 +119,14 @@ async function televerser(tampon, extension, contentType) {
 }
 
 async function supprimerImage({ chemin }) {
-  if (typeof chemin !== "string" || !/^vn\/[a-f0-9]{24}\.(?:webp|mp3|ogg)$/.test(chemin)) return { status: 400, corps: { error: "Fichier invalide" } };
+  if (typeof chemin !== "string" || !/^vn\/[a-f0-9]{24}\.(?:webp|mp3|ogg|woff2|woff|ttf|otf)$/.test(chemin)) return { status: 400, corps: { error: "Fichier invalide" } };
   const ligne = await lireLigne();
-  // Sans la liste des sons de l'histoire, qui n'est qu'un catalogue.
-  const { sons, ...utilise } = ligne?.data || {};
-  if (JSON.stringify(utilise).includes(chemin)) return { status: 409, corps: { error: "L'histoire enregistrée se sert de ce fichier." } };
+  // Sans les listes de sons et de polices, qui ne sont que des catalogues ;
+  // une police sert si un panneau l'a choisie.
+  const { sons, polices, ...utilise } = ligne?.data || {};
+  const chapitres = JSON.stringify(utilise.chapitres || []);
+  const policeUtilisee = (polices || []).some(p => p.chemin === chemin && chapitres.includes(`"famille":"${p.id}"`));
+  if (policeUtilisee || JSON.stringify(utilise).includes(chemin)) return { status: 409, corps: { error: "L'histoire enregistrée se sert de ce fichier." } };
   const { error } = await supabase.storage.from(DOSSIER).remove([chemin.slice(PREFIXE.length)]);
   if (error) throw error;
   return { status: 200, corps: { ok: true } };
@@ -122,6 +144,7 @@ async function traiterEdition(req, discordId) {
   if (corps.vn_sauvegarde) return sauvegarder(discordId, corps.vn_sauvegarde);
   if (corps.vn_import) return importerImage(corps.vn_import);
   if (corps.vn_import_son) return importerSon(corps.vn_import_son);
+  if (corps.vn_import_police) return importerPolice(corps.vn_import_police);
   if (corps.vn_image_suppression) return supprimerImage(corps.vn_image_suppression);
   const { error } = await supabase.from("vn_parties").delete().eq("discord_id", discordId);
   if (error) throw error;

@@ -9,8 +9,8 @@
   <meta name="robots" content="noindex, nofollow">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/entete.css?v=rem48">
-  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=7">
-  <link rel="stylesheet" href="/visual_novel/editeur.css?v=5">
+  <link rel="stylesheet" href="/visual_novel/lecteur.css?v=8">
+  <link rel="stylesheet" href="/visual_novel/editeur.css?v=6">
 </head>
 <body class="ed-page">
   <p id="ed-chargement">Chargement…</p>
@@ -21,7 +21,7 @@
       <span class="ed-image-event"><img id="ed-namecard-event" alt=""><button type="button" id="ed-choisir-namecard-event" class="ed-bouton">Namecard de l'event</button></span>
       <label title="Sinon, seuls les vrais admins voient l'event"><input type="checkbox" id="ed-public-event"> Event visible par tout le monde</label>
       <span id="ed-etat" class="ed-etat"></span>
-      <button type="button" id="ed-ouvrir-catalogue" class="ed-bouton">Objets, états et sons</button>
+      <button type="button" id="ed-ouvrir-catalogue" class="ed-bouton">Objets, états, sons et polices</button>
       <button type="button" id="ed-reinitialiser" class="ed-bouton" title="Efface ta progression de lecture, pour tout relire comme un nouveau joueur">Effacer ma progression</button>
       <button type="button" id="ed-tester" class="ed-bouton">Tester ce panneau</button>
       <button type="button" id="ed-enregistrer" class="ed-bouton ed-principal">Enregistrer</button>
@@ -31,7 +31,8 @@
 
     <div class="ed-colonnes">
       <!-- Chapitres, sous-chapitres et panneaux. -->
-      <nav class="ed-colonne" aria-label="Plan de l'histoire">
+      <nav class="ed-colonne ed-plan" aria-label="Plan de l'histoire">
+        <div id="ed-poignee" class="ed-poignee" role="separator" aria-orientation="vertical" title="Glisser pour élargir le plan (double clic : largeur par défaut)"></div>
         <div id="ed-arbre"></div>
         <button type="button" id="ed-ajouter-chapitre" class="ed-bouton ed-large">+ Chapitre</button>
       </nav>
@@ -89,7 +90,7 @@
   <!-- Objets, états et sons de l'histoire. -->
   <dialog id="ed-catalogue" class="ed-images">
     <div class="ed-images-entete">
-      <h2>Objets, états et sons</h2>
+      <h2>Objets, états, sons et polices</h2>
       <button type="button" id="ed-catalogue-fermer" class="ed-bouton" aria-label="Fermer">×</button>
     </div>
     <div class="ed-catalogue-contenu">
@@ -108,6 +109,13 @@
         <input type="file" id="ed-sons-import" accept=".mp3,.ogg,.oga,audio/mpeg,audio/ogg" hidden>
       </label>
       <span id="ed-sons-etat" class="ed-aide"></span>
+      <h3>Polices</h3>
+      <p class="ed-aide">WOFF2, WOFF, TTF ou OTF, 3 Mo au plus. Elles s'ajoutent au menu Police des panneaux.</p>
+      <div id="ed-polices"></div>
+      <label class="ed-bouton">Importer une police
+        <input type="file" id="ed-polices-import" accept=".woff2,.woff,.ttf,.otf" hidden>
+      </label>
+      <span id="ed-polices-etat" class="ed-aide"></span>
     </div>
   </dialog>
 
@@ -128,8 +136,8 @@
     <div id="ed-images-grille" class="ed-images-grille"></div>
   </dialog>
 
-  <script src="/commun/vn_polices.js?v=3"></script>
-  <script src="/visual_novel/scene.js?v=3"></script>
-  <script src="/visual_novel/editeur.js?v=7"></script>
+  <script src="/commun/vn_polices.js?v=4"></script>
+  <script src="/visual_novel/scene.js?v=4"></script>
+  <script src="/visual_novel/editeur.js?v=8"></script>
 </body>
 </html>

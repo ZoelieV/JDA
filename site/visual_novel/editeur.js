@@ -54,6 +54,7 @@ function creerPanneau(modele) {
     texte: "",
     persos: structuredClone(modele?.persos || []),
     police: structuredClone(modele?.police || lirePoliceVn()),
+    lecture_min: modele?.lecture_min ?? null,
     effets: [],
     sauvegarde: false,
     timer: null,
@@ -107,6 +108,29 @@ function boutonsDeplacement(liste, element, { apresSuppression, confirmation }) 
   ];
 }
 
+// Titre sur plusieurs lignes s'il est long, pour le voir en entier ; Entrée valide.
+function champTitre(element, libelle) {
+  const ajuster = zone => { zone.style.height = "auto"; zone.style.height = `${zone.scrollHeight + zone.offsetHeight - zone.clientHeight}px`; };
+  const zone = creer("textarea", {
+    classe: "ed-titre",
+    rows: 1,
+    maxLength: 80,
+    value: element.titre,
+    ariaLabel: libelle,
+    oninput: e => {
+      const sansRetour = e.target.value.replace(/[\r\n]+/g, " ");
+      if (sansRetour !== e.target.value) e.target.value = sansRetour;
+      element.titre = sansRetour;
+      marquerModifie();
+      ajuster(e.target);
+    },
+    onkeydown: e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } },
+    onchange: rendreArbre
+  });
+  requestAnimationFrame(() => ajuster(zone));
+  return zone;
+}
+
 function rendreArbre() {
   edEl("ed-arbre").replaceChildren(...histoire.chapitres.map(chapitre => {
     const nbPanneaux = chapitre.sous_chapitres.reduce((total, sc) => total + sc.panneaux.length, 0);
@@ -128,7 +152,7 @@ function rendreArbre() {
 function rendreChapitre(chapitre) {
   return creer("div", {},
     creer("div", { classe: "ed-reglages" },
-      creer("input", { type: "text", maxLength: 80, value: chapitre.titre, ariaLabel: "Titre du chapitre", oninput: e => { chapitre.titre = e.target.value; marquerModifie(); }, onchange: rendreArbre }),
+      champTitre(chapitre, "Titre du chapitre"),
       chapitre.namecard ? creer("img", { src: imageVn(chapitre.namecard), alt: "" }) : null,
       creer("button", { type: "button", classe: "ed-bouton", textContent: "Namecard du chapitre", onclick: () => ouvrirImages("namecard", chemin => { chapitre.namecard = chemin; marquerModifie(); rendreArbre(); }) }),
       creer("label", {}, creer("input", { type: "checkbox", checked: chapitre.public === true, onchange: e => { chapitre.public = e.target.checked; marquerModifie(); rendreArbre(); } }), " Chapitre visible par tout le monde"),
@@ -161,7 +185,7 @@ function rendreSousChapitre(chapitre, sc) {
       })
     ),
     actif ? creer("div", { classe: "ed-reglages" },
-      creer("input", { type: "text", maxLength: 80, value: sc.titre, ariaLabel: "Titre du sous-chapitre", oninput: e => { sc.titre = e.target.value; marquerModifie(); }, onchange: rendreArbre })
+      champTitre(sc, "Titre du sous-chapitre")
     ) : null,
     actif ? creer("div", { classe: "ed-panneaux" },
       ...sc.panneaux.map((panneau, i) => rendrePanneauArbre(chapitre, sc, panneau, i)),
@@ -216,7 +240,7 @@ function dupliquerPanneau(chapitre, sc) {
 // ---- Panneau : aperçu et texte ----
 function rendreApercu() {
   const panneau = panneauChoisi();
-  dessinerSceneVn(panneau);
+  dessinerSceneVn(panneau, histoire.polices);
   [...edEl("vn-persos").children].forEach((image, i) => {
     image.classList.toggle("ed-selection", i === persoChoisi);
     image.addEventListener("pointerdown", event => commencerGlissement(event, i));
@@ -257,7 +281,7 @@ function rendreFormulaire() {
   const panneau = panneauChoisi();
   edEl("ed-nom").value = panneau.nom;
   edEl("ed-texte").value = panneau.texte;
-  const police = panneau.police = lirePoliceVn(panneau.police);
+  const police = panneau.police = lirePoliceVn(panneau.police, histoire.polices);
   edEl("ed-police").value = police.famille;
   edEl("ed-taille").value = police.taille;
   edEl("ed-gras").checked = police.gras;
@@ -328,8 +352,23 @@ function rendrePersos() {
     creer("label", { classe: "ed-champ" }, "Taille",
       creer("input", { type: "range", min: 5, max: 250, value: perso.hauteur, oninput: e => { perso.hauteur = Number(e.target.value); marquerModifie(); rendreApercu(); } })
     ),
+    curseurPerso(perso, "gris", "Grisé", "Personnage en retrait : en noir et blanc, un peu assombri"),
+    curseurPerso(perso, "ombre", "Ombre", "À 100 % : seulement sa silhouette, en noir"),
     creer("label", {}, creer("input", { type: "checkbox", checked: perso.miroir === true, onchange: e => { perso.miroir = e.target.checked; marquerModifie(); rendreApercu(); } }), " Miroir")
   )));
+}
+
+// Grisé ou ombre d'un personnage, de 0 à 100 %.
+function curseurPerso(perso, champ, libelle, aide) {
+  const valeur = creer("span", { classe: "ed-valeur", textContent: `${perso[champ] || 0} %` });
+  return creer("label", { classe: "ed-champ", title: aide }, libelle,
+    creer("input", { type: "range", min: 0, max: 100, step: 5, value: perso[champ] || 0, oninput: e => {
+      perso[champ] = Number(e.target.value);
+      valeur.textContent = `${perso[champ]} %`;
+      marquerModifie();
+      rendreApercu();
+    } }),
+    valeur);
 }
 
 // ---- Panneau : suite ----
@@ -603,13 +642,26 @@ function rendreOptionsPanneau() {
         ]
         : editeurConsequence(panneau.timer, apres, { libelleVide: "Rester sur place", placeholder: "Message quand le temps est écoulé" }))
     ) : null,
+    creer("div", { classe: "ed-carte" },
+      creer("label", { classe: "ed-champ", title: "Le joueur ne peut pas avancer (ni répondre) avant ce délai. Vide : le délai par défaut." }, "Lecture minimale (s)",
+        creer("input", { type: "number", min: 0, max: 60, value: panneau.lecture_min ?? "", placeholder: `${histoire.lecture_min || 0}`, classe: "ed-nombre", oninput: e => {
+          panneau.lecture_min = e.target.value === "" ? null : Math.min(60, Math.max(0, Math.round(Number(e.target.value)) || 0));
+          marquerModifie();
+        } })),
+      creer("label", { classe: "ed-champ", title: "Pour tous les panneaux sans délai propre" }, "Par défaut, tous les panneaux (s)",
+        creer("input", { type: "number", min: 0, max: 60, value: histoire.lecture_min || 0, classe: "ed-nombre", oninput: e => {
+          histoire.lecture_min = Math.min(60, Math.max(0, Math.round(Number(e.target.value)) || 0));
+          marquerModifie();
+        }, onchange: () => rendreOptionsPanneau() })),
+      creer("p", { classe: "ed-aide", textContent: "Évite qu'on passe un panneau sans le lire. Vide : le délai par défaut. Ne s'applique pas au bouton Passer d'un chapitre déjà terminé." })
+    ),
     creer("p", { classe: "ed-aide", textContent: "En arrivant sur ce panneau :" }),
     editeurEffets(panneau.effets, apres),
     creer("label", { classe: "ed-champ" }, "Musique",
       listeSons(panneau.musique, [["", "Ne change pas"], ["stop", "Arrêter la musique"]], valeur => { panneau.musique = valeur || null; marquerModifie(); })),
     creer("label", { classe: "ed-champ" }, "Son",
       listeSons(panneau.son, [["", "Aucun"]], valeur => { panneau.son = valeur || null; marquerModifie(); })),
-    histoire.sons.length ? null : creer("p", { classe: "ed-aide", textContent: "Importe des sons avec le bouton « Objets, états et sons »." })
+    histoire.sons.length ? null : creer("p", { classe: "ed-aide", textContent: "Importe des sons avec le bouton « Objets, états, sons et polices »." })
   ].filter(Boolean));
 }
 
@@ -655,6 +707,72 @@ function rendreCatalogue() {
     } }),
     creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Supprimer du stockage", onclick: () => supprimerSon(son) })
   )));
+}
+
+function rendrePolices() {
+  const exemple = police => {
+    const apercu = creer("span", { classe: "ed-pousse ed-police-apercu", textContent: "Aa Bb 123 éàç" });
+    apercu.style.fontFamily = `"${familleImporteeVn(police.id, police.chemin)}", var(--police-texte)`;
+    return apercu;
+  };
+  edEl("ed-polices").replaceChildren(...histoire.polices.map(police => creer("div", { classe: "ed-carte-haut ed-son" },
+    creer("input", { type: "text", maxLength: 60, value: police.nom, ariaLabel: "Nom de la police", oninput: e => { police.nom = e.target.value; marquerModifie(); } }),
+    exemple(police),
+    creer("button", { type: "button", classe: "ed-bouton ed-mini", textContent: "×", title: "Supprimer du stockage", onclick: () => supprimerPolice(police) })
+  )));
+}
+
+const policeUtilisee = police => histoire.chapitres.some(c => c.sous_chapitres.some(sc => sc.panneaux.some(p => p.police?.famille === police.id)));
+
+async function supprimerPolice(police) {
+  if (policeUtilisee(police)) {
+    edEl("ed-polices-etat").textContent = `Un panneau se sert de « ${police.nom} ».`;
+    return;
+  }
+  if (!confirm(`Supprimer « ${police.nom} » du stockage ?`)) return;
+  // L'histoire enregistrée la liste peut-être encore : on la retire d'abord.
+  histoire.polices.splice(histoire.polices.indexOf(police), 1);
+  marquerModifie();
+  if (!await enregistrer()) {
+    histoire.polices.push(police);
+    rendrePolices();
+    return;
+  }
+  await envoyer({ vn_image_suppression: { chemin: police.chemin } });
+  rendrePolices();
+}
+
+async function importerPolice(fichier) {
+  const etat = edEl("ed-polices-etat");
+  if (!/\.(woff2|woff|ttf|otf)$/i.test(fichier.name)) { etat.textContent = "Formats acceptés : WOFF2, WOFF, TTF, OTF."; return; }
+  if (fichier.size > POIDS_MAX_SON) { etat.textContent = "Police trop lourde (3 Mo au plus)."; return; }
+  if (histoire.polices.length >= 30) { etat.textContent = "30 polices importées au plus."; return; }
+  etat.textContent = "Envoi…";
+  try {
+    const reponse = await envoyer({ vn_import_police: { data: `data:application/octet-stream;base64,${await lireEnBase64(fichier)}` } });
+    if (!reponse) { etat.textContent = "Envoi refusé."; return; }
+    if (!histoire.polices.some(p => p.chemin === reponse.chemin)) {
+      histoire.polices.push({ id: nouvelId("police_"), chemin: reponse.chemin, nom: fichier.name.replace(/\.\w+$/, "").slice(0, 60) });
+      marquerModifie();
+    }
+    etat.textContent = "";
+    rendrePolices();
+    remplirPolices();
+  } catch (erreur) {
+    console.error(erreur);
+    etat.textContent = erreur.message || "Erreur";
+  }
+}
+
+// Menu des polices du panneau : celles du site, puis celles importées.
+function remplirPolices() {
+  const menu = edEl("ed-police");
+  menu.replaceChildren(
+    creer("optgroup", { label: "Polices du site" }, ...POLICES_VN.map(p => creer("option", { value: p.id, textContent: p.nom }))),
+    histoire.polices.length ? creer("optgroup", { label: "Polices importées" }, ...histoire.polices.map(p => creer("option", { value: p.id, textContent: p.nom }))) : null
+  );
+  const panneau = selection.panneau ? panneauChoisi() : null;
+  if (panneau) menu.value = lirePoliceVn(panneau.police, histoire.polices).famille;
 }
 
 function afficherErreurSons(erreur) {
@@ -914,7 +1032,7 @@ function brancherFormulaire() {
   surPanneau("ed-italique", "change", (p, e) => { p.police.italique = e.checked; });
   ["ed-nom", "ed-texte"].forEach(id => edEl(id).addEventListener("change", rendreArbre));
 
-  edEl("ed-police").replaceChildren(...POLICES_VN.map(p => creer("option", { value: p.id, textContent: p.nom })));
+  remplirPolices();
   edEl("ed-taille").min = TAILLE_TEXTE_VN.min;
   edEl("ed-taille").max = TAILLE_TEXTE_VN.max;
 
@@ -951,11 +1069,12 @@ function brancherFormulaire() {
   });
   edEl("ed-ouvrir-catalogue").addEventListener("click", () => {
     rendreCatalogue();
+    rendrePolices();
     edEl("ed-catalogue").showModal();
   });
   edEl("ed-catalogue-fermer").addEventListener("click", () => edEl("ed-catalogue").close());
   // Les noms et listes ont pu changer : les menus des panneaux aussi.
-  edEl("ed-catalogue").addEventListener("close", () => { sonEcoute?.pause(); rendreOptionsPanneau(); rendreSuite(); });
+  edEl("ed-catalogue").addEventListener("close", () => { sonEcoute?.pause(); remplirPolices(); rendreOptionsPanneau(); rendreSuite(); rendreApercu(); });
   edEl("ed-ajouter-objet").addEventListener("click", () => {
     histoire.objets.push({ id: nouvelId("i"), nom: "Nouvel objet", description: "", image: null, limite: 1 });
     marquerModifie();
@@ -966,6 +1085,12 @@ function brancherFormulaire() {
     marquerModifie();
     rendreCatalogue();
   });
+  edEl("ed-polices-import").addEventListener("change", event => {
+    const [fichier] = event.target.files;
+    event.target.value = "";
+    if (fichier) importerPolice(fichier);
+  });
+  brancherPoignee();
   edEl("ed-sons-import").addEventListener("change", event => {
     const [fichier] = event.target.files;
     event.target.value = "";
@@ -986,6 +1111,44 @@ function brancherFormulaire() {
   });
   window.addEventListener("beforeunload", event => {
     if (modifie) event.preventDefault();
+  });
+}
+
+// Largeur du plan (titres des chapitres), réglée en faisant glisser son bord.
+const CLE_LARGEUR_PLAN = "vn_editeur_largeur_plan";
+function brancherPoignee() {
+  const colonnes = document.querySelector(".ed-colonnes");
+  const plan = colonnes.querySelector(".ed-colonne");
+  const poignee = edEl("ed-poignee");
+  const appliquer = largeur => {
+    const max = Math.max(240, colonnes.getBoundingClientRect().width * 0.6);
+    const bornee = Math.round(Math.min(max, Math.max(200, largeur)));
+    colonnes.style.setProperty("--largeur-plan", `${bornee}px`);
+    return bornee;
+  };
+  try {
+    const enregistree = Number(localStorage.getItem(CLE_LARGEUR_PLAN));
+    if (enregistree) appliquer(enregistree);
+  } catch { /* stockage indisponible : largeur par défaut */ }
+  poignee.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    poignee.setPointerCapture(event.pointerId);
+    const gauche = plan.getBoundingClientRect().left;
+    let largeur = null;
+    const bouger = e => { largeur = appliquer(e.clientX - gauche); };
+    const finir = () => {
+      poignee.removeEventListener("pointermove", bouger);
+      poignee.removeEventListener("pointerup", finir);
+      poignee.removeEventListener("pointercancel", finir);
+      try { if (largeur) localStorage.setItem(CLE_LARGEUR_PLAN, largeur); } catch { /* pas grave */ }
+    };
+    poignee.addEventListener("pointermove", bouger);
+    poignee.addEventListener("pointerup", finir);
+    poignee.addEventListener("pointercancel", finir);
+  });
+  poignee.addEventListener("dblclick", () => {
+    colonnes.style.removeProperty("--largeur-plan");
+    try { localStorage.removeItem(CLE_LARGEUR_PLAN); } catch { /* pas grave */ }
   });
 }
 
