@@ -3501,3 +3501,166 @@ body.page-administration #tuiles-equilibrage {
 .barre-admin .filtre-admin.filtre-texte {
   padding: 0 0.5rem;
 }
+
+/* ---- Stats du classé (admin_stats_classe.js) ---- */
+.modal-stats-classe {
+  width: min(70rem, calc(100vw - 2rem));
+}
+
+.reglages-stats-classe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.reglages-stats-classe label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.reglages-stats-classe input[type="number"] {
+  width: 4.5rem;
+}
+
+.stats-defilement {
+  overflow-x: auto;
+}
+
+.tableau-stats-classe td {
+  vertical-align: middle;
+}
+
+.stats-boss {
+  min-width: 9rem;
+  text-align: left !important;
+}
+
+.stats-boss img {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+  margin-bottom: 0.25rem;
+}
+
+.stats-equipe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.stats-temps {
+  margin-left: 0.25rem;
+  white-space: nowrap;
+}
+
+.stats-perso {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.stats-perso > img:first-child {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stats-perso.inconnu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.stats-coin {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.125rem;
+  border-radius: 62.4375rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.stats-coin-c {
+  top: 0.125rem;
+  left: 0.125rem;
+}
+
+/* Arme signature : contour de la couleur du raffinement (.ref-N, commun/cartes.css). */
+img.stats-coin-arme {
+  right: 0.0625rem;
+  bottom: 0.0625rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0.0625rem;
+  object-fit: contain;
+  outline: 2px solid var(--couleur-ref);
+  outline-offset: -2px;
+}
+
+.tableau-stats-classe .doux {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8125rem;
+}
+
+img.stats-coin-element {
+  left: 0.125rem;
+  bottom: 0.125rem;
+  width: 1rem;
+  height: 1rem;
+  padding: 0.0625rem;
+}
+
+.stats-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stats-top li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: help;
+}
+
+.stats-top .stats-perso {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.stats-nom {
+  flex: 1;
+  min-width: 0;
+}
+
+.stats-peu {
+  margin: 0 0 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.stats-fenetre {
+  white-space: nowrap;
+}

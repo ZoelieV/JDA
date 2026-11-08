@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=70">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=71">
 <link rel="stylesheet" href="/commun/entete.css?v=rem48">
 <link rel="stylesheet" href="/commun/cartes.css?v=6">
 <link rel="stylesheet" href="/commun/tri.css?v=8">
@@ -127,6 +127,11 @@
   <div id="zone-admin" class="zone-admin cache">
     <!-- Outils de l'équilibrage : mêmes tuiles que la page Administration. -->
     <div id="tuiles-equilibrage" class="tuiles-admin tuiles-equilibrage">
+      <button type="button" id="ouvrir-stats-classe" class="tuile-admin" title="Records et persos les plus joués près du record, boss par boss (classé)">
+        <img src="/DB/images/others/Icon_Archive.webp" alt="">
+        <span class="tuile-admin-titre">Stats du classé</span>
+        <span class="tuile-admin-texte">Record et top 4 des persos de chaque boss, pour régler les points.</span>
+      </button>
       <button type="button" id="ouvrir-ajout" class="tuile-admin" title="Ajouter un personnage, une arme ou un boss">
         <img src="/DB/images/others/Icon_Party_Setup.webp" alt="">
         <span class="tuile-admin-titre">+ Ajouter</span>
@@ -574,6 +579,36 @@
 
   <!-- Méthode des bans d'équilibrage (config.equilibrage, cf.
        admin_equilibrage.js) : administrateurs seulement. -->
+  <!-- Stats du classé (cf. admin_stats_classe.js, api/_lib/stats_equilibrage.js). -->
+  <div id="modal-stats-classe" class="modal-apercu">
+    <div class="modal-apercu-contenu modal-stats-classe">
+      <div class="modal-apercu-entete">
+        <h2>Stats du classé</h2>
+        <button type="button" id="fermer-stats-classe" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Matchs classés valides seulement (sans litige ouvert, triche, temps suspect ni abandon). Top 4 : persos les plus
+        présents dans les équipes proches du record, c'est-à-dire à <strong>écart</strong> % du record au plus, et jamais
+        moins que le <strong>minimum</strong> en secondes (défi : écart % sous le record d'ennemis). Une équipe refaite par
+        le même joueur compte une fois. Voyageur et Manekin : un perso par élément.
+      </p>
+      <form id="reglages-stats-classe" class="reglages-stats-classe" autocomplete="off">
+        <label>Période
+          <select id="stats-periode" class="texte-ajout">
+            <option value="saison">Saison en cours</option>
+            <option value="patch">Depuis le dernier patch</option>
+            <option value="date">Depuis une date…</option>
+            <option value="tout">Depuis toujours</option>
+          </select>
+        </label>
+        <input type="date" id="stats-depuis" class="texte-ajout" aria-label="Depuis le" hidden>
+        <label>Écart <input type="number" id="stats-ecart" class="texte-ajout" min="0" max="200" step="1"> %</label>
+        <label>Minimum <input type="number" id="stats-minimum" class="texte-ajout" min="0" max="600" step="1"> s</label>
+      </form>
+      <div id="contenu-stats-classe"></div>
+    </div>
+  </div>
+
   <div id="modal-equilibrage" class="modal-apercu">
     <div class="modal-apercu-contenu">
       <div class="modal-apercu-entete">
@@ -881,6 +916,7 @@
   <script src="/admin_ppc/admin_statistiques.js?v=1"></script>
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
   <script src="/admin_ppc/admin_patchs.js?v=3"></script>
+  <script src="/admin_ppc/admin_stats_classe.js?v=1"></script>
   <script src="/admin_ppc/admin_ppc.js?v=46"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=37"></script>

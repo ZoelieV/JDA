@@ -13,6 +13,8 @@
 //
 // GET ?stats_site=1 : statistiques du site (administrateurs et mini admins,
 //          cf. _lib/statistiques.js).
+// GET ?stats_equilibrage=1 : équipes des matchs classés valides, pour les
+//          stats d'équilibrage (même accès, cf. _lib/stats_equilibrage.js).
 // GET ?dons=1 : historique des dons de Rikoyns et de cosmétiques
 //          (administrateurs et mini admins, cf. lireHistoriqueDons) :
 //          { dons, joueurs: { id: nom } }.
@@ -149,6 +151,7 @@ const { getCatalogueComplet, MODES_POINTS, MODES_EQUILIBRAGE, ALTERNATIVES_ARMES
 const visualNovel = require("./_lib/visual_novel");
 const vnEdition = require("./_lib/vn_edition");
 const { lirePatchs, patchsPublics, modifierPatchs } = require("./_lib/patchs");
+const { lireStatsEquilibrage } = require("./_lib/stats_equilibrage");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -467,6 +470,14 @@ module.exports = async (req, res) => {
       res.setHeader("Cache-Control", "no-store");
       if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
       return res.status(200).json(await lireStatistiques());
+    }
+
+    // Stats d'équilibrage (équipes du classé, cf. _lib/stats_equilibrage.js) :
+    // administrateurs et mini admins.
+    if (req.method === "GET" && req.query?.stats_equilibrage === "1") {
+      res.setHeader("Cache-Control", "no-store");
+      if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+      return res.status(200).json(await lireStatsEquilibrage());
     }
 
     // Historique des dons (fenêtre Rikoyns) : administrateurs et mini admins.
