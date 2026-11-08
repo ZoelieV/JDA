@@ -396,7 +396,7 @@ function rendreEntete() {
       ${vue === "characters" ? `<th class="col-synergie" title="Nombre de persos en synergie : sans eux dans la box, le perso perd des points (bouton Synergie)">Synergie</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Faction du perso (aucune ou une seule) : filtres des persos sur tout le site">Faction</th>` : ""}
       ${vue === "characters" ? `<th class="col-faction" title="Rôles du perso (bouclier, soin ; aucun, un ou les deux) : filtres des persos sur tout le site">Rôles</th>` : ""}
-      ${vue === "weapons" ? `<th class="col-alternative" title="Part des points (0 à 400 %) comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box : par groupe de persos, et « le reste » (arrondi à l'entier)">Valeur alt.</th>` : ""}
+      ${vue === "weapons" ? `<th class="col-alternative" title="Part des points (0 à 400 %, tous les 25 %, plus 12,5, 37,5, 62,5 et 87,5 %) comptée pour une copie en double, et pour une arme signature quand son perso n'est pas dans la box : par groupe de persos, et « le reste » (arrondi à l'entier)">Valeur alt.</th>` : ""}
     </tr>
     ${vue === "characters" ? `
       <tr class="ligne-modes">
@@ -543,8 +543,8 @@ function rendreCorpsSommes(corps, items) {
 function texteAlternative(id) {
   const a = alternativeArme(id);
   if (!aAlternative(id)) return "100 %";
-  const groupes = a.groupes.map(g => `${g.pourcentage} % (${g.persos.length} perso${g.persos.length > 1 ? "s" : ""})`);
-  return [...groupes, `${a.groupes.length ? "reste " : ""}${a.reste} %`].join(" · ");
+  const groupes = a.groupes.map(g => `${textePourcentageAlternatif(g.pourcentage)} % (${g.persos.length} perso${g.persos.length > 1 ? "s" : ""})`);
+  return [...groupes, `${a.groupes.length ? "reste " : ""}${textePourcentageAlternatif(a.reste)} %`].join(" · ");
 }
 
 function rendre() {

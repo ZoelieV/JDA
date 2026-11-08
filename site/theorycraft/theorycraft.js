@@ -416,8 +416,8 @@ function htmlAlternativeArmeTc(arme) {
   if (alternative.reste === 100 && !alternative.groupes.length) return "";
   const valeurs = pourcentage => points(arme, "weapons").map(p => Math.round(p * pourcentage / 100)).join(" / ");
   const lignes = [
-    ...alternative.groupes.map(g => `<span class="valeur-alternative-tc" title="Portée par ${echapper(g.persos.map(nomPersoDraft).join(", "))}">${g.pourcentage} % : ${valeurs(g.pourcentage)}</span> sur ${echapper(g.persos.map(nomPersoDraft).join(", "))}`),
-    `<span class="valeur-alternative-tc" title="Copie en double, ou arme signature sans son perso dans la box, portée par un autre perso">${alternative.reste} % : ${valeurs(alternative.reste)}</span>${alternative.groupes.length ? " sur les autres" : ""}`
+    ...alternative.groupes.map(g => `<span class="valeur-alternative-tc" title="Portée par ${echapper(g.persos.map(nomPersoDraft).join(", "))}">${textePourcentageAlternatif(g.pourcentage)} % : ${valeurs(g.pourcentage)}</span> sur ${echapper(g.persos.map(nomPersoDraft).join(", "))}`),
+    `<span class="valeur-alternative-tc" title="Copie en double, ou arme signature sans son perso dans la box, portée par un autre perso">${textePourcentageAlternatif(alternative.reste)} % : ${valeurs(alternative.reste)}</span>${alternative.groupes.length ? " sur les autres" : ""}`
   ];
   return lignes.join("<br>");
 }

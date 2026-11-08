@@ -53,7 +53,7 @@ function ecrireAlternative(alternative) {
 }
 
 function optionsPourcentage(choisi) {
-  return POURCENTAGES_ALTERNATIFS.map(p => `<option value="${p}"${p === choisi ? " selected" : ""}>${p} %</option>`).join("");
+  return POURCENTAGES_ALTERNATIFS.map(p => `<option value="${p}"${p === choisi ? " selected" : ""}>${textePourcentageAlternatif(p)} %</option>`).join("");
 }
 
 function rendreAlternative() {

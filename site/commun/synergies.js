@@ -66,7 +66,11 @@ function appliquerSynergie(points, synergies, perso, presents) {
 // signature sans son perso, cf. pointsCopiesArmes) ; persos d'un groupe : le
 // pourcentage du groupe (le plus haut s'il est dans plusieurs) ; les autres :
 // « le reste ». Ancien format (un nombre) : le reste seul. 100 % par défaut.
-const POURCENTAGES_ALTERNATIFS = Array.from({ length: 17 }, (_, i) => i * 25); // 0 à 400 %, tous les 25
+// 0 à 400 %, tous les 25, plus 12,5, 37,5, 62,5 et 87,5 %.
+const POURCENTAGES_ALTERNATIFS = [...Array.from({ length: 17 }, (_, i) => i * 25), 12.5, 37.5, 62.5, 87.5].sort((a, b) => a - b);
+
+// Affichage d'un pourcentage : virgule décimale ("12,5").
+const textePourcentageAlternatif = p => String(p).replace(".", ",");
 const ALTERNATIVE_PAR_DEFAUT = { reste: 100, groupes: [] };
 
 const pourcentageValide = p => POURCENTAGES_ALTERNATIFS.includes(Number(p));
@@ -120,6 +124,6 @@ if (typeof module !== "undefined") {
   module.exports = {
     synergieIncoherente,
     lireSynergies, malusSynergie, appliquerSynergie,
-    POURCENTAGES_ALTERNATIFS, lireAlternativeArme, lireAlternativesArmes, pourcentageAlternatifPerso, pourcentageAlternatifBox
+    POURCENTAGES_ALTERNATIFS, textePourcentageAlternatif, lireAlternativeArme, lireAlternativesArmes, pourcentageAlternatifPerso, pourcentageAlternatifBox
   };
 }

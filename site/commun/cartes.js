@@ -442,7 +442,7 @@ function trouverPersonnageSignature(armes, personnages, idArme) {
 
 // ---- Valeurs alternatives des armes ----
 // Pourcentages des points d'une copie d'arme (POURCENTAGES_ALTERNATIFS,
-// 0 à 400 %), réglés par arme sur la page admin (arme.alternative : le reste
+// 0 à 400 %, dont 12,5, 37,5, 62,5 et 87,5), réglés par arme sur la page admin (arme.alternative : le reste
 // et des groupes de persos, cf. commun/synergies.js), appliqués dans les
 // points d'une box à chaque copie en double (toutes sauf la meilleure) et à
 // une arme signature dont le perso n'est pas dans la box (une seule fois si
