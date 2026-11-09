@@ -83,7 +83,9 @@
         Chances : <span class="rarete-texte rarete-commun">Commun ${pourcent(100 - tirage.probas.rare - tirage.probas.epique - legendaire)}</span>, <span class="rarete-texte rarete-rare">Rare ${pourcent(tirage.probas.rare)}</span>, <span class="rarete-texte rarete-epique">Épique ${pourcent(tirage.probas.epique)}</span>${legendaire ? `, <span class="rarete-texte rarete-legendaire">Légendaire ${pourcent(legendaire)}</span>` : ""}.
         Un <span class="rarete-texte rarete-epique">épique</span> ou mieux est garanti au ${tirage.garantie_epique ?? 10}e tirage sans épique.
         ${tirage.focus.length ? `Les <strong>cosmétiques focus</strong> (seulement par tirage) sont <span class="rarete-texte rarete-legendaire">légendaires</span>, garantis au ${tirage.garantie}e tirage sans légendaire.
-        Choisis ta focus : une légendaire a 50 % de chances d'être elle, sinon c'est une autre focus et la suivante sera forcément la tienne.` : ""}</p>
+        Choisis ta focus : une légendaire a 50 % de chances d'être elle, sinon c'est une autre focus et la suivante sera forcément la tienne.
+        Au pire, ta focus tombe donc en <strong>${tirage.garantie * 2} vœux</strong>.
+        Ton compteur de tirages (pity) et ta garantie sont conservés d'une bannière à l'autre et quand tu changes de focus.` : ""}</p>
       ${tirage.focus.length ? `
         <h3 class="perso-categorie">Focus</h3>
         <div class="perso-tirage-focus"></div>
