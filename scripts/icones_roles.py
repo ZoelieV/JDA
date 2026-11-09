@@ -14,21 +14,18 @@ def croix(d, cx, cy, taille, epais, rayon, remplissage, contour, largeur):
         d.rounded_rectangle([cx - ep / 2, cy - t / 2, cx + ep / 2, cy + t / 2], radius=rayon, fill=coul)
 
 def coeur(d, cx, cy, l, remplissage, contour, largeur):
-    def forme(echelle):
-        r = l * 0.27 * echelle
-        pts = []
-        import math
-        # Deux lobes et la pointe.
-        for a in range(200, 361, 4):
-            pts.append((cx - l * 0.25 * echelle + r * math.cos(math.radians(a)), cy - l * 0.08 * echelle + r * math.sin(math.radians(a))))
-        for a in range(180, 341, 4):
-            pts.append((cx + l * 0.25 * echelle + r * math.cos(math.radians(a)), cy - l * 0.08 * echelle + r * math.sin(math.radians(a))))
-        pts.append((cx + l * 0.5 * echelle * 0.98, cy + l * 0.02 * echelle))
-        pts.append((cx, cy + l * 0.48 * echelle))
-        pts.append((cx - l * 0.5 * echelle * 0.98, cy + l * 0.02 * echelle))
-        return pts
-    d.polygon(forme(1 + largeur / l * 2), fill=contour)
-    d.polygon(forme(1), fill=remplissage)
+    # Cœur = deux disques (lobes) + un triangle (pointe), sans tracé qui se
+    # recoupe : pas de trou. Contour : même forme agrandie, dessinée dessous.
+    def dessiner(marge, couleur):
+        r = l * 0.27 + marge
+        for dx in (-0.25, 0.25):
+            ox, oy = cx + l * dx, cy - l * 0.08
+            d.ellipse([ox - r, oy - r, ox + r, oy + r], fill=couleur)
+        d.polygon([(cx - l * 0.49 - marge, cy + l * 0.0), (cx + l * 0.49 + marge, cy + l * 0.0), (cx, cy + l * 0.48 + marge * 1.4)], fill=couleur)
+        # Comble le creux entre les lobes et le haut du triangle.
+        d.rectangle([cx - l * 0.25, cy - l * 0.08, cx + l * 0.25, cy + l * 0.05], fill=couleur)
+    dessiner(largeur, contour)
+    dessiner(0, remplissage)
 
 def soin():
     im = Image.new("RGBA", (T, T), (0, 0, 0, 0))
