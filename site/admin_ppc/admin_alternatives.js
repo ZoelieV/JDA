@@ -69,6 +69,7 @@ function rendreAlternative() {
       ${proprietaire ? `Sur ${echapperHtml(proprietaire.nom)} (sa signature) : toujours 100 %. ` : ""}R1 : ${r1} points.
       Une copie en double, ou l'arme sans ${proprietaire ? "son perso" : "propriétaire"} dans la box, vaut le pourcentage du perso qui la porte :
       celui de sa valeur alternative, sinon « le reste ». Dans les points d'une box, le meilleur des persos de la box qui peuvent la porter.
+      Dans les bans d'équilibrage, un perso placé dans un groupe ci-dessous peut recevoir l'arme même si son rôle ne colle pas (ex. une arme support sur un dps).
     </p>
     ${alternative.groupes.map((groupe, index) => `
       <div class="groupe-alternative">

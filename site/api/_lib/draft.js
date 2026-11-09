@@ -98,8 +98,10 @@ function estEquilibrageHorizontal(draft) {
 // signature d'aucun perso (perma, Ultime soupir... : 1re copie pleine
 // valeur, doublons valeur alternative). Chaque arme libre est attribuée à un
 // perso sans sa signature, du même type d'arme (arme support : persos
-// support ou sub-dps ; autre arme : persos sub-dps ou dps), un perso par
-// arme, au plus grand gain de verticalité (cf. attribuerArmesLibres).
+// support ou sub-dps ; autre arme : persos sub-dps ou dps ; exception : un
+// perso placé dans un groupe de la valeur alternative de l'arme la reçoit
+// quel que soit son rôle, cf. peutRecevoir), un perso par arme, au plus grand
+// gain de verticalité (cf. attribuerArmesLibres).
 // -> { persos: { id: { valeur, type, support, attaque, signature: { pleine,
 //      type, support } | null } }, libres: [{ cle, valeur (la plus haute
 //      possible), pleine, reduite, alternative, exclue, type, support }] }
@@ -151,7 +153,9 @@ function modeleEquilibrage(profilData, boxChoisie, personnages, armes) {
       // copie : rang de la copie (0 = meilleure), comme les cartes d'armes de
       // la draft (cf. bannirArmesPerso).
       const libre = { cle: `l${libres.length}`, arme: arme.id, copie: index, type: arme.type, support, pleine, exclue: signature ? cle : null };
-      if (!signature && index === 0) libres.push({ ...libre, reduite: false, valeur: pleine });
+      // alternative gardée aussi en pleine valeur : ses groupes ouvrent l'arme
+      // à des persos d'un autre rôle (cf. peutRecevoir).
+      if (!signature && index === 0) libres.push({ ...libre, reduite: false, alternative, valeur: pleine });
       else if (signature && index === 0 && persos[cle]) persos[cle].signature = { pleine, type: arme.type, support, arme: arme.id, copie: 0 };
       else libres.push({ ...libre, reduite: true, alternative, valeur: valeurMaxLibre(pleine, alternative) });
     });
@@ -195,6 +199,18 @@ function valeurLibre(arme, cle) {
   return Math.round(arme.pleine * pourcentageAlternatifPerso(arme.alternative, cle) / 100);
 }
 
+// Perso qui peut recevoir cette arme libre : sans sa propre signature, même
+// type d'arme, pas le propriétaire de la signature, et du bon rôle (arme
+// support : support ou sub-dps ; autre : sub-dps ou dps). Exception voulue
+// par les équilibreurs : un perso placé dans un groupe de la valeur
+// alternative de l'arme (page admin) la reçoit quel que soit son rôle (ex.
+// l'arme de Citlali sur Mizuki, dps).
+const dansGroupeAlternatif = (arme, id) => !!arme.alternative?.groupes?.some(groupe => groupe.persos.includes(id));
+function peutRecevoir(arme, p) {
+  if (!p.receveur || p.type !== arme.type || p.id === arme.exclue) return false;
+  return (arme.support ? p.support : p.attaque) || dansGroupeAlternatif(arme, p.id);
+}
+
 // Valeur la plus haute qu'une arme libre peut prendre (ordre d'attribution).
 function valeurMaxLibre(pleine, alternative) {
   const pourcentages = [alternative.reste, ...alternative.groupes.map(g => g.pourcentage)];
@@ -213,7 +229,7 @@ function attribuerArmesLibres(persos, libres) {
     const dernier = persos.length >= VERTICALITE_PERSOS ? persos[VERTICALITE_PERSOS - 1].valeur : 0;
     let meilleur = null;
     persos.forEach((p, rang) => {
-      if (!p.receveur || p.type !== arme.type || !(arme.support ? p.support : p.attaque) || p.id === arme.exclue) return;
+      if (!peutRecevoir(arme, p)) return;
       const valeur = valeurLibre(arme, p.id);
       const gain = rang < VERTICALITE_PERSOS ? valeur : Math.max(0, p.valeur + valeur - dernier);
       if (gain > 0 && (!meilleur || gain > meilleur.gain)) meilleur = { p, gain, valeur };
@@ -471,7 +487,7 @@ function valeursHorizontales(modele, verticaux, detail = null, porteurs = null) 
     .sort((a, b) => b.valeur - a.valeur)
     .forEach(arme => {
       const receveur = persos
-        .filter(p => p.receveur && p.type === arme.type && (arme.support ? p.support : p.attaque) && p.id !== arme.exclue)
+        .filter(p => peutRecevoir(arme, p))
         .sort((a, b) => b.valeur - a.valeur)[0];
       if (!receveur) return;
       const valeur = valeurLibre(arme, receveur.id);
