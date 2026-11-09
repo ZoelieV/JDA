@@ -166,3 +166,36 @@
   height: 1.4em;
   vertical-align: middle;
 }
+
+/* Focus pas encore choisie (cf. focusManquante, cosmetiques.js) : consigne
+   en évidence, cartes qui pulsent ; flash après le message. */
+.perso-tirage-choix.focus-a-choisir {
+  padding: 0.5rem 0.875rem;
+  border: 1px solid rgba(245, 197, 66, 0.85);
+  border-radius: 0.5rem;
+  background-color: rgba(245, 197, 66, 0.15);
+  color: #ffe9a8;
+}
+
+.perso-tirage-focus.focus-a-choisir .perso-choisir-focus {
+  animation: focus-a-choisir 1.6s ease-in-out infinite;
+}
+
+.perso-tirage-focus.focus-a-choisir-flash .perso-tirage-carte:not(.possede) {
+  animation: focus-flash 0.5s ease-in-out 3;
+}
+
+@keyframes focus-a-choisir {
+  50% { box-shadow: 0 0 0 0.25rem rgba(245, 197, 66, 0.6); }
+}
+
+@keyframes focus-flash {
+  50% { box-shadow: 0 0 1.75rem rgba(245, 197, 66, 0.95); transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perso-tirage-focus.focus-a-choisir .perso-choisir-focus,
+  .perso-tirage-focus.focus-a-choisir-flash .perso-tirage-carte:not(.possede) {
+    animation: none;
+  }
+}

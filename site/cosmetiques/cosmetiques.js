@@ -13,6 +13,24 @@
   let cosmetiques = null; // DB/images/cosmetiques.json
   let nomsPersos = new Map();
   let tirageEnCours = false;
+  let focusSignalee = false; // fenêtre « Choisis ta focus » déjà montrée à l'arrivée
+
+  // Focus encore à gagner mais pas choisie : vœux impossibles.
+  const focusManquante = () => {
+    const tirage = koyns?.tirage;
+    return !!tirage && tirage.focus.some(id => !possede(id)) && !tirage.choix;
+  };
+
+  // Message, puis les focus mises en évidence.
+  async function demanderFocus() {
+    await alerterSite("Avant de faire des vœux, choisis ta focus : clique sur « Choisir » sous le cosmétique focus que tu veux.\nUne légendaire aura 50 % de chances d'être elle, et si ce n'est pas elle, la suivante le sera forcément.", "Choisis ta focus");
+    const vitrine = document.querySelector(".perso-tirage-focus");
+    if (!vitrine) return;
+    vitrine.scrollIntoView({ behavior: "smooth", block: "center" });
+    vitrine.classList.remove("focus-a-choisir-flash");
+    void vitrine.offsetWidth;
+    vitrine.classList.add("focus-a-choisir-flash");
+  }
 
   const $ = id => document.getElementById(id);
   const urlImage = chemin => encodeURI(RACINE_IMAGES + chemin);
@@ -92,7 +110,7 @@
         ${focusRestants.length ? `
           <p class="perso-note perso-tirage-choix">${tirage.choix
             ? `Ta focus : <strong class="rarete-texte rarete-legendaire"></strong>${tirage.garanti ? " · <strong>garantie</strong> à la prochaine légendaire" : " · 50 % à la prochaine légendaire"}`
-            : "<strong>Choisis ta focus</strong> ci-dessus pour pouvoir faire des vœux."}</p>
+            : "⚠ <strong>Choisis ta focus</strong> ci-dessus (bouton « Choisir ») pour pouvoir faire des vœux."}</p>
           <div class="perso-tirage-garantie">
             <span>Légendaire garanti dans <strong>${restants}</strong> tirage${restants > 1 ? "s" : ""} · épique dans <strong>${restantsEpique}</strong></span>
             <span class="perso-tirage-jauge"><span style="width: ${Math.min(100, tirage.compteur / (tirage.garantie - 1) * 100)}%"></span></span>
@@ -137,16 +155,24 @@
     });
     const nomChoix = bloc.querySelector(".perso-tirage-choix strong.rarete-legendaire");
     if (nomChoix) nomChoix.textContent = infoCosmetique(tirage.choix).nom;
-    // Focus encore à gagner : vœux seulement avec une focus choisie.
+    // Focus encore à gagner : vœux seulement avec une focus choisie (clic :
+    // message pour la choisir, cf. tirer) ; focus et consigne mises en évidence.
     const sansChoix = focusRestants.length > 0 && !tirage.choix;
+    bloc.querySelector(".perso-tirage-choix")?.classList.toggle("focus-a-choisir", sansChoix);
+    vitrine?.classList.toggle("focus-a-choisir", sansChoix);
     bloc.querySelectorAll(".perso-tirer").forEach(bouton => {
       const prix = tirage.prix * Number(bouton.dataset.nombre);
-      bouton.disabled = koyns.solde < prix || sansChoix;
+      bouton.disabled = koyns.solde < prix;
       if (sansChoix) bouton.title = "Choisis d'abord ta focus.";
       else if (bouton.disabled) bouton.title = `Il faut ${prix} Rikoyns : joue des matchs pour en gagner.`;
       bouton.addEventListener("click", () => tirer(Number(bouton.dataset.nombre)));
     });
     conteneur.appendChild(bloc);
+    // Arrivée sur la page sans focus choisie : prévenu une fois.
+    if (sansChoix && !focusSignalee) {
+      focusSignalee = true;
+      demanderFocus();
+    }
   }
 
   // Focus choisie pour le 50/50 des légendaires.
@@ -173,6 +199,7 @@
   // nombre : 1 ou 10 tirages.
   async function tirer(nombre = 1) {
     if (tirageEnCours) return;
+    if (focusManquante()) return demanderFocus();
     tirageEnCours = true;
     afficherEtat("Tirage…");
     try {
