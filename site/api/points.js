@@ -887,7 +887,8 @@ module.exports = async (req, res) => {
           {
             ...ancienne,
             alternatives_armes: nettoyerAlternatives(ancienne.alternatives_armes, ids("weapons"), persosConnus),
-            synergies: nettoyerSynergies(ancienne.synergies, persosConnus)
+            synergies: nettoyerSynergies(ancienne.synergies, persosConnus),
+            masques: anciensMasques
           },
           config,
           { characters: persosConnus, weapons: [...listeJSON("weapons"), ...ajouts.weapons] },

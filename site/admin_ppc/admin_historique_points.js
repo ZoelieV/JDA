@@ -6,7 +6,9 @@
 //                 théâtre ; R1..R5) ;
 //   alternative : valeur alternative d'une arme, groupes en entier, persos
 //                 ajoutés / retirés et % modifiés surlignés ;
-//   synergie    : valeur alternative d'un perso (persos en synergie, malus).
+//   synergie    : valeur alternative d'un perso (persos en synergie, malus) ;
+//   theatre     : buff du théâtre du mois ajouté ou retiré ;
+//   masque      : perso ou arme masqué (pas encore sorti) ou rendu visible.
 // Filtres (depuis une date, persos / armes, recherche) gardés dans ce
 // navigateur ; « Copier en texte » : les lignes affichées, pour un patch.
 
@@ -48,7 +50,20 @@ function entreeHistorique(ligne) {
 
 const nomEntreeHistorique = ligne => entreeHistorique(ligne)?.nom || ligne.cible;
 
-const LIBELLES_CHAMPS_HISTORIQUE = { points: "Points", alternative: "Valeur alternative", synergie: "Synergie" };
+const LIBELLES_CHAMPS_HISTORIQUE = { points: "Points", alternative: "Valeur alternative", synergie: "Synergie", theatre: "Buff théâtre", masque: "Visibilité" };
+
+// Buff théâtre et masqué : oui / non.
+function detailOuiNon(ligne) {
+  const [oui, non] = ligne.champ === "theatre" ? ["Buffé", "Pas buffé"] : ["Masqué", "Visible"];
+  const texte = ligne.champ === "theatre"
+    ? (ligne.apres ? "buff ajouté" : "buff retiré")
+    : (ligne.apres ? "masqué" : "rendu visible");
+  return {
+    avant: [`<span class="hp-retire">${ligne.avant ? oui : non}</span>`],
+    apres: [`<span class="hp-ajoute">${ligne.apres ? oui : non}</span>`],
+    texte
+  };
+}
 
 // ---- Détail avant / après ----
 
@@ -137,6 +152,7 @@ function detailSynergie(ligne) {
 function detailHistorique(ligne) {
   if (ligne.champ === "alternative") return detailAlternative(ligne);
   if (ligne.champ === "synergie") return detailSynergie(ligne);
+  if (ligne.champ === "theatre" || ligne.champ === "masque") return detailOuiNon(ligne);
   return detailPoints(ligne);
 }
 

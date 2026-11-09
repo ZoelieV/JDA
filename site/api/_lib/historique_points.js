@@ -5,7 +5,9 @@
 // la date et les valeurs avant / après.
 //   champ "points"      : PPC (C0..C6, niv. 95, niv. 100, théâtre) ou PPW (R1..R5) ;
 //   champ "alternative" : valeur alternative d'une arme { reste, groupes } ;
-//   champ "synergie"    : valeur alternative d'un perso { persos, malus, par_absent? }.
+//   champ "synergie"    : valeur alternative d'un perso { persos, malus, par_absent? } ;
+//   champ "theatre"     : perso buffé par le théâtre du mois (avant / après : booléens) ;
+//   champ "masque"      : perso ou arme masqué (pas encore sorti ; booléens).
 // Une valeur absente (null) : pas de valeur alternative / de synergie.
 const { supabase } = require("./supabase");
 
@@ -43,6 +45,16 @@ function differencesPoints(ancienne, nouvelle, catalogue, tailles) {
   };
   comparer("weapons", "alternative", "alternatives_armes");
   comparer("characters", "synergie", "synergies");
+  // Listes d'ids : une ligne par id ajouté ou retiré.
+  const listes = (genre, champ, a, b) => {
+    const avant = new Set(Array.isArray(a) ? a : []);
+    const apres = new Set(Array.isArray(b) ? b : []);
+    new Set([...avant, ...apres]).forEach(id => {
+      if (avant.has(id) !== apres.has(id)) lignes.push({ genre, cible: id, champ, avant: avant.has(id), apres: apres.has(id) });
+    });
+  };
+  listes("characters", "theatre", ancienne?.theatre, nouvelle?.theatre);
+  for (const genre of ["characters", "weapons"]) listes(genre, "masque", ancienne?.masques?.[genre], nouvelle?.masques?.[genre]);
   return lignes;
 }
 
