@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=72">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=73">
 <link rel="stylesheet" href="/commun/entete.css?v=rem49">
 <link rel="stylesheet" href="/commun/cartes.css?v=6">
 <link rel="stylesheet" href="/commun/tri.css?v=8">
@@ -128,6 +128,11 @@
   <div id="zone-admin" class="zone-admin cache">
     <!-- Outils de l'équilibrage : mêmes tuiles que la page Administration. -->
     <div id="tuiles-equilibrage" class="tuiles-admin tuiles-equilibrage">
+      <button type="button" id="ouvrir-historique-points" class="tuile-admin" title="Qui a modifié quels points, quand, avec les valeurs avant et après">
+        <img src="/DB/images/others/Icon_Clock.webp" alt="">
+        <span class="tuile-admin-titre">Historique des points</span>
+        <span class="tuile-admin-texte">Qui a modifié quoi et quand, avant / après : pour rédiger les patchs.</span>
+      </button>
       <button type="button" id="ouvrir-stats-classe" class="tuile-admin" title="Records et persos les plus joués près du record, boss par boss (classé)">
         <img src="/DB/images/others/Icon_Archive.webp" alt="">
         <span class="tuile-admin-titre">Stats du classé</span>
@@ -580,6 +585,34 @@
 
   <!-- Méthode des bans d'équilibrage (config.equilibrage, cf.
        admin_equilibrage.js) : administrateurs seulement. -->
+  <!-- Historique des points (cf. admin_historique_points.js, api/_lib/historique_points.js). -->
+  <div id="modal-historique-points" class="modal-apercu">
+    <div class="modal-apercu-contenu modal-stats-classe">
+      <div class="modal-apercu-entete">
+        <h2>Historique des points</h2>
+        <button type="button" id="fermer-historique-points" class="fermer-apercu" aria-label="Fermer">×</button>
+      </div>
+      <p class="aide-apercu">
+        Chaque enregistrement du tableau des points ajoute une ligne par perso ou arme modifié : points (seules les
+        cases changées), valeurs alternatives des armes et synergies des persos. « Copier en texte » copie les lignes
+        affichées, de la plus ancienne à la plus récente, pour rédiger un patch.
+      </p>
+      <form id="reglages-historique-points" class="reglages-stats-classe" autocomplete="off">
+        <label>Depuis <input type="date" id="historique-depuis" class="texte-ajout"></label>
+        <label>Afficher
+          <select id="historique-genre" class="texte-ajout">
+            <option value="tout">Persos et armes</option>
+            <option value="characters">Persos</option>
+            <option value="weapons">Armes</option>
+          </select>
+        </label>
+        <input type="search" id="historique-recherche" class="texte-ajout" placeholder="Rechercher un perso, une arme" aria-label="Rechercher un perso, une arme">
+        <button type="button" id="copier-historique-points" class="bouton-creer secondaire">Copier en texte</button>
+      </form>
+      <div id="contenu-historique-points"></div>
+    </div>
+  </div>
+
   <!-- Stats du classé (cf. admin_stats_classe.js, api/_lib/stats_equilibrage.js). -->
   <div id="modal-stats-classe" class="modal-apercu">
     <div class="modal-apercu-contenu modal-stats-classe">
@@ -924,6 +957,7 @@
   <script src="/admin_ppc/admin_comptes.js?v=1"></script>
   <script src="/admin_ppc/admin_patchs.js?v=3"></script>
   <script src="/admin_ppc/admin_stats_classe.js?v=1"></script>
+  <script src="/admin_ppc/admin_historique_points.js?v=1"></script>
   <script src="/admin_ppc/admin_ppc.js?v=47"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=37"></script>

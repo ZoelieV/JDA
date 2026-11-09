@@ -15,6 +15,9 @@
 //          cf. _lib/statistiques.js).
 // GET ?stats_equilibrage=1 : équipes des matchs classés valides, pour les
 //          stats d'équilibrage (même accès, cf. _lib/stats_equilibrage.js).
+// GET ?historique_points=1 : modifications des points, valeurs alternatives
+//          des armes et synergies, une ligne par perso ou arme (même accès,
+//          cf. _lib/historique_points.js) : { lignes, admins: { id: nom }, limite }.
 // GET ?dons=1 : historique des dons de Rikoyns et de cosmétiques
 //          (administrateurs et mini admins, cf. lireHistoriqueDons) :
 //          { dons, joueurs: { id: nom } }.
@@ -154,6 +157,7 @@ const visualNovel = require("./_lib/visual_novel");
 const vnEdition = require("./_lib/vn_edition");
 const { lirePatchs, patchsPublics, modifierPatchs } = require("./_lib/patchs");
 const { lireStatsEquilibrage } = require("./_lib/stats_equilibrage");
+const { differencesPoints, noterModifications, lireHistoriquePoints } = require("./_lib/historique_points");
 
 const TAILLE_PPC = 10; // C0..C6, niveau 95, niveau 100, théâtre
 const TAILLE_PPW = 5;  // R1..R5
@@ -498,6 +502,13 @@ module.exports = async (req, res) => {
       return res.status(200).json(retraits ? { retraits: dons, joueurs } : { dons, joueurs });
     }
 
+    // Historique des modifications des points (cf. _lib/historique_points.js).
+    if (req.method === "GET" && req.query?.historique_points === "1") {
+      res.setHeader("Cache-Control", "no-store");
+      if (!user || !await estModerateur(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
+      return res.status(200).json(await lireHistoriquePoints());
+    }
+
     // Patchs d'équilibrage (cf. _lib/patchs.js).
     if (req.method === "GET" && req.query?.patchs === "1") {
       res.setHeader("Cache-Control", "no-store");
@@ -537,6 +548,8 @@ module.exports = async (req, res) => {
       const ancienne = await lireConfig();
       const ajouts = lireAjouts(ancienne);
       let config;
+      // Tableau des points enregistré : modifications notées dans l'historique.
+      let historique = [];
 
       if (corps.patch || corps.patch_suppression) {
         const idsPersos = new Set([...listeJSON("characters"), ...ajouts.characters].map(e => e.id));
@@ -867,6 +880,19 @@ module.exports = async (req, res) => {
           // Synergies (valeur alternative des persos, cf. commun/synergies.js).
           synergies: nettoyerSynergies(corps.synergies ?? ancienne.synergies, [...listeJSON("characters"), ...ajouts.characters])
         };
+        // Anciennes valeurs alternatives relues comme les nouvelles : seules
+        // les vraies modifications sont notées.
+        const persosConnus = [...listeJSON("characters"), ...ajouts.characters];
+        historique = differencesPoints(
+          {
+            ...ancienne,
+            alternatives_armes: nettoyerAlternatives(ancienne.alternatives_armes, ids("weapons"), persosConnus),
+            synergies: nettoyerSynergies(ancienne.synergies, persosConnus)
+          },
+          config,
+          { characters: persosConnus, weapons: [...listeJSON("weapons"), ...ajouts.weapons] },
+          { characters: TAILLE_PPC, weapons: TAILLE_PPW }
+        );
       }
 
       const { error } = await supabase.from("points").upsert({
@@ -876,6 +902,7 @@ module.exports = async (req, res) => {
         updated_by: user.id
       });
       if (error) throw error;
+      await noterModifications(historique, user.id);
 
       return res.status(200).json(config);
     }

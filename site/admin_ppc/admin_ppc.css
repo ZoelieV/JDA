@@ -3677,3 +3677,66 @@ img.stats-coin-element {
   background-color: rgba(255, 255, 255, 0.04);
   cursor: pointer;
 }
+
+/* ---- Historique des points (admin_historique_points.js) ---- */
+.reglages-stats-classe input[type="search"] {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.tableau-historique-points td {
+  vertical-align: top;
+}
+
+.tableau-historique-points tr.hp-debut td {
+  border-top: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.hp-quand {
+  min-width: 7.5rem;
+  white-space: nowrap;
+}
+
+.hp-cible {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 12rem;
+  text-align: left;
+}
+
+.hp-cible .stats-perso {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.hp-valeurs {
+  min-width: 11rem;
+  text-align: left !important;
+  line-height: 1.5;
+}
+
+.hp-case {
+  display: inline-block;
+  min-width: 3.5rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hp-hausse,
+.hp-ajoute {
+  color: #7fe08a;
+}
+
+.hp-baisse {
+  color: #ff9a8a;
+}
+
+.hp-retire {
+  color: #ff9a8a;
+  text-decoration: line-through;
+}
+
+.tableau-historique-points .doux {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8125rem;
+}
