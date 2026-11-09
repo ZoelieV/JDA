@@ -750,11 +750,8 @@ module.exports = async (req, res) => {
       } else if (Array.isArray(corps.cosmetiques_tirage)) {
         const inconnus = corps.cosmetiques_tirage.filter(id => !estCosmetique(id) || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
         if (inconnus.length) return res.status(400).json({ error: `Cosmétique inconnu ou gratuit : ${inconnus[0]}` });
-        // Nouveau focus sans rareté choisie : épique.
-        const raretes = { ...(ancienne.cosmetiques_raretes || {}) };
-        const anciensFocus = new Set(ancienne.cosmetiques_tirage || []);
-        corps.cosmetiques_tirage.filter(id => !anciensFocus.has(id) && !raretes[id]).forEach(id => { raretes[id] = "epique"; });
-        config = { ...ancienne, cosmetiques_raretes: raretes, cosmetiques_tirage: [...new Set(corps.cosmetiques_tirage)].sort() };
+        // Focus : légendaires (cf. rareteCosmetique, _lib/koyns.js), sans toucher à leur rareté enregistrée.
+        config = { ...ancienne, cosmetiques_tirage: [...new Set(corps.cosmetiques_tirage)].sort() };
       } else if (corps.cosmetiques_raretes && typeof corps.cosmetiques_raretes === "object") {
         const { niveau, ids } = corps.cosmetiques_raretes;
         if (!["rare", "epique"].includes(niveau) || !Array.isArray(ids)) return res.status(400).json({ error: "Rareté invalide" });
