@@ -219,10 +219,8 @@
       // Animation du vœu (cf. commun/tirage_voeu.js), puis la fenêtre des gains.
       await TirageVoeu.jouer(tirages.map(t => {
         const info = infoCosmetique(t.cosmetique);
-        // Logo du type : Welkin pour les fonds d'écran, A New World pour les namecards et bannières.
-        const choix = t.cosmetique.split(":")[0];
-        const logo = choix === "fond" ? "/DB/images/others/logo_cosmetique_fond.webp"
-          : choix === "banniere" || choix === "banniere2" ? "/DB/images/others/logo_cosmetique_namecard.webp" : null;
+        // Logo de l'animation : A New World pour tous les cosmétiques.
+        const logo = "/DB/images/others/logo_cosmetique_namecard.webp";
         const detail = t.doublon ? `Doublon : +${t.remboursement} Rikoyns rendus` : "";
         return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, capture: t.capture, logo, detail };
       }));
