@@ -113,7 +113,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=29";
+    lien.href = "/commun/personnalisation.css?v=30";
     document.head.appendChild(lien);
   }
 
@@ -351,11 +351,14 @@
         : texteRikoyns(prixCosmetique(cosmetique)),
       action: exclusif ? null
         : focus ? { texte: "🎲 Voir le tirage", surClic }
-        : { texte: dansPanier ? "Retirer du panier" : "🛒 Ajouter au panier", surClic }
+        : { texte: dansPanier ? "Retirer du panier" : `${ICONE_PANIER} Ajouter au panier`, surClic }
     });
   }
 
   // ---- Panier ----
+
+  // Icône du panier (à la place de l'émoji 🛒).
+  const ICONE_PANIER = `<img class="icone-panier" src="/DB/images/others/panier.webp" alt="Panier">`;
 
   const totalPanier = () => [...panier.keys()].reduce((total, id) => total + prixCosmetique(id), 0);
 
@@ -365,7 +368,7 @@
     bouton.hidden = panier.size === 0;
     // Vide (ouverture) : commun/koyns.js (ICONE_KOYN) pas forcément chargé.
     if (!panier.size) return;
-    bouton.innerHTML = `🛒 ${panier.size}<span class="perso-panier-montant"> · ${texteRikoyns(totalPanier())}</span>`;
+    bouton.innerHTML = `${ICONE_PANIER} ${panier.size}<span class="perso-panier-montant"> · ${texteRikoyns(totalPanier())}</span>`;
     bouton.title = `Panier : ${panier.size} cosmétique${panier.size > 1 ? "s" : ""}, clic pour acheter`;
   }
 
@@ -736,7 +739,7 @@
       const exclusif = estExclusif(cosmetique);
       const focus = estFocusTirage(cosmetique);
       const montant = prixCosmetique(cosmetique);
-      badge.innerHTML = exclusif ? "🔒 Exclusif" : focus ? "🎲 Tirage" : `${dansPanier ? "🛒" : "🔒"} ${montant} ${ICONE_KOYN}`;
+      badge.innerHTML = exclusif ? "🔒 Exclusif" : focus ? "🎲 Tirage" : `${dansPanier ? ICONE_PANIER : "🔒"} ${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
       bouton.title = `${titre} — ${exclusif ? "exclusif" : focus ? "focus du tirage (page Cosmétiques)" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
       if (image) {
