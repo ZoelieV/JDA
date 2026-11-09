@@ -5,17 +5,18 @@
 // son type et ses étoiles (une par tintement de la fin du son).
 //
 // Étoiles et clips selon la rareté : commun 2★ et rare 3★ (clip bleu ; 2★ :
-// sans le 3e tintement), épique 4★ (violet), légendaire 5★ (doré). Un
-// légendaire obtenu par la garantie joue la capture de radiance.
+// sans le 3e tintement), épique 4★ (violet), légendaire 5★ (doré). La
+// focus choisie par le joueur (50/50 gagné ou garanti) joue la capture de
+// radiance.
 // Clips : cf. scripts/clips_tirage.sh.
 //   1 vœu   : tirage_boss_2/3/4/5.mp4 ou voeu_5_capture.mp4 (vœu + obtention) ;
-//   10 vœux : dix_4/5/5_capture.mp4 (selon le meilleur gain : légendaire de
-//             la garantie, légendaire, sinon 4★), puis l'écran d'obtention
+//   10 vœux : dix_4/5/5_capture.mp4 (selon le meilleur gain : focus
+//             choisie, légendaire, sinon 4★), puis l'écran d'obtention
 //             de chaque cosmétique, dans l'ordre du tirage
 //             (obtention_<étoiles>_t.mp4 pour le premier, transition
 //             comprise ; obtention_<étoiles>.mp4 ensuite).
 // TirageVoeu.jouer(gains) -> promesse résolue à la fermeture (fin, « Passer »,
-// Échap). gains : [{ nom, type, image, rarete, garantie, logo, detail }] (logo :
+// Échap). gains : [{ nom, type, image, rarete, capture, logo, detail }] (logo :
 // image du type à gauche du nom, comme le logo du type de boss ; detail :
 // ligne sous le type, ex. doublon remboursé). Écran d'obtention : un clic
 // pendant l'animation l'amène à sa fin ; à la fin, il reste figé jusqu'au
@@ -61,11 +62,11 @@ const TirageVoeu = (() => {
     if (gains.length === 1) {
       const gain = gains[0];
       const n = etoilesDe(gain);
-      const clip = n === 5 && gain.garantie ? SIMPLES.capture : SIMPLES[n];
+      const clip = n === 5 && gain.capture ? SIMPLES.capture : SIMPLES[n];
       return [{ src: clip.src, debut: clip.debut, gain }];
     }
     const meilleur = Math.max(...gains.map(etoilesDe));
-    const intro = gains.some(g => etoilesDe(g) === 5 && g.garantie) ? DIX.capture : meilleur === 5 ? DIX[5] : DIX[4];
+    const intro = gains.some(g => etoilesDe(g) === 5 && g.capture) ? DIX.capture : meilleur === 5 ? DIX[5] : DIX[4];
     return [{ src: intro, debut: null, gain: null }, ...gains.map((gain, i) => ({ src: obtention(etoilesDe(gain), i === 0), debut: 0, gain }))];
   }
 

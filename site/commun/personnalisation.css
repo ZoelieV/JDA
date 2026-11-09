@@ -1078,6 +1078,35 @@
   opacity: 0.75;
 }
 
+/* Focus choisie pour le 50/50 des légendaires. */
+.perso-tirage-carte.choisie {
+  border-color: #ffc24a;
+  box-shadow: 0 0 1.5rem rgba(255, 194, 74, 0.75);
+}
+
+.perso-choisir-focus {
+  margin-top: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid rgba(245, 197, 66, 0.85);
+  border-radius: 0.5rem;
+  background-color: rgba(245, 197, 66, 0.2);
+  color: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.perso-choisir-focus:hover:not(:disabled) {
+  background-color: rgba(245, 197, 66, 0.4);
+}
+
+.perso-choisir-focus:disabled {
+  border-color: #ffc24a;
+  background-color: rgba(255, 194, 74, 0.45);
+  cursor: default;
+}
+
 .perso-tirage-carte.possede {
   border-color: #3ecf6a;
   background-color: rgba(62, 207, 106, 0.1);

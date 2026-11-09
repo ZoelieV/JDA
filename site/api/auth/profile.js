@@ -1,7 +1,7 @@
 const { parseCookies, verifySessionToken, estUidBanni, oublierBannis } = require("../_lib/session");
 const { codeTheatre, actualiserPoints, getConfigKoyns } = require("../_lib/personnages");
 const { verifierFrequenceCompte } = require("../_lib/limites");
-const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, tirerCosmetique } = require("../_lib/koyns");
+const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, tirerCosmetique, choisirFocus, focusAChoisir } = require("../_lib/koyns");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES, persoDuSkin } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
@@ -394,8 +394,16 @@ module.exports = async (req, res) => {
       if (attente > 0) return res.status(429).json({ error: "Doucement : une action par seconde au plus." });
     }
 
+    // Focus choisie pour les vœux (?action=choisir_focus, { cosmetique }).
+    if (req.method === "POST" && actionBoutique === "choisir_focus") {
+      const resultat = await choisirFocus(discordId, req.body?.cosmetique);
+      if (resultat.erreur) return res.status(resultat.status).json({ error: resultat.erreur });
+      return res.status(200).json({ ok: true, koyns: await etatKoyns(discordId) });
+    }
+
     if (req.method === "POST" && new URL(req.url, "http://x").searchParams.get("action") === "tirer") {
       const nombre = req.body?.nombre === 10 ? 10 : 1;
+      if (await focusAChoisir(discordId)) return res.status(409).json({ error: "Choisis d'abord ta focus parmi les cosmétiques légendaires." });
       const tirages = [];
       let arret = null;
       for (let i = 0; i < nombre; i++) {

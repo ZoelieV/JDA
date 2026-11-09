@@ -26,9 +26,13 @@
 //   vente) sont légendaires, et eux seuls. Garanties : un légendaire au
 //   GARANTIE_LEGENDAIRE-ième tirage sans légendaire (animation avec capture
 //   de radiance), un épique ou mieux au GARANTIE_EPIQUE-ième sans épique ni
-//   légendaire (fonction SQL tirer_voeu). Doublons possibles jusqu'à épique
-//   (jamais en légendaire) : pas ajouté, la moitié de sa valeur rendue
-//   (arrondie au supérieur, mouvement "tirage_doublon").
+//   légendaire (fonction SQL tirer_voeu). Le joueur choisit une focus
+//   (table voeux_focus_choisie, obligatoire tant qu'il en reste à gagner) :
+//   une légendaire est la focus choisie une fois sur deux (animation avec
+//   capture de radiance), sinon une autre focus, et la suivante est alors
+//   forcément la focus choisie. Doublons possibles jusqu'à épique (jamais
+//   en légendaire) : pas ajouté, un quart de sa valeur rendu (arrondi au
+//   supérieur, mouvement "tirage_doublon").
 // - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
 //   ils passent par l'achat comme tout le monde, cf. acheterCosmetique).
 const { supabase } = require("./supabase");
@@ -48,7 +52,7 @@ const DEPART_MINI_ADMIN = 100;
 const DEPART_ADMIN = 10000;
 const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100", montant: DEPART_MINI_ADMIN - 30 }];
 const MAX_KOYNS_DON = 1000;
-const TIRAGE_PRIX = 10;
+const TIRAGE_PRIX = 5;
 // En %, le reste : commun. Légendaire : 1 chance sur 30.
 const PROBAS_TIRAGE_DEFAUT = { rare: 25, epique: 10, legendaire: 3.33 };
 const GARANTIE_LEGENDAIRE = 30;
@@ -162,12 +166,39 @@ const possede = (possedes, id) => possedes === null || COSMETIQUES_GRATUITS.has(
 async function lireCompteursVoeu(discordId) {
   const { data, error } = await supabase.rpc("compteurs_voeu", { p_discord_id: discordId });
   if (error) console.error("Erreur lecture des compteurs de vœux :", error);
-  return { legendaire: Number(data?.legendaire) || 0, epique: Number(data?.epique) || 0 };
+  return { legendaire: Number(data?.legendaire) || 0, epique: Number(data?.epique) || 0, garanti: data?.garanti === true };
+}
+
+// Focus choisie par le joueur, si elle est encore à gagner (sinon null).
+async function lireFocusChoisie(discordId, possedes = null) {
+  const { data, error } = await supabase.from("voeux_focus_choisie").select("cosmetique").eq("discord_id", discordId).maybeSingle();
+  if (error) console.error("Erreur lecture de la focus choisie :", error);
+  const id = data?.cosmetique;
+  if (!id || !focusTirage().includes(id)) return null;
+  const possede = possedes ? possedes.has(id) : (await lirePossedes(discordId)).has(id);
+  return possede ? null : id;
+}
+
+// Choix de la focus (?action=choisir_focus) : une focus pas encore possédée.
+async function choisirFocus(discordId, id) {
+  if (typeof id !== "string" || !focusTirage().includes(id)) return { status: 400, erreur: "Ce cosmétique n'est pas en focus." };
+  if ((await lirePossedes(discordId)).has(id)) return { status: 409, erreur: "Tu as déjà ce cosmétique : choisis-en un autre." };
+  const { error } = await supabase.from("voeux_focus_choisie").upsert({ discord_id: discordId, cosmetique: id, maj: new Date().toISOString() });
+  if (error) throw error;
+  return { ok: true };
+}
+
+// Focus encore à gagner pour ce joueur : il doit en avoir choisi une.
+async function focusAChoisir(discordId) {
+  const possedes = await lirePossedes(discordId);
+  const restantes = focusTirage().filter(id => !possedes.has(id));
+  return restantes.length > 0 && !(await lireFocusChoisie(discordId, possedes));
 }
 
 // État envoyé à la page de personnalisation.
 async function etatKoyns(discordId) {
   const [solde, possedes, compteurs] = await Promise.all([lireSolde(discordId), lirePossedes(discordId), lireCompteursVoeu(discordId)]);
+  const choix = await lireFocusChoisie(discordId, possedes);
   return {
     solde,
     tout: possedes === null,
@@ -186,7 +217,10 @@ async function etatKoyns(discordId) {
       garantie_epique: GARANTIE_EPIQUE,
       focus: focusTirage(),
       compteur: compteurs.legendaire,
-      compteur_epique: compteurs.epique
+      compteur_epique: compteurs.epique,
+      // Focus choisie (50/50) ; garanti : 50/50 perdu, la prochaine légendaire est le choix.
+      choix,
+      garanti: compteurs.garanti
     }
   };
 }
@@ -212,7 +246,9 @@ async function tirerCosmetique(discordId) {
     p_garantie_legendaire: GARANTIE_LEGENDAIRE,
     p_garantie_epique: GARANTIE_EPIQUE,
     // Valeur de chaque cosmétique : un doublon en rend la moitié.
-    p_valeurs: Object.fromEntries(gains.map(id => [id, prixCosmetique(id)]))
+    p_valeurs: Object.fromEntries(gains.map(id => [id, prixCosmetique(id)])),
+    // Relue à chaque vœu : obtenue dans un dix vœux, elle n'est plus choisie.
+    p_choix: await lireFocusChoisie(discordId)
   });
   if (error) {
     console.error("Erreur tirage de cosmétique :", error);
@@ -222,7 +258,8 @@ async function tirerCosmetique(discordId) {
   if (data?.statut === "vide") return { status: 409, erreur: "Tu as déjà tous les cosmétiques du tirage !" };
   // garantie : légendaire obtenu par la garantie (animation avec capture de radiance).
   return {
-    cosmetique: data.cosmetique, focus: !!data.focus, rarete: data.rarete || rareteCosmetique(data.cosmetique), garantie: !!data.garantie,
+    // capture : la focus choisie (animation avec capture de radiance) ; perdu : 50/50 perdu.
+    cosmetique: data.cosmetique, focus: !!data.focus, rarete: data.rarete || rareteCosmetique(data.cosmetique), capture: !!data.capture, perdu: !!data.perdu,
     doublon: !!data.doublon, remboursement: Number(data.remboursement) || 0,
     compteur: data.compteur, compteur_epique: data.compteur_epique
   };
@@ -637,5 +674,7 @@ module.exports = {
   reclamerBonusConnexion,
   lireNouveautes,
   tirerCosmetique,
+  choisirFocus,
+  focusAChoisir,
   noterVictoireTournoi
 };

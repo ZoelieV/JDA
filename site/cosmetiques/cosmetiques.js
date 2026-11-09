@@ -79,14 +79,18 @@
     bloc.className = "perso-tirage";
     bloc.innerHTML = `
       <p class="perso-note">Pour ${texteRikoyns(tirage.prix)}, un cosmétique au hasard : une namecard, une bannière ou un fond d'écran.
-        Un doublon (jamais en légendaire) te rend la moitié de sa valeur en Rikoyns.
+        Un doublon (jamais en légendaire) te rend le quart de sa valeur en Rikoyns.
         Chances : <span class="rarete-texte rarete-commun">Commun ${pourcent(100 - tirage.probas.rare - tirage.probas.epique - legendaire)}</span>, <span class="rarete-texte rarete-rare">Rare ${pourcent(tirage.probas.rare)}</span>, <span class="rarete-texte rarete-epique">Épique ${pourcent(tirage.probas.epique)}</span>${legendaire ? `, <span class="rarete-texte rarete-legendaire">Légendaire ${pourcent(legendaire)}</span>` : ""}.
         Un <span class="rarete-texte rarete-epique">épique</span> ou mieux est garanti au ${tirage.garantie_epique ?? 10}e tirage sans épique.
-        ${tirage.focus.length ? `Les <strong>cosmétiques focus</strong> (seulement par tirage) sont <span class="rarete-texte rarete-legendaire">légendaires</span>, garantis au ${tirage.garantie}e tirage sans légendaire.` : ""}</p>
+        ${tirage.focus.length ? `Les <strong>cosmétiques focus</strong> (seulement par tirage) sont <span class="rarete-texte rarete-legendaire">légendaires</span>, garantis au ${tirage.garantie}e tirage sans légendaire.
+        Choisis ta focus : une légendaire a 50 % de chances d'être elle, sinon c'est une autre focus et la suivante sera forcément la tienne.` : ""}</p>
       ${tirage.focus.length ? `
         <h3 class="perso-categorie">Focus</h3>
         <div class="perso-tirage-focus"></div>
         ${focusRestants.length ? `
+          <p class="perso-note perso-tirage-choix">${tirage.choix
+            ? `Ta focus : <strong class="rarete-texte rarete-legendaire"></strong>${tirage.garanti ? " · <strong>garantie</strong> à la prochaine légendaire" : " · 50 % à la prochaine légendaire"}`
+            : "<strong>Choisis ta focus</strong> ci-dessus pour pouvoir faire des vœux."}</p>
           <div class="perso-tirage-garantie">
             <span>Légendaire garanti dans <strong>${restants}</strong> tirage${restants > 1 ? "s" : ""} · épique dans <strong>${restantsEpique}</strong></span>
             <span class="perso-tirage-jauge"><span style="width: ${Math.min(100, tirage.compteur / (tirage.garantie - 1) * 100)}%"></span></span>
@@ -99,9 +103,15 @@
     tirage.focus.forEach(id => {
       const info = infoCosmetique(id);
       const carte = document.createElement("figure");
-      carte.className = `perso-tirage-carte${possede(id) ? " possede" : ""}`;
-      carte.innerHTML = `${info.image ? `<img src="${info.image}" alt="" loading="lazy">` : ""}<figcaption><strong></strong><small>${info.type}${possede(id) ? " · obtenu ✓" : ""}</small>${htmlRarete(tirage.raretes?.[id])}</figcaption>`;
+      const choisie = tirage.choix === id;
+      carte.className = `perso-tirage-carte${possede(id) ? " possede" : ""}${choisie ? " choisie" : ""}`;
+      carte.innerHTML = `${info.image ? `<img src="${info.image}" alt="" loading="lazy">` : ""}<figcaption><strong></strong><small>${info.type}${possede(id) ? " · obtenu ✓" : ""}</small>${htmlRarete(tirage.raretes?.[id])}
+        ${possede(id) ? "" : `<button type="button" class="perso-choisir-focus"${choisie ? " disabled" : ""}>${choisie ? "✓ Ta focus" : "Choisir"}</button>`}</figcaption>`;
       carte.querySelector("strong").textContent = info.nom;
+      carte.querySelector(".perso-choisir-focus")?.addEventListener("click", event => {
+        event.stopPropagation();
+        choisirFocus(id);
+      });
       // Clic : le cosmétique en grand.
       if (info.image) {
         carte.tabIndex = 0;
@@ -123,13 +133,39 @@
       }
       vitrine?.appendChild(carte);
     });
+    const nomChoix = bloc.querySelector(".perso-tirage-choix strong.rarete-legendaire");
+    if (nomChoix) nomChoix.textContent = infoCosmetique(tirage.choix).nom;
+    // Focus encore à gagner : vœux seulement avec une focus choisie.
+    const sansChoix = focusRestants.length > 0 && !tirage.choix;
     bloc.querySelectorAll(".perso-tirer").forEach(bouton => {
       const prix = tirage.prix * Number(bouton.dataset.nombre);
-      bouton.disabled = koyns.solde < prix;
-      if (bouton.disabled) bouton.title = `Il faut ${prix} Rikoyns : joue des matchs pour en gagner.`;
+      bouton.disabled = koyns.solde < prix || sansChoix;
+      if (sansChoix) bouton.title = "Choisis d'abord ta focus.";
+      else if (bouton.disabled) bouton.title = `Il faut ${prix} Rikoyns : joue des matchs pour en gagner.`;
       bouton.addEventListener("click", () => tirer(Number(bouton.dataset.nombre)));
     });
     conteneur.appendChild(bloc);
+  }
+
+  // Focus choisie pour le 50/50 des légendaires.
+  async function choisirFocus(id) {
+    afficherEtat("Choix de la focus…");
+    try {
+      const reponse = await fetch("/api/auth/profile?action=choisir_focus", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cosmetique: id })
+      });
+      const donnees = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(donnees.error || "Choix impossible.");
+      if (donnees.koyns) lireEtatKoyns(donnees.koyns);
+      afficherEtat("");
+      rendreTirage();
+    } catch (erreur) {
+      console.error(erreur);
+      afficherEtat(erreur.message);
+    }
   }
 
   // nombre : 1 ou 10 tirages.
@@ -159,7 +195,7 @@
         const logo = choix === "fond" ? "/DB/images/others/logo_cosmetique_fond.webp"
           : choix === "banniere" || choix === "banniere2" ? "/DB/images/others/logo_cosmetique_namecard.webp" : null;
         const detail = t.doublon ? `Doublon : +${t.remboursement} Rikoyns rendus` : "";
-        return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, garantie: t.garantie, logo, detail };
+        return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, capture: t.capture, logo, detail };
       }));
       if (donnees.arret) afficherEtat(`Tirages arrêtés après ${tirages.length} : ${donnees.arret}`);
       if (nombre > 1) revelerGains(tirages);
