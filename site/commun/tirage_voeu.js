@@ -6,12 +6,12 @@
 //
 // Étoiles et clips selon la rareté : commun 2★ et rare 3★ (clip bleu ; 2★ :
 // sans le 3e tintement), épique 4★ (violet), légendaire 5★ (doré). La
-// focus choisie par le joueur (50/50 gagné ou garanti) joue la capture de
-// radiance.
+// focus choisie par le joueur obtenue par la garantie (50/50 perdu juste
+// avant) joue la capture de radiance.
 // Clips : cf. scripts/clips_tirage.sh.
 //   1 vœu   : tirage_boss_2/3/4/5.mp4 ou voeu_5_capture.mp4 (vœu + obtention) ;
 //   10 vœux : dix_4/5/5_capture.mp4 (selon le meilleur gain : focus
-//             choisie, légendaire, sinon 4★), puis l'écran d'obtention
+//             choisie garantie, légendaire, sinon 4★), puis l'écran d'obtention
 //             de chaque cosmétique, dans l'ordre du tirage
 //             (obtention_<étoiles>_t.mp4 pour le premier, transition
 //             comprise ; obtention_<étoiles>.mp4 ensuite).

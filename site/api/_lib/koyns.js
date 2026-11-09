@@ -24,13 +24,12 @@
 //   chances : config.probas_tirage). Les cosmétiques focus
 //   (config.cosmetiques_tirage : obtenables seulement par tirage, pas en
 //   vente) sont légendaires, et eux seuls. Garanties : un légendaire au
-//   GARANTIE_LEGENDAIRE-ième tirage sans légendaire (animation avec capture
-//   de radiance), un épique ou mieux au GARANTIE_EPIQUE-ième sans épique ni
+//   GARANTIE_LEGENDAIRE-ième tirage sans légendaire, un épique ou mieux au GARANTIE_EPIQUE-ième sans épique ni
 //   légendaire (fonction SQL tirer_voeu). Le joueur choisit une focus
 //   (table voeux_focus_choisie, obligatoire tant qu'il en reste à gagner) :
-//   une légendaire est la focus choisie une fois sur deux (animation avec
-//   capture de radiance), sinon une autre focus, et la suivante est alors
-//   forcément la focus choisie. Doublons possibles jusqu'à épique (jamais
+//   une légendaire est la focus choisie une fois sur deux, sinon une autre
+//   focus, et la suivante est alors forcément la focus choisie (seul cas
+//   joué avec la capture de radiance). Doublons possibles jusqu'à épique (jamais
 //   en légendaire) : pas ajouté, un quart de sa valeur rendu (arrondi au
 //   supérieur, mouvement "tirage_doublon").
 // - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
@@ -256,9 +255,9 @@ async function tirerCosmetique(discordId) {
   }
   if (data?.statut === "solde") return { status: 409, erreur: `Il faut ${TIRAGE_PRIX} Rikoyns pour un tirage : joue des matchs pour en gagner.` };
   if (data?.statut === "vide") return { status: 409, erreur: "Tu as déjà tous les cosmétiques du tirage !" };
-  // garantie : légendaire obtenu par la garantie (animation avec capture de radiance).
   return {
-    // capture : la focus choisie (animation avec capture de radiance) ; perdu : 50/50 perdu.
+    // capture : la focus choisie obtenue par la garantie après un 50/50 perdu
+    // (animation avec capture de radiance) ; perdu : 50/50 perdu.
     cosmetique: data.cosmetique, focus: !!data.focus, rarete: data.rarete || rareteCosmetique(data.cosmetique), capture: !!data.capture, perdu: !!data.perdu,
     doublon: !!data.doublon, remboursement: Number(data.remboursement) || 0,
     compteur: data.compteur, compteur_epique: data.compteur_epique
