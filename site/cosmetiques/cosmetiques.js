@@ -153,7 +153,11 @@
       // Animation du vœu (cf. commun/tirage_voeu.js), puis la fenêtre des gains.
       await TirageVoeu.jouer(tirages.map(t => {
         const info = infoCosmetique(t.cosmetique);
-        return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, garantie: t.garantie };
+        // Logo du type : Welkin pour les fonds d'écran, A New World pour les namecards et bannières.
+        const choix = t.cosmetique.split(":")[0];
+        const logo = choix === "fond" ? "/DB/images/others/logo_cosmetique_fond.webp"
+          : choix === "banniere" || choix === "banniere2" ? "/DB/images/others/logo_cosmetique_namecard.webp" : null;
+        return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, garantie: t.garantie, logo };
       }));
       if (donnees.arret) afficherEtat(`Tirages arrêtés après ${tirages.length} : ${donnees.arret}`);
       if (nombre > 1) revelerGains(tirages);

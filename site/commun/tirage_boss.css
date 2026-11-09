@@ -242,8 +242,20 @@
 }
 
 /* Texte à gauche de l'image : sans passer dessous. */
-.tirage-voeu .tb-bloc {
-  max-width: 16vw;
+/* Paysage : image décalée à droite, place pour le logo et le nom à gauche. */
+@media (orientation: landscape) {
+  .tirage-voeu .tv-objet {
+    left: 57%;
+    max-width: 56vw;
+  }
+
+  .tirage-voeu .tb-bloc {
+    max-width: 24vw;
+  }
+}
+
+.tirage-voeu .tb-logo[hidden] {
+  display: none;
 }
 
 .tv-type {

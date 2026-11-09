@@ -15,7 +15,8 @@
 //             (obtention_<étoiles>_t.mp4 pour le premier, transition
 //             comprise ; obtention_<étoiles>.mp4 ensuite).
 // TirageVoeu.jouer(gains) -> promesse résolue à la fermeture (fin, « Passer »,
-// Échap). gains : [{ nom, type, image, rarete, garantie }]. Clic pendant un
+// Échap). gains : [{ nom, type, image, rarete, garantie, logo }] (logo :
+// image du type à gauche du nom, comme le logo du type de boss). Clic pendant un
 // écran d'obtention : passe au suivant. Rien d'animé si le système demande
 // moins d'animations.
 
@@ -95,6 +96,7 @@ const TirageVoeu = (() => {
       <video class="tb-video" playsinline preload="auto"></video>
       <img class="tb-boss tv-objet" alt="">
       <div class="tb-bloc">
+        <img class="tb-logo" alt="" hidden>
         <div class="tb-texte">
           <span class="tb-nom"></span>
           <span class="tv-type"></span>
@@ -197,6 +199,9 @@ const TirageVoeu = (() => {
           image.src = plan.gain.image || "";
           ecran.querySelector(".tb-nom").textContent = plan.gain.nom || "";
           ecran.querySelector(".tv-type").textContent = plan.gain.type || "";
+          const logo = ecran.querySelector(".tb-logo");
+          logo.hidden = !plan.gain.logo;
+          if (plan.gain.logo) logo.src = plan.gain.logo;
           zoneEtoiles.innerHTML = reglage.pics.map(() => `<img alt="" src="/DB/images/others/etoile_tirage.webp">`).join("");
           zoneEtoiles.setAttribute("aria-label", `${n} étoiles`);
           etoiles = [...zoneEtoiles.querySelectorAll("img")];
