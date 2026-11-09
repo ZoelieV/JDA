@@ -19,7 +19,7 @@ const TirageBoss = (() => {
   // debut : début de l'obtention dans le clip ; fige : arrêt sur image après
   // ce début ; pics : tintements (une étoile chacun), en secondes.
   const CLIPS = {
-    2: { src: "/DB/videos/tirage_boss_2.mp4?v=1", debut: 5.933, fige: 1.033, pics: [1.98, 2.15] },
+    2: { src: "/DB/videos/tirage_boss_2.mp4?v=2", debut: 5.933, fige: 1.033, pics: [1.98, 2.15] },
     3: { src: "/DB/videos/tirage_boss_3.mp4?v=1", debut: 5.933, fige: 1.033, pics: [1.98, 2.15, 2.32] },
     4: { src: "/DB/videos/tirage_boss_4.mp4?v=1", debut: 5.933, fige: 1.017, pics: [2.03, 2.20, 2.37, 2.52] },
     5: { src: "/DB/videos/tirage_boss_5.mp4?v=1", debut: 5.883, fige: 1.083, pics: [2.05, 2.20, 2.32, 2.54, 2.69] }

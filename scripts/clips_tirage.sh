@@ -54,6 +54,10 @@ for n in 3 4 5; do
   obtention_t "$SRC/obtention ${n}*.mp4" "$OUT/obtention_${n}_t.mp4"
 done
 # 2★ : son de tirage_boss_2.mp4 (obtention à partir de 5,933 s, transition comprise).
+# tirage_boss_2.mp4 (pas fait ici) a déjà son 3e tintement coupé net : fondu
+# de 60 ms à partir de 8,108 s, puis silence, fait une fois avec
+#   ffmpeg -i ancien.mp4 -af "afade=t=out:st=8.108:d=0.06" -c:v copy -c:a aac -b:a 128k -ar 48000 tirage_boss_2.mp4
+# (à refaire s'il est réenregistré) ; les obtention_2 en héritent (fondu à 2,175 s).
 ffmpeg -v error -y -i "$OUT/obtention_3_t.mp4" -i "$OUT/tirage_boss_2.mp4" -filter_complex "[1:a]atrim=start=5.933,asetpts=PTS-STARTPTS,apad[a]" -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 128k -shortest -movflags +faststart "$OUT/obtention_2_t.mp4"
 ffmpeg -v error -y -i "$OUT/obtention_3.mp4" -i "$OUT/tirage_boss_2.mp4" -filter_complex "[0:a]atrim=0:0.75,asetpts=PTS-STARTPTS[d];[1:a]atrim=start=6.683,asetpts=PTS-STARTPTS[f];[d][f]concat=n=2:v=0:a=1,apad[a]" -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 128k -shortest -movflags +faststart "$OUT/obtention_2.mp4"
 ls -la "$OUT"

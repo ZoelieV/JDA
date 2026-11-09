@@ -39,7 +39,7 @@ const TirageVoeu = (() => {
   };
   // Vœu simple : clip complet, obtention à partir de debut.
   const SIMPLES = {
-    2: { src: "/DB/videos/tirage_boss_2.mp4?v=1", debut: 5.933 },
+    2: { src: "/DB/videos/tirage_boss_2.mp4?v=2", debut: 5.933 },
     3: { src: "/DB/videos/tirage_boss_3.mp4?v=1", debut: 5.933 },
     4: { src: "/DB/videos/tirage_boss_4.mp4?v=1", debut: 5.933 },
     5: { src: "/DB/videos/tirage_boss_5.mp4?v=1", debut: 5.883 },
@@ -50,7 +50,7 @@ const TirageVoeu = (() => {
     5: "/DB/videos/dix_5.mp4?v=1",
     capture: "/DB/videos/dix_5_capture.mp4?v=1"
   };
-  const obtention = (etoiles, premier) => `/DB/videos/obtention_${etoiles}${premier ? "_t" : ""}.mp4?v=1`;
+  const obtention = (etoiles, premier) => `/DB/videos/obtention_${etoiles}${premier ? "_t" : ""}.mp4?v=${etoiles === 2 ? 2 : 1}`;
   const ZOOM = 2.2;
   // Dézoom de la silhouette : cette part du temps avant l'arrêt sur image.
   const PART_DEZOOM = 0.5;
