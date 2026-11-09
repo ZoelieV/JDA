@@ -106,12 +106,15 @@ const TirageBoss = (() => {
       let finAffichee = false;
       // Éléments du choix : marque à leur place d'origine, pour les y remettre.
       const marques = [];
+      // Relance après un changement de périphérique audio (cf. plus bas).
+      let surPeripherique = null;
       const finir = () => {
         if (termine) return;
         termine = true;
         cancelAnimationFrame(image_raf);
         clearTimeout(minuteur);
         document.removeEventListener("keydown", touche);
+        if (surPeripherique) navigator.mediaDevices?.removeEventListener?.("devicechange", surPeripherique);
         video?.pause();
         marques.forEach(([marque, element]) => marque.replaceWith(element));
         ecran.classList.add("tb-ferme");
@@ -179,6 +182,14 @@ const TirageBoss = (() => {
       };
       video.addEventListener("ended", afficherFin);
       video.addEventListener("error", sauter);
+      // Lecture mise en pause par le navigateur (micro ou casque branché,
+      // changement de sortie audio) : relancée.
+      const relancer = () => setTimeout(() => {
+        if (!termine && !finAffichee && video.paused && !video.ended) video.play().catch(() => {});
+      }, 50);
+      video.addEventListener("pause", relancer);
+      surPeripherique = relancer;
+      navigator.mediaDevices?.addEventListener?.("devicechange", surPeripherique);
       video.addEventListener("playing", () => { image_raf = requestAnimationFrame(animer); }, { once: true });
       // Volume du site (menu des paramètres, cf. commun/volume.js).
       if (window.VolumeSite) VolumeSite.appliquer(video, VOLUME);

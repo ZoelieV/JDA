@@ -241,8 +241,8 @@
   box-shadow: 0 0 4vh rgba(0, 0, 0, 0.6);
 }
 
-/* Texte à gauche de l'image : sans passer dessous. */
-/* Paysage : image décalée à droite, place pour le logo et le nom à gauche. */
+/* Paysage : image décalée à droite ; logo, nom et étoiles plus bas que
+   pour un boss, jusqu'au milieu de l'écran. */
 @media (orientation: landscape) {
   .tirage-voeu .tv-objet {
     left: 57%;
@@ -250,7 +250,8 @@
   }
 
   .tirage-voeu .tb-bloc {
-    max-width: 24vw;
+    top: 71%;
+    max-width: 47vw;
   }
 }
 

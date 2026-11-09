@@ -19,9 +19,13 @@
 // Échap). gains : [{ nom, type, image, rarete, capture, logo, detail }] (logo :
 // image du type à gauche du nom, comme le logo du type de boss ; detail :
 // ligne sous le type, ex. doublon remboursé). Écran d'obtention : un clic
-// pendant l'animation l'amène à sa fin ; à la fin, il reste figé jusqu'au
-// clic suivant, qui passe au cosmétique suivant (1 vœu : fermeture seule
-// peu après). Rien d'animé si le système demande moins d'animations.
+// pendant l'animation montre le cosmétique un tiers de seconde puis passe au
+// suivant ; à la fin du clip, il reste figé jusqu'au clic suivant (1 vœu :
+// fermeture seule peu après). Silhouette : dézoom en la moitié du temps,
+// puis noire jusqu'à l'arrêt sur image, puis ses couleurs. Lecture relancée
+// si le navigateur la met en pause (micro ou casque branché, changement de
+// sortie audio) ou si le clip plante. Rien d'animé si le système demande
+// moins d'animations.
 
 const TirageVoeu = (() => {
   const ETOILES = { commun: 2, rare: 3, epique: 4, legendaire: 5 };
@@ -48,6 +52,12 @@ const TirageVoeu = (() => {
   };
   const obtention = (etoiles, premier) => `/DB/videos/obtention_${etoiles}${premier ? "_t" : ""}.mp4?v=1`;
   const ZOOM = 2.2;
+  // Dézoom de la silhouette : cette part du temps avant l'arrêt sur image.
+  const PART_DEZOOM = 0.5;
+  // Clic pendant l'animation : cosmétique montré ce temps, puis le suivant.
+  const APERCU_CLIC_MS = 333;
+  // Clip qui plante : rechargé (à sa position) au plus ce nombre de fois.
+  const REPRISES_MAX = 2;
   const FONDU = 0.35;
   // 1 vœu : fermeture après ce délai une fois tout affiché.
   const FERMETURE_APRES_FIN_MS = 1500;
@@ -129,6 +139,9 @@ const TirageVoeu = (() => {
       let reglage = null;
       // Image du cosmétique en cours chargée : sinon on verrait la précédente.
       let imagePrete = false;
+      // Pause faite par l'animation (fin du clip, fermeture) : pas à relancer.
+      let pauseVoulue = false;
+      let reprises = 0;
       const objets = liste.filter(p => p.gain).length;
       // Images de tous les gains chargées dès maintenant.
       gains.forEach(gain => { if (gain.image) new Image().src = gain.image; });
@@ -139,6 +152,8 @@ const TirageVoeu = (() => {
         cancelAnimationFrame(raf);
         clearTimeout(minuteur);
         document.removeEventListener("keydown", touche);
+        navigator.mediaDevices?.removeEventListener?.("devicechange", surPeripherique);
+        pauseVoulue = true;
         video.pause();
         ecran.classList.add("tb-ferme");
         setTimeout(() => ecran.remove(), 300);
@@ -155,6 +170,7 @@ const TirageVoeu = (() => {
         const plan = liste[indice];
         if (!plan.gain) return suivant();
         if (!video.ended) {
+          pauseVoulue = true;
           video.pause();
           if (Number.isFinite(video.duration)) video.currentTime = Math.max(0, video.duration - 0.05);
         }
@@ -174,7 +190,7 @@ const TirageVoeu = (() => {
           image.style.opacity = "0";
           bloc.style.opacity = "0";
         } else {
-          const p = Math.min(1, t / reglage.fige);
+          const p = Math.min(1, t / (reglage.fige * PART_DEZOOM));
           const echelle = 1 + (ZOOM - 1) * (1 - p) ** 3;
           const couleurs = Math.min(1, Math.max(0, (t - reglage.fige) / FONDU));
           image.style.opacity = String(Math.min(1, t / 0.08));
@@ -196,8 +212,30 @@ const TirageVoeu = (() => {
             video.play().catch(() => {});
             return;
           }
-          suivant();
+          reprendre();
         });
+      }
+
+      const surPeripherique = () => setTimeout(relancer, 300);
+
+      // Lecture mise en pause par le navigateur (périphérique audio branché
+      // ou débranché) : relancée.
+      function relancer() {
+        if (termine || finPlan || pauseVoulue || video.ended || !video.paused || !video.src) return;
+        video.play().catch(() => {});
+      }
+
+      // Clip qui plante : rechargé à sa position, sinon le suivant.
+      function reprendre() {
+        if (termine) return;
+        if (reprises >= REPRISES_MAX) return suivant();
+        reprises++;
+        const position = video.currentTime || 0;
+        video.load();
+        video.addEventListener("loadedmetadata", () => {
+          try { video.currentTime = position; } catch { /* début du clip */ }
+        }, { once: true });
+        lancer();
       }
 
       function suivant() {
@@ -207,6 +245,8 @@ const TirageVoeu = (() => {
         indice++;
         if (indice >= liste.length) return finir();
         finPlan = false;
+        pauseVoulue = false;
+        reprises = 0;
         const plan = liste[indice];
         image.style.opacity = "0";
         bloc.style.opacity = "0";
@@ -237,13 +277,17 @@ const TirageVoeu = (() => {
         lancer();
       }
 
-      // Clic (ou Entrée, Espace) sur un écran d'obtention : sa fin, puis le
-      // suivant. Pendant le clip du vœu : rien (« Passer » pour tout sauter).
+      // Clic (ou Entrée, Espace) sur un écran d'obtention : pendant
+      // l'animation, le cosmétique montré un tiers de seconde puis le
+      // suivant ; une fois figé, le suivant tout de suite. Pendant le clip du
+      // vœu : rien (« Passer » pour tout sauter).
       const avancer = () => {
         const plan = liste[indice];
         if (!plan?.gain || video.currentTime < plan.debut) return;
-        if (finPlan) suivant();
-        else afficherFin();
+        if (finPlan) return suivant();
+        afficherFin();
+        clearTimeout(minuteur);
+        minuteur = setTimeout(suivant, APERCU_CLIC_MS);
       };
       const touche = event => {
         if (event.key === "Escape") finir();
@@ -258,7 +302,9 @@ const TirageVoeu = (() => {
         cancelAnimationFrame(raf);
         raf = requestAnimationFrame(animer);
       });
-      video.addEventListener("error", suivant);
+      video.addEventListener("error", reprendre);
+      video.addEventListener("pause", () => setTimeout(relancer, 50));
+      navigator.mediaDevices?.addEventListener?.("devicechange", surPeripherique);
       document.addEventListener("keydown", touche);
       suivant();
     });
