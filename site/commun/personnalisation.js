@@ -113,7 +113,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=27";
+    lien.href = "/commun/personnalisation.css?v=28";
     document.head.appendChild(lien);
   }
 

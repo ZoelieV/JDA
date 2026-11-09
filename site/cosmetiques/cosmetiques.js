@@ -78,7 +78,8 @@
     const bloc = document.createElement("div");
     bloc.className = "perso-tirage";
     bloc.innerHTML = `
-      <p class="perso-note">Pour ${texteRikoyns(tirage.prix)}, un cosmétique au hasard : une namecard, une bannière ou un fond d'écran que tu n'as pas encore.
+      <p class="perso-note">Pour ${texteRikoyns(tirage.prix)}, un cosmétique au hasard : une namecard, une bannière ou un fond d'écran.
+        Un doublon (jamais en légendaire) te rend la moitié de sa valeur en Rikoyns.
         Chances : <span class="rarete-texte rarete-commun">Commun ${pourcent(100 - tirage.probas.rare - tirage.probas.epique - legendaire)}</span>, <span class="rarete-texte rarete-rare">Rare ${pourcent(tirage.probas.rare)}</span>, <span class="rarete-texte rarete-epique">Épique ${pourcent(tirage.probas.epique)}</span>${legendaire ? `, <span class="rarete-texte rarete-legendaire">Légendaire ${pourcent(legendaire)}</span>` : ""}.
         Un <span class="rarete-texte rarete-epique">épique</span> ou mieux est garanti au ${tirage.garantie_epique ?? 10}e tirage sans épique.
         ${tirage.focus.length ? `Les <strong>cosmétiques focus</strong> (seulement par tirage) sont <span class="rarete-texte rarete-legendaire">légendaires</span>, garantis au ${tirage.garantie}e tirage sans légendaire.` : ""}</p>
@@ -157,7 +158,8 @@
         const choix = t.cosmetique.split(":")[0];
         const logo = choix === "fond" ? "/DB/images/others/logo_cosmetique_fond.webp"
           : choix === "banniere" || choix === "banniere2" ? "/DB/images/others/logo_cosmetique_namecard.webp" : null;
-        return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, garantie: t.garantie, logo };
+        const detail = t.doublon ? `Doublon : +${t.remboursement} Rikoyns rendus` : "";
+        return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, garantie: t.garantie, logo, detail };
       }));
       if (donnees.arret) afficherEtat(`Tirages arrêtés après ${tirages.length} : ${donnees.arret}`);
       if (nombre > 1) revelerGains(tirages);
@@ -179,7 +181,10 @@
 
   // Fenêtre du gain : carte retournée (dorée pour un focus), équiper,
   // retirer encore.
-  function revelerGain({ cosmetique, focus, rarete = "commun" }) {
+  // Doublon : la moitié de sa valeur rendue (cf. tirer_voeu).
+  const htmlDoublon = t => (t.doublon ? `<span class="perso-gain-doublon">Doublon · +${texteRikoyns(t.remboursement)}</span>` : "");
+
+  function revelerGain({ cosmetique, focus, rarete = "commun", doublon = false, remboursement = 0 }) {
     const info = infoCosmetique(cosmetique);
     const fenetre = document.createElement("dialog");
     fenetre.className = `perso-fenetre perso-fenetre-gain${focus ? " focus" : ""}`;
@@ -189,7 +194,7 @@
         <div class="perso-gain-dos" aria-hidden="true">🎲</div>
         <div class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</div>
       </div>
-      <p class="perso-gain-nom"><strong></strong><small>${info.type}</small>${htmlRarete(rarete)}</p>
+      <p class="perso-gain-nom"><strong></strong><small>${info.type}</small>${htmlRarete(rarete)}${htmlDoublon({ doublon, remboursement })}</p>
       <div class="perso-fenetre-actions">
         <button type="button" data-action="fermer">Fermer</button>
         <button type="button" data-action="encore"></button>
@@ -229,7 +234,7 @@
         <button type="button" class="perso-fenetre-ok" data-action="encore"></button>
       </div>`;
     const grille = fenetre.querySelector(".perso-gains-grille");
-    tirages.forEach(({ cosmetique, focus, rarete = "commun" }, i) => {
+    tirages.forEach(({ cosmetique, focus, rarete = "commun", doublon = false, remboursement = 0 }, i) => {
       const info = infoCosmetique(cosmetique);
       const carte = document.createElement("button");
       carte.type = "button";
@@ -242,7 +247,7 @@
           <span class="perso-gain-dos" aria-hidden="true">🎲</span>
           <span class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</span>
         </span>
-        <span class="perso-gains-nom"></span>${htmlRarete(rarete)}`;
+        <span class="perso-gains-nom"></span>${htmlRarete(rarete)}${htmlDoublon({ doublon, remboursement })}`;
       carte.querySelector(".perso-gains-nom").textContent = info.nom;
       grille.appendChild(carte);
     });

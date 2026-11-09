@@ -15,10 +15,12 @@
 //             (obtention_<étoiles>_t.mp4 pour le premier, transition
 //             comprise ; obtention_<étoiles>.mp4 ensuite).
 // TirageVoeu.jouer(gains) -> promesse résolue à la fermeture (fin, « Passer »,
-// Échap). gains : [{ nom, type, image, rarete, garantie, logo }] (logo :
-// image du type à gauche du nom, comme le logo du type de boss). Clic pendant un
-// écran d'obtention : passe au suivant. Rien d'animé si le système demande
-// moins d'animations.
+// Échap). gains : [{ nom, type, image, rarete, garantie, logo, detail }] (logo :
+// image du type à gauche du nom, comme le logo du type de boss ; detail :
+// ligne sous le type, ex. doublon remboursé). Écran d'obtention : un clic
+// pendant l'animation l'amène à sa fin ; à la fin, il reste figé jusqu'au
+// clic suivant, qui passe au cosmétique suivant (1 vœu : fermeture seule
+// peu après). Rien d'animé si le système demande moins d'animations.
 
 const TirageVoeu = (() => {
   const ETOILES = { commun: 2, rare: 3, epique: 4, legendaire: 5 };
@@ -46,8 +48,8 @@ const TirageVoeu = (() => {
   const obtention = (etoiles, premier) => `/DB/videos/obtention_${etoiles}${premier ? "_t" : ""}.mp4?v=1`;
   const ZOOM = 2.2;
   const FONDU = 0.35;
-  // Fin d'un écran d'obtention : suivant (ou fermeture) après ce délai.
-  const SUITE_APRES_FIN_MS = 1500;
+  // 1 vœu : fermeture après ce délai une fois tout affiché.
+  const FERMETURE_APRES_FIN_MS = 1500;
   const VOLUME = 0.5;
   const MOUVEMENT_REDUIT = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -100,6 +102,7 @@ const TirageVoeu = (() => {
         <div class="tb-texte">
           <span class="tb-nom"></span>
           <span class="tv-type"></span>
+          <span class="tv-detail"></span>
           <span class="tb-etoiles"></span>
         </div>
       </div>
@@ -124,7 +127,11 @@ const TirageVoeu = (() => {
       let finPlan = false;
       let etoiles = [];
       let reglage = null;
+      // Image du cosmétique en cours chargée : sinon on verrait la précédente.
+      let imagePrete = false;
       const objets = liste.filter(p => p.gain).length;
+      // Images de tous les gains chargées dès maintenant.
+      gains.forEach(gain => { if (gain.image) new Image().src = gain.image; });
 
       const finir = () => {
         if (termine) return;
@@ -138,26 +145,32 @@ const TirageVoeu = (() => {
         resolve();
       };
 
-      // Fin d'un écran d'obtention : tout affiché, puis suivant.
+      // Fin d'un écran d'obtention (fin du clip, ou clic) : image figée sur
+      // la dernière image du clip, tout affiché ; dix vœux : clic suivant
+      // attendu ; un vœu : fermeture peu après.
       const afficherFin = () => {
         if (finPlan || termine) return;
         finPlan = true;
         cancelAnimationFrame(raf);
         const plan = liste[indice];
         if (!plan.gain) return suivant();
+        if (!video.ended) {
+          video.pause();
+          if (Number.isFinite(video.duration)) video.currentTime = Math.max(0, video.duration - 0.05);
+        }
         image.style.opacity = "1";
         image.style.filter = "none";
         image.style.transform = "translate(-50%, -50%) scale(1)";
         bloc.style.opacity = "1";
         etoiles.forEach(etoile => etoile.classList.add("tb-visible"));
-        minuteur = setTimeout(suivant, SUITE_APRES_FIN_MS);
+        if (objets === 1) minuteur = setTimeout(suivant, FERMETURE_APRES_FIN_MS);
       };
 
       // Une image par rafraîchissement, calée sur le temps de la vidéo.
       const animer = () => {
         const plan = liste[indice];
         const t = video.currentTime - (plan.debut ?? Infinity);
-        if (!plan.gain || t < 0) {
+        if (!plan.gain || t < 0 || !imagePrete) {
           image.style.opacity = "0";
           bloc.style.opacity = "0";
         } else {
@@ -174,10 +187,16 @@ const TirageVoeu = (() => {
       };
 
       function lancer() {
-        video.play().catch(() => {
-          // Son refusé par le navigateur : sans le son.
-          video.muted = true;
-          video.play().catch(suivant);
+        video.play().catch(erreur => {
+          // Lecture interrompue par le clip suivant (clic) : rien à faire.
+          if (erreur?.name === "AbortError") return;
+          // Son refusé par le navigateur (aucun clic sur la page) : sans le son.
+          if (erreur?.name === "NotAllowedError" && !video.muted) {
+            video.muted = true;
+            video.play().catch(() => {});
+            return;
+          }
+          suivant();
         });
       }
 
@@ -196,9 +215,13 @@ const TirageVoeu = (() => {
           reglage = OBTENTIONS[n];
           image.style.filter = "brightness(0)";
           image.style.transform = `translate(-50%, -50%) scale(${ZOOM})`;
+          imagePrete = false;
+          image.onload = () => { imagePrete = true; };
           image.src = plan.gain.image || "";
+          if (image.complete && image.naturalWidth) imagePrete = true;
           ecran.querySelector(".tb-nom").textContent = plan.gain.nom || "";
           ecran.querySelector(".tv-type").textContent = plan.gain.type || "";
+          ecran.querySelector(".tv-detail").textContent = plan.gain.detail || "";
           const logo = ecran.querySelector(".tb-logo");
           logo.hidden = !plan.gain.logo;
           if (plan.gain.logo) logo.src = plan.gain.logo;
@@ -214,17 +237,21 @@ const TirageVoeu = (() => {
         lancer();
       }
 
+      // Clic (ou Entrée, Espace) sur un écran d'obtention : sa fin, puis le
+      // suivant. Pendant le clip du vœu : rien (« Passer » pour tout sauter).
+      const avancer = () => {
+        const plan = liste[indice];
+        if (!plan?.gain || video.currentTime < plan.debut) return;
+        if (finPlan) suivant();
+        else afficherFin();
+      };
       const touche = event => {
         if (event.key === "Escape") finir();
-        else if ((event.key === "Enter" || event.key === " ") && liste[indice]?.gain) { event.preventDefault(); suivant(); }
+        else if (event.key === "Enter" || event.key === " ") { event.preventDefault(); avancer(); }
       };
       ecran._finir = finir;
       passer.addEventListener("click", event => { event.stopPropagation(); finir(); });
-      // Clic : écran d'obtention suivant (pas pendant le clip du vœu).
-      ecran.addEventListener("click", () => {
-        const plan = liste[indice];
-        if (plan?.gain && video.currentTime >= plan.debut) suivant();
-      });
+      ecran.addEventListener("click", avancer);
       video.addEventListener("ended", afficherFin);
       // Une seule boucle d'animation, relancée à chaque clip.
       video.addEventListener("playing", () => {

@@ -1215,6 +1215,19 @@
 .contour-epique .perso-gain-face { border-color: #c08bff; }
 .contour-legendaire .perso-gain-face { border-color: #ffc24a; }
 
+/* Doublon d'un vœu : Rikoyns rendus. */
+.perso-gain-doublon {
+  display: block;
+  color: #ffd98a;
+  font-size: 0.8125rem;
+}
+
+.perso-gain-doublon .icone-koyn {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+}
+
 /* Focus : liseré et lueur dorés qui pulsent. */
 .perso-fenetre-gain.focus {
   border-color: #ffd34d;

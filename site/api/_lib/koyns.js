@@ -26,7 +26,9 @@
 //   vente) sont légendaires, et eux seuls. Garanties : un légendaire au
 //   GARANTIE_LEGENDAIRE-ième tirage sans légendaire (animation avec capture
 //   de radiance), un épique ou mieux au GARANTIE_EPIQUE-ième sans épique ni
-//   légendaire (fonction SQL tirer_voeu).
+//   légendaire (fonction SQL tirer_voeu). Doublons possibles jusqu'à épique
+//   (jamais en légendaire) : pas ajouté, la moitié de sa valeur rendue
+//   (arrondie au supérieur, mouvement "tirage_doublon").
 // - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
 //   ils passent par l'achat comme tout le monde, cf. acheterCosmetique).
 const { supabase } = require("./supabase");
@@ -155,26 +157,17 @@ async function lirePossedes(discordId) {
 
 const possede = (possedes, id) => possedes === null || COSMETIQUES_GRATUITS.has(id) || possedes.has(id);
 
-// Tirages faits depuis le dernier gain de ces sources (garanties ; même
-// calcul que tirer_voeu) : légendaire ["tirage_focus"], épique
-// ["tirage_focus", "tirage_epique"].
-async function compterTiragesDepuis(discordId, sources) {
-  const { data: dernier } = await supabase.from("cosmetiques_possedes").select("obtenu_le")
-    .eq("discord_id", discordId).in("source", sources).order("obtenu_le", { ascending: false }).limit(1);
-  let requete = supabase.from("koyns_mouvements").select("id", { count: "exact", head: true })
-    .eq("discord_id", discordId).eq("raison", "tirage");
-  if (dernier?.[0]) requete = requete.gt("cree_le", dernier[0].obtenu_le);
-  const { count, error } = await requete;
-  if (error) console.error("Erreur lecture koyns_mouvements :", error);
-  return count || 0;
+// Vœux faits depuis le dernier légendaire et depuis le dernier épique ou
+// mieux (garanties ; fonction SQL compteurs_voeu, la même que tirer_voeu).
+async function lireCompteursVoeu(discordId) {
+  const { data, error } = await supabase.rpc("compteurs_voeu", { p_discord_id: discordId });
+  if (error) console.error("Erreur lecture des compteurs de vœux :", error);
+  return { legendaire: Number(data?.legendaire) || 0, epique: Number(data?.epique) || 0 };
 }
 
 // État envoyé à la page de personnalisation.
 async function etatKoyns(discordId) {
-  const [solde, possedes, compteur, compteurEpique] = await Promise.all([
-    lireSolde(discordId), lirePossedes(discordId),
-    compterTiragesDepuis(discordId, ["tirage_focus"]), compterTiragesDepuis(discordId, ["tirage_focus", "tirage_epique"])
-  ]);
+  const [solde, possedes, compteurs] = await Promise.all([lireSolde(discordId), lirePossedes(discordId), lireCompteursVoeu(discordId)]);
   return {
     solde,
     tout: possedes === null,
@@ -192,8 +185,8 @@ async function etatKoyns(discordId) {
       garantie: GARANTIE_LEGENDAIRE,
       garantie_epique: GARANTIE_EPIQUE,
       focus: focusTirage(),
-      compteur,
-      compteur_epique: compteurEpique
+      compteur: compteurs.legendaire,
+      compteur_epique: compteurs.epique
     }
   };
 }
@@ -217,7 +210,9 @@ async function tirerCosmetique(discordId) {
     p_chance_epique: probas.epique / 100,
     p_chance_legendaire: probas.legendaire / 100,
     p_garantie_legendaire: GARANTIE_LEGENDAIRE,
-    p_garantie_epique: GARANTIE_EPIQUE
+    p_garantie_epique: GARANTIE_EPIQUE,
+    // Valeur de chaque cosmétique : un doublon en rend la moitié.
+    p_valeurs: Object.fromEntries(gains.map(id => [id, prixCosmetique(id)]))
   });
   if (error) {
     console.error("Erreur tirage de cosmétique :", error);
@@ -226,7 +221,11 @@ async function tirerCosmetique(discordId) {
   if (data?.statut === "solde") return { status: 409, erreur: `Il faut ${TIRAGE_PRIX} Rikoyns pour un tirage : joue des matchs pour en gagner.` };
   if (data?.statut === "vide") return { status: 409, erreur: "Tu as déjà tous les cosmétiques du tirage !" };
   // garantie : légendaire obtenu par la garantie (animation avec capture de radiance).
-  return { cosmetique: data.cosmetique, focus: !!data.focus, rarete: data.rarete || rareteCosmetique(data.cosmetique), garantie: !!data.garantie, compteur: data.compteur, compteur_epique: data.compteur_epique };
+  return {
+    cosmetique: data.cosmetique, focus: !!data.focus, rarete: data.rarete || rareteCosmetique(data.cosmetique), garantie: !!data.garantie,
+    doublon: !!data.doublon, remboursement: Number(data.remboursement) || 0,
+    compteur: data.compteur, compteur_epique: data.compteur_epique
+  };
 }
 
 // Paramètres de personnalisation réduits aux cosmétiques possédés : les

@@ -264,6 +264,17 @@
   text-shadow: 0 0 0.3vh rgba(0, 0, 0, 0.95), 0 0.2vh 0.6vh rgba(0, 0, 0, 0.9);
 }
 
+/* Ligne sous le type (doublon remboursé). */
+.tv-detail {
+  color: #ffd98a;
+  font-size: 2vh;
+  text-shadow: 0 0 0.3vh rgba(0, 0, 0, 0.95), 0 0.2vh 0.6vh rgba(0, 0, 0, 0.9);
+}
+
+.tv-detail:empty {
+  display: none;
+}
+
 /* Dix vœux : rang du cosmétique affiché. */
 .tv-compteur {
   position: absolute;
