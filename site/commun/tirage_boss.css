@@ -229,6 +229,44 @@
   background-color: rgba(0, 0, 0, 0.55);
 }
 
+/* ---- Vœux de cosmétiques (cf. commun/tirage_voeu.js) : même écran ---- */
+/* Cosmétique (namecard, bannière, fond) : rectangle centré, pas toute la
+   hauteur comme un boss. */
+.tirage-voeu .tv-objet {
+  height: auto;
+  width: auto;
+  max-width: 62vw;
+  max-height: 62vh;
+  border-radius: 1vh;
+  box-shadow: 0 0 4vh rgba(0, 0, 0, 0.6);
+}
+
+/* Texte à gauche de l'image : sans passer dessous. */
+.tirage-voeu .tb-bloc {
+  max-width: 16vw;
+}
+
+.tv-type {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 2.2vh;
+  text-shadow: 0 0 0.3vh rgba(0, 0, 0, 0.95), 0 0.2vh 0.6vh rgba(0, 0, 0, 0.9);
+}
+
+/* Dix vœux : rang du cosmétique affiché. */
+.tv-compteur {
+  position: absolute;
+  top: 1.75rem;
+  left: 1.5rem;
+  color: #fff;
+  font-size: 0.9375rem;
+  text-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+.tirage-voeu .tb-video {
+  cursor: pointer;
+}
+
 /* Téléphone en portrait : boss en largeur, texte plus petit. */
 @media (orientation: portrait) {
   .tb-boss {
@@ -270,5 +308,19 @@
 
   .tb-etoiles {
     height: 2.3vh;
+  }
+
+  .tirage-voeu .tb-bloc {
+    max-width: 90vw;
+  }
+
+  .tirage-voeu .tv-objet {
+    width: 92vw;
+    max-width: 92vw;
+    height: auto;
+  }
+
+  .tv-type {
+    font-size: 1.8vh;
   }
 }

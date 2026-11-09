@@ -8,6 +8,7 @@ function initialiserRaretes() {
   const modal = document.getElementById("modal-raretes");
   const champRare = document.getElementById("proba-rare");
   const champEpique = document.getElementById("proba-epique");
+  const champLegendaire = document.getElementById("proba-legendaire");
   let raretes = {};
 
   const message = (texte, type = "") => {
@@ -16,7 +17,7 @@ function initialiserRaretes() {
     e.className = `message-ajout${type ? ` ${type}` : ""}`;
   };
   const majCommun = () => {
-    const reste = 100 - Number(champRare.value) - Number(champEpique.value);
+    const reste = 100 - Number(champRare.value) - Number(champEpique.value) - Number(champLegendaire.value);
     document.getElementById("proba-commun").textContent = `${Math.round(reste * 100) / 100} %`;
   };
   const deRarete = niveau => Object.keys(raretes).filter(id => raretes[id] === niveau);
@@ -40,6 +41,7 @@ function initialiserRaretes() {
       raretes = { ...(config?.cosmetiques_raretes || {}) };
       champRare.value = config?.probas_tirage?.rare ?? 25;
       champEpique.value = config?.probas_tirage?.epique ?? 10;
+      champLegendaire.value = config?.probas_tirage?.legendaire ?? 3.33;
       majCommun();
       majBoutons();
       message("");
@@ -71,12 +73,13 @@ function initialiserRaretes() {
   modal.addEventListener("click", event => { if (event.target === modal) modal.classList.remove("active"); });
   champRare.addEventListener("input", majCommun);
   champEpique.addEventListener("input", majCommun);
+  champLegendaire.addEventListener("input", majCommun);
   document.getElementById("choisir-rares").addEventListener("click", () => choisir("rare"));
   document.getElementById("choisir-epiques").addEventListener("click", () => choisir("epique"));
   document.getElementById("enregistrer-probas").addEventListener("click", async () => {
     message("Enregistrement…");
     try {
-      relire(await envoyerAjout({ probas_tirage: { rare: Number(champRare.value), epique: Number(champEpique.value) } }));
+      relire(await envoyerAjout({ probas_tirage: { rare: Number(champRare.value), epique: Number(champEpique.value), legendaire: Number(champLegendaire.value) } }));
       message("Enregistré.", "succes");
     } catch (erreur) {
       message(erreur.message, "erreur");

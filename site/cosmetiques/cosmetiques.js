@@ -59,7 +59,7 @@
     window.Personnalisation?.ouvrir({ equiper: id });
   }
 
-  const NOMS_RARETES = { commun: "Commun", rare: "Rare", epique: "Épique" };
+  const NOMS_RARETES = { commun: "Commun", rare: "Rare", epique: "Épique", legendaire: "Légendaire" };
   const pourcent = valeur => `${Math.round(valeur * 100) / 100} %`;
   const htmlRarete = (rarete = "commun") => `<span class="rarete-texte rarete-${rarete}">${NOMS_RARETES[rarete] || NOMS_RARETES.commun}</span>`;
 
@@ -72,19 +72,22 @@
       return;
     }
     const restants = Math.max(1, tirage.garantie - tirage.compteur);
+    const restantsEpique = Math.max(1, (tirage.garantie_epique ?? 10) - (tirage.compteur_epique ?? 0));
+    const legendaire = tirage.focus.length ? (tirage.probas.legendaire ?? 0) : 0;
     const focusRestants = tirage.focus.filter(id => !possede(id));
     const bloc = document.createElement("div");
     bloc.className = "perso-tirage";
     bloc.innerHTML = `
       <p class="perso-note">Pour ${texteRikoyns(tirage.prix)}, un cosmétique au hasard : une namecard, une bannière ou un fond d'écran que tu n'as pas encore.
-        Chances : <span class="rarete-texte rarete-commun">Commun ${pourcent(100 - tirage.probas.rare - tirage.probas.epique)}</span>, <span class="rarete-texte rarete-rare">Rare ${pourcent(tirage.probas.rare)}</span>, <span class="rarete-texte rarete-epique">Épique ${pourcent(tirage.probas.epique)}</span>.
-        ${tirage.focus.length ? `Les <strong>cosmétiques focus</strong> (seulement par tirage) sont garantis au ${tirage.garantie}e tirage sans focus.` : ""}</p>
+        Chances : <span class="rarete-texte rarete-commun">Commun ${pourcent(100 - tirage.probas.rare - tirage.probas.epique - legendaire)}</span>, <span class="rarete-texte rarete-rare">Rare ${pourcent(tirage.probas.rare)}</span>, <span class="rarete-texte rarete-epique">Épique ${pourcent(tirage.probas.epique)}</span>${legendaire ? `, <span class="rarete-texte rarete-legendaire">Légendaire ${pourcent(legendaire)}</span>` : ""}.
+        Un <span class="rarete-texte rarete-epique">épique</span> ou mieux est garanti au ${tirage.garantie_epique ?? 10}e tirage sans épique.
+        ${tirage.focus.length ? `Les <strong>cosmétiques focus</strong> (seulement par tirage) sont <span class="rarete-texte rarete-legendaire">légendaires</span>, garantis au ${tirage.garantie}e tirage sans légendaire.` : ""}</p>
       ${tirage.focus.length ? `
         <h3 class="perso-categorie">Focus</h3>
         <div class="perso-tirage-focus"></div>
         ${focusRestants.length ? `
           <div class="perso-tirage-garantie">
-            <span>Focus garanti dans <strong>${restants}</strong> tirage${restants > 1 ? "s" : ""}</span>
+            <span>Légendaire garanti dans <strong>${restants}</strong> tirage${restants > 1 ? "s" : ""} · épique dans <strong>${restantsEpique}</strong></span>
             <span class="perso-tirage-jauge"><span style="width: ${Math.min(100, tirage.compteur / (tirage.garantie - 1) * 100)}%"></span></span>
           </div>` : `<p class="perso-note">Tu as tous les cosmétiques focus !</p>`}` : ""}
       <div class="perso-tirer-boutons">
@@ -143,10 +146,17 @@
       const donnees = await reponse.json().catch(() => ({}));
       if (donnees.koyns) lireEtatKoyns(donnees.koyns);
       if (!reponse.ok) throw new Error(donnees.error || "Tirage impossible.");
-      afficherEtat(donnees.arret ? `Tirages arrêtés après ${donnees.tirages.length} : ${donnees.arret}` : "");
       celebrer();
       rendreTirage();
-      if (nombre > 1) revelerGains(donnees.tirages || [donnees.tirage]);
+      afficherEtat("");
+      const tirages = donnees.tirages || [donnees.tirage];
+      // Animation du vœu (cf. commun/tirage_voeu.js), puis la fenêtre des gains.
+      await TirageVoeu.jouer(tirages.map(t => {
+        const info = infoCosmetique(t.cosmetique);
+        return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, garantie: t.garantie };
+      }));
+      if (donnees.arret) afficherEtat(`Tirages arrêtés après ${tirages.length} : ${donnees.arret}`);
+      if (nombre > 1) revelerGains(tirages);
       else revelerGain(donnees.tirage);
     } catch (erreur) {
       console.error(erreur);
@@ -170,7 +180,7 @@
     const fenetre = document.createElement("dialog");
     fenetre.className = `perso-fenetre perso-fenetre-gain${focus ? " focus" : ""}`;
     fenetre.innerHTML = `
-      <h3 class="perso-fenetre-titre">${focus ? "✨ Focus ! ✨" : "Tirage"}</h3>
+      <h3 class="perso-fenetre-titre">${focus ? "✨ Légendaire ! ✨" : "Tirage"}</h3>
       <div class="perso-gain-carte contour-${rarete}">
         <div class="perso-gain-dos" aria-hidden="true">🎲</div>
         <div class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</div>
@@ -207,7 +217,7 @@
     const fenetre = document.createElement("dialog");
     fenetre.className = `perso-fenetre perso-fenetre-gain perso-fenetre-gains${nbFocus ? " focus" : ""}`;
     fenetre.innerHTML = `
-      <h3 class="perso-fenetre-titre">${nbFocus ? `✨ ${nbFocus > 1 ? `${nbFocus} focus` : "Focus"} ! ✨` : `${tirages.length} tirages`}</h3>
+      <h3 class="perso-fenetre-titre">${nbFocus ? `✨ ${nbFocus > 1 ? `${nbFocus} légendaires` : "Légendaire"} ! ✨` : `${tirages.length} tirages`}</h3>
       <div class="perso-gains-grille"></div>
       <p class="perso-note">Clic sur un cosmétique pour l'équiper.</p>
       <div class="perso-fenetre-actions">
@@ -271,6 +281,7 @@
       if (!reponse.ok || !donnees.koyns) throw new Error(donnees.error || "Chargement impossible.");
       lireEtatKoyns(donnees.koyns);
       rendreTirage();
+      TirageVoeu.precharger();
     } catch (erreur) {
       console.error(erreur);
       $("tirage-cosmetiques").innerHTML = `<p class="perso-note">Impossible de charger le tirage.</p>`;

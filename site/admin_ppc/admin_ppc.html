@@ -23,7 +23,7 @@
 <script src="/commun/appli.js?v=2" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
 <script src="/commun/volume.js?v=1"></script>
-<script src="/commun/compte.js?v=73" defer></script>
+<script src="/commun/compte.js?v=74" defer></script>
   <link rel="stylesheet" href="/commun/listes.css?v=2">
 </head>
 <body>
@@ -701,10 +701,11 @@
         <h2>Raretés du tirage</h2>
         <button type="button" id="fermer-raretes" class="fermer-apercu" aria-label="Fermer">×</button>
       </div>
-      <p class="aide-apercu">Un cosmétique sans rareté choisie est commun. Si une rareté n'a plus rien à donner au joueur, le tirage passe à une autre. Le focus reste garanti au 10e tirage sans focus.</p>
+      <p class="aide-apercu">Un cosmétique sans rareté choisie est commun. Les cosmétiques focus sont légendaires, et eux seuls. Si une rareté n'a plus rien à donner au joueur, le tirage passe à une autre. Garanties : un légendaire au 30e tirage sans légendaire (animation avec capture de radiance), un épique ou mieux au 10e tirage sans épique ni légendaire.</p>
       <div class="formulaire-skin">
         <label class="champ-compte">Rare (%) <input type="number" id="proba-rare" class="texte-ajout" min="0" max="100" step="0.5"></label>
         <label class="champ-compte">Épique (%) <input type="number" id="proba-epique" class="texte-ajout" min="0" max="100" step="0.5"></label>
+        <label class="champ-compte">Légendaire (%) <input type="number" id="proba-legendaire" class="texte-ajout" min="0" max="100" step="0.01"></label>
         <p class="aide-apercu">Commun : <strong id="proba-commun"></strong></p>
       </div>
       <div class="actions-ajout">
@@ -907,7 +908,7 @@
   <script src="/admin_ppc/admin_koyns.js?v=10"></script>
   <script src="/admin_ppc/admin_skins.js?v=6"></script>
   <script src="/admin_ppc/admin_visibilite.js?v=1"></script>
-  <script src="/admin_ppc/admin_raretes.js?v=2"></script>
+  <script src="/admin_ppc/admin_raretes.js?v=3"></script>
   <script src="/commun/boss_modes.js?v=1"></script>
   <script src="/admin_ppc/admin_boss_modes.js?v=1"></script>
   <script src="/commun/temps_suspects.js?v=2"></script>

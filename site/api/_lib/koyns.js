@@ -18,12 +18,15 @@
 //   que reçoivent aussi ceux qui avaient déjà les 30).
 // - Bonus de connexion pendant un événement (config.bonus_connexion) et
 //   dons des administrateurs (Rikoyns, cosmétiques exclusifs).
-// - Tirage (TIRAGE_PRIX par tirage, cf. tirerCosmetique) : une namecard,
-//   une bannière ou un fond d'écran pas encore possédé, selon sa rareté
-//   (config.cosmetiques_raretes, commun par défaut ; chances :
-//   config.probas_tirage). Les cosmétiques focus (config.cosmetiques_tirage :
-//   obtenables seulement par tirage, pas en vente) tombent avec leur rareté,
-//   et sont garantis au TIRAGE_GARANTIE-ième tirage sans focus.
+// - Tirage (vœu, TIRAGE_PRIX par tirage, cf. tirerCosmetique) : une
+//   namecard, une bannière ou un fond d'écran pas encore possédé, selon sa
+//   rareté (config.cosmetiques_raretes : commun par défaut, rare, épique ;
+//   chances : config.probas_tirage). Les cosmétiques focus
+//   (config.cosmetiques_tirage : obtenables seulement par tirage, pas en
+//   vente) sont légendaires, et eux seuls. Garanties : un légendaire au
+//   GARANTIE_LEGENDAIRE-ième tirage sans légendaire (animation avec capture
+//   de radiance), un épique ou mieux au GARANTIE_EPIQUE-ième sans épique ni
+//   légendaire (fonction SQL tirer_voeu).
 // - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
 //   ils passent par l'achat comme tout le monde, cf. acheterCosmetique).
 const { supabase } = require("./supabase");
@@ -44,8 +47,10 @@ const DEPART_ADMIN = 10000;
 const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100", montant: DEPART_MINI_ADMIN - 30 }];
 const MAX_KOYNS_DON = 1000;
 const TIRAGE_PRIX = 10;
-const PROBAS_TIRAGE_DEFAUT = { rare: 25, epique: 10 }; // en %, le reste : commun
-const TIRAGE_GARANTIE = 10;
+// En %, le reste : commun. Légendaire : 1 chance sur 30.
+const PROBAS_TIRAGE_DEFAUT = { rare: 25, epique: 10, legendaire: 3.33 };
+const GARANTIE_LEGENDAIRE = 30;
+const GARANTIE_EPIQUE = 10;
 
 // Tous les cosmétiques existants (ids), gratuits compris. "fond:perso" :
 // image importée par le joueur (gardée dans son navigateur), payée à chaque
@@ -74,7 +79,14 @@ const listeCaches = () => [...new Set([...CACHES, ...Object.keys(getConfigKoyns(
 // inutilisables, même par ceux qui les possèdent. Rien n'est supprimé : les
 // remettre les rend à leurs propriétaires.
 const estRetire = id => getConfigKoyns().retires.has(id);
-const rareteCosmetique = id => getConfigKoyns().raretes[id] || "commun";
+// Focus : légendaire, et seulement eux (un épique enregistré pour un focus
+// reprend effet s'il quitte le focus).
+const RARETES_NORMALES = ["commun", "rare", "epique"];
+function rareteCosmetique(id) {
+  if (getConfigKoyns().tirage.includes(id)) return "legendaire";
+  const rarete = getConfigKoyns().raretes[id];
+  return RARETES_NORMALES.includes(rarete) ? rarete : "commun";
+}
 const probasTirage = () => ({ ...PROBAS_TIRAGE_DEFAUT, ...getConfigKoyns().probas });
 const focusTirage = () => getConfigKoyns().tirage.filter(id => estCosmetique(id) && !estRetire(id));
 
@@ -143,14 +155,15 @@ async function lirePossedes(discordId) {
 
 const possede = (possedes, id) => possedes === null || COSMETIQUES_GRATUITS.has(id) || possedes.has(id);
 
-// Tirages faits depuis le dernier focus gagné (garantie ; même calcul que
-// tirer_cosmetique).
-async function lireCompteurTirage(discordId) {
-  const { data: focus } = await supabase.from("cosmetiques_possedes").select("obtenu_le")
-    .eq("discord_id", discordId).eq("source", "tirage_focus").order("obtenu_le", { ascending: false }).limit(1);
+// Tirages faits depuis le dernier gain de ces sources (garanties ; même
+// calcul que tirer_voeu) : légendaire ["tirage_focus"], épique
+// ["tirage_focus", "tirage_epique"].
+async function compterTiragesDepuis(discordId, sources) {
+  const { data: dernier } = await supabase.from("cosmetiques_possedes").select("obtenu_le")
+    .eq("discord_id", discordId).in("source", sources).order("obtenu_le", { ascending: false }).limit(1);
   let requete = supabase.from("koyns_mouvements").select("id", { count: "exact", head: true })
     .eq("discord_id", discordId).eq("raison", "tirage");
-  if (focus?.[0]) requete = requete.gt("cree_le", focus[0].obtenu_le);
+  if (dernier?.[0]) requete = requete.gt("cree_le", dernier[0].obtenu_le);
   const { count, error } = await requete;
   if (error) console.error("Erreur lecture koyns_mouvements :", error);
   return count || 0;
@@ -158,7 +171,10 @@ async function lireCompteurTirage(discordId) {
 
 // État envoyé à la page de personnalisation.
 async function etatKoyns(discordId) {
-  const [solde, possedes, compteur] = await Promise.all([lireSolde(discordId), lirePossedes(discordId), lireCompteurTirage(discordId)]);
+  const [solde, possedes, compteur, compteurEpique] = await Promise.all([
+    lireSolde(discordId), lirePossedes(discordId),
+    compterTiragesDepuis(discordId, ["tirage_focus"]), compterTiragesDepuis(discordId, ["tirage_focus", "tirage_epique"])
+  ]);
   return {
     solde,
     tout: possedes === null,
@@ -171,10 +187,13 @@ async function etatKoyns(discordId) {
     tirage: {
       prix: TIRAGE_PRIX,
       probas: probasTirage(),
-      raretes: getConfigKoyns().raretes,
-      garantie: TIRAGE_GARANTIE,
+      // Raretés de chaque cosmétique (focus : légendaire).
+      raretes: { ...Object.fromEntries(Object.entries(getConfigKoyns().raretes).filter(([, r]) => RARETES_NORMALES.includes(r))), ...Object.fromEntries(focusTirage().map(id => [id, "legendaire"])) },
+      garantie: GARANTIE_LEGENDAIRE,
+      garantie_epique: GARANTIE_EPIQUE,
       focus: focusTirage(),
-      compteur
+      compteur,
+      compteur_epique: compteurEpique
     }
   };
 }
@@ -183,10 +202,11 @@ async function etatKoyns(discordId) {
 async function tirerCosmetique(discordId) {
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant le tirage.
   const focus = focusTirage();
-  const gains = [...new Set([...poolTirage(), ...focus])];
+  // Hors focus : commun, rare ou épique (les focus ne sont que légendaires).
+  const gains = poolTirage();
   const deRarete = rarete => gains.filter(id => rareteCosmetique(id) === rarete);
   const probas = probasTirage();
-  const { data, error } = await supabase.rpc("tirer_cosmetique", {
+  const { data, error } = await supabase.rpc("tirer_voeu", {
     p_discord_id: discordId,
     p_prix: TIRAGE_PRIX,
     p_communs: deRarete("commun"),
@@ -195,7 +215,9 @@ async function tirerCosmetique(discordId) {
     p_focus: focus,
     p_chance_rare: probas.rare / 100,
     p_chance_epique: probas.epique / 100,
-    p_garantie: TIRAGE_GARANTIE
+    p_chance_legendaire: probas.legendaire / 100,
+    p_garantie_legendaire: GARANTIE_LEGENDAIRE,
+    p_garantie_epique: GARANTIE_EPIQUE
   });
   if (error) {
     console.error("Erreur tirage de cosmétique :", error);
@@ -203,7 +225,8 @@ async function tirerCosmetique(discordId) {
   }
   if (data?.statut === "solde") return { status: 409, erreur: `Il faut ${TIRAGE_PRIX} Rikoyns pour un tirage : joue des matchs pour en gagner.` };
   if (data?.statut === "vide") return { status: 409, erreur: "Tu as déjà tous les cosmétiques du tirage !" };
-  return { cosmetique: data.cosmetique, focus: !!data.focus, rarete: rareteCosmetique(data.cosmetique), compteur: data.compteur };
+  // garantie : légendaire obtenu par la garantie (animation avec capture de radiance).
+  return { cosmetique: data.cosmetique, focus: !!data.focus, rarete: data.rarete || rareteCosmetique(data.cosmetique), garantie: !!data.garantie, compteur: data.compteur, compteur_epique: data.compteur_epique };
 }
 
 // Paramètres de personnalisation réduits aux cosmétiques possédés : les
@@ -518,7 +541,7 @@ async function lireNouveautes(discordId, depuis) {
     supabase.from("koyns_mouvements").select("montant, raison, ref, message, cree_le")
       .eq("discord_id", discordId).gt("cree_le", debut).in("raison", RAISONS_NOTIFIEES).order("cree_le", { ascending: true }),
     supabase.from("cosmetiques_possedes").select("cosmetique")
-      .eq("discord_id", discordId).gt("obtenu_le", debut).not("source", "in", "(achat,tirage,tirage_focus)")
+      .eq("discord_id", discordId).gt("obtenu_le", debut).not("source", "in", "(achat,tirage,tirage_epique,tirage_focus)")
   ]);
   if (mouvements.error) console.error("Erreur lecture koyns_mouvements :", mouvements.error);
   if (recus.error) console.error("Erreur lecture cosmetiques_possedes :", recus.error);

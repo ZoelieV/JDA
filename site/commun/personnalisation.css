@@ -1199,7 +1199,7 @@
   font-size: 0.875rem;
 }
 
-/* Raretés du tirage : vert, bleu, violet (un focus reste doré). */
+/* Raretés du tirage : vert, bleu, violet, doré (légendaire = focus). */
 .rarete-texte {
   font-weight: bold;
   font-size: 0.875rem;
@@ -1208,10 +1208,12 @@
 .rarete-commun { color: #5fd38a; }
 .rarete-rare { color: #5aa9ff; }
 .rarete-epique { color: #c08bff; }
+.rarete-legendaire { color: #ffc24a; }
 
 .contour-commun .perso-gain-face { border-color: #5fd38a; }
 .contour-rare .perso-gain-face { border-color: #5aa9ff; }
 .contour-epique .perso-gain-face { border-color: #c08bff; }
+.contour-legendaire .perso-gain-face { border-color: #ffc24a; }
 
 /* Focus : liseré et lueur dorés qui pulsent. */
 .perso-fenetre-gain.focus {

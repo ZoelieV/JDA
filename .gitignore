@@ -7,6 +7,8 @@ site/DB/images/bg_ignore/
 
 # Captures d'écran de vérification (Claude Code), locales uniquement.
 site/captures_claude/
+# Images et vidéos de travail, gardées en local (enregistrements de plusieurs Go).
+site/DB/temp/
 
 # Cache Python.
 __pycache__/

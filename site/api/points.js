@@ -96,7 +96,7 @@
 //   { cosmetiques_raretes: { niveau: "rare" | "epique", ids: [id...] } }
 //                                       Rikoyns : cosmétiques de cette rareté
 //                                       (les autres : commun par défaut)
-//   { probas_tirage: { rare, epique } }  Rikoyns : chances du tirage, en %
+//   { probas_tirage: { rare, epique, legendaire } }  Rikoyns : chances du tirage, en %
 //   { cosmetiques_retires: [id...] }    Rikoyns : fonds d'écran retirés,
 //                                       inutilisables même par leurs
 //                                       propriétaires (cf. estRetire)
@@ -766,8 +766,9 @@ module.exports = async (req, res) => {
       } else if (corps.probas_tirage && typeof corps.probas_tirage === "object") {
         const rare = Number(corps.probas_tirage.rare);
         const epique = Number(corps.probas_tirage.epique);
-        if (![rare, epique].every(p => Number.isFinite(p) && p >= 0) || rare + epique > 100) return res.status(400).json({ error: "Chances invalides : entre 0 et 100 %, 100 % au plus à elles deux" });
-        config = { ...ancienne, probas_tirage: { rare, epique } };
+        const legendaire = Number(corps.probas_tirage.legendaire ?? 3.33);
+        if (![rare, epique, legendaire].every(p => Number.isFinite(p) && p >= 0) || rare + epique + legendaire > 100) return res.status(400).json({ error: "Chances invalides : entre 0 et 100 %, 100 % au plus à elles trois" });
+        config = { ...ancienne, probas_tirage: { rare, epique, legendaire } };
       } else if (Array.isArray(corps.cosmetiques_retires)) {
         const inconnu = corps.cosmetiques_retires.find(id => !estCosmetique(id) || !String(id).startsWith("fond:") || COSMETIQUES_GRATUITS.has(id) || id === "fond:perso");
         if (inconnu !== undefined) return res.status(400).json({ error: `Fond d'écran inconnu ou gratuit : ${inconnu}` });
