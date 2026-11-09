@@ -249,6 +249,10 @@
   // Doublon : la moitié de sa valeur rendue (cf. tirer_voeu).
   const htmlDoublon = t => (t.doublon ? `<span class="perso-gain-doublon">Doublon · +${texteRikoyns(t.remboursement)}</span>` : "");
 
+  // Bouton « Refaire » des récaps : même style que « Faire 1 / 10 vœux ».
+  const htmlBoutonVoeu = (titre, prix) =>
+    `<span class="voeu-titre">${titre}</span><span class="voeu-cout">${ICONE_KOYN} x ${prix.toLocaleString("fr-FR")}</span>`;
+
   function revelerGain({ cosmetique, focus, rarete = "commun", doublon = false, remboursement = 0 }) {
     const info = infoCosmetique(cosmetique);
     const fenetre = document.createElement("dialog");
@@ -262,12 +266,12 @@
       <p class="perso-gain-nom"><strong></strong><small>${info.type}</small>${htmlRarete(rarete)}${htmlDoublon({ doublon, remboursement })}</p>
       <div class="perso-fenetre-actions">
         <button type="button" data-action="fermer">Fermer</button>
-        <button type="button" data-action="encore"></button>
         <button type="button" class="perso-fenetre-ok" data-action="equiper">Équiper</button>
+        <button type="button" class="perso-tirer bouton-voeu" data-action="encore"></button>
       </div>`;
     fenetre.querySelector(".perso-gain-nom strong").textContent = info.nom;
     const encore = fenetre.querySelector('[data-action="encore"]');
-    encore.innerHTML = `Retirer · ${texteRikoyns(koyns.tirage?.prix ?? 10)}`;
+    encore.innerHTML = htmlBoutonVoeu("Refaire 1 vœu", koyns.tirage?.prix ?? 10);
     encore.disabled = !koyns.tirage || koyns.solde < koyns.tirage.prix;
     fenetre.addEventListener("click", event => {
       const action = event.target.closest("[data-action]")?.dataset.action;
@@ -296,7 +300,7 @@
       <p class="perso-note">Clic sur un cosmétique pour l'équiper.</p>
       <div class="perso-fenetre-actions">
         <button type="button" data-action="fermer">Fermer</button>
-        <button type="button" class="perso-fenetre-ok" data-action="encore"></button>
+        <button type="button" class="perso-tirer bouton-voeu" data-action="encore"></button>
       </div>`;
     const grille = fenetre.querySelector(".perso-gains-grille");
     tirages.forEach(({ cosmetique, focus, rarete = "commun", doublon = false, remboursement = 0 }, i) => {
@@ -318,7 +322,7 @@
     });
     const encore = fenetre.querySelector('[data-action="encore"]');
     const prix = (koyns.tirage?.prix ?? 10) * 10;
-    encore.innerHTML = `Retirer ×10 · ${texteRikoyns(prix)}`;
+    encore.innerHTML = htmlBoutonVoeu("Refaire 10 vœux", prix);
     encore.disabled = !koyns.tirage || koyns.solde < prix;
     fenetre.addEventListener("click", event => {
       const carte = event.target.closest(".perso-gains-carte");

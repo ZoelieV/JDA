@@ -199,3 +199,17 @@
     animation: none;
   }
 }
+
+/* Récap des vœux : « Refaire 1 / 10 vœux » comme les boutons de la page
+   (cf. htmlBoutonVoeu, cosmetiques.js), aligné avec Fermer / Équiper. */
+.perso-fenetre-actions:has(.bouton-voeu) {
+  align-items: center;
+}
+
+.perso-fenetre-actions .perso-tirer.bouton-voeu {
+  margin-top: 0;
+  min-width: 13rem;
+  padding: 0.35rem 3rem 0.4rem;
+  font-family: var(--police-titre);
+  font-size: 1.05rem;
+}
