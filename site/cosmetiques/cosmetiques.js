@@ -219,8 +219,9 @@
       // Animation du vœu (cf. commun/tirage_voeu.js), puis la fenêtre des gains.
       await TirageVoeu.jouer(tirages.map(t => {
         const info = infoCosmetique(t.cosmetique);
-        // Logo de l'animation : A New World pour tous les cosmétiques.
-        const logo = "/DB/images/others/logo_cosmetique_namecard.webp";
+        // Logo de l'animation : tenue pour les skins, A New World pour le reste.
+        const logo = t.cosmetique.startsWith("skin:") ? "/DB/images/others/logo_cosmetique_skin.webp"
+          : "/DB/images/others/logo_cosmetique_namecard.webp";
         const detail = t.doublon ? `Doublon : +${t.remboursement} Rikoyns rendus` : "";
         return { nom: info.nom, type: info.type, image: info.imageGrande || info.image, rarete: t.rarete, capture: t.capture, logo, detail };
       }));
