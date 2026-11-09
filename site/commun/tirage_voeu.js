@@ -11,7 +11,7 @@
 //   1 vœu   : tirage_boss_2/3/4/5.mp4 ou voeu_5_capture.mp4 (vœu + obtention) ;
 //   10 vœux : dix_4/5/5_capture.mp4 (selon le meilleur gain : légendaire de
 //             la garantie, légendaire, sinon 4★), puis l'écran d'obtention
-//             de chaque cosmétique, du moins rare au plus rare
+//             de chaque cosmétique, dans l'ordre du tirage
 //             (obtention_<étoiles>_t.mp4 pour le premier, transition
 //             comprise ; obtention_<étoiles>.mp4 ensuite).
 // TirageVoeu.jouer(gains) -> promesse résolue à la fermeture (fin, « Passer »,
@@ -64,10 +64,9 @@ const TirageVoeu = (() => {
       const clip = n === 5 && gain.garantie ? SIMPLES.capture : SIMPLES[n];
       return [{ src: clip.src, debut: clip.debut, gain }];
     }
-    const ordre = gains.map((gain, i) => ({ gain, i })).sort((a, b) => etoilesDe(a.gain) - etoilesDe(b.gain) || a.i - b.i).map(e => e.gain);
     const meilleur = Math.max(...gains.map(etoilesDe));
     const intro = gains.some(g => etoilesDe(g) === 5 && g.garantie) ? DIX.capture : meilleur === 5 ? DIX[5] : DIX[4];
-    return [{ src: intro, debut: null, gain: null }, ...ordre.map((gain, i) => ({ src: obtention(etoilesDe(gain), i === 0), debut: 0, gain }))];
+    return [{ src: intro, debut: null, gain: null }, ...gains.map((gain, i) => ({ src: obtention(etoilesDe(gain), i === 0), debut: 0, gain }))];
   }
 
   // Clips téléchargés à l'avance (ouverture de la page).
