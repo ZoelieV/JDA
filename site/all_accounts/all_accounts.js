@@ -731,7 +731,7 @@ async function afficherFlex() {
     const entete = creerCarteCompte(compte, false);
     const stats = document.createElement("span");
     stats.className = "account-stat";
-    stats.innerHTML = `${compte.flex_valeur || 0} <img class="icone-rikoyn" src="/DB/images/others/rikoyn.webp" alt="Rikoyns">${compte.flex_exclusifs ? ` · ✨ ${compte.flex_exclusifs}` : ""}`;
+    stats.innerHTML = `${compte.flex_valeur || 0} <img class="icone-rikoyn" src="/DB/images/others/rikoyn.webp" alt="Rikoyns">${compte.flex_exclusifs ? ` · <img class="icone-texte" src="/DB/images/others/etincelles.webp" alt=""> ${compte.flex_exclusifs}` : ""}`;
     stats.title = `Valeur : ${compte.flex_valeur || 0} Rikoyns${compte.flex_exclusifs ? ` · ${compte.flex_exclusifs} exclusif${compte.flex_exclusifs > 1 ? "s" : ""}` : ""}`;
     entete.appendChild(stats);
     const grille = document.createElement("div");

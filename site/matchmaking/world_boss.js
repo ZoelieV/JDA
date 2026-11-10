@@ -316,7 +316,7 @@ function rendreEtatJoueurs() {
     <h3>Déclarations</h3>
     <ul class="membres-equipe etat-declarations">${draft.joueurs.map(id => {
       const persos = (draft.joues?.[id] || []).map(persoId => draft.persos.find(p => p.perso_id === persoId)).filter(Boolean);
-      return `<li>${htmlNom(id)}${badgesJoueur(id)}${draft.hote === id ? `<span class="badge-equipe hote" title="Hôte du monde">🏠 Hôte</span>` : ""}<span class="aide-equipe">${persos.length ? persos.map(nomPerso).map(echapperHtml).join(", ") : "en attente…"}</span></li>`;
+      return `<li>${htmlNom(id)}${badgesJoueur(id)}${draft.hote === id ? `<span class="badge-equipe hote" title="Hôte du monde"><img class="icone-texte" src="/DB/images/others/maison.webp" alt=""> Hôte</span>` : ""}<span class="aide-equipe">${persos.length ? persos.map(nomPerso).map(echapperHtml).join(", ") : "en attente…"}</span></li>`;
     }).join("")}</ul>`;
 }
 
@@ -561,7 +561,7 @@ function fermerTirage(immediat = false) {
 function rendreBulles() {
   const message = $("message-wb");
   message.textContent = "";
-  if (draft.phase !== "lobby" && !suisJoueur()) message.textContent = "👁 Tu regardes cette partie en spectateur.";
+  if (draft.phase !== "lobby" && !suisJoueur()) message.innerHTML = `<img class="icone-texte" src="/DB/images/others/oeil.webp" alt=""> Tu regardes cette partie en spectateur.`;
   else if (draft.phase === "jeu" && enSolo()) message.textContent = "Après le combat : déclare la réussite ou l'échec.";
   else if (draft.phase === "jeu") message.textContent = estLegendeLocale(bossParId.get(draft.boss_id))
     ? "Après le combat : chacun déclare ses persos, l'hôte se déclare, le chef déclare le résultat."

@@ -357,7 +357,7 @@ function htmlJoueur(match, role, bansConnus) {
     (gagnant && reel?.prime ? `, prime +${reel.prime} (plus longue série battue)` : "") +
     (gagnant && reel?.ecart ? `, bonus d'écart +${reel.ecart} (adversaire mieux classé)` : "") + saison;
   const trophees = match.classe && match.trophees && (gagnant || perdant)
-    ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} ${ICONE_TROPHEE}${bonus ? " 🔥" : ""}</span>`
+    ? `<span class="etiquette-resultat trophees ${gagnant ? "gain" : "perte"}" title="Trophées${bonus}">${gagnant ? "+" : "−"}${nbTrophees} ${ICONE_TROPHEE}${bonus ? " <img class=\"icone-texte\" src=\"/DB/images/others/pyro.webp\" alt=\"\">" : ""}</span>`
     : "";
 
   // Match d'équipe : joueur qui a joué chaque perso (dans l'info-bulle).
@@ -538,7 +538,7 @@ function creerLigneWorldBoss(partie) {
           <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
           ${htmlMedailleTheatre(m.theatre)}
           ${m.discord_id === partie.createur ? `<span class="etiquette-resultat chef-equipe" title="Chef de la room">★ Chef</span>` : ""}
-          ${m.discord_id === partie.hote ? `<span class="etiquette-resultat chef-equipe" title="Hôte du monde : légende locale tuée pour lui">🏠 Hôte</span>` : ""}
+          ${m.discord_id === partie.hote ? `<span class="etiquette-resultat chef-equipe" title="Hôte du monde : légende locale tuée pour lui"><img class="icone-texte" src="/DB/images/others/maison.webp" alt=""> Hôte</span>` : ""}
         </div>`).join("")}
       </div>
     </div>
@@ -709,7 +709,7 @@ function htmlCorrectionLitige(match) {
   // Anti-triche : temps passé à saisir et somme des temps saisis.
   const fmt = s => s == null ? "?" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const triche = match.triche && match.triche.duree_saisie != null
-    ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft">⚠️ Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
+    ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft"><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
     : "";
   // Temps sous les seuils du boss (tuile « Temps anti-triche » de l'admin) :
   // danger 1 (sous le temps suspect, "limite") ou 2 (sous le temps de triche
@@ -720,7 +720,7 @@ function htmlCorrectionLitige(match) {
     const detail = s.ennemis
       ? `${echapperHtml(match[role].nom)} avec ${s.secondes} ennemis éliminés, au-dessus du seuil ${s.niveau === 2 ? `de triche confirmée (${s.minimum})` : `suspect (${s.limite})`}`
       : `${echapperHtml(match[role].nom)} en ${fmt(s.secondes)}, sous le temps ${s.niveau === 2 ? `de triche confirmée (${fmt(s.minimum)})` : `suspect (${fmt(s.limite)})`}`;
-    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? "⚠️⚠️ Danger 2 (triche confirmée)" : `⚠️ Danger 1 (${s.ennemis ? "score suspect" : "temps suspect"})`} : ${detail}. Preuve vidéo à demander.</span>`;
+    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Danger 2 (triche confirmée)` : `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Danger 1 (${s.ennemis ? "score suspect" : "temps suspect"})`} : ${detail}. Preuve vidéo à demander.</span>`;
   }).join("");
   // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
   const sanction = htmlSanction;

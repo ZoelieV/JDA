@@ -3460,3 +3460,13 @@ h1 {
   vertical-align: -0.25em;
   object-fit: contain;
 }
+
+/* Horloge du bouton « Chrono » (à la place de l'émoji ⏱) : pas la taille de
+   l'image du boss (.bandeau-boss img). */
+.bandeau-boss .btn-chrono .icone-texte {
+  width: 1.25em;
+  height: 1.25em;
+  border-radius: 0;
+  object-fit: contain;
+  background: none;
+}

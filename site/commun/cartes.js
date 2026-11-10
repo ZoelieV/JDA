@@ -118,7 +118,7 @@ const MOMENTS_CHRONO = {
 function htmlBoutonChrono(boss) {
   const moment = MOMENTS_CHRONO[boss?.chrono];
   if (!moment) return "";
-  return `<button type="button" class="btn-chrono" title="Comment chronométrer" aria-expanded="false">⏱️ Chrono</button>
+  return `<button type="button" class="btn-chrono" title="Comment chronométrer" aria-expanded="false"><img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Chrono</button>
     <span class="bulle-chrono cache">${moment.phrase}</span>`;
 }
 

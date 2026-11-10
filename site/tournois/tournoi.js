@@ -98,7 +98,7 @@ function rendre() {
     ...(tournoi.format === "1v1" ? [["Box", tournoi.box === "full" ? "Full box imposée" : "Au choix (full / opti)"]] : []),
     ["Chronos", tournoi.chronos ? `analyse ${tournoi.chronos.analyse_s} s, ${tournoi.chronos.action_s} s par pick / ban, ${tournoi.chronos.ban_s} s par ban d'équilibrage` : "Sans chronos"],
     ["Récompense", `${RECOMPENSES_TOURNOI[tournoi.recompense?.type] || "—"}${tournoi.recompense?.texte ? ` : ${echapperTournoi(tournoi.recompense.texte)}` : ""}`],
-    ...(tournoi.vainqueur ? [["🏆 Vainqueur", nomParticipant(tournoi.vainqueur)]] : [])
+    ...(tournoi.vainqueur ? [[`<img class="icone-texte" src="/DB/images/others/trophee_tournoi.webp" alt=""> Vainqueur`, nomParticipant(tournoi.vainqueur)]] : [])
   ];
   $t("infos-tournoi").innerHTML = infos.map(([titre, valeur]) => `<dt>${titre}</dt><dd>${valeur}</dd>`).join("");
 
@@ -214,7 +214,7 @@ const nomPoule = nomPouleTournoi;
 // date d'une phase -> pastille, ou "".
 const dateTour = (tournoi, places) => tournoi.dates_phases?.tours?.[places] || null;
 const datePoule = (tournoi, numero) => tournoi.dates_phases?.poules?.[numero] || null;
-const htmlDatePhase = iso => (iso ? `<span class="date-phase">📅 ${dateTournoi(iso)}</span>` : "");
+const htmlDatePhase = iso => (iso ? `<span class="date-phase"><img class="icone-texte" src="/DB/images/others/Icon_Events.webp" alt=""> ${dateTournoi(iso)}</span>` : "");
 
 // Infos : dates des phases réglées, dans l'ordre du tournoi.
 function htmlDatesPhases(tournoi) {
@@ -258,7 +258,7 @@ function rendreQualifs() {
   $t("matchs-qualifs").innerHTML = tournoi.qualifs.matchs.map(match => {
     const mien = estMoi(match.a) || estMoi(match.b);
     let droite = "";
-    if (match.statut === "termine") droite = `<span>${match.forfait ? "Victoire par forfait" : "Vainqueur"} : ${nomParticipant(match.vainqueur)} (${match.trophees} 🏆)${scoreMatch(match)}</span>`;
+    if (match.statut === "termine") droite = `<span>${match.forfait ? "Victoire par forfait" : "Vainqueur"} : ${nomParticipant(match.vainqueur)} (${match.trophees} <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées">)${scoreMatch(match)}</span>`;
     else if (match.statut === "en_cours") droite = `<a class="bouton-tournoi petit" href="${lienRoom(match.room_id)}">${mien || moi?.arbitre ? "Rejoindre" : "Regarder"}</a>`;
     else if (enQualifs && (mien || moi?.arbitre)) droite = `<button type="button" class="bouton-tournoi petit principal" data-lancer="${match.id}">Lancer</button>`;
     // Best of 3 en cours : manches gagnées.
@@ -277,7 +277,7 @@ function boutonsGestionMatch(match) {
   const boutons = (match.statut === "en_cours" ? `<button type="button" class="bouton-tournoi petit" data-relancer="${match.id}" title="Room abandonnée ou annulée : remet le match à jouer">Remettre à jouer</button>` : "") +
     (match.a && match.b ? `<button type="button" class="bouton-tournoi petit danger" data-forfait="${match.id}" data-vainqueur="${match.a}" title="Victoire par forfait">Victoire par forfait → ${nom(match.a)}</button>
     <button type="button" class="bouton-tournoi petit danger" data-forfait="${match.id}" data-vainqueur="${match.b}" title="Victoire par forfait">Victoire par forfait → ${nom(match.b)}</button>` : "");
-  return boutons ? `<details class="gestion-match"><summary title="Victoire par forfait, remettre à jouer">⚙</summary><div class="actions-match">${boutons}</div></details>` : "";
+  return boutons ? `<details class="gestion-match"><summary title="Victoire par forfait, remettre à jouer"><img class="icone-texte" src="/DB/images/others/Icon_Settings.webp" alt=""></summary><div class="actions-match">${boutons}</div></details>` : "";
 }
 
 function rendreArbre() {
@@ -287,8 +287,8 @@ function rendreArbre() {
   if (!tournoi.arbre) return;
   const modifiable = moi?.gestionnaire && tournoi.statut === "arbre" &&
     !tournoi.arbre.tours.flat().some(m => !m.exempt && (m.statut === "en_cours" || m.statut === "termine"));
-  $t("aide-arbre").textContent = [
-    tournoi.arbre_equilibre === false ? "⚠ Certaines paires du premier tour ne s'équilibrent pas en full box (aucun tirage n'a tout réussi)." : "",
+  $t("aide-arbre").innerHTML = [
+    tournoi.arbre_equilibre === false ? `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Certaines paires du premier tour ne s'équilibrent pas en full box (aucun tirage n'a tout réussi).` : "",
     modifiable ? "Clique sur 2 participants du premier tour pour les échanger." : ""
   ].filter(Boolean).join(" ");
   // Une seule grille : une colonne par tour, une ligne par match du premier

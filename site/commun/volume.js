@@ -83,9 +83,9 @@
     bloc.innerHTML = `
       <label for="volume-site-${reglages.length}">Volume du site <span class="zoom-site-note">(cet appareil)</span></label>
       <div class="zoom-site-ligne">
-        <span class="volume-site-icone" aria-hidden="true">🔈</span>
+        <span class="volume-site-icone" aria-hidden="true"><img class="icone-texte" src="/DB/images/others/son_faible.webp" alt=""></span>
         <input type="range" id="volume-site-${reglages.length}" class="zoom-site-curseur" min="0" max="100" step="${PAS}">
-        <span class="volume-site-icone" aria-hidden="true">🔊</span>
+        <span class="volume-site-icone" aria-hidden="true"><img class="icone-texte" src="/DB/images/others/son_fort.webp" alt=""></span>
         <button type="button" class="zoom-site-valeur" title="Couper le son, ou le remettre"></button>
       </div>
     `;

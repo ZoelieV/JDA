@@ -141,7 +141,7 @@
   const chargerKoyns = () => chargerScript("/commun/koyns.js?v=15",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
-  const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=4",
+  const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=5",
     () => typeof FILTRES_DRAFT !== "undefined", "Impossible de charger les filtres de la draft.");
 
   async function chargerCosmetiques() {
@@ -1014,7 +1014,7 @@
     if (AFFICHAGES_ACCUEIL.find(affichage => affichage.id === brouillon.accueil)?.beta) {
       const avertissement = document.createElement("p");
       avertissement.className = "perso-avertissement-beta";
-      avertissement.textContent = "⚠️ Affichage en bêta : il peut être incomplet (pages, liens ou nouveautés pas encore adaptés). L'affichage Classique est le plus à jour.";
+      avertissement.innerHTML = `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Affichage en bêta : il peut être incomplet (pages, liens ou nouveautés pas encore adaptés). L'affichage Classique est le plus à jour.`;
       conteneur.appendChild(avertissement);
     }
   }

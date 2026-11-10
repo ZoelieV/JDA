@@ -119,7 +119,7 @@
     const bouton = document.createElement("button");
     bouton.type = "button";
     bouton.className = "eq-rouvrir cache";
-    bouton.textContent = "⚖ Déroulé de l'équilibrage";
+    bouton.innerHTML = `<img class="icone-texte" src="/DB/images/others/scale.webp" alt=""> Déroulé de l'équilibrage`;
     bouton.addEventListener("click", () => {
       const d = draft?.detail_equilibrage;
       if (!d) return;
@@ -142,7 +142,7 @@
   function basculerLecture() {
     if (vue.lecture) return arreterLecture();
     if (vue.index >= vue.etapes.length - 1) allerA(0);
-    fenetre.querySelector(".eq-lecture").textContent = "⏸ Pause";
+    fenetre.querySelector(".eq-lecture").innerHTML = `<img class="icone-texte" src="/DB/images/others/pause.webp" alt=""> Pause`;
     vue.lecture = setInterval(() => {
       if (vue.index >= vue.etapes.length - 1) return arreterLecture();
       allerA(vue.index + 1);

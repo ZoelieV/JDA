@@ -46,7 +46,7 @@ const PRIX_TOURNOI = {
 };
 
 function htmlVictoireTournoi(nomHtml, recompense) {
-  return `🏆 ${nomHtml} remporte ${PRIX_TOURNOI[recompense?.type] || "le tournoi"} !`;
+  return `<img class="icone-texte" src="/DB/images/others/trophee_tournoi.webp" alt=""> ${nomHtml} remporte ${PRIX_TOURNOI[recompense?.type] || "le tournoi"} !`;
 }
 
 // Format de la finale (anciens tournois : finale_bo5, sinon comme l'arbre).

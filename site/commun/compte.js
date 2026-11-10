@@ -54,7 +54,7 @@
     if (window.Personnalisation) return Promise.resolve();
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=51";
+      script.src = "/commun/personnalisation.js?v=62";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;
@@ -288,7 +288,7 @@
       <h2>${tournois.length ? "Victoire !" : gains ? "Récompenses reçues !" : invalides.length ? (invalides.length > 1 ? "Matchs invalidés" : "Match invalidé") : retire ? "Rikoyns retirés" : "Message de l'équipe"}</h2>
       ${tournois.map(t => `
         <div class="recompenses-tournoi">
-          <p class="recompenses-tournoi-titre">🏆 Tu remportes le tournoi « ${echapper(t.nom)} » !</p>
+          <p class="recompenses-tournoi-titre"><img class="icone-texte" src="/DB/images/others/trophee_tournoi.webp" alt=""> Tu remportes le tournoi « ${echapper(t.nom)} » !</p>
           ${PRIX_TOURNOIS[t.recompense?.type] ? `<p>Tu gagnes ${PRIX_TOURNOIS[t.recompense.type]}${t.recompense.texte ? ` : ${echapper(t.recompense.texte)}` : ""}. À récupérer auprès de l'organisateur.</p>` : ""}
           <a href="/tournoi?id=${encodeURIComponent(t.id)}">Voir le tournoi</a>
         </div>`).join("")}
@@ -303,7 +303,7 @@
           const quoi = [m.boss ? `contre ${echapper(m.boss)}` : "", quand ? `du ${quand}` : ""].filter(Boolean).join(" ");
           return `
           <blockquote class="recompenses-message recompenses-invalide">
-            <span>⚠️ Ton match${quoi ? ` ${quoi}` : ""} a été invalidé par un administrateur après un signalement : il ne compte pas (classement, trophées, statistiques).</span>
+            <span><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Ton match${quoi ? ` ${quoi}` : ""} a été invalidé par un administrateur après un signalement : il ne compte pas (classement, trophées, statistiques).</span>
             ${m.retire ? `${montantMessage(-m.retire)}` : ""}
             ${SANCTIONS_INVALIDATION[m.sanction] ? `<span class="recompenses-sanction">${SANCTIONS_INVALIDATION[m.sanction]}</span>` : ""}
           </blockquote>`;
@@ -344,7 +344,7 @@
     const bandeau = document.createElement("div");
     bandeau.className = "bandeau-match-tournoi";
     bandeau.setAttribute("role", "status");
-    bandeau.innerHTML = `<span>🏆 Ton match de tournoi${nom ? ` « ${echapper(nom)} »` : ""} est lancé !</span>
+    bandeau.innerHTML = `<span><img class="icone-texte" src="/DB/images/others/trophee_tournoi.webp" alt=""> Ton match de tournoi${nom ? ` « ${echapper(nom)} »` : ""} est lancé !</span>
       <a class="recompenses-btn" href="/${equipe ? "equipe" : "match"}?room=${encodeURIComponent(roomId)}">Rejoindre</a>
       <button type="button" class="fermer-bandeau-tournoi" aria-label="Masquer">×</button>`;
     bandeau.querySelector("button").addEventListener("click", () => {

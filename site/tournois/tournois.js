@@ -25,9 +25,9 @@ function rendreListeTournois() {
           <span class="pastille-tournoi">${echapperTournoi(modeTournoi(t))}</span>
           ${htmlPastillesAffrontement(t)}
         </div>
-        <span>📅 ${dateTournoi(t.debut)}${t.fin ? ` → ${dateTournoi(t.fin)}` : ""}</span>
-        <span>👥 ${t.nb_participants} / ${t.max_participants} ${t.format === "equipe" ? "équipes" : "joueurs"}</span>
-        <span>🏆 ${RECOMPENSES_TOURNOI[t.recompense?.type] || "—"}</span>
+        <span><img class="icone-texte" src="/DB/images/others/Icon_Events.webp" alt=""> ${dateTournoi(t.debut)}${t.fin ? ` → ${dateTournoi(t.fin)}` : ""}</span>
+        <span><img class="icone-texte" src="/DB/images/others/Icon_Friends.webp" alt=""> ${t.nb_participants} / ${t.max_participants} ${t.format === "equipe" ? "équipes" : "joueurs"}</span>
+        <span><img class="icone-texte" src="/DB/images/others/trophee_tournoi.webp" alt=""> ${RECOMPENSES_TOURNOI[t.recompense?.type] || "—"}</span>
         <span class="doux">Organisé par ${echapperTournoi(createursTournois[t.createur]?.nom || t.createur_nom || "—")}</span>
       </div>
     </a>`).join("");

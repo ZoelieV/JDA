@@ -18,7 +18,7 @@
 <script src="/commun/fond.js?v=18" data-sans-requete></script>
 <script src="/commun/appli.js?v=2" defer></script>
 <script src="/commun/zoom.js?v=3"></script>
-<script src="/commun/volume.js?v=1"></script>
+<script src="/commun/volume.js?v=2"></script>
   <link rel="stylesheet" href="/commun/listes.css?v=2">
 </head>
 <body>
@@ -204,7 +204,7 @@
           <!-- Persos de la saison (config.bonus_saison, contour doré) :
                seulement s'il y en a (cf. afficherCollection). -->
           <div class="groupe-filtres" id="filtres-saison" hidden>
-            <label class="filtre-texte" title="Persos de la saison : +3 trophées s'ils sont dans ton équipe en classé"><input type="checkbox" id="filtre-saison"><span>🌟</span></label>
+            <label class="filtre-texte" title="Persos de la saison : +3 trophées s'ils sont dans ton équipe en classé"><input type="checkbox" id="filtre-saison"><span><img class="icone-texte" src="/DB/images/others/etoile_bonus_saison.webp" alt="Bonus de saison"></span></label>
           </div>
           <!-- Favoris : filtre (seuls les favoris), activé / désactivé. -->
           <div class="groupe-filtres">
@@ -271,7 +271,7 @@
       <div class="auto-box-consigne">
         <p><strong>Récupère l'image de tous tes personnages sur HoYoLAB, en français.</strong> L'image est analysée sur ton appareil et n'est envoyée nulle part.</p>
         <button type="button" class="tuto-hoyolab-ouvrir" data-tuto-hoyolab-ouvrir>Comment faire ? Voir les 8 étapes</button>
-        <p class="auto-box-avertissement">⚠️ La détection n'est pas infaillible, surtout pour les constellations : après l'avoir appliquée, vérifie ta box avant de jouer.</p>
+        <p class="auto-box-avertissement"><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> La détection n'est pas infaillible, surtout pour les constellations : après l'avoir appliquée, vérifie ta box avant de jouer.</p>
       </div>
 
       <label id="zone-depot" class="zone-depot">
@@ -311,7 +311,7 @@
        constellations à revérifier, armes à renseigner. -->
   <div id="modal-rappel-armes" class="modal-parametres">
     <div class="modal-parametres-contenu modal-confirmation" role="dialog" aria-modal="true" aria-labelledby="rappel-armes-titre">
-      <h2 id="rappel-armes-titre">⚠️ Ta box n'est pas encore finie</h2>
+      <h2 id="rappel-armes-titre"><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Ta box n'est pas encore finie</h2>
       <div class="rappel-etape">
         <span class="rappel-numero">1</span>
         <p><strong class="rappel-titre">Constellations</strong> revérifie celles des personnages qui ont <mark class="surligne">un chapeau ou des cheveux longs</mark> : ils cachent souvent l'icône des constellations sur la capture et la détection peut se tromper.</p>
@@ -333,9 +333,9 @@
   <script src="/my_account/auto_box/detection.js?v=5"></script>
   <script src="/my_account/auto_box/interface.js?v=7"></script>
   <script src="/commun/synergies.js?v=6"></script>
-  <script src="/commun/cartes.js?v=38"></script>
-  <script src="/commun/tri.js?v=21"></script>
-  <script src="/commun/personnalisation.js?v=61"></script>
+  <script src="/commun/cartes.js?v=39"></script>
+  <script src="/commun/tri.js?v=22"></script>
+  <script src="/commun/personnalisation.js?v=62"></script>
   <script src="/commun/recommandations_stuff.js?v=2"></script>
   <script src="/my_account/my_account.js?v=89"></script>
   <script src="/commun/listes.js?v=1"></script>

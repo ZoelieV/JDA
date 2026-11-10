@@ -2814,6 +2814,16 @@ body.page-equilibrage #tuiles-admin {
   font-size: 2rem;
 }
 
+/* Icône « image » (à la place de l'émoji 🖼) : pas la taille des images de
+   cosmétiques (.carte-prix-cosmetique img). */
+.carte-prix-cosmetique .sans-image-prix .icone-texte {
+  width: 1.25em;
+  height: 1.25em;
+  aspect-ratio: auto;
+  border-radius: 0;
+  object-fit: contain;
+}
+
 .nom-prix-cosmetique {
   overflow: hidden;
   font-size: 0.8125rem;

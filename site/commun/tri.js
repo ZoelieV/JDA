@@ -155,7 +155,7 @@ function majBoutonTri(btn, etat, vue = "characters") {
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`,
     arme: `<img class="tri-logo" src="${LOGO_TRI_ARME}" alt="Type d'arme">`,
     raffinement: `<b>R</b>`,
-    bonus_saison: `<span class="tri-etoile">🌟</span>`,
+    bonus_saison: `<img class="tri-logo" src="/DB/images/others/etoile_bonus_saison.webp" alt="Bonus de saison">`,
     favoris: `<img class="tri-logo" src="${LOGO_TRI_FAVORIS}" alt="Favoris">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;

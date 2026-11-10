@@ -85,7 +85,7 @@ async function afficherLittleCup(config) {
   const reponse = await fetch("/api/matches?little_cup=1", { credentials: "include" });
   const { classement = [] } = reponse.ok ? await reponse.json() : {};
   document.getElementById("liste-classement-little-cup").innerHTML = classement.length
-    ? classement.map(j => `<li><span>${echapperCalendrier(j.nom)}</span><strong>${j.trophees} 🏆</strong></li>`).join("")
+    ? classement.map(j => `<li><span>${echapperCalendrier(j.nom)}</span><strong>${j.trophees} <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></strong></li>`).join("")
     : "<li>Aucun match pour l'instant.</li>";
 }
 

@@ -110,7 +110,7 @@
         ${focusRestants.length ? `
           <p class="perso-note perso-tirage-choix">${tirage.choix
             ? `Ta focus : <strong class="rarete-texte rarete-legendaire"></strong>${tirage.garanti ? " · <strong>garantie</strong> à la prochaine légendaire" : " · 50 % à la prochaine légendaire"}`
-            : "⚠ <strong>Choisis ta focus</strong> ci-dessus (bouton « Choisir ») pour pouvoir faire des vœux."}</p>
+            : "<img class=\"icone-texte\" src=\"/DB/images/others/avertissement.webp\" alt=\"\"> <strong>Choisis ta focus</strong> ci-dessus (bouton « Choisir ») pour pouvoir faire des vœux."}</p>
           <div class="perso-tirage-garantie">
             <span>Légendaire garanti dans <strong>${restants}</strong> tirage${restants > 1 ? "s" : ""} · épique dans <strong>${restantsEpique}</strong></span>
             <span class="perso-tirage-jauge"><span style="width: ${Math.min(100, tirage.compteur / (tirage.garantie - 1) * 100)}%"></span></span>
@@ -257,7 +257,7 @@
     const fenetre = document.createElement("dialog");
     fenetre.className = `perso-fenetre perso-fenetre-gain${focus ? " focus" : ""}`;
     fenetre.innerHTML = `
-      <h3 class="perso-fenetre-titre">${focus ? "✨ Légendaire ! ✨" : "Tirage"}</h3>
+      <h3 class="perso-fenetre-titre">${focus ? `<img class="icone-texte" src="/DB/images/others/etincelles.webp" alt=""> Légendaire ! <img class="icone-texte" src="/DB/images/others/etincelles.webp" alt="">` : "Tirage"}</h3>
       <div class="perso-gain-carte contour-${rarete}">
         <div class="perso-gain-dos" aria-hidden="true"><img class="icone-voeu" src="/DB/images/others/Item_Intertwined_Fate.webp" alt=""></div>
         <div class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</div>
@@ -294,7 +294,7 @@
     const fenetre = document.createElement("dialog");
     fenetre.className = `perso-fenetre perso-fenetre-gain perso-fenetre-gains${nbFocus ? " focus" : ""}`;
     fenetre.innerHTML = `
-      <h3 class="perso-fenetre-titre">${nbFocus ? `✨ ${nbFocus > 1 ? `${nbFocus} légendaires` : "Légendaire"} ! ✨` : `${tirages.length} tirages`}</h3>
+      <h3 class="perso-fenetre-titre">${nbFocus ? `<img class="icone-texte" src="/DB/images/others/etincelles.webp" alt=""> ${nbFocus > 1 ? `${nbFocus} légendaires` : "Légendaire"} ! <img class="icone-texte" src="/DB/images/others/etincelles.webp" alt="">` : `${tirages.length} tirages`}</h3>
       <div class="perso-gains-grille"></div>
       <p class="perso-note">Clic sur un cosmétique pour l'équiper.</p>
       <div class="perso-fenetre-actions">

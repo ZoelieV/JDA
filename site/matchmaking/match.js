@@ -2847,7 +2847,9 @@ function rendreLienStream(role, zone) {
     zone.querySelector(".texte-temps").after(lien);
   }
   lien.href = href;
-  lien.innerHTML = `📺 Stream de ${joueur.pseudo}`;
+  // Logo de la plateforme du lien (Twitch ou YouTube, seuls acceptés).
+  const logo = /(^|\.)twitch\.tv$/i.test(new URL(href).hostname) ? "twitch.webp" : "reseaux/youtube_couleur.svg";
+  lien.innerHTML = `<img class="icone-texte" src="/DB/images/others/${logo}" alt=""> Stream de ${joueur.pseudo}`;
   lien.title = href;
 }
 
@@ -3152,12 +3154,12 @@ function rendreTermine() {
     const enJeu = calculerTrophees();
     const delta = role => resultat ? resultat[role] : (draft.vainqueur === role ? enJeu : -enJeu);
     const signe = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0";
-    const bonus = (resultat?.bonus ? ` (dont +${resultat.bonus} de série 🔥)` : "") +
+    const bonus = (resultat?.bonus ? ` (dont +${resultat.bonus} de série <img class="icone-texte" src="/DB/images/others/pyro.webp" alt="">)` : "") +
       (resultat?.prime ? ` (dont +${resultat.prime} de prime ${ICONE_ENTRAINEMENT} : tu as battu la plus longue série en cours)` : "") +
       (resultat?.ecart ? ` (dont +${resultat.ecart} de bonus d'écart : adversaire mieux classé)` : "");
     // Bonus de saison (persos cochés dans l'admin) : gain augmenté, perte réduite.
     const saison = role => resultat?.saison?.[role]
-      ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}🌟)`
+      ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}<img class="icone-texte" src="/DB/images/others/etoile_bonus_saison.webp" alt="">)`
       : "";
     if (enJeu === 0) {
       ligneTrophees = `<p class="ligne-trophees">${ICONE_TROPHEE} Aucun trophée en jeu</p>`;
@@ -3443,7 +3445,7 @@ function rendreNonEquilibrable() {
 function afficherAlerteEquilibrage() {
   if (moiDiscordId !== draft.entrainement?.lanceur) return;
   const message = document.getElementById("message-choix-box");
-  message.innerHTML = `⚠ Ces box ne s'équilibrent pas : en match normal ou classé, ce match aurait été annulé. ` +
+  message.innerHTML = `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Ces box ne s'équilibrent pas : en match normal ou classé, ce match aurait été annulé. ` +
     `<button type="button" class="btn-alerte-equilibrage" id="btn-continuer-equilibrage">Continuer quand même (mode spécial)</button> ` +
     `<a class="btn-alerte-equilibrage" href="/match#entrainement">Changer de box</a>` +
     `<br><small>Mode spécial : la box la plus faible reçoit autant de bans joker que nécessaire pour équilibrer, même sous les seuils.</small>`;
@@ -3531,8 +3533,8 @@ function annoncerChoixAleatoires(nouvelles) {
   const quoi = aleatoires.every(a => a.type === "ban") ? "ban" : aleatoires.every(a => a.type === "pick") ? "pick" : "choix";
   const joueur = aleatoires[0].joueur;
   afficherNotification(joueur === monRole
-    ? `⏱ Temps écoulé : ${quoi} aléatoire pour toi (${echapperHtml(noms)}).`
-    : `⏱ Temps écoulé pour ${(joueur === "j1" ? joueur1 : joueur2)?.pseudo || "ton adversaire"} : ${quoi} aléatoire (${echapperHtml(noms)}).`);
+    ? `<img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Temps écoulé : ${quoi} aléatoire pour toi (${echapperHtml(noms)}).`
+    : `<img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Temps écoulé pour ${(joueur === "j1" ? joueur1 : joueur2)?.pseudo || "ton adversaire"} : ${quoi} aléatoire (${echapperHtml(noms)}).`);
 }
 
 // Chronos sortis de l'écran (défilement) : copie figée en bas, en haut de
@@ -3574,9 +3576,9 @@ function majChronos() {
   const nom = role => (role === "j1" ? joueur1 : joueur2)?.pseudo || role.toUpperCase();
   let html;
   if (etat.phase === "analyse") {
-    html = `<span class="chrono actif${classeUrgent(etat.reste)}">⏱ Analyse des box : ${formaterChrono(etat.reste)}</span>`;
+    html = `<span class="chrono actif${classeUrgent(etat.reste)}"><img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Analyse des box : ${formaterChrono(etat.reste)}</span>`;
   } else if (etat.phase === "bans_bonus") {
-    html = `<span class="chrono actif${classeUrgent(etat.reste)}">⏱ Bans d'équilibrage de ${nom(etat.acteur)} : ${formaterChrono(etat.reste)}</span>`;
+    html = `<span class="chrono actif${classeUrgent(etat.reste)}"><img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Bans d'équilibrage de ${nom(etat.acteur)} : ${formaterChrono(etat.reste)}</span>`;
   } else {
     html = ["j1", "j2"].map(role => {
       const epuise = draft.chrono[`epuise_${role}`];
@@ -3600,7 +3602,7 @@ function majChronos() {
     // Trop tard de MON point de vue : bouton grisé, notification, choix
     // aléatoire demandé au serveur.
     if (!expirationsEnvoyees.has(cleTour)) {
-      afficherNotification("⏱ Temps écoulé : un choix aléatoire est fait pour toi.");
+      afficherNotification(`<img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Temps écoulé : un choix aléatoire est fait pour toi.`);
       document.querySelectorAll("#btn-confirmer-action, #btn-confirmer-bonus").forEach(b => { b.disabled = true; });
     }
     envoyerExpiration(cleTour);
@@ -3623,7 +3625,7 @@ function majPause() {
   if (!draft?.pause) return;
   const absent = draft.pause.absent === "j1" ? joueur1 : joueur2;
   const reste = PAUSE_MAX_MS - (heureServeur() - draft.pause.debut);
-  const html = `⏸ Draft en pause : ${absent?.pseudo || "un joueur"} a crash. Elle reprend dès son retour ` +
+  const html = `<img class="icone-texte" src="/DB/images/others/pause.webp" alt=""> Draft en pause : ${absent?.pseudo || "un joueur"} a crash. Elle reprend dès son retour ` +
     `(annulée dans ${formaterChrono(reste)} s'il ne revient pas).`;
   if (bandeau.dataset.html !== html) {
     bandeau.dataset.html = html;
@@ -3883,7 +3885,7 @@ function afficherSpectateurs(nombre) {
   const visible = Number.isInteger(nombre) && nombre > 0;
   indicateur.classList.toggle("cache", !visible);
   if (visible) {
-    indicateur.textContent = `👁 ${nombre}`;
+    indicateur.innerHTML = `<img class="icone-texte" src="/DB/images/others/oeil.webp" alt=""> ${nombre}`;
     indicateur.title = `${nombre} spectateur${nombre > 1 ? "s" : ""}`;
   }
 }

@@ -94,7 +94,7 @@ function htmlNom(id) {
 function badgesJoueur(id, role) {
   return [
     draft.chefs?.[role] === id ? `<span class="badge-equipe chef" title="Chef de l'équipe">★ Chef</span>` : "",
-    draft.hotes?.[role] === id ? `<span class="badge-equipe hote" title="Hôte du monde">🏠 Hôte</span>` : "",
+    draft.hotes?.[role] === id ? `<span class="badge-equipe hote" title="Hôte du monde"><img class="icone-texte" src="/DB/images/others/maison.webp" alt=""> Hôte</span>` : "",
     id === moi?.id ? `<span class="badge-equipe moi">toi</span>` : ""
   ].join("");
 }
@@ -790,7 +790,7 @@ function rendreBulles() {
   tour.textContent = "";
   bouton.classList.add("cache");
 
-  if (!suisMembre() && draft.phase !== "lobby") message.textContent = "👁 Tu regardes ce match en spectateur.";
+  if (!suisMembre() && draft.phase !== "lobby") message.innerHTML = `<img class="icone-texte" src="/DB/images/others/oeil.webp" alt=""> Tu regardes ce match en spectateur.`;
 
   if (draft.phase === "chefs") tour.textContent = `Vote du chef : ${secondesRestantes(draft.fin_vote)} s`;
   if (draft.phase === "hotes") tour.textContent = `Choix de l'hôte : ${secondesRestantes(draft.fin_hote)} s`;
@@ -907,7 +907,7 @@ function afficherSpectateurs(nombre) {
   const visible = Number.isInteger(nombre) && nombre > 0;
   indicateur.classList.toggle("cache", !visible);
   if (visible) {
-    indicateur.textContent = `👁 ${nombre}`;
+    indicateur.innerHTML = `<img class="icone-texte" src="/DB/images/others/oeil.webp" alt=""> ${nombre}`;
     indicateur.title = `${nombre} spectateur${nombre > 1 ? "s" : ""}`;
   }
 }

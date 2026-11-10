@@ -44,7 +44,7 @@ const FILTRES_DRAFT = [
     description: "Trie par rareté (les 5★ standards entre les 4★ et les 5★ limités).", fige: false },
   { id: "tri_element", groupe: "tris", logo: "/DB/images/others/omni_element.webp", nom: "Élément",
     description: "Regroupe par élément (par type d'arme dans la vue Armes).", fige: false },
-  { id: "tri_bonus_saison", groupe: "tris", texte: "🌟", nom: "Bonus de saison",
+  { id: "tri_bonus_saison", groupe: "tris", logo: "/DB/images/others/etoile_bonus_saison.webp", nom: "Bonus de saison",
     description: "Persos du bonus de saison d'abord (trophées en plus). Matchs classés seulement.", fige: false }
 ];
 

@@ -57,7 +57,7 @@ function rendrePrix() {
     const info = id === FOND_IMPORTE ? { nom: "Mon image (chaque import)", type: "Fond d'écran", image: null } : infoCosmetiqueAdmin(id);
     return `
       <div class="carte-prix-cosmetique" title="${echapper(`${info.type} : ${id}`)}">
-        ${info.image ? `<img src="${echapper(info.image)}" alt="" loading="lazy">` : `<span class="sans-image-prix">🖼</span>`}
+        ${info.image ? `<img src="${echapper(info.image)}" alt="" loading="lazy">` : `<span class="sans-image-prix"><img class="icone-texte" src="/DB/images/others/image.webp" alt=""></span>`}
         <span class="nom-prix-cosmetique">${echapper(info.nom)}</span>
         <span class="aide-apercu">défaut : ${prixParDefautCosmetique(id)}</span>
         <label class="champ-prix-cosmetique"><input type="number" min="0" max="${PRIX_COSMETIQUE_MAX}" step="1" class="texte-ajout" data-prix="${echapper(id)}" value="${prixKoyns[id]}"> ${ICONE_KOYN}</label>
