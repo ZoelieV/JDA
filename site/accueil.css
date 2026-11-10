@@ -242,8 +242,8 @@ html[data-accueil="classique"] .accueil-panneau {
   width: 25rem;
   padding: 4.75rem 1.25rem 1.25rem;
   overflow-y: auto;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   background-color: rgba(20, 20, 20, 0.55);
   -webkit-backdrop-filter: blur(0.5rem);
@@ -277,6 +277,7 @@ html[data-accueil="classique"] .accueil-panneau {
 /* Namecard entière (840 × 400), largeur fixe ; la carte a exactement sa
    hauteur (bordures comprises), sans vide dessous. */
 .accueil-panneau .carte-section {
+  flex-shrink: 0;
   box-sizing: border-box;
   height: calc(12rem * 20 / 42 + 2px);
 }
@@ -299,6 +300,36 @@ html[data-accueil="classique"] .accueil-panneau {
 .accueil-panneau .carte-regles { order: 5; }
 .accueil-panneau .carte-derniere { order: 6; }
 .accueil-panneau .carte-admin { order: 7; }
+
+/* Pied de page de l'accueil (cf. accueil.js) : en bas du panneau, en
+   colonne, sans son fond de barre. */
+html.pied-accueil .accueil-panneau .site-pied {
+  order: 8;
+  position: static;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.pied-accueil .accueil-panneau .pied-contenu {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0;
+  text-align: center;
+}
+
+.accueil-panneau .pied-marque {
+  align-items: center;
+}
+
+.accueil-panneau .pied-liens {
+  justify-content: center;
+}
 
 .accueil-panneau .carte-section-texte {
   align-self: center;

@@ -44,6 +44,9 @@
   function ranger() {
     const avecPanneau = document.documentElement.dataset.accueil === "panneau";
     cartes.forEach(carte => (avecPanneau && !resteAuCentre(carte) ? panneau : grille).appendChild(carte));
+    // Pied de page de l'accueil (commun/site.js) : en bas du panneau.
+    const pied = document.querySelector(".site-pied");
+    if (pied) (avecPanneau ? panneau : document.body).appendChild(pied);
     deplier(avecPanneau && !telephone.matches && lire(CLE_PLIE) !== "1");
   }
 
