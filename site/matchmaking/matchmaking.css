@@ -802,7 +802,7 @@
    modes, petite flèche comme celle des tris. */
 .mode-plus {
   grid-column: 1 / -1;
-  justify-self: center;
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
