@@ -110,6 +110,19 @@
   gap: 1.125rem;
 }
 
+/* Affichage Cartes, toutes tailles d'écran : Créer un match, Classement,
+   Joueurs, Historique, Événements, Cosmétiques, Règles, Tutoriel,
+   Administration (ordre de la page inchangé pour le panneau). */
+html[data-accueil="cartes"] .accueil-sections .principale { order: 1; }
+html[data-accueil="cartes"] .carte-classement { order: 2; }
+html[data-accueil="cartes"] .carte-tous-comptes { order: 3; }
+html[data-accueil="cartes"] .carte-historique { order: 4; }
+html[data-accueil="cartes"] .carte-evenements { order: 5; }
+html[data-accueil="cartes"] .carte-cosmetiques { order: 6; }
+html[data-accueil="cartes"] .carte-regles { order: 7; }
+html[data-accueil="cartes"] .carte-derniere { order: 8; }
+html[data-accueil="cartes"] .carte-admin { order: 9; }
+
 /* Ordi : 3 cartes par ligne (grille de 6 colonnes, chaque carte en couvre
    2) : Créer un match, Classement, Joueurs ; Historique, Événements,
    Cosmétiques ; Règles et Tutoriel centrés sur la dernière ligne (avec
@@ -125,15 +138,6 @@
     grid-column: span 2;
   }
 
-  html[data-accueil="cartes"] .accueil-sections .principale { order: 1; }
-  html[data-accueil="cartes"] .carte-classement { order: 2; }
-  html[data-accueil="cartes"] .carte-tous-comptes { order: 3; }
-  html[data-accueil="cartes"] .carte-historique { order: 4; }
-  html[data-accueil="cartes"] .carte-evenements { order: 5; }
-  html[data-accueil="cartes"] .carte-cosmetiques { order: 6; }
-  html[data-accueil="cartes"] .carte-regles { order: 7; }
-  html[data-accueil="cartes"] .carte-derniere { order: 8; }
-  html[data-accueil="cartes"] .carte-admin { order: 9; }
 
   .carte-regles {
     grid-column: 2 / span 2;
