@@ -113,7 +113,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=32";
+    lien.href = "/commun/personnalisation.css?v=33";
     document.head.appendChild(lien);
   }
 
@@ -743,7 +743,7 @@
       const exclusif = estExclusif(cosmetique);
       const focus = estFocusTirage(cosmetique);
       const montant = prixCosmetique(cosmetique);
-      badge.innerHTML = exclusif ? "Exclusif" : focus ? "🎲 Tirage" : `${dansPanier ? `${ICONE_PANIER} ` : ""}${montant} ${ICONE_KOYN}`;
+      badge.innerHTML = exclusif ? "Exclusif" : focus ? "🎲 Tirage" : `${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
       bouton.title = `${titre} — ${exclusif ? "exclusif" : focus ? "focus du tirage (page Cosmétiques)" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
       if (image) {

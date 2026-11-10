@@ -688,6 +688,11 @@
   filter: brightness(0.8);
 }
 
+/* Dans le panier : symbole en bleu (rouge -> bleu foncé, orange -> bleu clair). */
+.perso-choix-image.dans-panier .perso-symbole {
+  background-image: url("/DB/images/others/symbole_verrou_panier.webp");
+}
+
 .perso-choix-image.dans-panier .perso-prix {
   background-color: rgba(20, 90, 45, 0.92);
   color: white;
