@@ -186,7 +186,7 @@
 }
 
 /* ---- Affichage "panneau" (cf. accueil.js) : Créer un match et
-   Cosmétiques au centre (même taille que dans la grille classique), les
+   Événements au centre (même taille que dans la grille classique), les
    autres cartes dans le panneau de gauche (25rem : namecard entière et nom le plus long), au format
    téléphone, plié / déplié par le bouton ☰. Affichages "cartes" et
    "classique" : ni bouton ni panneau. ---- */
@@ -243,7 +243,6 @@ html[data-accueil="classique"] .accueil-panneau {
   padding: 4.75rem 1.25rem 1.25rem;
   overflow-y: auto;
   display: grid;
-  grid-auto-rows: 1fr;
   align-content: start;
   gap: 0.75rem;
   background-color: rgba(20, 20, 20, 0.55);
@@ -275,14 +274,31 @@ html[data-accueil="classique"] .accueil-panneau {
   align-items: stretch;
 }
 
-/* Namecard entière (840 × 400), largeur fixe ; la carte prend sa hauteur. */
+/* Namecard entière (840 × 400), largeur fixe ; la carte a exactement sa
+   hauteur (bordures comprises), sans vide dessous. */
+.accueil-panneau .carte-section {
+  box-sizing: border-box;
+  height: calc(12rem * 20 / 42 + 2px);
+}
+
 .accueil-panneau .carte-section > img {
   width: 12rem;
-  height: auto;
-  aspect-ratio: 42 / 20;
-  align-self: flex-start;
+  height: 100%;
+  aspect-ratio: auto;
+  align-self: stretch;
   flex-shrink: 0;
 }
+
+/* Ordre du panneau : Classement, Joueurs, Cosmétiques, Historique, Règles,
+   Tutoriel, Administration (Créer un match et Événements au centre, cf.
+   accueil.js). */
+.accueil-panneau .carte-classement { order: 1; }
+.accueil-panneau .carte-tous-comptes { order: 2; }
+.accueil-panneau .carte-cosmetiques { order: 3; }
+.accueil-panneau .carte-historique { order: 4; }
+.accueil-panneau .carte-regles { order: 5; }
+.accueil-panneau .carte-derniere { order: 6; }
+.accueil-panneau .carte-admin { order: 7; }
 
 .accueil-panneau .carte-section-texte {
   align-self: center;
