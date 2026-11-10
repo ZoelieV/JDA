@@ -1151,6 +1151,9 @@ const PAGE_STATISTIQUES = window.location.pathname.replace(/\/$/, "") === "/stat
 const PAGE_LITIGES = window.location.pathname.replace(/\/$/, "") === "/admin/litiges";
 if (PAGE_LITIGES && window.self === window.top) window.location.replace("/admin?litiges=1");
 let onglet = PAGE_STATISTIQUES ? "stats" : PAGE_LITIGES ? "litiges" : "matchs";
+// Affichages Panneau et Cartes (sans l'en-tête du site, donc sans lien
+// Statistiques) : onglet Statistiques dans l'historique.
+const STATS_DANS_HISTORIQUE = document.documentElement.dataset.accueil !== "classique";
 
 // Page Statistiques : titre, onglets et barre des matchs masqués, panneau
 // des statistiques affiché dès l'ouverture (pas l'historique le temps du
@@ -1181,7 +1184,7 @@ function ongletDisponible(nom) {
   if (PAGE_STATISTIQUES) return nom === "stats";
   if (PAGE_LITIGES) return nom === "litiges" && estAdmin;
   // Random world boss : comme le mode (cf. api/_lib/world_boss.js).
-  return nom === "matchs" || nom === "equipe" ||
+  return nom === "matchs" || nom === "equipe" || (nom === "stats" && STATS_DANS_HISTORIQUE) ||
     (nom === "world_boss" && worldBossVisible) || (nom === "little_cup" && littleCupVisible) || (nom === "entrainements" && !!moiDiscordId);
 }
 

@@ -303,6 +303,40 @@ html.site-classique .site-pied {
   zoom: var(--zoom-barres);
 }
 
+/* Accueil en Panneau / Cartes (html.pied-accueil, cf. site.js) : même pied
+   de page, caché sous le bas de l'écran : visible seulement en faisant
+   défiler (la page fait au moins la hauteur de l'écran). */
+html.pied-accueil {
+  --barre-fond: rgba(255, 255, 255, 0.05);
+  --barre-flou: blur(1rem) saturate(140%);
+  --barre-bordure: rgba(255, 255, 255, 0.12);
+  --zoom-barres: 0.85;
+}
+
+html.pied-accueil body {
+  position: relative;
+  box-sizing: border-box;
+  min-height: calc(100vh - 2.5rem);
+}
+
+html.pied-accueil .site-pied {
+  display: block;
+  position: absolute;
+  top: calc(100% + 1.25rem);
+  right: -1.25rem;
+  left: -1.25rem;
+  background-color: var(--barre-fond);
+  -webkit-backdrop-filter: var(--barre-flou);
+  backdrop-filter: var(--barre-flou);
+  border-top: 1px solid var(--barre-bordure);
+  text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.7);
+}
+
+/* Zoom sur le contenu (pas sur le pied, placé en absolu). */
+html.pied-accueil .pied-contenu {
+  zoom: var(--zoom-barres);
+}
+
 /* Autres pages : tout en bas de la page, d'un bord à l'autre de l'écran. */
 html.avec-entete-site .site-pied {
   position: absolute;

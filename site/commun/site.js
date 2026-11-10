@@ -30,16 +30,20 @@
     }
   } catch { /* stockage bloqué : pas de test ni d'astuce */ }
   const room = document.currentScript?.hasAttribute("data-room");
-  if (document.documentElement.dataset.accueil !== "classique") {
+  const classique = document.documentElement.dataset.accueil === "classique";
+  if (!classique) {
     // Affichage changé depuis la personnalisation : page rechargée pour
     // afficher (ou retirer) l'en-tête.
     document.addEventListener("accueil-change", () => {
       if (document.documentElement.dataset.accueil === "classique") location.reload();
     });
-    return;
+    // Panneau / Cartes : rien d'ajouté, sauf le pied de page de l'accueil
+    // (plus bas).
+    if (!document.querySelector(".accueil-barre")) return;
+  } else {
+    document.addEventListener("accueil-change", () => location.reload());
+    document.documentElement.classList.add("site-classique");
   }
-  document.addEventListener("accueil-change", () => location.reload());
-  document.documentElement.classList.add("site-classique");
 
   // Liens des pages ; menus déroulants : Match, Joueurs, Historique, Règles.
   const LIENS = [
@@ -203,6 +207,15 @@
       document.head.appendChild(script);
     });
     promesseFeedback.then(() => document.querySelector(".bouton-feedback")?.click()).catch(() => {});
+  }
+
+  // Accueil en Panneau / Cartes : pas d'en-tête ; même pied de page qu'en
+  // Classique, placé juste sous le bas de l'écran (visible en faisant
+  // défiler, cf. html.pied-accueil dans site.css).
+  if (!classique) {
+    document.documentElement.classList.add("pied-accueil");
+    document.body.appendChild(creerPied());
+    return;
   }
 
   // ---- En-tête : celui de l'accueil, sinon un nouveau en haut de la page.
