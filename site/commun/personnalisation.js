@@ -113,7 +113,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=40";
+    lien.href = "/commun/personnalisation.css?v=41";
     document.head.appendChild(lien);
   }
 
@@ -974,7 +974,7 @@
       const bouton = creerChoix(null, affichage.nom, brouillon.accueil === affichage.id,
         () => { brouillon.accueil = affichage.id; }, `perso-choix-accueil perso-schema-${affichage.id}`);
       bouton.title = affichage.description;
-      bouton.innerHTML = `<span class="perso-schema" aria-hidden="true">${"<span></span>".repeat(8)}</span>`;
+      bouton.innerHTML = `<span class="perso-schema" aria-hidden="true">${"<span></span>".repeat(9)}</span>`;
       const nom = document.createElement("strong");
       nom.textContent = affichage.nom;
       if (affichage.beta) {

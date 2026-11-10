@@ -962,10 +962,12 @@
   background-color: rgba(255, 255, 255, 0.35);
 }
 
-/* Panneau : 6 cartes empilées à gauche (un tiers), 2 au centre. */
+/* Schémas : 9 blocs (cf. rendreAccueil) ; Créer un match en doré.
+   Panneau : panneau étroit à gauche (6 cartes, pied de page en bas),
+   Créer un match et Événements au centre. */
 .perso-schema-panneau .perso-schema {
-  grid-template-columns: 1fr 0.25fr 1fr 1fr 0.25fr;
-  grid-template-rows: repeat(6, 1fr);
+  grid-template-columns: 1.1fr 0.3fr 1fr 1fr 0.2fr;
+  grid-template-rows: repeat(7, 1fr);
 }
 
 .perso-schema-panneau .perso-schema span {
@@ -975,18 +977,25 @@
 .perso-schema-panneau .perso-schema span:nth-child(7),
 .perso-schema-panneau .perso-schema span:nth-child(8) {
   grid-row: 3 / span 2;
-  background-color: rgba(245, 197, 66, 0.6);
 }
 
 .perso-schema-panneau .perso-schema span:nth-child(7) {
   grid-column: 3;
+  background-color: rgba(245, 197, 66, 0.6);
 }
 
 .perso-schema-panneau .perso-schema span:nth-child(8) {
   grid-column: 4;
 }
 
-/* Cartes : 3 cartes par ligne, les 2 dernières centrées. */
+/* Pied de page, en bas du panneau. */
+.perso-schema-panneau .perso-schema span:nth-child(9) {
+  grid-row: 7;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Cartes : 3 cartes par ligne, Règles et Tutoriel centrés sur la dernière
+   (pied de page sous le bas de l'écran : pas dessiné). */
 .perso-schema-cartes .perso-schema {
   grid-template-columns: repeat(6, 1fr);
 }
@@ -995,14 +1004,17 @@
   grid-column: span 2;
 }
 
-/* Créer un match (1re) et Mon compte (3e, en haut à droite). */
-.perso-schema-cartes .perso-schema span:nth-child(1),
-.perso-schema-cartes .perso-schema span:nth-child(3) {
+.perso-schema-cartes .perso-schema span:nth-child(1) {
   background-color: rgba(245, 197, 66, 0.6);
 }
 
 .perso-schema-cartes .perso-schema span:nth-child(7) {
   grid-column: 2 / span 2;
+}
+
+.perso-schema-cartes .perso-schema span:nth-child(9),
+.perso-schema-classique .perso-schema span:nth-child(9) {
+  display: none;
 }
 
 /* Aperçu en haut : nom de l'affichage choisi. */
