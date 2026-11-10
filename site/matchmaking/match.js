@@ -2086,7 +2086,7 @@ function rendreChoixBoss() {
 
   const votes = draft.votes_boss || {};
   const nom = role => pseudoColore(role); // couleur de son rôle
-  const libelle = vote => vote === "relancer" ? "veut relancer 🎲" : "confirme le boss ✓";
+  const libelle = vote => vote === "relancer" ? `veut relancer <img class="icone-voeu" src="/DB/images/others/Item_Intertwined_Fate.webp" alt="">` : "confirme le boss ✓";
   const message = document.getElementById("message-boss");
   const nbRelances = draft.relances_boss || 0;
   const plusDeRelance = nbRelances >= MAX_RELANCES_BOSS;

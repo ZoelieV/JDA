@@ -113,7 +113,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=36";
+    lien.href = "/commun/personnalisation.css?v=37";
     document.head.appendChild(lien);
   }
 
@@ -352,7 +352,7 @@
         : focus ? "Focus du tirage : il se gagne seulement par tirage."
         : texteRikoyns(prixCosmetique(cosmetique)),
       action: exclusif ? null
-        : focus ? { texte: "🎲 Voir le tirage", surClic }
+        : focus ? { texte: `${ICONE_VOEU} Voir le tirage`, surClic }
         : { texte: dansPanier ? "Retirer du panier" : `${ICONE_PANIER} Ajouter au panier`, surClic }
     });
   }
@@ -361,6 +361,8 @@
 
   // Icône du panier (à la place de l'émoji 🛒).
   const ICONE_PANIER = `<img class="icone-panier" src="/DB/images/others/panier.webp?v=2" alt="Panier">`;
+  // Icône des vœux (Intertwined Fate) à la place de l'émoji 🎲.
+  const ICONE_VOEU = `<img class="icone-voeu" src="/DB/images/others/Item_Intertwined_Fate.webp" alt="">`;
 
   const totalPanier = () => [...panier.keys()].reduce((total, id) => total + prixCosmetique(id), 0);
 
@@ -388,7 +390,8 @@
     // Nom en texte (jamais interprété comme du HTML).
     zone.querySelector(".perso-tirage-nom").textContent = article?.nom || "Ce cosmétique";
     const ok = await confirmer({
-      titre: "🎲 Exclusif au tirage",
+      titre: "Exclusif au tirage",
+      icone: ICONE_VOEU,
       contenu: zone,
       ok: surPage ? "Tenter ma chance" : "Aller aux tirages",
       annuler: "Plus tard",
@@ -745,7 +748,7 @@
       const exclusif = estExclusif(cosmetique);
       const focus = estFocusTirage(cosmetique);
       const montant = prixCosmetique(cosmetique);
-      badge.innerHTML = exclusif ? "Exclusif" : focus ? "🎲 Tirage" : `${montant} ${ICONE_KOYN}`;
+      badge.innerHTML = exclusif ? "Exclusif" : focus ? `${ICONE_VOEU} Tirage` : `${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
       bouton.title = `${titre} — ${exclusif ? "exclusif" : focus ? "focus du tirage (page Cosmétiques)" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
       if (image) {

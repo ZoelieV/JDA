@@ -3450,3 +3450,13 @@ h1 {
 .legende-preselection-j2 {
   color: var(--couleur-j2);
 }
+
+/* Icône des vœux (Intertwined Fate) dans le message de vote du boss, à la
+   place de l'émoji 🎲. */
+.icone-voeu {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.25em;
+  object-fit: contain;
+}

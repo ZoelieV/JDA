@@ -259,7 +259,7 @@
     fenetre.innerHTML = `
       <h3 class="perso-fenetre-titre">${focus ? "✨ Légendaire ! ✨" : "Tirage"}</h3>
       <div class="perso-gain-carte contour-${rarete}">
-        <div class="perso-gain-dos" aria-hidden="true">🎲</div>
+        <div class="perso-gain-dos" aria-hidden="true"><img class="icone-voeu" src="/DB/images/others/Item_Intertwined_Fate.webp" alt=""></div>
         <div class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</div>
       </div>
       <p class="perso-gain-nom"><strong></strong><small>${info.type}</small>${htmlRarete(rarete)}${htmlDoublon({ doublon, remboursement })}</p>
@@ -312,7 +312,7 @@
       carte.title = `${info.nom} (${info.type}) : clic pour l'équiper`;
       carte.innerHTML = `
         <span class="perso-gain-carte">
-          <span class="perso-gain-dos" aria-hidden="true">🎲</span>
+          <span class="perso-gain-dos" aria-hidden="true"><img class="icone-voeu" src="/DB/images/others/Item_Intertwined_Fate.webp" alt=""></span>
           <span class="perso-gain-face">${info.image ? `<img src="${info.image}" alt="">` : ""}</span>
         </span>
         <span class="perso-gains-nom"></span>${htmlRarete(rarete)}${htmlDoublon({ doublon, remboursement })}`;

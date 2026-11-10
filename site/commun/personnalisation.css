@@ -1190,7 +1190,7 @@
   object-fit: contain;
 }
 
-/* Gain : carte qui se retourne (dos 🎲, puis le cosmétique). */
+/* Gain : carte qui se retourne (dos Intertwined Fate, puis le cosmétique). */
 .perso-gain-carte {
   position: relative;
   width: min(18rem, 100%);
@@ -1605,6 +1605,25 @@
 }
 
 /* Icône du panier (cf. ICONE_PANIER, personnalisation.js), à la taille du texte. */
+/* Icône des vœux (Intertwined Fate), taille d'un émoji ; sélecteur précis
+   dans le prix pour ne pas prendre la taille des images de cosmétiques. */
+.icone-voeu,
+.perso-choix-image .perso-prix .icone-voeu {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.25em;
+  object-fit: contain;
+  filter: none;
+}
+
+/* Dos des cartes de gain : Intertwined Fate en grand. */
+.perso-gain-dos .icone-voeu {
+  width: 60%;
+  height: 60%;
+  filter: drop-shadow(0 0 0.5rem rgba(245, 197, 66, 0.6));
+}
+
 .icone-panier {
   width: 1.25em;
   height: 1.25em;
