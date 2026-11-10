@@ -488,12 +488,13 @@ async function terminerSiComplet(roomId, draft) {
   draft.phase = "termine";
   await sauvegarder(roomId, draft);
   draft.id_partie = await archiver(draft);
-  // Rikoyns de chaque joueur (plafond : mêmes coéquipiers), écran de fin.
+  // Rikoyns de chaque joueur (1 partie récompensée par jour, cf.
+  // MAX_WORLD_BOSS_PAR_JOUR), écran de fin.
   if (draft.id_partie) {
     draft.koyns = await crediterPartie(draft.joueurs.map(id => ({
       discordId: id,
       adversaires: draft.joueurs.filter(autre => autre !== id)
-    })), `wb:${draft.id_partie}`);
+    })), `wb:${draft.id_partie}`, null, { worldBoss: true });
   }
   try {
     await sauvegarder(roomId, draft);

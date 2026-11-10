@@ -123,6 +123,7 @@ function htmlGainKoyns(gain) {
   if (!gain) return "";
   const texte = gain.montant > 0 ? `+${gain.montant} ${ICONE_KOYN}`
     : gain.raison === "plafond" ? "Pas de Rikoyns : 3 games récompensées par jour au plus contre les mêmes adversaires (reset à 4 h)"
+      : gain.raison === "plafond_wb" ? "Pas de Rikoyns : 1 Random world boss récompensé par jour (reset à 4 h)"
       : gain.raison === "suspicion" ? "Pas de Rikoyns : temps jugés suspects par l'anti-triche"
         : "";
   return texte ? `<p class="ligne-koyns${gain.montant > 0 ? " gain" : ""}">${texte}</p>` : "";

@@ -4,7 +4,8 @@
 //
 // Gains :
 // - KOYNS_PAR_MATCH à chaque joueur d'un match réel terminé : 1v1 (room
-//   privée, matchmaking, classé), en équipe, Random world boss. Jamais en
+//   privée, matchmaking, classé), en équipe, Random world boss (une seule
+//   partie récompensée par journée, cf. MAX_WORLD_BOSS_PAR_JOUR). Jamais en
 //   entraînement, ni en litige, ni quand l'anti-triche a un soupçon (cf.
 //   _lib/sanctions.js) ; repris si un administrateur invalide le match
 //   ensuite (signalement) ; donnés si un litige est republié. Joueur (ou
@@ -45,6 +46,11 @@ const { VARIANTES_PERSONNAGES, SKINS_PERSONNAGES, imagesSkin } = require("../../
 const KOYNS_PAR_MATCH = 5;
 const KOYNS_ABANDON = 1;
 const MAX_GAMES_PAR_ADVERSAIRE = 3;
+// Random world boss : au plus 1 partie récompensée par journée (reset à
+// 4 h), quels que soient les coéquipiers ; mouvements notés avec
+// adversaires = CLE_WORLD_BOSS (séparés du plafond des matchs).
+const MAX_WORLD_BOSS_PAR_JOUR = 1;
+const CLE_WORLD_BOSS = "world_boss";
 const DEPART_MINI_ADMIN = 100;
 // Catalogue complet : ~6000 Rikoyns (429 cosmétiques au 2026-10-21), plus
 // des imports de Mon image.
@@ -329,7 +335,9 @@ async function acheterCosmetique(discordId, id) {
 // "suspicion"), pour l'écran de fin.
 // participants : [{ discordId, adversaires, abandon }] (abandon : a
 // déclaré « Abandon » au boss -> KOYNS_ABANDON au lieu de KOYNS_PAR_MATCH).
-async function crediterPartie(participants, ref, refus = null) {
+// worldBoss : plafond du Random world boss (MAX_WORLD_BOSS_PAR_JOUR, raison
+// "plafond_wb") au lieu de celui par adversaires.
+async function crediterPartie(participants, ref, refus = null, { worldBoss = false } = {}) {
   const resultat = {};
   const debut = new Date(debutJournee()).toISOString();
   for (const { discordId, adversaires, abandon } of participants) {
@@ -338,7 +346,8 @@ async function crediterPartie(participants, ref, refus = null) {
       resultat[discordId] = { montant: 0, raison: refus };
       continue;
     }
-    const cle = [...new Set(adversaires.filter(Boolean).map(String))].sort().join(",") || "seul";
+    const cle = worldBoss ? CLE_WORLD_BOSS : [...new Set(adversaires.filter(Boolean).map(String))].sort().join(",") || "seul";
+    const max = worldBoss ? MAX_WORLD_BOSS_PAR_JOUR : MAX_GAMES_PAR_ADVERSAIRE;
     const { count, error } = await supabase
       .from("koyns_mouvements")
       .select("id", { count: "exact", head: true })
@@ -351,8 +360,8 @@ async function crediterPartie(participants, ref, refus = null) {
       resultat[discordId] = { montant: 0, raison: null };
       continue;
     }
-    if (count >= MAX_GAMES_PAR_ADVERSAIRE) {
-      resultat[discordId] = { montant: 0, raison: "plafond" };
+    if (count >= max) {
+      resultat[discordId] = { montant: 0, raison: worldBoss ? "plafond_wb" : "plafond" };
       continue;
     }
     const montant = abandon ? KOYNS_ABANDON : KOYNS_PAR_MATCH;
