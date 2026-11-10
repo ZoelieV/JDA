@@ -374,7 +374,8 @@
       const reponse = await fetch(`/api/auth/me${depuis ? `?depuis=${encodeURIComponent(depuis)}` : ""}`, { credentials: "include" });
 
       const donneesMoi = await reponse.json().catch(() => ({}));
-      // Lien Random world boss du menu Historique (cf. commun/site.js).
+      // Lien Random world boss du menu Historique (cf. commun/site.js) et
+      // phrases des règles qui en parlent (regles_completes.html).
       if (donneesMoi.world_boss) {
         document.querySelectorAll(".carte-world-boss").forEach(lien => { lien.hidden = false; });
       }
