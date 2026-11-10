@@ -249,3 +249,14 @@
   margin: 0 0 1rem;
   text-align: center;
 }
+
+/* « Lancer le tutoriel guidé » : doré sur fond gris (le transparent était
+   peu lisible sur le fond d'écran). */
+.relancer-tutoriel .tuto-hoyolab-ouvrir {
+  background: rgba(38, 38, 44, 0.92);
+  font-weight: bold;
+}
+
+.relancer-tutoriel .tuto-hoyolab-ouvrir:hover {
+  background: rgba(58, 54, 44, 0.95);
+}
