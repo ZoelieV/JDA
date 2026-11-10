@@ -539,14 +539,14 @@
   display: none;
 }
 
-/* Cosmétique pas encore possédé : grisé, symbole en grand par-dessus
+/* Cosmétique pas encore possédé : assombri, symbole en grand par-dessus
    (centré, sans dépasser du cadre, à 70 %) et prix en bas. */
 .perso-choix-image.verrouille {
   position: relative;
 }
 
 .perso-choix-image.verrouille img {
-  filter: grayscale(1) brightness(0.55);
+  filter: brightness(0.45) grayscale(0.4);
 }
 
 .perso-symbole {
