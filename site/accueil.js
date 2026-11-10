@@ -5,7 +5,7 @@
 //   page du site (commun/site.js), logo, bouton Événements et modes de jeu
 //   au centre, sans la grille de cartes (accueil.css).
 // - "panneau" : Créer un match et Cosmétiques restent au centre, les autres
-//   cartes sont rangées dans le panneau de gauche (20rem),
+//   cartes sont rangées dans le panneau de gauche (25rem),
 //   plié / déplié par le bouton ☰. Déplié par défaut sur ordi (choix gardé
 //   dans ce navigateur), plié sur téléphone (il passe alors par-dessus la
 //   page).
