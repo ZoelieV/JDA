@@ -111,9 +111,10 @@
 }
 
 /* Ordi : 3 cartes par ligne (grille de 6 colonnes, chaque carte en couvre
-   2), Joueurs avant Cosmétiques, Tutoriel et Événements centrés
-   ensemble sur la dernière ligne ; pour les administrateurs, Tutoriel,
-   Événements et Administration remplissent la dernière ligne.
+   2) : Créer un match, Classement, Joueurs ; Historique, Événements,
+   Cosmétiques ; Règles et Tutoriel centrés sur la dernière ligne (avec
+   Administration pour les administrateurs : 3 cartes). Ordre de la page
+   inchangé (panneau, téléphone).
    Entre-deux : 2 par ligne, Administration seule centrée sur la dernière. */
 @media (min-width: 1001px) {
   .accueil-sections {
@@ -124,28 +125,27 @@
     grid-column: span 2;
   }
 
-  .carte-derniere {
+  html[data-accueil="cartes"] .accueil-sections .principale { order: 1; }
+  html[data-accueil="cartes"] .carte-classement { order: 2; }
+  html[data-accueil="cartes"] .carte-tous-comptes { order: 3; }
+  html[data-accueil="cartes"] .carte-historique { order: 4; }
+  html[data-accueil="cartes"] .carte-evenements { order: 5; }
+  html[data-accueil="cartes"] .carte-cosmetiques { order: 6; }
+  html[data-accueil="cartes"] .carte-regles { order: 7; }
+  html[data-accueil="cartes"] .carte-derniere { order: 8; }
+  html[data-accueil="cartes"] .carte-admin { order: 9; }
+
+  .carte-regles {
     grid-column: 2 / span 2;
   }
 
-  .carte-evenements {
+  .carte-derniere {
     grid-column: 4 / span 2;
   }
 
-  .accueil-sections:has(.carte-admin:not([hidden])) .carte-derniere,
-  .accueil-sections:has(.carte-admin:not([hidden])) .carte-evenements {
+  .accueil-sections:has(.carte-admin:not([hidden])) .carte-regles,
+  .accueil-sections:has(.carte-admin:not([hidden])) .carte-derniere {
     grid-column: span 2;
-  }
-
-  /* 1re ligne : Joueurs au milieu, Cosmétiques à droite. */
-  .carte-tous-comptes {
-    grid-row: 1;
-    grid-column: 3 / span 2;
-  }
-
-  .carte-cosmetiques {
-    grid-row: 1;
-    grid-column: 5 / span 2;
   }
 }
 
