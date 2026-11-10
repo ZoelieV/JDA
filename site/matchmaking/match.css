@@ -1944,7 +1944,8 @@ h1 {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "j1 j2"
-      "bans bans"
+      "bansj1 bansj1"
+      "bansj2 bansj2"
       "pool pool";
     gap: 0.625rem;
   }
@@ -1954,9 +1955,18 @@ h1 {
     display: contents;
   }
 
+  /* Une ligne par joueur : les 2 blocs dans la même case se recouvraient
+     quand les 2 joueurs ont des bans (ou des armes bannies). */
   .bans-equilibrage {
-    grid-area: bans;
     margin-bottom: 0;
+  }
+
+  #bans-eq-j1 {
+    grid-area: bansj1;
+  }
+
+  #bans-eq-j2 {
+    grid-area: bansj2;
   }
 
   .bans-eq-grille {
@@ -2129,7 +2139,8 @@ h1 {
     grid-template-areas:
       "boss boss"
       "j1 j2"
-      "bans bans"
+      "bansj1 bansj1"
+      "bansj2 bansj2"
       "recherche recherche"
       "libres libres"
       "figes figes"
@@ -2165,8 +2176,12 @@ h1 {
     grid-area: j2;
   }
 
-  #zone-match.mode-draft .bans-equilibrage {
-    grid-area: bans;
+  #zone-match.mode-draft #bans-eq-j1 {
+    grid-area: bansj1;
+  }
+
+  #zone-match.mode-draft #bans-eq-j2 {
+    grid-area: bansj2;
   }
 
   #zone-match.mode-draft .zone-recherche {
@@ -2323,7 +2338,8 @@ h1 {
       "centre centre"
       "tj1 tj2"
       "j1 j2"
-      "bans bans";
+      "bansj1 bansj1"
+      "bansj2 bansj2";
   }
 
   #zone-match.mode-draft #recap-temps-j1 {
