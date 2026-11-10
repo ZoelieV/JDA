@@ -33,9 +33,11 @@ html.site-classique {
   --zoom-barres: 0.85;
 }
 
-/* Bouton Feedback flottant remplacé par celui du pied de page ; lien
+/* Bouton Feedback flottant remplacé par celui du pied de page (aussi sur
+   l'accueil en Panneau / Cartes : html.pied-accueil) ; lien
    "Accueil" des pages remplacé par le logo de l'en-tête. */
 html.site-classique .bouton-feedback,
+html.pied-accueil .bouton-feedback,
 html.avec-entete-site .lien-accueil {
   display: none;
 }
