@@ -17,6 +17,11 @@
   const telephone = window.matchMedia("(max-width: 700px)");
   const grille = document.querySelector(".accueil-sections");
   const panneau = document.getElementById("accueil-panneau");
+  // Cartes du panneau dans une grille à 2 colonnes (namecards de même
+  // largeur, cf. accueil.css), le pied de page en dessous.
+  const listePanneau = document.createElement("div");
+  listePanneau.className = "panneau-cartes";
+  panneau.appendChild(listePanneau);
   const bouton = document.querySelector(".accueil-menu");
   // Ordre d'origine des cartes (retour à l'affichage classique).
   const cartes = [...grille.querySelectorAll(".carte-section")];
@@ -43,7 +48,7 @@
 
   function ranger() {
     const avecPanneau = document.documentElement.dataset.accueil === "panneau";
-    cartes.forEach(carte => (avecPanneau && !resteAuCentre(carte) ? panneau : grille).appendChild(carte));
+    cartes.forEach(carte => (avecPanneau && !resteAuCentre(carte) ? listePanneau : grille).appendChild(carte));
     // Pied de page de l'accueil (commun/site.js) : en bas du panneau.
     const pied = document.querySelector(".site-pied");
     if (pied) (avecPanneau ? panneau : document.body).appendChild(pied);

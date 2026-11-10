@@ -272,10 +272,26 @@ html[data-accueil="classique"] .accueil-panneau {
    classique ne s'appliquent pas ici), format téléphone (image à gauche,
    texte à droite), comme commun/namecards.css sous 700 px. */
 .accueil-panneau .carte-section {
-  grid-column: 1 !important;
+  grid-column: 1 / -1 !important;
   grid-row: auto !important;
   flex-direction: row;
   align-items: stretch;
+}
+
+/* Grille du panneau : namecards toutes de la même largeur (12rem, rognées
+   par la gauche jusqu'à 7,2rem, soit 40 % au plus, si le nom le plus long
+   manque de place), noms dans la 2e colonne. */
+.panneau-cartes {
+  display: grid;
+  grid-template-columns: minmax(7.2rem, 12rem) minmax(max-content, 1fr);
+  gap: 0.75rem;
+}
+
+.accueil-panneau .carte-section:not([hidden]) {
+  display: grid;
+  grid-template-columns: subgrid;
+  /* Pas d'écart hérité de la grille entre la namecard et le nom. */
+  column-gap: 0;
 }
 
 /* Namecard entière (840 × 400), largeur fixe ; la carte a exactement sa
@@ -286,12 +302,11 @@ html[data-accueil="classique"] .accueil-panneau {
   height: calc(12rem * 20 / 42 + 2px);
 }
 
-/* Nom trop long pour la place (téléphone) : namecard rognée par la gauche,
-   de 40 % de sa largeur au plus (7,2rem minimum), hauteur inchangée. */
+/* Namecard : largeur de la 1re colonne, rognée par la gauche, hauteur
+   inchangée. */
 .accueil-panneau .carte-section > img {
-  flex: 0 1 12rem;
-  width: 12rem;
-  min-width: 7.2rem;
+  width: 100%;
+  min-width: 0;
   height: 100%;
   aspect-ratio: auto;
   align-self: stretch;
