@@ -54,7 +54,7 @@
     if (window.Personnalisation) return Promise.resolve();
     promessePersonnalisation ??= new Promise((resoudre, rejeter) => {
       const script = document.createElement("script");
-      script.src = "/commun/personnalisation.js?v=63";
+      script.src = "/commun/personnalisation.js?v=64";
       script.onload = resoudre;
       script.onerror = () => {
         promessePersonnalisation = null;
