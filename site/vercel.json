@@ -283,7 +283,7 @@
   ],
   "headers": [
     {
-      "source": "/((?!admin/litiges$).*)",
+      "source": "/((?!admin/litiges$|comptes$).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -316,7 +316,7 @@
       ]
     },
     {
-      "source": "/admin/litiges",
+      "source": "/(admin/litiges|comptes)",
       "headers": [
         {
           "key": "X-Content-Type-Options",

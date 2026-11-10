@@ -72,7 +72,9 @@ async function agir(action, corps = {}) {
 
 function htmlNom(id) {
   const infos = draft.infos?.[id] || {};
-  return `${infos.avatar ? `<img class="avatar-mini" src="${echapperHtml(infos.avatar)}" alt="">` : ""}<span class="pseudo">${echapperHtml(infos.nom || "Joueur")}</span>`;
+  // Clic : box du joueur (commun/profil_joueur.js) ; display: contents
+  // garde la mise en page de la photo et du pseudo.
+  return `<span class="lien-profil" data-profil="${echapperHtml(id)}">${infos.avatar ? `<img class="avatar-mini" src="${echapperHtml(infos.avatar)}" alt="">` : ""}<span class="pseudo">${echapperHtml(infos.nom || "Joueur")}</span></span>`;
 }
 
 function badgesJoueur(id) {

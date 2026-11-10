@@ -122,6 +122,7 @@ function joueursAffiches() {
 function creerLigne(joueur) {
   const ligne = document.createElement("div");
   ligne.className = "ligne-classement";
+  ligne.dataset.profil = joueur.discord_id;
   if (joueur.discord_id === moiDiscordId) ligne.classList.add("moi");
   if (joueur.rang <= 3) ligne.classList.add(`podium-${joueur.rang}`);
 

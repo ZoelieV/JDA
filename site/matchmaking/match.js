@@ -1128,9 +1128,12 @@ function rendreEntetesJoueurs() {
   [["entete-joueur1", joueur1, "j1"], ["entete-joueur2", joueur2, "j2"]].forEach(([containerId, joueur, role]) => {
     const container = document.getElementById(containerId);
     if (!joueur) {
+      delete container.dataset.profil;
       container.innerHTML = `<span class="vide">En attente…</span>`;
       return;
     }
+    // Clic : box du joueur (commun/profil_joueur.js).
+    container.dataset.profil = joueur.discordId || "";
 
     const pret = draft && draft[`pret_${role}`];
     const afficherPastille = draft && (draft.phase === "choix_box" || draft.phase === "analyse");
@@ -1781,7 +1784,7 @@ function titreTableauJoueur(role, nomJoueur) {
   const namecard = encodeURI(`/DB/images/${joueur?.data?.parametres?.banniere || NAMECARD_DEFAUT}`);
   const tagRole = draft?.roles_tires ? `<span class="tag-role">${role.toUpperCase()}</span>` : "";
   return `
-    <div class="namecard-tableau" style="--namecard: url(&quot;${echapperHtml(namecard)}&quot;)">
+    <div class="namecard-tableau" data-profil="${echapperHtml(joueur?.discordId || "")}" style="--namecard: url(&quot;${echapperHtml(namecard)}&quot;)">
       <span class="pastille-presence pastille-${role} cache" data-role="${role}"></span>
       ${joueur?.avatar ? `<img class="avatar-tableau" src="${joueur.avatar}" alt="">` : ""}
       <span class="nom-complet">${echapperHtml(nomJoueur)}</span>

@@ -17,13 +17,15 @@ const BANNIERE2_DEFAUT_TOURNOI = "namecards/banners/Namecard_Banner_Mondstadt_He
 // Joueur d'un match de l'arbre (1v1) : sa bannière, photo à gauche (format
 // commun .banniere-joueur.cote-gauche, commun/entete.css ; adresse absolue
 // obligatoire dans --banniere2). Équipes : leur nom seulement.
-function campBanniere(id) {
+// cliquable : ouvre sa box (commun/profil_joueur.js), sauf quand la case
+// sert à placer les joueurs (data-place).
+function campBanniere(id, cliquable = true) {
   const { tournoi, joueurs } = vue;
   if (tournoi.format === "equipe") return `<span class="nom-camp-arbre">${nomParticipant(id)}</span>`;
   const joueur = joueurs[id];
   const banniere = encodeURI(`/DB/images/${joueur?.banniere2 || BANNIERE2_DEFAUT_TOURNOI}`);
   const photo = joueur?.avatar ? `<img class="photo-joueur" src="${echapperTournoi(joueur.avatar)}" alt="" loading="lazy">` : `<span class="photo-joueur"></span>`;
-  return `<span class="banniere-joueur cote-gauche" style="--banniere2: url(&quot;${echapperTournoi(banniere)}&quot;)">${photo}<span class="nom-camp-arbre">${echapperTournoi(joueur?.nom || "Joueur")}</span></span>`;
+  return `<span class="banniere-joueur cote-gauche"${cliquable ? ` data-profil="${echapperTournoi(id)}"` : ""} style="--banniere2: url(&quot;${echapperTournoi(banniere)}&quot;)">${photo}<span class="nom-camp-arbre">${echapperTournoi(joueur?.nom || "Joueur")}</span></span>`;
 }
 
 function nomParticipant(id) {
@@ -308,7 +310,7 @@ function rendreArbre() {
             match.statut === "termine" && id ? (match.vainqueur === id ? "gagnant" : "perdant") : "",
             modifiable && t === 0 && id ? "cliquable" : "",
             placeChoisie && placeChoisie === id ? "choisi" : ""].join(" ");
-          return `<div class="${classes}"${modifiable && t === 0 && id ? ` data-place="${id}"` : ""}>${id ? campBanniere(id) : `<span class="vide">${t === 0 && match.exempt ? "exempt" : "à venir"}</span>`}</div>`;
+          return `<div class="${classes}"${modifiable && t === 0 && id ? ` data-place="${id}"` : ""}>${id ? campBanniere(id, !(modifiable && t === 0)) : `<span class="vide">${t === 0 && match.exempt ? "exempt" : "à venir"}</span>`}</div>`;
         };
         let actions = "";
         if (match.statut === "en_cours") actions += `<a class="bouton-tournoi petit principal" href="${lienRoom(match.room_id)}">${estMoi(match.a) || estMoi(match.b) ? "Rejoindre" : "Regarder"}</a>`;

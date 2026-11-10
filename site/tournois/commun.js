@@ -78,7 +78,7 @@ function modeTournoi(tournoi) {
 function htmlJoueurTournoi(joueurs, id) {
   const joueur = joueurs?.[id];
   const photo = joueur?.avatar ? `<img src="${echapperTournoi(joueur.avatar)}" alt="" loading="lazy">` : `<span class="sans-photo"></span>`;
-  return `<span class="joueur-tournoi">${photo}<span>${echapperTournoi(joueur?.nom || "Joueur")}</span></span>`;
+  return `<span class="joueur-tournoi" data-profil="${echapperTournoi(id || "")}">${photo}<span>${echapperTournoi(joueur?.nom || "Joueur")}</span></span>`;
 }
 
 // ---- Image du tournoi (cf. changerImage dans api/_lib/tournois.js) ----

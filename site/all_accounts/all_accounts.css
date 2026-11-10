@@ -954,3 +954,29 @@ h1, h2 {
     font-size: 1rem;
   }
 }
+
+/* ---- Profil ouvert depuis une autre page (iframe de
+   commun/profil_joueur.js, cf. PAGE_INTEGREE dans all_accounts.js) : la
+   fenêtre seule, sur fond transparent ; l'assombrissement et le flou sont
+   faits par la page parente. ---- */
+html.page-integree,
+html.page-integree body {
+  background: transparent !important;
+  overflow: hidden;
+}
+
+html.page-integree body {
+  margin: 0;
+  padding: 0;
+}
+
+html.page-integree body::before,
+html.page-integree body > :not(#modal):not(dialog) {
+  display: none !important;
+}
+
+html.page-integree #modal {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

@@ -816,6 +816,18 @@ function ajusterCouleur(r, v, b) {
   return [r1, v1, b1].map(valeur => Math.round((valeur + m) * 255));
 }
 
+// Profil ouvert depuis une autre page (commun/profil_joueur.js) : cette
+// page est chargée dans un iframe par-dessus, sans la liste des comptes ;
+// fermer la fenêtre prévient la page parente.
+const PROFIL_DEMANDE = new URLSearchParams(location.search).get("profil");
+const PAGE_INTEGREE = !!PROFIL_DEMANDE && window.self !== window.top;
+if (PAGE_INTEGREE) document.documentElement.classList.add("page-integree");
+
+function prevenirParent(type) {
+  if (PAGE_INTEGREE) window.parent.postMessage({ type }, location.origin);
+}
+
+// nom : facultatif (sinon celui du profil chargé). Renvoie true si ouvert.
 async function ouvrirProfil(discordId, nom) {
   try {
     const dejaCharges = personnagesBase.length > 0 && armesData.length > 0;
@@ -826,6 +838,7 @@ async function ouvrirProfil(discordId, nom) {
     ]);
 
     profilCourant = profil;
+    nom ||= profil.discord_global_name || profil.discord_username || "Joueur";
     // Ancien Voyageur unique -> Voyageur Anemo (cf. commun/variantes.js).
     migrerCollectionPersos(profil.data?.characters);
     personnagesBase = personnages;
@@ -855,28 +868,49 @@ async function ouvrirProfil(discordId, nom) {
     });
     rendreProfilBox();
     document.getElementById("modal").classList.add("active");
+    return true;
   } catch (error) {
     console.error(error);
-    alerterSite("Erreur lors du chargement du profil.");
+    await alerterSite("Erreur lors du chargement du profil.");
+    return false;
   }
+}
+
+function fermerModal() {
+  document.getElementById("modal").classList.remove("active");
+  prevenirParent("jda-fermer-profil");
 }
 
 function initialiserModal() {
   const modal = document.getElementById("modal");
-  const closeBtn = document.getElementById("close-modal");
-
-  closeBtn.addEventListener("click", () => {
-    modal.classList.remove("active");
-  });
-
+  document.getElementById("close-modal").addEventListener("click", fermerModal);
   modal.addEventListener("click", event => {
-    if (event.target === modal) {
-      modal.classList.remove("active");
-    }
+    if (event.target === modal) fermerModal();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("active") && !document.querySelector(".fenetre-site")) fermerModal();
   });
 }
 
+// Fenêtre seule, par-dessus une autre page (cf. PAGE_INTEGREE).
+async function demarrerIntegre() {
+  fetch("/api/auth/me", { credentials: "include" })
+    .then(reponse => reponse.ok ? reponse.json() : null)
+    .then(session => {
+      moiDiscordId = session?.user?.id || null;
+      if (profilCourant) mettreAJourBarreOutils();
+    })
+    .catch(() => {});
+  initialiserModal();
+  initialiserBarreOutils();
+  initialiserSelecteursVueEtBox();
+  initialiserGrille();
+  const ouvert = await ouvrirProfil(PROFIL_DEMANDE);
+  prevenirParent(ouvert ? "jda-profil-pret" : "jda-fermer-profil");
+}
+
 async function demarrer() {
+  if (PAGE_INTEGREE) return demarrerIntegre();
   try {
     // Compte connecté (sans bloquer la page) : pour le tri des favoris.
     fetch("/api/auth/me", { credentials: "include" })
@@ -893,6 +927,8 @@ async function demarrer() {
     initialiserBarreOutils();
     initialiserSelecteursVueEtBox();
     initialiserGrille();
+    // /comptes?profil=<discord_id> : ouvre directement sa box.
+    if (PROFIL_DEMANDE) ouvrirProfil(PROFIL_DEMANDE);
   } catch (error) {
     console.error(error);
     alerterSite("Erreur lors du chargement des comptes.");

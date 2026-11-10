@@ -378,14 +378,14 @@ function htmlJoueur(match, role, bansConnus) {
   // temps de l'équipe ; sinon la bannière du joueur avec son temps.
   const bannieres = match.equipe
     ? `<div class="bannieres-equipe">${membres.map(m => `
-        <div class="match-banniere banniere-joueur banniere-membre${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`/DB/images/${m.banniere2}`))}&quot;)">
+        <div class="match-banniere banniere-joueur banniere-membre${role === "j1" ? " cote-gauche" : ""}" data-profil="${echapperHtml(m.discord_id || "")}" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`/DB/images/${m.banniere2}`))}&quot;)">
           ${m.avatar ? `<img class="match-avatar photo-joueur" src="${echapperHtml(m.avatar)}" alt="">` : ""}
           <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
           ${m.discord_id === match.equipe[role]?.chef ? `<span class="etiquette-resultat chef-equipe" title="Chef de l'équipe">★ Chef</span>` : ""}
         </div>`).join("")}
       </div>
       <div class="resultat-equipe">${etiquette}<span class="match-temps">${joueur.temps ? joueur.temps.affiche : "—"}</span></div>`
-    : `<div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
+    : `<div class="match-banniere banniere-joueur${role === "j1" ? " cote-gauche" : ""}" data-profil="${echapperHtml(joueur.discord_id || "")}" style="--banniere2: url(&quot;${echapperHtml(banniere)}&quot;)">
         ${joueur.avatar ? `<img class="match-avatar photo-joueur" src="${joueur.avatar}" alt="">` : ""}
         <span class="match-nom"></span>
         ${htmlRangTrophees(joueur.trophees)}
@@ -538,7 +538,7 @@ function creerLigneWorldBoss(partie) {
   ligne.innerHTML = `
     <div class="match-joueur match-j1">
       <div class="bannieres-equipe">${partie.membres.map(m => `
-        <div class="match-banniere banniere-joueur banniere-membre cote-gauche" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`/DB/images/${m.banniere2}`))}&quot;)">
+        <div class="match-banniere banniere-joueur banniere-membre cote-gauche" data-profil="${echapperHtml(m.discord_id || "")}" style="--banniere2: url(&quot;${echapperHtml(encodeURI(`/DB/images/${m.banniere2}`))}&quot;)">
           ${m.avatar ? `<img class="match-avatar photo-joueur" src="${echapperHtml(m.avatar)}" alt="">` : ""}
           <span class="match-nom" data-membre="${echapperHtml(m.discord_id)}"></span>
           ${htmlMedailleTheatre(m.theatre)}
