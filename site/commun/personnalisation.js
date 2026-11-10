@@ -113,7 +113,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=34";
+    lien.href = "/commun/personnalisation.css?v=35";
     document.head.appendChild(lien);
   }
 
@@ -751,7 +751,7 @@
       if (image) {
         const loupe = document.createElement("span");
         loupe.className = "perso-loupe";
-        loupe.textContent = "🔍";
+        loupe.innerHTML = `<img class="icone-loupe" src="/DB/images/others/loupe.webp" alt="Loupe">`;
         loupe.title = "Voir en grand";
         bouton.appendChild(loupe);
       }
