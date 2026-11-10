@@ -358,7 +358,7 @@
   // ---- Panier ----
 
   // Icône du panier (à la place de l'émoji 🛒).
-  const ICONE_PANIER = `<img class="icone-panier" src="/DB/images/others/panier.webp" alt="Panier">`;
+  const ICONE_PANIER = `<img class="icone-panier" src="/DB/images/others/panier.webp?v=2" alt="Panier">`;
 
   const totalPanier = () => [...panier.keys()].reduce((total, id) => total + prixCosmetique(id), 0);
 
