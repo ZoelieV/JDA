@@ -170,9 +170,15 @@ document.querySelectorAll(".mode-match:not(.mode-plus)").forEach(bouton => {
 });
 
 // Créer une room : Auto et Classique, puis « Plus d'options » affiche tous
-// les modes (dans l'ordre des paliers).
+// les modes (dans l'ordre des paliers) ; devient « Moins d'options » pour
+// les replier.
 document.querySelectorAll(".mode-plus").forEach(bouton => {
-  bouton.addEventListener("click", () => bouton.closest(".modes-match").classList.remove("modes-reduits"));
+  bouton.addEventListener("click", () => {
+    const reduits = bouton.closest(".modes-match").classList.toggle("modes-reduits");
+    bouton.setAttribute("aria-expanded", String(!reduits));
+    bouton.querySelector(".mode-plus-texte").textContent = reduits ? "Plus d'options" : "Moins d'options";
+    bouton.querySelector(".mode-plus-fleche").textContent = reduits ? "▼" : "▲";
+  });
 });
 
 // ---- Mode entraînement ----
