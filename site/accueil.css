@@ -286,12 +286,17 @@ html[data-accueil="classique"] .accueil-panneau {
   height: calc(12rem * 20 / 42 + 2px);
 }
 
+/* Nom trop long pour la place (téléphone) : namecard rognée par la gauche,
+   de 40 % de sa largeur au plus (7,2rem minimum), hauteur inchangée. */
 .accueil-panneau .carte-section > img {
+  flex: 0 1 12rem;
   width: 12rem;
+  min-width: 7.2rem;
   height: 100%;
   aspect-ratio: auto;
   align-self: stretch;
-  flex-shrink: 0;
+  object-fit: cover;
+  object-position: right center;
 }
 
 /* Ordre du panneau : Classement, Joueurs, Cosmétiques, Historique, Règles,
@@ -336,6 +341,7 @@ html.pied-accueil .accueil-panneau .pied-contenu {
 }
 
 .accueil-panneau .carte-section-texte {
+  flex-shrink: 0;
   align-self: center;
   padding: 0.625rem 0.75rem;
 }
