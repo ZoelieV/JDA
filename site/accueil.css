@@ -111,7 +111,7 @@
 }
 
 /* Ordi : 3 cartes par ligne (grille de 6 colonnes, chaque carte en couvre
-   2), Tous les comptes avant Mon compte, Tutoriel et Événements centrés
+   2), Joueurs avant Cosmétiques, Tutoriel et Événements centrés
    ensemble sur la dernière ligne ; pour les administrateurs, Tutoriel,
    Événements et Administration remplissent la dernière ligne.
    Entre-deux : 2 par ligne, Administration seule centrée sur la dernière. */
@@ -137,13 +137,13 @@
     grid-column: span 2;
   }
 
-  /* 1re ligne : Tous les comptes au milieu, Mon compte à droite. */
+  /* 1re ligne : Joueurs au milieu, Cosmétiques à droite. */
   .carte-tous-comptes {
     grid-row: 1;
     grid-column: 3 / span 2;
   }
 
-  .carte-mon-compte {
+  .carte-cosmetiques {
     grid-row: 1;
     grid-column: 5 / span 2;
   }
@@ -186,7 +186,7 @@
 }
 
 /* ---- Affichage "panneau" (cf. accueil.js) : Créer un match et
-   Mon compte au centre (même taille que dans la grille classique), les
+   Cosmétiques au centre (même taille que dans la grille classique), les
    autres cartes dans le panneau de gauche (un tiers de l'écran), au format
    téléphone, plié / déplié par le bouton ☰. Affichages "cartes" et
    "classique" : ni bouton ni panneau. ---- */

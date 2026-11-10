@@ -25,7 +25,7 @@
   <meta name="theme-color" content="#1e1e1e">
   <link rel="stylesheet" href="/commun/theme.css?v=rem5">
   <link rel="stylesheet" href="/commun/namecards.css?v=3">
-  <link rel="stylesheet" href="/accueil.css?v=rem40">
+  <link rel="stylesheet" href="/accueil.css?v=rem41">
   <link rel="stylesheet" href="/commun/entete.css?v=rem49">
   <link rel="stylesheet" href="/commun/feedback.css?v=4">
   <link rel="stylesheet" href="/commun/site.css?v=20">
@@ -49,7 +49,7 @@
 
   <!-- Affichage "panneau" (cf. accueil.js) : bouton ☰ qui plie / déplie le
        panneau de gauche, où sont rangées les cartes autres que Créer un
-       match et Mon compte. -->
+       match et Cosmétiques. -->
   <button type="button" class="accueil-menu" aria-controls="accueil-panneau" aria-expanded="true" aria-label="Plier le menu" title="Plier le menu">
     <span></span><span></span><span></span>
   </button>
@@ -97,10 +97,13 @@
         </div>
       </a>
 
-      <a class="carte-section carte-mon-compte" href="/compte">
+      <!-- Mon compte : bouton du compte en haut à droite ; ici, les vœux
+           et cosmétiques (affichages Panneau et Cartes, la grille est
+           masquée en Classique). -->
+      <a class="carte-section carte-cosmetiques" href="/cosmetiques">
         <img src="/DB/images/namecards/Namecard_Background_Furina_Banquet.webp" alt="" loading="lazy">
         <div class="carte-section-texte">
-          <h2>Mon compte</h2>
+          <h2>Cosmétiques</h2>
         </div>
       </a>
 
@@ -159,6 +162,6 @@
 
 <script src="/commun/listes.js?v=1"></script>
 <script src="/commun/site.js?v=38"></script>
-<script src="/accueil.js?v=6"></script>
+<script src="/accueil.js?v=7"></script>
 </body>
 </html>
