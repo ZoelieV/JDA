@@ -539,13 +539,22 @@
   display: none;
 }
 
-/* Cosmétique pas encore possédé : assombri, cadenas et prix en bas. */
+/* Cosmétique pas encore possédé : grisé, symbole en grand par-dessus
+   (centré, sans dépasser du cadre, à 70 %) et prix en bas. */
 .perso-choix-image.verrouille {
   position: relative;
 }
 
 .perso-choix-image.verrouille img {
-  filter: brightness(0.45) grayscale(0.4);
+  filter: grayscale(1) brightness(0.55);
+}
+
+.perso-symbole {
+  position: absolute;
+  inset: 6%;
+  background: url("/DB/images/others/symbole_verrou.webp") center / contain no-repeat;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .perso-prix {
@@ -562,7 +571,7 @@
   white-space: nowrap;
 }
 
-/* Bannières (bandeaux fins) : cadenas et prix à gauche, centrés en hauteur. */
+/* Bannières (bandeaux fins) : prix à gauche, centrés en hauteur. */
 .perso-grille-banniere2 .perso-prix {
   left: 0.375rem;
   top: 50%;

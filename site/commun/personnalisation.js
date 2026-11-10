@@ -15,7 +15,7 @@
 // met à jour elle-même).
 //
 // Rikoyns (cf. commun/koyns.js) : les cosmétiques pas encore possédés sont
-// marqués d'un cadenas (prix, solde affiché en haut) ; un clic les met dans
+// marqués d'un symbole (prix, solde affiché en haut) ; un clic les met dans
 // le panier (ou les en retire), achetés ensemble depuis la fenêtre du
 // panier (confirmation au centre de l'écran) ; exclusifs : pas en vente.
 // Tirages : page Cosmétiques (cosmetiques/cosmetiques.js), dont « Équiper »
@@ -113,7 +113,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=30";
+    lien.href = "/commun/personnalisation.css?v=31";
     document.head.appendChild(lien);
   }
 
@@ -712,7 +712,7 @@
 
   // Une image cliquable ; choisir() applique le choix au brouillon.
   // image null : bouton texte (titre affiché), ex. "Importer une image".
-  // cosmetique : id du cosmétique (commun/koyns.js) ; pas possédé : cadenas
+  // cosmetique : id du cosmétique (commun/koyns.js) ; pas possédé : symbole
   // et prix, mis au panier (ou retiré) au clic.
   function creerChoix(image, titre, actif, choisir, classe = "", cosmetique = null) {
     const bouton = document.createElement("button");
@@ -734,12 +734,16 @@
       bouton.classList.add("verrouille");
       const dansPanier = panier.has(cosmetique);
       bouton.classList.toggle("dans-panier", dansPanier);
+      const symbole = document.createElement("span");
+      symbole.className = "perso-symbole";
+      symbole.setAttribute("aria-hidden", "true");
+      bouton.appendChild(symbole);
       const badge = document.createElement("span");
       badge.className = "perso-prix";
       const exclusif = estExclusif(cosmetique);
       const focus = estFocusTirage(cosmetique);
       const montant = prixCosmetique(cosmetique);
-      badge.innerHTML = exclusif ? "🔒 Exclusif" : focus ? "🎲 Tirage" : `${dansPanier ? ICONE_PANIER : "🔒"} ${montant} ${ICONE_KOYN}`;
+      badge.innerHTML = exclusif ? "Exclusif" : focus ? "🎲 Tirage" : `${dansPanier ? `${ICONE_PANIER} ` : ""}${montant} ${ICONE_KOYN}`;
       bouton.appendChild(badge);
       bouton.title = `${titre} — ${exclusif ? "exclusif" : focus ? "focus du tirage (page Cosmétiques)" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
       if (image) {
