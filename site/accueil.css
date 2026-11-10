@@ -187,7 +187,7 @@
 
 /* ---- Affichage "panneau" (cf. accueil.js) : Créer un match et
    Cosmétiques au centre (même taille que dans la grille classique), les
-   autres cartes dans le panneau de gauche (un tiers de l'écran), au format
+   autres cartes dans le panneau de gauche (20rem de large : namecard et nom, sans vide à droite), au format
    téléphone, plié / déplié par le bouton ☰. Affichages "cartes" et
    "classique" : ni bouton ni panneau. ---- */
 html[data-accueil="cartes"] .accueil-menu,
@@ -239,7 +239,7 @@ html[data-accueil="classique"] .accueil-panneau {
   left: 0;
   z-index: 150;
   box-sizing: border-box;
-  width: calc(100vw / 3);
+  width: 20rem;
   padding: 4.75rem 1.25rem 1.25rem;
   overflow-y: auto;
   display: grid;
@@ -303,7 +303,7 @@ html[data-accueil="classique"] .accueil-panneau {
   }
 
   html[data-accueil="panneau"] body.panneau-ouvert {
-    margin-left: calc(100vw / 3 + 1.25rem);
+    margin-left: calc(20rem + 1.25rem);
   }
 
   /* Les 2 cartes du centre, côte à côte, à la largeur exacte d'une carte
