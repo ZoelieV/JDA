@@ -849,6 +849,14 @@ function getValeurItem(item, vueActive, collectionProfil) {
     .map(instanceId => collectionProfil.full[instanceId] ?? -1));
 }
 
+// Arme : copie possédée au plus haut raffinement (celle comptée par
+// getValeurItem pour le tri).
+function meilleureInstanceArme(item, collectionProfil) {
+  const instances = getInstancesArme(item.id, collectionProfil);
+  return instances.reduce((meilleure, id) =>
+    (collectionProfil.full[id] ?? -1) > (collectionProfil.full[meilleure] ?? -1) ? id : meilleure, instances[0] ?? item.id);
+}
+
 function getValeursTri(vueActive, collectionProfil) {
   return {
     // Non possédé (grisé, full box) : compté comme C0 / R1, trié après les
@@ -1013,6 +1021,18 @@ function rendreCollection(personnages, armes, profil) {
   const combo = vueActive === "characters" && estVueCombo();
   const contexte = contexteBox(personnages, armes, boxActive, profil);
   const valeursTri = getValeursTri(vueActive, collectionProfil);
+  // Tri par points : les points affichés sur la carte (persos en synergie
+  // absents de la box, copie d'arme en double ou sans son perso), pas les
+  // points nominaux (ex. Linnea 88 réels ne passe plus devant Furina 94).
+  // Pas possédé : nominal (C0 / R1), trié après les possédés.
+  const pointsNominaux = valeursTri.points;
+  valeursTri.points = item => {
+    const valeur = getValeurItem(item, vueActive, collectionProfil);
+    if (valeur < 0) return pointsNominaux(item);
+    const niveau = vueActive === "characters" ? collectionProfil.niveaux?.[cleNiveau(item)] ?? null : null;
+    const instance = vueActive === "weapons" ? meilleureInstanceArme(item, collectionProfil) : item.id;
+    return pointsCarte(item, valeur, vueActive, niveau, instance, contexte).points;
+  };
   if (combo) {
     const pointsPerso = valeursTri.points;
     valeursTri.points = item => pointsPerso(item) + pointsSignatureBox(item, armes, contexte);
