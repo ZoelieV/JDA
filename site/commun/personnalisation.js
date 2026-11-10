@@ -221,7 +221,8 @@
   // ---- Fenêtre de confirmation (au centre, à la place de confirm()) ----
   // contenu : nœud ou HTML ; -> Promise<boolean>. avantOk(dialog) : appelé à
   // chaque mise à jour (ex. panier modifié) pour activer ou non le bouton.
-  function confirmer({ titre, contenu, ok = "Confirmer", annuler = "Annuler", classe = "" }) {
+  // icone : HTML d'une icône affichée à gauche du titre (ex. ICONE_PANIER).
+  function confirmer({ titre, contenu, ok = "Confirmer", annuler = "Annuler", classe = "", icone = "" }) {
     return new Promise(resoudre => {
       const fenetre = document.createElement("dialog");
       fenetre.className = `perso-fenetre ${classe}`.trim();
@@ -233,6 +234,7 @@
           <button type="button" class="perso-fenetre-ok"></button>
         </div>`;
       fenetre.querySelector(".perso-fenetre-titre").textContent = titre;
+      if (icone) fenetre.querySelector(".perso-fenetre-titre").insertAdjacentHTML("afterbegin", `${icone} `);
       const zone = fenetre.querySelector(".perso-fenetre-contenu");
       if (typeof contenu === "string") zone.innerHTML = contenu;
       else zone.appendChild(contenu);
@@ -451,7 +453,7 @@
   async function ouvrirPanier() {
     if (!panier.size) return;
     const zone = document.createElement("div");
-    const promesse = confirmer({ titre: "Panier", contenu: zone, ok: "Acheter", annuler: "Continuer mes achats", classe: "perso-fenetre-panier" });
+    const promesse = confirmer({ titre: "Panier", icone: ICONE_PANIER, contenu: zone, ok: "Acheter", annuler: "Continuer mes achats", classe: "perso-fenetre-panier" });
     rendrePanier(zone, zone.closest("dialog"));
     if (!await promesse || !panier.size) return;
     const articles = [...panier.values()];
