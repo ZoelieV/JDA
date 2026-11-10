@@ -184,7 +184,12 @@ function mettreAJourBoutons() {
   const categorie = CATEGORIES_BOSS.find(c => c.cle === categorieBossFiltre);
   const bouton = document.getElementById("categorie-boss");
   bouton.classList.toggle("active", !!categorie);
-  bouton.textContent = categorie ? categorie.bouton : "Tous les boss";
+  // Tous les libellés restent dans le bouton (superposés, cf.
+  // #categorie-boss) : sa largeur est celle du plus long, il ne change plus
+  // de taille à chaque clic (les filtres à côté ne bougent plus).
+  bouton.querySelectorAll("span[data-cle]").forEach(span => {
+    span.classList.toggle("visible", span.dataset.cle === (categorie?.cle || ""));
+  });
   // Liste des boss : seulement ceux de la catégorie choisie.
   document.querySelectorAll("#filtre-boss optgroup").forEach(groupe => {
     groupe.hidden = !!categorie && groupe.dataset.categorie !== categorie.cle;

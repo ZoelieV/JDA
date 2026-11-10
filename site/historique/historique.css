@@ -1860,3 +1860,26 @@ html.page-integree .bouton-feedback {
 .match-tournoi:hover {
   background-color: rgba(245, 197, 66, 0.3);
 }
+
+/* Catégorie de boss : libellés superposés dans la même case, seul le
+   courant visible (largeur fixe = le plus long). */
+#categorie-boss {
+  display: inline-grid;
+  justify-items: center;
+}
+
+#categorie-boss > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+#categorie-boss > span.visible {
+  visibility: visible;
+}
+
+/* Tri par écart : delta majuscule, à la taille des icônes. */
+.icone-delta {
+  font-size: 1.2em;
+  font-weight: bold;
+  line-height: 1;
+}

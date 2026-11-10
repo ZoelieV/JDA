@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/historique/historique.css?v=55">
+<link rel="stylesheet" href="/historique/historique.css?v=56">
 <link rel="stylesheet" href="/commun/entete.css?v=rem49">
 <link rel="stylesheet" href="/commun/tri.css?v=9">
 <link rel="stylesheet" href="/commun/cartes.css?v=6">
@@ -47,13 +47,13 @@
     <input type="text" id="recherche" class="recherche-historique filtre-matchs" placeholder="Rechercher un joueur, un perso, un temps (7:32)…">
     <div class="tris filtre-matchs">
       <span class="tris-label">Trier :</span>
-      <button type="button" class="bouton-historique tri-historique" data-tri="date">Date <span class="fleche"></span></button>
-      <button type="button" class="bouton-historique tri-historique" data-tri="temps" title="Meilleur temps du match">Temps <span class="fleche"></span></button>
-      <button type="button" class="bouton-historique tri-historique" data-tri="ecart" title="Écart de temps entre les 2 joueurs">Écart <span class="fleche"></span></button>
+      <button type="button" class="bouton-historique tri-historique" data-tri="date" title="Date du match" aria-label="Date"><img class="icone-texte" src="/DB/images/others/Icon_Events.webp" alt=""> <span class="fleche"></span></button>
+      <button type="button" class="bouton-historique tri-historique" data-tri="temps" title="Meilleur temps du match" aria-label="Temps"><img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> <span class="fleche"></span></button>
+      <button type="button" class="bouton-historique tri-historique" data-tri="ecart" title="Écart de temps entre les 2 joueurs" aria-label="Écart"><span class="icone-delta">Δ</span> <span class="fleche"></span></button>
     </div>
     <!-- Catégorie de boss : chaque clic passe à la suivante (tous, hebdo,
          légendes locales, carnage). -->
-    <button type="button" id="categorie-boss" class="bouton-historique filtre-matchs" title="Filtrer par catégorie de boss (clic pour changer)">Tous les boss</button>
+    <button type="button" id="categorie-boss" class="bouton-historique filtre-matchs" title="Filtrer par catégorie de boss (clic pour changer)"><span data-cle="" class="visible">Tous les boss</span><span data-cle="hebdo">Boss hebdo</span><span data-cle="legendes">Légendes locales</span><span data-cle="carnage">Boss carnage</span></button>
     <!-- Un seul boss (liste remplie depuis DB/boss.json et les ajouts admin). -->
     <select id="filtre-boss" class="filtre-boss-historique filtre-matchs" title="N'afficher que les matchs contre ce boss">
       <option value="">Tous les boss</option>
@@ -63,7 +63,7 @@
     <select id="filtre-saison" class="filtre-boss-historique filtre-matchs" title="N'afficher que les matchs de cette saison">
       <option value="">Toutes les saisons</option>
     </select>
-    <button type="button" id="matchs-classes" class="bouton-historique filtre-matchs" title="N'afficher que les matchs classés">Classés <img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></button>
+    <button type="button" id="matchs-classes" class="bouton-historique filtre-matchs" title="N'afficher que les matchs classés" aria-label="Classés"><img class="icone-texte" src="/DB/images/others/Achievement_Wonders_of_the_World.webp" alt="trophées"></button>
     <button type="button" id="clear-historique" class="btn-clear-filtres filtre-matchs" title="Réinitialiser les filtres"><img src="/DB/images/others/remove_filters.webp" alt="Réinitialiser les filtres"></button>
     <label class="choix-par-page" title="Nombre de matchs par page">
       Matchs par page
@@ -294,7 +294,7 @@
   <script src="/commun/synergies.js?v=6"></script>
   <script src="/commun/cartes.js?v=39"></script>
   <script src="/commun/tri.js?v=23"></script>
-  <script src="/historique/historique.js?v=82"></script>
+  <script src="/historique/historique.js?v=83"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=37"></script>
 </body>
