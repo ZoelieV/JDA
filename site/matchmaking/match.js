@@ -3159,7 +3159,7 @@ function rendreTermine() {
       (resultat?.ecart ? ` (dont +${resultat.ecart} de bonus d'écart : adversaire mieux classé)` : "");
     // Bonus de saison (persos cochés dans l'admin) : gain augmenté, perte réduite.
     const saison = role => resultat?.saison?.[role]
-      ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}<img class="icone-texte" src="/DB/images/others/etoile_bonus_saison.webp" alt="">)`
+      ? ` (bonus de saison : ${draft.vainqueur === role ? "+" : "−"}${resultat.saison[role]} ${draft.vainqueur === role ? "" : "de perte "}<img class="icone-texte" src="/DB/images/others/etoile_bonus_saison.webp?v=2" alt="">)`
       : "";
     if (enJeu === 0) {
       ligneTrophees = `<p class="ligne-trophees">${ICONE_TROPHEE} Aucun trophée en jeu</p>`;

@@ -217,6 +217,13 @@ h2 {
   background-color: rgba(245, 197, 66, 0.15);
 }
 
+/* Filtre des favoris activé : cœur en rouge (commun/tri.js) au lieu du
+   contour et du fond dorés. */
+.barre-filtres .tri-btn.filtre-favoris.active {
+  border-color: transparent;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
 .box-selector {
   display: flex;
   flex-wrap: wrap;
@@ -1577,9 +1584,9 @@ body {
   opacity: 0.75;
 }
 
+/* Favori : cœur en rouge (favourite_rouge.webp), sans surbrillance. */
 .favori-btn.actif {
   opacity: 1;
-  filter: drop-shadow(0 0 0.25rem rgba(245, 197, 66, 0.9));
 }
 
 /* Téléphone : engrenage plus petit. */

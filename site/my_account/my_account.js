@@ -769,7 +769,7 @@ function creerCarteItem(item, valeur = -1, boxActive = "full", selectionne = fal
   // arme.
   const boutonFavori = favori === null
     ? ""
-    : `<button type="button" class="favori-btn${favori ? " actif" : ""}" data-id="${item.id}" title="${favori ? "Retirer des favoris" : "Ajouter aux favoris"}"><img src="../DB/images/others/favourite.webp" alt="Favori"></button>`;
+    : `<button type="button" class="favori-btn${favori ? " actif" : ""}" data-id="${item.id}" title="${favori ? "Retirer des favoris" : "Ajouter aux favoris"}"><img src="../DB/images/others/${favori ? "favourite_rouge" : "favourite"}.webp" alt="Favori"></button>`;
   const outils = vueActive === "characters"
     ? (valeur >= 0 ? creerSelectNiveau(cleNiveau(item), niveau) : "") + boutonFavori
     : boutonDupliquer + boutonFavori;
@@ -1538,6 +1538,8 @@ async function initialiserPage() {
             afficherCollection(personnages, armes, profil);
           } else {
             boutonFavori.classList.toggle("actif", !!favoris[id]);
+            // Favori : cœur en rouge (cf. .favori-btn.actif).
+            boutonFavori.querySelector("img").src = `../DB/images/others/${favoris[id] ? "favourite_rouge" : "favourite"}.webp`;
             boutonFavori.title = favoris[id] ? "Retirer des favoris" : "Ajouter aux favoris";
             mettreAJourBoutonEnregistrer(profil);
           }

@@ -141,7 +141,7 @@
   const chargerKoyns = () => chargerScript("/commun/koyns.js?v=15",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
-  const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=5",
+  const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=6",
     () => typeof FILTRES_DRAFT !== "undefined", "Impossible de charger les filtres de la draft.");
 
   async function chargerCosmetiques() {

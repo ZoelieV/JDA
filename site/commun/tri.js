@@ -34,6 +34,8 @@ const LOGO_TRI_NIVEAU = `${RACINE_LOGOS}stella.webp`;
 const LOGO_TRI_POINTS = `${RACINE_LOGOS}scale.webp`;
 const LOGO_TRI_ARME = `${RACINE_LOGOS}Icon_Inventory_Weapons.webp`;
 const LOGO_TRI_FAVORIS = `${RACINE_LOGOS}favourite.webp`;
+// Filtre des favoris activé : cœur en rouge (au lieu de la surbrillance dorée).
+const LOGO_TRI_FAVORIS_ACTIF = `${RACINE_LOGOS}favourite_rouge.webp`;
 
 // Vœux : Acquaint Fate = 4★ + personnages standards (dont le Voyageur),
 // Intertwined Fate = les autres 5★. Aloy et Manekin : ni l'un ni l'autre.
@@ -155,8 +157,8 @@ function majBoutonTri(btn, etat, vue = "characters") {
     element: vue === "weapons" ? "Type" : `<img class="tri-logo" src="${LOGO_TRI_ELEMENT}" alt="Élément">`,
     arme: `<img class="tri-logo" src="${LOGO_TRI_ARME}" alt="Type d'arme">`,
     raffinement: `<b>R</b>`,
-    bonus_saison: `<img class="tri-logo" src="/DB/images/others/etoile_bonus_saison.webp" alt="Bonus de saison">`,
-    favoris: `<img class="tri-logo" src="${LOGO_TRI_FAVORIS}" alt="Favoris">`
+    bonus_saison: `<img class="tri-logo" src="/DB/images/others/etoile_bonus_saison.webp?v=2" alt="Bonus de saison">`,
+    favoris: `<img class="tri-logo" src="${sens ? LOGO_TRI_FAVORIS_ACTIF : LOGO_TRI_FAVORIS}" alt="Favoris">`
   };
   btn.innerHTML = `${libelles[cle] ?? cle}<span class="fleche-tri">${sens === 1 ? "▼" : sens === -1 ? "▲" : ""}</span>`;
   const titres = {

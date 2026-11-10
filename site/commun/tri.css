@@ -127,3 +127,11 @@
   border-color: rgba(245, 197, 66, 0.8);
   background-color: rgba(20, 20, 20, 0.45);
 }
+
+/* Filtre des favoris activé : cœur en rouge (LOGO_TRI_FAVORIS_ACTIF) au lieu
+   du contour et du fond dorés. */
+.tri-btn.filtre-favoris.active,
+#modal .tri-btn.filtre-favoris.active {
+  border-color: transparent;
+  background-color: rgba(20, 20, 20, 0.45);
+}
