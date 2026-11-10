@@ -90,7 +90,7 @@ async function chargerSessionDiscord() {
   });
 
   logoutBtn.addEventListener("click", async () => {
-    if (!await confirmerSite({ titre: "Se déconnecter ?", ok: "Se déconnecter" })) return;
+    if (!await confirmerSite({ titre: "Se déconnecter ?", ok: "Se déconnecter", danger: true })) return;
     // Plus de fond personnalisé une fois déconnecté.
     window.FondEcran?.memoriser(null, null);
     window.FondEcran?.memoriserTheatre(null);
