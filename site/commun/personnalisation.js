@@ -47,10 +47,10 @@
   };
   const AFFICHAGES_ACCUEIL = [
     { id: "classique", nom: "Classique", description: "En-tête avec les pages et leurs menus, logo et modes de jeu au centre, bas de page." },
-    // beta : affichage plus suivi au même rythme que Classique (pastille
-    // « Bêta », avertissement quand il est choisi, cf. rendreAccueil).
-    { id: "panneau", nom: "Panneau", beta: true, description: "Créer un match et Mon compte au centre, les autres pages dans un panneau à gauche (bouton ☰ pour le plier)." },
-    { id: "cartes", nom: "Cartes", beta: true, description: "Toutes les pages au centre, en grille de cartes." }
+    // beta (aucun pour l'instant) : affichage moins suivi que Classique
+    // (pastille « Bêta », avertissement quand il est choisi, cf. rendreAccueil).
+    { id: "panneau", nom: "Panneau", description: "Créer un match et Événements au centre, les autres pages dans un panneau à gauche (bouton ☰ pour le plier)." },
+    { id: "cartes", nom: "Cartes", description: "Toutes les pages au centre, en grille de cartes." }
   ];
   // Choix qui changent les images des personnages (rechargement).
   const CLES_PERSOS = ["voyageur", "manekin", "skins", "skins_test"];
