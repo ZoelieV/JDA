@@ -695,6 +695,44 @@
   object-fit: contain;
 }
 
+/* Image entre les flèches précédent / suivant. */
+.perso-grand-zone {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 0;
+}
+
+.perso-grand-zone .perso-grand-image {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.perso-fleche-apercu {
+  flex: none;
+  width: 2.5rem;
+  height: 3.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.625rem;
+  background-color: rgba(20, 20, 20, 0.6);
+  color: white;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.perso-fleche-apercu:hover,
+.perso-fleche-apercu:focus-visible {
+  border-color: #f5c542;
+  color: #f5c542;
+}
+
+.perso-grand-position {
+  margin-left: 0.5rem;
+  opacity: 0.6;
+  font-size: 0.875rem;
+}
+
 .perso-grand-infos {
   margin: 0.625rem 0 0;
 }

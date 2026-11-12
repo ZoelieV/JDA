@@ -120,7 +120,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=44";
+    lien.href = "/commun/personnalisation.css?v=45";
     document.head.appendChild(lien);
   }
 
@@ -317,14 +317,21 @@
   // ---- Aperçu en grand d'un cosmétique ----
   // { nom, type, image, detail (HTML), action: { texte (HTML), surClic } } ;
   // aussi utilisé par la page Cosmétiques (Personnalisation.apercu).
-  function ouvrirApercuCosmetique({ nom, type, image, detail = "", action = null }) {
+  // navigation : { position: "3 / 40", aller(pas) } pour passer au
+  // cosmétique précédent (-1) ou suivant (+1) : flèches à l'écran et du
+  // clavier.
+  function ouvrirApercuCosmetique({ nom, type, image, detail = "", action = null, navigation = null }) {
     chargerStyles();
     const fenetre = document.createElement("dialog");
     fenetre.className = "perso-fenetre perso-fenetre-apercu";
     fenetre.innerHTML = `
       <h3 class="perso-fenetre-titre"></h3>
-      <img class="perso-grand-image" alt="">
-      <p class="perso-grand-infos"><small></small>${detail}</p>
+      <div class="perso-grand-zone">
+        ${navigation ? `<button type="button" class="perso-fleche-apercu" data-action="precedent" aria-label="Précédent" title="Précédent (←)">‹</button>` : ""}
+        <img class="perso-grand-image" alt="">
+        ${navigation ? `<button type="button" class="perso-fleche-apercu" data-action="suivant" aria-label="Suivant" title="Suivant (→)">›</button>` : ""}
+      </div>
+      <p class="perso-grand-infos"><small></small>${detail}${navigation ? ` <span class="perso-grand-position">${navigation.position}</span>` : ""}</p>
       <div class="perso-fenetre-actions">
         <button type="button" data-action="fermer">Fermer</button>
         ${action ? `<button type="button" class="perso-fenetre-ok" data-action="ok">${action.texte}</button>` : ""}
@@ -339,16 +346,37 @@
         fenetre.close();
         action.surClic();
       }
+      if (bouton === "precedent" || bouton === "suivant") {
+        fenetre.close();
+        navigation.aller(bouton === "precedent" ? -1 : 1);
+      }
     });
-    // Échap : ferme cette fenêtre seulement (pas la personnalisation).
-    fenetre.addEventListener("keydown", event => { if (event.key === "Escape") event.stopPropagation(); });
+    // Échap : ferme cette fenêtre seulement (pas la personnalisation) ;
+    // flèches gauche / droite : cosmétique précédent / suivant.
+    fenetre.addEventListener("keydown", event => {
+      if (event.key === "Escape") event.stopPropagation();
+      if (navigation && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        event.stopPropagation();
+        fenetre.close();
+        navigation.aller(event.key === "ArrowLeft" ? -1 : 1);
+      }
+    });
     fenetre.addEventListener("close", () => fenetre.remove());
     document.body.appendChild(fenetre);
     fenetre.showModal();
   }
 
   // Aperçu d'un cosmétique pas possédé : prix et panier, ou comment l'obtenir.
-  function apercuAchat(cosmetique, article) {
+  // bouton : sa carte dans la grille, pour passer aux autres cosmétiques à
+  // aperçu affichés (même ordre que la grille, recherche et filtres compris).
+  function apercuAchat(cosmetique, article, bouton = null) {
+    const liste = [...modal.querySelectorAll(".perso-choix .perso-choix-image")].filter(carte => carte.ouvrirApercu);
+    const index = bouton ? liste.indexOf(bouton) : -1;
+    const navigation = index >= 0 && liste.length > 1 ? {
+      position: `${index + 1} / ${liste.length}`,
+      aller: pas => liste[(index + pas + liste.length) % liste.length].ouvrirApercu()
+    } : null;
     const exclusif = estExclusif(cosmetique);
     const focus = estFocusTirage(cosmetique);
     const dansPanier = panier.has(cosmetique);
@@ -362,7 +390,8 @@
         : texteRikoyns(prixCosmetique(cosmetique)),
       action: exclusif ? null
         : focus ? { texte: `${ICONE_VOEU} Voir le tirage`, surClic }
-        : { texte: dansPanier ? "Retirer du panier" : `${ICONE_PANIER} Ajouter au panier`, surClic }
+        : { texte: dansPanier ? "Retirer du panier" : `${ICONE_PANIER} Ajouter au panier`, surClic },
+      navigation
     });
   }
 
@@ -724,6 +753,7 @@
     bouton.title = titre;
     bouton.classList.toggle("active", actif);
     const verrouille = !!cosmetique && !possede(cosmetique);
+    const articlePanier = () => ({ id: cosmetique, nom: titre.replace(/ : clic pour activer le skin$/, ""), image, type: TYPES_COSMETIQUES[cosmetique.split(":")[0]] || "Cosmétique", choisir });
     if (image) {
       const img = document.createElement("img");
       img.src = image;
@@ -750,6 +780,8 @@
       bouton.appendChild(badge);
       bouton.title = `${titre} — ${exclusif ? "exclusif" : focus ? "focus du tirage (page Cosmétiques)" : `${montant} Rikoyn${montant > 1 ? "s" : ""}, ${dansPanier ? "dans le panier (clic pour le retirer)" : "clic pour l'ajouter au panier"}`}`;
       if (image) {
+        // Aperçu en grand (loupe), avec navigation dans la grille.
+        bouton.ouvrirApercu = () => apercuAchat(cosmetique, articlePanier(), bouton);
         const loupe = document.createElement("span");
         loupe.className = "perso-loupe";
         loupe.innerHTML = `<img class="icone-loupe" src="/DB/images/others/loupe.webp" alt="Loupe">`;
@@ -760,9 +792,8 @@
     bouton.addEventListener("click", event => {
       if (!brouillon) return;
       if (verrouille) {
-        const article = { id: cosmetique, nom: titre.replace(/ : clic pour activer le skin$/, ""), image, type: TYPES_COSMETIQUES[cosmetique.split(":")[0]] || "Cosmétique", choisir };
-        if (event.target.closest(".perso-loupe")) apercuAchat(cosmetique, article);
-        else basculerPanier(cosmetique, article);
+        if (event.target.closest(".perso-loupe")) bouton.ouvrirApercu();
+        else basculerPanier(cosmetique, articlePanier());
         return;
       }
       choisir();
