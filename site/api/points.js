@@ -714,7 +714,11 @@ module.exports = async (req, res) => {
       } else if (corps.calendrier && typeof corps.calendrier === "object") {
         const { calendrier, erreur } = lireCalendrier(corps.calendrier);
         if (erreur) return res.status(400).json({ error: erreur });
-        config = { ...ancienne, calendrier };
+        // Date de modification (joueurs prévenus, cf. getCalendrierModifieLe) :
+        // seulement si les dates ou les événements ont changé.
+        const { modifie_le: ancienneDate, ...ancienCalendrier } = ancienne.calendrier || {};
+        const change = JSON.stringify(ancienCalendrier) !== JSON.stringify(calendrier);
+        config = { ...ancienne, calendrier: { ...calendrier, modifie_le: change || !ancienneDate ? new Date().toISOString() : ancienneDate } };
       } else if (typeof corps.carnage_desactive === "boolean") {
         config = { ...ancienne, carnage_desactive: corps.carnage_desactive };
       } else if ("temps_suspects" in corps) {

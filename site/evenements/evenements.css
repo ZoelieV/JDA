@@ -362,3 +362,13 @@
 .texte-chapitre-vn .repere-chapitre-vn {
   color: var(--accent);
 }
+
+/* Avertissement du calendrier (dates susceptibles de changer). */
+.avertissement-calendrier {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #e2d29a;
+  border-radius: 0.25rem;
+  background-color: rgba(226, 210, 154, 0.1);
+  font-size: 0.9375rem;
+}

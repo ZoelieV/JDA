@@ -329,6 +329,24 @@ function dessinerFrise() {
 
 }
 
+// ---- Avertissement du calendrier : fenêtre à l'ouverture de la page à la
+// première visite et après chaque modification du calendrier
+// (config.calendrier.modifie_le, cf. api/points.js) ; date vue gardée dans
+// ce navigateur (pastille des liens Événements, cf. commun/compte.js).
+const CLE_CALENDRIER_VU = "calendrier-vu";
+const AVERTISSEMENT_CALENDRIER = "Les événements prévus après décembre peuvent encore changer, et de nouveaux événements peuvent être ajoutés. Tu es prévenu sur le site à chaque mise à jour du calendrier.";
+
+async function prevenirCalendrier(calendrier) {
+  if (!calendrier?.saison) return;
+  const maj = calendrier.modifie_le || "";
+  let vu = null;
+  try { vu = localStorage.getItem(CLE_CALENDRIER_VU); } catch { /* stockage bloqué */ }
+  if (vu && (!maj || vu >= maj)) return;
+  try { localStorage.setItem(CLE_CALENDRIER_VU, maj || new Date().toISOString()); } catch { /* stockage bloqué */ }
+  const date = maj ? new Date(maj).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "";
+  await alerterSite(`${vu && date ? `Le calendrier a été mis à jour le ${date}.\n\n` : ""}${AVERTISSEMENT_CALENDRIER}`, "Calendrier des événements");
+}
+
 async function demarrer() {
   const etat = document.getElementById("etat-evenements");
   const [utilisateur, config, visualNovelVisible] = await Promise.all([
@@ -366,6 +384,10 @@ async function demarrer() {
   // evenements.html#world-boss : détails ouverts.
   const ancre = location.hash && document.querySelector(`.carte-match:not(.cache)[data-detail="${CSS.escape(location.hash.slice(1))}"]`);
   if (ancre) choisirCarte(ancre);
+
+  // Calendrier visible (saison ouverte, ou administrateur) : avertissement.
+  document.documentElement.classList.remove("calendrier-nouveau");
+  if (evenements.calendrier || admin) prevenirCalendrier(config?.calendrier);
 }
 
 demarrer();

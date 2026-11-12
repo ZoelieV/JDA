@@ -78,6 +78,15 @@ function estWorldBossPublic() {
   return worldBossPublic;
 }
 
+// Dernière modification du calendrier de la page Événements
+// (config.calendrier.modifie_le, cf. api/points.js), null sans saison :
+// pastille « nouveau » sur les liens Événements (cf. api/auth/me.js).
+let calendrierModifieLe = null;
+
+function getCalendrierModifieLe() {
+  return calendrierModifieLe;
+}
+
 // Méthode des bans d'équilibrage (config.equilibrage, choisie par un
 // administrateur sur la page admin) : figée dans chaque draft au calcul de
 // l'équilibrage (cf. calculerEquilibrage, _lib/boxes.js), une draft en cours
@@ -276,6 +285,7 @@ async function actualiserPoints() {
     bonusSaison = new Set(Array.isArray(config.bonus_saison) ? config.bonus_saison : []);
     carnageDesactive = config.carnage_desactive === true;
     worldBossPublic = config.world_boss_public === true;
+    calendrierModifieLe = config.calendrier?.saison && typeof config.calendrier.modifie_le === "string" ? config.calendrier.modifie_le : null;
     littleCup = { ...LITTLE_CUP_DEFAUT, ...(config.little_cup || {}) };
     bossModes = config.boss_modes && typeof config.boss_modes === "object" ? config.boss_modes : {};
     tempsSuspects = reglageTempsSuspects(config);
@@ -496,6 +506,7 @@ module.exports = {
   estAjout,
   estCarnageDesactive,
   estWorldBossPublic,
+  getCalendrierModifieLe,
   getArmes,
   getCatalogueComplet,
   infosPersoJoueur,
