@@ -309,7 +309,13 @@
   // Revérifié si trop ancien, ou si le théâtre n'a jamais été gardé (cache
   // d'avant la médaille).
   const age = Date.now() - Number(lire(CLE_DATE) || 0);
-  if (!sansRequete && (age > DUREE_CACHE_MS || lire(CLE_THEATRE) === null)) {
+  // Ancienne bannière par défaut gardée en cache (Namecard_Banner_Default,
+  // qui était l'image de Mondstadt, ou Mondstadt Hero's Fame, retirée le
+  // 2026-11-12) : oubliée tout de suite (bannière par défaut actuelle en
+  // attendant) et profil relu.
+  const banniereObsolete = /Namecard_Banner_Default\.webp|Mondstadt_Hero_s_Fame/.test(lire(CLE_BANNIERE2) || "");
+  if (banniereObsolete) ecrire(CLE_BANNIERE2, null);
+  if (!sansRequete && (banniereObsolete || age > DUREE_CACHE_MS || lire(CLE_THEATRE) === null)) {
     rafraichir();
   }
 
