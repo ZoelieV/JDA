@@ -37,7 +37,7 @@ async function chargerSaisons() {
   } catch {
     // Liste indisponible : saison en cours seulement.
   }
-  return { actuelle: 0, saisons: [{ numero: 0, nom: "Tests" }] };
+  return { actuelle: 0, saisons: [{ numero: 0, nom: "Lancement du JDA !" }] };
 }
 
 function nomSaison({ numero, nom }) {

@@ -5,7 +5,7 @@
 // Table absente (SQL pas lancé) : une seule saison, la 0.
 const { supabase } = require("./supabase");
 
-const SAISON_DEFAUT = { numero: 0, nom: "Tests", debut: null };
+const SAISON_DEFAUT = { numero: 0, nom: "Lancement du JDA !", debut: null };
 // Liste relue au plus toutes les 30 s.
 const CACHE_SAISONS_MS = 30 * 1000;
 let cache = null;
