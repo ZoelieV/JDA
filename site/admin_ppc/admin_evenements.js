@@ -49,7 +49,7 @@ function initialiserEvenements() {
 // caractères au plus) et longue (fenêtre de l'événement). Chaque
 // modification envoie tout le calendrier.
 const COURT_CALENDRIER_MAX = 30;
-const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default_Etoiles.webp";
 const NOMS_JOURS_ADMIN = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
 
 function initialiserCalendrierAdmin() {

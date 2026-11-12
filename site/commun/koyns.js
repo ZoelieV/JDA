@@ -117,7 +117,7 @@ function nomFond(fond) {
 // pour tout le monde.
 const COSMETIQUES_GRATUITS = new Set([
   "banniere:namecards/Namecard_Background_Default.webp",
-  "banniere2:namecards/banners/Namecard_Banner_Default.webp",
+  "banniere2:namecards/banners/Namecard_Banner_Default_Etoiles.webp",
   "fond:bg/autres/default_bg.webp",
   "voyageur:aether",
   "voyageur:lumine",

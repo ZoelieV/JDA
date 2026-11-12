@@ -1721,7 +1721,7 @@ function getProchaineActionDe(role) {
 // Sans bannière : celle par défaut.
 
 const ALIAS_BANNIERES = { tartaglia: "childe", itto: "itto" };
-const BANNIERE_PERSO_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+const BANNIERE_PERSO_DEFAUT = "namecards/banners/Namecard_Banner_Default_Etoiles.webp";
 let bannieresPersos = [];
 const cacheBannieres = new Map();
 

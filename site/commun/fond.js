@@ -99,7 +99,7 @@
   // Choix par défaut (profil sans choix, ou visiteur non connecté pour le fond).
   const FOND_DEFAUT_ID = "bg/autres/default_bg.webp";
   const FOND_DEFAUT_URL = "/DB/images/bg_web/autres/default_bg.webp";
-  const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+  const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default_Etoiles.webp";
   const DUREE_CACHE_MS = 10 * 60 * 1000;
   const FOND_PERSO = "perso";
   const BASE_PERSO = "bpuc-fond-perso";

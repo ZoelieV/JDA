@@ -284,7 +284,7 @@ const CALENDRIER_LONG_MAX = 2000;
 const BANNIERES_CALENDRIER = new Set(require("../DB/images/cosmetiques.json").bannieres2);
 const NAMECARDS_SITE = new Set(require("../DB/images/cosmetiques.json").bannieres);
 const CACHES_JSON = new Set(require("../DB/images/cosmetiques.json").caches || []);
-const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
+const BANNIERE_CALENDRIER_DEFAUT = "namecards/banners/Namecard_Banner_Default_Etoiles.webp";
 
 // "AAAA-MM-JJ" valide -> nombre de jours depuis 1970, sinon null.
 function jourCalendrier(valeur) {
