@@ -35,10 +35,20 @@
   color: white;
 }
 
+/* En-tête (titre, panier, Rikoyns, ×) figé en haut pendant le défilement
+   de la fenêtre, comme le pied en bas. */
 .perso-entete {
+  position: sticky;
+  top: -1.25rem;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin: -1.25rem -1.25rem 0;
+  padding: 1.25rem 1.25rem 0.625rem;
+  background-color: rgba(20, 20, 20, 0.85);
+  -webkit-backdrop-filter: blur(0.5rem);
+  backdrop-filter: blur(0.5rem);
 }
 
 .perso-entete h2 {
@@ -433,6 +443,9 @@
   /* En-tête : titre, panier, solde et × sur une ligne (plus petits). */
   .perso-entete {
     gap: 0.375rem;
+    top: -0.75rem;
+    margin: -0.75rem -0.75rem 0;
+    padding: 0.75rem 0.75rem 0.5rem;
   }
 
   .perso-entete h2 {
