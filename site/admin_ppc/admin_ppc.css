@@ -2874,6 +2874,54 @@ body.page-equilibrage #tuiles-admin {
   font-weight: bold;
 }
 
+/* Rareté du tirage (fenêtre des raretés) : pastille et filtres aux couleurs
+   des raretés de la page Cosmétiques (commun/personnalisation.css). */
+.etiquette-choix-cosmetique.rarete-commun { background-color: rgba(30, 110, 60, 0.9); color: #d9ffe6; }
+.etiquette-choix-cosmetique.rarete-rare { background-color: rgba(30, 85, 160, 0.9); color: #e0eeff; }
+.etiquette-choix-cosmetique.rarete-epique { background-color: rgba(110, 55, 170, 0.92); color: #f1e4ff; }
+.etiquette-choix-cosmetique.rarete-legendaire { background-color: rgba(170, 120, 20, 0.92); color: #fff3d6; }
+
+.filtres-rarete-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.filtre-rarete-choix {
+  padding: 0.375rem 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background-color: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.filtre-rarete-choix small {
+  font-weight: normal;
+  opacity: 0.85;
+}
+
+.filtre-rarete-choix:hover {
+  opacity: 1;
+}
+
+.filtre-rarete-choix.actif {
+  opacity: 1;
+  color: #111 !important;
+}
+
+.filtre-rarete-choix.rarete-commun { color: #5fd38a; }
+.filtre-rarete-choix.rarete-rare { color: #5aa9ff; }
+.filtre-rarete-choix.rarete-epique { color: #c08bff; }
+.filtre-rarete-choix.rarete-legendaire { color: #ffc24a; }
+.filtre-rarete-choix.rarete-commun.actif { background-color: #5fd38a; }
+.filtre-rarete-choix.rarete-rare.actif { background-color: #5aa9ff; }
+.filtre-rarete-choix.rarete-epique.actif { background-color: #c08bff; }
+.filtre-rarete-choix.rarete-legendaire.actif { background-color: #ffc24a; }
+
 .etiquette-choix-cosmetique .icone-koyn {
   width: 1rem;
   height: 1rem;

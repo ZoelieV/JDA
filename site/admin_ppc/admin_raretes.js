@@ -64,7 +64,8 @@ function initialiserRaretes() {
       selection: deRarete(niveau),
       onglets: ["banniere", "banniere2", "fond"],
       exclure: id => focus.includes(id),
-      etiquette: id => NOMS[rareteDe(id)]
+      etiquette: id => NOMS[rareteDe(id)],
+      rarete: rareteDe
     });
     if (!choix) return;
     message("Enregistrement…");
@@ -90,7 +91,8 @@ function initialiserRaretes() {
       titre: "Sélectionne les cosmétiques légendaires (focus du tirage)",
       selection: focus,
       onglets: ["banniere", "banniere2", "fond"],
-      etiquette: id => NOMS[rareteDe(id)]
+      etiquette: id => NOMS[rareteDe(id)],
+      rarete: rareteDe
     });
     if (!choix) return;
     message("Enregistrement…");

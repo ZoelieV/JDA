@@ -7,7 +7,9 @@
 // choisirCosmetiques({ titre, multiple, selection, onglets, etiquette }) ->
 // Promise<[ids] | null> (null : annulé ; onglets : ids des onglets proposés,
 // tous sinon ; etiquette(id) : texte affiché sur l'image, ex. son prix ;
-// apercu : bouton « Aperçu » sur chaque image, qui l'ouvre en grand). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
+// apercu : bouton « Aperçu » sur chaque image, qui l'ouvre en grand ;
+// rarete(id) : "commun" | "rare" | "epique" | "legendaire", pastille de la
+// couleur de la rareté et filtres par rareté). infoCosmetiqueAdmin(id) -> { id, type, nom, image, cache }.
 // Utilise idCosmetique, COSMETIQUES_GRATUITS (commun/koyns.js), nomFond,
 // VARIANTES_PERSONNAGES, SKINS_PERSONNAGES et imagesSkin (commun/variantes.js).
 
@@ -70,7 +72,15 @@ function htmlPastilleCosmetique(id) {
     `<button type="button" class="retirer-exclusif" data-id="${echapper(id)}" aria-label="Retirer">×</button></span>`;
 }
 
-function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, exclure = null, etiquette = null, avecRetires = false, apercu = false } = {}) {
+// Raretés du tirage (cf. admin_raretes.js), dans l'ordre des filtres.
+const RARETES_CHOIX_COSMETIQUES = [
+  { id: "commun", nom: "Commun" },
+  { id: "rare", nom: "Rare" },
+  { id: "epique", nom: "Épique" },
+  { id: "legendaire", nom: "Légendaire" }
+];
+
+function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = true, selection = [], onglets = null, exclure = null, etiquette = null, avecRetires = false, apercu = false, rarete = null } = {}) {
   return new Promise(async resoudre => {
     const catalogue = await chargerCatalogueChoix().catch(() => null);
     if (!catalogue) {
@@ -92,6 +102,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
         </div>
         <div class="choix-cosmetiques-onglets">${ongletsProposes.map(o => `<button type="button" class="bouton-creer secondaire" data-onglet="${o.id}">${o.nom}${o.id === "caches" ? ` (${nbCaches})` : ""}</button>`).join("")}</div>
         <div class="choix-cosmetiques-outils">
+          ${rarete ? `<div class="filtres-rarete-choix" role="group" aria-label="Filtrer par rareté"></div>` : ""}
           <input type="text" class="texte-ajout choix-cosmetiques-recherche" placeholder="Rechercher…" autocomplete="off">
           ${multiple ? `<button type="button" class="bouton-creer secondaire" data-action="tout">Tout l'onglet</button>
           <button type="button" class="bouton-creer secondaire" data-action="aucun">Tout désélectionner</button>` : ""}
@@ -117,10 +128,25 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
     const grille = fenetre.querySelector(".choix-cosmetiques-grille");
     const recherche = fenetre.querySelector(".choix-cosmetiques-recherche");
 
+    // Filtres par rareté (option rarete) : cumulables, aucun = toutes.
+    const filtresRarete = new Set();
+
     // Onglet Cachés : namecards puis bannières cachées ; les autres onglets
     // montrent aussi leurs cachés (pastille « caché »).
-    const visibles = () => [...catalogue.values()].filter(info => (avecRetires || !info.retire) && !exclure?.(info.id) && (onglet === "caches" ? info.cache : info.onglet === onglet) &&
+    const dansOnglet = () => [...catalogue.values()].filter(info => (avecRetires || !info.retire) && !exclure?.(info.id) && (onglet === "caches" ? info.cache : info.onglet === onglet) &&
       (!recherche.value.trim() || `${info.nom} ${info.id}`.toLowerCase().includes(recherche.value.trim().toLowerCase())));
+    const visibles = () => dansOnglet().filter(info => !filtresRarete.size || filtresRarete.has(rarete(info.id)));
+
+    // Boutons des raretés, avec le nombre de cosmétiques de l'onglet (et de
+    // la recherche) dans chacune.
+    const rendreFiltresRarete = () => {
+      const zone = fenetre.querySelector(".filtres-rarete-choix");
+      if (!zone) return;
+      const comptes = {};
+      dansOnglet().forEach(info => { const r = rarete(info.id); comptes[r] = (comptes[r] || 0) + 1; });
+      zone.innerHTML = RARETES_CHOIX_COSMETIQUES.filter(r => comptes[r.id] || filtresRarete.has(r.id)).map(r =>
+        `<button type="button" class="filtre-rarete-choix rarete-${r.id}${filtresRarete.has(r.id) ? " actif" : ""}" data-rarete="${r.id}" aria-pressed="${filtresRarete.has(r.id)}">${r.nom} <small>${comptes[r.id] || 0}</small></button>`).join("");
+    };
 
     const majCompte = () => {
       fenetre.querySelector(".choix-cosmetiques-compte").textContent = multiple ? `${choisis.size} sélectionné${choisis.size > 1 ? "s" : ""}` : "";
@@ -133,9 +159,10 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
         <button type="button" class="choix-cosmetique${choisis.has(info.id) ? " choisi" : ""}${info.cache ? " est-cache" : ""}" data-id="${echapper(info.id)}" title="${echapper(info.id)}">
           <img src="${echapper(info.image)}" alt="" loading="lazy">
           ${apercu ? `<span class="loupe-choix-cosmetique" title="Voir en grand">Aperçu</span>` : ""}
-          ${etiquette ? `<span class="etiquette-choix-cosmetique">${etiquette(info.id)}</span>` : ""}
+          ${etiquette ? `<span class="etiquette-choix-cosmetique${rarete ? ` rarete-${rarete(info.id)}` : ""}">${etiquette(info.id)}</span>` : ""}
           <span>${echapper(info.nom)}</span>
         </button>`).join("") : `<p class="aide-apercu">Aucun cosmétique.</p>`;
+      rendreFiltresRarete();
       majCompte();
     };
 
@@ -213,6 +240,13 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       const loupe = event.target.closest(".loupe-choix-cosmetique");
       if (loupe) {
         ouvrirApercu(loupe.closest(".choix-cosmetique").dataset.id);
+        return;
+      }
+      const filtre = event.target.closest("[data-rarete]");
+      if (filtre) {
+        if (filtresRarete.has(filtre.dataset.rarete)) filtresRarete.delete(filtre.dataset.rarete);
+        else filtresRarete.add(filtre.dataset.rarete);
+        rendre();
         return;
       }
       const ongletBouton = event.target.closest("[data-onglet]");
