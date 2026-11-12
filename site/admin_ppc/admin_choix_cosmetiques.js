@@ -104,6 +104,7 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
         <div class="choix-cosmetiques-outils">
           ${rarete ? `<div class="filtres-rarete-choix" role="group" aria-label="Filtrer par rareté"></div>` : ""}
           <input type="text" class="texte-ajout choix-cosmetiques-recherche" placeholder="Rechercher…" autocomplete="off">
+          <label class="masquer-caches-choix"><input type="checkbox" data-action="masquer-caches"> Masquer les cachés</label>
           ${multiple ? `<button type="button" class="bouton-creer secondaire" data-action="tout">Tout l'onglet</button>
           <button type="button" class="bouton-creer secondaire" data-action="aucun">Tout désélectionner</button>` : ""}
         </div>
@@ -130,10 +131,15 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
 
     // Filtres par rareté (option rarete) : cumulables, aucun = toutes.
     const filtresRarete = new Set();
+    // « Masquer les cachés » (pas sur l'onglet Cachés) : seulement ce qui est
+    // visible sur le site ; choix gardé dans ce navigateur.
+    const CLE_MASQUER_CACHES = "admin-choix-masquer-caches";
+    let masquerCaches = false;
+    try { masquerCaches = localStorage.getItem(CLE_MASQUER_CACHES) === "1"; } catch { /* stockage bloqué */ }
 
     // Onglet Cachés : namecards puis bannières cachées ; les autres onglets
     // montrent aussi leurs cachés (pastille « caché »).
-    const dansOnglet = () => [...catalogue.values()].filter(info => (avecRetires || !info.retire) && !exclure?.(info.id) && (onglet === "caches" ? info.cache : info.onglet === onglet) &&
+    const dansOnglet = () => [...catalogue.values()].filter(info => (avecRetires || !info.retire) && !exclure?.(info.id) && (onglet === "caches" ? info.cache : info.onglet === onglet && !(masquerCaches && info.cache)) &&
       (!recherche.value.trim() || `${info.nom} ${info.id}`.toLowerCase().includes(recherche.value.trim().toLowerCase())));
     const visibles = () => dansOnglet().filter(info => !filtresRarete.size || filtresRarete.has(rarete(info.id)));
 
@@ -153,6 +159,9 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
     };
     const rendre = () => {
       fenetre.querySelectorAll("[data-onglet]").forEach(bouton => bouton.classList.toggle("secondaire", bouton.dataset.onglet !== onglet));
+      const caseCaches = fenetre.querySelector("[data-action=masquer-caches]");
+      caseCaches.checked = masquerCaches;
+      caseCaches.closest("label").hidden = onglet === "caches";
       grille.className = `choix-cosmetiques-grille onglet-${onglet}`;
       const infos = visibles();
       grille.innerHTML = infos.length ? infos.map(info => `
@@ -278,6 +287,11 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
       }
     });
     recherche.addEventListener("input", rendre);
+    fenetre.querySelector("[data-action=masquer-caches]").addEventListener("change", event => {
+      masquerCaches = event.target.checked;
+      try { localStorage.setItem(CLE_MASQUER_CACHES, masquerCaches ? "1" : "0"); } catch { /* stockage bloqué */ }
+      rendre();
+    });
     document.body.appendChild(fenetre);
     rendre();
     recherche.focus();

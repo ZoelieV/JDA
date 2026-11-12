@@ -2881,6 +2881,19 @@ body.page-equilibrage #tuiles-admin {
 .etiquette-choix-cosmetique.rarete-epique { background-color: rgba(110, 55, 170, 0.92); color: #f1e4ff; }
 .etiquette-choix-cosmetique.rarete-legendaire { background-color: rgba(170, 120, 20, 0.92); color: #fff3d6; }
 
+/* Case « Masquer les cachés » de la fenêtre de choix. */
+.masquer-caches-choix {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.masquer-caches-choix[hidden] {
+  display: none;
+}
+
 .filtres-rarete-choix {
   display: flex;
   flex-wrap: wrap;
