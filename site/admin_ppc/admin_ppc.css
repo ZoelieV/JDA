@@ -2539,6 +2539,12 @@ body.page-equilibrage #tuiles-admin {
   font-size: 0.75rem;
 }
 
+/* Avec une pastille (rareté, prix) en haut à gauche : bouton juste dessous. */
+.choix-cosmetique:has(.etiquette-choix-cosmetique) .loupe-choix-cosmetique {
+  top: 2.25rem;
+  left: 0.5rem;
+}
+
 .loupe-choix-cosmetique:hover {
   background-color: #f5c542;
   color: #1e1e1e;

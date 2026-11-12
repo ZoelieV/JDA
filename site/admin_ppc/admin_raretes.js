@@ -65,7 +65,8 @@ function initialiserRaretes() {
       onglets: ["banniere", "banniere2", "fond"],
       exclure: id => focus.includes(id),
       etiquette: id => NOMS[rareteDe(id)],
-      rarete: rareteDe
+      rarete: rareteDe,
+      apercu: true
     });
     if (!choix) return;
     message("Enregistrement…");
@@ -92,7 +93,8 @@ function initialiserRaretes() {
       selection: focus,
       onglets: ["banniere", "banniere2", "fond"],
       etiquette: id => NOMS[rareteDe(id)],
-      rarete: rareteDe
+      rarete: rareteDe,
+      apercu: true
     });
     if (!choix) return;
     message("Enregistrement…");

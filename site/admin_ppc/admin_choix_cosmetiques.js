@@ -184,7 +184,8 @@ function choisirCosmetiques({ titre = "Choisir des cosmétiques", multiple = tru
     const majApercu = () => {
       const info = listeApercu[indexApercu];
       zoneApercu.querySelector("img").src = info.imageGrande || info.image;
-      zoneApercu.querySelector(".nom-apercu-choix").textContent = `${info.nom} (${indexApercu + 1} / ${listeApercu.length})`;
+      const nomRarete = rarete ? RARETES_CHOIX_COSMETIQUES.find(r => r.id === rarete(info.id))?.nom : null;
+      zoneApercu.querySelector(".nom-apercu-choix").textContent = `${info.nom}${nomRarete ? ` · ${nomRarete}` : ""} (${indexApercu + 1} / ${listeApercu.length})`;
       const choisi = choisis.has(info.id);
       const bouton = zoneApercu.querySelector("[data-apercu=basculer]");
       bouton.textContent = choisi ? "Désélectionner" : "Sélectionner";
