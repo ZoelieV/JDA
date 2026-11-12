@@ -271,6 +271,38 @@ html.site-classique .site-entete #discord-name::before {
   font-size: 1rem;
 }
 
+/* Affichages Panneau et Cartes (sans en-tête) : même bouton du compte
+   qu'en Classique, « Mon compte » à la place du pseudo, même format
+   (largeur, hauteur, photo ; sans le zoom de l'en-tête). */
+html[data-accueil="panneau"] .compte-lien > span:not(.rang-trophees),
+html[data-accueil="cartes"] .compte-lien > span:not(.rang-trophees),
+html[data-accueil="panneau"] #discord-name,
+html[data-accueil="cartes"] #discord-name {
+  font-size: 0;
+}
+
+html[data-accueil="panneau"] .compte-lien > span:not(.rang-trophees)::before,
+html[data-accueil="cartes"] .compte-lien > span:not(.rang-trophees)::before,
+html[data-accueil="panneau"] #discord-name::before,
+html[data-accueil="cartes"] #discord-name::before {
+  content: "Mon compte";
+  font-size: 1rem;
+}
+
+html[data-accueil="panneau"] .avec-banniere2,
+html[data-accueil="cartes"] .avec-banniere2 {
+  --largeur-banniere: min(20.5rem, 100vw - 5.375rem);
+}
+
+@media (min-width: 701px) {
+  html[data-accueil="panneau"] .avec-banniere2,
+  html[data-accueil="cartes"] .avec-banniere2 {
+    --taille-avatar: 3.5rem;
+    --hauteur-banniere: calc(3.5rem + 2px);
+    width: 19.625rem;
+  }
+}
+
 /* Bouton du compte de l'en-tête plus court (place pour les liens) ;
    téléphone : tel quel. */
 html.site-classique .site-entete .avec-banniere2 {
