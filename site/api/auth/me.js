@@ -73,8 +73,8 @@ module.exports = async (req, res) => {
         theorycraft: !await estShadowban(user.id)
       },
       world_boss: estWorldBossPublic() || estAdmin(user.id) || await estMiniAdmin(user.id),
-      // Dernière modification du calendrier des événements (pastille, cf.
-      // commun/compte.js).
+      // Dernière modification du calendrier des événements (pas utilisée
+      // par les pages pour l'instant).
       calendrier_maj: getCalendrierModifieLe()
     });
   } catch (error) {

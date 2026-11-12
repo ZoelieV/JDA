@@ -379,14 +379,6 @@
       if (donneesMoi.world_boss) {
         document.querySelectorAll(".carte-world-boss").forEach(lien => { lien.hidden = false; });
       }
-      // Calendrier des événements modifié depuis la dernière visite de la
-      // page Événements (date gardée par evenements/evenements.js) : pastille
-      // sur les liens Événements (cf. html.calendrier-nouveau, site.css).
-      if (donneesMoi.calendrier_maj && location.pathname.replace(/\/$/, "") !== "/evenements") {
-        let vu = null;
-        try { vu = localStorage.getItem("calendrier-vu"); } catch { /* stockage bloqué */ }
-        if (!vu || vu < donneesMoi.calendrier_maj) document.documentElement.classList.add("calendrier-nouveau");
-      }
       if (reponse.ok) {
         connecte = true;
         const { user, maintenant, nouveautes, match_tournoi: matchTournoi } = donneesMoi;

@@ -79,8 +79,8 @@ function estWorldBossPublic() {
 }
 
 // Dernière modification du calendrier de la page Événements
-// (config.calendrier.modifie_le, cf. api/points.js), null sans saison :
-// pastille « nouveau » sur les liens Événements (cf. api/auth/me.js).
+// (config.calendrier.modifie_le, cf. api/points.js), null sans saison
+// (renvoyée par api/auth/me.js).
 let calendrierModifieLe = null;
 
 function getCalendrierModifieLe() {

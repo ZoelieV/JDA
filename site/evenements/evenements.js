@@ -332,7 +332,7 @@ function dessinerFrise() {
 // ---- Avertissement du calendrier : fenêtre à l'ouverture de la page à la
 // première visite et après chaque modification du calendrier
 // (config.calendrier.modifie_le, cf. api/points.js) ; date vue gardée dans
-// ce navigateur (pastille des liens Événements, cf. commun/compte.js).
+// ce navigateur.
 const CLE_CALENDRIER_VU = "calendrier-vu";
 const AVERTISSEMENT_CALENDRIER = "Les événements prévus après décembre peuvent encore changer, et de nouveaux événements peuvent être ajoutés. Tu es prévenu sur le site à chaque mise à jour du calendrier.";
 
@@ -386,7 +386,6 @@ async function demarrer() {
   if (ancre) choisirCarte(ancre);
 
   // Calendrier visible (saison ouverte, ou administrateur) : avertissement.
-  document.documentElement.classList.remove("calendrier-nouveau");
   if (evenements.calendrier || admin) prevenirCalendrier(config?.calendrier);
 }
 
