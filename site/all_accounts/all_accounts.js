@@ -103,7 +103,7 @@ const SENS_INITIAL_TRI = {
 };
 
 // Deuxième bannière par défaut (joueur qui n'en a pas choisi).
-const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
+const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 
 // Pourcentage de victoires, null si aucun match joué.
 function getRatio(compte) {

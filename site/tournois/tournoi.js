@@ -12,7 +12,7 @@ let comptesTournoi = null; // [{ id, nom }] pour ajouter un arbitre
 const $t = id => document.getElementById(id);
 
 // Bannière par défaut (même chemin que BANNIERE2_DEFAUT de commun/fond.js).
-const BANNIERE2_DEFAUT_TOURNOI = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
+const BANNIERE2_DEFAUT_TOURNOI = "namecards/banners/Namecard_Banner_Default.webp";
 
 // Joueur d'un match de l'arbre (1v1) : sa bannière, photo à gauche (format
 // commun .banniere-joueur.cote-gauche, commun/entete.css ; adresse absolue

@@ -4,7 +4,7 @@
 // puis les stats de Tous les comptes). Rang toujours calculé sur les
 // trophées ; tri au choix (2e clic : sens inversé).
 
-const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
+const BANNIERE2_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 const TRI_DEFAUT = { cle: "trophees", sens: -1 };
 
 // Sens du 1er clic : plus grande valeur d'abord, A -> Z, plus récents d'abord.

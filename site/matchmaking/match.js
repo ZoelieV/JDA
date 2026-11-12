@@ -1122,7 +1122,7 @@ function creerBanMini(personnage) {
 // j1 à gauche, j2 à droite — reflète toujours les rôles de la manche en
 // cours (draft.discord_j1/discord_j2), pas "qui a créé la room".
 
-const NAMECARD_DEFAUT = "namecards/Namecard_Background_Mondstadt_Hero_s_Fame.webp";
+const NAMECARD_DEFAUT = "namecards/Namecard_Background_Default.webp";
 
 function rendreEntetesJoueurs() {
   [["entete-joueur1", joueur1, "j1"], ["entete-joueur2", joueur2, "j2"]].forEach(([containerId, joueur, role]) => {
@@ -1721,7 +1721,7 @@ function getProchaineActionDe(role) {
 // Sans bannière : celle par défaut.
 
 const ALIAS_BANNIERES = { tartaglia: "childe", itto: "itto" };
-const BANNIERE_PERSO_DEFAUT = "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp";
+const BANNIERE_PERSO_DEFAUT = "namecards/banners/Namecard_Banner_Default.webp";
 let bannieresPersos = [];
 const cacheBannieres = new Map();
 

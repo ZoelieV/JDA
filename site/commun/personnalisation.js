@@ -36,8 +36,8 @@
   const RACINE_IMAGES = "/DB/images/";
   // Choix attribués par défaut à tout le monde (mêmes que Mon compte).
   const PARAMETRES_DEFAUT = {
-    banniere: "namecards/Namecard_Background_Mondstadt_Hero_s_Fame.webp",
-    banniere2: "namecards/banners/Namecard_Banner_Mondstadt_Hero_s_Fame.webp",
+    banniere: "namecards/Namecard_Background_Default.webp",
+    banniere2: "namecards/banners/Namecard_Banner_Default.webp",
     fond: "bg/autres/default_bg.webp",
     voyageur: "aether",
     manekin: "manekin",
@@ -138,7 +138,7 @@
   const chargerVariantes = () => chargerScript("/commun/variantes.js?v=7",
     () => typeof SKINS_PERSONNAGES !== "undefined", "Impossible de charger les variantes.");
   // Ids et cosmétiques gratuits des Rikoyns (commun/koyns.js).
-  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=17",
+  const chargerKoyns = () => chargerScript("/commun/koyns.js?v=18",
     () => typeof idCosmetique !== "undefined", "Impossible de charger les Rikoyns.");
   // Filtres et tris de la draft (commun/filtres_draft.js).
   const chargerFiltresDraft = () => chargerScript("/commun/filtres_draft.js?v=6",
