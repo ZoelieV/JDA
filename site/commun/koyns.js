@@ -4,10 +4,16 @@
 // tris de la draft restent libres. Règles et gains : api/_lib/koyns.js.
 // Partagé avec le serveur.
 
-// Prix d'un cosmétique selon son choix (début de l'id, cf. idCosmetique) :
-// fonds d'écran (image importée comprise, fonds des personnages : 8) et skins 10, namecards
-// ("banniere") et bannières ("banniere2") 15 ; autre choix payant :
-// PRIX_COSMETIQUE (Voyageur et Manekin : gratuits, cf. COSMETIQUES_GRATUITS). Double pour les persos de PERSOS_PRIX_DOUBLE.
+// Prix d'un cosmétique (décidés par l'utilisateur le 2026-11-12) :
+// - namecards ("banniere") et bannières ("banniere2") : persos préférés de
+//   la communauté (PERSOS_PRIX_DOUBLE) 30 ; sinon selon la rareté du tirage
+//   (= étoiles du perso : épique 5★ 20, rare 4★ 10) ; Aloy (3★) 5 ; autres
+//   (succès, régions, événements…) 15 ;
+// - fonds d'écran : selon la rareté, commun 10, rare 20, épique 30 ;
+// - skins 10 (double pour PERSOS_PRIX_DOUBLE) ; Mon image : PRIX_IMPORT_FOND ;
+//   autre choix payant : PRIX_COSMETIQUE (Voyageur et Manekin : gratuits,
+//   cf. COSMETIQUES_GRATUITS).
+// Prix réglés à la main dans l'admin (config.prix_cosmetiques) : prioritaires.
 const PRIX_COSMETIQUE = 1;
 const PRIX_PAR_CHOIX = { fond: 10, skin: 10, banniere: 15, banniere2: 15 };
 
@@ -36,10 +42,20 @@ function estPrixDouble(id) {
 const FOND_IMPORTE = "fond:perso";
 const PRIX_IMPORT_FOND = 100;
 
-// Fonds des personnages (DB/images/bg_web/autres/personnage_<n>.webp) :
-// PRIX_FOND_PERSONNAGE au lieu du prix d'un fond.
-const FOND_PERSONNAGE = /^fond:bg\/autres\/personnage_\d+\.webp$/;
-const PRIX_FOND_PERSONNAGE = 8;
+// Prix selon la rareté du tirage (config.cosmetiques_raretes : rare,
+// epique ; commun sinon), cf. prixParDefautCosmetique.
+const PRIX_FOND_PAR_RARETE = { commun: 10, rare: 20, epique: 30, legendaire: 30 };
+const PRIX_NAMECARD_PAR_RARETE = { rare: 10, epique: 20, legendaire: 20 };
+const PRIX_NAMECARD_PERSO_3_ETOILES = 5;
+const NAMECARDS_PERSOS_3_ETOILES = /\/Namecard_(Background|Banner)_Aloy_/;
+let raretesPrix = {};
+
+// Raretés (config.cosmetiques_raretes, { id: "rare" | "epique" }) : serveur
+// avec la config (actualiserPoints) ; pages avec l'état des Rikoyns
+// (etat.tirage.raretes) ou la config (admin).
+function definirRaretesPrix(raretes) {
+  raretesPrix = raretes && typeof raretes === "object" ? raretes : {};
+}
 
 // Prix réglés par les administrateurs (config.prix_cosmetiques, { id: prix },
 // fenêtre Rikoyns de l'admin) : prioritaires sur le prix par défaut.
@@ -59,10 +75,19 @@ function prixCosmetique(id) {
 
 // Prix sans réglage des administrateurs.
 function prixParDefautCosmetique(id) {
-  if (String(id).split("#")[0] === FOND_IMPORTE) return PRIX_IMPORT_FOND;
-  if (FOND_PERSONNAGE.test(String(id))) return PRIX_FOND_PERSONNAGE;
-  const prix = PRIX_PAR_CHOIX[String(id).split(":")[0]] ?? PRIX_COSMETIQUE;
-  return estPrixDouble(id) ? prix * 2 : prix;
+  const brut = String(id).split("#")[0];
+  if (brut === FOND_IMPORTE) return PRIX_IMPORT_FOND;
+  const choix = brut.split(":")[0];
+  const rarete = raretesPrix[brut] || "commun";
+  if (choix === "fond") return PRIX_FOND_PAR_RARETE[rarete] ?? PRIX_PAR_CHOIX.fond;
+  if (choix === "banniere" || choix === "banniere2") {
+    if (estPrixDouble(brut)) return PRIX_PAR_CHOIX[choix] * 2;
+    if (PRIX_NAMECARD_PAR_RARETE[rarete]) return PRIX_NAMECARD_PAR_RARETE[rarete];
+    if (NAMECARDS_PERSOS_3_ETOILES.test(brut)) return PRIX_NAMECARD_PERSO_3_ETOILES;
+    return PRIX_PAR_CHOIX[choix];
+  }
+  const prix = PRIX_PAR_CHOIX[choix] ?? PRIX_COSMETIQUE;
+  return estPrixDouble(brut) ? prix * 2 : prix;
 }
 
 // Icône du Rikoyn (DB/images/others/rikoyn.webp), à côté des montants.
@@ -130,5 +155,5 @@ function htmlGainKoyns(gain) {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { PRIX_COSMETIQUE, PRIX_COSMETIQUE_MAX, prixCosmetique, prixParDefautCosmetique, definirPrixCosmetiques, FOND_IMPORTE, PRIX_IMPORT_FOND, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, TAILLE_FLEX, idCosmetique, cosmetiquesParametres };
+  module.exports = { PRIX_COSMETIQUE, PRIX_COSMETIQUE_MAX, prixCosmetique, prixParDefautCosmetique, definirPrixCosmetiques, definirRaretesPrix, FOND_IMPORTE, PRIX_IMPORT_FOND, COSMETIQUES_GRATUITS, CHOIX_COSMETIQUES, TAILLE_FLEX, idCosmetique, cosmetiquesParametres };
 }

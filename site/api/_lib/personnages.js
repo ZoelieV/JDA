@@ -9,7 +9,7 @@ const personnages = require("../../DB/characters.json");
 const armes = require("../../DB/weapons.json");
 const bossList = require("../../DB/boss.json"); // même tableau que _lib/boss.js
 const { lireSynergies, appliquerSynergie, lireAlternativeArme, POURCENTAGES_ALTERNATIFS } = require("../../commun/synergies.js");
-const { definirPrixCosmetiques } = require("../../commun/koyns.js");
+const { definirPrixCosmetiques, definirRaretesPrix } = require("../../commun/koyns.js");
 const { TEMPS_SUSPECTS_DEFAUT, reglageTempsSuspects } = require("../../commun/temps_suspects.js");
 
 // ---- Groupes (Voyageur) ----
@@ -313,6 +313,8 @@ async function actualiserPoints() {
     };
     // Prix réglés par les administrateurs (cf. prixCosmetique).
     definirPrixCosmetiques(configKoyns.prix);
+    // Prix par défaut selon la rareté du tirage (cf. commun/koyns.js).
+    definirRaretesPrix(configKoyns.raretes);
     personnagesDraft = null;
     // Nom et résistances des boss modifiés par les admins (config.boss).
     bossList.forEach(b => {

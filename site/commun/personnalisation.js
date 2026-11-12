@@ -193,6 +193,8 @@
     koyns = { ...etat, possedes: new Set(etat.possedes || []), exclusifs: new Set(etat.exclusifs || []), caches: etat.caches ? new Set(etat.caches) : null };
     // Prix réglés par les administrateurs (commun/koyns.js).
     definirPrixCosmetiques(etat.prix);
+    // Prix par défaut selon la rareté (légendaires = focus, pas en vente).
+    definirRaretesPrix(etat.tirage?.raretes);
     // tirage : { prix, chance, garantie, focus: [ids], compteur }.
     koyns.tirage ??= null;
     if (modal) modal.querySelector(".perso-solde").innerHTML = `${koyns.solde} ${ICONE_KOYN}`;

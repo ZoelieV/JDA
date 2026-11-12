@@ -99,6 +99,7 @@ async function ouvrirKoyns() {
   rendreTirage();
   remplirBonus(config?.bonus_connexion);
   prixKoyns = { ...(config?.prix_cosmetiques || {}) };
+  definirRaretesPrix(config?.cosmetiques_raretes);
   rendrePrix();
   messageKoyns("message-prix", "");
 }
