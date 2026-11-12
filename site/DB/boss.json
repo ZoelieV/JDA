@@ -484,25 +484,18 @@
     "image": "images/boss/legend_local/elder_blighttree_ll.webp"
   },
   {
-    "id": "verkhovensky_ll",
-    "nom": "Verkhovensky",
+    "id": "rowdy_beast_host_ll",
+    "nom": "Bande bestiale chahuteuse",
     "type": "legende_locale_jour",
     "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/verkhovensky_ll.webp"
+    "image": "images/boss/legend_local/rowdy_beast_host_ll.webp"
   },
   {
-    "id": "varvara_ll",
-    "nom": "Varvara",
+    "id": "ancient_ironquill_ll",
+    "nom": "Robuflisson ancien",
     "type": "legende_locale_jour",
     "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/varvara_ll.webp"
-  },
-  {
-    "id": "stavrogin_ll",
-    "nom": "Stavrogin",
-    "type": "legende_locale_jour",
-    "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/stavrogin_ll.webp"
+    "image": "images/boss/legend_local/ancient_ironquill_ll.webp"
   },
   {
     "id": "boss_1",

@@ -1618,6 +1618,12 @@
    "miniature": "bg_miniatures/boss_hebdo/signora_2.webp"
   },
   {
+   "id": "bg/legendes_locales/ancient_ironquill_ll.png",
+   "categorie": "legendes_locales",
+   "image": "bg_web/legendes_locales/ancient_ironquill_ll.webp",
+   "miniature": "bg_miniatures/legendes_locales/ancient_ironquill_ll.webp"
+  },
+  {
    "id": "bg/legendes_locales/bandersnatch_ll.png",
    "categorie": "legendes_locales",
    "image": "bg_web/legendes_locales/bandersnatch_ll.webp",
