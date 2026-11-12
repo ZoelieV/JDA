@@ -72,7 +72,7 @@
       ["Règles simplifiées", "/regles/simplifiees"],
       ["Règles complètes", "/regles/completes"],
       ["Problèmes connus", "/regles/problemes-connus"],
-      // Connectés seulement, sauf shadowbans (affiché par commun/compte.js).
+      // Affiché par commun/compte.js selon le compte (user.theorycraft).
       ["Theorycraft", "/theorycraft", "carte-theorycraft"],
       ["Tutoriel", "/tutoriel"]
     ] },

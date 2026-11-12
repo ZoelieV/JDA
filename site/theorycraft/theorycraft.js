@@ -1,6 +1,5 @@
-// Page Theorycraft : connectés seulement, sauf shadowbans (user.theorycraft,
-// cf. api/auth/me.js). Les autres sont renvoyés à l'accueil, comme si la
-// page n'existait pas.
+// Page Theorycraft : comptes qui y ont accès (user.theorycraft). Les autres
+// sont renvoyés à l'accueil.
 //
 // Lecture seule : points des personnages et des armes, et personnage + arme
 // signature R1 (mêmes tableaux que la page Administration, masqués exclus), résistances et probabilités de

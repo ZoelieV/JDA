@@ -28,3 +28,6 @@ scripts/sortie/
 # Export des profils des joueurs (box opti privées, cf.
 # scripts/graphes_boxes.js) : jamais dans le dépôt public.
 scripts/box.txt
+
+# Notes privées (anti-triche, shadowban...) : jamais dans le dépôt public.
+docs_prives/

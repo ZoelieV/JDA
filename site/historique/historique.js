@@ -711,21 +711,14 @@ function htmlSanction(role) {
 
 function htmlCorrectionLitige(match) {
   const champ = role => htmlChampTemps(match, role);
-  // Anti-triche : temps passé à saisir et somme des temps saisis.
-  const fmt = s => s == null ? "?" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  // Alerte du serveur (administrateurs seulement) : texte fourni par l'API.
   const triche = match.triche && match.triche.duree_saisie != null
-    ? `<span class="alerte-triche" title="Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft"><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Suspicion de triche : temps saisis ${fmt(match.triche.duree_saisie)} après la fin de la draft, somme des temps ${fmt(match.triche.somme_temps)}</span>`
+    ? `<span class="alerte-triche" title="${echapperHtml(match.triche.explication || "")}"><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> ${echapperHtml(match.triche.texte || "Alerte")}</span>`
     : "";
-  // Temps sous les seuils du boss (tuile « Temps anti-triche » de l'admin) :
-  // danger 1 (sous le temps suspect, "limite") ou 2 (sous le temps de triche
-  // confirmée, "minimum"), preuve vidéo à demander.
+  // Alertes de niveau 1 ou 2 (administrateurs seulement).
   const suspects = ["j1", "j2"].filter(role => match.suspicion?.[role]).map(role => {
     const s = match.suspicion[role];
-    // Défi : nombre d'ennemis au-dessus des seuils.
-    const detail = s.ennemis
-      ? `${echapperHtml(match[role].nom)} avec ${s.secondes} ennemis éliminés, au-dessus du seuil ${s.niveau === 2 ? `de triche confirmée (${s.minimum})` : `suspect (${s.limite})`}`
-      : `${echapperHtml(match[role].nom)} en ${fmt(s.secondes)}, sous le temps ${s.niveau === 2 ? `de triche confirmée (${fmt(s.minimum)})` : `suspect (${fmt(s.limite)})`}`;
-    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Danger 2 (triche confirmée)` : `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""> Danger 1 (${s.ennemis ? "score suspect" : "temps suspect"})`} : ${detail}. Preuve vidéo à demander.</span>`;
+    return `<span class="alerte-triche danger-${s.niveau}">${s.niveau === 2 ? `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt=""><img class="icone-texte" src="/DB/images/others/avertissement.webp" alt="">` : `<img class="icone-texte" src="/DB/images/others/avertissement.webp" alt="">`} ${echapperHtml(s.titre || "Alerte")} : ${echapperHtml(match[role].nom)} ${echapperHtml(s.texte || "")}. Preuve vidéo à demander.</span>`;
   }).join("");
   // Sanction de chaque joueur (ban du mode classé), puis dossier clos.
   const sanction = htmlSanction;

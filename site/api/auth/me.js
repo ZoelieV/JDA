@@ -62,8 +62,7 @@ module.exports = async (req, res) => {
       ...(matchTournoi ? { match_tournoi: matchTournoi } : {}),
       // admin : accès à la page d'administration des points (carte de l'accueil).
       // mini_admin : même page en lecture seule, litiges et bans du classé.
-      // theorycraft : accès à la page Theorycraft (tout connecté sauf les
-      // shadowbans).
+      // theorycraft : accès à la page Theorycraft.
       user: {
         ...user,
         admin: estAdmin(user.id),

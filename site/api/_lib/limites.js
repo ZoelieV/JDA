@@ -29,27 +29,47 @@ function verifierFrequenceCompte(discordId, action, delaiMs) {
   return verifierCle(`${action}:compte:${empreinte(String(discordId))}`, delaiMs);
 }
 
+// Vérification et écriture en une seule opération côté base (deux requêtes
+// simultanées ne passent plus ensemble) :
+// 1. ligne existante assez ancienne : mise à jour conditionnelle ;
+// 2. pas de ligne : insertion (clé unique, une seule requête la crée) ;
+// 3. sinon l'action est trop récente : temps restant.
 async function verifierCle(cle, delaiMs) {
   const maintenant = Date.now();
+  const dernier = new Date(maintenant).toISOString();
 
-  const { data, error } = await supabase
+  const { data: maj, error } = await supabase
+    .from("limites_frequence")
+    .update({ dernier })
+    .eq("cle", cle)
+    .lte("dernier", new Date(maintenant - delaiMs).toISOString())
+    .select("cle");
+  if (error) {
+    console.error("Erreur écriture limites_frequence :", error);
+    return 0;
+  }
+  if (maj?.length) return 0;
+
+  const { data: creee, error: erreurCreation } = await supabase
+    .from("limites_frequence")
+    .upsert({ cle, dernier }, { onConflict: "cle", ignoreDuplicates: true })
+    .select("cle");
+  if (erreurCreation) {
+    console.error("Erreur écriture limites_frequence :", erreurCreation);
+    return 0;
+  }
+  if (creee?.length) return 0;
+
+  const { data, error: erreurLecture } = await supabase
     .from("limites_frequence")
     .select("dernier")
     .eq("cle", cle)
     .maybeSingle();
-  if (error) {
-    console.error("Erreur lecture limites_frequence :", error);
+  if (erreurLecture) {
+    console.error("Erreur lecture limites_frequence :", erreurLecture);
     return 0;
   }
-
-  const ecoule = data ? maintenant - Date.parse(data.dernier) : Infinity;
-  if (ecoule < delaiMs) return delaiMs - ecoule;
-
-  const { error: erreurEcriture } = await supabase
-    .from("limites_frequence")
-    .upsert({ cle, dernier: new Date(maintenant).toISOString() });
-  if (erreurEcriture) console.error("Erreur écriture limites_frequence :", erreurEcriture);
-  return 0;
+  return data ? Math.max(1, delaiMs - (maintenant - Date.parse(data.dernier))) : 0;
 }
 
 // Temps à attendre (ms) avant que "action" soit de nouveau permise pour ce

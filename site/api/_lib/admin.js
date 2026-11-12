@@ -2,8 +2,7 @@
 // d'environnement Vercel ADMIN_DISCORD_IDS (séparés par des virgules).
 // Mini admins : table mini_admins de Supabase,
 // page Administration en lecture seule, litiges et bans du classé.
-// Shadowbans : table shadowbans, pas d'accès à la
-// page Theorycraft.
+// Table shadowbans : cf. notes privées de l'équipe (hors dépôt).
 const { supabase } = require("./supabase");
 
 function getIdsAdmins() {

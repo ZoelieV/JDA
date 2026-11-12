@@ -1,30 +1,9 @@
-// Anti-triche : temps minimum de chaque boss (config.temps_suspects, page
-// admin, tuile « Temps anti-triche »). Partagé avec le serveur
-// (api/_lib/sanctions.js, api/points.js), seul juge.
-// { <boss_id>: { suspect, triche } } en secondes, chacun facultatif :
-//   temps < suspect -> danger 1 (temps suspect) ;
-//   temps < triche  -> danger 2 (triche confirmée), triche <= suspect.
-// Défis (score "ennemis" dans DB/boss.json, ex. Mer d'Antan) : nombre
-// d'ennemis éliminés, où le plus grand gagne ; mêmes champs, mais ce sont des
-// maximums : au-dessus de suspect -> danger 1, au-dessus de triche -> danger
-// 2 (triche >= suspect).
-// Classé et Little Cup : match transmis aux administrateurs ; autres
-// matchs : sans Rikoyns (cf. api/_lib/sanctions.js). Réglage jamais
-// enregistré : valeurs par défaut ci-dessous (boss hebdomadaires).
-// Jamais envoyé aux joueurs (cf. versionPublique, api/points.js).
-
-const TEMPS_SUSPECTS_DEFAUT = {
-  signora_boss: { suspect: 37, triche: 37 },
-  raiden_boss: { suspect: 8, triche: 6 },
-  scara_boss: { suspect: 101, triche: 100 },
-  apep_boss: { suspect: 55, triche: 42 },
-  narwhal_boss: { suspect: 40, triche: 16 },
-  arle_boss: { suspect: 27, triche: 25 },
-  erode_boss: { suspect: 22, triche: 14 },
-  dottoreI_boss: { suspect: 38, triche: 21 },
-  dottoreII_boss: { suspect: 53, triche: 47 },
-  chess_boss: { suspect: 41, triche: 39 }
-};
+// Seuils des alertes de temps par boss (config.temps_suspects, réglés dans
+// l'admin). Partagé avec le serveur, seul juge. Jamais envoyé aux joueurs.
+// Valeurs par défaut : côté serveur seulement (api/_lib/temps_suspects_defaut.js) ;
+// dans le navigateur, objet vide rempli par la page admin avec la config
+// (temps_suspects_defaut, administrateurs seulement).
+const TEMPS_SUSPECTS_DEFAUT = typeof module !== "undefined" ? require("../api/_lib/temps_suspects_defaut.js") : {};
 
 const TEMPS_SUSPECT_MAX = 3600;
 const ENNEMIS_SUSPECT_MAX = 9999;

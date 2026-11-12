@@ -703,6 +703,32 @@ async function statistiquesWorldBoss(res, saison = null) {
   });
 }
 
+// Textes des alertes d'un match (administrateurs seulement).
+const fmtAlerte = s => s == null ? "?" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+function textesAlerteTriche(match) {
+  return {
+    texte: `Suspicion de triche : temps saisis ${fmtAlerte(match.duree_saisie)} après la fin de la draft, somme des temps ${fmtAlerte(match.somme_temps)}`,
+    explication: "Somme des temps saisis supérieure au temps écoulé depuis la fin de la draft"
+  };
+}
+
+function avecTextesSuspicion(suspicion) {
+  const copie = { ...suspicion };
+  ["j1", "j2"].forEach(role => {
+    const s = suspicion[role];
+    if (!s) return;
+    copie[role] = {
+      ...s,
+      titre: s.niveau === 2 ? "Danger 2 (triche confirmée)" : `Danger 1 (${s.ennemis ? "score suspect" : "temps suspect"})`,
+      texte: s.ennemis
+        ? `avec ${s.secondes} ennemis éliminés, au-dessus du seuil ${s.niveau === 2 ? `de triche confirmée (${s.minimum})` : `suspect (${s.limite})`}`
+        : `en ${fmtAlerte(s.secondes)}, sous le temps ${s.niveau === 2 ? `de triche confirmée (${fmtAlerte(s.minimum)})` : `suspect (${fmtAlerte(s.limite)})`}`
+    };
+  });
+  return copie;
+}
+
 module.exports = async (req, res) => {
   if (!["GET", "PATCH", "POST"].includes(req.method)) {
     res.setHeader("Allow", "GET, PATCH, POST");
@@ -952,9 +978,9 @@ module.exports = async (req, res) => {
       // Litige (ouvert ou republié) : administrateurs seulement ; triche :
       // temps passé à saisir et somme des temps saisis (secondes).
       ...(admin && match.litige ? { litige: match.litige, litige_par: match.litige_par || null, litige_commentaire: match.litige_commentaire || null } : {}),
-      ...(admin && match.triche ? { triche: { duree_saisie: match.duree_saisie ?? null, somme_temps: match.somme_temps ?? null } } : {}),
-      // Temps sous les meilleurs temps connus du boss (danger 1 ou 2).
-      ...(admin && match.suspicion ? { suspicion: match.suspicion } : {}),
+      // Alertes : textes écrits ici (jamais dans les pages, lues par tous).
+      ...(admin && match.triche ? { triche: { duree_saisie: match.duree_saisie ?? null, somme_temps: match.somme_temps ?? null, ...textesAlerteTriche(match) } } : {}),
+      ...(admin && match.suspicion ? { suspicion: avecTextesSuspicion(match.suspicion) } : {}),
       // Bouton Signaler (joueurs connectés) : match encore valide.
       signalable: estSignalable(match),
       ...deuxJoueurs(match)

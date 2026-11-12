@@ -105,6 +105,8 @@ function initialiserTempsSuspects() {
     message("Chargement…");
     try {
       const [config, boss] = await Promise.all([chargerPointsAdmin(), chargerBoss()]);
+      // Valeurs par défaut : envoyées par le serveur aux administrateurs.
+      Object.assign(TEMPS_SUSPECTS_DEFAUT, config?.temps_suspects_defaut || {});
       tous = boss;
       personnalise = !!config?.temps_suspects;
       saisie = versSaisie(reglageTempsSuspects(config));

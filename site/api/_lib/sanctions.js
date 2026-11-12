@@ -1,17 +1,5 @@
-// Anti-triche et sanctions du mode classé.
-//
-// Détection : les 2 joueurs jouent l'un après l'autre (chacun chronomètre
-// l'autre), donc le temps réel écoulé depuis l'affichage de la saisie des
-// temps (draft.debut_temps) est au moins la somme des 2 temps. Somme des
-// temps supérieure au temps écoulé = impossible : match classé invalidé et
-// transmis aux administrateurs (litige avec triche = true). Défi (nombre
-// d'ennemis tués, cf. estDefiEnnemis) : chaque joueur qui n'a pas abandonné
-// compte pour la durée du défi (2 min).
-//
-// Sanctions (table sanctions), choisies par un
-// administrateur pour chaque joueur du dossier : ban du classé d'une
-// semaine, jusqu'à la fin de la saison (date donnée par l'administrateur)
-// ou définitif ; ou aucune conséquence (explication valable).
+// Alertes sur les temps et sanctions du mode classé (détails : notes privées
+// de l'équipe, hors dépôt).
 const { supabase } = require("./supabase");
 const { DUREE_DEFI_SECONDES, estDefiEnnemis } = require("./boss");
 const { seuilsTempsSuspects, dangerTemps } = require("../../commun/temps_suspects.js");
@@ -33,16 +21,7 @@ function detecterTriche(draft, maintenant = Date.now()) {
   return somme > ecoule ? { duree_saisie: ecoule, somme_temps: somme } : null;
 }
 
-// Temps suspects : seuils de chaque boss réglés par les administrateurs
-// (config.temps_suspects, cf. commun/temps_suspects.js). Sous le temps
-// suspect -> danger 1 ; sous le temps de triche confirmée -> danger 2. Le
-// match classé est alors transmis aux administrateurs (preuve vidéo), comme
-// une triche détectée. Seuils lus par actualiserPoints (_lib/personnages.js),
-// à appeler avant.
-// Défi (nombre d'ennemis) : seuils en maximum (cf. dangerTemps), ennemis: true.
-// -> null si aucun temps suspect, sinon { niveau (1 | 2, le plus haut),
-// j1, j2 : { secondes, niveau, limite (suspect), minimum (triche), ennemis? } | null }
-// (noms gardés pour les archives déjà écrites, cf. historique.js).
+// Seuils par boss (config.temps_suspects) -> { niveau, j1, j2 } ou null.
 function detecterTempsSuspects(draft) {
   const seuils = seuilsTempsSuspects(draft.boss_id, getTempsSuspects());
   if (!seuils) return null;

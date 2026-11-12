@@ -142,7 +142,8 @@ const { lireRecommandationsBoss } = require("../commun/recommandations_boss.js")
 const { lireSynergies, lireAlternativesArmes, synergieIncoherente } = require("../commun/synergies.js");
 const { lireRecommandationsStuff } = require("../commun/recommandations_stuff.js");
 const { MODES_TIRAGE_BOSS, lireReglageBossMode } = require("../commun/boss_modes.js");
-const { lireReglageTempsSuspects } = require("../commun/temps_suspects.js");
+const { memoriser } = require("./_lib/memo");
+const { lireReglageTempsSuspects, TEMPS_SUSPECTS_DEFAUT } = require("../commun/temps_suspects.js");
 const { lireStatistiques } = require("./_lib/statistiques");
 // Recommandations de la box stuff par défaut (tant qu'aucun admin ne les a
 // modifiées, cf. commun/recommandations_stuff.js).
@@ -547,10 +548,13 @@ module.exports = async (req, res) => {
 
     if (req.method === "GET") {
       res.setHeader("Cache-Control", "no-store");
-      const config = await lireConfig();
       // Mini admins : tout voir (page Administration en lecture seule), rien modifier.
       // seuil_equilibrage : points d'écart par ban d'équilibrage (page Theorycraft).
       const moderateur = user && await estModerateur(user.id);
+      // Config lue par presque toutes les pages : gardée 10 s en mémoire pour
+      // les joueurs (cf. _lib/memo.js ; jamais modifiée sur place), relue à
+      // chaque fois pour les administrateurs (page admin toujours à jour).
+      const config = moderateur ? await lireConfig() : await memoriser("config_points", 10 * 1000, lireConfig);
       const donnees = moderateur ? config : versionPublique(config);
       // Recommandations de la box stuff (par défaut si jamais modifiées) ;
       // hors admins, sans les persos masqués (ni DPS, ni supports).
@@ -563,7 +567,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({
         ...donnees,
         // Page Équilibrage : version du tableau chargé (cf. versionTableau).
-        ...(moderateur ? { version_tableau: versionTableau(config) } : {}),
+        ...(moderateur ? { version_tableau: versionTableau(config), temps_suspects_defaut: TEMPS_SUSPECTS_DEFAUT } : {}),
         seuil_equilibrage: SEUIL_EQUILIBRAGE,
         limites_equilibrage: lireLimitesEquilibrage(config.limites_equilibrage),
         seuil_horizontal: lireSeuilHorizontal(config.seuil_horizontal),

@@ -3082,8 +3082,7 @@ function rendreVerification() {
 // Litige : manche invalidée, pas de vainqueur ; revanche possible.
 function rendreLitige() {
   rendreRecap();
-  // Anti-triche : pas de détail de la détection côté joueurs (visible par
-  // les administrateurs seulement, page Historique).
+  // Match transmis aux administrateurs (détail : page des litiges).
   if (draft.triche) {
     document.getElementById("resultat-final").innerHTML = `
       <p class="ligne-vainqueur"><span class="litige">Match invalidé</span></p>
