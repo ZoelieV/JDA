@@ -15,6 +15,7 @@
 // recalculé en rejouant ses matchs classés dans l'ordre (un litige
 // republié plus tard reprend sa place à sa date).
 const { saisonDuMatch } = require("./saisons");
+const { lireToutesLesLignes } = require("./supabase");
 const { estDefiEnnemis } = require("./boss");
 
 const TROPHEES_MAX = 30;
@@ -165,7 +166,8 @@ async function chargerMatchsClasses(supabase) {
   // Colonnes facultatives (litige, mode_theatre) : lecture sans elles si
   // elles n'existent pas encore.
   const champs = "id, created_at, player1_discord_id, player2_discord_id, vainqueur, classe, trophees";
-  const lire = select => supabase.from("match_history").select(select).eq("classe", true);
+  // Tous les matchs classés, par pages (cf. lireToutesLesLignes).
+  const lire = select => lireToutesLesLignes(() => supabase.from("match_history").select(select).eq("classe", true).order("id"));
   // Sans colonne saison (base pas à jour) : tout en saison 0.
   let { data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2, saison`);
   if (error) ({ data, error } = await lire(`${champs}, litige, mode_theatre, bonus_saison_j1, bonus_saison_j2`));

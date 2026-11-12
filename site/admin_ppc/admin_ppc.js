@@ -359,6 +359,9 @@ async function chargerDonnees() {
   // Points déjà appliqués par cartes.js (JSON + modifications des admins),
   // masqués compris.
   const [listePersos, listeArmes, config, boss] = await Promise.all([chargerPersonnages(true), chargerArmes(true), chargerPointsAdmin(), chargerBoss()]);
+  // Version du tableau chargé, renvoyée à l'enregistrement (cf.
+  // versionTableau, api/points.js) ; mise à jour après chaque écriture.
+  window.versionTableauPoints = config?.version_tableau ?? null;
   personnages = listePersos;
   armes = listeArmes;
   listeBoss = boss;                  // cf. admin_ajout.js
@@ -955,9 +958,11 @@ async function enregistrer() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison, alternatives_armes: alternatives, synergies, factions, soutiens })
+      body: JSON.stringify({ characters: valeurs.characters, weapons: valeurs.weapons, modes, masques, theatre: buffs, bonus_saison: bonusSaison, alternatives_armes: alternatives, synergies, factions, soutiens, version_tableau: window.versionTableauPoints })
     });
-    if (!reponse.ok) throw new Error((await reponse.json().catch(() => ({}))).error || "Erreur d'enregistrement.");
+    const enregistre = await reponse.json().catch(() => ({}));
+    if (!reponse.ok) throw new Error(enregistre.error || "Erreur d'enregistrement.");
+    if (enregistre.version_tableau) window.versionTableauPoints = enregistre.version_tableau;
     etatEnregistre = etatActuel();
     afficherEtat("Modifications enregistrées : elles s'appliquent sur tout le site.", "succes");
   } catch (erreur) {

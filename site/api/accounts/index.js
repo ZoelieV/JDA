@@ -1,4 +1,4 @@
-const { supabase } = require("../_lib/supabase");
+const { supabase, lireToutesLesLignes } = require("../_lib/supabase");
 const { memoriser } = require("../_lib/memo");
 const { calculerPointsBox, calculerPointsArmesBox } = require("../_lib/draft");
 const { getPersonnages, getArmes, migrerCollectionPersos, actualiserPoints, palierTheatre, costBox } = require("../_lib/personnages");
@@ -10,10 +10,12 @@ const { resumeFlex } = require("../_lib/koyns");
 const CHAMPS = "discord_id, discord_username, discord_global_name, discord_avatar_url, updated_at, data";
 
 async function chargerProfils() {
-  const { data, error } = await supabase
+  // Tous les profils, par pages (cf. lireToutesLesLignes).
+  const { data, error } = await lireToutesLesLignes(() => supabase
     .from("profiles")
     .select(CHAMPS)
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .order("discord_id"));
   if (error) throw error;
   return data;
 }
@@ -31,57 +33,22 @@ async function chargerResultats() {
   // entrainement (base pas à jour), il n'y en a pas.
   // Matchs d'équipe (colonne mode_equipe) : pas comptés
   // ici (stats des matchs 1v1).
-  let { data, error } = await supabase
-    .from("match_history")
-    .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison, mode_equipe`)
-    .or(litigeOuvert);
-
-  if (error) {
-    ({ data, error } = await supabase
-      .from("match_history")
-      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison`)
-      .or(litigeOuvert));
-  }
-
-  // Sans colonne saison (base pas à jour) : tout en saison 0.
-  if (error) {
-    ({ data, error } = await supabase
-      .from("match_history")
-      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2`)
-      .or(litigeOuvert));
-  }
-
-  // Sans colonnes du bonus de saison (base pas à jour).
-  if (error) {
-    ({ data, error } = await supabase
-      .from("match_history")
-      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement`)
-      .or(litigeOuvert));
-  }
-
-  if (error) {
-    ({ data, error } = await supabase
-      .from("match_history")
-      .select(`${champs}, id, created_at, litige, classe, trophees, mode_theatre`)
-      .or(litigeOuvert));
-  }
-
-  // Sans colonne mode_theatre (base pas à jour) : tout en
-  // classement Classique.
-  if (error) {
-    ({ data, error } = await supabase.from("match_history").select(`${champs}, id, created_at, litige, classe, trophees`).or(litigeOuvert));
-  }
-
-  // Sans colonne litige (base pas à jour) : classé quand même.
-  if (error) {
-    ({ data, error } = await supabase.from("match_history").select(`${champs}, id, created_at, classe, trophees`));
-  }
-  if (error) {
-    ({ data, error } = await supabase.from("match_history").select(champs).or(litigeOuvert));
-  }
-  if (error) {
-    ({ data, error } = await supabase.from("match_history").select(champs));
-  }
+  // Tout l'historique, par pages (cf. lireToutesLesLignes) ; colonnes
+  // facultatives retirées une à une si la base n'est pas à jour (mode_equipe,
+  // saison, bonus de saison, entrainement, mode_theatre, litige, classé).
+  const lire = (select, filtre = true) => lireToutesLesLignes(() => {
+    const requete = supabase.from("match_history").select(select);
+    return (filtre ? requete.or(litigeOuvert) : requete).order("id");
+  });
+  let { data, error } = await lire(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison, mode_equipe`);
+  if (error) ({ data, error } = await lire(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2, saison`));
+  if (error) ({ data, error } = await lire(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement, bonus_saison_j1, bonus_saison_j2`));
+  if (error) ({ data, error } = await lire(`${champs}, id, created_at, litige, classe, trophees, mode_theatre, entrainement`));
+  if (error) ({ data, error } = await lire(`${champs}, id, created_at, litige, classe, trophees, mode_theatre`));
+  if (error) ({ data, error } = await lire(`${champs}, id, created_at, litige, classe, trophees`));
+  if (error) ({ data, error } = await lire(`${champs}, id, created_at, classe, trophees`, false));
+  if (error) ({ data, error } = await lire(champs));
+  if (error) ({ data, error } = await lire(champs, false));
 
   if (error) {
     // Pas bloquant : la liste reste utilisable sans ces tris.

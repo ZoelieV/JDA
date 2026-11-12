@@ -377,6 +377,8 @@ async function envoyerAjout(corps) {
   });
   const donnees = await reponse.json().catch(() => ({}));
   if (!reponse.ok) throw new Error(donnees.error || "Erreur d'enregistrement.");
+  // Version du tableau des points après cette écriture (cf. admin_ppc.js).
+  if (donnees.version_tableau) window.versionTableauPoints = donnees.version_tableau;
   ajouts = lireAjoutsConfig(donnees);
   return donnees;
 }

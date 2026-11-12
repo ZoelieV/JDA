@@ -398,6 +398,35 @@ async function lireConfig() {
   return data?.data || {};
 }
 
+// Config et date de sa dernière écriture (écriture conditionnelle du POST :
+// deux enregistrements simultanés ne s'écrasent pas, cf. plus bas).
+async function lireConfigDatee() {
+  const { data, error } = await supabase.from("points").select("data, updated_at").eq("id", "config").maybeSingle();
+  if (error) throw error;
+  return { config: data?.data || {}, ecriteLe: data ? data.updated_at : undefined };
+}
+
+// Version du tableau des points : empreinte des parties de la config que le
+// bouton Enregistrer de la page Équilibrage remplace en entier. La page
+// renvoie celle qu'elle a chargée : si quelqu'un d'autre a modifié le
+// tableau entre-temps, l'enregistrement est refusé (sinon une page ouverte
+// depuis longtemps écraserait ses changements). Clés triées : même empreinte
+// quelle que soit l'ordre des clés (jsonb relu, objet construit ici).
+const CLES_TABLEAU = ["characters", "weapons", "modes", "masques", "theatre", "bonus_saison", "alternatives_armes", "synergies", "factions", "soutiens"];
+
+function canonique(valeur) {
+  if (Array.isArray(valeur)) return valeur.map(canonique);
+  if (valeur && typeof valeur === "object") {
+    return Object.fromEntries(Object.keys(valeur).sort().filter(cle => valeur[cle] !== undefined).map(cle => [cle, canonique(valeur[cle])]));
+  }
+  return valeur;
+}
+
+function versionTableau(config) {
+  const contenu = JSON.stringify(CLES_TABLEAU.map(cle => canonique(config?.[cle] ?? null)));
+  return require("crypto").createHash("sha256").update(contenu).digest("hex").slice(0, 16);
+}
+
 // Valeurs alternatives des armes : ids connus, pourcentages permis (0 à
 // 400 %, cf. POURCENTAGES_ALTERNATIFS), persos connus (clés signature : id, ou groupe pour le Voyageur) ;
 // valeur par défaut (100 %, aucun groupe) pas gardée (cf.
@@ -533,6 +562,8 @@ module.exports = async (req, res) => {
       // Theorycraft).
       return res.status(200).json({
         ...donnees,
+        // Page Équilibrage : version du tableau chargé (cf. versionTableau).
+        ...(moderateur ? { version_tableau: versionTableau(config) } : {}),
         seuil_equilibrage: SEUIL_EQUILIBRAGE,
         limites_equilibrage: lireLimitesEquilibrage(config.limites_equilibrage),
         seuil_horizontal: lireSeuilHorizontal(config.seuil_horizontal),
@@ -545,7 +576,7 @@ module.exports = async (req, res) => {
       if (!estAdmin(user.id)) return res.status(403).json({ error: "Réservé aux administrateurs" });
 
       const corps = req.body || {};
-      const ancienne = await lireConfig();
+      const { config: ancienne, ecriteLe } = await lireConfigDatee();
       const ajouts = lireAjouts(ancienne);
       let config;
       // Tableau des points enregistré : modifications notées dans l'historique.
@@ -855,6 +886,15 @@ module.exports = async (req, res) => {
         }
         config = { ...ancienne, categoriesArmes: modifs };
       } else {
+        // Tableau des points : refusé si le tableau enregistré n'est plus
+        // celui que la page a chargé (cf. versionTableau).
+        if (corps.version_tableau !== versionTableau(ancienne)) {
+          return res.status(409).json({
+            error: typeof corps.version_tableau === "string"
+              ? "Le tableau des points a été modifié par quelqu'un d'autre depuis l'ouverture de cette page : recharge la page pour repartir de la dernière version (tes modifications non enregistrées seront à refaire)."
+              : "Page pas à jour : recharge-la avant d'enregistrer."
+          });
+        }
         const modes = {};
         Object.keys(MODES_POINTS).forEach(cle => {
           modes[cle] = corps.modes?.[cle] === "multiplication" ? "multiplication" : "addition";
@@ -900,16 +940,25 @@ module.exports = async (req, res) => {
         );
       }
 
-      const { error } = await supabase.from("points").upsert({
-        id: "config",
-        data: config,
-        updated_at: new Date().toISOString(),
-        updated_by: user.id
-      });
-      if (error) throw error;
+      // Écriture conditionnelle : seulement si la config n'a pas été réécrite
+      // depuis sa lecture au début de cette requête (deux enregistrements
+      // simultanés : le second est refusé au lieu d'effacer le premier).
+      const ligne = { id: "config", data: config, updated_at: new Date().toISOString(), updated_by: user.id };
+      if (ecriteLe === undefined) {
+        const { error } = await supabase.from("points").upsert(ligne);
+        if (error) throw error;
+      } else {
+        let ecriture = supabase.from("points").update(ligne).eq("id", "config");
+        ecriture = ecriteLe === null ? ecriture.is("updated_at", null) : ecriture.eq("updated_at", ecriteLe);
+        const { data: ecrites, error } = await ecriture.select("id");
+        if (error) throw error;
+        if (!ecrites?.length) {
+          return res.status(409).json({ error: "Un autre enregistrement vient d'avoir lieu en même temps : réessaie." });
+        }
+      }
       await noterModifications(historique, user.id);
 
-      return res.status(200).json(config);
+      return res.status(200).json({ ...config, version_tableau: versionTableau(config) });
     }
 
     res.setHeader("Allow", "GET, POST");

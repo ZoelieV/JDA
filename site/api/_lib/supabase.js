@@ -41,4 +41,20 @@ const supabase = createClient(
   { global: { fetch: fetchAvecReessai } }
 );
 
-module.exports = { supabase, fetchAvecReessai };
+// Lecture complète d'une table : PostgREST renvoie 1000 lignes au plus par
+// requête (au-delà, le reste est coupé sans erreur : classement, trophées
+// ou solde faux). requete() : nouvelle requête à chaque page, avec un ordre
+// stable (.order sur une colonne unique). -> { data, error } comme Supabase.
+const TAILLE_PAGE_LECTURE = 1000;
+
+async function lireToutesLesLignes(requete, taille = TAILLE_PAGE_LECTURE) {
+  const lignes = [];
+  for (let debut = 0; ; debut += taille) {
+    const { data, error } = await requete().range(debut, debut + taille - 1);
+    if (error) return { data: null, error };
+    lignes.push(...(data || []));
+    if (!data || data.length < taille) return { data: lignes, error: null };
+  }
+}
+
+module.exports = { supabase, fetchAvecReessai, lireToutesLesLignes };

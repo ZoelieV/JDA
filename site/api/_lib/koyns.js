@@ -35,7 +35,7 @@
 //   supérieur, mouvement "tirage_doublon").
 // - DEPART_ADMIN une fois pour les administrateurs (de quoi tout acheter :
 //   ils passent par l'achat comme tout le monde, cf. acheterCosmetique).
-const { supabase } = require("./supabase");
+const { supabase, lireToutesLesLignes } = require("./supabase");
 const { estAdmin, estMiniAdmin } = require("./admin");
 const { debutJournee } = require("./journee");
 const { getConfigKoyns } = require("./personnages");
@@ -143,7 +143,9 @@ async function lireSolde(discordId) {
       await ajouterMouvement({ discord_id: discordId, montant, raison: "depart", ref });
     }
   }
-  const { data, error } = await supabase.from("koyns_mouvements").select("montant").eq("discord_id", discordId);
+  // Tous ses mouvements, par pages (un joueur qui fait beaucoup de vœux
+  // dépasse vite 1000 lignes, cf. lireToutesLesLignes).
+  const { data, error } = await lireToutesLesLignes(() => supabase.from("koyns_mouvements").select("montant").eq("discord_id", discordId).order("id"));
   if (error) {
     console.error("Erreur lecture koyns_mouvements :", error);
     return 0;
