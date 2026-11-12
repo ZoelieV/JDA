@@ -499,21 +499,21 @@
   },
   {
     "id": "boss_1",
-    "nom": "Carnage 5 : Salle 1",
+    "nom": "Carnage 4 : Salle 1",
     "type": "carnage_boss",
     "res": [10, 70, -10, 10, 10, 10, 10],
     "image": "images/boss/carnage_chtonien/Wavebinder_Stygian_Onslaught_Preview.webp"
   },
   {
     "id": "boss_2",
-    "nom": "Carnage 5 : Salle 2",
+    "nom": "Carnage 4 : Salle 2",
     "type": "carnage_boss",
     "res": [60, 10, 10, 10, 10, 10, 10],
     "image": "images/boss/carnage_chtonien/Emperor_of_Fire_and_Iron_Stygian_Onslaught_Preview.webp"
   },
   {
     "id": "boss_3",
-    "nom": "Carnage 5 : Salle 3",
+    "nom": "Carnage 4 : Salle 3",
     "type": "carnage_boss",
     "res": [10, 10, 10, 10, 10, 70, 10],
     "image": "images/boss/carnage_chtonien/Radiant_Moongecko_Stygian_Onslaught_Preview.webp"
