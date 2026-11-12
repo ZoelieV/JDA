@@ -74,6 +74,13 @@
   let enregistres = null; // choix enregistrés (à l'ouverture)
   let brouillon = null;   // choix en cours, appliqués seulement à l'enregistrement
   let ongletActif = "fond";
+  // Filtres par rareté du tirage (fonds, namecards, bannières ; cumulables,
+  // aucun = tout), remis à zéro au changement d'onglet.
+  const filtresRarete = new Set();
+  const RARETES_FILTRE = [["commun", "Commun"], ["rare", "Rare"], ["epique", "Épique"], ["legendaire", "Légendaire"]];
+  const ONGLETS_RARETE = ["fond", "banniere", "banniere2"];
+  const rareteDe = id => koyns?.tirage?.raretes?.[id] || "commun";
+  const passeFiltreRarete = id => !filtresRarete.size || filtresRarete.has(rareteDe(id));
   let options = {};
   let koyns = null;       // { solde, prix, tout, possedes: Set, exclusifs: Set } (api/auth/profile.js)
   // Panier : id -> { id, nom, image, type, choisir } (choisir : appliqué si
@@ -113,7 +120,7 @@
     const lien = document.createElement("link");
     lien.id = "styles-personnalisation";
     lien.rel = "stylesheet";
-    lien.href = "/commun/personnalisation.css?v=43";
+    lien.href = "/commun/personnalisation.css?v=44";
     document.head.appendChild(lien);
   }
 
@@ -618,6 +625,7 @@
           </button>
         </div>
         <input type="text" class="perso-recherche" placeholder="Rechercher…" autocomplete="off">
+        <div class="perso-filtres-rarete" role="group" aria-label="Filtrer par rareté" hidden></div>
         <div class="perso-choix"></div>
         <input type="file" class="perso-fichier-image" accept="${TYPES_IMAGE_PERSO.join(",")}" hidden>
         <div class="perso-pied">
@@ -641,6 +649,13 @@
       bloc.addEventListener("click", () => choisirOnglet(bloc.dataset.onglet));
     });
     modal.querySelector(".perso-recherche").addEventListener("input", rendreChoix);
+    modal.querySelector(".perso-filtres-rarete").addEventListener("click", event => {
+      const bouton = event.target.closest("[data-rarete]");
+      if (!bouton) return;
+      if (filtresRarete.has(bouton.dataset.rarete)) filtresRarete.delete(bouton.dataset.rarete);
+      else filtresRarete.add(bouton.dataset.rarete);
+      rendreChoix();
+    });
     modal.querySelector(".perso-panier").addEventListener("click", ouvrirPanier);
     modal.querySelector(".perso-enregistrer").addEventListener("click", enregistrer);
     const champImage = modal.querySelector(".perso-fichier-image");
@@ -669,6 +684,7 @@
       bloc.classList.toggle("active", bloc.dataset.onglet === onglet);
     });
     modal.querySelector(".perso-recherche").value = "";
+    filtresRarete.clear();
     rendreChoix();
     modal.querySelector(".perso-contenu").scrollTop = 0;
   }
@@ -1091,6 +1107,22 @@
     mettreAJourPied();
   }
 
+  // Boutons des raretés (onglets fonds, namecards, bannières), avec le nombre
+  // de cosmétiques proposés (recherche comprise) dans chacune.
+  function rendreFiltresRarete(recherche) {
+    const zone = modal.querySelector(".perso-filtres-rarete");
+    zone.hidden = !ONGLETS_RARETE.includes(ongletActif) || !cosmetiques;
+    if (zone.hidden) return;
+    const ids = ongletActif === "fond"
+      ? cosmetiques.fonds.filter(fond => !recherche || nomFond(fond).toLowerCase().includes(recherche)).map(fond => idCosmetique("fond", fond.id))
+      : (ongletActif === "banniere" ? cosmetiques.bannieres : cosmetiques.bannieres2)
+        .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche)).map(chemin => idCosmetique(ongletActif, chemin));
+    const comptes = {};
+    ids.filter(estProposable).forEach(id => { comptes[rareteDe(id)] = (comptes[rareteDe(id)] || 0) + 1; });
+    zone.innerHTML = RARETES_FILTRE.filter(([id]) => comptes[id] || filtresRarete.has(id)).map(([id, nom]) =>
+      `<button type="button" class="perso-filtre-rarete rarete-${id}${filtresRarete.has(id) ? " actif" : ""}" data-rarete="${id}" aria-pressed="${filtresRarete.has(id)}">${nom} <small>${comptes[id] || 0}</small></button>`).join("");
+  }
+
   function rendreChoix() {
     const conteneur = modal.querySelector(".perso-choix");
     conteneur.innerHTML = "";
@@ -1100,6 +1132,7 @@
       return;
     }
     const recherche = modal.querySelector(".perso-recherche").value.trim().toLowerCase();
+    rendreFiltresRarete(recherche);
 
     if (ongletActif === "skins") {
       rendreSkins(conteneur, recherche);
@@ -1124,8 +1157,9 @@
     };
 
     if (ongletActif === "fond") {
-      // Mon image : la choisir, en importer une (autre), ou la retirer.
-      if (!recherche || "mon image".includes(recherche)) {
+      // Mon image : la choisir, en importer une (autre), ou la retirer
+      // (pas de rareté : masquée quand un filtre de rareté est actif).
+      if (!filtresRarete.size && (!recherche || "mon image".includes(recherche))) {
         const grille = nouvelleGrille();
         if (imageBrouillon) {
           grille.appendChild(creerChoix(urlBlob(imageBrouillon), "Mon image", brouillon.fond === FOND_PERSO, choisir(FOND_PERSO), "", idCosmetique("fond", FOND_PERSO)));
@@ -1165,7 +1199,8 @@
       // Fonds groupés par catégorie (cf. categorie_fond, scripts/generer_cosmetiques.py).
       [...new Set(cosmetiques.fonds.map(fond => fond.categorie))].forEach(categorie => {
         const fonds = cosmetiques.fonds.filter(fond =>
-          fond.categorie === categorie && estProposable(idCosmetique("fond", fond.id)) && (!recherche || nomFond(fond).toLowerCase().includes(recherche)));
+          fond.categorie === categorie && estProposable(idCosmetique("fond", fond.id)) && passeFiltreRarete(idCosmetique("fond", fond.id)) &&
+          (!recherche || nomFond(fond).toLowerCase().includes(recherche)));
         if (!fonds.length) return;
         const grille = nouvelleGrille();
         fonds.forEach(fond => grille.appendChild(creerChoix(
@@ -1180,7 +1215,7 @@
     const grille = nouvelleGrille();
     [...liste]
       .sort((a, b) => (b === PARAMETRES_DEFAUT[ongletActif]) - (a === PARAMETRES_DEFAUT[ongletActif]))
-      .filter(chemin => estProposable(idCosmetique(ongletActif, chemin)))
+      .filter(chemin => estProposable(idCosmetique(ongletActif, chemin)) && passeFiltreRarete(idCosmetique(ongletActif, chemin)))
       .filter(chemin => !recherche || nomNamecard(chemin).toLowerCase().includes(recherche))
       .forEach(chemin => grille.appendChild(creerChoix(
         urlImage(chemin), nomNamecard(chemin), brouillon[ongletActif] === chemin, choisir(chemin), "", idCosmetique(ongletActif, chemin))));
