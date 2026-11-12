@@ -7,14 +7,14 @@ const { verifierFrequence, verifierFrequenceCompte } = require("../_lib/limites"
 const { MODES_THEATRE, MODE_MELEE, NB_PERSOS_MIN_BOX, etatInitialDraft, calculerPoolJoueur, resoudreTheatre, theatreProfil } = require("../_lib/draft");
 const { calculerEquilibrage, donneesBoxRole, erreurPointsBox } = require("../_lib/boxes");
 const { demarrerAnalyse } = require("../_lib/chronos");
-const { getPersonnages, actualiserPoints, migrerCollectionPersos, getLittleCup, estEquilibrageMiniAdmins } = require("../_lib/personnages");
+const { getPersonnages, actualiserPoints, migrerCollectionPersos, getLittleCup } = require("../_lib/personnages");
 const { erreurLittleCup } = require("../_lib/little_cup");
 const { getBossParId, bossCarnageExclus, reglageBoss, estHorsCoop, ERREUR_CARNAGE_DESACTIVE, ERREUR_BOSS_MODE } = require("../_lib/boss");
 const { legendesTueesAujourdhui } = require("../_lib/legendes");
 const { preparerCreation, creerEntrainementEquipe: creerRoomEntrainementEquipe } = require("../_lib/equipe");
 const { analyserVitrine } = require("../_lib/vitrine");
 const { preparerCreation: preparerWorldBoss, erreurAcces: erreurAccesWorldBoss, rejoindreFileMM } = require("../_lib/world_boss");
-const { estAdmin, estModerateur } = require("../_lib/admin");
+const { estModerateur, aModeEquilibrage } = require("../_lib/admin");
 const { estIdFictif, lireBoxFictive } = require("../_lib/boxes_fictives");
 
 // Entraînement : une création toutes les 10 s par IP au plus.
@@ -114,13 +114,13 @@ async function creerEntrainement(req, res, user) {
   const erreurBoss = await erreurBossImpose(bossId, user.id, { entrainement: true });
   if (erreurBoss) return res.status(400).json({ error: erreurBoss });
 
-  // Mode Équilibrage (vrais admins ; mini admins si l'admin l'a permis, cf.
-  // estEquilibrageMiniAdmins) : déroulé du calcul des bans d'équilibrage
-  // montré avant les bans (cf. detailEquilibrage, _lib/boxes.js) ; sans
-  // chronos (ils tourneraient pendant le déroulé).
+  // Mode Équilibrage (Strike seulement, cf. aModeEquilibrage) : déroulé du
+  // calcul des bans d'équilibrage montré avant les bans (cf.
+  // detailEquilibrage, _lib/boxes.js) ; sans chronos (ils tourneraient
+  // pendant le déroulé).
   const detailEquilibrage = config.equilibrage_detail === true;
-  if (detailEquilibrage && !estAdmin(user.id) && !(estEquilibrageMiniAdmins() && await estModerateur(user.id))) {
-    return res.status(403).json({ error: "Mode Équilibrage réservé aux administrateurs." });
+  if (detailEquilibrage && !aModeEquilibrage(user.id)) {
+    return res.status(403).json({ error: "Mode Équilibrage réservé à l'administrateur Strike." });
   }
 
   const attente = await verifierFrequence(req, "entrainement", DELAI_ENTRAINEMENT_MS);

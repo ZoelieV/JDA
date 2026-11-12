@@ -17,6 +17,15 @@ function estAdmin(discordId) {
   return !!discordId && getIdsAdmins().includes(String(discordId));
 }
 
+// Mode Équilibrage de l'entraînement (déroulé du calcul des bans
+// d'équilibrage) : réservé à l'administrateur Strike (décision du
+// 2026-11-12 ; avant : vrais admins, mini admins si permis).
+const ID_MODE_EQUILIBRAGE = "642409257597272077";
+
+function aModeEquilibrage(discordId) {
+  return String(discordId) === ID_MODE_EQUILIBRAGE && estAdmin(discordId);
+}
+
 // Liste d'IDs Discord d'une table Supabase (colonne discord_id), relue au
 // plus toutes les 30 s. Table absente (SQL pas lancé) : liste vide.
 const CACHE_LISTES_MS = 30 * 1000;
@@ -43,4 +52,4 @@ async function estModerateur(discordId) {
   return estAdmin(discordId) || await estMiniAdmin(discordId);
 }
 
-module.exports = { getIdsAdmins, estAdmin, estMiniAdmin, estModerateur, estShadowban };
+module.exports = { aModeEquilibrage, getIdsAdmins, estAdmin, estMiniAdmin, estModerateur, estShadowban };

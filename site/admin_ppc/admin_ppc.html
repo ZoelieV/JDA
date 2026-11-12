@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
 <link rel="stylesheet" href="/commun/theme.css?v=rem5">
-<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=74">
+<link rel="stylesheet" href="/admin_ppc/admin_ppc.css?v=75">
 <link rel="stylesheet" href="/commun/entete.css?v=rem49">
 <link rel="stylesheet" href="/commun/cartes.css?v=6">
 <link rel="stylesheet" href="/commun/tri.css?v=9">
@@ -655,7 +655,9 @@
         n'est pas encore calculé (une draft en cours et ses revanches gardent la leur).
       </p>
       <div id="liste-equilibrage" class="liste-equilibrage"></div>
-      <label class="option-equilibrage-mini" id="option-equilibrage-mini">
+      <!-- Plus utilisée : mode Équilibrage réservé à Strike (cf.
+           aModeEquilibrage, api/_lib/admin.js). -->
+      <label class="option-equilibrage-mini" id="option-equilibrage-mini" hidden>
         <input type="checkbox" id="equilibrage-mini-admins">
         Ouvrir le <strong>mode Équilibrage de l'entraînement</strong> aux mini admins (sinon : vrais admins seulement)
       </label>
