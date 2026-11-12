@@ -366,6 +366,23 @@ module.exports = async (req, res) => {
 
       const rows = await r.json();
       const data = rows[0]?.data || null;
+      // Cosmétiques plus possédés (remise à zéro, retrait par un admin…) :
+      // retirés des paramètres enregistrés dès la lecture, pour que la
+      // bannière, le fond, etc. reviennent au défaut partout (pas seulement
+      // à l'enregistrement de la personnalisation). Lecture des possédés en
+      // erreur : rien n'est touché.
+      if (data?.parametres) {
+        const { data: lignes, error: erreurPossedes } = await supabase.from("cosmetiques_possedes").select("cosmetique").eq("discord_id", discordId);
+        if (!erreurPossedes) {
+          const possedes = new Set((lignes || []).map(ligne => ligne.cosmetique.split("#")[0]));
+          const propres = filtrerParametresPossedes(data.parametres, possedes);
+          if (JSON.stringify(propres) !== JSON.stringify(data.parametres)) {
+            data.parametres = propres;
+            const { error: erreurNettoyage } = await supabase.from("profiles").update({ data }).eq("discord_id", discordId);
+            if (erreurNettoyage) console.error("Erreur nettoyage des cosmétiques du profil :", erreurNettoyage);
+          }
+        }
+      }
       // Palier de théâtre recalculé (profil enregistré avant le calcul
       // automatique, ou catalogue changé depuis). Rikoyns : solde et
       // cosmétiques possédés (personnalisation, cf. _lib/koyns.js).
