@@ -138,7 +138,7 @@ function creerLigne(joueur) {
       <div class="joueur-infos">
         <div class="joueur-textes">
           <div class="joueur-nom"></div>
-          ${joueur.prime ? `<span class="badge-prime" title="Plus longue série de victoires en cours (${joueur.serie}) : le battre rapporte +5 trophées">${ICONE_ENTRAINEMENT} Prime +5 · ${joueur.serie} victoires d'affilée</span>` : ""}
+          ${joueur.prime ? `<span class="badge-prime" title="Plus longue série de victoires en cours (${joueur.serie}) : le battre rapporte +5 trophées">${ICONE_ENTRAINEMENT} Prime +5<span class="prime-serie"> · ${joueur.serie} victoires d'affilée</span><span class="prime-trophee">${ICONE_TROPHEE}</span></span>` : ""}
           <div class="joueur-sub"></div>
         </div>
         ${htmlRangTrophees(joueur.trophees)}

@@ -311,3 +311,70 @@
   font-size: 0.75rem;
   font-weight: bold;
 }
+
+/* Prime : série en entier sur ordi ; téléphone : « Prime +5 » et l'icône
+   des trophées, sur une ligne (la série reste dans la bulle d'aide). */
+.badge-prime .prime-trophee {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .badge-prime .prime-serie {
+    display: none;
+  }
+
+  .badge-prime .prime-trophee {
+    display: inline;
+  }
+
+  /* Plus petit : tient dans la colonne du pseudo, même à 360 px. */
+  .badge-prime {
+    white-space: nowrap;
+    padding: 0 0.25rem;
+    font-size: 0.625rem;
+  }
+
+  .badge-prime .prime-trophee .icone-texte {
+    margin-left: 0.125rem;
+  }
+
+  .badge-prime .icone-texte {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  /* Ligne du porteur : la colonne du pseudo garde au moins la largeur du
+     badge (le pseudo et l'@ se coupent avant), et prend la place libre. */
+  .joueur-textes:has(.badge-prime) {
+    display: grid;
+    flex-grow: 1;
+    min-width: auto;
+  }
+
+  .joueur-textes:has(.badge-prime) .joueur-nom,
+  .joueur-textes:has(.badge-prime) .joueur-sub {
+    width: 0;
+    min-width: 100%;
+  }
+
+  .joueur-textes .badge-prime {
+    justify-self: start;
+  }
+
+  .joueur-infos:has(.badge-prime) {
+    gap: 0.25rem;
+  }
+}
+
+/* Très petit écran : icônes du porteur de la prime un peu réduites pour
+   laisser la place au badge. */
+@media (max-width: 380px) {
+  .joueur-infos:has(.badge-prime) .medaille-theatre {
+    width: 1.6em;
+    height: 1.6em;
+  }
+
+  .joueur-infos:has(.badge-prime) .rang-trophees {
+    font-size: 0.85em;
+  }
+}
