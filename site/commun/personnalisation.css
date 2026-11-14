@@ -279,6 +279,13 @@
   color: #111 !important;
 }
 
+/* Possédés : doré, séparé des raretés. */
+.perso-filtre-rarete.filtre-possedes {
+  margin-right: 0.5rem;
+  color: #f5c542;
+}
+
+.perso-filtre-rarete.filtre-possedes.actif { background-color: #f5c542; }
 .perso-filtre-rarete.rarete-commun.actif { background-color: #5fd38a; }
 .perso-filtre-rarete.rarete-rare.actif { background-color: #5aa9ff; }
 .perso-filtre-rarete.rarete-epique.actif { background-color: #c08bff; }
