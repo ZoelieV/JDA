@@ -389,28 +389,12 @@
     "image": "images/boss/legend_local/balachko_ll.webp"
   },
   {
-    "id": "vasily_ll",
-    "nom": "Tri-étoile polychrome : Vasily",
+    "id": "polychrome_tri_stars_ll",
+    "nom": "Tri-étoiles polychromes",
     "type": "legende_locale_jour",
     "world_boss_seulement": true,
     "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/vasily_ll.webp"
-  },
-  {
-    "id": "nomokonov_ll",
-    "nom": "Tri-étoile polychrome : Nomokonov",
-    "type": "legende_locale_jour",
-    "world_boss_seulement": true,
-    "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/nomokonov_ll.webp"
-  },
-  {
-    "id": "sidorenko_ll",
-    "nom": "Tri-étoile polychrome : Sidorenko",
-    "type": "legende_locale_jour",
-    "world_boss_seulement": true,
-    "res": [10, 10, 10, 10, 10, 10, 10],
-    "image": "images/boss/legend_local/sidorenko_ll.webp"
+    "image": "images/boss/legend_local/polychrome_tri_stars_ll.webp"
   },
   {
     "id": "le_pic_ll",
