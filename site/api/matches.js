@@ -580,7 +580,8 @@ async function statistiques(res, saison = null, equipe = false, littleCup = fals
   // meilleurs temps de chaque boss, tous matchs confondus (classés ou non).
   const records = {};
   // Temps moyen par boss en classé : { boss_id: { total, nb } } sur les
-  // temps saisis (abandons exclus, matchs de triche aussi).
+  // temps saisis (abandons exclus, matchs de triche aussi, sauf litige
+  // résolu : temps republiés par un administrateur).
   const moyennesClasse = {};
 
   matchs.forEach(match => {
@@ -601,7 +602,7 @@ async function statistiques(res, saison = null, equipe = false, littleCup = fals
       const secondes = match[`temps_${role}_secondes`];
       if (typeof secondes !== "number") return; // abandon ou pas de temps
       (records[match.boss_id] ??= []).push({ match, role });
-      if (match.classe && !match.triche) {
+      if (match.classe && (!match.triche || match.litige === "republie")) {
         const moyenne = moyennesClasse[match.boss_id] ??= { total: 0, nb: 0 };
         moyenne.total += secondes;
         moyenne.nb += 1;

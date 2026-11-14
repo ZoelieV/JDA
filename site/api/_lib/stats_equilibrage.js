@@ -5,7 +5,8 @@
 // changer la période et les écarts sans rappeler le serveur.
 //
 // Équipe comptée : match classé 1v1 terminé (vainqueur connu), sans litige
-// (ou litige corrigé et republié), sans triche détectée ; joueur avec un
+// ni triche détectée, ou litige résolu (corrigé et republié par un
+// administrateur : compté même marqué triche ou suspect) ; joueur avec un
 // temps (pas d'abandon) qui n'a pas été jugé suspect par l'anti-triche.
 // Hors entraînement, modes en équipe, Little Cup et tournois.
 const { supabase } = require("./supabase");
@@ -33,8 +34,10 @@ async function lireMatchsClasses() {
   }
 }
 
-const matchValide = m => !m.entrainement && !m.mode_equipe && !m.little_cup && !m.tournoi && !m.triche &&
-  (m.litige == null || m.litige === "republie");
+// Litige résolu (temps republiés par un administrateur) : compté, même
+// marqué triche.
+const matchValide = m => !m.entrainement && !m.mode_equipe && !m.little_cup && !m.tournoi &&
+  (m.litige === "republie" || (m.litige == null && !m.triche));
 
 // -> { equipes: [{ match, date, saison, boss, joueur, temps, resultat
 //      ("victoire" | "defaite" | "egalite"), persos: [{ id, element, c, r,
@@ -48,7 +51,7 @@ async function lireStatsEquilibrage() {
   matchs.filter(matchValide).forEach(m => {
     ["j1", "j2"].forEach(role => {
       const temps = m[`temps_${role}_secondes`];
-      if (temps == null || m.suspicion?.[role]) return;
+      if (temps == null || (m.suspicion?.[role] && m.litige !== "republie")) return;
       const persos = (Array.isArray(m.actions) ? m.actions : [])
         .filter(a => a.type === "pick" && a.joueur === role && a.perso_id)
         .map(a => ({ id: a.perso_id, element: a.element || null, c: a.constellation ?? null, r: a.raffinement ?? null, niveau: a.niveau ?? null }));
