@@ -1274,6 +1274,7 @@ function mettreAJourTotalBox(personnages, armes, profil) {
     : nomBox(profil, boxActive);
   document.getElementById("total-ppc").textContent = total;
   mettreAJourCopieBox();
+  document.getElementById("cocher-stuff").classList.toggle("cache", boxActive !== "stuff" || vueActive === "weapons");
   rendreRecommandationsStuff(personnages, boxActive, profil);
 
   // Sous le total : vitrine conforme ou non aux modes en équipe ; box opti :
@@ -1736,6 +1737,7 @@ async function initialiserPage() {
     });
 
     initialiserReinitialisation(personnages, armes, profil);
+    initialiserCocherStuff(personnages, armes, profil);
 
     // UID, niveau du monde, stream (menu du compte) : même enregistrement
     // que le formulaire.
@@ -1892,6 +1894,39 @@ function reinitialiserBox(profil, vueActive, boxActive) {
   }
 
   collection.selections[boxActive] = {};
+}
+
+// ---- Box stuff : cocher d'un coup les persos possédés (Full box) d'une
+// catégorie, sans décocher les autres. 5★ limités : 5★ hors standards ;
+// standards : champ "standard" (Jean, Diluc… et le Voyageur) ; 4★. Aloy
+// et Manekin (rareté 3) : avec « Tout » seulement. ----
+const CATEGORIES_COCHER_STUFF = {
+  tout: () => true,
+  5: perso => String(perso.rarete) === "5" && !perso.standard,
+  standard: perso => !!perso.standard,
+  4: perso => String(perso.rarete) === "4"
+};
+
+function initialiserCocherStuff(personnages, armes, profil) {
+  document.getElementById("cocher-stuff").addEventListener("click", event => {
+    const bouton = event.target.closest("[data-cocher]");
+    if (!bouton) return;
+    const garder = CATEGORIES_COCHER_STUFF[bouton.dataset.cocher];
+    const collection = profil.characters;
+    const selection = collection.selections.stuff ??= {};
+    let ajoutes = 0;
+    personnages.filter(garder).forEach(perso => {
+      if ((collection.full[perso.id] ?? -1) < 0 || selection[perso.id]) return;
+      selection[perso.id] = true;
+      ajoutes++;
+    });
+    afficherCollection(personnages, armes, profil);
+    mettreAJourTotalBox(personnages, armes, profil);
+    mettreAJourBoutonEnregistrer(profil);
+    afficherToast(ajoutes
+      ? `${ajoutes} perso${ajoutes > 1 ? "s" : ""} coché${ajoutes > 1 ? "s" : ""} (${bouton.textContent}) : pense à enregistrer.`
+      : `Rien à cocher (${bouton.textContent}) : déjà tous cochés ou pas possédés.`);
+  });
 }
 
 function initialiserReinitialisation(personnages, armes, profil) {

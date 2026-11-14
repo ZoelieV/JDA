@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/my_account/my_account.css?v=rem55">
+<link rel="stylesheet" href="/my_account/my_account.css?v=rem56">
 <link rel="stylesheet" href="/commun/tuto_hoyolab.css?v=6">
 <link rel="stylesheet" href="/commun/entete.css?v=rem49">
 <link rel="stylesheet" href="/commun/tri.css?v=9">
@@ -234,6 +234,16 @@
         <span id="statut-vitrine" class="statut-vitrine cache"></span>
       </div>
 
+      <!-- Box stuff (vue personnages) : cocher d'un coup les persos possédés
+           d'une catégorie (cf. initialiserCocherStuff). -->
+      <div id="cocher-stuff" class="cocher-stuff cache">
+        <span class="cocher-stuff-titre">Cocher :</span>
+        <button type="button" class="btn-cocher-stuff" data-cocher="tout">Tout</button>
+        <button type="button" class="btn-cocher-stuff" data-cocher="5">5★ limités</button>
+        <button type="button" class="btn-cocher-stuff" data-cocher="standard">Standards</button>
+        <button type="button" class="btn-cocher-stuff" data-cocher="4">4★</button>
+      </div>
+
       <!-- Box stuff : persos à monter (cf. commun/recommandations_stuff.js). -->
       <div id="recommandations-stuff" class="recommandations-stuff cache"></div>
 
@@ -338,7 +348,7 @@
   <script src="/commun/tri.js?v=23"></script>
   <script src="/commun/personnalisation.js?v=75"></script>
   <script src="/commun/recommandations_stuff.js?v=2"></script>
-  <script src="/my_account/my_account.js?v=94"></script>
+  <script src="/my_account/my_account.js?v=95"></script>
   <script src="/commun/listes.js?v=1"></script>
   <script src="/commun/site.js?v=40"></script>
 </body>
