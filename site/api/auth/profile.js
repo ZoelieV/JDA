@@ -392,6 +392,9 @@ module.exports = async (req, res) => {
       const matchsClasses = await memoriser("matchs_classes", 30 * 1000, () => chargerMatchsClasses(supabase));
       const trophees = tropheesSaison(rejouerClasse(matchsClasses).parSaison, await saisonActuelle()).get(discordId) ?? null;
       return res.status(200).json({
+        // Compte lu (changement de rang : notification par compte, cf.
+        // commun/fond.js).
+        discord_id: discordId,
         profil: data ? { ...data, parametres: parametresSkinsTest(data.parametres, estAdmin(discordId)), theatre: codeTheatre(data), trophees } : null,
         // Test des skins masqués : administrateurs (pas les mini admins).
         ...(estAdmin(discordId) ? { skins_test_permis: true } : {}),

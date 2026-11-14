@@ -1159,3 +1159,80 @@ body::before {
     animation: none;
   }
 }
+
+/* ---- Notification de changement de rang (cf. notifierRang, commun/fond.js) :
+   en haut au centre, icônes ancien -> nouveau rang ; clic : fermée. ---- */
+.notif-rang {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 100001;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  /* left: 50% : sans largeur explicite, la bulle n'aurait que la moitié
+     de l'écran. */
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  box-sizing: border-box;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid rgba(245, 197, 66, 0.7);
+  border-radius: 1rem;
+  background-color: rgba(18, 18, 24, 0.95);
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6), 0 0 1.5rem rgba(245, 197, 66, 0.25);
+  color: white;
+  font-size: 1.0625rem;
+  cursor: pointer;
+  transform: translateX(-50%);
+  animation: notif-rang-entree 0.45s ease-out;
+}
+
+.notif-rang.descente {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6);
+}
+
+.notif-rang.sortie {
+  opacity: 0;
+  transform: translate(-50%, -1rem);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.notif-rang-icones {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.notif-rang .rang-trophees {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.notif-rang .rang-trophees:last-child {
+  width: 3rem;
+  height: 3rem;
+}
+
+.notif-rang-fleche {
+  opacity: 0.7;
+  font-size: 1.25rem;
+}
+
+.notif-rang strong {
+  white-space: nowrap;
+}
+
+.notif-rang.montee strong {
+  color: #f5c542;
+}
+
+@keyframes notif-rang-entree {
+  from { opacity: 0; transform: translate(-50%, -1.5rem) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-rang { animation: none; }
+}

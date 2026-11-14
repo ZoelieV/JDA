@@ -3789,6 +3789,12 @@ function rendrePhase() {
   document.getElementById("barre-outils").classList.toggle("cache", !avecPersos);
   mettreAJourFiltreProprietaire();
 
+  // Fin d'un match classé joué : profil relu (trophées, rang du bouton du
+  // compte, notification de changement de rang, cf. commun/fond.js).
+  if (draft.phase === "termine" && phasePrecedente && phasePrecedente !== "termine" && typeRoom === "classe" && monRole) {
+    setTimeout(() => window.FondEcran?.rafraichir(), 1500);
+  }
+
   // Avant la saisie des temps (nouveau match, revanche) : champ vidé, rien
   // du match précédent (temps corrigé à la vérification) ne reste dedans.
   if (!PHASES_RECAP.includes(draft.phase)) {

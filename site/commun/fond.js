@@ -214,6 +214,46 @@
     document.dispatchEvent(new CustomEvent("trophees-change", { detail: valeur }));
   }
 
+  // ---- Changement de rang (Bronze 3 -> Bronze 2…) : notification ----
+  // Trophées vus la dernière fois, par compte (rang-vu-<id>) : rien au
+  // premier passage (ni au premier match classé d'une saison), notification
+  // quand le rang a changé depuis (montée ou descente).
+  const ORDRE_RANGS = [...RANGS_TROPHEES.flatMap(r => [3, 2, 1].map(n => `${r.nom} ${n}`)), "Archon"];
+
+  function verifierRang(trophees, discordId) {
+    if (!discordId) return;
+    const cle = `rang-vu-${discordId}`;
+    const avant = rangTrophees(lire(cle));
+    const apres = rangTrophees(trophees);
+    ecrire(cle, apres ? String(trophees) : null);
+    if (!avant || !apres || avant.nom === apres.nom) return;
+    notifierRang(avant, apres, ORDRE_RANGS.indexOf(apres.nom) > ORDRE_RANGS.indexOf(avant.nom));
+  }
+
+  function iconeRang(rang) {
+    return `<span class="rang-trophees" title="${rang.nom}"><img src="/DB/images/others/${rang.icone}.webp" alt="${rang.nom}">${rang.niveau ? `<span class="niveau-rang">${rang.niveau}</span>` : ""}</span>`;
+  }
+
+  function notifierRang(avant, apres, montee) {
+    const afficher = () => {
+      document.querySelector(".notif-rang")?.remove();
+      const notif = document.createElement("div");
+      notif.className = `notif-rang${montee ? " montee" : " descente"}`;
+      notif.setAttribute("role", "status");
+      notif.innerHTML = `<span class="notif-rang-icones">${iconeRang(avant)}<span class="notif-rang-fleche">→</span>${iconeRang(apres)}</span>
+        <span class="notif-rang-texte">${montee ? `Tu passes <strong>${apres.nom}</strong> !` : `Tu redescends en <strong>${apres.nom}</strong>.`}</span>`;
+      const fermer = () => {
+        notif.classList.add("sortie");
+        setTimeout(() => notif.remove(), 400);
+      };
+      notif.addEventListener("click", fermer);
+      document.body.appendChild(notif);
+      setTimeout(fermer, 7000);
+    };
+    if (document.body) afficher();
+    else document.addEventListener("DOMContentLoaded", afficher, { once: true });
+  }
+
   // Pose (ou retire) le rang dans un bouton de compte, entre le pseudo et
   // la médaille du théâtre (la médaille reste la plus loin de la photo).
   function appliquerRang(element, trophees) {
@@ -278,7 +318,7 @@
         return;
       }
 
-      const { profil } = await reponse.json();
+      const { profil, discord_id: discordId } = await reponse.json();
       const idFond = profil?.parametres?.fond || FOND_DEFAUT_ID;
       let url = FOND_DEFAUT_URL;
 
@@ -297,6 +337,7 @@
       memoriser(url, banniere2);
       memoriserTheatre(profil?.theatre);
       memoriserTrophees(profil?.trophees);
+      verifierRang(profil?.trophees, discordId);
       memoriserAccueil(profil?.parametres?.accueil);
     } catch (erreur) {
       console.error(erreur);
@@ -350,6 +391,9 @@
     appliquerRang,
     trophees: () => lire(CLE_TROPHEES) || "",
     rangTrophees,
-    creerRang
+    creerRang,
+    // Relit le profil tout de suite (fin de match classé : rang à jour et
+    // notification de changement de rang sans attendre).
+    rafraichir
   };
 })();
