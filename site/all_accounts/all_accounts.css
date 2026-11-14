@@ -1028,3 +1028,39 @@ html.page-integree #modal {
     flex-wrap: wrap;
   }
 }
+
+/* Téléphone, box d'un joueur : pas de « Trier : » ; filtres et tris non
+   figés à la suite, compactés comme sur ordi. */
+@media (max-width: 700px) {
+  #modal .tris-label {
+    display: none;
+  }
+
+  #modal .barre-outils {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.25rem;
+  }
+
+  /* Groupes « ouverts » : chaque bouton à la suite, sans trou en fin de
+     ligne. */
+  #modal .barre-outils .zone-recherche,
+  #modal .barre-outils .filtres-tri,
+  #modal .barre-outils .tris,
+  #modal .barre-outils .filtres-icones,
+  #modal .barre-outils .filtres-etoiles {
+    display: contents;
+  }
+
+  #outils-figes .tris {
+    gap: 0.25rem;
+  }
+
+  #modal .filtres-etoiles .filtre-etoile-btn {
+    width: 2.4375rem;
+    padding: 0;
+    font-size: 1rem;
+  }
+}
