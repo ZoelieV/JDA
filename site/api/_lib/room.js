@@ -162,11 +162,14 @@ async function abandonnerMatchClasse(supabase, roomId, draft, role) {
 // Active : room ouverte (last_active_at, écrit à l'ouverture de la page)
 // ou draft relue par un des 2 joueurs (présence dans rooms.spectateurs,
 // écrite par le polling de la page du match, cf. noterPresence) : un match
-// long (draft + combat > 10 min) reste bloquant tant qu'un joueur est
+// long reste bloquant tant qu'un joueur est
 // encore sur la page. Room inactive (match laissé à l'abandon) : plus
 // bloquante.
 // -> id de la room, ou null.
-const ACTIVITE_MATCH_CLASSE_MS = 10 * 60 * 1000;
+// 30 min : après la draft, chacun se stuff, lance son stream, fait le boss
+// en jeu pendant que l'autre le chronomètre (onglet du match souvent en
+// arrière-plan : plus de présence notée), puis l'inverse, avant la saisie.
+const ACTIVITE_MATCH_CLASSE_MS = 30 * 60 * 1000;
 const ERREUR_MATCH_CLASSE = "Tu as un match classé en cours : termine-le d'abord.";
 
 async function matchClasseEnCours(supabase, discordId, { sauf = null } = {}) {
