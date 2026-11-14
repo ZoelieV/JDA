@@ -156,10 +156,15 @@ async function abandonnerMatchClasse(supabase, roomId, draft, role) {
 }
 
 // Match classé en cours du joueur (room complète, manche pas finie, room
-// consultée depuis moins de ACTIVITE_MATCH_CLASSE_MS) : il n'est jamais
+// active depuis moins de ACTIVITE_MATCH_CLASSE_MS) : il n'est jamais
 // quitté en démarrant ou rejoignant un autre match (ce serait un abandon,
 // cf. abandonnerMatchClasse) ; la recherche y renvoie, le reste est refusé.
-// Room inactive (match laissé à l'abandon) : plus bloquante.
+// Active : room ouverte (last_active_at, écrit à l'ouverture de la page)
+// ou draft relue par un des 2 joueurs (présence dans rooms.spectateurs,
+// écrite par le polling de la page du match, cf. noterPresence) : un match
+// long (draft + combat > 10 min) reste bloquant tant qu'un joueur est
+// encore sur la page. Room inactive (match laissé à l'abandon) : plus
+// bloquante.
 // -> id de la room, ou null.
 const ACTIVITE_MATCH_CLASSE_MS = 10 * 60 * 1000;
 const ERREUR_MATCH_CLASSE = "Tu as un match classé en cours : termine-le d'abord.";
@@ -167,20 +172,22 @@ const ERREUR_MATCH_CLASSE = "Tu as un match classé en cours : termine-le d'abor
 async function matchClasseEnCours(supabase, discordId, { sauf = null } = {}) {
   let requete = supabase
     .from("rooms")
-    .select("room_id, draft")
+    .select("room_id, player1_discord_id, player2_discord_id, draft, last_active_at, spectateurs")
     .eq("type", "classe")
     .not("player2_discord_id", "is", null)
-    .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`)
-    .gte("last_active_at", new Date(Date.now() - ACTIVITE_MATCH_CLASSE_MS).toISOString());
+    .or(`player1_discord_id.eq.${discordId},player2_discord_id.eq.${discordId}`);
   if (sauf) requete = requete.neq("room_id", sauf);
   const { data, error } = await requete;
   if (error) {
     console.error("Erreur lecture des matchs classés du joueur :", error);
     return null;
   }
+  const limite = Date.now() - ACTIVITE_MATCH_CLASSE_MS;
+  const active = room => Date.parse(room.last_active_at || 0) >= limite ||
+    [room.player1_discord_id, room.player2_discord_id].some(id => Number(room.spectateurs?.[id] || 0) >= limite);
   const enCours = (data || []).find(room => {
     const draft = room.draft || {};
-    return !PHASES_FINIES.includes(draft.phase) && draft.phase !== "non_equilibrable" && !draft.quitte_par;
+    return active(room) && !PHASES_FINIES.includes(draft.phase) && draft.phase !== "non_equilibrable" && !draft.quitte_par;
   });
   return enCours?.room_id || null;
 }
