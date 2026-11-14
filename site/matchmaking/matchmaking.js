@@ -150,8 +150,32 @@ async function remplirBossRoom(idSelect = "room-boss") {
 // Mode choisi : room privée (mode de théâtre au choix, « Full box » :
 // full_box) ou recherche (matchmaking amical : Full box, Auto, Classique ;
 // classé : mode "12").
+// Avant le premier match classé (aucun trophée cette saison, cf.
+// FondEcran.trophees, et rappel jamais vu sur cet appareil) : rappel de
+// renseigner ses armes. -> true pour lancer la recherche.
+const CLE_RAPPEL_ARMES_CLASSE = "rappel-armes-classe-vu";
+let rappelArmesOuvert = false; // 2e clic pendant le rappel : ignoré
+
+async function rappelArmesAvantClasse() {
+  if (rappelArmesOuvert) return false;
+  let dejaVu = false;
+  try { dejaVu = localStorage.getItem(CLE_RAPPEL_ARMES_CLASSE) === "1"; } catch { /* stockage bloqué */ }
+  if (dejaVu || (window.FondEcran?.trophees() ?? "") !== "") return true;
+  try { localStorage.setItem(CLE_RAPPEL_ARMES_CLASSE, "1"); } catch { /* stockage bloqué */ }
+  rappelArmesOuvert = true;
+  const lancer = await confirmerSite({
+    titre: "Avant ton premier match classé",
+    texte: "N'oublie pas de mettre tes armes dans ta box pour pouvoir les jouer en match : une arme qui n'est pas renseignée dans Mon compte ne pourra pas être jouée.",
+    ok: "Lancer la recherche",
+    annuler: "Vérifier mes armes"
+  });
+  rappelArmesOuvert = false;
+  if (!lancer) window.location.href = "/compte";
+  return lancer;
+}
+
 document.querySelectorAll(".mode-match:not(.mode-plus)").forEach(bouton => {
-  bouton.addEventListener("click", () => {
+  bouton.addEventListener("click", async () => {
     const type = bouton.dataset.type || bouton.closest(".modes-match").dataset.type;
     const mode = bouton.dataset.mode;
     if (type === "equipe") {
@@ -163,6 +187,7 @@ document.querySelectorAll(".mode-match:not(.mode-plus)").forEach(bouton => {
       });
       return;
     }
+    if (type === "classe" && !await rappelArmesAvantClasse()) return;
     creerMatch(type === "prive"
       ? { mode, ...(bouton.dataset.fullBox ? { full_box: true } : {}), boss_id: document.getElementById("room-boss").value || null, premier: document.getElementById("room-premier").value }
       : { type, mode });
