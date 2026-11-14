@@ -1064,3 +1064,34 @@ html.page-integree #modal {
     font-size: 1rem;
   }
 }
+
+/* Téléphone : filtres et tris figés en grille de 7 par ligne, boutons
+   agrandis pour remplir la largeur ; recherche et Personnages / Armes sur
+   toute la ligne. */
+@media (max-width: 700px) {
+  #outils-figes {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.375rem;
+  }
+
+  #outils-figes > .filtres-icones,
+  #outils-figes > .filtres-etoiles,
+  #outils-figes > .tris {
+    display: contents;
+  }
+
+  #outils-figes > #view-selector,
+  #outils-figes > .recherche-personnage {
+    grid-column: 1 / -1;
+  }
+
+  #outils-figes .filtre-icone-btn,
+  #outils-figes .filtre-etoile-btn,
+  #outils-figes .btn-clear-filtres {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    padding: 0.375rem;
+  }
+}
