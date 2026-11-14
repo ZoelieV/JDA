@@ -3564,9 +3564,46 @@ function majChronosFlottant() {
 const CHRONO_URGENT_MS = 10 * 1000;
 const classeUrgent = reste => reste > 0 && reste <= CHRONO_URGENT_MS ? " urgent" : "";
 
+// ---- Tic-tac de fin de chrono (sons CC0 de BigSoundBank : Chronograph #2
+// et #1, DB/sons/) : 2 battements par seconde sous 30 s, 4 sous 10 s, en
+// boucle jusqu'à 0. Seulement pour le joueur dont le chrono tourne (analyse :
+// les deux), pas en pause ; volume du site (VolumeSite). ----
+const SONS_CHRONO = {
+  lent: { src: "/DB/sons/chrono_2_par_seconde.mp3", sous: 30 * 1000 },
+  rapide: { src: "/DB/sons/chrono_4_par_seconde.mp3", sous: 10 * 1000 }
+};
+const audiosChrono = {};
+let modeSonChrono = null;
+
+function majSonChrono(etat) {
+  let mode = null;
+  if (etat && monRole && !draft?.pause && !draft?.chrono?.[`epuise_${monRole}`]) {
+    const monTour = etat.phase === "analyse" || etat.acteur === monRole;
+    const reste = etat.phase === "draft" ? etat.restants?.[monRole] : etat.reste;
+    if (monTour && reste > 0) {
+      mode = reste <= SONS_CHRONO.rapide.sous ? "rapide" : reste <= SONS_CHRONO.lent.sous ? "lent" : null;
+    }
+  }
+  if (mode === modeSonChrono) return;
+  modeSonChrono = mode;
+  Object.values(audiosChrono).forEach(audio => audio.pause());
+  if (!mode) return;
+  let audio = audiosChrono[mode];
+  if (!audio) {
+    audio = new Audio(SONS_CHRONO[mode].src);
+    audio.loop = true;
+    window.VolumeSite?.appliquer(audio, 0.7);
+    audiosChrono[mode] = audio;
+  }
+  audio.currentTime = 0;
+  // Navigateur qui bloque le son (aucun clic sur la page) : tant pis.
+  audio.play().catch(() => {});
+}
+
 function majChronos() {
   const zone = document.getElementById("chronos");
   const etat = etatChronos();
+  majSonChrono(etat);
   majPause();
   zone.classList.toggle("cache", !etat);
   if (!etat) {
