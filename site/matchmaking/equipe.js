@@ -564,7 +564,7 @@ function rendreTemps() {
       ${ROLES.map(role => `
         <div class="ligne-saisie-temps">
           <span>${NOMS_EQUIPES[role]}</span>
-          <input id="arbitre-temps-${role}" type="text" placeholder="mm:ss" inputmode="decimal">
+          <input id="arbitre-temps-${role}" type="text" placeholder="mm:ss" inputmode="decimal" autocomplete="off">
           <label><input id="arbitre-abandon-${role}" type="checkbox"> Abandon</label>
         </div>`).join("")}
       <div class="boutons-verification">
@@ -577,7 +577,7 @@ function rendreTemps() {
       ${ROLES.map(role => `
         <div class="ligne-saisie-temps">
           <span>${NOMS_EQUIPES[role]}</span>
-          <input id="arbitre-temps-${role}" type="text" placeholder="mm:ss" inputmode="decimal">
+          <input id="arbitre-temps-${role}" type="text" placeholder="mm:ss" inputmode="decimal" autocomplete="off">
           <label><input id="arbitre-abandon-${role}" type="checkbox"> Abandon</label>
         </div>`).join("")}
       <button type="button" class="btn-equipe principal" id="btn-temps-arbitre">Valider les temps</button>`
@@ -585,7 +585,7 @@ function rendreTemps() {
   } else if (draft.phase === "temps" && suisChef() && !draft[`temps_${camp}`]) {
     contenu += `
       <div class="ligne-saisie-temps">
-        <input id="input-temps-equipe" type="text" placeholder="Temps de l'équipe (mm:ss)" inputmode="decimal" value="${echapperHtml(saisie)}">
+        <input id="input-temps-equipe" type="text" placeholder="Temps de l'équipe (mm:ss)" inputmode="decimal" autocomplete="off" value="${echapperHtml(saisie)}">
         <button type="button" class="btn-equipe principal" id="btn-temps">Valider</button>
         <button type="button" class="btn-equipe secondaire" id="btn-abandon">Abandonner</button>
       </div>`;

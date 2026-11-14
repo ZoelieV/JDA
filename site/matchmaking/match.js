@@ -3789,6 +3789,14 @@ function rendrePhase() {
   document.getElementById("barre-outils").classList.toggle("cache", !avecPersos);
   mettreAJourFiltreProprietaire();
 
+  // Avant la saisie des temps (nouveau match, revanche) : champ vidé, rien
+  // du match précédent (temps corrigé à la vérification) ne reste dedans.
+  if (!PHASES_RECAP.includes(draft.phase)) {
+    const input = document.getElementById("input-temps");
+    input.value = "";
+    delete input.dataset.pour;
+  }
+
   if (draft.phase === "draft" && phasePrecedente && phasePrecedente !== "draft") {
     annoncerRole();
     // Nouvelle étape : filtres du choix des box / des bans d'équilibrage
