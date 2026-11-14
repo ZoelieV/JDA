@@ -1492,6 +1492,7 @@ function afficherRecords() {
           ${htmlImagesBoss(boss, `class="match-boss" loading="lazy"`)}
           <span class="match-boss-nom">${echapperHtml(boss.nom)}</span>
         </div>
+        ${htmlMoyenneClasse(boss)}
         ${meilleurs.length ? `<ol class="liste-records"></ol>` : `<p class="record-aucun">Aucun temps</p>`}`;
       carte.querySelector(".liste-records")?.append(...meilleurs.map((record, i) => creerRecord(record, i + 1)));
       return carte;
@@ -1499,6 +1500,18 @@ function afficherRecords() {
     return [sousTitre, grille];
   });
   document.getElementById("records-boss").replaceChildren(...elements);
+}
+
+// Temps moyen du boss en classé (1v1 seulement : pas de classé en équipe ni
+// en Little Cup), abandons exclus ; défi : nombre moyen d'ennemis tués.
+function htmlMoyenneClasse(boss) {
+  if (modeStats !== "1v1") return "";
+  const moyenne = statistiques.moyennes_classe?.[boss.id];
+  if (!moyenne) return "";
+  const valeur = estDefiEnnemis(boss)
+    ? `${Math.round(moyenne.moyenne)} ennemis`
+    : (s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`)(Math.round(moyenne.moyenne));
+  return `<p class="record-moyenne" title="Moyenne des ${moyenne.nb} temps saisis en match classé (abandons exclus)">${ICONE_TROPHEE} Moyenne en classé : <strong>${valeur}</strong> <span>(${moyenne.nb} temps)</span></p>`;
 }
 
 // Saison des statistiques : saison en cours par défaut, ou toutes.

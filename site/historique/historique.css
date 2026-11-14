@@ -1883,3 +1883,18 @@ html.page-integree .bouton-feedback {
   font-weight: bold;
   line-height: 1;
 }
+
+/* Temps moyen du boss en classé (sous son nom, cf. htmlMoyenneClasse). */
+.record-moyenne {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.record-moyenne strong {
+  color: #f5c542;
+}
+
+.record-moyenne span {
+  opacity: 0.7;
+}

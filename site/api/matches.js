@@ -579,6 +579,9 @@ async function statistiques(res, saison = null, equipe = false, littleCup = fals
   // Records : { boss_id: [{ match, role }, ...] }, les NB_RECORDS_BOSS
   // meilleurs temps de chaque boss, tous matchs confondus (classés ou non).
   const records = {};
+  // Temps moyen par boss en classé : { boss_id: { total, nb } } sur les
+  // temps saisis (abandons exclus, matchs de triche aussi).
+  const moyennesClasse = {};
 
   matchs.forEach(match => {
     const cle = match.classe ? "classe" : "non_classe";
@@ -595,8 +598,14 @@ async function statistiques(res, saison = null, equipe = false, littleCup = fals
 
     if (!match.boss_id) return;
     ["j1", "j2"].forEach(role => {
-      if (typeof match[`temps_${role}_secondes`] !== "number") return; // abandon ou pas de temps
+      const secondes = match[`temps_${role}_secondes`];
+      if (typeof secondes !== "number") return; // abandon ou pas de temps
       (records[match.boss_id] ??= []).push({ match, role });
+      if (match.classe && !match.triche) {
+        const moyenne = moyennesClasse[match.boss_id] ??= { total: 0, nb: 0 };
+        moyenne.total += secondes;
+        moyenne.nb += 1;
+      }
     });
   });
 
@@ -637,7 +646,9 @@ async function statistiques(res, saison = null, equipe = false, littleCup = fals
 
   return res.status(200).json({
     categories,
-    records: Object.entries(records).map(([bossId, liste]) => ({ boss_id: bossId, meilleurs: liste.map(resumerRecord) }))
+    records: Object.entries(records).map(([bossId, liste]) => ({ boss_id: bossId, meilleurs: liste.map(resumerRecord) })),
+    // { boss_id: { moyenne (secondes, ou ennemis pour un défi), nb } }.
+    moyennes_classe: Object.fromEntries(Object.entries(moyennesClasse).map(([bossId, { total, nb }]) => [bossId, { moyenne: total / nb, nb }]))
   });
 }
 
