@@ -161,6 +161,12 @@
   font-weight: normal;
 }
 
+/* Dix vœux : ancien prix barré à côté du prix remisé. */
+.bouton-voeu .voeu-ancien-prix {
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
 .bouton-voeu .voeu-cout .icone-koyn {
   width: 1.4em;
   height: 1.4em;

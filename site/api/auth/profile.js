@@ -1,7 +1,7 @@
 const { parseCookies, verifySessionToken, estUidBanni, oublierBannis } = require("../_lib/session");
 const { codeTheatre, actualiserPoints, getConfigKoyns } = require("../_lib/personnages");
 const { verifierFrequenceCompte } = require("../_lib/limites");
-const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, tirerCosmetique, choisirFocus, focusAChoisir } = require("../_lib/koyns");
+const { etatKoyns, lirePossedes, filtrerParametresPossedes, acheterCosmetique, tirerCosmetique, prixVoeu, choisirFocus, focusAChoisir } = require("../_lib/koyns");
 const cosmetiques = require("../../DB/images/cosmetiques.json");
 const { SKINS_PERSONNAGES, persoDuSkin } = require("../../commun/variantes.js");
 const { lireFiltresDraft } = require("../../commun/filtres_draft.js");
@@ -424,7 +424,7 @@ module.exports = async (req, res) => {
       const tirages = [];
       let arret = null;
       for (let i = 0; i < nombre; i++) {
-        const resultat = await tirerCosmetique(discordId);
+        const resultat = await tirerCosmetique(discordId, prixVoeu(nombre, i));
         if (resultat.erreur) {
           if (!tirages.length) return res.status(resultat.status).json({ error: resultat.erreur });
           arret = resultat.erreur;

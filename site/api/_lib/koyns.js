@@ -58,6 +58,15 @@ const DEPART_ADMIN = 10000;
 const DEPARTS_MINI_ADMIN = [{ ref: "depart", montant: 30 }, { ref: "depart_100", montant: DEPART_MINI_ADMIN - 30 }];
 const MAX_KOYNS_DON = 1000;
 const TIRAGE_PRIX = 5;
+// Dix vœux d'un coup : petite remise (45 au lieu de 50). Les 9 premiers
+// au prix normal, le reste sur le dernier (cf. prixVoeu).
+const TIRAGE_DIX_PRIX = 45;
+
+// Prix du vœu d'indice i (0..nombre-1) d'une série de nombre vœux.
+function prixVoeu(nombre, i) {
+  if (nombre !== 10) return TIRAGE_PRIX;
+  return i < 9 ? TIRAGE_PRIX : TIRAGE_DIX_PRIX - 9 * TIRAGE_PRIX;
+}
 // En %, le reste : commun. Légendaire : 1 chance sur 30.
 const PROBAS_TIRAGE_DEFAUT = { rare: 25, epique: 10, legendaire: 3.33 };
 const GARANTIE_LEGENDAIRE = 30;
@@ -217,6 +226,7 @@ async function etatKoyns(discordId) {
     prix: getConfigKoyns().prix || {},
     tirage: {
       prix: TIRAGE_PRIX,
+      prix_dix: TIRAGE_DIX_PRIX,
       probas: probasTirage(),
       // Raretés de chaque cosmétique (focus : légendaire).
       raretes: { ...Object.fromEntries(Object.entries(getConfigKoyns().raretes).filter(([, r]) => RARETES_NORMALES.includes(r))), ...Object.fromEntries(focusTirage().map(id => [id, "legendaire"])) },
@@ -233,7 +243,7 @@ async function etatKoyns(discordId) {
 }
 
 // Un tirage. -> { cosmetique, focus, rarete, compteur } ou { erreur, status }.
-async function tirerCosmetique(discordId) {
+async function tirerCosmetique(discordId, prix = TIRAGE_PRIX) {
   await lireSolde(discordId); // Rikoyns de départ (administrateur, mini admin), avant le tirage.
   const focus = focusTirage();
   // Hors focus : commun, rare ou épique (les focus ne sont que légendaires).
@@ -242,7 +252,7 @@ async function tirerCosmetique(discordId) {
   const probas = probasTirage();
   const { data, error } = await supabase.rpc("tirer_voeu", {
     p_discord_id: discordId,
-    p_prix: TIRAGE_PRIX,
+    p_prix: prix,
     p_communs: deRarete("commun"),
     p_rares: deRarete("rare"),
     p_epiques: deRarete("epique"),
@@ -661,6 +671,7 @@ async function noterVictoireTournoi(discordIds, tournoiId) {
 }
 
 module.exports = {
+  prixVoeu,
   KOYNS_PAR_MATCH,
   KOYNS_ABANDON,
   MAX_GAMES_PAR_ADVERSAIRE,

@@ -117,7 +117,7 @@
           </div>` : `<p class="perso-note">Tu as tous les cosmétiques focus !</p>`}` : ""}
       <div class="perso-tirer-boutons">
         <button type="button" class="perso-tirer bouton-voeu" data-nombre="1"><span class="voeu-titre">Faire 1 vœu</span><span class="voeu-cout">${ICONE_KOYN} x ${tirage.prix.toLocaleString("fr-FR")}</span></button>
-        <button type="button" class="perso-tirer bouton-voeu" data-nombre="10"><span class="voeu-titre">Faire 10 vœux</span><span class="voeu-cout">${ICONE_KOYN} x ${(tirage.prix * 10).toLocaleString("fr-FR")}</span></button>
+        <button type="button" class="perso-tirer bouton-voeu" data-nombre="10"><span class="voeu-titre">Faire 10 vœux</span><span class="voeu-cout">${ICONE_KOYN} x ${prixDixVoeux(tirage).toLocaleString("fr-FR")}${prixDixVoeux(tirage) < tirage.prix * 10 ? ` <s class="voeu-ancien-prix">${(tirage.prix * 10).toLocaleString("fr-FR")}</s>` : ""}</span></button>
       </div>`;
     const vitrine = bloc.querySelector(".perso-tirage-focus");
     tirage.focus.forEach(id => {
@@ -161,7 +161,7 @@
     bloc.querySelector(".perso-tirage-choix")?.classList.toggle("focus-a-choisir", sansChoix);
     vitrine?.classList.toggle("focus-a-choisir", sansChoix);
     bloc.querySelectorAll(".perso-tirer").forEach(bouton => {
-      const prix = tirage.prix * Number(bouton.dataset.nombre);
+      const prix = Number(bouton.dataset.nombre) === 10 ? prixDixVoeux(tirage) : tirage.prix;
       bouton.disabled = koyns.solde < prix;
       if (sansChoix) bouton.title = "Choisis d'abord ta focus.";
       else if (bouton.disabled) bouton.title = `Il faut ${prix} Rikoyns : joue des matchs pour en gagner.`;
@@ -194,6 +194,11 @@
       console.error(erreur);
       afficherEtat(erreur.message);
     }
+  }
+
+  // Dix vœux d'un coup : prix remisé du serveur (tirage.prix_dix).
+  function prixDixVoeux(tirage) {
+    return tirage.prix_dix ?? tirage.prix * 10;
   }
 
   // nombre : 1 ou 10 tirages.
@@ -320,7 +325,7 @@
       grille.appendChild(carte);
     });
     const encore = fenetre.querySelector('[data-action="encore"]');
-    const prix = (koyns.tirage?.prix ?? 10) * 10;
+    const prix = koyns.tirage ? prixDixVoeux(koyns.tirage) : 50;
     encore.innerHTML = htmlBoutonVoeu("Refaire 10 vœux", prix);
     encore.disabled = !koyns.tirage || koyns.solde < prix;
     fenetre.addEventListener("click", event => {
