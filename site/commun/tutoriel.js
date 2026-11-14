@@ -28,14 +28,15 @@
   const montes = profil => new Set(Object.entries(profil.characters?.selections?.stuff || {})
     .filter(([, coche]) => coche).map(([id]) => id.replace(/^traveler_.*/, "traveler"))).size;
 
-  // verifier(profil) -> { ok, detail } (état enregistré sur le compte).
+  // verifier(profil) -> { ok, detail } (état enregistré sur le compte) ;
+  // enregistrer : bouton Enregistrer de l'étape, entouré à part.
   const ETAPES = [
     {
       page: "/", titre: "Bienvenue !", assombrir: true,
       texte: "On va préparer ton compte, puis faire le tour du site. Ça prend quelques minutes, et tu pourras jouer juste après."
     },
     {
-      page: "/compte", titre: "Tes informations", cibles: ["#uid", "#niveau-monde"], clic: "#compte-btn",
+      page: "/compte", titre: "Tes informations", cibles: ["#uid", "#niveau-monde"], enregistrer: "#btn-enregistrer-compte", clic: "#compte-btn",
       texte: "Renseigne ton UID et ton niveau du monde, puis clique sur Enregistrer. Attention : ton UID ne pourra plus être modifié.",
       verifier: profil => {
         const manque = [!profil.uid && "ton UID", !profil.niveau_monde && "ton niveau du monde"].filter(Boolean);
@@ -43,7 +44,7 @@
       }
     },
     {
-      page: "/compte", titre: "Tes personnages", cibles: ["#btn-auto-box"], clic: ['[data-box="full"]', '.view-btn[data-view="characters"]'],
+      page: "/compte", titre: "Tes personnages", cibles: ["#btn-auto-box"], enregistrer: ".btn-enregistrer-fixe", clic: ['[data-box="full"]', '.view-btn[data-view="characters"]'],
       texte: `Renseigne tous tes personnages dans ta Full box. On te conseille la <strong>Détection auto</strong> : elle lit une image de ta liste HoYoLAB et te fait gagner beaucoup de temps (<button type="button" class="tutoriel-lien" data-tuto-hoyolab-ouvrir>comment obtenir l'image</button>). Vérifie les constellations proposées, puis clique sur Enregistrer.`,
       verifier: profil => {
         const nb = Object.values(profil.characters?.full || {}).filter(valeur => valeur >= 0).length;
@@ -51,12 +52,12 @@
       }
     },
     {
-      page: "/compte", titre: "Tes armes", cibles: ['.view-btn[data-view="weapons"]'], clic: ['[data-box="full"]', '.view-btn[data-view="weapons"]'],
+      page: "/compte", titre: "Tes armes", cibles: ['.view-btn[data-view="weapons"]'], enregistrer: ".btn-enregistrer-fixe", clic: ['[data-box="full"]', '.view-btn[data-view="weapons"]'],
       texte: "La Détection auto ne renseigne pas les armes : on est passé sur la vue Armes pour ça. Renseigne au moins un exemplaire de chaque arme que tu possèdes, et leurs doublons, puis clique sur Enregistrer. Si tu n'en as pas encore, passe simplement à la suite.",
       remplir: true
     },
     {
-      page: "/compte", titre: "Tes persos montés", cibles: ['[data-box="stuff"]'], clic: ['[data-box="stuff"]', '.view-btn[data-view="characters"]'],
+      page: "/compte", titre: "Tes persos montés", cibles: ['[data-box="stuff"]'], enregistrer: ".btn-enregistrer-fixe", clic: ['[data-box="stuff"]', '.view-btn[data-view="characters"]'],
       texte: "Dans ta Box stuff, coche les persos que tu as vraiment montés (niveau 80 ou plus, sauf exceptions comme Sucrose : niveau 70 suffit ; aptitudes utiles niveau 8 ou plus, un set d'artefacts). Il en faut 3 pour jouer en Sardine, 8 en Carpe, 12 en Dauphin et 16 en Baleine. Puis clique sur Enregistrer.",
       verifier: profil => {
         const palier = Number(profil.theatre) || 1;
@@ -123,7 +124,8 @@
   }
 
   // Halo autour des cibles (suit le défilement ; laisse passer les clics).
-  function suivreCibles(selecteurs, assombrir) {
+  // defiler : amène la cible à l'écran au premier affichage.
+  function suivreCibles(selecteurs, assombrir, defiler = true) {
     const halo = document.createElement("div");
     halo.className = `tutoriel-halo${assombrir ? " assombri" : ""}`;
     halo.hidden = true;
@@ -143,7 +145,7 @@
         });
         if (premier) {
           premier = false;
-          document.querySelector(selecteurs.find(s => document.querySelector(s))).scrollIntoView({ block: "center", behavior: "smooth" });
+          if (defiler) document.querySelector(selecteurs.find(s => document.querySelector(s))).scrollIntoView({ block: "center", behavior: "smooth" });
         }
       }
       requestAnimationFrame(suivre);
@@ -225,6 +227,9 @@
       document.body.appendChild(voile);
     }
     if (etape.cibles) suivreCibles(etape.cibles, etape.assombrir);
+    // Bouton Enregistrer de l'étape : son propre halo (il peut être loin
+    // des cibles, ex. figé en bas de l'écran).
+    if (etape.enregistrer) suivreCibles([etape.enregistrer], false, false);
     if (etape.clic) preparerPage(etape);
 
     const element = bulle({ progression: `Étape ${numero + 1} / ${ETAPES.length}`, titre: etape.titre, texte: etape.texte });
