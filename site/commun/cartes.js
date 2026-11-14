@@ -108,7 +108,8 @@ function appliquerModifsBoss(liste, modifs) {
 // ---- Début du chrono d'un boss (boss.chrono, choisi dans la fenêtre Boss
 // de la page admin) : ligne "Méthode de chronométrage" au-dessus de la
 // localisation en fin de draft (saisie des temps), toujours affichée. Pas
-// de moment choisi : pas de ligne. ----
+// de moment choisi : apparition de la barre de vie (cas par défaut des
+// règles, sans message ni dôme). ----
 const MOMENTS_CHRONO = {
   message: { libelle: "Fin du message", phrase: "Lance le chrono à la fin du message." },
   premier_pas: { libelle: "Premier pas", phrase: "Lance le chrono à ton premier pas." },
@@ -117,8 +118,10 @@ const MOMENTS_CHRONO = {
 
 // Ligne de la méthode de chronométrage, ou "".
 function htmlMethodeChrono(boss) {
-  const moment = MOMENTS_CHRONO[boss?.chrono];
-  if (!moment) return "";
+  // Défi (nombre d'ennemis en 2 minutes) : pas de chrono à lancer, sauf
+  // méthode choisie dans l'admin.
+  if (!boss || (estDefiEnnemis(boss) && !MOMENTS_CHRONO[boss.chrono])) return "";
+  const moment = MOMENTS_CHRONO[boss.chrono] || MOMENTS_CHRONO.barre_vie;
   return `<p class="methode-chrono" title="${moment.phrase}"><img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Méthode de chronométrage : <strong>${moment.libelle.toLowerCase()}</strong></p>`;
 }
 

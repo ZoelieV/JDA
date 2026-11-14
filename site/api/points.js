@@ -264,7 +264,7 @@ function nettoyerMasques(masques, ids) {
 }
 
 // Début du chrono d'un boss (ligne "Méthode de chronométrage" de la saisie des temps, cf.
-// MOMENTS_CHRONO dans commun/cartes.js) ; absent = bouton pas affiché.
+// MOMENTS_CHRONO dans commun/cartes.js) ; absent = apparition de la barre de vie.
 const MOMENTS_CHRONO = ["message", "premier_pas", "barre_vie"];
 
 // Nom, 7 résistances, début du chrono (facultatif) et recommandations

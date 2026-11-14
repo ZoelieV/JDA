@@ -514,6 +514,101 @@ function mettreAJourBarreOutils() {
   document.getElementById("recherche").value = rechercheTexte;
   genererFiltresIcones();
   genererFiltresArmesPersos();
+  placerFiltresProfil();
+}
+
+// ---- Téléphone : filtres et tris de la fenêtre comme ceux que le
+// connecté a choisis pour la draft (Personnalisation, onglet "Filtres et
+// tris en Draft", commun/filtres_draft.js) : masqués cachés, figés en haut
+// de la fenêtre, les autres défilent avec les cartes. Ordi : barre complète,
+// inchangée. ----
+let choixFiltresProfil = lireFiltresDraft(null);
+let marqueursFiltres = null; // élément -> commentaire à sa place d'origine
+
+// Éléments de la fenêtre pour chaque id de FILTRES_DRAFT (pas de J1/J2, de
+// raffinement ni de bonus de saison ici ; tri par type d'arme : jamais
+// figé). Vue Armes : les icônes du haut sont les types d'arme.
+function elementsFiltresProfil() {
+  const q = selecteur => document.querySelector(`#modal ${selecteur}`);
+  const tri = cle => q(`.tri-btn[data-tri="${cle}"]`);
+  const persos = vueActive === "characters";
+  return {
+    vue: q("#view-selector"),
+    elements: persos ? q("#filtres-icones") : null,
+    armes: persos ? q("#filtres-armes-persos") : q("#filtres-icones"),
+    etoiles: q(".filtres-etoiles"),
+    voeux: q("#filtres-voeux"),
+    factions: q("#filtres-factions"),
+    soutiens: q("#filtres-soutiens"),
+    favoris: q(".filtre-favoris")?.parentElement,
+    recherche: q("#recherche"),
+    clear: q("#btn-clear-filtres"),
+    tri_points: tri("points"),
+    tri_constellation: tri("constellation"),
+    tri_niveau: tri("niveau"),
+    tri_rarete: tri("rarete"),
+    tri_element: tri("element")
+  };
+}
+
+// Choix du connecté (profil), sans bloquer l'ouverture de la fenêtre.
+function chargerChoixFiltresProfil() {
+  fetch("/api/auth/profile", { credentials: "include" })
+    .then(reponse => reponse.ok ? reponse.json() : null)
+    .then(donnees => {
+      if (!donnees) return;
+      choixFiltresProfil = lireFiltresDraft(donnees.profil?.parametres?.filtres_draft);
+      placerFiltresProfil();
+    })
+    .catch(() => {});
+}
+
+function placerFiltresProfil() {
+  const figes = document.getElementById("outils-figes");
+  const trisFiges = figes.querySelector(".tris-figes");
+  const elements = elementsFiltresProfil();
+  // Repère de la place d'origine de chaque élément, posé une fois.
+  if (!marqueursFiltres) {
+    marqueursFiltres = new Map();
+    const tous = new Set([...Object.values(elements), document.getElementById("filtres-armes-persos")]);
+    tous.forEach(el => {
+      if (!el) return;
+      const marqueur = document.createComment("");
+      el.before(marqueur);
+      marqueursFiltres.set(el, marqueur);
+    });
+  }
+  // Tout remis à sa place, puis rangé selon les choix (téléphone).
+  marqueursFiltres.forEach((marqueur, el) => {
+    marqueur.after(el);
+    el.classList.remove("filtre-masque");
+  });
+  const telephone = MEDIA_TELEPHONE.matches;
+  if (telephone) {
+    const masques = new Set(choixFiltresProfil.masques);
+    const figesIds = new Set(choixFiltresProfil.figes);
+    FILTRES_DRAFT.forEach(filtre => {
+      const el = elements[filtre.id];
+      if (!el) return;
+      if (masques.has(filtre.id)) el.classList.add("filtre-masque");
+      if (!figesIds.has(filtre.id) || filtre.id === "clear") return;
+      if (filtre.groupe === "tris") trisFiges.appendChild(el);
+      else if (filtre.id === "recherche") figes.prepend(el);
+      else figes.insertBefore(el, trisFiges);
+    });
+    if (figesIds.has("clear") && elements.clear) figes.appendChild(elements.clear);
+  }
+  // Blocs vides cachés (rien de figé, plus aucun tri dans la barre, etc.),
+  // de l'intérieur vers l'extérieur.
+  const barre = document.getElementById("barre-outils");
+  const trisBarre = [...barre.querySelectorAll(".tris")];
+  [trisFiges, figes, barre, ...trisBarre].forEach(bloc => { bloc.hidden = false; });
+  const visible = el => !el.hidden && !el.closest("[hidden], .filtre-masque");
+  const aDuContenu = bloc => [...bloc.querySelectorAll("button, input")].some(visible);
+  trisFiges.hidden = !aDuContenu(trisFiges);
+  figes.hidden = !telephone || !aDuContenu(figes);
+  trisBarre.forEach(tris => { tris.hidden = !aDuContenu(tris); });
+  barre.hidden = !aDuContenu(barre);
 }
 
 function reinitialiserFiltres() {
@@ -528,6 +623,8 @@ function reinitialiserFiltres() {
 }
 
 function initialiserBarreOutils() {
+  chargerChoixFiltresProfil();
+  MEDIA_TELEPHONE.addEventListener("change", placerFiltresProfil);
   document.querySelectorAll(".tri-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       cyclerTri(etatTri, btn.dataset.tri);

@@ -1,6 +1,6 @@
 // Boss : consultation et modification du nom, des résistances, du début
-// du chrono (MOMENTS_CHRONO, commun/cartes.js ; aucun = pas de bouton Chrono
-// en fin de draft) et des recommandations (éléments, réactions, mécaniques,
+// du chrono (MOMENTS_CHRONO, commun/cartes.js ; aucun = apparition de la
+// barre de vie, affichée en fin de draft) et des recommandations (éléments, réactions, mécaniques,
 // affichées hors match classé, cf. commun/recommandations_boss.js) de chaque
 // boss (JSON de DB/ et ajouts), enregistrés dans Supabase (api/points.js,
 // config.boss) et appliqués sur tout le site. Utilise listeBoss,
@@ -27,7 +27,7 @@ function rendreBoss() {
         <tr>
           <th class="col-nom">Boss</th>
           ${ELEMENTS_AJOUT.map(element => `<th title="Résistance ${LIBELLES_ELEMENTS[element]}"><img src="${ICONES_ELEMENTS_TRI[element]}" alt="${LIBELLES_ELEMENTS[element]}"></th>`).join("")}
-          <th title="Début du chrono (bouton Chrono en fin de draft)">Chrono</th>
+          <th title="Méthode de chronométrage (affichée en fin de draft ; aucune choisie : apparition de la barre de vie)">Chrono</th>
           <th title="Éléments, réactions et mécaniques recommandés (hors match classé)">Conseils</th>
         </tr>
       </thead>
@@ -52,7 +52,7 @@ function rendreBoss() {
               <td><span class="champ-pourcent${estImmunise(valeur) ? " immunise" : ""}"><input type="text" class="res-ajout res-boss${Number.isFinite(valeur) ? "" : " invalide"}" data-id="${echapper(boss.id)}" data-index="${i}" value="${Number.isFinite(valeur) ? valeur : ""}" inputmode="decimal" title="${LIBELLES_ELEMENTS[ELEMENTS_AJOUT[i]]} (%)"></span></td>`).join("")}
             <td>
               <select class="chrono-boss${b.chrono ? "" : " sans-chrono"}" data-id="${echapper(boss.id)}" title="Début du chrono">
-                <option value="">—</option>
+                <option value="">— (barre de vie)</option>
                 ${Object.entries(MOMENTS_CHRONO).map(([cle, moment]) => `<option value="${cle}"${b.chrono === cle ? " selected" : ""}>${moment.libelle}</option>`).join("")}
               </select>
             </td>

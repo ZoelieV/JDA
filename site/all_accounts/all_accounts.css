@@ -980,3 +980,51 @@ html.page-integree #modal {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+/* ---- Téléphone, box d'un joueur : filtres et tris choisis pour la draft
+   (cf. placerFiltresProfil). Toute la fenêtre défile ; seuls les filtres
+   figés restent en haut, les autres défilent avec les cartes. ---- */
+#modal [hidden],
+#modal .filtre-masque {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  #modal-content {
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #modal #profile-box {
+    overflow: visible;
+    min-height: auto;
+  }
+
+  /* Collé au bord haut de la fenêtre (par-dessus son padding). */
+  #outils-figes {
+    position: sticky;
+    top: -0.75rem;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0 -0.75rem 0.625rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgb(var(--rvb-profil) / 0.35);
+    background-color: rgba(18, 18, 24, 0.97);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+  }
+
+  #outils-figes > #view-selector,
+  #outils-figes > .recherche-personnage {
+    flex: 1 1 100%;
+  }
+
+  #outils-figes .tris,
+  #outils-figes .filtres-icones,
+  #outils-figes .filtres-etoiles {
+    flex-wrap: wrap;
+  }
+}
