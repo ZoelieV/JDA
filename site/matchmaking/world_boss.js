@@ -344,7 +344,8 @@ function rendreBoss() {
   $("boss-wb").innerHTML = `
     ${htmlImageInfosBoss(boss, false)}
     <span class="nom-boss">${echapperHtml(boss.nom)}</span>
-    ${estLegendeLocale(boss) ? `<button type="button" class="btn-carte-legende" title="Où trouver cette légende locale"><img src="../DB/images/others/Icon_Map.webp" alt="">Localisation</button>` : ""}`;
+    ${estLegendeLocale(boss) ? htmlCarteLegende(boss) : ""}`;
+  brancherCarteLegende($("boss-wb"));
 }
 
 function initialiserBoss() {

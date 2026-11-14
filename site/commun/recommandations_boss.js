@@ -75,8 +75,9 @@ function htmlRecommandationsBoss(reco) {
   return `<span class="reco-boss"><span class="titre-reco-boss">Recommandé</span>${elements}${textes}</span>`;
 }
 
-// Image du boss. Hors match compétitif : cliquable, avec par-dessus ses
-// résistances (en %) et ses recommandations, et une indication dessous.
+// Image du boss. Hors match compétitif : avec par-dessus ses résistances
+// (en %) et ses recommandations, affichées d'office (un clic les masque /
+// les réaffiche), et une indication dessous.
 function htmlImageInfosBoss(boss, competitif) {
   if (competitif) return htmlImagesBoss(boss);
   const res = ELEMENTS_BOSS.map((element, i) => {
@@ -86,11 +87,11 @@ function htmlImageInfosBoss(boss, competitif) {
   }).join("");
   const reco = htmlRecommandationsBoss(boss.reco);
   return `
-    <button type="button" class="image-boss-res" title="Voir les résistances${reco ? " et les recommandations" : ""}">
+    <button type="button" class="image-boss-res res-visibles" title="Masquer / afficher les résistances${reco ? " et les recommandations" : ""}">
       ${htmlImagesBoss(boss)}
       <span class="resistances-boss">${res}${reco}</span>
     </button>
-    <span class="indice-res-boss">${reco ? "Voir les Res et conseils" : "Voir les Res"}</span>`;
+    <span class="indice-res-boss"><span class="indice-voir">${reco ? "Voir les Res et conseils" : "Voir les Res"}</span><span class="indice-masquer">${reco ? "Masquer les Res et conseils" : "Masquer les Res"}</span></span>`;
 }
 
 if (typeof module !== "undefined") {

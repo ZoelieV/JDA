@@ -561,7 +561,13 @@ h1 {
   white-space: nowrap;
 }
 
-/* Petite indication discrète sous l'image. */
+/* Petite indication discrète sous l'image (« Voir » ou « Masquer » selon
+   que les résistances sont affichées). */
+.image-boss-res.res-visibles + .indice-res-boss .indice-voir,
+.image-boss-res:not(.res-visibles) + .indice-res-boss .indice-masquer {
+  display: none;
+}
+
 .bandeau-boss .indice-res-boss {
   margin-top: -0.375rem;
   font-size: 0.6875rem;
@@ -1247,6 +1253,14 @@ h1 {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Défi : nombre d'ennemis tués à saisir, pas un temps. */
+.saisie-temps .consigne-defi {
+  max-width: 16rem;
+  margin: 0;
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .saisie-temps #input-temps {
@@ -2969,30 +2983,25 @@ h1 {
   }
 }
 
-/* Bouton "Chrono" (début du chrono du boss, au-dessus de "Localisation")
-   et sa bulle. */
-.bandeau-boss .btn-chrono {
+/* Méthode de chronométrage du boss (au-dessus de la localisation), toujours
+   affichée. */
+.bandeau-boss .methode-chrono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  max-width: 100%;
+  margin: 0;
   padding: 0.375rem 0.875rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 999px;
   background-color: rgba(20, 20, 20, 0.7);
-  color: inherit;
-  font: inherit;
-  font-weight: bold;
-  cursor: pointer;
+  text-align: center;
 }
 
-.bandeau-boss .btn-chrono:hover,
-.bandeau-boss .btn-chrono[aria-expanded="true"] {
-  background-color: rgba(60, 60, 60, 0.8);
-}
-
-.bandeau-boss .bulle-chrono {
-  max-width: 18rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  background-color: rgba(20, 20, 20, 0.85);
-  font-size: 0.9375rem;
+.bandeau-boss .methode-chrono strong {
+  color: #f5c542;
 }
 
 /* Bouton "Localisation" sous une légende locale (fin de draft). */
@@ -3022,6 +3031,30 @@ h1 {
   border-radius: 0;
   background: none;
   object-fit: contain;
+}
+
+/* Carte affichée d'office sous la légende locale (clic : en grand). */
+.bandeau-boss .miniature-carte-legende {
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+}
+
+.bandeau-boss .titre-miniature-carte {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.recap-centre .bandeau-boss .btn-carte-legende img.image-carte-legende,
+.bandeau-boss .btn-carte-legende img.image-carte-legende {
+  width: 14rem;
+  height: 14rem;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  object-fit: cover;
 }
 
 /* Fenêtre de la localisation d'une légende locale. */
@@ -3477,9 +3510,9 @@ h1 {
   object-fit: contain;
 }
 
-/* Horloge du bouton « Chrono » (à la place de l'émoji ⏱) : pas la taille de
-   l'image du boss (.bandeau-boss img). */
-.bandeau-boss .btn-chrono .icone-texte {
+/* Horloge de la méthode de chronométrage : pas la taille de l'image du
+   boss (.bandeau-boss img). */
+.bandeau-boss .methode-chrono .icone-texte {
   width: 1.25em;
   height: 1.25em;
   border-radius: 0;

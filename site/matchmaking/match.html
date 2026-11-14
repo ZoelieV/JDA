@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/DB/images/others/appli_apple_180.png?v=2">
 <meta name="theme-color" content="#1e1e1e">
-<link rel="stylesheet" href="/matchmaking/match.css?v=rem80">
+<link rel="stylesheet" href="/matchmaking/match.css?v=rem81">
 <link rel="stylesheet" href="/commun/tirage_boss.css?v=10">
 <link rel="stylesheet" href="/matchmaking/equilibrage.css?v=4">
 <link rel="stylesheet" href="/commun/entete.css?v=rem49">
@@ -273,6 +273,8 @@
            connecté (cf. rendreTempsJoueur). -->
       <div id="saisie-temps" class="saisie-temps cache">
         <label for="input-temps">Ton temps</label>
+        <!-- Défi (Mer d'Antan) : nombre d'ennemis tués, pas un temps. -->
+        <p id="consigne-defi" class="consigne-defi cache">Défi : entre le <strong>nombre d'ennemis tués</strong> en 2 minutes, pas ton temps.</p>
         <div class="ligne-saisie-temps">
           <input id="input-temps" type="text" placeholder="Ton temps" inputmode="decimal">
           <button id="btn-valider-temps" type="button" class="btn-valider-temps">Valider</button>
@@ -319,14 +321,14 @@
   <script src="/commun/compte.js?v=94" defer></script>
   <script src="/commun/variantes.js?v=7"></script>
   <script src="/commun/synergies.js?v=6"></script>
-  <script src="/commun/cartes.js?v=39"></script>
+  <script src="/commun/cartes.js?v=40"></script>
   <script src="/commun/little_cup.js?v=1"></script>
   <script src="/commun/tri.js?v=23"></script>
   <script src="/commun/filtres_draft.js?v=6"></script>
-  <script src="/commun/recommandations_boss.js?v=1"></script>
+  <script src="/commun/recommandations_boss.js?v=2"></script>
   <script src="/commun/koyns.js?v=19"></script>
   <script src="/commun/tirage_boss.js?v=9"></script>
-  <script src="/matchmaking/match.js?v=157"></script>
+  <script src="/matchmaking/match.js?v=158"></script>
   <script src="/matchmaking/equilibrage.js?v=8"></script>
 </body>
 </html>

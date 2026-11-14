@@ -106,27 +106,40 @@ function appliquerModifsBoss(liste, modifs) {
 }
 
 // ---- Début du chrono d'un boss (boss.chrono, choisi dans la fenêtre Boss
-// de la page admin) : bouton "Chrono" au-dessus de "Localisation" en fin de
-// draft (saisie des temps). Pas de moment choisi : pas de bouton. ----
+// de la page admin) : ligne "Méthode de chronométrage" au-dessus de la
+// localisation en fin de draft (saisie des temps), toujours affichée. Pas
+// de moment choisi : pas de ligne. ----
 const MOMENTS_CHRONO = {
   message: { libelle: "Fin du message", phrase: "Lance le chrono à la fin du message." },
   premier_pas: { libelle: "Premier pas", phrase: "Lance le chrono à ton premier pas." },
   barre_vie: { libelle: "Apparition de la barre de vie", phrase: "Lance le chrono à l'apparition de la barre de vie." }
 };
 
-// Bouton et sa bulle (cachée, cf. basculerChrono), ou "".
-function htmlBoutonChrono(boss) {
+// Ligne de la méthode de chronométrage, ou "".
+function htmlMethodeChrono(boss) {
   const moment = MOMENTS_CHRONO[boss?.chrono];
   if (!moment) return "";
-  return `<button type="button" class="btn-chrono" title="Comment chronométrer" aria-expanded="false"><img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Chrono</button>
-    <span class="bulle-chrono cache">${moment.phrase}</span>`;
+  return `<p class="methode-chrono" title="${moment.phrase}"><img class="icone-texte" src="/DB/images/others/Icon_Clock.webp" alt=""> Méthode de chronométrage : <strong>${moment.libelle.toLowerCase()}</strong></p>`;
 }
 
-// Clic sur le bouton Chrono : affiche ou cache sa bulle.
-function basculerChrono(bouton) {
-  const bulle = bouton.nextElementSibling;
-  const ouvert = bulle.classList.toggle("cache") === false;
-  bouton.setAttribute("aria-expanded", String(ouvert));
+// ---- Carte d'une légende locale (DB/images/boss/legend_local/carte/<id
+// du boss>.webp), affichée d'office sous le boss ; clic : en grand dans la
+// fenêtre #carte-legende de la page. Image absente : simple bouton
+// "Localisation" (la fenêtre l'indique). ----
+function htmlCarteLegende(boss) {
+  return `<button type="button" class="btn-carte-legende miniature-carte-legende" title="Agrandir la carte">
+    <span class="titre-miniature-carte"><img class="icone-carte" src="/DB/images/others/Icon_Map.webp" alt="">Localisation</span>
+    <img class="image-carte-legende" src="/DB/images/boss/legend_local/carte/${boss.id}.webp" alt="Localisation de ${echapperHtml(boss.nom)}">
+  </button>`;
+}
+
+// À appeler juste après avoir inséré htmlCarteLegende dans conteneur.
+function brancherCarteLegende(conteneur) {
+  const image = conteneur?.querySelector(".image-carte-legende");
+  image?.addEventListener("error", () => {
+    image.remove();
+    conteneur.querySelector(".miniature-carte-legende")?.classList.remove("miniature-carte-legende");
+  });
 }
 
 // ---- Points d'un personnage chez un joueur ----

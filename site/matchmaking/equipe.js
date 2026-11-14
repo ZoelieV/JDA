@@ -674,8 +674,9 @@ function rendreBoss() {
   $("boss-equipe").innerHTML = `
     ${htmlImageInfosBoss(boss, false)}
     <span class="nom-boss">${echapperHtml(boss.nom)}</span>
-    ${htmlBoutonChrono(boss)}
-    ${estLegendeLocale(boss) ? `<button type="button" class="btn-carte-legende" title="Où trouver cette légende locale"><img src="../DB/images/others/Icon_Map.webp" alt="">Localisation</button>` : ""}`;
+    ${htmlMethodeChrono(boss)}
+    ${estLegendeLocale(boss) ? htmlCarteLegende(boss) : ""}`;
+  brancherCarteLegende($("boss-equipe"));
 }
 
 function initialiserBoss() {
@@ -683,8 +684,6 @@ function initialiserBoss() {
     if (event.target.closest(".image-boss-res, .indice-res-boss")) {
       $("boss-equipe").querySelector(".image-boss-res")?.classList.toggle("res-visibles");
     }
-    const chrono = event.target.closest(".btn-chrono");
-    if (chrono) basculerChrono(chrono);
     if (event.target.closest(".btn-carte-legende")) ouvrirCarteLegende(bossParId.get(draft.boss_id));
   });
   const fenetre = $("carte-legende");

@@ -2856,15 +2856,10 @@ function rendreLienStream(role, zone) {
   lien.title = href;
 }
 
-// ---- Localisation d'une légende locale sur la carte ----
+// ---- Localisation d'une légende locale sur la carte, en grand ----
 // Image DB/images/boss/legend_local/carte/<id du boss>.webp (pas encore
-// toutes prises : message à la place si elle manque).
-function htmlBoutonCarteLegende() {
-  return `<button type="button" class="btn-carte-legende" title="Où trouver cette légende locale">
-    <img src="../DB/images/others/Icon_Map.webp" alt="">Localisation
-  </button>`;
-}
-
+// toutes prises : message à la place si elle manque ; miniature sous le
+// boss, cf. htmlCarteLegende dans commun/cartes.js).
 function ouvrirCarteLegende(boss) {
   const fenetre = document.getElementById("carte-legende");
   fenetre.querySelector(".titre-carte-legende").textContent = boss.nom;
@@ -2920,6 +2915,7 @@ function rendreLibellesResultat() {
   document.querySelector("#saisie-temps label").textContent = libelle;
   input.placeholder = libelle;
   input.inputMode = defi ? "numeric" : "decimal";
+  document.getElementById("consigne-defi").classList.toggle("cache", !defi);
   document.querySelector("#verification-temps .titre-verification").textContent = `Vérifie les deux ${motsResultat().les}`;
 }
 
@@ -2945,9 +2941,9 @@ function rendreRecap() {
   if (blocBoss.dataset.cle !== cleBoss) {
     blocBoss.dataset.cle = cleBoss;
     blocBoss.innerHTML = boss
-      ? `${htmlImagesBoss(boss)}<span class="nom-boss">${boss.nom}</span>${htmlBoutonChrono(boss)}${estLegendeLocale(boss) ? htmlBoutonCarteLegende() : ""}`
+      ? `${htmlImagesBoss(boss)}<span class="nom-boss">${boss.nom}</span>${htmlMethodeChrono(boss)}${estLegendeLocale(boss) ? htmlCarteLegende(boss) : ""}`
       : "";
-    blocBoss.querySelector(".btn-chrono")?.addEventListener("click", event => basculerChrono(event.currentTarget));
+    brancherCarteLegende(blocBoss);
     blocBoss.querySelector(".btn-carte-legende")?.addEventListener("click", () => ouvrirCarteLegende(boss));
   }
 
@@ -3284,7 +3280,10 @@ function calculerTrophees() {
 }
 
 function definirTypeRoom(type) {
-  if (!type || type === typeRoom) return;
+  if (!type) return;
+  // Matchmaking / classé : pas de lien à partager (on y entre par la file).
+  document.getElementById("btn-partager").classList.toggle("cache", type === "matchmaking" || type === "classe");
+  if (type === typeRoom) return;
   typeRoom = type;
   document.querySelector(".titre-page").innerHTML =
     typeRoom === "classe" ? `Match classé ${ICONE_TROPHEE}` : typeRoom === "entrainement" ? `Entraînement ${ICONE_ENTRAINEMENT}` : typeRoom === "tournoi" ? `Match de tournoi ${ICONE_TROPHEE}` : "Match";

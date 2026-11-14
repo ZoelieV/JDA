@@ -263,7 +263,7 @@ function nettoyerMasques(masques, ids) {
   return Array.from(new Set((Array.isArray(masques) ? masques : []).filter(id => ids.has(id)))).sort();
 }
 
-// Début du chrono d'un boss (bouton "Chrono" de la saisie des temps, cf.
+// Début du chrono d'un boss (ligne "Méthode de chronométrage" de la saisie des temps, cf.
 // MOMENTS_CHRONO dans commun/cartes.js) ; absent = bouton pas affiché.
 const MOMENTS_CHRONO = ["message", "premier_pas", "barre_vie"];
 
